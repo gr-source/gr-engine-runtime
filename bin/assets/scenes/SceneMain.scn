@@ -1,0 +1,6 @@
+name: default
+object MainCamera
+object Plane
+object Sun
+object Spot
+object Cylinder
