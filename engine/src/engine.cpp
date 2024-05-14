@@ -152,9 +152,9 @@ void engine::OnRender() {
     #endif
 }
 
-Time tickphysics;
 void engine::OnPhysics() {
     PhysicsScene&  pPhysicsScene  = PhysicsScene::getInstance();
+    Time tickphysics;
 
     do {
         tickphysics.tick();

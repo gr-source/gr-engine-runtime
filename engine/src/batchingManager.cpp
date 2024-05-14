@@ -82,7 +82,7 @@ void BatchingManager::OnUpdate() {
 
     m_cameraComponent = &CameraComponent::MainCamera();
 
-    const Matrix4x4 vp = m_cameraComponent->getPerspesctive() * m_cameraComponent->getViewMatrix();
+    const Matrix4x4 vp = m_cameraComponent->getperspesctive() * m_cameraComponent->getviewmatrix();
 
     m_frustum.CalculateFrustum(vp);
 
@@ -96,9 +96,9 @@ void BatchingManager::OnUpdate() {
         Vector3 min = transform.position + (transform.rotation * (meshRender.m_drawcall.m_boundBox.min * transform.scale));
         Vector3 max = transform.position + (transform.rotation * (meshRender.m_drawcall.m_boundBox.max * transform.scale));
 
-        if (!m_frustum.IsFrustum(min, max)) {
-            continue;
-        }
+        // if (!m_frustum.IsFrustum(min, max)) {
+            // continue;
+        // }
 
         m_objectrender.push_back(gameObject.get());
     }
@@ -124,8 +124,8 @@ void BatchingManager::OnRender() {
 
     m_shader->bind();
 
-    m_shader->setUniform("projection", m_cameraComponent->getPerspesctive());
-    m_shader->setUniform("view", m_cameraComponent->getViewMatrix());
+    m_shader->setUniform("projection", m_cameraComponent->getperspesctive());
+    m_shader->setUniform("view", m_cameraComponent->getviewmatrix());
     m_shader->setUniform("gEye", m_cameraComponent->getposition());
 
     SetupLight(m_shader);
@@ -137,7 +137,7 @@ void BatchingManager::OnRender() {
 
         Transform& transform = gameObject->getComponent<Transform>();
 
-        m_shader->setUniform("model", transform.getGlobalMatrix());
+        m_shader->setUniform("model", transform.getglobalmatrix());
 
         SetupMaterial(meshRender, m_shader);
 
@@ -159,7 +159,7 @@ void BatchingManager::RenderModel(Shader *shader) {
         if (!gameObject->hasComponent<MeshRender>()) continue;
 
         Transform& transform = gameObject->getComponent<Transform>();
-        shader->setUniform("model", transform.getGlobalMatrix());
+        shader->setUniform("model", transform.getglobalmatrix());
 
         MeshRender& meshRender = gameObject->getComponent<MeshRender>();
         meshRender.m_drawcall.buffers.bind(BufferManager::eVAO);

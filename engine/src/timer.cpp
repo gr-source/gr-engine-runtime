@@ -3,11 +3,6 @@
 
 float Time::deltaTime = 0.0f;
 
-int64_t difftimespec_ns(const struct timespec after, const struct timespec before) {
-    return ((int64_t)after.tv_sec - (int64_t)before.tv_sec) * (int64_t)1000000000 + ((int64_t)after.tv_nsec - (int64_t)before.tv_nsec);
-    // clock_gettime(CLOCK_MONOTONIC, &endTime);
-}
-
 Time::Time(float fps) : dt(0.0f), targetFPS(1.0f / fps), lastTime(std::chrono::steady_clock::now()) {}
 
 float Time::start() const {

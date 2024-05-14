@@ -33,15 +33,15 @@ void CameraComponent::OnInit() {
     m_transform = &entity->getComponent<Transform>();
 }
 
-const Vector3 &CameraComponent::getposition() {
-    return m_transform->position;
+const Vector3 CameraComponent::getposition() {
+    return m_transform->getposition();
 }
 
-const Matrix4x4 CameraComponent::getViewMatrix() const {
-    return Math::lookAt(m_transform->position, m_transform->position + m_transform->getforward(), m_transform->getup());
+const Matrix4x4 CameraComponent::getviewmatrix() const {
+    return Math::lookAt(m_transform->getposition(), m_transform->getposition() + m_transform->getforward(), m_transform->getup());
 }
 
-const Matrix4x4 CameraComponent::getPerspesctive() const {
+const Matrix4x4 CameraComponent::getperspesctive() const {
     // return Math::orthographic(-1.0f, 1.0f, -1.0f, 1.0f, 75.0f, 0.001f);
     return Math::perspective(Math::rad(m_fov), m_aspect, m_farPlane, m_nearPlane);
 }
@@ -56,6 +56,7 @@ void CameraComponent::SetFildOfView(float fov) {
     m_fov = fov;
 }
 
+/*
 void CameraComponent::OnGui() {
     if (ImGui::TreeNode("CameraComponent")) {
         ImGui::Text("Fov:");
@@ -70,6 +71,7 @@ void CameraComponent::OnGui() {
         ImGui::TreePop();
     }
 }
+*/
 
 CameraComponent::~CameraComponent() {
     m_cameras.erase(std::remove(m_cameras.begin(), m_cameras.end(), this), m_cameras.end());

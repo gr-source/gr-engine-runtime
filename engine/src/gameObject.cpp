@@ -20,10 +20,6 @@ const std::string &GameObject::gettag() const {
     return tag;
 }
 
-void GameObject::OnGui() {
-    entity->OnGui();
-}
-
 Transform& GameObject::gettransform() {
     return entity->getComponent<Transform>();
 }

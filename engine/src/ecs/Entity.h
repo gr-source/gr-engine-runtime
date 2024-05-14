@@ -55,21 +55,13 @@ public:
 
     /* função pra verificar se o component existe */
     template <typename T>
-    bool hasComponent() const;
+    const bool hasComponent() const;
 
     /* Função pra iniciar as script */
     void OnStart();
 
     /* função pra atualizar a as scripts */
     void OnUpdate();
-
-    /* Renderize as scripts */
-    void OnRender(DebugDraw& debugDraw);
-
-    /* UI property engine */
-    void OnGui();
-
-    void OnCollidedWith(const GameObject& other);
 
     /* operador pra verificar se duas entidades sao iguais */
     bool operator==(const Entity& other) const;
@@ -100,7 +92,7 @@ inline T& Entity::getComponent() {
 }
 
 template <typename T>
-inline bool Entity::hasComponent() const {
+inline const bool Entity::hasComponent() const {
     return components[GetIDFromComponent<T>()] != nullptr;
 }
 

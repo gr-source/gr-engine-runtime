@@ -44,6 +44,7 @@ const int &LightComponent::gettype() const {
     return m_type;
 }
 
+/*
 void LightComponent::OnGui() {
     if (ImGui::TreeNode("LightComponent")) {
         ImGui::Text("Constante:");
@@ -73,6 +74,7 @@ void LightComponent::OnGui() {
         ImGui::TreePop();
     }
 }
+*/
 
 const float &LightComponent::getattenuationconstant() {
     return m_attenuationConstant;

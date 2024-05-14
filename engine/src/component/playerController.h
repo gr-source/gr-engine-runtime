@@ -8,11 +8,9 @@ public:
 
     void OnInit() override;
 
+    void OnStart() override;
+
     void OnUpdate() override;
-
-    void updateCursor();
-
-    void processMouse(const Vector2& directio);
 
 private:
     /* Trasnsform do local player */
@@ -23,6 +21,8 @@ private:
 
     /* Rigidbody do player */
     Animator* m_animator;
+
+    Transform* m_camera;
 
     CameraController* m_cameraController;
 

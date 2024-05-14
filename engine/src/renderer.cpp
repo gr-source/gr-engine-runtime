@@ -78,7 +78,7 @@ void DebugDraw::addPoint(const Vector3 &position, const Color &color) {
 void DebugDraw::addSprite(const Vector3 &position, Sprite *sprite) {
     CameraComponent& m_cameraComponent = CameraComponent::MainCamera();
 
-    Quaternion rotate = Math::normalize(Quaternion::LookRotation(Math::normalize(position - m_cameraComponent.getposition()), Vector3::up));
+    Quaternion rotate = Math::normalize(Math::lookRotation(Math::normalize(position - m_cameraComponent.getposition()), Vector3::up));
     rotate *= Math::normalize(Quaternion::Euler(Math::rad(90.0f), Vector3(1.0f, 0.0f, 0.0f)));
     rotate = Math::normalize(rotate);
 
@@ -99,8 +99,8 @@ void DebugDraw::bind() {
 
     m_shader->bind();
 
-    m_shader->setUniform("projection", m_cameraComponent.getPerspesctive());
-    m_shader->setUniform("view", m_cameraComponent.getViewMatrix());
+    m_shader->setUniform("projection", m_cameraComponent.getperspesctive());
+    m_shader->setUniform("view", m_cameraComponent.getviewmatrix());
 }
 
 void DebugDraw::unbind() {
@@ -163,7 +163,7 @@ void DebugDraw::drawsprites() {
 
     m_spritebuffer->bind(BufferManager::eVAO);
 
-    m_spriteRender->setUniform("vp", m_cameraComponent.getPerspesctive() * m_cameraComponent.getViewMatrix());
+    m_spriteRender->setUniform("vp", m_cameraComponent.getperspesctive() * m_cameraComponent.getviewmatrix());
 
     for (auto& entry : m_sprites) {
         m_spriteRender->setUniform("model", entry.model);

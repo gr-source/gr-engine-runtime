@@ -18,6 +18,7 @@ out vec4 FragColor;
 #define LIGHT_POINT 2
 #define LIGHT_SPOT 3
 
+in mat3 m_TBN;
 in vec3 m_normal;
 in vec3 m_fragPos;
 in vec2 m_textCoord;

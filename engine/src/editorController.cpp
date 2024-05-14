@@ -26,6 +26,9 @@ void EditorController::OnUpdate() {
     if (!io.MouseDrawCursor || Settings::IsGameRunning) {
         return;
     }
+    if (CameraComponent::CameraID != 0) {
+        CameraComponent::CameraID = 0;
+    }
 
     CameraComponent& m_cameraComponent = CameraComponent::MainCamera();
 

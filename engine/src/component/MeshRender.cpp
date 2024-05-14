@@ -75,7 +75,7 @@ void MeshRender::OnInit() {
     m_transform = &entity->getComponent<Transform>();
 }
 
-void MeshRender::OnGui() {
+/*void MeshRender::OnGui() {
     if (ImGui::TreeNode("MeshRender")) {
         for (auto& entry : materials) {
             Material& material = entry.second;
@@ -200,7 +200,7 @@ void MeshRender::OnGui() {
         }
         ImGui::TreePop();
     }
-}
+}*/
 
 void MeshRender::AddAttrib(BufferManager& pBufferManager) {
     /* posiçao do vertice no espaço mundial */

@@ -21,15 +21,6 @@ public:
     /* Atualização do script */
     virtual void OnUpdate() {}
 
-    /* Renderização do script */
-    virtual void OnRender(DebugDraw& debugDraw) {}
-
-    /* o objeto que a entidade atual collidiu */
-    virtual void OnCollidedWith(const GameObject& other) {}
-
-    /* UI de propriedades do script (ENGINE) */
-    virtual void OnGui() {}
-
     /* Quando o script terminar */
     virtual ~Component() {}
 };

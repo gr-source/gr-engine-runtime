@@ -9,7 +9,7 @@
 
 #include <GLFW/glfw3.h>
 
-CameraController::CameraController() : m_transform(nullptr), up(Vector3::up), right(Vector3::right), forward(Vector3::forward), pitch(0.0f), yaw(0.0f) {}
+CameraController::CameraController() : m_transform(nullptr), pitch(0.0f), yaw(0.0f) {}
 
 void CameraController::OnInit() {
     m_transform = &entity->getComponent<Transform>();
@@ -27,7 +27,7 @@ void CameraController::updateCursor() {
     static Vector2 lastMousePos = Input::GetCursorPos();
     const Vector2 delta = Input::GetCursorPos() - lastMousePos;
 
-    if (Math::magnitude(delta) > 0.00001f)
+    if (Math::magnitude(delta) > 0.001f)
         processMouse(delta);
 
     lastMousePos = Screen::GetResolution() / 2.0f;
@@ -39,21 +39,7 @@ void CameraController::updateCursor() {
 }
 
 void CameraController::OnCameraUpdate() {
-    CameraComponent& m_cameraComponent = CameraComponent::MainCamera();
-
-    forward = {
-        std::cos(Math::rad(yaw)) * std::cos(Math::rad(pitch)),
-        std::sin(Math::rad(pitch)),
-        std::sin(Math::rad(yaw)) * std::cos(Math::rad(pitch))
-    };
-
-    forward = Math::normalize(forward);
-
-    right = Math::normalize(Math::cross(forward, Vector3::up));
-    Vector3 up = Math::normalize(Math::cross(right, forward));
-
-    // m_cameraComponent.m_forward = forward;
-    // m_cameraComponent.m_up = up;
+    m_transform->rotation = Math::normalize(Quaternion::Euler({Math::rad(-pitch), Math::rad(-yaw), 0.0f}));
 }
 
 void CameraController::processMouse(const Vector2& direction) {
@@ -61,6 +47,8 @@ void CameraController::processMouse(const Vector2& direction) {
 
     pitch -= sensi.y;
     yaw += sensi.x;
+
+    // pitch = std::max(89.0f, std::min(-89.0f, pitch));
 
     if (pitch > 89.0f)
         pitch = 89.0f;
@@ -71,7 +59,6 @@ void CameraController::processMouse(const Vector2& direction) {
         yaw -= 360.0f;
     if (yaw < 0.0f)
         yaw += 360.0f;
-
     OnCameraUpdate();
 }
 

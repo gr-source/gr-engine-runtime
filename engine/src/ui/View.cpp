@@ -22,7 +22,3 @@ void View::PopupChangeColor(const std::string& name, Color& color) {
         ImGui::EndPopup();
     }
 }
-
-
-
-

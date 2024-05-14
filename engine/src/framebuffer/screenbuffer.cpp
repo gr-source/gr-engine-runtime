@@ -26,7 +26,7 @@ ScreenBuffer::ScreenBuffer(u32 width, u32 height) : m_width(width), m_height(hei
 	m_fbo[FRAMEFBO]->unbind();
 
 	/*********** POSPROCESSING ***********/
-	m_texture->resize(m_width, m_height, Texture::eSRBG8, Texture::eRGB, Texture::eBILINEAR, Texture::eBYTE, false);
+	m_texture->resize(m_width, m_height, Texture::eRGBA16F, Texture::eRGBA, Texture::eBILINEAR, Texture::eFLOAT, false);
 	m_texture->apply();
 
 	m_fbo[POSFBO]->bind();

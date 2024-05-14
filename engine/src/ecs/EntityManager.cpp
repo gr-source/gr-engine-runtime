@@ -22,19 +22,12 @@ void EntityManager::OnUpdate() {
     });
 }
 
-void EntityManager::OnRender(DebugDraw& debugDraw) {
-    std::for_each(m_entities.begin(), m_entities.end(), [&debugDraw](std::unique_ptr<Entity>& entitie) {
-        entitie->OnRender(debugDraw);
-    });
-}
-
 void EntityManager::OnPlayGame() {
     /* perocrra todas as entidades e abilites os scripts */
     std::for_each(m_entities.begin(), m_entities.end(), [](std::unique_ptr<Entity>& entitie) {
         entitie->IsActivate = true;
         entitie->OnStart();
     });
-    Settings::IsGameRunning = true;
 }
 
 void EntityManager::OnStopPlayGame() {
@@ -42,7 +35,6 @@ void EntityManager::OnStopPlayGame() {
     std::for_each(m_entities.begin(), m_entities.end(), [](std::unique_ptr<Entity>& entitie) {
         entitie->IsActivate = false;
     });
-    Settings::IsGameRunning = false;
 }
 
 const u32 EntityManager::getcount() {

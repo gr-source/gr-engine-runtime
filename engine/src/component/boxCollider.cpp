@@ -9,6 +9,7 @@ void BoxCollider::OnInit() {
     m_boxShape->setLocalScaling(btVector3(size.x, size.y, size.z));
 }
 
+/*
 void BoxCollider::OnGui() {
     if (ImGui::TreeNode("BoxCollider")) {
         ImGui::Text("Size:");
@@ -19,3 +20,4 @@ void BoxCollider::OnGui() {
         ImGui::TreePop();
     }
 }
+*/

@@ -28,8 +28,6 @@ public:
 
     void OnInit() override;
 
-    void OnGui() override;
-
     ~MeshRender();
 
     std::unordered_map<u32, Material> materials;

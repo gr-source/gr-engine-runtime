@@ -97,12 +97,6 @@ void Rigidbody::addlinearvelocity(const Vector3 &velocity) {
 	body->setLinearVelocity(FROMVEC3(velocity));
 }
 
-void Rigidbody::OnGui() {
-	if (ImGui::TreeNode("Rigidbody")) {
-		ImGui::TreePop();
-	}
-}
-
 void Rigidbody::GetAABB(Vector3& min, Vector3& max) {
 	btVector3 mi, ma;
     body->getAabb(mi, ma);

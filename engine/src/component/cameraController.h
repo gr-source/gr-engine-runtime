@@ -11,14 +11,9 @@ public:
     void OnStart() override;
 
     void OnUpdate() override;
-    Vector3 up;
 
-    Vector3 right;
-
-    Vector3 forward;
 protected:
     Transform* m_transform;
-
 
     float pitch;
 

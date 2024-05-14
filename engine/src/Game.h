@@ -5,6 +5,8 @@
 
 #include "filmbox/Filmbox.h"
 
+#include "guizmo/ImGuizmo.h"
+
 class Game {
 public:
     Game();
@@ -54,11 +56,20 @@ private:
 
     std::mutex m_mutex;
 
+    #if !IS_GAME
     ImGuiIO* m_io;
+
+    ImGuizmo::OPERATION m_guizmoOperation;
+
+    ImGuizmo::MODE m_guizmoManipulate;
+
+    void OnPropertyTransform(Transform* transform);
 
     void TextureInfo(Texture2D*& texture);
 
     void MenuAdd();
+
+    #endif
 };
 
 

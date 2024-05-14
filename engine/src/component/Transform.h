@@ -6,25 +6,16 @@
 class Transform : public Component {
 public:
     Vector3 scale;
-    Vector3 localScale;
 
     Quaternion rotation;
-    Quaternion localRotation;
 
     Vector3 position;
-    Vector3 localPosition;
 
-    GameObject* parent;
+    Transform* parent;
 
     std::vector<GameObject*> parents;
 
     Transform();
-
-    void OnInit() override;
-
-    void OnUpdate() override;
-
-    void OnUpdateParents();
 
     Vector3 getright() const;
 
@@ -32,9 +23,11 @@ public:
 
     Vector3 getforward() const;
 
-    Matrix4x4 getGlobalMatrix();
+    const Vector3 getposition() const;
 
-    Matrix4x4 getLocalMatrix();
+    const Matrix4x4 getglobalmatrix() const;
+
+    const Matrix4x4 getLocalMatrix() const;
 
     bool hasparent() const;
 
@@ -42,7 +35,6 @@ public:
 
     std::vector<GameObject*>& getparents();
 
-    void OnGui() override;
 };
 
 

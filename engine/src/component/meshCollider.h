@@ -13,8 +13,6 @@ public:
     void OnInit() override;
 
     void OnUpdate() override;
-
-    void OnGui() override;
 protected:
     Transform* m_transform;
     

@@ -29,8 +29,6 @@ public:
 
     void OnInit() override;
 
-    void OnGui() override;
-
     const float& getattenuationconstant();
 
     const float& getattenuationlinear();

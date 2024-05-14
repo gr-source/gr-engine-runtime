@@ -1,5 +1,15 @@
 
+set(guizmo_src
+    src/guizmo/ImGuizmo.cpp
+)
+
+set(guizmo_hdr
+    src/guizmo/ImGuizmo.h
+)
+
 set(engine_src
+    ${guizmo_src}
+
     src/log.cpp
     src/timer.cpp
     src/Game.cpp
@@ -85,6 +95,7 @@ set(engine_src
 )
 
 set(engine_hdr
+    ${guizmo_hdr}
     src/log.h
     src/timer.h
     src/Game.h

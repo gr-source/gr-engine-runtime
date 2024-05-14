@@ -33,36 +33,42 @@ public:
 
     /* adiciono um componenet ao objeto */
     template <typename T, typename ...Argv>
-    T& addComponent(Argv&&... argv) const;
+    T& addComponent(Argv&&... argv);
 
     /* pegue um component do objeto */
     template <typename T>
-    T& getComponent() const;
+    T& getComponent();
 
     /* verifique de o component existe nesse objeto */
     template <typename T>
-    bool hasComponent() const;
+    const bool hasComponent() const;
 
     Transform& gettransform();
 
-    void OnGui();
+    template <typename T, typename Callback, typename... Args>
+    void RenderProperty(Callback&& callback, Args&&... args);
 
     bool operator ==(const GameObject& other) const;
 };
 
 template <typename T, typename ...Argv>
-inline T& GameObject::addComponent(Argv&&... argv) const {
+inline T& GameObject::addComponent(Argv&&... argv) {
     return entity->addComponent<T>(std::forward<Argv>(argv)...);
 }
 
 template <typename T>
-inline T& GameObject::getComponent() const {
+inline T& GameObject::getComponent() {
     return entity->getComponent<T>();
 }
 
 template <typename T>
-inline bool GameObject::hasComponent() const {
+inline const bool GameObject::hasComponent() const {
     return entity->hasComponent<T>();
 }
 
+template <typename T, typename Callback, typename... Args>
+inline void GameObject::RenderProperty(Callback&& callback, Args&&... args) {
+    if (!entity->hasComponent<T>()) return;
 
+    std::bind(std::forward<Callback>(callback), std::forward<Args>(args)..., &entity->getComponent<T>())();
+}

@@ -13,7 +13,6 @@ public:
 
     void OnInit() override;
 
-    void OnGui() override;
 protected:
     btBoxShape* m_boxShape;
 };

@@ -84,8 +84,8 @@ void Skybox::render() {
 
         CameraComponent& m_cameraComponent = CameraComponent::MainCamera();
 
-        m_backgroundShader->setUniform("projection", m_cameraComponent.getPerspesctive());
-        m_backgroundShader->setUniform("view", m_cameraComponent.getViewMatrix());
+        m_backgroundShader->setUniform("projection", m_cameraComponent.getperspesctive());
+        m_backgroundShader->setUniform("view", m_cameraComponent.getviewmatrix());
 
         bufferManager->bind(BufferManager::eVAO);
         bufferManager->draw(BufferManager::eTriangle, count, BufferManager::eUint);

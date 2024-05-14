@@ -14,17 +14,15 @@ public:
 
     void OnInit() override;
 
-    const Vector3& getposition();
+    const Vector3 getposition();
 
-    const Matrix4x4 getViewMatrix() const;
+    const Matrix4x4 getviewmatrix() const;
 
-    const Matrix4x4 getPerspesctive() const;
+    const Matrix4x4 getperspesctive() const;
 
     Transform* gettransform();
 
     void SetFildOfView(float fov);
-
-    void OnGui() override;
 
     ~CameraComponent();
 

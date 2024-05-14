@@ -34,9 +34,3 @@ void MeshCollider::OnInit() {
 
 void MeshCollider::OnUpdate() {
 }
-
-void MeshCollider::OnGui() {
-    if (ImGui::TreeNode("MeshCollider")) {
-        ImGui::TreePop();
-    }
-}

@@ -36,8 +36,6 @@ public:
 
     void addlinearvelocity(const Vector3& velocity);
 
-    void OnGui() override;
-
     void GetAABB(Vector3& min, Vector3& max);
 protected:    
     PhysicsScene* pPhysicsScene;

@@ -31,6 +31,8 @@
 #include "component/Rigidbody.h"
 #include "component/animator.h"
 
+#include "guizmo/ImGuizmo.h"
+
 #include "ui/ImGuiRender.h"
 
 #include "core/scene/SceneManager.h"
@@ -93,17 +95,18 @@ GameObject& GenGameObject(const FbxNode& node, bool local) {
 
     Transform& transform = gameObject.getComponent<Transform>();
 
-    if (local) {
-        transform.localScale = node.scale;
-        transform.localRotation = node.rotation;
-        transform.localPosition = node.position;
-    } else {
+    // if (local) {
+        // transform.localScale = node.scale;
+        // transform.localRotation = node.rotation;
+        // transform.localPosition = node.position;
+    // } else {
         transform.scale = node.scale;
         transform.rotation = node.rotation;
         transform.position = node.position;
 
+        if (!local)
         SceneManager::Add(&gameObject);
-    }
+    // }
 
     if (node.hasmesh()) {
         gameObject.addComponent<MeshRender>(node.getmeshs(), node.materials);
@@ -122,6 +125,10 @@ void CreateCamera(GameObject& gameobject, const FbxNode& node, const FbxScene& s
     const FbxCamera* m_camera = scene.findcamera(node.getname());
     // forward e up removido
     CameraComponent& m_cameraComponent = gameobject.addComponent<CameraComponent>(m_camera->getfov(), m_camera->getnearplane(), m_camera->getfarplane(), m_camera->getaspect());
+
+    if (gameobject.getname() == "Camera") {
+        gameobject.addComponent<CameraController>();
+    }
 }
 
 void CreateModel(GameObject& gameobject, const FbxNode& node, const FbxScene& scene) {
@@ -132,8 +139,6 @@ void CreateModel(GameObject& gameobject, const FbxNode& node, const FbxScene& sc
 
     if (gameobject.getname() == "player") {
         rigidbodyDef.isDynamic = true;
-
-        gameobject.addComponent<CameraController>();
 
         gameobject.addComponent<BoxCollider>(transform.scale);
 
@@ -155,8 +160,9 @@ void CreateModel(GameObject& gameobject, const FbxNode& node, const FbxScene& sc
     }
 }
 
-GameObject& SetupNode(const FbxNode& node, const FbxScene& scene, bool local) {
-    GameObject& gameobject = GenGameObject(node, local);
+GameObject& SetupNode(const FbxNode& node, const FbxScene& scene, Transform* transform) {
+    GameObject& gameobject = GenGameObject(node, transform != nullptr);
+
     switch (node.gettype()) {
     case FbxNode::eLIGHT:
         CreateLight(gameobject, node, scene);
@@ -175,12 +181,14 @@ GameObject& SetupNode(const FbxNode& node, const FbxScene& scene, bool local) {
 
 void ReaderNode(const FbxNode& node, const FbxScene& scene, const FbxNode* parent = nullptr, Transform* transform = nullptr) {
     if (parent != nullptr) {
-        GameObject& gameObject = SetupNode(node, scene, transform != nullptr);
+        GameObject& gameObject = SetupNode(node, scene, transform);
 
         if (transform == nullptr) {
             transform = &gameObject.gettransform();
         } else {
             transform->addparent(&gameObject);
+
+            gameObject.gettransform().parent = transform;
 
             transform = &gameObject.gettransform();
         }
@@ -194,19 +202,28 @@ void ReaderNode(const FbxNode& node, const FbxScene& scene, const FbxNode* paren
 void SceneLoaded(const FbxScene& scene) {
     ReaderNode(scene.getroot(), scene, nullptr);
 
+    #if IS_GAME
+    Settings::IsGameRunning = true;
+    EntityManager::OnPlayGame();
+    #endif
     m_filmbox = nullptr;
 }
 
-Game::Game() : objectselected(nullptr), m_io(nullptr) {
+Game::Game() : objectselected(nullptr) {
     m_filmbox = std::make_unique<Filmbox>("/home/grsource/Documentos/filmbox/backrooms.fbx");
     m_filmbox->SetLoaded(SceneLoaded);
     m_filmbox->load();
 
     #if !IS_GAME
+    m_io = nullptr;
+    m_guizmoOperation = ImGuizmo::TRANSLATE;
+    m_guizmoManipulate = ImGuizmo::WORLD;
+
     m_io = &ImGui::GetIO();
+
     loadReources();
-    #else
-    EntityManager::OnPlayGame();
+
+    Settings::IsGameRunning = false;
     #endif
 }
 
@@ -322,6 +339,11 @@ void Game::RenderViewportUI() {
     static Imguibuffer& m_imguibuffer = Imguibuffer::getInstance();
 
     ImGui::Begin("Viewport", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+    ImGuizmo::SetDrawlist();
+    float windowWidth = (float)ImGui::GetWindowWidth();
+    float windowHeight = (float)ImGui::GetWindowHeight();
+    ImGuizmo::SetRect(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y, windowWidth, windowHeight);
+
     static ImVec2 lastSize = ImGui::GetContentRegionAvail();
     ImVec2 curSize = ImGui::GetContentRegionAvail();
 
@@ -332,6 +354,37 @@ void Game::RenderViewportUI() {
     
     ImGui::Image(reinterpret_cast<ImTextureID>(m_imguibuffer.gettexture()), ImGui::GetContentRegionAvail(), ImVec2(0, 1), ImVec2(1, 0));
 
+    CameraComponent& m_cameraComponent = CameraComponent::MainCamera();
+
+    if (objectselected != nullptr) {
+        if (ImGui::IsKeyReleased(ImGuiKey_T)) {
+            m_guizmoOperation = ImGuizmo::TRANSLATE;
+        }
+        if (ImGui::IsKeyReleased(ImGuiKey_R)) {
+            m_guizmoOperation = ImGuizmo::ROTATE;
+        }
+        if (ImGui::IsKeyReleased(ImGuiKey_S)) {
+            m_guizmoOperation = ImGuizmo::SCALE;
+        }
+        if (ImGui::IsKeyReleased(ImGuiKey_Space)) {
+            if (m_guizmoManipulate == ImGuizmo::WORLD) {
+                m_guizmoManipulate = ImGuizmo::LOCAL;
+            } else if (m_guizmoManipulate == ImGuizmo::LOCAL) {
+                m_guizmoManipulate = ImGuizmo::WORLD;
+            }
+        }
+        Transform& transform = objectselected->gettransform();
+
+        Matrix4x4 model = transform.getglobalmatrix();
+        Matrix4x4 tra = Matrix4x4::identityMatrix;
+
+        if (ImGuizmo::Manipulate(m_cameraComponent.getviewmatrix().data, m_cameraComponent.getperspesctive().data, m_guizmoOperation, m_guizmoManipulate, model.data, tra.data, NULL, NULL, NULL)) {
+        // tra = transform.getLocalMatrix() * tra;
+        
+        // tra.decompose(transform.scale, transform.rotation, transform.position);
+        }
+    }
+
     const ImVec2 wSize =  ImGui::GetCursorPos();
 
     ImGui::SetCursorPos(ImVec2(ImGui::GetContentRegionAvail().x / 2 - wSize.x, 32));
@@ -339,9 +392,13 @@ void Game::RenderViewportUI() {
         Settings::IsGameRunning =! Settings::IsGameRunning;
 
         if (Settings::IsGameRunning) {
-            texturePlayGame = iconsUI[IconType::ICON_PLAY_GAME];
-        } else {
             texturePlayGame = iconsUI[IconType::ICON_STOP_GAME];
+
+            EntityManager::OnStopPlayGame();
+        } else {
+            texturePlayGame = iconsUI[IconType::ICON_PLAY_GAME];
+
+            EntityManager::OnPlayGame();
         }
     }
 
@@ -492,68 +549,90 @@ void Game::RenderPropertiUI() {
     ImGui::Begin("Propriedades", nullptr, ImGuiWindowFlags_NoResize);
 
     if (ImGui::BeginTabBar("##propertimenubar")) {
-            if (ImGui::BeginTabItem("Objeto", nullptr)) {
+        if (ImGui::BeginTabItem("Objeto", nullptr)) {
 
-                if (objectselected != nullptr) {
-                    ImGui::Image(reinterpret_cast<ImTextureID>(iconsUI[IconType::ICON_GAMEOBJECT]->getID()), ImVec2(16, 16));
+            if (objectselected != nullptr) {
+                ImGui::Image(reinterpret_cast<ImTextureID>(iconsUI[IconType::ICON_GAMEOBJECT]->getID()), ImVec2(16, 16));
 
-                    ImGui::SameLine();
+                ImGui::SameLine();
 
-                    ImGui::Text("[ %s - %s ]", objectselected->name.c_str(), objectselected->tag.c_str());
+                ImGui::Text("[ %s - %s ]", objectselected->name.c_str(), objectselected->tag.c_str());
 
-                    objectselected->OnGui();
-                }
-
-                ImGui::EndTabItem();
-            }
-            
-            ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
-            if (ImGui::BeginTabItem("Statisticas", nullptr)) {
-                ImGui::SeparatorText("Scripts");
-                ImGui::Text("Entidades: %d", EntityManager::getcount());
-
-                ImGui::SeparatorText("Cena");
-                ImGui::Text("Vertices: %d | %s", gameStatics.vertices, getfilesize(gameStatics.vertices).c_str());
-                ImGui::Text("Indice: %d | %s", gameStatics.indices, getfilesize(gameStatics.indices).c_str());
-                ImGui::Text("Eventos: %d", EventManager::getcount());
-                ImGui::Text("Triangulos: %dK", (gameStatics.indices / 3));
-
-                ImGui::SeparatorText("Resources");
-                ImGui::Text("Sprites: %d", Resources::getspritecount());
-                ImGui::Text("Textures: %d", Resources::gettexturecount());
-                ImGui::Text("Shaders: %d", Resources::getshadercount());
-
-                ImGui::SeparatorText("Threads");
-                ImGui::Text("Update:  %fms  | FPS: %.2f",  gameStatics.updateMs,  (1.0f / gameStatics.updateMs));
-                ImGui::Text("Render:  %fms  | FPS: %.2f",  gameStatics.renderMs,  (1.0f / gameStatics.renderMs));
-                ImGui::Text("Physics: %fms  | FPS: %.2f",  gameStatics.physicsMs, (1.0f / gameStatics.physicsMs));
-                ImGui::Text("Script:  %fms  | FPS: %.2f",  gameStatics.scriptMS,  (1.0f / gameStatics.scriptMS));
-
-                ImGui::SeparatorText("Renderização");
-                ImGui::Text("Objetos: %d/%d", BatchingManager::frustomDraw, BatchingManager::drawCount);
-                ImGui::Text("Luzes: %ld",     LightComponent::m_lights.size());
-                ImGui::Text("Cameras: %ld",   CameraComponent::m_cameras.size());
-                
-                ImGui::EndTabItem();
+                objectselected->RenderProperty<Transform>(&Game::OnPropertyTransform, this);
             }
 
-            if (ImGui::BeginTabItem("Configuraçoes")) {
-                ImGui::Text("Camera: %d", CameraComponent::CameraID);
-                if (ImGui::Button("Change")) {
-                    CameraComponent::CameraID++;
-
-                    if (CameraComponent::CameraID >= CameraComponent::m_cameras.size()) {
-                        CameraComponent::CameraID = 0;
-                    }
-                }
-                ImGui::EndTabItem();
-            }
-            ImGui::EndTabBar();
+            ImGui::EndTabItem();
         }
+        
+        ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
+        if (ImGui::BeginTabItem("Statisticas", nullptr)) {
+            ImGui::SeparatorText("Scripts");
+            ImGui::Text("Entidades: %d", EntityManager::getcount());
+
+            ImGui::SeparatorText("Cena");
+            ImGui::Text("Vertices: %d | %s", gameStatics.vertices, getfilesize(gameStatics.vertices).c_str());
+            ImGui::Text("Indice: %d | %s", gameStatics.indices, getfilesize(gameStatics.indices).c_str());
+            ImGui::Text("Eventos: %d", EventManager::getcount());
+            ImGui::Text("Triangulos: %dK", (gameStatics.indices / 3));
+
+            ImGui::SeparatorText("Resources");
+            ImGui::Text("Sprites: %d", Resources::getspritecount());
+            ImGui::Text("Textures: %d", Resources::gettexturecount());
+            ImGui::Text("Shaders: %d", Resources::getshadercount());
+
+            ImGui::SeparatorText("Threads");
+            ImGui::Text("Update:  %fms  | FPS: %.2f",  gameStatics.updateMs,  (1.0f / gameStatics.updateMs));
+            ImGui::Text("Render:  %fms  | FPS: %.2f",  gameStatics.renderMs,  (1.0f / gameStatics.renderMs));
+            ImGui::Text("Physics: %fms  | FPS: %.2f",  gameStatics.physicsMs, (1.0f / gameStatics.physicsMs));
+            ImGui::Text("Script:  %fms  | FPS: %.2f",  gameStatics.scriptMS,  (1.0f / gameStatics.scriptMS));
+
+            ImGui::SeparatorText("Renderização");
+            ImGui::Text("Objetos: %d/%d", BatchingManager::frustomDraw, BatchingManager::drawCount);
+            ImGui::Text("Luzes: %ld",     LightComponent::m_lights.size());
+            ImGui::Text("Cameras: %ld",   CameraComponent::m_cameras.size());
+            
+            ImGui::EndTabItem();
+        }
+
+        if (ImGui::BeginTabItem("Configuraçoes")) {
+            ImGui::Text("Camera: %d", CameraComponent::CameraID);
+            if (ImGui::Button("Change")) {
+                CameraComponent::CameraID++;
+
+                if (CameraComponent::CameraID >= CameraComponent::m_cameras.size()) {
+                    CameraComponent::CameraID = 0;
+                }
+            }
+            ImGui::EndTabItem();
+        }
+        ImGui::EndTabBar();
+    }
     ImGui::End();
 }
 
-void Game::TextureInfo(Texture2D*& texture) {
+/* ********** Propriedades ********** */
+void Game::OnPropertyTransform(Transform* transform) {
+    if (ImGui::TreeNode("Transform")) {
+        const char* text[] {"X", "Y", "Z"};
+
+        ImGui::Text("Posição:");
+        ImGui::DragFloatEx("##Posicao", text, transform->position.data, 1.0f, 0.0f, 0.0f, "%.3f");
+
+        ImGui::Text("Escala:");
+        ImGui::DragFloatEx("##Escala", text, transform->scale.data, 1.0f, 1.0f, 0.0f, "%.3f");
+
+        Vector3 euler = transform->rotation.eulerAngles();
+
+        ImGui::Text("Rotação:");
+        if (ImGui::DragFloatEx("##Rotacao", text, euler.data, 1.0f, -360.0f, 360.0f)) {
+            transform->rotation = Math::normalize(Quaternion::Euler({Math::rad(euler.x), Math::rad(euler.y), Math::rad(euler.z)}));
+        }
+
+        ImGui::TreePop();
+    }
+}
+
+void Game::TextureInfo(Texture2D *&texture) {
     bool IsOpen = true;
 
     const ImVec2 textureSize(100, 100);
