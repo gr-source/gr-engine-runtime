@@ -64,6 +64,8 @@ private:
     ImGuizmo::MODE m_guizmoManipulate;
 
     void OnPropertyTransform(Transform* transform);
+    
+    void OnPropertyCameraComponent(CameraComponent* cameraComponent);
 
     void TextureInfo(Texture2D*& texture);
 

@@ -348,6 +348,8 @@ void Game::RenderViewportUI() {
     ImVec2 curSize = ImGui::GetContentRegionAvail();
 
     if (lastSize.x != curSize.x || lastSize.y != curSize.y) {
+        Settings::ViewportSize = {curSize.x, curSize.y};
+
         m_imguibuffer.resize({curSize.x, curSize.y});
         lastSize = curSize;
     }
@@ -376,12 +378,9 @@ void Game::RenderViewportUI() {
         Transform& transform = objectselected->gettransform();
 
         Matrix4x4 model = transform.getglobalmatrix();
-        Matrix4x4 tra = Matrix4x4::identityMatrix;
 
-        if (ImGuizmo::Manipulate(m_cameraComponent.getviewmatrix().data, m_cameraComponent.getperspesctive().data, m_guizmoOperation, m_guizmoManipulate, model.data, tra.data, NULL, NULL, NULL)) {
-        // tra = transform.getLocalMatrix() * tra;
-        
-        // tra.decompose(transform.scale, transform.rotation, transform.position);
+        if (ImGuizmo::Manipulate(m_cameraComponent.getviewmatrix().data, m_cameraComponent.getperspesctive().data, m_guizmoOperation, m_guizmoManipulate, model.data, nullptr, NULL, NULL, NULL)) {
+            model.decompose(transform.scale, transform.rotation, transform.position);
         }
     }
 
@@ -559,6 +558,7 @@ void Game::RenderPropertiUI() {
                 ImGui::Text("[ %s - %s ]", objectselected->name.c_str(), objectselected->tag.c_str());
 
                 objectselected->RenderProperty<Transform>(&Game::OnPropertyTransform, this);
+                objectselected->RenderProperty<CameraComponent>(&Game::OnPropertyCameraComponent, this);
             }
 
             ImGui::EndTabItem();
@@ -626,6 +626,31 @@ void Game::OnPropertyTransform(Transform* transform) {
         ImGui::Text("Rotação:");
         if (ImGui::DragFloatEx("##Rotacao", text, euler.data, 1.0f, -360.0f, 360.0f)) {
             transform->rotation = Math::normalize(Quaternion::Euler({Math::rad(euler.x), Math::rad(euler.y), Math::rad(euler.z)}));
+        }
+
+        ImGui::TreePop();
+    }
+}
+
+void Game::OnPropertyCameraComponent(CameraComponent *cameraComponent) {
+    static int itemID = 0;
+
+    if (ImGui::TreeNode("CameraComponent")) {
+        ImGui::Text("Fov:");
+        ImGui::DragFloat("##CameraComponentFov", &cameraComponent->m_fov, 1.0f, 1.0f, 179.0f);
+
+        ImGui::Text("FarPlane:");
+        ImGui::DragFloat("##CameraComponentFarPlane", &cameraComponent->m_farPlane);
+
+        ImGui::Text("NearPlane:");
+        ImGui::DragFloat("##CameraComponentNearPlane", &cameraComponent->m_nearPlane);
+
+        ImGui::Text("Projeção:");
+        ImGui::Combo("##projection", &itemID, "Perspectiva\0Ortografia\0");
+        if (itemID == 0) {
+            cameraComponent->m_projection = CameraComponent::ePerspective;
+        } else if (itemID == 1) {
+            cameraComponent->m_projection = CameraComponent::erthographic;
         }
 
         ImGui::TreePop();

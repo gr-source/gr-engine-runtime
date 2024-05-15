@@ -4,6 +4,12 @@
 
 class CameraComponent : public Component {
 public:
+    enum Projection : u8 {
+        eNONE        = 1 << 1,
+        ePerspective = 1 << 2,
+        erthographic = 1 << 3
+    };
+
     static std::vector<CameraComponent*> m_cameras;
 
     static CameraComponent& MainCamera();
@@ -37,8 +43,10 @@ private:
 
     Transform* m_transform;
 
-    friend class EditorController;
+    Projection m_projection;
 
+    friend class EditorController;
+    friend class Game;
 };
 
 

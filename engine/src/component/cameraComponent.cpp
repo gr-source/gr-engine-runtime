@@ -3,6 +3,7 @@
 #include "Transform.h"
 
 #include "../objectManager.h"
+#include "../settings.h"
 #include "../screen.h"
 #include "../time.h"
 
@@ -25,7 +26,7 @@ CameraComponent &CameraComponent::MainCamera() {
     return *m_cameras[CameraID];
 }
 
-CameraComponent::CameraComponent(float fov, float nearPlane, float farPlane, float aspect) : m_fov(fov), m_nearPlane(nearPlane), m_farPlane(farPlane), m_aspect(aspect) {
+CameraComponent::CameraComponent(float fov, float nearPlane, float farPlane, float aspect) : m_fov(fov), m_nearPlane(nearPlane), m_farPlane(farPlane), m_aspect(aspect), m_projection(Projection::ePerspective) {
     m_cameras.push_back(this);
 }
 
@@ -42,7 +43,8 @@ const Matrix4x4 CameraComponent::getviewmatrix() const {
 }
 
 const Matrix4x4 CameraComponent::getperspesctive() const {
-    // return Math::orthographic(-1.0f, 1.0f, -1.0f, 1.0f, 75.0f, 0.001f);
+    if (m_projection == Projection::erthographic)
+        return Math::orthographic(-35.0f, 35.0f, -35.0f, 35.0f, 0.1f, 75.0f);
     return Math::perspective(Math::rad(m_fov), m_aspect, m_farPlane, m_nearPlane);
 }
 
@@ -55,23 +57,6 @@ void CameraComponent::SetFildOfView(float fov) {
 
     m_fov = fov;
 }
-
-/*
-void CameraComponent::OnGui() {
-    if (ImGui::TreeNode("CameraComponent")) {
-        ImGui::Text("Fov:");
-        ImGui::DragFloat("##CameraComponentFov", &m_fov, 1.0f, 1.0f, 179.0f);
-
-        ImGui::Text("FarPlane:");
-        ImGui::DragFloat("##CameraComponentFarPlane", &m_farPlane);
-
-        ImGui::Text("NearPlane:");
-        ImGui::DragFloat("##CameraComponentNearPlane", &m_nearPlane);
-
-        ImGui::TreePop();
-    }
-}
-*/
 
 CameraComponent::~CameraComponent() {
     m_cameras.erase(std::remove(m_cameras.begin(), m_cameras.end(), this), m_cameras.end());

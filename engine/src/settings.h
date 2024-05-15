@@ -10,6 +10,8 @@ struct Settings {
     static Vector2 GameGrapicQiality;
 
     static Vector2 IconSize;
+
+    static Vector2 ViewportSize;
 };
 
 template <typename T, typename R>

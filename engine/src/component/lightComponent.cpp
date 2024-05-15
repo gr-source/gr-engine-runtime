@@ -3,7 +3,7 @@
 #include "Transform.h"
 
 std::vector<LightComponent*> LightComponent::m_lights;
-Matrix4x4 LightComponent::projection = Math::orthographic(-1.0f, 1.0f, -1.0f, 1.0f, 75.0f, 0.001f);
+Matrix4x4 LightComponent::projection = Math::orthographic(-35.0f, 35.0f, -35.0f, 35.0f, 0.1f, 75.0f);
 
 
 LightComponent::LightComponent(u8 type, const Color& color, float aConstant, float aLinear, float aQuadract, float inneCone, float outerCone) : m_type(type), m_color(color), m_attenuationConstant(aConstant), m_attenuationLinear(aLinear), m_attenuationQuadratic(aQuadract), m_transform(nullptr), m_angleInnerCone(inneCone), m_angleOuterCone(outerCone) {
