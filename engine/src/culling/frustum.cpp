@@ -100,10 +100,10 @@ bool Frustum::SphereInFrustum(const Vector3& point, float radius) {
 	return true;
 }
 
-// #include "renderer.h"
+#include "../renderer.h"
 
-bool Frustum::IsFrustum(const Vector3& min, const Vector3& max) {
-    std::array<Vector3, 8> points = {
+const bool Frustum::IsCubeInFrustumAABB(const Vector3& min, const Vector3& max) const {
+    Vector3 points[8] {
         Vector3(min.x, min.y, min.z),
         Vector3(max.x, min.y, min.z),
         Vector3(max.x, max.y, min.z),
@@ -116,7 +116,8 @@ bool Frustum::IsFrustum(const Vector3& min, const Vector3& max) {
     };
 
 	// Desenhar as linhas do cubo usando as coordenadas dos pontos do frustum
-	/*DebugDraw::addLine(points[0], points[1], Color::blue);
+	/*
+	DebugDraw::addLine(points[0], points[1], Color::blue);
 	DebugDraw::addLine(points[1], points[2], Color::blue);
 	DebugDraw::addLine(points[2], points[3], Color::blue);
 	DebugDraw::addLine(points[3], points[0], Color::blue);
@@ -151,38 +152,56 @@ bool Frustum::IsFrustum(const Vector3& min, const Vector3& max) {
 		   continue;
 		return false;
 	}
-
 	return true;
-
-    /*for (const auto& point : points) {
-        if (PointInFrustum(point))
-            return true;
-    }
-
-    return false;*/
 }
 
+const bool Frustum::IsCubeInFrustumOOBB(const Vector3 &min, const Vector3 &max, const Matrix4x4 &model) const {
+    Vector3 points[8] {
+        model * Vector3(min.x, min.y, min.z),
+        model * Vector3(max.x, min.y, min.z),
+        model * Vector3(max.x, max.y, min.z),
+        model * Vector3(min.x, max.y, min.z),
+ 
+        model * Vector3(min.x, min.y, max.z),
+        model * Vector3(max.x, min.y, max.z),
+        model * Vector3(max.x, max.y, max.z),
+        model * Vector3(min.x, max.y, max.z)
+    };
 
-bool Frustum::CubeInFrustum(const Vector3& position, const Vector3& size) {
+	// Desenhar as linhas do cubo usando as coordenadas dos pontos do frustum
+	DebugDraw::addLine(points[0], points[1], Color::blue);
+	DebugDraw::addLine(points[1], points[2], Color::blue);
+	DebugDraw::addLine(points[2], points[3], Color::blue);
+	DebugDraw::addLine(points[3], points[0], Color::blue);
+
+	DebugDraw::addLine(points[4], points[5], Color::blue);
+	DebugDraw::addLine(points[5], points[6], Color::blue);
+	DebugDraw::addLine(points[6], points[7], Color::blue);
+	DebugDraw::addLine(points[7], points[4], Color::blue);
+
+	DebugDraw::addLine(points[0], points[4], Color::blue);
+	DebugDraw::addLine(points[1], points[5], Color::blue);
+	DebugDraw::addLine(points[2], points[6], Color::blue);
+	DebugDraw::addLine(points[3], points[7], Color::blue);
+
 	for (int i = 0; i < 6; i++ ) {
-		if (m_Frustum[i][A] * (position.x - size.x) + m_Frustum[i][B] * (position.y - size.y) + m_Frustum[i][C] * (position.z - size.z) + m_Frustum[i][D] > 0)
+		if (m_Frustum[i][A] * (points[0].x) + m_Frustum[i][B] * (points[0].y) + m_Frustum[i][C] * (points[0].z) + m_Frustum[i][D] > 0)
 		   continue;
-		if (m_Frustum[i][A] * (position.x + size.x) + m_Frustum[i][B] * (position.y - size.y) + m_Frustum[i][C] * (position.z - size.z) + m_Frustum[i][D] > 0)
+		if (m_Frustum[i][A] * (points[1].x) + m_Frustum[i][B] * (points[1].y) + m_Frustum[i][C] * (points[1].z) + m_Frustum[i][D] > 0)
 		   continue;
-		if (m_Frustum[i][A] * (position.x - size.x) + m_Frustum[i][B] * (position.y + size.y) + m_Frustum[i][C] * (position.z - size.z) + m_Frustum[i][D] > 0)
+		if (m_Frustum[i][A] * (points[2].x) + m_Frustum[i][B] * (points[2].y) + m_Frustum[i][C] * (points[2].z) + m_Frustum[i][D] > 0)
 		   continue;
-		if (m_Frustum[i][A] * (position.x + size.x) + m_Frustum[i][B] * (position.y + size.y) + m_Frustum[i][C] * (position.z - size.z) + m_Frustum[i][D] > 0)
+		if (m_Frustum[i][A] * (points[3].x) + m_Frustum[i][B] * (points[3].y) + m_Frustum[i][C] * (points[3].z) + m_Frustum[i][D] > 0)
 		   continue;
-		if (m_Frustum[i][A] * (position.x - size.x) + m_Frustum[i][B] * (position.y - size.y) + m_Frustum[i][C] * (position.z + size.z) + m_Frustum[i][D] > 0)
+		if (m_Frustum[i][A] * (points[4].x) + m_Frustum[i][B] * (points[4].y) + m_Frustum[i][C] * (points[4].z) + m_Frustum[i][D] > 0)
 		   continue;
-		if (m_Frustum[i][A] * (position.x + size.x) + m_Frustum[i][B] * (position.y - size.y) + m_Frustum[i][C] * (position.z + size.z) + m_Frustum[i][D] > 0)
+		if (m_Frustum[i][A] * (points[5].x) + m_Frustum[i][B] * (points[5].y) + m_Frustum[i][C] * (points[5].z) + m_Frustum[i][D] > 0)
 		   continue;
-		if (m_Frustum[i][A] * (position.x - size.x) + m_Frustum[i][B] * (position.y + size.y) + m_Frustum[i][C] * (position.z + size.z) + m_Frustum[i][D] > 0)
+		if (m_Frustum[i][A] * (points[6].x) + m_Frustum[i][B] * (points[6].y) + m_Frustum[i][C] * (points[6].z) + m_Frustum[i][D] > 0)
 		   continue;
-		if (m_Frustum[i][A] * (position.x + size.x) + m_Frustum[i][B] * (position.y + size.y) + m_Frustum[i][C] * (position.z + size.z) + m_Frustum[i][D] > 0)
+		if (m_Frustum[i][A] * (points[7].x) + m_Frustum[i][B] * (points[7].y) + m_Frustum[i][C] * (points[7].z) + m_Frustum[i][D] > 0)
 		   continue;
 		return false;
 	}
-
 	return true;
 }

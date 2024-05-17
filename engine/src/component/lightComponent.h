@@ -59,4 +59,6 @@ protected:
     float m_angleOuterCone;
 
     static Matrix4x4 projection;
+
+    friend class Game;
 };

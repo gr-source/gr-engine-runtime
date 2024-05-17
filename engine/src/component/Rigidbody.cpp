@@ -75,10 +75,6 @@ void Rigidbody::OnUpdate() {
 		m_transform->position = {trans.getOrigin().getX(), trans.getOrigin().getY(), trans.getOrigin().getZ()};
 
 		m_transform->rotation = {trans.getRotation().getW(), trans.getRotation().getX(), trans.getRotation().getY(), trans.getRotation().getZ()};
-
-		// if (m_transform->hasparent()) {
-		// 	m_transform->OnUpdateParents();
-		// }
 	}
 }
 

@@ -10,11 +10,13 @@ set(guizmo_hdr
 set(engine_src
     ${guizmo_src}
 
+    src/gl.cpp
     src/log.cpp
     src/timer.cpp
     src/Game.cpp
     src/input.cpp
     src/engine.cpp
+    src/memory.cpp
     src/Global.cpp
     src/skybox.cpp
     src/screen.cpp
@@ -101,6 +103,7 @@ set(engine_hdr
     src/Game.h
     src/input.h
     src/engine.h
+    src/memory.h
     src/Global.h
     src/skybox.h
     src/screen.h

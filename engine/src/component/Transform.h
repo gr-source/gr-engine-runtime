@@ -17,11 +17,11 @@ public:
 
     Transform();
 
-    Vector3 getright() const;
+    const Vector3 getright() const;
 
-    Vector3 getup() const;
+    const Vector3 getup() const;
 
-    Vector3 getforward() const;
+    const Vector3 getforward() const;
 
     const Vector3 getposition() const;
 

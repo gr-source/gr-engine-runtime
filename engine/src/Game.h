@@ -65,7 +65,11 @@ private:
 
     void OnPropertyTransform(Transform* transform);
     
+    void OnPropertyMeshRender(MeshRender* meshRender);
+
     void OnPropertyCameraComponent(CameraComponent* cameraComponent);
+
+    void OnPropertyLightComponent(LightComponent* lightComponent);
 
     void TextureInfo(Texture2D*& texture);
 
@@ -73,7 +77,3 @@ private:
 
     #endif
 };
-
-
-
-

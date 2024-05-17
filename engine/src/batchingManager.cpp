@@ -93,12 +93,12 @@ void BatchingManager::OnUpdate() {
 
         Transform& transform = gameObject->getComponent<Transform>();
 
-        Vector3 min = transform.position + (transform.rotation * (meshRender.m_drawcall.m_boundBox.min * transform.scale));
-        Vector3 max = transform.position + (transform.rotation * (meshRender.m_drawcall.m_boundBox.max * transform.scale));
+        const Vector3& min = meshRender.m_drawcall.m_boundBox.min;
+        const Vector3& max = meshRender.m_drawcall.m_boundBox.max;
 
-        // if (!m_frustum.IsFrustum(min, max)) {
+        if (!m_frustum.IsCubeInFrustumOOBB(min, max, transform.getglobalmatrix().transpose()) /*&& !meshRender.m_occlusion->isvisible(vp, transform.getglobalmatrix())*/) {
             // continue;
-        // }
+        }
 
         m_objectrender.push_back(gameObject.get());
     }
@@ -109,6 +109,8 @@ void BatchingManager::OnRenderShadow() {
     if (!m_shaderShadow->isvalid()) return;
 
     auto& lights = LightComponent::m_lights;
+
+    if (lights.empty()) return;
 
     m_shaderShadow->bind();
 
@@ -170,6 +172,7 @@ void BatchingManager::RenderModel(Shader *shader) {
     }
 }
 
+/*
 void BatchingManager::OnRenderLight(GBuffer* gbuffer) {
     if (!m_shaderLights->isvalid()) return;
     
@@ -226,6 +229,7 @@ void BatchingManager::OnRenderLight(GBuffer* gbuffer) {
     m_screenRender->bind(BufferManager::eVAO);
     m_screenRender->draw(BufferManager::eTriangle, 0, 6);
 }
+*/
 
 void BatchingManager::SetupMaterial(const MeshRender &meshRender, Shader *shader) {
     for (const auto& material : meshRender.materials) {
@@ -256,10 +260,11 @@ void BatchingManager::SetupMaterial(const MeshRender &meshRender, Shader *shader
 void BatchingManager::SetupLight(Shader *shader) {
     auto& lights = LightComponent::m_lights;
 
-    shader->setUniform("vpLight", lights[0]->getprojectionview());
-
     shader->setUniform("m_lightcount", static_cast<int>(lights.size()));
 
+    if (lights.empty()) return;
+    
+    shader->setUniform("vpLight", lights[0]->getprojectionview());
     for (u32 i=0;i<lights.size();i++) {
         const auto& m_light = lights[i];
 

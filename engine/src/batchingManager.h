@@ -21,7 +21,8 @@ public:
 
     static void OnRenderShadow();
 
-    static void OnRenderLight(GBuffer* gbuffer);
+    /* shader deffred */
+    // static void OnRenderLight(GBuffer* gbuffer);
 
     static u32 frustomDraw;
     static u32 drawCount;

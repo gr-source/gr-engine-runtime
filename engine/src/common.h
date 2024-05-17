@@ -14,6 +14,7 @@ class Shader;
 
 class CameraController;
 class CameraComponent;
+class LightComponent;
 class Camera;
 class Light;
 

@@ -16,5 +16,8 @@ protected:
     static Shader* m_shaderQuery;
 
 
-    u32 count;
+    static u32 count;
+
+    GLint samplesPassed = -1;
+
 };

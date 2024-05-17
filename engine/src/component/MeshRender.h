@@ -45,8 +45,6 @@ protected:
     Transform* m_transform;
 
     void AddAttrib(BufferManager& pBufferManager);
-
-    void DropTexture(Texture2D* texture);
 };
 
 

@@ -2,6 +2,7 @@
 
 #include "time.h"
 #include "screen.h"
+#include "memory.h"
 #include "skybox.h"
 #include "settings.h"
 #include "renderer.h"
@@ -42,10 +43,12 @@
 
 #include "filesystem/filesystem.h"
 
+#include "ui/View.h"
+
 #include <sstream>
 
-const std::string getfilesize(u32 size) {
-    float kb = size / 1024.0f;
+const std::string getfilesize(size sz) {
+    float kb = sz / 1024.0f;
     float mb = kb / 1024.0f;
     float gb = mb / 1024.0f;
 
@@ -58,7 +61,7 @@ const std::string getfilesize(u32 size) {
     } else if (kb >= 1.0f) {
         oss << std::fixed << std::setprecision(2) << kb << "KB";
     } else {
-        oss << std::fixed << std::setprecision(2) << size << "B";
+        oss << std::fixed << std::setprecision(2) << sz << "B";
     }
     return oss.str();
 }
@@ -210,7 +213,7 @@ void SceneLoaded(const FbxScene& scene) {
 }
 
 Game::Game() : objectselected(nullptr) {
-    m_filmbox = std::make_unique<Filmbox>("/home/grsource/Documentos/filmbox/backrooms.fbx");
+    m_filmbox = std::make_unique<Filmbox>("/home/grsource/Documentos/filmbox/game.fbx");
     m_filmbox->SetLoaded(SceneLoaded);
     m_filmbox->load();
 
@@ -558,7 +561,9 @@ void Game::RenderPropertiUI() {
                 ImGui::Text("[ %s - %s ]", objectselected->name.c_str(), objectselected->tag.c_str());
 
                 objectselected->RenderProperty<Transform>(&Game::OnPropertyTransform, this);
+                objectselected->RenderProperty<MeshRender>(&Game::OnPropertyMeshRender, this);
                 objectselected->RenderProperty<CameraComponent>(&Game::OnPropertyCameraComponent, this);
+                objectselected->RenderProperty<LightComponent>(&Game::OnPropertyLightComponent, this);
             }
 
             ImGui::EndTabItem();
@@ -568,6 +573,7 @@ void Game::RenderPropertiUI() {
         if (ImGui::BeginTabItem("Statisticas", nullptr)) {
             ImGui::SeparatorText("Scripts");
             ImGui::Text("Entidades: %d", EntityManager::getcount());
+            ImGui::Text("Memoria: %s", getfilesize(memory::totalMemoryUsage).c_str());
 
             ImGui::SeparatorText("Cena");
             ImGui::Text("Vertices: %d | %s", gameStatics.vertices, getfilesize(gameStatics.vertices).c_str());
@@ -632,6 +638,133 @@ void Game::OnPropertyTransform(Transform* transform) {
     }
 }
 
+void Game::OnPropertyMeshRender(MeshRender *meshRender) {
+    if (ImGui::TreeNode("MeshRender")) {
+        for (auto& entry : meshRender->materials) {
+            Material& material = entry.second;
+            
+            if (ImGui::TreeNode(std::string(material.name + "(" + std::to_string(entry.first) + ")").c_str())) {
+                {
+                    ImGui::SeparatorText("Albedo");
+                    if (material.texture[TexturePBR::ALBEDO] != nullptr && material.texture[TexturePBR::ALBEDO]->isvalid()) {
+                        ImGui::Image(reinterpret_cast<ImTextureID>(material.texture[TexturePBR::ALBEDO]->getID()), ImVec2(32, 32));
+                        if (ImGui::IsItemHovered() && ImGui::IsKeyDown(ImGuiKey_X)) {
+                            material.texture[TexturePBR::ALBEDO] = nullptr;
+                        }
+                    } else {
+                        if (View::TextureInputUI(ImColor(material.albedo.r, material.albedo.g, material.albedo.b, material.albedo.a))) {
+                            ImGui::OpenPopup("#PopupChangeColorAlbedo");
+                        }
+                    }
+
+                    if (ImGui::BeginDragDropTarget()) {
+                        if (const ImGuiPayload* data = ImGui::AcceptDragDropPayload(getDragDrop(DragDrop::TEXTURE), ImGuiDragDropFlags_None)) {
+                            std::string path((char*)data->Data, data->DataSize);
+                            if (!path.empty()) {
+                                material.texture[TexturePBR::ALBEDO] = Resources::Load<Texture2D>(path);
+                            }
+                        }
+                        ImGui::EndDragDropTarget();
+                    }
+                }
+
+                {
+                    ImGui::SeparatorText("Normal");
+                    if (material.texture[TexturePBR::NORMAL] != nullptr && material.texture[TexturePBR::NORMAL]->isvalid()) {
+                        ImGui::Image(reinterpret_cast<ImTextureID>(material.texture[TexturePBR::NORMAL]->getID()), ImVec2(32, 32));
+                        if (ImGui::IsItemHovered() && ImGui::IsKeyDown(ImGuiKey_X)) {
+                            material.texture[TexturePBR::NORMAL] = nullptr;
+                        }
+                    } else {
+                        View::TextureInputUI(ImColor(100, 100, 255));
+                    }
+
+                    if (ImGui::BeginDragDropTarget()) {
+                        if (const ImGuiPayload* data = ImGui::AcceptDragDropPayload(getDragDrop(DragDrop::TEXTURE), ImGuiDragDropFlags_None)) {
+                            std::string path((char*)data->Data, data->DataSize);
+                            if (!path.empty()) {
+                                material.texture[TexturePBR::NORMAL] = Resources::Load<Texture2D>(path);
+                            }
+                        }
+                        ImGui::EndDragDropTarget();
+                    }
+                }
+
+                {
+                    ImGui::SeparatorText("Metalica");
+                    if (material.texture[TexturePBR::METALLIC] != nullptr && material.texture[TexturePBR::METALLIC]->isvalid()) {
+                        ImGui::Image(reinterpret_cast<ImTextureID>(material.texture[TexturePBR::METALLIC]->getID()), ImVec2(32, 32));
+                        if (ImGui::IsItemHovered() && ImGui::IsKeyDown(ImGuiKey_X)) {
+                            material.texture[TexturePBR::METALLIC] = nullptr;
+                        }
+                    } else {
+                        ImGui::DragFloat("##Metalica", &material.metallic, 0.005f, 0.0f, 1.0f);
+                    }
+
+                    if (ImGui::BeginDragDropTarget()) {
+                        if (const ImGuiPayload* data = ImGui::AcceptDragDropPayload(getDragDrop(DragDrop::TEXTURE), ImGuiDragDropFlags_None)) {
+                            std::string path((char*)data->Data, data->DataSize);
+                            if (!path.empty()) {
+                                material.texture[TexturePBR::METALLIC] = Resources::Load<Texture2D>(path);
+                            }
+                        }
+                        ImGui::EndDragDropTarget();
+                    }
+                }
+
+                {
+                    ImGui::SeparatorText("Rugosidade");
+                    if (material.texture[TexturePBR::ROUGHNESS] != nullptr && material.texture[TexturePBR::ROUGHNESS]->isvalid()) {
+                        ImGui::Image(reinterpret_cast<ImTextureID>(material.texture[TexturePBR::ROUGHNESS]->getID()), ImVec2(32, 32));
+                        if (ImGui::IsItemHovered() && ImGui::IsKeyDown(ImGuiKey_X)) {
+                            material.texture[TexturePBR::ROUGHNESS] = nullptr;
+                        }
+                    } else {
+                        ImGui::DragFloat("##Rugosidade", &material.roughness, 0.005f, 0.0f, 1.0);
+                    }
+
+                    if (ImGui::BeginDragDropTarget()) {
+                        if (const ImGuiPayload* data = ImGui::AcceptDragDropPayload(getDragDrop(DragDrop::TEXTURE), ImGuiDragDropFlags_None)) {
+                            std::string path((char*)data->Data, data->DataSize);
+                            if (!path.empty()) {
+                                material.texture[TexturePBR::ROUGHNESS] = Resources::Load<Texture2D>(path);
+                            }
+                        }
+                        ImGui::EndDragDropTarget();
+                    }
+                }
+
+                {
+                    ImGui::SeparatorText("AO");
+                    if (material.texture[TexturePBR::AO] != nullptr && material.texture[TexturePBR::AO]->isvalid()) {
+                        ImGui::Image(reinterpret_cast<ImTextureID>(material.texture[TexturePBR::AO]->getID()), ImVec2(32, 32));
+                        if (ImGui::IsItemHovered() && ImGui::IsKeyDown(ImGuiKey_X)) {
+                            material.texture[TexturePBR::AO] = nullptr;
+                        }
+                    } else {
+                        ImGui::DragFloat("##AO", &material.ao, 0.005f, 0.0f, 1.0);
+                    }
+
+                    if (ImGui::BeginDragDropTarget()) {
+                        if (const ImGuiPayload* data = ImGui::AcceptDragDropPayload(getDragDrop(DragDrop::TEXTURE), ImGuiDragDropFlags_None)) {
+                            std::string path((char*)data->Data, data->DataSize);
+                            if (!path.empty()) {
+                                material.texture[TexturePBR::AO] = Resources::Load<Texture2D>(path);
+                            }
+                        }
+                        ImGui::EndDragDropTarget();
+                    }
+                }
+
+                View::PopupChangeColor("Albedo", material.albedo);
+
+                ImGui::TreePop();
+            }
+        }
+        ImGui::TreePop();
+    }
+}
+
 void Game::OnPropertyCameraComponent(CameraComponent *cameraComponent) {
     static int itemID = 0;
 
@@ -653,6 +786,36 @@ void Game::OnPropertyCameraComponent(CameraComponent *cameraComponent) {
             cameraComponent->m_projection = CameraComponent::erthographic;
         }
 
+        ImGui::TreePop();
+    }
+}
+
+void Game::OnPropertyLightComponent(LightComponent *lightComponent) {
+    if (ImGui::TreeNode("LightComponent")) {
+        ImGui::Text("Constante:");
+        ImGui::DragFloat("##constant", &lightComponent->m_attenuationConstant, 0.005f, 0.01f, 1.0f);
+
+        ImGui::Text("Linear:");
+        ImGui::DragFloat("##linear", &lightComponent->m_attenuationLinear, 0.005f, 0.01f, 1.0f);
+
+        ImGui::Text("Quadract:");
+        ImGui::DragFloat("##quadract", &lightComponent->m_attenuationQuadratic, 0.005f, 0.01f, 1.0f);
+
+        ImGui::Text("InConner:");
+        ImGui::DragFloat("##inconer", &lightComponent->m_angleInnerCone, 0.005f, 0.01f, 1.0f);
+
+        ImGui::Text("IuterConner:");
+        ImGui::DragFloat("##outerconner", &lightComponent->m_angleOuterCone, 0.005f, 0.01f, 1.0f);
+
+        ImGui::Text("Cor:");
+        ImVec4 color = {lightComponent->m_color.r, lightComponent->m_color.g, lightComponent->m_color.b, 1.0f};
+        if (ImGui::ColorButton("##LightColor", color)) {
+            ImGui::OpenPopup("##LightColorPopup");
+        }
+        if (ImGui::BeginPopup("##LightColorPopup")) {
+            ImGui::ColorPicker4("#LightColorPick", lightComponent->m_color.data);
+            ImGui::EndPopup();
+        }
         ImGui::TreePop();
     }
 }

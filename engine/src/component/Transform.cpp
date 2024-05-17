@@ -10,19 +10,19 @@
 
 Transform::Transform() : Component(true), position(Vector3::zero), scale(Vector3::one), rotation(Quaternion::identity), parent(nullptr) {}
 
-Vector3 Transform::getright() const {
+const Vector3 Transform::getright() const {
     if (parent)
         return Math::normalize((parent->rotation * rotation) * Vector3::right);
     return rotation * Vector3::right;
 }
 
-Vector3 Transform::getup() const {
+const Vector3 Transform::getup() const {
     if (parent)
         return Math::normalize((parent->rotation * rotation) * Vector3::up);
     return rotation * Vector3::up;
 }
 
-Vector3 Transform::getforward() const {
+const Vector3 Transform::getforward() const {
     if (parent)
         return Math::normalize((parent->rotation * rotation) * Vector3::forward);
     return rotation * Vector3::forward;

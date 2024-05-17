@@ -12,9 +12,9 @@ public:
 
     bool SphereInFrustum(const Vector3& point, float radius);
 
-    bool IsFrustum(const Vector3& min, const Vector3& max);
+    const bool IsCubeInFrustumAABB(const Vector3& min, const Vector3& max) const;
 
-    bool CubeInFrustum(const Vector3& point, const Vector3& size);
+    const bool IsCubeInFrustumOOBB(const Vector3& min, const Vector3& max, const Matrix4x4& model) const;
 
 private:
     float m_Frustum[6][4];
