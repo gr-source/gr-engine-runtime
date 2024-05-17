@@ -32,7 +32,7 @@ bool Resources::m_shaderReady = false;
 u32 Resources::m_processCount = 0;
 
 template <>
-Shader* Resources::Load<Shader>(const std::string& path, SucessFunc callback) {
+Shader* Resources::Load<Shader>(const std::string& path, const std::function<void(Shader*)>& callback) {
     if (!std::filesystem::exists(path + ".frag")) {
         ERROR("[ Shader ] fragment shader file not found (" + path + ".frag)");
         return nullptr;
@@ -60,7 +60,31 @@ Shader* Resources::Load<Shader>(const std::string& path, SucessFunc callback) {
 }
 
 template <>
-Texture2D* Resources::Load<Texture2D>(const std::string& path, SucessFunc callback) {
+Sprite* Resources::Load<Sprite>(const std::string& path, const std::function<void(Sprite*)>& callback) {
+    if (!std::filesystem::exists(path)) {
+        ERROR("[ Sprite ] file not found (" + path + ")");
+        return nullptr;
+    }
+
+    auto it = m_sprites.find(path);
+    if (it != m_sprites.end()) {
+        return (*it).second.get();
+    }
+
+    Sprite* m_sprite = new Sprite(path);
+
+    ++m_processCount;
+
+    {
+        std::lock_guard<std::mutex> lock(m_spriteMutex);
+        m_spriteLoader.emplace_back(m_sprite, callback);
+    }
+
+    return m_sprite;
+}
+
+template <>
+Texture2D* Resources::Load<Texture2D>(const std::string& path, const std::function<void(Texture2D*)>& callback) {
     if (!std::filesystem::exists(path)) {
         ERROR("[ Texture2D ] file not found (" + path + ")");
         return nullptr;
@@ -71,12 +95,13 @@ Texture2D* Resources::Load<Texture2D>(const std::string& path, SucessFunc callba
         return (*it).second.get();
     }
 
-    Texture2D* m_texture = new Texture2D(-1, path);
+    Texture2D* m_texture = new Texture2D(path);
+
+    ++m_processCount;
 
     {
         std::lock_guard<std::mutex> lock(m_textureMutex);
         m_textureLoader.emplace_back(m_texture, callback);
-    ++m_processCount;
     }
 
     return m_texture;
@@ -86,8 +111,9 @@ void Resources::Initialize() {
     // stbi_set_flip_vertically_on_load(true);
 }
 
-Texture2D *Resources::Load(const std::string& path, SucessFunc callback, u32 internalFormat, u32 format, u32 type, u32 filter, bool hasMipmap) {
-    if (!std::filesystem::exists(path)) {
+
+Texture2D *Resources::Load(const std::string& path, const std::function<void(Texture2D*)>& callback, u32 internalFormat, u32 format, u32 type, u32 filter, bool hasMipmap) {
+    /*if (!std::filesystem::exists(path)) {
         ERROR("[ Texture2D ] file not found (" + path + ")");
         return nullptr;
     }
@@ -97,7 +123,7 @@ Texture2D *Resources::Load(const std::string& path, SucessFunc callback, u32 int
         return (*it).second.get();
     }
 
-    Texture2D* m_texture = new Texture2D(-1, path);
+    Texture2D* m_texture = new Texture2D(path);
     m_texture->m_internalformat = internalFormat;
     m_texture->m_format = format;
     m_texture->m_type = type;
@@ -109,9 +135,9 @@ Texture2D *Resources::Load(const std::string& path, SucessFunc callback, u32 int
     {
         std::lock_guard<std::mutex> lock(m_textureMutex);
         m_textureLoader.emplace_back(m_texture, callback);
-    }
+    }*/
 
-    return m_texture;
+    return nullptr;
 }
 
 u32 Resources::getTextureType(int ch) {
@@ -143,30 +169,6 @@ GLenum Resources::getTextureTypeSRGB(int ch) {
 }
 
 /***************** SPRITE LOAD *****************/
-template <>
-Sprite* Resources::Load<Sprite>(const std::string& path, SucessFunc callback) {
-    if (!std::filesystem::exists(path)) {
-        ERROR("[ Sprite ] file not found (" + path + ")");
-        return nullptr;
-    }
-
-    auto it = m_sprites.find(path);
-    if (it != m_sprites.end()) {
-        return (*it).second.get();
-    }
-
-    Sprite* m_sprite = new Sprite(-1, path);
-
-    ++m_processCount;
-
-    {
-        std::lock_guard<std::mutex> lock(m_spriteMutex);
-        m_spriteLoader.emplace_back(m_sprite, callback);
-    }
-
-    return m_sprite;
-}
-
 void Resources::setup_sprite(ProcessLoader<Sprite>& process, const int width, const int height, const int channel, stbi_uc*& data) {
     process.data->resize(width, height, Resources::getTextureType(channel), Resources::getTextureType(channel), Texture::eBILINEAR, Texture::eBYTE, false);
     process.data->apply(data);
@@ -183,7 +185,7 @@ void Resources::setup_sprite(ProcessLoader<Sprite>& process, const int width, co
     }
 
     if (process.callback != nullptr) {
-        process.callback();
+        process.callback(process.data);
     }
 }
 
@@ -243,7 +245,7 @@ void Resources::setup_texture(ProcessLoader<Texture2D>& process, const int width
     }
 
     if (process.callback != nullptr) {
-        process.callback();
+        process.callback(process.data);
     }
 }
 
@@ -329,7 +331,7 @@ void Resources::setup_shader(ProcessLoader<Shader>& process, const std::string& 
     }
 
     if (process.callback != nullptr) {
-        process.callback();
+        process.callback(process.data);
     }
 }
 

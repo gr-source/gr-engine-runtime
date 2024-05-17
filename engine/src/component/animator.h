@@ -1,20 +1,13 @@
 #pragma once
 
 #include "../ecs/Entity.h"
-/*
-#include "../Global.h"
 
 #include "../animation/animationClip.h"
 #include "../animation/skeleton.h"
-#include "../animation/bone.h"
 
-#include "../filmbox/BoneInfo.h"
-
-#include "Transform.h"
-*/
 class Animator : public Component {
 public:
-    /*Animator(const Skeleton& skeleton);
+    Animator(const Skeleton& skeleton);
     
     void OnInit() override;
 
@@ -22,14 +15,9 @@ public:
 
     void OnUpdate() override;
     
-    void OnGui() override;
-
     std::array<Matrix4x4, 100> m_FinalBoneMatrices;
-
-    std::vector<AnimationClip> clips;
-
-    void playAnimation(int id);
-    void stopAnimation();
+    
+    std::unordered_map<u32, AnimationClip> m_animations;
 
 protected:
     Transform* transform;
@@ -38,11 +26,5 @@ protected:
     
     float currentTime;
 
-    int animationID;
-
-    float animationSpeed;
-
-    GameObject* m_armature;
-
-    void CalculateBoneTransform(Bone& bone, const Matrix4x4& parentTransform);*/
+    void CalculateBoneTransform(Bone& bone, const Matrix4x4& parentTransform);
 };

@@ -27,7 +27,6 @@
     out.position = {t.x, t.y, t.z}; \
 
 
-
 Filmbox::Filmbox(const std::string& path) : path(path), m_BoneCounter(0), m_changenewgameobject(nullptr), m_changeloading(nullptr), m_loaded(nullptr) {}
 
 Filmbox::~Filmbox() {
@@ -50,7 +49,7 @@ void Filmbox::setupLoader() {
 
     {
         std::lock_guard<std::mutex> lock(mt);
-        scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_CalcTangentSpace | aiProcess_GenBoundingBoxes);
+        scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_CalcTangentSpace);
     }
 
     if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
@@ -72,7 +71,7 @@ void Filmbox::setupLoader() {
     }
 
     if (scene->HasAnimations()) {
-        // loadAnimations(scene);
+        loadAnimations(scene);
     }
 
     if (scene->HasMeshes()) {
@@ -141,6 +140,26 @@ void Filmbox::loadLight(const aiScene *scene) {
     }
 }
 
+void Filmbox::loadAnimations(const aiScene *scene) {
+    for (u32 i=0;i<scene->mNumAnimations;i++) {
+        aiAnimation* animation = scene->mAnimations[i];
+
+        std::string name = animation->mName.C_Str();
+
+        auto& clip = fbxScene.addanimation(i, name);
+        clip.setduration(animation->mDuration);
+        clip.setmaxtick(animation->mTicksPerSecond);
+
+        for (u32 j=0;j<animation->mNumChannels;j++) {
+            aiNodeAnim* nodeAnim = animation->mChannels[j];
+
+            Keyframe& keyframe = clip.addkeyframe(nodeAnim->mNodeName.C_Str());
+
+            loadAnimationKeys(keyframe, nodeAnim);
+        }
+    }
+}
+
 void Filmbox::loadAnimationKeys(Keyframe& keyFrame, const aiNodeAnim* nodeAnim) {
     loadAnimationKeyPositions(keyFrame, nodeAnim);
     loadAnimationKeyRotations(keyFrame, nodeAnim);
@@ -148,7 +167,7 @@ void Filmbox::loadAnimationKeys(Keyframe& keyFrame, const aiNodeAnim* nodeAnim) 
 }
 
 void Filmbox::loadAnimationKeyPositions(Keyframe& keyFrame, const aiNodeAnim* nodeAnim) {
-    for (std::uint32_t i = 0; i < nodeAnim->mNumPositionKeys; ++i) {
+    for (u32 i = 0; i < nodeAnim->mNumPositionKeys; ++i) {
         aiVector3D aiPosition = nodeAnim->mPositionKeys[i].mValue;
         float timeStamp = nodeAnim->mPositionKeys[i].mTime;
 
@@ -160,7 +179,7 @@ void Filmbox::loadAnimationKeyPositions(Keyframe& keyFrame, const aiNodeAnim* no
 }
 
 void Filmbox::loadAnimationKeyRotations(Keyframe& keyFrame, const aiNodeAnim* nodeAnim) {
-    for (std::uint32_t i = 0; i < nodeAnim->mNumRotationKeys; ++i) {
+    for (u32 i = 0; i < nodeAnim->mNumRotationKeys; ++i) {
         aiQuaternion aiRotation = nodeAnim->mRotationKeys[i].mValue;
         float timeStamp = nodeAnim->mRotationKeys[i].mTime;
 
@@ -172,7 +191,7 @@ void Filmbox::loadAnimationKeyRotations(Keyframe& keyFrame, const aiNodeAnim* no
 }
 
 void Filmbox::loadAnimationKeyScales(Keyframe& keyFrame, const aiNodeAnim* nodeAnim) {
-    for (std::uint32_t i = 0; i < nodeAnim->mNumScalingKeys; ++i) {
+    for (u32 i = 0; i < nodeAnim->mNumScalingKeys; ++i) {
         aiVector3D aiScale = nodeAnim->mScalingKeys[i].mValue;
         float timeStamp = nodeAnim->mScalingKeys[i].mTime;
 
@@ -180,24 +199,6 @@ void Filmbox::loadAnimationKeyScales(Keyframe& keyFrame, const aiNodeAnim* nodeA
             Vector3(aiScale.x, aiScale.y, aiScale.z),
             timeStamp
         );
-    }
-}
-
-void Filmbox::loadAnimations(const aiScene *scene) {
-    for (u32 i=0;i<scene->mNumAnimations;i++) {
-        aiAnimation* animation = scene->mAnimations[i];
-
-        AnimationClip clip(animation->mName.C_Str(), animation->mDuration, animation->mTicksPerSecond);
-
-        for (u32 j=0;j<animation->mNumChannels;j++) {
-            aiNodeAnim* nodeAnim = animation->mChannels[j];
-
-            Keyframe& keyframe = clip.addkeyframe(nodeAnim->mNodeName.C_Str());
-
-            loadAnimationKeys(keyframe, nodeAnim);
-        }
-
-        fbxScene.m_animations.emplace(i, clip);
     }
 }
 
@@ -316,18 +317,14 @@ void Filmbox::loadvertices(aiMesh* pMesh, Mesh& mesh, const aiScene* scene) {
 
     setupFace(pMesh, mesh);
 
-    // setupBone(pMesh, mesh, scene);
+    setupBone(pMesh, mesh, scene);
 }
 
 void Filmbox::loadMeshes(const aiScene *scene) {
     for (u32 i=0;i<scene->mNumMeshes;i++) {
         aiMesh* pMesh = scene->mMeshes[i];
 
-        aiAABB bounds = pMesh->mAABB;
-
         auto& mesh = fbxScene.addmesh(i, pMesh->mName.C_Str());
-
-        mesh.m_boundBox = {Vector3(bounds.mMin.x, bounds.mMin.y, bounds.mMin.z), Vector3(bounds.mMax.x, bounds.mMax.y, bounds.mMax.z)};
 
         loadvertices(pMesh, mesh, scene);
     }
@@ -382,19 +379,7 @@ TexturePBR getTexturePBRType(aiTextureType type) {
         return TexturePBR::Non;
     }
 }
-/*
- * aiTextureType_DIFFUSE,
- * aiTextureType_SPECULAR,
- * aiTextureType_NORMALS,
- * aiTextureType_HEIGHT,
- * aiTextureType_AMBIENT,
- * aiTextureType_SHININESS,
- * aiTextureType_OPACITY,
- * aiTextureType_DISPLACEMENT,
- * aiTextureType_LIGHTMAP,
- * aiTextureType_REFLECTION,
- * aiTextureType_UNKNOWN
-*/
+
 void Filmbox::loadMaterialTexture(aiMaterial* pMaterial, Material& material) {
     aiString texturePath;
     aiTextureType types[] = {

@@ -1,6 +1,6 @@
 #include "sprite.h"
 
-Sprite::Sprite() : Texture(-1) {
+Sprite::Sprite(const std::string& path) : Texture(path) {
     m_textureType = GL_TEXTURE_2D;
 }
 

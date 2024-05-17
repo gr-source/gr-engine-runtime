@@ -10,7 +10,11 @@
 class AnimationClip {
 public:
 
-    AnimationClip(const std::string& name, float duration = 0.0f, float ticks = 0.0f);
+    AnimationClip(const std::string& name = "default");
+
+    void setduration(float val);
+
+    void setmaxtick(float val);
 
     Keyframe* findKeyframe(const std::string& name);
 

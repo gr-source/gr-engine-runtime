@@ -111,7 +111,7 @@ void Skybox::setupSkybox() {
         m_skyboxbuffer->addSkyColor(Cubemap::ePOSITIVE_X + i, Framebuffer::eCOLOR_ATTACHMENT0);
     }, m_texture);
 
-    m_skyboxShader = Resources::Load<Shader>(Filesystem::getpublic(Filesystem::eShader) + "/Irradiance", [&]{
+    m_skyboxShader = Resources::Load<Shader>(Filesystem::getpublic(Filesystem::eShader) + "/Irradiance", [&](Shader* shader) {
         GenerateMap([&](u32 i) {
             m_skyboxbuffer->addIrradiance(Cubemap::ePOSITIVE_X + i, Framebuffer::eCOLOR_ATTACHMENT0);
         }, m_skyboxbuffer->getSkyColor());

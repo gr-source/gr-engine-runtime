@@ -48,7 +48,7 @@ public:
         eFLOAT     = GL_FLOAT
     };
 
-    Texture();
+    Texture(const std::string& path = "deafult");
 
     Texture(const GLuint& textureID, const std::string& path = "none");
 

@@ -160,6 +160,9 @@ void CreateModel(GameObject& gameobject, const FbxNode& node, const FbxScene& sc
         gameobject.addComponent<MeshCollider>(node.getmeshs()[0]);
 
         gameobject.addComponent<Rigidbody>(rigidbodyDef);
+    } else if (gameobject.getname() == "Beta_Surface") {
+        auto& animation = gameobject.addComponent<Animator>(node.getmeshs()[0].getskeleton());
+        animation.m_animations.insert(scene.getanimations().begin(), scene.getanimations().end());
     }
 }
 
@@ -213,7 +216,7 @@ void SceneLoaded(const FbxScene& scene) {
 }
 
 Game::Game() : objectselected(nullptr) {
-    m_filmbox = std::make_unique<Filmbox>("/home/grsource/Documentos/filmbox/game.fbx");
+    m_filmbox = std::make_unique<Filmbox>("/home/grsource/Documentos/filmbox/anim.fbx");
     m_filmbox->SetLoaded(SceneLoaded);
     m_filmbox->load();
 
@@ -450,7 +453,7 @@ void Game::RenderFilesUI() {
                     break;
                 case FileType::JPG:
                 case FileType::PNG: {
-                    m_texture = Resources::Load<Texture2D>(entry.string(), nullptr);
+                    m_texture = Resources::Load<Texture2D>(entry.string());
                     if (!m_texture->isvalid()) {
                         iconTexture = reinterpret_cast<ImTextureID>(iconsUI[IconType::ICON_PNG]->getID());
                         break;
@@ -564,6 +567,7 @@ void Game::RenderPropertiUI() {
                 objectselected->RenderProperty<MeshRender>(&Game::OnPropertyMeshRender, this);
                 objectselected->RenderProperty<CameraComponent>(&Game::OnPropertyCameraComponent, this);
                 objectselected->RenderProperty<LightComponent>(&Game::OnPropertyLightComponent, this);
+                objectselected->RenderProperty<Animator>(&Game::OnPropertyAnimator, this);
             }
 
             ImGui::EndTabItem();
@@ -634,6 +638,12 @@ void Game::OnPropertyTransform(Transform* transform) {
             transform->rotation = Math::normalize(Quaternion::Euler({Math::rad(euler.x), Math::rad(euler.y), Math::rad(euler.z)}));
         }
 
+        ImGui::TreePop();
+    }
+}
+
+void Game::OnPropertyAnimator(Animator *animator) {
+    if (ImGui::TreeNode("Animator")) {
         ImGui::TreePop();
     }
 }

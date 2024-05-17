@@ -1,6 +1,6 @@
 #include "texture2D.h"
 
-Texture2D::Texture2D() : Texture(-1) {
+Texture2D::Texture2D(const std::string& path) : Texture(path) {
     m_textureType = GL_TEXTURE_2D;
 }
 

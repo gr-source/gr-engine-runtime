@@ -70,67 +70,79 @@ void Shader::loadFromFile(const std::string& path, u8 type) {
     }
 }
 
+void Shader::RegisterUniform(const std::string &name, const u32 &count, u8 type) {
+    Uniform* location = getUniformIndex(name);
+    if (!location) {
+        u32 index =  GL_CHECK(glGetUniformLocation(programID, name.c_str()));
+        if (index != GL_INVALID_INDEX)  {
+            auto& uniform = m_uniforms[name];
+            uniform.location = index;
+            uniform.count = count;
+            uniform.type = type;
+            uniform.data = nullptr;
+        } else {
+            std::cout << "Unform invalid: " << name  << " (" << path << ")" << std::endl;
+        }
+    }
+}
+
 void Shader::bind() {
     GL_CHECK(glUseProgram(programID));
 }
 
 template <>
+void Shader::setUniform(const std::string& name, u32 num, const Matrix4x4* value) {
+    Uniform* uniform = getUniformIndex(name);
+    if (uniform) {
+        GL_CHECK(glUniformMatrix4fv(uniform->location, num, GL_FALSE, reinterpret_cast<const GLfloat*>(value)));
+    }
+}
+
+template <>
 void Shader::setUniform(const std::string& name, const Matrix4x4& value) {
-    GLuint location =  GL_CHECK(glGetUniformLocation(programID, name.c_str()));
-    if (location != GL_INVALID_INDEX) {
-        GL_CHECK(glUniformMatrix4fv(location, 1, GL_FALSE, value.data));
-    } else {
-        throw std::runtime_error("Error object not found: " + name);
+    Uniform* uniform = getUniformIndex(name);
+    if (uniform) {
+        GL_CHECK(glUniformMatrix4fv(uniform->location, 1, GL_FALSE, value.data));
     }
 }
 
 template <>
 void Shader::setUniform(const std::string& name, const Matrix3x3& value) {
-    GLuint location =  GL_CHECK(glGetUniformLocation(programID, name.c_str()));
-    if (location != GL_INVALID_INDEX) {
-        GL_CHECK(glUniformMatrix3fv(location, 1, GL_FALSE, value.data));
-    } else {
-        throw std::runtime_error("Error object not found: " + name);
+    Uniform* location = getUniformIndex(name);
+    if (location) {
+        GL_CHECK(glUniformMatrix3fv(location->location, 1, GL_FALSE, value.data));
     }
 }
 
 template <>
 void Shader::setUniform(const std::string& name, const Vector3& value) {
-    GLuint location =  GL_CHECK(glGetUniformLocation(programID, name.c_str()));
-    if (location != GL_INVALID_INDEX) {
-        GL_CHECK(glUniform3fv(location, 1, value.data));
-    } else {
-        throw std::runtime_error("Error object not found: " + name);
+    Uniform* location = getUniformIndex(name);
+    if (location) {
+        GL_CHECK(glUniform3fv(location->location, 1, value.data));
     }
 }
 
 template <>
 void Shader::setUniform(const std::string& name, const Color& value) {
-    GLuint location =  GL_CHECK(glGetUniformLocation(programID, name.c_str()));
-    if (location != GL_INVALID_INDEX) {
-        GL_CHECK(glUniform4fv(location, 1, value.data));
-    } else {
-        throw std::runtime_error("Error object not found: " + name);
+    Uniform* location = getUniformIndex(name);
+    if (location) {
+        GL_CHECK(glUniform4fv(location->location, 1, value.data));
     }
 }
 
 template <>
 void Shader::setUniform(const std::string& name, const float& value) {
-    GLuint location =  GL_CHECK(glGetUniformLocation(programID, name.c_str()));
-    if (location != GL_INVALID_INDEX) {
-        GL_CHECK(glUniform1f(location, value));
-    } else {
-        throw std::runtime_error("Error object not found: " + name);
+    Uniform* location = getUniformIndex(name);
+    if (location) {
+        GL_CHECK(glUniform1f(location->location, value));
     }
 }
 
 template <>
 void Shader::setUniform(const std::string& name, const int& value) {
-    GLuint location = GL_CHECK(glGetUniformLocation(programID, name.c_str()));
-    if (location != GL_INVALID_INDEX) {
-        GL_CHECK(glUniform1i(location, value));
-    } else {
-        // throw std::runtime_error("Error object not found: " + name);
+    Uniform* location = getUniformIndex(name);
+    if (location) {
+        GL_CHECK(glUniform1i(location->location, value));
     }
 }
 
@@ -148,6 +160,10 @@ bool Shader::isvalid() const {
 
 const std::string &Shader::getpath() const {
     return path;
+}
+
+const u32 &Shader::getID() const {
+    return programID;
 }
 
 std::string Shader::loadFile(const std::string& path) const {
@@ -211,5 +227,10 @@ void Shader::createShader(const char* data, GLenum type) {
     GL_CHECK(glDeleteShader(shaderID));
 }
 
-
-
+Shader::Uniform* Shader::getUniformIndex(const std::string &name) {
+    auto it = m_uniforms.find(name);
+    if (it != m_uniforms.end()) {
+        return &(*it).second;
+    }
+    return nullptr;
+}

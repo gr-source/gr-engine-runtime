@@ -1,6 +1,6 @@
 #include "texture.h"
 
-Texture::Texture() : m_texture(-1), m_width(0), m_height(0), m_hasMipmap(false), m_format(eNONE), m_type(eNONE), m_internalformat(eNONE), m_textureType(eNONE), path(""), m_wrapMode(eREPEAT) {}
+Texture::Texture(const std::string& path) : path(path), m_texture(-1), m_width(0), m_height(0), m_hasMipmap(false), m_format(eNONE), m_type(eNONE), m_internalformat(eNONE), m_textureType(eNONE), m_wrapMode(eREPEAT) {}
 
 Texture::Texture(const GLuint &textureID, const std::string &path) : m_texture(textureID), path(path), m_hasMipmap(false), m_format(eNONE), m_type(eNONE), m_internalformat(eNONE), m_textureType(eNONE), m_wrapMode(eREPEAT) {}
 

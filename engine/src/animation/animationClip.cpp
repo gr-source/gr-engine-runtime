@@ -2,7 +2,15 @@
 
 #include <algorithm>
 
-AnimationClip::AnimationClip(const std::string& name, float duration, float ticks) : name(name), duration(duration), ticks(ticks) {}
+AnimationClip::AnimationClip(const std::string& name) : name(name), duration(0.0f), ticks(0.0f) {}
+
+void AnimationClip::setduration(float val) {
+    duration = val;
+}
+
+void AnimationClip::setmaxtick(float val) {
+    ticks = val;
+}
 
 Keyframe* AnimationClip::findKeyframe(const std::string& name) {
     auto result = std::find_if(keyframes.begin(), keyframes.end(), [=](auto& key) {

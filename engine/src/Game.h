@@ -65,9 +65,12 @@ private:
 
     void OnPropertyTransform(Transform* transform);
     
+    void OnPropertyAnimator(Animator* animator);
+
     void OnPropertyMeshRender(MeshRender* meshRender);
 
     void OnPropertyCameraComponent(CameraComponent* cameraComponent);
+
 
     void OnPropertyLightComponent(LightComponent* lightComponent);
 

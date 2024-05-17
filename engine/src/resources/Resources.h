@@ -17,24 +17,23 @@
 
 #include "../core/stb/stb_image.h"
 
-using SucessFunc = std::function<void()>;
-
 template <typename T>
 struct ProcessLoader {
     T* data;
-    SucessFunc callback;
+    std::function<void(T*)> callback;
 
-    ProcessLoader(T*& _data, SucessFunc& callback) : data(_data), callback(callback) {}
+    ProcessLoader(T*& _data, std::function<void(T*)> _callback) : data(_data), callback(_callback) {}
 };
+
 
 class Resources {
 public:
     static void Initialize();
     
     template <typename T>
-    static T* Load(const std::string& path, SucessFunc callback = nullptr);
+    static T* Load(const std::string& path, const std::function<void(T*)>& callback = nullptr);
 
-    static Texture2D* Load(const std::string& path, SucessFunc callback, u32 internalFormat, u32 format, u32 type, u32 filter, bool hasMipmap);
+    static Texture2D* Load(const std::string& path, const std::function<void(Texture2D*)>& callback, u32 internalFormat, u32 format, u32 type, u32 filter, bool hasMipmap);
 
     template <typename T>
     static void Remove(T* resouce);

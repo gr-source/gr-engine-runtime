@@ -47,4 +47,10 @@ protected:
     static void SetupMaterial(const MeshRender& meshRender, Shader* shader);
 
     static void SetupLight(Shader* shader);
+
+    static void SetupEnableShaderModel(Shader* shader);
+
+    static void SetupEnableShaderLight(Shader* shader);
+
+    static void SetupEnableShaderShadow(Shader* shader);
 };

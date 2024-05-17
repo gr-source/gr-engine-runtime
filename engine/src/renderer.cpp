@@ -24,7 +24,7 @@ Shader* DebugDraw::m_shader = nullptr;
 void DebugDraw::initialize() {
     m_spriteRender = Resources::Load<Shader>(Filesystem::getpublic(Filesystem::eShader) + "/SpriteRender", DebugDraw::SetupSpriteRender);
 
-    m_shader = Resources::Load<Shader>(Filesystem::getpublic(Filesystem::eShader) + "/ShaderPrimitive");
+    m_shader = Resources::Load<Shader>(Filesystem::getpublic(Filesystem::eShader) + "/ShaderPrimitive", DebugDraw::SetupShaderPrimitive);
 
     m_primitivebuffer = std::make_unique<BufferManager>(BufferManager::eDYNAMIC);
 
@@ -40,7 +40,12 @@ void DebugDraw::initialize() {
     glLineWidth(2.5f);
 }
 
-void DebugDraw::SetupSpriteRender() {
+void DebugDraw::SetupSpriteRender(Shader* shader) {
+    shader->RegisterUniform("m_texture", 1, Shader::eINT);
+
+    shader->RegisterUniform("model", 1, Shader::eMAT4x4);
+    shader->RegisterUniform("vp", 1, Shader::eMAT4x4);
+
     m_spritebuffer = std::make_unique<BufferManager>(BufferManager::eSTATIC, true);
 
     Mesh m_mesh;
@@ -64,6 +69,11 @@ void DebugDraw::SetupSpriteRender() {
     m_spritebuffer->attribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex3D), reinterpret_cast<void*>(offsetof(Vertex3D, uv)));
 
     m_spritebuffer->unbind();
+}
+
+void DebugDraw::SetupShaderPrimitive(Shader *shader) {
+    shader->RegisterUniform("projection", 1, Shader::eMAT4x4);
+    shader->RegisterUniform("view", 1, Shader::eMAT4x4);
 }
 
 void DebugDraw::addLine(const Vector3& start, const Vector3& end, const Color& color) {

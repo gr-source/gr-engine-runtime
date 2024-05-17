@@ -57,30 +57,7 @@ Quaternion Keyframe::getInterpolateRotation(float time) {
 
     float scaleFactor = getScaleFactor(keyRotation[p0Index].time, keyRotation[p1Index].time, time);
     
-    // glm::quat finalRotation = glm::slerp(
-    //     glm::quat(
-    //         keyRotation[p0Index].value.w,
-    //         keyRotation[p0Index].value.x,
-    //         keyRotation[p0Index].value.y,
-    //         keyRotation[p0Index].value.z
-    //     ),
-    //     glm::quat(
-    //         keyRotation[p1Index].value.w,
-    //         keyRotation[p1Index].value.x,
-    //         keyRotation[p1Index].value.y,
-    //         keyRotation[p1Index].value.z
-    //     ),
-    //     scaleFactor
-    // );
-
-    // finalRotation = glm::normalize(finalRotation);
-
-    // return /*nlerp(keyRotation[p0Index].value, keyRotation[p1Index].value, scaleFactor);*/Quaternion(
-    //     finalRotation.w,
-    //     finalRotation.x,
-    //     finalRotation.y,
-    //     finalRotation.z
-    // );
+    return Quaternion::Slerp(keyRotation[p0Index].value, keyRotation[p1Index].value, scaleFactor);
 }
 
 Vector3 Keyframe::getInterpolatePosition(float time) {

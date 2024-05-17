@@ -6,7 +6,7 @@ out vec4 FragColor;
 
 #define MAX_MATERIAL 50
 #define MAX_TEXTURE 10
-#define MAX_LIGHT 100
+#define MAX_LIGHT 10
 
 #define TEXTURE_ALBEDO 0
 #define TEXTURE_NORMAL 1
@@ -18,7 +18,6 @@ out vec4 FragColor;
 #define LIGHT_POINT 2
 #define LIGHT_SPOT 3
 
-in mat3 m_TBN;
 in vec3 m_normal;
 in vec3 m_fragPos;
 in vec2 m_textCoord;
@@ -65,8 +64,8 @@ vec3 getNormalMap(sampler2D normalMap, vec2 textCoord, vec3 fragPos, vec3 normal
 vec3 BaseColor(vec3 fragPos, vec3 albedo, float roughness, float metallic, float ao, vec3 normal);
 
 void main() {
-    vec3 albedo     = materials[m_materialIndex].albedo.xyz;
-    float roughness = materials[m_materialIndex].roughness;
+    // vec3 albedo     = materials[m_materialIndex].albedo.xyz;
+    /*float roughness = materials[m_materialIndex].roughness;
     float metallic  = materials[m_materialIndex].metallic;
     float ao        = materials[m_materialIndex].ao;
 
@@ -91,9 +90,9 @@ void main() {
 
     if (isactive[TEXTURE_AO]) {
         ao = texture(textures[TEXTURE_AO], m_textCoord).r;
-    }
+    }*/
 
-    vec3 color = BaseColor(m_fragPos, albedo, roughness, metallic, ao, normal);
+    vec3 color = vec3(0.8);//BaseColor(m_fragPos, albedo, roughness, metallic, ao, normal);
 
     color = color / (color + vec3(1.0));
     color = pow(color, vec3(1.0 / 2.2)); 

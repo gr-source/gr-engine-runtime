@@ -3,6 +3,7 @@
 const char* get_enum_name(GLenum err) {
     #define GETENUMNAME(e) case e: return #e;
     switch (err) {
+        /* ERROR */
         GETENUMNAME(GL_INVALID_ENUM);
         GETENUMNAME(GL_INVALID_VALUE);
         GETENUMNAME(GL_INVALID_OPERATION);

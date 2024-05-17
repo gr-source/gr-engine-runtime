@@ -14,7 +14,7 @@ const std::string& FbxScene::getname() const {
     return name;
 }
 
-const std::map<u32, AnimationClip> &FbxScene::getanimations() const {
+const std::unordered_map<u32, AnimationClip> &FbxScene::getanimations() const {
     return m_animations;
 }
 

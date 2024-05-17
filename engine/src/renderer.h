@@ -63,6 +63,8 @@ protected:
 
 	static Shader* m_shader;
 
-    static void SetupSpriteRender();
+    static void SetupSpriteRender(Shader* shader);
+
+    static void SetupShaderPrimitive(Shader* shader);
 
 };

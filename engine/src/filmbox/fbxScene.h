@@ -18,8 +18,6 @@ public:
 
     const std::string& getname() const;
 
-    const std::map<u32, AnimationClip>& getanimations() const;
-
     const FbxLight* findlight(const std::string& name) const;
 
     const FbxCamera* findcamera(const std::string& name) const;
@@ -33,6 +31,11 @@ public:
     Mesh& addmesh(u32 index, Args&&... args);
 
     Mesh* findmesh(u32 index);
+
+    const std::unordered_map<u32, AnimationClip>& getanimations() const;
+
+    template <typename... Args>
+    AnimationClip& addanimation(u32 index, Args&&... args);
 
 private:
     /* nome da cena */
@@ -48,7 +51,7 @@ private:
     std::unordered_map<u32, Material> m_materials;
 
     /* lista de animações na cena */
-    std::map<u32, AnimationClip> m_animations;
+    std::unordered_map<u32, AnimationClip> m_animations;
 
     std::unordered_map<std::string, FbxLight> m_lights;
 
@@ -69,4 +72,8 @@ inline Mesh &FbxScene::addmesh(u32 index, Args &&...args) {
     return m_meshes[index];
 }
 
-
+template <typename... Args>
+inline AnimationClip &FbxScene::addanimation(u32 index, Args &&...args) {
+    m_animations.emplace(index, std::forward<Args>(args)...);
+    return m_animations[index];
+}
