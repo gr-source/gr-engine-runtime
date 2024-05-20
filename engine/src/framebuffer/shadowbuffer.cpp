@@ -7,7 +7,7 @@ Shadowbuffer &Shadowbuffer::getInstance() {
     return m_shadowbuffer;
 }
 
-Shadowbuffer::Shadowbuffer(u32 width, u32 height) : m_width(width), m_height(height), m_framebuffer(std::make_unique<Framebuffer>()), m_texture(std::make_unique<Texture2D>()) {
+Shadowbuffer::Shadowbuffer(u32 width, u32 height) : m_width(width), m_height(height), m_framebuffer(std::make_unique<Framebuffer>()), m_texture(std::make_unique<Texture>()) {
     m_texture->resize(width, height, Texture::eDEPTH_COMPONENT, Texture::eDEPTH_COMPONENT, Texture::ePOINT, Texture::eFLOAT, false, Texture::eCLAMPBORDER);
     m_texture->apply();
 
@@ -26,6 +26,6 @@ void Shadowbuffer::unbind() {
     m_framebuffer->unbind();
 }
 
-Texture2D *Shadowbuffer::GetTexture() {
+Texture *Shadowbuffer::GetTexture() {
     return m_texture.get();
 }

@@ -52,7 +52,7 @@ private:
     GameObject* objectselected;
     
     /* Textura do play button */
-    Sprite* texturePlayGame;
+    Texture* texturePlayGame;
 
     std::mutex m_mutex;
 
@@ -74,7 +74,7 @@ private:
 
     void OnPropertyLightComponent(LightComponent* lightComponent);
 
-    void TextureInfo(Texture2D*& texture);
+    void TextureInfo(Texture*& texture);
 
     void MenuAdd();
 

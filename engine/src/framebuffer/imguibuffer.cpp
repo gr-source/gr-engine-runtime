@@ -8,7 +8,7 @@ Imguibuffer& Imguibuffer::getInstance() {
 }
 
 Imguibuffer::Imguibuffer(u32 width, u32 height) : FrameBuffer(width, height), m_framebuffer(std::make_unique<Framebuffer>()), m_renderbuffer(std::make_unique<Renderbuffer>()) {
-    m_texture = std::make_unique<Texture2D>();
+    m_texture = std::make_unique<Texture>();
     
     m_texture->resize(m_width, m_height, Texture::eSRBG8, Texture::eRGB, Texture::eBILINEAR, Texture::eBYTE, false);
     m_texture->apply();

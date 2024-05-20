@@ -2,7 +2,7 @@
 
 #include "FrameBuffer.h"
 
-#include "../resources/textureSample.h"
+#include "../resources/texture.h"
 
 #define FRAMETEXTURE 0
 #define POSTTEXTURE 1
@@ -27,16 +27,16 @@ public:
 
     const u32& getsample() const;
 
-    Texture2D* GetTexture();
+    Texture* GetTexture();
 
 private:
     std::array<std::unique_ptr<Framebuffer>, 2> m_fbo;
     
-    std::unique_ptr<TextureSample> m_textureSample;
+    std::unique_ptr<Texture> m_textureSample;
     
     std::unique_ptr<Renderbuffer> m_renderbuffer;
 
-    std::unique_ptr<Texture2D> m_texture;
+    std::unique_ptr<Texture> m_texture;
 
     u32 samples;
 

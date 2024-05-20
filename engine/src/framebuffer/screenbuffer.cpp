@@ -8,12 +8,11 @@ ScreenBuffer& ScreenBuffer::getInstance() {
 	return pScreenBuffer;
 }
 
-ScreenBuffer::ScreenBuffer(u32 width, u32 height) : m_width(width), m_height(height), samples(4), m_renderbuffer(std::make_unique<Renderbuffer>()), m_textureSample(std::make_unique<TextureSample>()), m_texture(std::make_unique<Texture2D>()) {
+ScreenBuffer::ScreenBuffer(u32 width, u32 height) : m_width(width), m_height(height), samples(4), m_renderbuffer(std::make_unique<Renderbuffer>()), m_textureSample(std::make_unique<Texture>("default", Texture::eTEXTURE2D_MULTISAMPLE)), m_texture(std::make_unique<Texture>()) {
 	m_fbo[0] = std::make_unique<Framebuffer>();
 	m_fbo[1] = std::make_unique<Framebuffer>();
 
 	m_textureSample->resize(m_width, m_height, Texture::eSRBG8, Texture::eRGB, Texture::eBILINEAR, Texture::eBYTE, false);
-	m_textureSample->setsamples(samples);
 	m_textureSample->apply();
 
 	m_renderbuffer->bind();
@@ -79,7 +78,7 @@ const u32& ScreenBuffer::getsample() const {
 	return samples;
 }
 
-Texture2D *ScreenBuffer::GetTexture() {
+Texture *ScreenBuffer::GetTexture() {
     return m_texture.get();
 }
 

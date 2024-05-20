@@ -85,7 +85,7 @@ enum class IconType : int {
 	ICON_EDIT         = 14
 };
 
-std::unordered_map<IconType, Sprite*> iconsUI;
+std::unordered_map<IconType, Texture*> iconsUI;
 
 /* editor da game engine */
 EditorController mEditorController;
@@ -414,8 +414,8 @@ void Game::RenderFilesUI() {
     static std::filesystem::path resources = Filesystem::getpublic(Filesystem::eResource);
     const ImVec2 iconSize = reinterpret_vector<ImVec2, Vector2>(Settings::IconSize);
     ImTextureID iconTexture = nullptr;
-    Texture2D* m_texture = nullptr;
-    static Texture2D* texture = nullptr;
+    Texture* m_texture = nullptr;
+    static Texture* texture = nullptr;
 
     ImGui::Columns(5, "#Collums1", false);
     if (ImGui::ImageButton(reinterpret_cast<ImTextureID>(iconsUI[IconType::ICON_BACK_FILE]->getID()), iconSize)) {
@@ -453,7 +453,7 @@ void Game::RenderFilesUI() {
                     break;
                 case FileType::JPG:
                 case FileType::PNG: {
-                    m_texture = Resources::Load<Texture2D>(entry.string());
+                    m_texture = Resources::Load<Texture>(entry.string());
                     if (!m_texture->isvalid()) {
                         iconTexture = reinterpret_cast<ImTextureID>(iconsUI[IconType::ICON_PNG]->getID());
                         break;
@@ -586,7 +586,6 @@ void Game::RenderPropertiUI() {
             ImGui::Text("Triangulos: %dK", (gameStatics.indices / 3));
 
             ImGui::SeparatorText("Resources");
-            ImGui::Text("Sprites: %d", Resources::getspritecount());
             ImGui::Text("Textures: %d", Resources::gettexturecount());
             ImGui::Text("Shaders: %d", Resources::getshadercount());
 
@@ -671,7 +670,7 @@ void Game::OnPropertyMeshRender(MeshRender *meshRender) {
                         if (const ImGuiPayload* data = ImGui::AcceptDragDropPayload(getDragDrop(DragDrop::TEXTURE), ImGuiDragDropFlags_None)) {
                             std::string path((char*)data->Data, data->DataSize);
                             if (!path.empty()) {
-                                material.texture[TexturePBR::ALBEDO] = Resources::Load<Texture2D>(path);
+                                material.texture[TexturePBR::ALBEDO] = Resources::Load<Texture>(path);
                             }
                         }
                         ImGui::EndDragDropTarget();
@@ -693,7 +692,7 @@ void Game::OnPropertyMeshRender(MeshRender *meshRender) {
                         if (const ImGuiPayload* data = ImGui::AcceptDragDropPayload(getDragDrop(DragDrop::TEXTURE), ImGuiDragDropFlags_None)) {
                             std::string path((char*)data->Data, data->DataSize);
                             if (!path.empty()) {
-                                material.texture[TexturePBR::NORMAL] = Resources::Load<Texture2D>(path);
+                                material.texture[TexturePBR::NORMAL] = Resources::Load<Texture>(path);
                             }
                         }
                         ImGui::EndDragDropTarget();
@@ -715,7 +714,7 @@ void Game::OnPropertyMeshRender(MeshRender *meshRender) {
                         if (const ImGuiPayload* data = ImGui::AcceptDragDropPayload(getDragDrop(DragDrop::TEXTURE), ImGuiDragDropFlags_None)) {
                             std::string path((char*)data->Data, data->DataSize);
                             if (!path.empty()) {
-                                material.texture[TexturePBR::METALLIC] = Resources::Load<Texture2D>(path);
+                                material.texture[TexturePBR::METALLIC] = Resources::Load<Texture>(path);
                             }
                         }
                         ImGui::EndDragDropTarget();
@@ -737,7 +736,7 @@ void Game::OnPropertyMeshRender(MeshRender *meshRender) {
                         if (const ImGuiPayload* data = ImGui::AcceptDragDropPayload(getDragDrop(DragDrop::TEXTURE), ImGuiDragDropFlags_None)) {
                             std::string path((char*)data->Data, data->DataSize);
                             if (!path.empty()) {
-                                material.texture[TexturePBR::ROUGHNESS] = Resources::Load<Texture2D>(path);
+                                material.texture[TexturePBR::ROUGHNESS] = Resources::Load<Texture>(path);
                             }
                         }
                         ImGui::EndDragDropTarget();
@@ -759,7 +758,7 @@ void Game::OnPropertyMeshRender(MeshRender *meshRender) {
                         if (const ImGuiPayload* data = ImGui::AcceptDragDropPayload(getDragDrop(DragDrop::TEXTURE), ImGuiDragDropFlags_None)) {
                             std::string path((char*)data->Data, data->DataSize);
                             if (!path.empty()) {
-                                material.texture[TexturePBR::AO] = Resources::Load<Texture2D>(path);
+                                material.texture[TexturePBR::AO] = Resources::Load<Texture>(path);
                             }
                         }
                         ImGui::EndDragDropTarget();
@@ -830,7 +829,7 @@ void Game::OnPropertyLightComponent(LightComponent *lightComponent) {
     }
 }
 
-void Game::TextureInfo(Texture2D *&texture) {
+void Game::TextureInfo(Texture *&texture) {
     bool IsOpen = true;
 
     const ImVec2 textureSize(100, 100);
@@ -906,21 +905,21 @@ void Game::RenderRectSlide(const Color& color) {
 }
 
 void Game::loadReources() {
-    iconsUI.emplace(IconType::ICON_FILE,        Resources::Load<Sprite>(Filesystem::getpublic(Filesystem::eIcon) + "/icons8-file-30.png"));
-    iconsUI.emplace(IconType::ICON_FOLDER,      Resources::Load<Sprite>(Filesystem::getpublic(Filesystem::eIcon) + "/icons8-folder-50.png"));
-    iconsUI.emplace(IconType::ICON_BACK_FILE,   Resources::Load<Sprite>(Filesystem::getpublic(Filesystem::eIcon) + "/icons8-go-back-50.png"));
-    iconsUI.emplace(IconType::ICON_GAMEOBJECT,  Resources::Load<Sprite>(Filesystem::getpublic(Filesystem::eIcon) + "/icons8-3d-object-50.png"));
-    iconsUI.emplace(IconType::ICON_PENCIL,      Resources::Load<Sprite>(Filesystem::getpublic(Filesystem::eIcon) + "/icons8-lápis-30.png"));
-    iconsUI.emplace(IconType::ICON_LIGHT,       Resources::Load<Sprite>(Filesystem::getpublic(Filesystem::eIcon) + "/icons8-lâmpada-globular-64.png"));
-    iconsUI.emplace(IconType::ICON_TEXTURE,     Resources::Load<Sprite>(Filesystem::getpublic(Filesystem::eIcon) + "/icons8-textura-de-renderização-32.png"));
-    iconsUI.emplace(IconType::ICON_PNG,         Resources::Load<Sprite>(Filesystem::getpublic(Filesystem::eIcon) + "/icons8-png-24.png"));
-    iconsUI.emplace(IconType::ICON_PLAY_GAME,   Resources::Load<Sprite>(Filesystem::getpublic(Filesystem::eIcon) + "/icons8-reproduzir-30.png"));
-    iconsUI.emplace(IconType::ICON_STOP_GAME,   Resources::Load<Sprite>(Filesystem::getpublic(Filesystem::eIcon) + "/icons8-parar-50.png"));
-    iconsUI.emplace(IconType::ICON_BIN,         Resources::Load<Sprite>(Filesystem::getpublic(Filesystem::eIcon) + "/icons8-resíduos-50.png"));
-    iconsUI.emplace(IconType::ICON_IMPORT,      Resources::Load<Sprite>(Filesystem::getpublic(Filesystem::eIcon) + "/icons8-importar-50.png"));
-    iconsUI.emplace(IconType::ICON_ASCENDENTE,  Resources::Load<Sprite>(Filesystem::getpublic(Filesystem::eIcon) + "/icons8-ordenar-para-a-direita-50.png"));
-    iconsUI.emplace(IconType::ICON_DESCENDENTE, Resources::Load<Sprite>(Filesystem::getpublic(Filesystem::eIcon) + "/icons8-ordem-descendente-50.png"));
-    iconsUI.emplace(IconType::ICON_EDIT,        Resources::Load<Sprite>(Filesystem::getpublic(Filesystem::eIcon) + "/icons8-editar-24.png"));
+    iconsUI.emplace(IconType::ICON_FILE,        Resources::Load<Texture>(Filesystem::getpublic(Filesystem::eIcon) + "/icons8-file-30.png"));
+    iconsUI.emplace(IconType::ICON_FOLDER,      Resources::Load<Texture>(Filesystem::getpublic(Filesystem::eIcon) + "/icons8-folder-50.png"));
+    iconsUI.emplace(IconType::ICON_BACK_FILE,   Resources::Load<Texture>(Filesystem::getpublic(Filesystem::eIcon) + "/icons8-go-back-50.png"));
+    iconsUI.emplace(IconType::ICON_GAMEOBJECT,  Resources::Load<Texture>(Filesystem::getpublic(Filesystem::eIcon) + "/icons8-3d-object-50.png"));
+    iconsUI.emplace(IconType::ICON_PENCIL,      Resources::Load<Texture>(Filesystem::getpublic(Filesystem::eIcon) + "/icons8-lápis-30.png"));
+    iconsUI.emplace(IconType::ICON_LIGHT,       Resources::Load<Texture>(Filesystem::getpublic(Filesystem::eIcon) + "/icons8-lâmpada-globular-64.png"));
+    iconsUI.emplace(IconType::ICON_TEXTURE,     Resources::Load<Texture>(Filesystem::getpublic(Filesystem::eIcon) + "/icons8-textura-de-renderização-32.png"));
+    iconsUI.emplace(IconType::ICON_PNG,         Resources::Load<Texture>(Filesystem::getpublic(Filesystem::eIcon) + "/icons8-png-24.png"));
+    iconsUI.emplace(IconType::ICON_PLAY_GAME,   Resources::Load<Texture>(Filesystem::getpublic(Filesystem::eIcon) + "/icons8-reproduzir-30.png"));
+    iconsUI.emplace(IconType::ICON_STOP_GAME,   Resources::Load<Texture>(Filesystem::getpublic(Filesystem::eIcon) + "/icons8-parar-50.png"));
+    iconsUI.emplace(IconType::ICON_BIN,         Resources::Load<Texture>(Filesystem::getpublic(Filesystem::eIcon) + "/icons8-resíduos-50.png"));
+    iconsUI.emplace(IconType::ICON_IMPORT,      Resources::Load<Texture>(Filesystem::getpublic(Filesystem::eIcon) + "/icons8-importar-50.png"));
+    iconsUI.emplace(IconType::ICON_ASCENDENTE,  Resources::Load<Texture>(Filesystem::getpublic(Filesystem::eIcon) + "/icons8-ordenar-para-a-direita-50.png"));
+    iconsUI.emplace(IconType::ICON_DESCENDENTE, Resources::Load<Texture>(Filesystem::getpublic(Filesystem::eIcon) + "/icons8-ordem-descendente-50.png"));
+    iconsUI.emplace(IconType::ICON_EDIT,        Resources::Load<Texture>(Filesystem::getpublic(Filesystem::eIcon) + "/icons8-editar-24.png"));
 
     texturePlayGame = iconsUI[IconType::ICON_PLAY_GAME];
 

@@ -8,16 +8,9 @@
 
 #include <future>
 
-/***************** SPRITE *****************/
-std::unordered_map<std::string, std::unique_ptr<Sprite>> Resources::m_sprites;
-std::list<ProcessLoader<Sprite>> Resources::m_spriteLoader;
-std::mutex Resources::m_spriteMutex;
-std::condition_variable Resources::m_spritecv;
-bool Resources::m_spriteReady = false;
-
-/***************** TEXTURE2D *****************/
-std::unordered_map<std::string, std::unique_ptr<Texture2D>> Resources::m_textures;
-std::list<ProcessLoader<Texture2D>> Resources::m_textureLoader;
+/***************** Texture *****************/
+std::unordered_map<std::string, std::unique_ptr<Texture>> Resources::m_textures;
+std::list<ProcessLoader<Texture>> Resources::m_textureLoader;
 std::mutex Resources::m_textureMutex;
 std::condition_variable Resources::m_texturecv;
 bool Resources::m_textureReady = false;
@@ -42,7 +35,7 @@ Shader* Resources::Load<Shader>(const std::string& path, const std::function<voi
         return nullptr;
     }
 
-    auto it = m_shaders.find(path);
+    auto it = m_shaders.find(std::filesystem::path(path).filename());
     if (it != m_shaders.end()) {
         return (*it).second.get();
     }
@@ -60,42 +53,18 @@ Shader* Resources::Load<Shader>(const std::string& path, const std::function<voi
 }
 
 template <>
-Sprite* Resources::Load<Sprite>(const std::string& path, const std::function<void(Sprite*)>& callback) {
+Texture* Resources::Load<Texture>(const std::string& path, const std::function<void(Texture*)>& callback) {
     if (!std::filesystem::exists(path)) {
-        ERROR("[ Sprite ] file not found (" + path + ")");
+        ERROR("[ Texture ] file not found (" + path + ")");
         return nullptr;
     }
 
-    auto it = m_sprites.find(path);
-    if (it != m_sprites.end()) {
-        return (*it).second.get();
-    }
-
-    Sprite* m_sprite = new Sprite(path);
-
-    ++m_processCount;
-
-    {
-        std::lock_guard<std::mutex> lock(m_spriteMutex);
-        m_spriteLoader.emplace_back(m_sprite, callback);
-    }
-
-    return m_sprite;
-}
-
-template <>
-Texture2D* Resources::Load<Texture2D>(const std::string& path, const std::function<void(Texture2D*)>& callback) {
-    if (!std::filesystem::exists(path)) {
-        ERROR("[ Texture2D ] file not found (" + path + ")");
-        return nullptr;
-    }
-
-    auto it = m_textures.find(path);
+    auto it = m_textures.find(std::filesystem::path(path).filename());
     if (it != m_textures.end()) {
         return (*it).second.get();
     }
 
-    Texture2D* m_texture = new Texture2D(path);
+    Texture* m_texture = new Texture(path);
 
     ++m_processCount;
 
@@ -111,18 +80,18 @@ void Resources::Initialize() {
     // stbi_set_flip_vertically_on_load(true);
 }
 
-Texture2D *Resources::Load(const std::string& path, const std::function<void(Texture2D*)>& callback, u32 internalFormat, u32 format, u32 type, u32 filter, bool hasMipmap) {
+Texture *Resources::Load(const std::string& path, const std::function<void(Texture*)>& callback, u32 internalFormat, u32 format, u32 type, u32 filter, bool hasMipmap) {
     if (!std::filesystem::exists(path)) {
-        ERROR("[ Texture2D ] file not found (" + path + ")");
+        ERROR("[ Texture ] file not found (" + path + ")");
         return nullptr;
     }
 
-    auto it = m_textures.find(path);
+    auto it = m_textures.find(std::filesystem::path(path).filename());
     if (it != m_textures.end()) {
         return (*it).second.get();
     }
 
-    Texture2D* m_texture = new Texture2D(path);
+    Texture* m_texture = new Texture(path);
     m_texture->m_internalformat = internalFormat;
     m_texture->m_format = format;
     m_texture->m_type = type;
@@ -167,64 +136,9 @@ GLenum Resources::getTextureTypeSRGB(int ch) {
     }
 }
 
-/***************** SPRITE LOAD *****************/
-void Resources::setup_sprite(ProcessLoader<Sprite>& process, const int width, const int height, const int channel, stbi_uc*& data) {
-    process.data->resize(width, height, Resources::getTextureType(channel), Resources::getTextureType(channel), Texture::eBILINEAR, Texture::eBYTE, false);
-    process.data->apply(data);
-
-    m_sprites[process.data->getpath()] = std::unique_ptr<Sprite>(std::move(process.data));
-
-    --m_processCount;
-
-    {
-        std::lock_guard<std::mutex> lock(m_spriteMutex);
-        m_spriteReady = true;
-
-        m_spritecv.notify_one();
-    }
-
-    if (process.callback != nullptr) {
-        process.callback(process.data);
-    }
-}
-
-void Resources::LoadSprite() {
-    std::unique_lock<std::mutex> lock(m_spriteMutex);
-    while (!m_spriteLoader.empty()) {
-        auto& m_process = m_spriteLoader.front();
-
-        int width = 0, height = 0, channel = 0;
-        stbi_uc* data = stbi_load(m_process.data->getpath().c_str(), &width, &height, &channel, 0);
-        if (!data) {
-            ERROR("[ Sprite ] data do not loaded");
-
-            delete m_process.data;
-            m_process.data = nullptr;
-
-            m_spriteLoader.pop_front();
-
-            return;
-        }
-
-        EventManager::addEvent(setup_sprite, m_process, width, height, channel, data);
-
-        {
-            m_spritecv.wait(lock, []{ return m_spriteReady || !Settings::IsEngineRunning;});
-
-            stbi_image_free(data);
-            data = nullptr;
-
-            m_spriteReady = false;
-
-            m_spriteLoader.pop_front();
-
-        }
-    }
-}
-
 
 /***************** TEXTURE LOAD ****************/
-void Resources::setup_texture(ProcessLoader<Texture2D>& process, const int width, const int height, const int channel, stbi_uc*& data) {
+void Resources::setup_texture(ProcessLoader<Texture>& process, const int width, const int height, const int channel, stbi_uc*& data) {
     u32 internalFormat = (process.data->m_internalformat != Texture::eNONE ? process.data->m_internalformat : Resources::getTextureTypeSRGB(channel));
     u32 format = (process.data->m_format != Texture::eNONE ? process.data->m_format : Resources::getTextureType(channel));
     u32 type = (process.data->m_type != Texture::eNONE ? process.data->m_type : Texture::eBYTE);
@@ -232,16 +146,12 @@ void Resources::setup_texture(ProcessLoader<Texture2D>& process, const int width
     process.data->resize(width, height, internalFormat, format, Texture::eTRILINEAR, type, true);
     process.data->apply(data);
 
-    m_textures[process.data->getpath()] = std::unique_ptr<Texture2D>(std::move(process.data));
+    stbi_image_free(data);
+    data = nullptr;
+
+    m_textures.emplace(std::filesystem::path(process.data->getpath()).filename(), std::unique_ptr<Texture>(process.data));
 
     --m_processCount;
-
-    {
-        std::lock_guard<std::mutex> lock(m_textureMutex);
-        m_textureReady = true;
-
-        m_texturecv.notify_one();
-    }
 
     if (process.callback != nullptr) {
         process.callback(process.data);
@@ -251,41 +161,31 @@ void Resources::setup_texture(ProcessLoader<Texture2D>& process, const int width
 void Resources::LoadTexture() {
     std::unique_lock<std::mutex> lock(m_textureMutex);
     while (!m_textureLoader.empty()) {
-        auto& process = m_textureLoader.front();
+        auto process = m_textureLoader.front();
+        m_textureLoader.pop_front();
+        lock.unlock();
 
         int width = 0, height = 0, channel = 0;
         stbi_uc* data = stbi_load(process.data->getpath().c_str(), &width, &height, &channel, 0);
         if (!data) {
-            ERROR("[ Texture2D ] data do not loaded");
+            ERROR("[Texture] Data not loaded");
 
             delete process.data;
             process.data = nullptr;
-            
-            m_textureLoader.pop_front();
-
+            lock.lock();
             continue;
         }
 
         EventManager::addEvent(setup_texture, process, width, height, channel, data);
-
-        {
-            m_texturecv.wait(lock, []{return m_textureReady || !Settings::IsEngineRunning;});
-
-            stbi_image_free(data);
-            data = nullptr;
-
-            m_textureReady = false;
-
-            m_textureLoader.pop_front();
-        }
-        
+        lock.lock();
     }
 }
 
 /***************** SHADER LOAD ****************/
 void Resources::setup_shader(ProcessLoader<Shader>& process, const std::string& fcontent, const std::string& vcontent, const std::string& gcontent) {
     if (!fcontent.empty()) {
-        process.data->loadSource(fcontent, Shader::eFRAGMENT);
+        const char* str = fcontent.c_str();
+        process.data->loadsource(&str, 1, Shader::eFRAGMENT);
     } else {
         ERROR("[ Resources::setup_shader ] Fatal error f");
 
@@ -295,7 +195,8 @@ void Resources::setup_shader(ProcessLoader<Shader>& process, const std::string& 
     }
 
     if (!vcontent.empty()) {
-        process.data->loadSource(vcontent, Shader::eVERTEX);
+        const char* str = vcontent.c_str();
+        process.data->loadsource(&str, 1, Shader::eVERTEX);
     } else {
         ERROR("[ Resources::setup_shader ] Fatal error v");
 
@@ -305,20 +206,14 @@ void Resources::setup_shader(ProcessLoader<Shader>& process, const std::string& 
     }
 
     if (!gcontent.empty()) {
-        process.data->loadSource(gcontent, Shader::eGEOMETRY);
+        const char* str = gcontent.c_str();
+        process.data->loadsource(&str, 1, Shader::eGEOMETRY);
     }
 
-    m_shaders[process.data->getpath()] = std::unique_ptr<Shader>(process.data);
+    m_shaders.emplace(std::filesystem::path(process.data->getpath()).filename(), std::unique_ptr<Shader>(process.data));
 
     --m_processCount;
     
-    {
-        std::lock_guard<std::mutex> lock(m_shaderMutex);
-        m_shaderReady = true;
-
-        m_shadercv.notify_one();
-    }
-
     if (process.callback != nullptr) {
         process.callback(process.data);
     }
@@ -327,77 +222,38 @@ void Resources::setup_shader(ProcessLoader<Shader>& process, const std::string& 
 void Resources::LoadShader() {
     std::unique_lock<std::mutex> lock(m_shaderMutex);
     while (!m_shaderLoader.empty()) {
-        auto& process = m_shaderLoader.front();
+        auto process = m_shaderLoader.front();
+        m_shaderLoader.pop_front();
+        lock.unlock();
 
-        std::string fcontent, vcontent, gcontent;
-
-        /* load fragment shader string */
-        std::ifstream file(process.data->getpath() + ".frag");
-        if (!file.is_open()) {
-            ERROR("[ Shader ] fragment shader file do not open");
-
-            delete process.data;
-            process.data = nullptr;
-
-            m_shaderLoader.pop_front();
-
-            return;
+        std::string fcontent = Filesystem::getfilecontent(process.data->getpath() + ".frag");
+        if (fcontent.empty()) {
+            lock.lock();
+            continue;
         }
-        fcontent = std::string((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
-
-        file.close();
-
 
         /* load vertex shader string */
-        file.open(process.data->getpath() + ".vert");
-        if (!file.is_open()) {
-            ERROR("[ Shader ] vertex shader file do not open");
-
-            delete process.data;
-            process.data = nullptr;
-
-            m_shaderLoader.pop_front();
-
-            return;
+        std::string vcontent = Filesystem::getfilecontent(process.data->getpath() + ".vert");
+        if (vcontent.empty()) {
+            lock.lock();
+            continue;
         }
-        
-        vcontent = std::string((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
-
-        file.close();
 
         /* load geometry shader string */
-        file.open(process.data->getpath() + ".geo");
-        if (file.is_open()) {
-            gcontent = std::string((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
-        } else {
+        const std::string gcontent = Filesystem::getfilecontent(process.data->getpath() + ".geo");
+        if (gcontent.empty()) {
             WARNING("[ Shader ] geometry shader file do not open");
         }
-        file.close();
 
         EventManager::addEvent(setup_shader, process, fcontent, vcontent, gcontent);
-
-        {
-            m_shadercv.wait(lock, []{return m_shaderReady || !Settings::IsEngineRunning;});
-
-            m_shaderReady = false;
-
-            m_shaderLoader.pop_front();
-        }
+        lock.lock();
     }
 }
 
 void Resources::OnThread() {
-    stbi_set_flip_vertically_on_load(false);
-    LoadSprite();
-
     LoadShader();
 
-    stbi_set_flip_vertically_on_load(true);
     LoadTexture();
-}
-
-const u32 Resources::getspritecount() {
-    return m_sprites.size();
 }
 
 const u32 Resources::gettexturecount() {

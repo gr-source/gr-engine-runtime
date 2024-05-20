@@ -26,7 +26,7 @@ private:
     Shader* m_skyboxShader;
     float distance;
 
-    Texture2D* m_texture;
+    Texture* m_texture;
 
     GLuint count;
 

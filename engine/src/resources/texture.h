@@ -11,9 +11,12 @@ enum TexturePBR {
     Non = 5
 };
 
+struct TextureProperty {
+    u32 m_format;
+};
+
 class Texture {
 public:
-
     enum : u32 {
         /* texture format */
         eNONE        = 1 << 1,
@@ -45,10 +48,15 @@ public:
 
         /* texture type */
         eBYTE      = GL_UNSIGNED_BYTE,
-        eFLOAT     = GL_FLOAT
+        eFLOAT     = GL_FLOAT,
+
+        eTEXTURE2D = GL_TEXTURE_2D,
+        eTEXTURE2D_MULTISAMPLE = GL_TEXTURE_2D_MULTISAMPLE
     };
 
-    Texture(const std::string& path = "deafult");
+    Texture(const Texture&& texture);
+    
+    Texture(const std::string& path = "deafult", u32 textureType = eTEXTURE2D);
 
     Texture(const GLuint& textureID, const std::string& path = "none");
 
@@ -60,7 +68,7 @@ public:
 
     void unbind();
 
-    virtual void apply(void* pixels) {}
+    void apply(void* pixels = nullptr);
 
     void resize(u32 width, u32 height, u32 internalFormat, u32 format, u32 filter, u32 type, bool hasMipmap = false, u32 wrapMode = eREPEAT);
 
@@ -104,5 +112,3 @@ protected:
     friend class Resources;
     friend class Cubemap;
 };
-
-

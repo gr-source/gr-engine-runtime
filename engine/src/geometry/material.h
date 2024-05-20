@@ -2,7 +2,7 @@
 
 #include <string>
 
-#include "../resources/texture2D.h"
+#include "../resources/texture.h"
 
 #include "../Color.h"
 
@@ -21,7 +21,7 @@ struct Material {
 
     float ao;
 
-    Texture2D* texture[MAX_TEXTURE];
+    Texture* texture[MAX_TEXTURE];
 
     Material(const std::string& name = "Material");
     

@@ -17,3 +17,11 @@ const std::string Filesystem::getpublic(u8 type) {
     }
     return std::string();
 }
+
+std::string Filesystem::getfilecontent(const std::string &path) {
+    std::ifstream is(path);
+    if (!is.is_open()) return "";
+    std::string content((std::istreambuf_iterator<char>(is)), std::istreambuf_iterator<char>());
+    is.close();
+    return content;
+}

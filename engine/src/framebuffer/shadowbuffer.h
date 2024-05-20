@@ -12,11 +12,11 @@ public:
 
     void unbind();
 
-    Texture2D* GetTexture();
+    Texture* GetTexture();
 
 protected:
     std::unique_ptr<Framebuffer> m_framebuffer;
-    std::unique_ptr<Texture2D> m_texture;
+    std::unique_ptr<Texture> m_texture;
 
     u32 m_width;
     u32 m_height;

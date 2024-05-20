@@ -6,7 +6,7 @@
 #include "../types.h"
 #include "../common.h"
 
-#include "../resources/texture2D.h"
+#include "../resources/texture.h"
 
 #include "internal/framebuffer.h"
 
@@ -31,11 +31,11 @@ public:
 
     void unbind();
 
-    Texture2D* GetTexture(u32 type);
+    Texture* GetTexture(u32 type);
     
-    std::unique_ptr<Texture2D> m_texture;
+    std::unique_ptr<Texture> m_texture;
 protected:
-    std::array<std::unique_ptr<Texture2D>, 6> m_textures;
+    std::array<std::unique_ptr<Texture>, 6> m_textures;
 
     std::unique_ptr<Framebuffer> m_framebuffer;
     std::unique_ptr<Framebuffer> m_posframebuffer;

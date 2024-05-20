@@ -9,7 +9,6 @@ class GameObject;
 class Skybox;
 
 /* resources */
-class Texture2D;
 class Shader;
 
 class CameraController;

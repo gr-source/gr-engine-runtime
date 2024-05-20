@@ -13,27 +13,27 @@ GBuffer::GBuffer(u32 width, u32 height) : m_width(width), m_height(height), m_fr
 }
 
 void GBuffer::SetupGBuffer() {
-    m_textures[Texture_Position] = std::make_unique<Texture2D>();
+    m_textures[Texture_Position] = std::make_unique<Texture>();
     m_textures[Texture_Position]->resize(m_width, m_height, Texture::eRGBA32F, Texture::eRGBA, Texture::ePOINT, Texture::eFLOAT, false);
     m_textures[Texture_Position]->apply();
 
-    m_textures[Texture_Normal] = std::make_unique<Texture2D>();
+    m_textures[Texture_Normal] = std::make_unique<Texture>();
     m_textures[Texture_Normal]->resize(m_width, m_height, Texture::eRGBA32F, Texture::eRGBA, Texture::ePOINT, Texture::eFLOAT, false);
     m_textures[Texture_Normal]->apply();
 
-    m_textures[Texture_Albedo] = std::make_unique<Texture2D>();
+    m_textures[Texture_Albedo] = std::make_unique<Texture>();
     m_textures[Texture_Albedo]->resize(m_width, m_height, Texture::eRGBA, Texture::eRGBA, Texture::ePOINT, Texture::eBYTE, false);
     m_textures[Texture_Albedo]->apply();
 
-    m_textures[Texture_Roughnness] = std::make_unique<Texture2D>();
+    m_textures[Texture_Roughnness] = std::make_unique<Texture>();
     m_textures[Texture_Roughnness]->resize(m_width, m_height, Texture::eRED, Texture::eRG, Texture::ePOINT, Texture::eBYTE, false);
     m_textures[Texture_Roughnness]->apply();
 
-    m_textures[Texture_Ao] = std::make_unique<Texture2D>();
+    m_textures[Texture_Ao] = std::make_unique<Texture>();
     m_textures[Texture_Ao]->resize(m_width, m_height, Texture::eRED, Texture::eRG, Texture::ePOINT, Texture::eBYTE, false);
     m_textures[Texture_Ao]->apply();
 
-    m_textures[Texture_Metallic] = std::make_unique<Texture2D>();
+    m_textures[Texture_Metallic] = std::make_unique<Texture>();
     m_textures[Texture_Metallic]->resize(m_width, m_height, Texture::eRED, Texture::eRG, Texture::ePOINT, Texture::eBYTE, false);
     m_textures[Texture_Metallic]->apply();
 
@@ -65,6 +65,6 @@ void GBuffer::unbind() {
     m_framebuffer->unbind();
 }
 
-Texture2D *GBuffer::GetTexture(u32 type) {
+Texture *GBuffer::GetTexture(u32 type) {
     return m_textures[type].get();
 }

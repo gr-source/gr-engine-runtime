@@ -32,7 +32,7 @@ ScreenRender::ScreenRender() : m_shader(Resources::Load<Shader>(Filesystem::getp
     bufferManager->unbind();
 }
 
-void ScreenRender::render(Texture2D* texture) {
+void ScreenRender::render(Texture* texture) {
     if (!texture->isvalid() || !m_shader->isvalid()) return;
 
     m_shader->bind();

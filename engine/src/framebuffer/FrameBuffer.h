@@ -7,7 +7,7 @@
 #include <gr-math/gmath.h>
 #include <GL/glew.h>
 
-#include "../resources/texture2D.h"
+#include "../resources/texture.h"
 #include "../resources/cubemap.h"
 
 #include "../types.h"

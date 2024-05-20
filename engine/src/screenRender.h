@@ -6,7 +6,7 @@ class ScreenRender {
 public:
     ScreenRender();
 
-    void render(Texture2D* texture);
+    void render(Texture* texture);
 
 protected:
     std::unique_ptr<BufferManager> bufferManager;

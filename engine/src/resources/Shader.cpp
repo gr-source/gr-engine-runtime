@@ -11,62 +11,23 @@
 
 Shader::Shader(const std::string& path) : path(path), programID(-1) {}
 
-Shader::Shader(const std::string& vertexFile, const std::string& fragmentFile) : programID(-1) {
-    loadFromFile(vertexFile, eVERTEX);
-    loadFromFile(fragmentFile, eFRAGMENT);
-}
-
-void Shader::loadSource(const std::string& data, u8 type) {
+void Shader::loadsource(const char** data, u32 count, u8 type) {
     CHECK_PROGMA
     switch (type) {
     case eFRAGMENT: {
-        createShader(data.c_str(), GL_FRAGMENT_SHADER);
+        createshader(data, count, GL_FRAGMENT_SHADER);
         break;
     }
     case eVERTEX: {
-        createShader(data.c_str(), GL_VERTEX_SHADER);
+        createshader(data, count, GL_VERTEX_SHADER);
         break;
     }
     case eGEOMETRY: {
-        createShader(data.c_str(), GL_GEOMETRY_SHADER);
+        createshader(data, count, GL_GEOMETRY_SHADER);
         break;
     }
     default:
         assert(false && "Error type do not loadede!");
-    }
-}
-
-void Shader::loadFromFile(const std::string& path, u8 type) {
-    CHECK_PROGMA
-    
-    std::ifstream is(path);
-    if (!is.is_open()) {
-        std::cerr << "Shader do not openned(" << (type == eFRAGMENT ? "frag)" : "vert)") << std::endl;
-        return;
-    }
-
-    std::string data((std::istreambuf_iterator<char>(is)), std::istreambuf_iterator<char>());
-
-    const char* content = data.c_str();
-
-    is.close();
-
-    switch (type) {
-    case eFRAGMENT: {
-        createShader(content, GL_FRAGMENT_SHADER);
-        break;
-    }
-    case eVERTEX: {
-        createShader(content, GL_VERTEX_SHADER);
-        break;
-    }
-    case eGEOMETRY: {
-        createShader(content, GL_GEOMETRY_SHADER);
-        break;
-    }
-    default:
-        std::cerr << "Error type do not loadede!" << std::endl;
-        break;
     }
 }
 
@@ -166,64 +127,58 @@ const u32 &Shader::getID() const {
     return programID;
 }
 
-std::string Shader::loadFile(const std::string& path) const {
-    std::ifstream file(path);
-    if (!file.is_open()) {
-        return nullptr;
-    }
-    std::string content((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
-    
-    file.close();
-    return content;
-}
-
-void Shader::checkError(GLuint& shader, const std::string& path) {
+void Shader::checkerrors(GLuint& shader, const std::string& path, bool compile) {
     GLint status;
-    GL_CHECK(glGetShaderiv(shader, GL_COMPILE_STATUS, &status));
-    if (status != GL_TRUE) {
-        GLint length;
-        GL_CHECK(glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &length));
+    if (compile) {
+        GL_CHECK(glGetShaderiv(shader, GL_COMPILE_STATUS, &status));
+        if (status != GL_TRUE) {
+            GLint length;
+            GL_CHECK(glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &length));
 
-        GLint type;
-        GL_CHECK(glGetShaderiv(shader, GL_SHADER_TYPE, &type));
+            GLint type;
+            GL_CHECK(glGetShaderiv(shader, GL_SHADER_TYPE, &type));
 
-        std::string logMessage(length, '\0');
+            std::string logMessage(length, '\0');
+            GL_CHECK(glGetShaderInfoLog(shader, logMessage.size(), nullptr, logMessage.data()));
 
-        GL_CHECK(glGetShaderInfoLog(shader, logMessage.size(), nullptr, logMessage.data()));
-
-        std::cout << "Shader error(" << path << ")";
-        switch (type) {
-        case GL_FRAGMENT_SHADER:
-            std::cout << "(GL_FRAGMENT_SHADER):" << std::endl;
-            break;
-        case GL_VERTEX_SHADER:
-            std::cout << "(GL_VERTEX_SHADER):" << std::endl;
-            break;
-        default:
-            break;
+            std::cout << "Failed to compile shader - " << path;
+            switch (type) {
+            case GL_FRAGMENT_SHADER:
+                std::cout << ".frag" << std::endl << std::endl;
+                break;
+            case GL_VERTEX_SHADER:
+                std::cout << ".vert" << std::endl << std::endl;
+                break;
+            default:
+                break;
+            }
+            std::cout << logMessage << std::endl;
         }
+        return;
+    }
+
+    GL_CHECK(glGetProgramiv(shader, GL_LINK_STATUS, &status));
+    if (status != GL_TRUE) {
+        std::string logMessage(512, '\0');
+
+        GL_CHECK(glGetProgramInfoLog(shader, logMessage.size(), nullptr, logMessage.data()));
+        std::cout << "Failed to link shader program - " << path << std::endl << std::endl;
         std::cout << logMessage << std::endl;
     }
 }
 
-void Shader::createShader(const char* data, GLenum type) {
-    /* cria um obejto shader vazio retorna zero caso tenha erros */
+void Shader::createshader(const char** data, u32 count, GLenum type) {
     GLuint shaderID = GL_CHECK(glCreateShader(type));
 
-    /* preenche o objeto vazio */
-    GL_CHECK(glShaderSource(shaderID, 1, &data, nullptr));
-
-    /* compila o objeto */
+    GL_CHECK(glShaderSource(shaderID, count, data, nullptr));
     GL_CHECK(glCompileShader(shaderID));
-    checkError(shaderID, "null");
+    checkerrors(shaderID, std::filesystem::path(path).filename(), true);
 
-    /* anexe o objeto ao programa principal  */
+
     GL_CHECK(glAttachShader(programID, shaderID));
-
-    /* ligue o objeto ao programa */
     GL_CHECK(glLinkProgram(programID));
+    checkerrors(programID, std::filesystem::path(path).filename(), false);
 
-    /* delete o objeto nao sera util pos ja esta no programa do shader */
     GL_CHECK(glDeleteShader(shaderID));
 }
 

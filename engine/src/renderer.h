@@ -14,7 +14,7 @@ struct Line {
 };
 
 struct SpriteRender {
-    Sprite* m_sprite;
+    Texture* m_sprite;
     Matrix4x4 model;
 };
 
@@ -26,7 +26,7 @@ public:
 
     static void addPoint(const Vector3& position, const Color& color);
 
-    static void addSprite(const Vector3& position, Sprite* sprite);
+    static void addSprite(const Vector3& position, Texture*& sprite);
 
     static const bool isvalid();
 

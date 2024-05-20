@@ -1,6 +1,6 @@
 #include "framebuffer.h"
 
-#include "../../resources/texture2D.h"
+#include "../../resources/texture.h"
 
 Framebuffer::Framebuffer() : m_fbo(-1) {
     GL_CHECK(glGenFramebuffers(1, &m_fbo));

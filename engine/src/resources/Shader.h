@@ -35,15 +35,10 @@ public:
     };
 
     Shader(const std::string& path);
-
-    Shader(const std::string& vertexFile, const std::string& fragmentFile);
     ~Shader();
 
     /* carregue a string source: frag | vert | geo */
-    void loadSource(const std::string& data, u8 type);
-
-    /* carregue uma source shader do arguivo: .frag | .vert | .geo */
-    void loadFromFile(const std::string& path, u8 type);
+    void loadsource(const char** data, u32 count, u8 type);
 
     void RegisterUniform(const std::string& name, const u32& count, u8 type);
 
@@ -66,11 +61,9 @@ public:
     const u32& getID() const;
 
 protected:
-    std::string loadFile(const std::string& path) const;
+    void checkerrors(GLuint& shaders, const std::string& path, bool compile);
 
-    void checkError(GLuint& shaders, const std::string& path);
-
-    void createShader(const char* data, GLenum type);
+    void createshader(const char** data, u32 count, GLenum type);
 
     std::string path;
 

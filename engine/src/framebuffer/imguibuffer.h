@@ -20,6 +20,6 @@ public:
 protected:
     std::unique_ptr<Renderbuffer> m_renderbuffer;
     std::unique_ptr<Framebuffer> m_framebuffer;
-    std::unique_ptr<Texture2D> m_texture;
+    std::unique_ptr<Texture> m_texture;
 };
 

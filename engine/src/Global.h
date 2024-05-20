@@ -44,13 +44,12 @@ class Game;
 /* pasta: src/engine */
 class Mesh;
 class Light;
-class Sprite;
 class Shader;
 class Skybox;
 class Terrain;
+class Texture;
 class Material;
 class Animation;
-class Texture2D;
 class GameObject;
 class ScreenBuffer;
 class ScreenRender;

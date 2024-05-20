@@ -14,6 +14,8 @@ public:
     };
 
     static const std::string getpublic(u8 type);
+
+    static std::string getfilecontent(const std::string& path);
 };
 
 

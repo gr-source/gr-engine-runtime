@@ -85,7 +85,7 @@ void DebugDraw::addPoint(const Vector3 &position, const Color &color) {
     m_points.emplace_back(position, color);
 }
 
-void DebugDraw::addSprite(const Vector3 &position, Sprite *sprite) {
+void DebugDraw::addSprite(const Vector3 &position, Texture*& sprite) {
     CameraComponent& m_cameraComponent = CameraComponent::MainCamera();
 
     Quaternion rotate = Math::normalize(Math::lookRotation(Math::normalize(position - m_cameraComponent.getposition()), Vector3::up));
