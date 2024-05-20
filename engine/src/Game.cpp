@@ -385,7 +385,7 @@ void Game::RenderViewportUI() {
 
         Matrix4x4 model = transform.getglobalmatrix();
 
-        if (ImGuizmo::Manipulate(m_cameraComponent.getviewmatrix().data, m_cameraComponent.getperspesctive().data, m_guizmoOperation, m_guizmoManipulate, model.data, nullptr, NULL, NULL, NULL)) {
+        if (ImGuizmo::Manipulate(m_cameraComponent.getviewmatrix().data, m_cameraComponent.getperspesctive().data, m_guizmoOperation, m_guizmoManipulate, model.data)) {
             model.decompose(transform.scale, transform.rotation, transform.position);
         }
     }

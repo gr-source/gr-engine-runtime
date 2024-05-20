@@ -96,8 +96,13 @@ void BatchingManager::OnUpdate() {
         const Vector3& min = meshRender.m_drawcall.m_boundBox.min;
         const Vector3& max = meshRender.m_drawcall.m_boundBox.max;
 
-        if (!m_frustum.IsCubeInFrustumOOBB(min, max, transform.getglobalmatrix().transpose()) /*&& !meshRender.m_occlusion->isvisible(vp, transform.getglobalmatrix())*/) {
+        if (!m_frustum.IsCubeInFrustumOOBB(min, max, transform.getglobalmatrix()) /*&& !meshRender.m_occlusion->isvisible(vp, transform.getglobalmatrix())*/) {
             continue;
+        }
+
+        if (gameObject->hasComponent<Animator>()) {
+            Animator& animator = gameObject->getComponent<Animator>();
+            animator.OnUpdate();
         }
 
         m_objectrender.push_back(gameObject.get());
@@ -114,9 +119,10 @@ void BatchingManager::OnRenderShadow() {
 
     m_shaderShadow->bind();
 
-    m_shaderShadow->setUniform("vp", lights[0]->getprojectionview());
-
-    // RenderModel(m_shaderShadow);
+    for (u32 i=0;i<lights.size();i++) {
+        m_shaderShadow->setUniform("vp", lights[i]->getprojectionview());
+        RenderModel(m_shaderShadow);
+    }
 
     m_shaderShadow->unbind();
 }
@@ -135,10 +141,11 @@ void BatchingManager::OnRender() {
     for (auto& gameObject : m_objectrender) {
         if (!gameObject->hasComponent<MeshRender>()) continue;
 
-        if (gameObject->hasComponent<Animator>()) {
-            Animator& animator = gameObject->getComponent<Animator>();
-            animator.OnUpdate();
+        m_shader->setUniform("isanimation", static_cast<int>(gameObject->hasComponent<Animator>()));
 
+        if (gameObject->hasComponent<Animator>()) {
+
+            Animator& animator = gameObject->getComponent<Animator>();
             m_shader->setUniform("u_boneMatrices", 100, animator.m_FinalBoneMatrices.data());
         }
 
@@ -166,6 +173,13 @@ void BatchingManager::OnRender() {
 void BatchingManager::RenderModel(Shader *shader) {
     for (const auto& gameObject : m_objectrender) {
         if (!gameObject->hasComponent<MeshRender>()) continue;
+
+        shader->setUniform("isanimation", static_cast<int>(gameObject->hasComponent<Animator>()));
+
+        if (gameObject->hasComponent<Animator>()) {
+            Animator& animator = gameObject->getComponent<Animator>();
+            shader->setUniform("u_boneMatrices", 100, animator.m_FinalBoneMatrices.data());
+        }
 
         Transform& transform = gameObject->getComponent<Transform>();
         shader->setUniform("model", transform.getglobalmatrix());
@@ -244,9 +258,7 @@ void BatchingManager::SetupMaterial(const MeshRender &meshRender, Shader *shader
         auto& index = material.first;
 
         shader->setUniform("materials[" + std::to_string(index) + "].albedo",    entry.albedo);
-        shader->setUniform("materials[" + std::to_string(index) + "].roughness", entry.roughness);
-        shader->setUniform("materials[" + std::to_string(index) + "].metallic",  entry.metallic);
-        shader->setUniform("materials[" + std::to_string(index) + "].ao",        entry.ao);
+        shader->setUniform("materials[" + std::to_string(index) + "].params", Vector3(entry.roughness, entry.metallic, entry.ao));
 
         for (int i=0;i<MAX_TEXTURE;i++) {
             if (entry.texture[i] == nullptr || !entry.texture[i]->isvalid()) {
@@ -271,7 +283,6 @@ void BatchingManager::SetupLight(Shader *shader) {
 
     if (lights.empty()) return;
     
-    shader->setUniform("vpLight", lights[0]->getprojectionview());
     for (u32 i=0;i<lights.size();i++) {
         const auto& m_light = lights[i];
 
@@ -284,7 +295,7 @@ void BatchingManager::SetupLight(Shader *shader) {
         shader->setUniform("m_lights[" + std::to_string(i) + "].direction", m_light->getforward());
         shader->setUniform("m_lights[" + std::to_string(i) + "].angleInnerCone", m_light->getinnecone());
         shader->setUniform("m_lights[" + std::to_string(i) + "].angleOuterCone", m_light->getoutercone());
-        // shader->setUniform("m_lights[" + std::to_string(i) + "].vp", projection * m_light->getviewmatrix());
+        shader->setUniform("m_lights[" + std::to_string(i) + "].vp", m_light->getprojectionview());
     }
 }
 
@@ -293,40 +304,37 @@ void BatchingManager::SetupEnableShaderModel(Shader *shader) {
     shader->RegisterUniform("projection", 1, Shader::eMAT4x4);
     shader->RegisterUniform("model", 1, Shader::eMAT4x4);
     shader->RegisterUniform("view", 1, Shader::eMAT4x4);
+    shader->RegisterUniform("gEye", 1, Shader::eVECTOR3);
 
     /* light */
-    // shader->RegisterUniform("m_lightcount", 1, Shader::eINT);
-    // shader->RegisterUniform("vpLight", 1, Shader::eMAT4x4);
+    shader->RegisterUniform("m_lightcount", 1, Shader::eINT);
 
-    // for (u32 i=0;i<10;i++) {
-    //     shader->RegisterUniform("m_lights[" + std::to_string(i) + "].position", 1, Shader::eVECTOR3);
-    //     shader->RegisterUniform("m_lights[" + std::to_string(i) + "].color", 1, Shader::eVECTOR4);
-    //     shader->RegisterUniform("m_lights[" + std::to_string(i) + "].attenuationConstant", 1, Shader::eFLOAT);
-    //     shader->RegisterUniform("m_lights[" + std::to_string(i) + "].attenuationLinear", 1, Shader::eFLOAT);
-    //     shader->RegisterUniform("m_lights[" + std::to_string(i) + "].attenuationQuadratic", 1, Shader::eFLOAT);
-    //     shader->RegisterUniform("m_lights[" + std::to_string(i) + "].type", 1, Shader::eFLOAT);
-    //     shader->RegisterUniform("m_lights[" + std::to_string(i) + "].direction", 1, Shader::eFLOAT);
-    //     shader->RegisterUniform("m_lights[" + std::to_string(i) + "].angleInnerCone", 1, Shader::eFLOAT);
-    //     shader->RegisterUniform("m_lights[" + std::to_string(i) + "].angleOuterCone", 1, Shader::eFLOAT);
-    // }
-    /*
-    uniform LightComponent m_lights[MAX_LIGHT];
-    uniform Material materials[MAX_MATERIAL];
+    for (u32 i=0;i<10;i++) {
+        shader->RegisterUniform("m_lights[" + std::to_string(i) + "].position", 1, Shader::eVECTOR3);
+        shader->RegisterUniform("m_lights[" + std::to_string(i) + "].color", 1, Shader::eVECTOR4);
+        shader->RegisterUniform("m_lights[" + std::to_string(i) + "].attenuationConstant", 1, Shader::eFLOAT);
+        shader->RegisterUniform("m_lights[" + std::to_string(i) + "].attenuationLinear", 1, Shader::eFLOAT);
+        shader->RegisterUniform("m_lights[" + std::to_string(i) + "].attenuationQuadratic", 1, Shader::eFLOAT);
+        shader->RegisterUniform("m_lights[" + std::to_string(i) + "].type", 1, Shader::eFLOAT);
+        shader->RegisterUniform("m_lights[" + std::to_string(i) + "].direction", 1, Shader::eFLOAT);
+        shader->RegisterUniform("m_lights[" + std::to_string(i) + "].angleInnerCone", 1, Shader::eFLOAT);
+        shader->RegisterUniform("m_lights[" + std::to_string(i) + "].angleOuterCone", 1, Shader::eFLOAT);
+        shader->RegisterUniform("m_lights[" + std::to_string(i) + "].vp", 1, Shader::eMAT4x4);
+    }
 
-    uniform sampler2D textures[MAX_TEXTURE];
-    uniform sampler2D gShadow;
+    /* material */
+    for (u32 i=0;i<50;i++) {
+        shader->RegisterUniform("materials[" + std::to_string(i) + "].albedo", 1, Shader::eVECTOR3);
+        shader->RegisterUniform("materials[" + std::to_string(i) + "].params", 1, Shader::eVECTOR3);
 
-    uniform bool isactive[MAX_TEXTURE];
-
-    uniform int m_lightcount;
-
-    uniform vec3 gEye;
-    */
-    // shader->RegisterUniform("m_lights", 100, Shader::eMAT4x4);
-    // shader->RegisterUniform("materials", 50, Shader::eMAT4x4);
-
-    // shader->RegisterUniform("textures", 10, Shader::eMAT4x4);
-    // shader->RegisterUniform("textures", 10, Shader::eMAT4x4);
+        for (u32 j=0;j<MAX_TEXTURE;j++) {
+            shader->RegisterUniform("isactive["+ std::to_string(j) + "]", static_cast<int>(false), Shader::eINT);
+            shader->RegisterUniform("textures["+ std::to_string(j) + "]", 1, Shader::eINT);
+            shader->RegisterUniform("isactive["+ std::to_string(j) + "]", static_cast<int>(true), Shader::eINT);
+        }
+    }
+    shader->RegisterUniform("gShadow", 1, Shader::eINT);
+    shader->RegisterUniform("isanimation", 1, Shader::eINT);
 }
 
 void BatchingManager::SetupEnableShaderLight(Shader *shader) {
@@ -344,4 +352,7 @@ void BatchingManager::SetupEnableShaderLight(Shader *shader) {
 void BatchingManager::SetupEnableShaderShadow(Shader *shader) {
     shader->RegisterUniform("model", 1, Shader::eMAT4x4);
     shader->RegisterUniform("vp", 1, Shader::eMAT4x4);
+
+    shader->RegisterUniform("u_boneMatrices", 100, Shader::eMAT4x4);
+    shader->RegisterUniform("isanimation", 1, Shader::eINT);
 }

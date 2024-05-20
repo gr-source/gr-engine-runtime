@@ -1,6 +1,6 @@
 name: default
 object MainCamera
-object Plane
-object Sun
-object Spot
-object Cylinder
+object Armature
+object Beta_Joints
+object Beta_Surface
+object Cube

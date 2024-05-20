@@ -11,36 +11,40 @@ layout (location = 7) in vec4 in_weights;
 
 #define MAX_BONES 100
 
+uniform mat4 u_boneMatrices[MAX_BONES];
 uniform mat4 projection;
 uniform mat4 view;
 uniform mat4 model;
 uniform mat4 vpLight;
+uniform bool isanimation;
 
 out vec3 m_normal;
 out vec3 m_fragPos;
 out vec2 m_textCoord;
-out vec4 m_fragPosLight;
 
 flat out int m_materialIndex;
-
-uniform mat4 u_boneMatrices[MAX_BONES];
 
 void main() {
     vec3 SkinVertex = vec3(0.0);
     vec3 SkinNormal = vec3(0.0);
     
-    for (int i = 0; i < 4; ++i) {
-        if (in_indices[i] >= MAX_BONES) {
-            SkinVertex = in_pos;
-            break;
+    if (isanimation) {
+        for (int i = 0; i < 4; ++i) {
+            if (in_indices[i] >= MAX_BONES) {
+                SkinVertex = in_pos;
+                break;
+            }
+            if (in_indices[i] == -1) {
+                continue;
+            }
+            SkinVertex += (u_boneMatrices[in_indices[i]] * vec4(in_pos, 1.0)).xyz * in_weights[i];
+            SkinNormal += (mat3(u_boneMatrices[in_indices[i]]) * in_normal) * in_weights[i];
         }
-        if (in_indices[i] == -1) {
-            continue;
-        }
-        SkinVertex += (u_boneMatrices[in_indices[i]] * vec4(in_pos, 1.0)).xyz * in_weights[i];
-        SkinNormal += (mat3(u_boneMatrices[in_indices[i]]) * in_normal) * in_weights[i];
+    } else {
+        SkinVertex = in_pos;
+        SkinNormal = in_normal;
     }
-    
+
     vec4 worldPos = model * vec4(SkinVertex, 1.0);//* vec4(in_pos, 1.0);
 
     // mat4 normalMatrix = transpose(inverse(model));
@@ -57,8 +61,6 @@ void main() {
     m_textCoord = aTextCoord;
 
     m_materialIndex = materialID;
-
-    m_fragPosLight = vpLight * worldPos;
 
     gl_Position = projection * view * worldPos;
 }

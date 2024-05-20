@@ -21,15 +21,12 @@ out vec4 FragColor;
 in vec3 m_normal;
 in vec3 m_fragPos;
 in vec2 m_textCoord;
-in vec4 m_fragPosLight;
 
 flat in int m_materialIndex;
 
 struct Material {
     vec4 albedo;
-    float roughness;
-    float metallic;
-    float ao;
+    vec3 params; // roughness, metallic, ao
 };
 
 struct LightComponent {
@@ -64,10 +61,10 @@ vec3 getNormalMap(sampler2D normalMap, vec2 textCoord, vec3 fragPos, vec3 normal
 vec3 BaseColor(vec3 fragPos, vec3 albedo, float roughness, float metallic, float ao, vec3 normal);
 
 void main() {
-    // vec3 albedo     = materials[m_materialIndex].albedo.xyz;
-    /*float roughness = materials[m_materialIndex].roughness;
-    float metallic  = materials[m_materialIndex].metallic;
-    float ao        = materials[m_materialIndex].ao;
+    vec3 albedo     = materials[m_materialIndex].albedo.xyz;
+    float roughness = materials[m_materialIndex].params.x;
+    float metallic  = materials[m_materialIndex].params.y;
+    float ao        = materials[m_materialIndex].params.z;
 
     vec3 normal     = m_normal;
 
@@ -90,9 +87,9 @@ void main() {
 
     if (isactive[TEXTURE_AO]) {
         ao = texture(textures[TEXTURE_AO], m_textCoord).r;
-    }*/
+    }
 
-    vec3 color = vec3(0.8);//BaseColor(m_fragPos, albedo, roughness, metallic, ao, normal);
+    vec3 color = BaseColor(m_fragPos, albedo, roughness, metallic, ao, normal);
 
     color = color / (color + vec3(1.0));
     color = pow(color, vec3(1.0 / 2.2)); 
@@ -237,7 +234,7 @@ float getShadow(vec4 fragPosLightSpace) {
     for (int x = -1; x <= 1; ++x) {
         for (int y = -1; y <= 1; ++y) {
             float pcfDepth = texture(gShadow, projCoords.xy + vec2(x, y) * texelSize).r;
-            shadow += currentDepth > pcfDepth  ? 1.0 : 0.0; // Alterado de 0.0f para 0.001
+            shadow += currentDepth > pcfDepth  ? 1.0 : 0.0;
         }    
     }
     shadow /= 9.0;
@@ -254,7 +251,7 @@ vec3 CreateDirectLight(LightComponent light, vec3 V, vec3 N, vec3 F0, vec3 albed
     vec3 R = reflect(-V, N);
 
     // Calcula o fator de sombreamento
-    float shadow = getShadow(m_fragPosLight);
+    float shadow = getShadow(light.vp * vec4(m_fragPos, 1.0));
 
     // Calcula os produtos de ponto entre vetores
     float NdotL = max(0.0, dot(N, L));
@@ -279,9 +276,10 @@ vec3 CreateDirectLight(LightComponent light, vec3 V, vec3 N, vec3 F0, vec3 albed
     
     // Atenuação do metal
     kD *= 1.0 - metallic;
+    kD *= 1.0 - shadow;
 
     // Aplica o fator de sombreamento
-    return (kD * albedo / PI + specular * (1.0 - shadow)) * light.color.xyz * (1.0 - shadow) * NdotL;
+    return (kD * albedo / PI + specular) * light.color.xyz * (1.0 - shadow) * NdotL;
 }
 
 vec3 BaseColor(vec3 fragPos, vec3 albedo, float roughness, float metallic, float ao, vec3 normal) {

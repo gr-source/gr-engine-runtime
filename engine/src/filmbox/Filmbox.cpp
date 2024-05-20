@@ -353,7 +353,7 @@ void Filmbox::loadMaterials(const aiScene *scene) {
         }
 
         if (AI_SUCCESS == pMaterial->Get(AI_MATKEY_SHININESS, value)) {
-            material.roughness = value;
+            material.roughness = NORM(value);
         }
 
         // if (AI_SUCCESS == pMaterial->Get(AI_MATKEY_COLOR_AMBIENT, value)) {

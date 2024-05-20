@@ -1,7 +1,7 @@
 #include "animator.h"
-/*
-#include "MeshRender.h"
+
 #include "Transform.h"
+/*#include "MeshRender.h"
 
 #include "../animation/animation.h"
 
@@ -47,8 +47,6 @@ void Animator::CalculateBoneTransform(Bone& bone, const Matrix4x4& parentTransfo
             Matrix4x4 offset = bone.getlocalmatrix();
             m_FinalBoneMatrices[bone.id] = result * offset;
         }
-    } else {
-        result = Matrix4x4::identityMatrix;
     }
 
     for (auto& child : bone.getchildren()) {

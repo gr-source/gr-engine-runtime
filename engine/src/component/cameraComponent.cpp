@@ -43,8 +43,7 @@ const Matrix4x4 CameraComponent::getviewmatrix() const {
 }
 
 const Matrix4x4 CameraComponent::getperspesctive() const {
-    if (m_projection == Projection::erthographic)
-        return Math::orthographic(-35.0f, 35.0f, -35.0f, 35.0f, 0.1f, 75.0f);
+    // return Math::orthographic(-10.0f, 10.0f, -10.0f, 10.0f, 1.0f, 7.5f);
     return Math::perspective(Math::rad(m_fov), m_aspect, m_farPlane, m_nearPlane);
 }
 
