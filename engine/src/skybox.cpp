@@ -15,7 +15,13 @@ Skybox &Skybox::getInstance() {
     return m_skybox;
 }
 
-Skybox::Skybox() : play(false), currentTime(0.0f), distance(400.0f), m_backgroundShader(Resources::Load<Shader>(Filesystem::getpublic(Filesystem::eShader) + "/Background")), m_skyboxbuffer(std::make_unique<Skyboxbuffer>(512, 512)), m_skyboxShader(nullptr) {
+void SetupBackgroundShader(Shader* shader) {
+    shader->RegisterUniform("projection", 1, Shader::eMAT4x4);
+    shader->RegisterUniform("view", 1, Shader::eMAT4x4);
+    shader->RegisterUniform("environmentMap", 1, Shader::eINT);
+}
+
+Skybox::Skybox() : play(false), currentTime(0.0f), distance(400.0f), m_backgroundShader(Resources::Load<Shader>(Filesystem::getpublic(Filesystem::eShader) + "/Background", SetupBackgroundShader)), m_skyboxbuffer(std::make_unique<Skyboxbuffer>(512, 512)), m_skyboxShader(nullptr) {
      captureProjection = Math::perspective(Math::rad(90.0f), 1.0f, 0.1f, 10.0f);
      
      captureViews = {
@@ -68,12 +74,33 @@ Skybox::Skybox() : play(false), currentTime(0.0f), distance(400.0f), m_backgroun
     bufferManager->attribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vector3));
     bufferManager->unbind();
 
-    m_texture = Resources::Load("/home/grsource/Downloads/lonely_road_afternoon_puresky_1k.hdr", std::bind(&Skybox::prepareShader, this), Texture::eSRBG, Texture::eRGB, Texture::eNONE, Texture::eBILINEAR, false);
+    /*m_texture = Resources::Load("/home/grsource/Downloads/lonely_road_afternoon_puresky_1k.hdr", [&](Texture* textulre) {
+        m_skyboxShader = Resources::Load<Shader>(Filesystem::getpublic(Filesystem::eShader) + "/Skybox", [&](Shader* shader) {
+            shader->RegisterUniform("projection", 1, Shader::eMAT4x4);
+            shader->RegisterUniform("view", 1, Shader::eMAT4x4);
+            shader->RegisterUniform("environmentMap", 1, Shader::eINT);
+
+            GenerateMap([&](u32 i) {
+                m_skyboxbuffer->addSkyColor(Cubemap::ePOSITIVE_X + i, Framebuffer::eCOLOR_ATTACHMENT0);
+            }, textulre);
+
+            m_skyboxShader = Resources::Load<Shader>(Filesystem::getpublic(Filesystem::eShader) + "/Irradiance", [&](Shader* shader) {
+                shader->RegisterUniform("projection", 1, Shader::eMAT4x4);
+                shader->RegisterUniform("view", 1, Shader::eMAT4x4);
+                shader->RegisterUniform("environmentMap", 1, Shader::eINT);
+
+                GenerateMap([&](u32 i) {
+                    m_skyboxbuffer->addIrradiance(Cubemap::ePOSITIVE_X + i, Framebuffer::eCOLOR_ATTACHMENT0);
+                }, m_skyboxbuffer->getSkyColor());
+            });
+        });
+    }, Texture::eSRBG, Texture::eRGB, Texture::eNONE, Texture::eBILINEAR, false);
+    */
 }
 
 void Skybox::update() {}
 
-void Skybox::render() {
+void Skybox::render() { return;
     if (m_backgroundShader->isvalid()) {
         m_backgroundShader->bind();
 
@@ -103,25 +130,17 @@ Cubemap *Skybox::getIrradiance() {
 }
 
 void Skybox::prepareShader() {
-    m_skyboxShader = Resources::Load<Shader>(Filesystem::getpublic(Filesystem::eShader) + "/Skybox", std::bind(&Skybox::setupSkybox, this));
+    
 }
 
-void Skybox::setupSkybox() {
-    GenerateMap([&](u32 i) {
-        m_skyboxbuffer->addSkyColor(Cubemap::ePOSITIVE_X + i, Framebuffer::eCOLOR_ATTACHMENT0);
-    }, m_texture);
-
-    m_skyboxShader = Resources::Load<Shader>(Filesystem::getpublic(Filesystem::eShader) + "/Irradiance", [&](Shader* shader) {
-        GenerateMap([&](u32 i) {
-            m_skyboxbuffer->addIrradiance(Cubemap::ePOSITIVE_X + i, Framebuffer::eCOLOR_ATTACHMENT0);
-        }, m_skyboxbuffer->getSkyColor());
-    });
+void Skybox::setupSkybox(Shader* shader) {
+    
 }
 
 void Skybox::GenerateMap(std::function<void(u32)> func, Texture* texture) {
     m_skyboxShader->bind();
 
-    texture->bind(GL_TEXTURE0);
+    texture->bind();
     m_skyboxShader->setUniform("environmentMap", 0);
 
     m_skyboxShader->setUniform("projection", captureProjection);

@@ -111,9 +111,8 @@ void Resources::Initialize() {
     // stbi_set_flip_vertically_on_load(true);
 }
 
-
 Texture2D *Resources::Load(const std::string& path, const std::function<void(Texture2D*)>& callback, u32 internalFormat, u32 format, u32 type, u32 filter, bool hasMipmap) {
-    /*if (!std::filesystem::exists(path)) {
+    if (!std::filesystem::exists(path)) {
         ERROR("[ Texture2D ] file not found (" + path + ")");
         return nullptr;
     }
@@ -135,7 +134,7 @@ Texture2D *Resources::Load(const std::string& path, const std::function<void(Tex
     {
         std::lock_guard<std::mutex> lock(m_textureMutex);
         m_textureLoader.emplace_back(m_texture, callback);
-    }*/
+    }
 
     return nullptr;
 }
@@ -173,7 +172,7 @@ void Resources::setup_sprite(ProcessLoader<Sprite>& process, const int width, co
     process.data->resize(width, height, Resources::getTextureType(channel), Resources::getTextureType(channel), Texture::eBILINEAR, Texture::eBYTE, false);
     process.data->apply(data);
 
-    m_sprites[process.data->getpath()] = std::unique_ptr<Sprite>(process.data);
+    m_sprites[process.data->getpath()] = std::unique_ptr<Sprite>(std::move(process.data));
 
     --m_processCount;
 
@@ -233,7 +232,7 @@ void Resources::setup_texture(ProcessLoader<Texture2D>& process, const int width
     process.data->resize(width, height, internalFormat, format, Texture::eTRILINEAR, type, true);
     process.data->apply(data);
 
-    m_textures[process.data->getpath()] = std::unique_ptr<Texture2D>(process.data);
+    m_textures[process.data->getpath()] = std::unique_ptr<Texture2D>(std::move(process.data));
 
     --m_processCount;
 
@@ -264,7 +263,7 @@ void Resources::LoadTexture() {
             
             m_textureLoader.pop_front();
 
-            return;
+            continue;
         }
 
         EventManager::addEvent(setup_texture, process, width, height, channel, data);
@@ -280,16 +279,6 @@ void Resources::LoadTexture() {
             m_textureLoader.pop_front();
         }
         
-    }
-}
-
-template <>
-void Resources::Remove(Texture2D* resouce) {
-    auto m_texture = m_textures.find(resouce->getpath());
-    if (m_texture != m_textures.end()) {
-        m_textures.erase(m_texture);
-    } else {
-        std::cout << "[ Resources::Remove ] textura nao encontrada" << std::endl;
     }
 }
 

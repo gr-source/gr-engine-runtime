@@ -2,25 +2,29 @@
 
 #include "types.h"
 
-class memory {
+class Memory {
 public:
-    static size totalMemoryUsage;
+    static std::size_t totalMemoryUsage;
 
-    static void* malloc(const size& sz);
+    static void* malloc(std::size_t size);
+
+    static void* realloc(void *ptr, std::size_t size);
 
     static void free(void* ptr) noexcept;
 
 private:
     
     struct MemoryBlock {
-        size sz;
-        u32 hint;
+        std::size_t sz;
         void *origPtr;
-        const char *codeline;
-        //LLLink inAllocList;
     };
 };
 
-void *operator new(size sz);
+void *operator new(std::size_t size);
+
+void *operator new[](std::size_t size);
 
 void operator delete(void* ptr) noexcept;
+
+void operator delete[](void* ptr) noexcept;
+

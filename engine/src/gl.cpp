@@ -25,7 +25,8 @@ void check_for_opengl_errors(const std::string& functionName) {
     std::stringstream ss;
     while ((err = glGetError()) != GL_NO_ERROR) {
         numErrors++;
-        ss << "========== " << functionName << "==========" << std::endl;
+        ss << std::endl;
+        ss << "========== " << functionName << " ==========" << std::endl;
         ss << "[ " << numErrors << " ] " << get_enum_name(err) << std::endl;
         throw std::runtime_error(Log::red + ss.str() + Log::none);
     }

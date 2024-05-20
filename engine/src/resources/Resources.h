@@ -35,9 +35,6 @@ public:
 
     static Texture2D* Load(const std::string& path, const std::function<void(Texture2D*)>& callback, u32 internalFormat, u32 format, u32 type, u32 filter, bool hasMipmap);
 
-    template <typename T>
-    static void Remove(T* resouce);
-
     static u32 getTextureType(int ch);
 
     static GLenum getTextureTypeSRGB(int ch);

@@ -47,7 +47,7 @@
 
 #include <sstream>
 
-const std::string getfilesize(size sz) {
+const std::string getfilesize(std::size_t sz) {
     float kb = sz / 1024.0f;
     float mb = kb / 1024.0f;
     float gb = mb / 1024.0f;
@@ -577,7 +577,7 @@ void Game::RenderPropertiUI() {
         if (ImGui::BeginTabItem("Statisticas", nullptr)) {
             ImGui::SeparatorText("Scripts");
             ImGui::Text("Entidades: %d", EntityManager::getcount());
-            ImGui::Text("Memoria: %s", getfilesize(memory::totalMemoryUsage).c_str());
+            ImGui::Text("Memoria: %s", getfilesize(Memory::totalMemoryUsage).c_str());
 
             ImGui::SeparatorText("Cena");
             ImGui::Text("Vertices: %d | %s", gameStatics.vertices, getfilesize(gameStatics.vertices).c_str());

@@ -676,10 +676,12 @@ typedef unsigned char validate_uint32[sizeof(stbi__uint32)==4 ? 1 : -1];
 #error "Must define all or none of STBI_MALLOC, STBI_FREE, and STBI_REALLOC (or STBI_REALLOC_SIZED)."
 #endif
 
+#include "../../memory.h"
+
 #ifndef STBI_MALLOC
-#define STBI_MALLOC(sz)           malloc(sz)
-#define STBI_REALLOC(p,newsz)     realloc(p,newsz)
-#define STBI_FREE(p)              free(p)
+#define STBI_MALLOC(sz)           Memory::malloc(sz)
+#define STBI_REALLOC(p,newsz)     Memory::realloc(p,newsz)
+#define STBI_FREE(p)              Memory::free(p)
 #endif
 
 #ifndef STBI_REALLOC_SIZED

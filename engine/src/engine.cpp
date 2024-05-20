@@ -177,8 +177,6 @@ void engine::MainFramebuffer() {
     // Preparação ara renderização.
     BatchingManager::OnUpdate();
 
-    glCullFace(GL_FRONT);
-
     // Preparação do shadow
     m_shadowbuffer->bind();
     GRender(GRENDERERDEPTH);
@@ -188,8 +186,6 @@ void engine::MainFramebuffer() {
     BatchingManager::OnRenderShadow();
 
     m_shadowbuffer->unbind();
-
-    glCullFace(GL_BACK);
 
     // aplicação do anti-alising mass4.
     pScreenBuffer->bind();

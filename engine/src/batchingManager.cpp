@@ -111,11 +111,8 @@ void BatchingManager::OnUpdate() {
 }
 
 void BatchingManager::OnRenderShadow() {
-    if (!m_shaderShadow->isvalid()) return;
-
     auto& lights = LightComponent::m_lights;
-
-    if (lights.empty()) return;
+    if (!m_shaderShadow->isvalid() || lights.empty()) return;
 
     m_shaderShadow->bind();
 
@@ -174,9 +171,11 @@ void BatchingManager::RenderModel(Shader *shader) {
     for (const auto& gameObject : m_objectrender) {
         if (!gameObject->hasComponent<MeshRender>()) continue;
 
-        shader->setUniform("isanimation", static_cast<int>(gameObject->hasComponent<Animator>()));
+        const bool hasAnimation = gameObject->hasComponent<Animator>();
 
-        if (gameObject->hasComponent<Animator>()) {
+        shader->setUniform("isanimation", static_cast<int>(hasAnimation));
+
+        if (hasAnimation) {
             Animator& animator = gameObject->getComponent<Animator>();
             shader->setUniform("u_boneMatrices", 100, animator.m_FinalBoneMatrices.data());
         }
@@ -344,7 +343,7 @@ void BatchingManager::SetupEnableShaderLight(Shader *shader) {
     shader->RegisterUniform("gRoughness", 1, Shader::eINT);
     shader->RegisterUniform("gAo", 1, Shader::eINT);
     shader->RegisterUniform("gMetallic", 1, Shader::eINT);
-    shader->RegisterUniform("gShadow", 1, Shader::eINT);
+    // shader->RegisterUniform("gShadow", 1, Shader::eINT);
 
     shader->RegisterUniform("gEye", 1, Shader::eVECTOR3);
 }

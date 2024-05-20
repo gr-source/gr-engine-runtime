@@ -39,9 +39,7 @@ private:
 
     void prepareShader();
 
-    void setupSkybox();
-
-    void setupIrradiance();
+    void setupSkybox(Shader* shader);
 
     void GenerateMap(std::function<void(u32)> func, Texture* texture);
 };
