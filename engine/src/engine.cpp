@@ -101,9 +101,6 @@ Imguibuffer* pImguibuffer = nullptr;
 
 GBuffer* m_gbuffer = nullptr;
 
-Time tickMain;
-Time tickRender;
-
 void engine::OnInit() {
     pImGuiRender = std::make_unique<ImGuiRender>("#version 330 core");
 
@@ -130,16 +127,13 @@ void engine::OnInit() {
     #endif
 }
 
+Time timer_update(60.0f);
 void engine::OnUpdate() {
-    tickMain.tick();
-
-    Time::deltaTime = gameStatics.updateMs = tickMain.start();
+    Time::deltaTime = gameStatics.updateMs = timer_update.SleepTick();
 
     EntityManager::OnUpdate();
 
     m_game->Update();
-
-    tickMain.end();
 }
 
 void engine::OnRender() {
@@ -154,31 +148,29 @@ void engine::OnRender() {
 
 void engine::OnPhysics() {
     PhysicsScene&  pPhysicsScene  = PhysicsScene::getInstance();
-    Time tickphysics;
+    Time timer(60.0f);
 
     do {
-        tickphysics.tick();
-
-        gameStatics.physicsMs = tickphysics.start();
+        gameStatics.physicsMs = timer.SleepTick();
 
         if (Settings::IsGameRunning)
             pPhysicsScene.Simulate(gameStatics.physicsMs);
-        tickphysics.end();
     } while (Settings::IsEngineRunning);
 }
 
-Time tickloader(20.0f);
 void engine::OnLoader() {
     Resources::Initialize();
+    Time timer(5.0f);
     
     do {
-        tickloader.tick();
+        timer.SleepTick();
         Resources::OnThread();
     } while (Settings::IsEngineRunning);
 }
 
 void engine::OnDestroy() {}
 
+Time tickRender;
 void engine::MainFramebuffer() {
     gameStatics.renderMs = tickRender.start();
 

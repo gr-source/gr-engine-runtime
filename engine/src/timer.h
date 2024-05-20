@@ -8,18 +8,16 @@ class Time {
 public:
     static float deltaTime;
 
-    Time(float fps = 60.0f);
+    Time(float maxFPS = 60.0f);
 
-    float start() const;
+    float SleepTick();
+
+    float start();
 
     void end();
 
-    void tick();
-
-    float dt;
-
 protected:
-    std::chrono::_V2::steady_clock::time_point lastTime;
-    std::chrono::_V2::steady_clock::time_point endTime;
-    const std::chrono::duration<float> targetFPS;
+    std::chrono::system_clock::time_point a;
+    std::chrono::system_clock::time_point b;
+    double m_targetFrameTime;
 };
