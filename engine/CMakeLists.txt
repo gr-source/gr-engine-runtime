@@ -53,10 +53,10 @@ set(engine_src
     src/framebuffer/internal/framebuffer.cpp
     src/framebuffer/internal/renderbuffer.cpp
     
-    src/resources/Shader.cpp
+    src/resources/shader.cpp
     src/resources/cubemap.cpp
     src/resources/texture.cpp
-    src/resources/Resources.cpp
+    src/resources/resources.cpp
     
     src/animation/bone.cpp
     src/animation/keyframe.cpp
@@ -137,10 +137,10 @@ set(engine_hdr
     src/framebuffer/internal/framebuffer.h
     src/framebuffer/internal/renderbuffer.h
 
-    src/resources/Shader.h
+    src/resources/shader.h
     src/resources/cubemap.h
     src/resources/texture.h
-    src/resources/Resources.h
+    src/resources/resources.h
 
     src/animation/bone.h
     src/animation/keyframe.h

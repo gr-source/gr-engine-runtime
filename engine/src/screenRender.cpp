@@ -4,7 +4,7 @@
 
 #include "geometry/vertex2D.h"
 
-#include "resources/Resources.h"
+#include "resources/resources.h"
 
 void EnableShader(Shader* shader) {
     shader->RegisterUniform("screenTexture", 1, Shader::eINT);

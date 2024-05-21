@@ -54,8 +54,6 @@ public:
         eTEXTURE2D_MULTISAMPLE = GL_TEXTURE_2D_MULTISAMPLE
     };
 
-    Texture(const Texture&& texture);
-    
     Texture(const std::string& path = "deafult", u32 textureType = eTEXTURE2D);
 
     Texture(const GLuint& textureID, const std::string& path = "none");

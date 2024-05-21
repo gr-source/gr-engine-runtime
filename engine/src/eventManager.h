@@ -10,8 +10,8 @@
 class EventManager {
 public:
     
-    template <typename Callable, typename ...Args>
-    static void addEvent(Callable&& callback, Args&&... args);
+    template <typename ...Args>
+    static void addEvent(Args&&... args);
 
     static void ProcessEvent();
 
@@ -21,9 +21,9 @@ protected:
     static std::mutex m_mutex;
 };
 
-template <typename Callable, typename... Args>
-inline void EventManager::addEvent(Callable&& callback, Args&&... args) {
+template <typename... Args>
+inline void EventManager::addEvent(Args&&... args) {
     std::lock_guard<std::mutex> lock(m_mutex);
-    m_events.emplace_back(std::bind(std::forward<Callable>(callback), std::forward<Args>(args)...));
+    m_events.emplace_back(std::bind(std::forward<Args>(args)...));
 }
 

@@ -6,7 +6,7 @@
 #include "../bufferManager.h"
 #include "../screen.h"
 
-#include "../resources/Resources.h"
+#include "../resources/resources.h"
 
 #include "../ecs/Entity.h"
 

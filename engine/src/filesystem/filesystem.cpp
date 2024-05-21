@@ -25,3 +25,7 @@ std::string Filesystem::getfilecontent(const std::string &path) {
     is.close();
     return content;
 }
+
+const bool Filesystem::exists(const std::string &path) {
+    return std::filesystem::exists(path);
+}

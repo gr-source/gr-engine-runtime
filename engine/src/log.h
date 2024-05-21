@@ -17,6 +17,10 @@ public:
     static const std::string none;
     static const std::string green;
     static const std::string orange;
+
+    static std::ostream& error;
+
+    static const std::string end;
 };
 
 #define INFO(msg) Log::Write(LogType::eINFO, msg)

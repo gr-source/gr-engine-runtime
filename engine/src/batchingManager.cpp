@@ -9,7 +9,7 @@
 #include "component/Transform.h"
 #include "component/animator.h"
 
-#include "resources/Resources.h"
+#include "resources/resources.h"
 
 #include "framebuffer/shadowbuffer.h"
 #include "framebuffer/skyboxbuffer.h"
@@ -326,7 +326,7 @@ void BatchingManager::SetupEnableShaderModel(Shader *shader) {
         shader->RegisterUniform("materials[" + std::to_string(i) + "].albedo", 1, Shader::eVECTOR3);
         shader->RegisterUniform("materials[" + std::to_string(i) + "].params", 1, Shader::eVECTOR3);
 
-        for (u32 j=0;j<MAX_TEXTURE;j++) {
+        for (u32 j=0;j<5;j++) {
             shader->RegisterUniform("isactive["+ std::to_string(j) + "]", static_cast<int>(false), Shader::eINT);
             shader->RegisterUniform("textures["+ std::to_string(j) + "]", 1, Shader::eINT);
             shader->RegisterUniform("isactive["+ std::to_string(j) + "]", static_cast<int>(true), Shader::eINT);

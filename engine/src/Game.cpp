@@ -17,7 +17,7 @@
 #include "framebuffer/imguibuffer.h"
 #include "framebuffer/thumbnails.h"
 
-#include "resources/Resources.h"
+#include "resources/resources.h"
 
 #include "ecs/EntityManager.h"
 
@@ -216,7 +216,7 @@ void SceneLoaded(const FbxScene& scene) {
 }
 
 Game::Game() : objectselected(nullptr) {
-    m_filmbox = std::make_unique<Filmbox>("/home/grsource/Documentos/filmbox/anim.fbx");
+    m_filmbox = std::make_unique<Filmbox>("/home/grsource/Documentos/filmbox/sponza.fbx");
     m_filmbox->SetLoaded(SceneLoaded);
     m_filmbox->load();
 
@@ -856,8 +856,6 @@ void Game::TextureInfo(Texture *&texture) {
 
     ImGui::SeparatorText("Configurações");
     ImGui::Text("Espaço de cor: %s", Resources::gettextureformatname(texture->getinternalformat()));
-
-    // ImGui::Image(reinterpret_cast<ImTextureID>(iconsUI[IconType::ICON_EDIT]->getID()), reinterpret_vector<ImVec2, Vector2>(Settings::IconSize));
 
     ImGui::End();
 

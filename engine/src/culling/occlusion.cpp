@@ -2,7 +2,7 @@
 
 #include "../geometry/mesh.h"
 
-#include "../resources/Resources.h"
+#include "../resources/resources.h"
 
 std::unique_ptr<BufferManager> Occlusion::m_bufferManager = nullptr;
 

@@ -1,6 +1,6 @@
 #include "Filmbox.h"
 
-#include "../resources/Resources.h"
+#include "../resources/resources.h"
 #include "../eventManager.h"
 
 #include "../geometry/mesh.h"
@@ -404,11 +404,11 @@ void Filmbox::loadMaterialTexture(aiMaterial* pMaterial, Material& material) {
             TexturePBR pbrType = getTexturePBRType(type);
             if (pbrType == TexturePBR::Non) {
                 continue;
-            }// else if (pbrType == TexturePBR::ALBEDO) {
+            } //else if (pbrType == TexturePBR::ALBEDO) {
                 material.texture[pbrType] = Resources::Load<Texture>(texturePath.C_Str());
-            /*} else {
-                material.texture[pbrType] = Resources::Load(texturePath.C_Str(), nullptr, Texture::eRGB, Texture::eRGB, Texture::eBYTE, Texture::eTRILINEAR, true);
-            }*/
+            // } else {
+                // material.texture[pbrType] = Resources::Load(texturePath.C_Str(), nullptr, Texture::eRGB, Texture::eRGB, Texture::eBYTE, Texture::eTRILINEAR, true);
+            // }
             // switch (pbrType) {
             // case TexturePBR::ALBEDO:
             //     continue;

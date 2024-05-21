@@ -1,8 +1,8 @@
-#include "Shader.h"
+#include "shader.h"
 
 #include "../Global.h"
 
-#include "Resources.h"
+#include "resources.h"
 
 #define CHECK_PROGMA \
     if (programID == -1) { \

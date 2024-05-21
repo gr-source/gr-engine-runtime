@@ -3,7 +3,7 @@
 #include "bufferManager.h"
 #include "timer.h"
 
-#include "resources/Resources.h"
+#include "resources/resources.h"
 
 #include "component/cameraComponent.h"
 #include "component/lightComponent.h"
@@ -74,6 +74,10 @@ Skybox::Skybox() : play(false), currentTime(0.0f), distance(400.0f), m_backgroun
     bufferManager->attribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vector3));
     bufferManager->unbind();
 
+    TextureArgs args {Texture::eRGBA16F, Texture::eRGBA, Texture::eFLOAT, Texture::eBILINEAR, false};
+
+    m_texture = Resources::Load<void (Skybox::*)(Texture *texture), Skybox *>("/home/grsource/Downloads/lonely_road_afternoon_puresky_1k.hdr", &Skybox::SetupBackgroundTexture, this);
+
     /*m_texture = Resources::Load("/home/grsource/Downloads/lonely_road_afternoon_puresky_1k.hdr", [&](Texture* textulre) {
         m_skyboxShader = Resources::Load<Shader>(Filesystem::getpublic(Filesystem::eShader) + "/Skybox", [&](Shader* shader) {
             shader->RegisterUniform("projection", 1, Shader::eMAT4x4);
@@ -129,8 +133,12 @@ Cubemap *Skybox::getIrradiance() {
     return m_skyboxbuffer->getIrradiance();
 }
 
-void Skybox::prepareShader() {
-    
+void Skybox::SetupBackgroundTexture(Texture *texture) {
+    std::cout << "Background texture is: " << texture->getpath() << std::endl;
+}
+
+void Skybox::prepareShader()
+{
 }
 
 void Skybox::setupSkybox(Shader* shader) {

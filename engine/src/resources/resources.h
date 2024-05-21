@@ -12,7 +12,7 @@
 #include <map>
 
 #include "texture.h"
-#include "Shader.h"
+#include "shader.h"
 
 #include "../core/stb/stb_image.h"
 
@@ -24,6 +24,13 @@ struct ProcessLoader {
     ProcessLoader(T*& _data, std::function<void(T*)> _callback) : data(_data), callback(_callback) {}
 };
 
+struct TextureArgs {
+    u32 internalFormat;
+    u32 format;
+    u32 type;
+    u32 filter;
+    bool hasMipmap;
+};
 
 class Resources {
 public:
@@ -32,7 +39,8 @@ public:
     template <typename T>
     static T* Load(const std::string& path, const std::function<void(T*)>& callback = nullptr);
 
-    static Texture* Load(const std::string& path, const std::function<void(Texture*)>& callback, u32 internalFormat, u32 format, u32 type, u32 filter, bool hasMipmap);
+    template <typename... Args>
+    static Texture* Load(const std::string& path, Args&&... args);
 
     static u32 getTextureType(int ch);
 
@@ -71,4 +79,21 @@ private:
 
     static void LoadShader();
 };
+
+template <typename... Args>
+inline Texture *Resources::Load(const std::string &path, Args &&...args) {
+    if (!Filesystem::exists(path)) {
+        Log::error << "File texture do not open: " << path << Log::end;
+        return nullptr;
+    }
+
+    Texture* texture = new Texture(path);
+
+    auto func = std::bind(std::forward<Args>(args)..., texture);
+    func();
+
+    return texture;
+}
+
+
 

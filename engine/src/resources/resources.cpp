@@ -1,4 +1,4 @@
-#include "Resources.h"
+#include "resources.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "../core/stb/stb_image.h"
@@ -80,7 +80,7 @@ void Resources::Initialize() {
     // stbi_set_flip_vertically_on_load(true);
 }
 
-Texture *Resources::Load(const std::string& path, const std::function<void(Texture*)>& callback, u32 internalFormat, u32 format, u32 type, u32 filter, bool hasMipmap) {
+/*Texture *Resources::Load(const std::string& path, const std::function<void(Texture*)>& callback, u32 internalFormat, u32 format, u32 type, u32 filter, bool hasMipmap) {
     if (!std::filesystem::exists(path)) {
         ERROR("[ Texture ] file not found (" + path + ")");
         return nullptr;
@@ -107,6 +107,7 @@ Texture *Resources::Load(const std::string& path, const std::function<void(Textu
 
     return nullptr;
 }
+*/
 
 u32 Resources::getTextureType(int ch) {
     switch (ch) {

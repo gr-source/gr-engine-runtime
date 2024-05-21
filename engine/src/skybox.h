@@ -2,8 +2,6 @@
 
 #include "framebuffer/skyboxbuffer.h"
 
-#include "resources/Shader.h"
-
 #include "bufferManager.h"
 
 #include "common.h"
@@ -36,6 +34,8 @@ private:
     std::array<Matrix4x4, 6> captureViews;
 
     std::unique_ptr<Skyboxbuffer> m_skyboxbuffer;
+
+    void SetupBackgroundTexture(Texture* texture);
 
     void prepareShader();
 

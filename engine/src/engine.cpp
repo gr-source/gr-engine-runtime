@@ -14,7 +14,7 @@
 #include "framebuffer/imguibuffer.h"
 #include "framebuffer/gBuffer.h"
 
-#include "resources/Resources.h"
+#include "resources/resources.h"
 
 #include "physics/physicsScene.h"
 

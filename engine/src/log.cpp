@@ -26,3 +26,6 @@ void Log::Write(LogType type, const std::string& append) {
     std::cout << none << std::endl;
 }
 
+std::ostream& Log::error = std::cout << red;
+
+const std::string Log::end = "\n" + none;
