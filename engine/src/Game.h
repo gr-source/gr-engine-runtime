@@ -71,7 +71,6 @@ private:
 
     void OnPropertyCameraComponent(CameraComponent* cameraComponent);
 
-
     void OnPropertyLightComponent(LightComponent* lightComponent);
 
     void TextureInfo(Texture*& texture);

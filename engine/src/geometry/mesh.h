@@ -48,6 +48,8 @@ public:
 
     const Skeleton& getskeleton() const;
 
+    const bool hasBones() const;
+
     bool operator ==(const Mesh& other) const;
 
 protected:

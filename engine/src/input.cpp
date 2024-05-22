@@ -1,122 +1,78 @@
 #include "input.h"
 
-std::string getKeyName(KeyCode key) {
+#include <GLFW/glfw3.h>
+
+#define GET_INSTANCE_PRESS(key) glfwGetKey((GLFWwindow*)Input::m_instance, key);
+#define GET_INSTANCE_MOUSE_BUTTON(key) glfwGetMouseButton((GLFWwindow*)Input::m_instance, key);
+#define GET_INSTANCE_MOUSE_POS() double x, y; glfwGetCursorPos((GLFWwindow*)Input::m_instance, &x, &y); return {static_cast<float>(x), static_cast<float>(y)};
+#define SET_INSTANCE_MOUSE_POS(pos) glfwSetCursorPos((GLFWwindow*)Input::m_instance, static_cast<float>(pos.x), static_cast<float>(pos.y))
+
+void* Input::m_instance = nullptr;
+
+int get_key_to_glfw(Input::Key key) {
     switch (key) {
-    case KeyCode::A:
-        return "A";
-    case KeyCode::W:
-        return "W";
-    case KeyCode::S:
-        return "S";
-    case KeyCode::D:
-        return "D";
-    case KeyCode::SPACE:
-        return "SPACE";
-    case KeyCode::NONE:
-        return "NONE";
+    case Input::KEY_W:
+        return GLFW_KEY_W;
+    case Input::KEY_A:
+        return GLFW_KEY_A;
+    case Input::KEY_S:
+        return GLFW_KEY_S;
+    case Input::KEY_D:
+        return GLFW_KEY_D;
+    case Input::KEY_UP:
+        return GLFW_KEY_UP;
+    case Input::KEY_DOWN:
+        return GLFW_KEY_DOWN;
+    case Input::BUTTON_MIDDLE:
+        return GLFW_MOUSE_BUTTON_MIDDLE;
     default:
-        return "";
+        return GLFW_INVALID_ENUM;
     }
 }
 
-KeyCode getKeyCode(unsigned char c) {
-    switch (c) {
-    case 'A':
-        return KeyCode::A;
-    case 'W':
-        return KeyCode::W;
-    case 'S':
-        return KeyCode::S;
-    case 'D':
-        return KeyCode::D;
-    case ' ':
-        return KeyCode::SPACE;
+std::string Input::getKeyName(Key key) {
+    #define GET_ENUM_NAME(e) case e: return #e;
+    switch (key) {
+    GET_ENUM_NAME(KEY_A)
+    GET_ENUM_NAME(KEY_W)
+    GET_ENUM_NAME(KEY_S)
+    GET_ENUM_NAME(KEY_D)
+    GET_ENUM_NAME(KEY_SPACE)
     default:
-        return KeyCode::NONE;
+        GET_ENUM_NAME(NONE)
     }
+    #undef GET_ENUM_NAME
 }
 
-KeyAction getKeyAction(int c) {
-    switch (c) {
-    case 0:
-        return KeyAction::UP;
-    case 1:
-        return KeyAction::DOWN;
-    case 2:
-        return KeyAction::PRESS;
-    default:
-        assert("fail key action do not exists");
-    }
-    return KeyAction::NONEN;
+int Input::IsKeyDown(Key key) {
+    return 0;
 }
 
-std::map<MouseButton, KeyAction> mouseMap = {
-    {MouseButton::BUTTON_1, KeyAction::NONEN},
-};
-
-std::map<KeyCode, KeyAction> keyMap = {
-    {KeyCode::A, KeyAction::NONEN},
-    {KeyCode::W, KeyAction::NONEN},
-    {KeyCode::S, KeyAction::NONEN},
-    {KeyCode::D, KeyAction::NONEN},
-    {KeyCode::SPACE, KeyAction::NONEN},
-    {KeyCode::MIDDLE, KeyAction::NONEN},
-};
-
-int Input::IsKeyDown(KeyCode key) {
-    return ((keyMap[key] == KeyAction::DOWN) ? true : false);
+int Input::IsKeyUp(Key key) {
+    return 0;
 }
 
-int Input::IsKeyUp(KeyCode key) {
-    return ((keyMap[key] == KeyAction::UP) ? true : false);
+int Input::IsKeyPress(Key key) {
+    return GET_INSTANCE_PRESS(get_key_to_glfw(key));
 }
 
-int Input::IsKeyPress(KeyCode key) {
-    return ((keyMap[key] == KeyAction::PRESS || keyMap[key] == KeyAction::DOWN || keyMap[key] == KeyAction::UP) ? true : false);
+int Input::IsMouseUp(Key button) {
+    return 0;
 }
 
-void Input::SetKeyAction(KeyCode key, KeyAction action) {
-    keyMap[key] = action;
+int Input::IsMousePress(Key button) {
+    return 0;
 }
 
-void Input::SetMouseAction(MouseButton button, KeyAction action) {
-    mouseMap[button] = action;
-}
-
-int Input::IsMouseUp(MouseButton button) {
-    return ((mouseMap[button] == KeyAction::UP) ? true : false);
-}
-
-int Input::IsMousePress(MouseButton button) {
-    return ((mouseMap[button] == KeyAction::DOWN) ? true : false);
-}
-
-MouseButton Input::getMouseButton(int button) {
-    switch (button) {
-    case 0:
-        return MouseButton::BUTTON_1;
-    default:
-        return MouseButton::NONE;
-    }
-}
-
-Vector2 cursorPos;
-
-void Input::SetCursorPos(float x, float y) {
-    cursorPos = {x, y};
+void Input::SetCursorPos(const Vector2& position) {
+    SET_INSTANCE_MOUSE_POS(position);
 }
 
 Vector2 Input::GetCursorPos() {
-    return cursorPos;
+    GET_INSTANCE_MOUSE_POS();
 }
 
-bool lockedM = false;
-
-void Input::SetLockMouse(bool locked) {
-    lockedM = locked;
-}
-
-bool Input::IsLockMouse() {
-    return lockedM;
+void Input::SetInstance(void *instance) {
+    m_instance = instance;
 }
 

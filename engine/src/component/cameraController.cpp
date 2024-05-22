@@ -7,8 +7,6 @@
 #include "../input.h"
 #include "../timer.h"
 
-#include <GLFW/glfw3.h>
-
 CameraController::CameraController() : m_transform(nullptr), pitch(0.0f), yaw(0.0f) {}
 
 void CameraController::OnInit() {
@@ -32,9 +30,8 @@ void CameraController::updateCursor() {
 
     lastMousePos = Screen::GetResolution() / 2.0f;
 
-    if (!glfwGetMouseButton(glfwGetCurrentContext(), GLFW_MOUSE_BUTTON_MIDDLE)) {
-        glfwSetCursorPos(glfwGetCurrentContext(), lastMousePos.x, lastMousePos.y);
-        Input::SetCursorPos(lastMousePos.x, lastMousePos.y);
+    if (!Input::IsMousePress(Input::BUTTON_MIDDLE)) {
+        Input::SetCursorPos(lastMousePos);
     }
 }
 

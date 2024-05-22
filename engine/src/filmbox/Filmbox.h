@@ -60,6 +60,8 @@ protected:
 
     void setupBone(aiMesh* nodeMesh, Mesh& mesh, const aiScene* scene);
 
+    void addBoneData(Vertex3D& vertex, u32 index, float weight);
+
     void loadvertices(aiMesh* pMesh, Mesh& mesh, const aiScene* scene);
 
     void loadMeshes(const aiScene* scene);

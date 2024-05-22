@@ -17,13 +17,9 @@ public:
 
     Bone& getroot();
 
-    bool hasbone() const;
-
-    u32 getcount() const;
+    const bool hasbone() const;
 protected:
     Bone m_root;
-
-    u32 m_count;
 
     friend class Filmbox;
 };

@@ -60,18 +60,14 @@ private:
     /***************** Texture *****************/
     static std::unordered_map<std::string, std::unique_ptr<Texture>> m_textures;
     static std::list<ProcessLoader<Texture>> m_textureLoader;
-    static std::condition_variable m_texturecv;
     static std::mutex m_textureMutex;
-    static bool m_textureReady;
 
     /***************** SHADER *****************/
     static std::unordered_map<std::string, std::unique_ptr<Shader>> m_shaders;
     static std::list<ProcessLoader<Shader>> m_shaderLoader;
-    static std::condition_variable m_shadercv;
     static std::mutex m_shaderMutex;
-    static bool m_shaderReady;
 
-    static void setup_texture(ProcessLoader<Texture>& process, const int width, const int height, const int channel, stbi_uc*& data);
+    static void setup_texture(ProcessLoader<Texture>& process, const int width, const int height, const int channel, stbi_uc* data);
 
     static void LoadTexture();
 

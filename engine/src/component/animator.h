@@ -26,5 +26,7 @@ protected:
     
     float currentTime;
 
-    void CalculateBoneTransform(Bone& bone, const Matrix4x4& parentTransform);
+    void CalculateBoneTransform(const Bone& bone, const Matrix4x4& parentTransform);
+
+    friend class Game;
 };

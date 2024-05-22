@@ -38,7 +38,7 @@ protected:
     template <typename T>
     std::uint32_t getIndexFromTime(float time, const std::vector<Key<T>>& keys);
 
-    float getScaleFactor(float lastTimeStamp, float nextTimeStamp, float animationTime);
+    float getScaleFactor(float last, float next, float time);
 
     std::vector<Key<Vector3>> keyPosition;
 

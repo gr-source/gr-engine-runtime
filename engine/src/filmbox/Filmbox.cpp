@@ -82,12 +82,13 @@ void Filmbox::setupLoader() {
 
     loadNode(rootNode, scene, fbxScene.root);
 
-    if (m_loaded != nullptr) {
-        EventManager::addEvent(m_loaded, fbxScene);
+    {
+        std::lock_guard<std::mutex> lock(mt);
+        if (m_loaded != nullptr) {
+            EventManager::addEvent(m_loaded, fbxScene);
+        }
     }
 }
-
-#include "../screen.h"
 
 void Filmbox::loadCamera(const aiScene *scene) {
     for (u32 i=0;i<scene->mNumCameras;i++) {
@@ -259,7 +260,12 @@ void Filmbox::setupSkeleton(aiNode* node, Bone* bone) {
         Bone& boneMap = m_boneMap[node->mName.C_Str()];
         boneMap.m_parent = bone;
 
-        newBone = &bone->addchild(boneMap);
+        if (bone->getname() == "none") {
+            newBone = bone;
+            newBone->setname(node->mName.C_Str());
+        } else {
+            newBone = &bone->addchild(boneMap);
+        }
     }
 
     for (u32 i=0;i<node->mNumChildren;i++) {
@@ -274,41 +280,56 @@ void Filmbox::setupSkeleton(aiNode* node, Bone* bone) {
 }
 
 void Filmbox::setupBone(aiMesh *nodeMesh, Mesh &mesh, const aiScene* scene) {
-    if (nodeMesh->HasBones()) {
-        for (u32 i=0;i<nodeMesh->mNumBones;i++) {
-            aiBone* nodeBone = nodeMesh->mBones[i];
+    if (!nodeMesh->HasBones()) return;
 
-            std::string boneName = nodeBone->mName.C_Str();
+    for (u32 i=0;i<nodeMesh->mNumBones;i++) {
+        aiBone* nodeBone = nodeMesh->mBones[i];
 
-            Bone& bone = m_boneMap[boneName];
-            bone.m_name = boneName;
-            bone.id = i;
+        std::string boneName = nodeBone->mName.C_Str();
 
-            DECOMPOSE(nodeBone->mOffsetMatrix, bone);
-
-            for (u32 j=0;j<nodeBone->mNumWeights;j++) {
-                aiVertexWeight vertexWeight = nodeBone->mWeights[j];
-
-                Vertex3D& vertex = mesh.GetVertex(vertexWeight.mVertexId);
-
-                for (u32 k=0;k<4;k++) {
-                    if (vertex.boneIndex[k] == -1) {
-                        vertex.boneIndex[k] = i;
-                        vertex.weight[k] = vertexWeight.mWeight;
-                        break;
-                    }
-                }
-            }
-
-            m_isBone[boneName] = true;
+        auto it = m_boneMap.find(boneName);
+        if (it != m_boneMap.end()) {
+            Log::error << "Bone has already been added. " << boneName << Log::end;
+            continue;
         }
 
-        Skeleton& m_skeleton = mesh.m_skeleton;
-        setupSkeleton(scene->mRootNode, &m_skeleton.m_root);
-        
-        m_boneMap.clear();
-        m_isBone.clear();
-        m_BoneCounter = 0;
+        Bone& bone = m_boneMap[boneName];
+        bone.m_name = boneName;
+        bone.id = i;
+
+        DECOMPOSE(nodeBone->mOffsetMatrix, bone);
+
+        for (u32 j=0;j<nodeBone->mNumWeights;j++) {
+            aiVertexWeight vertexWeight = nodeBone->mWeights[j];
+
+            Vertex3D& vertex = mesh.GetVertex(vertexWeight.mVertexId);
+
+            addBoneData(vertex, bone.id, vertexWeight.mWeight);
+        }
+
+        m_isBone[boneName] = true;
+    }
+
+    Skeleton& m_skeleton = mesh.m_skeleton;
+    setupSkeleton(scene->mRootNode, &m_skeleton.m_root);
+    
+    m_boneMap.clear();
+    m_isBone.clear();
+    m_BoneCounter = 0;
+}
+
+void Filmbox::addBoneData(Vertex3D &vertex, u32 index, float weight) {
+    if (weight == 0.0f || index >= 100) {
+        Log::error << "Bone invalid wight or index. " << weight << " " << index << Log::end;
+        return;
+    }
+
+    for (u32 k=0;k<4;k++) {
+        if (vertex.boneIndex[k] == -1 && vertex.boneIndex[k] != index) {
+            vertex.boneIndex[k] = index;
+            vertex.weight[k] = weight;
+            break;
+        }
     }
 }
 

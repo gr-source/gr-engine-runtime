@@ -31,8 +31,6 @@
 #include "settings.h"
 
 void engine::GLFWkeyfunCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
-    Input::SetKeyAction(getKeyCode(static_cast<unsigned char>(key)), getKeyAction(action));
-
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
         #if IS_GAME
         Settings::IsGameRunning = !Settings::IsGameRunning;
@@ -59,14 +57,12 @@ void engine::GLFWscrollfun(GLFWwindow* window, double xoffset, double yoffset) {
 }
 
 void engine::GLFWcursorposfun(GLFWwindow* window, double xpos, double ypos) {
-    Input::SetCursorPos(static_cast<float>(xpos), static_cast<float>(ypos));
 }
 
 void engine::GLFWcharfun(GLFWwindow* window, unsigned int codepoint) {
 }
 
 void engine::GLFWmousebuttonfun(GLFWwindow* window, int button, int action, int mods) {
-    Input::SetMouseAction(Input::getMouseButton(button), getKeyAction(action));
 }
 
 void engine::GLFWcursorenterfun(GLFWwindow* window, int entered) {
@@ -102,6 +98,8 @@ Imguibuffer* pImguibuffer = nullptr;
 GBuffer* m_gbuffer = nullptr;
 
 void engine::OnInit() {
+    Input::SetInstance((void*)glfwGetCurrentContext());
+
     pImGuiRender = std::make_unique<ImGuiRender>("#version 330 core");
 
     pScreenBuffer = &ScreenBuffer::getInstance();

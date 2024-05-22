@@ -22,10 +22,14 @@ public:
 
     const std::string& getname() const;
 
+    void setname(const std::string& name);
+
     template <typename... Args>
     Bone& addchild(Args&&... args);
 
-    std::vector<Bone>& getchildren();
+    const bool haschildren() const;
+
+    const std::vector<Bone>& getchildren() const;
 
     const bool hasparent() const;
 

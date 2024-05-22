@@ -6,7 +6,15 @@ const std::string &Bone::getname() const {
     return m_name;
 }
 
-std::vector<Bone> &Bone::getchildren() {
+void Bone::setname(const std::string &name) {
+    m_name = name;
+}
+
+const bool Bone::haschildren() const {
+    return !m_children.empty();
+}
+
+const std::vector<Bone> &Bone::getchildren() const {
     return m_children;
 }
 

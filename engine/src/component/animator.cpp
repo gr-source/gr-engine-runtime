@@ -17,6 +17,8 @@ void Animator::OnInit() {
     transform = &entity->getComponent<Transform>();
 
     currentTime = 0.0f;
+
+    m_FinalBoneMatrices.fill(Matrix4x4::identityMatrix);
 }
 
 void Animator::OnStart() {
@@ -34,22 +36,20 @@ void Animator::OnUpdate() {
     CalculateBoneTransform(m_skeleton.getroot(), Matrix4x4::identityMatrix);
 }
 
-void Animator::CalculateBoneTransform(Bone& bone, const Matrix4x4& parentTransform) {
+void Animator::CalculateBoneTransform(const Bone& bone, const Matrix4x4& parentTransform) {
     Matrix4x4 result = parentTransform;
 
-    if (bone.getname() != "none") {
-        AnimationClip& animation = m_animations[0];
+    AnimationClip& animation = m_animations[0];
 
-        Keyframe* keyframe = animation.findKeyframe(bone.getname());
-        if (keyframe != nullptr) {
-            result *= keyframe->getlocalmatrix(currentTime);
+    Keyframe* keyframe = animation.findKeyframe(bone.getname());
+    if (keyframe != nullptr) {
+        result *= keyframe->getlocalmatrix(currentTime);
 
-            Matrix4x4 offset = bone.getlocalmatrix();
-            m_FinalBoneMatrices[bone.id] = result * offset;
-        }
+        Matrix4x4 offset = bone.getlocalmatrix();
+        m_FinalBoneMatrices[bone.id] = result * offset;
     }
 
-    for (auto& child : bone.getchildren()) {
+    for (const auto& child : bone.getchildren()) {
         CalculateBoneTransform(child, result);
     }
 }

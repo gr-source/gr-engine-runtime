@@ -1,8 +1,9 @@
 #include "memory.h"
 
-#define ALIGN16(x) ((x) + 0xF & ~0xF)
-
 std::size_t Memory::totalMemoryUsage = 0;
+std::mutex Memory::memoryMutex;
+
+#define ALIGN16(x) (((x) + 0xF) & ~0xF)
 
 void *Memory::malloc(std::size_t size) {
     void* ptr = std::malloc(size + sizeof(MemoryBlock) + 15);
@@ -10,13 +11,16 @@ void *Memory::malloc(std::size_t size) {
         throw std::bad_alloc();
     }
 
-    totalMemoryUsage += size;
+    {
+        std::lock_guard<std::mutex> lock(memoryMutex);
+        totalMemoryUsage += size;
+    }
 
-    u8* data = (u8*)ptr;
-	data += sizeof(MemoryBlock);
-	data = (u8*)ALIGN16((std::uintptr_t)data);
+    uint8_t* data = reinterpret_cast<uint8_t*>(ptr);
+    data += sizeof(MemoryBlock);
+    data = reinterpret_cast<uint8_t*>(ALIGN16(reinterpret_cast<std::uintptr_t>(data)));
 
-	MemoryBlock* mem = (MemoryBlock*)(data-sizeof(MemoryBlock));
+    MemoryBlock* mem = reinterpret_cast<MemoryBlock*>(data - sizeof(MemoryBlock));
     mem->origPtr = ptr;
     mem->sz = size;
 
@@ -24,32 +28,40 @@ void *Memory::malloc(std::size_t size) {
 }
 
 void* Memory::realloc(void *ptr, std::size_t size) {
-	if (!ptr)
-		return Memory::malloc(size);
+    if (!ptr) {
+        return Memory::malloc(size);
+    }
 
-	MemoryBlock* mem = (MemoryBlock*)((u8*)ptr - sizeof(MemoryBlock));
-	u32 offset = (u8*)ptr - (u8*)mem->origPtr;
+    MemoryBlock* mem = reinterpret_cast<MemoryBlock*>(reinterpret_cast<uint8_t*>(ptr) - sizeof(MemoryBlock));
+    uint32_t offset = reinterpret_cast<uint8_t*>(ptr) - reinterpret_cast<uint8_t*>(mem->origPtr);
 
-	void* origPtr = std::realloc(mem->origPtr, size + sizeof(MemoryBlock) + 15);
-	if (!origPtr) {
-		throw std::bad_alloc();
-	}
-	ptr = (u8*)origPtr + offset;
-	mem = (MemoryBlock*)((u8*)ptr - sizeof(MemoryBlock));
+    void* origPtr = std::realloc(mem->origPtr, size + sizeof(MemoryBlock) + 15);
+    if (!origPtr) {
+        throw std::bad_alloc();
+    }
+    uint8_t* newPtr = reinterpret_cast<uint8_t*>(origPtr) + sizeof(MemoryBlock);
+    newPtr = reinterpret_cast<uint8_t*>(ALIGN16(reinterpret_cast<std::uintptr_t>(newPtr)));
 
-	totalMemoryUsage -= mem->sz;
-	mem->sz = size;
-	mem->origPtr = origPtr;
-	totalMemoryUsage += mem->sz;
+    mem = reinterpret_cast<MemoryBlock*>(newPtr - sizeof(MemoryBlock));
+    {
+        std::lock_guard<std::mutex> lock(memoryMutex);
+        totalMemoryUsage -= mem->sz;
+        totalMemoryUsage += size;
+    }
+    mem->origPtr = origPtr;
+    mem->sz = size;
 
-	return ptr;
+    return newPtr;
 }
 
 void Memory::free(void *ptr) noexcept {
     if (!ptr) return;
 
-    MemoryBlock *mem = (MemoryBlock*)((std::uint8_t*)ptr - sizeof(MemoryBlock));
-    totalMemoryUsage -= mem->sz;
+    MemoryBlock *mem = reinterpret_cast<MemoryBlock*>(reinterpret_cast<uint8_t*>(ptr) - sizeof(MemoryBlock));
+    {
+        std::lock_guard<std::mutex> lock(memoryMutex);
+        totalMemoryUsage -= mem->sz;
+    }
 
     std::free(mem->origPtr);
 }

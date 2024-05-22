@@ -13,8 +13,6 @@
 #include "input.h"
 #include "timer.h"
 
-#include <GLFW/glfw3.h>
-
 EditorController::EditorController() : movementSpeed(30.0f), mouseSensitivity(10.5f), pitch(0.0f), yaw(0.0f) {}
 
 void EditorController::OnInit() {
@@ -34,23 +32,30 @@ void EditorController::OnUpdate() {
 
     float velocity = movementSpeed * Time::deltaTime;
 
-    if (glfwGetKey(glfwGetCurrentContext(), GLFW_KEY_W)) {
-        m_cameraComponent.gettransform()->position += m_cameraComponent.gettransform()->getforward() * velocity;
+    Vector3 diretion;
+
+    // if (glfwGetKey(glfwGetCurrentContext(), GLFW_KEY_W)) {
+    if (Input::IsKeyPress(Input::KEY_W)) {
+        diretion += m_cameraComponent.gettransform()->getforward();
     }
-    if (glfwGetKey(glfwGetCurrentContext(), GLFW_KEY_S)) {
-        m_cameraComponent.gettransform()->position -= m_cameraComponent.gettransform()->getforward() * velocity;
+    if (Input::IsKeyPress(Input::KEY_S)) {
+        diretion -= m_cameraComponent.gettransform()->getforward();
     }
-    if (glfwGetKey(glfwGetCurrentContext(), GLFW_KEY_A)) {
-        m_cameraComponent.gettransform()->position += m_cameraComponent.gettransform()->getright() * velocity;
+    if (Input::IsKeyPress(Input::KEY_A)) {
+        diretion += m_cameraComponent.gettransform()->getright();
     }
-    if (glfwGetKey(glfwGetCurrentContext(), GLFW_KEY_D)) {
-        m_cameraComponent.gettransform()->position -= m_cameraComponent.gettransform()->getright() * velocity;
+    if (Input::IsKeyPress(Input::KEY_D)) {
+        diretion -= m_cameraComponent.gettransform()->getright();
     }
-    if (glfwGetKey(glfwGetCurrentContext(), GLFW_KEY_UP)) {// up
-        m_cameraComponent.gettransform()->position.y += velocity;
+    if (Input::IsKeyPress(Input::KEY_UP)) {// up
+        diretion.y += 1.0f;
     }
-    if (glfwGetKey(glfwGetCurrentContext(), GLFW_KEY_DOWN)) {//down
-        m_cameraComponent.gettransform()->position.y -= velocity;
+    if (Input::IsKeyPress(Input::KEY_DOWN)) {//down
+        diretion.y -= 1.0f;
+    }
+
+    if (diretion != Vector3::zero) {
+        m_cameraComponent.gettransform()->position += Math::normalize(diretion) * velocity;
     }
 
     updateCursor();
@@ -65,9 +70,8 @@ void EditorController::updateCursor() {
 
     lastMousePos = Screen::GetResolution() / 2.0f;
 
-    if (!glfwGetMouseButton(glfwGetCurrentContext(), GLFW_MOUSE_BUTTON_MIDDLE)) {
-        glfwSetCursorPos(glfwGetCurrentContext(), lastMousePos.x, lastMousePos.y);
-        Input::SetCursorPos(lastMousePos.x, lastMousePos.y);
+    if (!Input::IsMousePress(Input::BUTTON_MIDDLE)) {
+        Input::SetCursorPos(lastMousePos);
     }
 }
 

@@ -6,56 +6,43 @@
 
 #include <gr-math/gmath.h>
 
-enum KeyCode {
-    W = 0x01,
-    A = 0x02,
-    S = 0x03,
-    D = 0x04,
-    SPACE = 0x005,
-    MIDDLE = 0x006,
-    NONE = 0x00
-};
+#include "types.h"
 
-enum KeyAction {
-    DOWN = 0x0001,
-    UP = 0x0002,
-    PRESS = 0x0003,
-    NONEN = 0xffff
-};
+class Input {
+public:
+    enum Key : u32 {
+        NONE = 1 << 0,
+        KEY_W = 1 << 1,
+        KEY_A = 1 << 2,
+        KEY_S = 1 << 3,
+        KEY_D = 1 << 4,
+        KEY_UP = 1 << 5,
+        KEY_DOWN = 1 << 6,
+        KEY_SPACE = 1 << 7,
+        BUTTON_MIDDLE = 1 << 8
+    };
 
-enum struct MouseButton {
-    BUTTON_1,
-    NONE
-};
+    static std::string getKeyName(Key key);
 
-std::string getKeyName(KeyCode key);
+    Key getKeyAction(int c);
 
-KeyCode getKeyCode(unsigned char c);
+    static int IsKeyDown(Key key);
 
-KeyAction getKeyAction(int c);
+    static int IsKeyUp(Key key);
 
-namespace Input {
-    int IsKeyDown(KeyCode key);
+    static int IsKeyPress(Key key);
 
-    int IsKeyUp(KeyCode key);
+    static int IsMouseUp(Key button);
 
-    int IsKeyPress(KeyCode key);
+    static int IsMousePress(Key button);
 
-    void SetKeyAction(KeyCode key, KeyAction action);
+    static Key getMouseButton(int button);
 
-    void SetMouseAction(MouseButton button, KeyAction action);
+    static void SetCursorPos(const Vector2& position);
 
-    int IsMouseUp(MouseButton button);
+    static Vector2 GetCursorPos();
 
-    int IsMousePress(MouseButton button);
-
-    MouseButton getMouseButton(int button);
-
-    void SetCursorPos(float x, float y);
-
-    Vector2 GetCursorPos();
-
-    void SetLockMouse(bool locked);
-
-    bool IsLockMouse();
+    static void SetInstance(void* instance);
+private:
+    static void* m_instance;
 };

@@ -1,7 +1,5 @@
 #include "playerController.h"
 
-#include <GLFW/glfw3.h>
-
 #include "cameraController.h"
 #include "Transform.h"
 #include "Rigidbody.h"
@@ -34,24 +32,24 @@ void PlayerController::OnUpdate() {
     Vector3 direction;
 
     const Vector3 cameraDirection = Math::normalize(Vector3(m_camera->getforward().x, 0.0f, m_camera->getforward().z));
-    if (glfwGetKey(glfwGetCurrentContext(), GLFW_KEY_W)) {
-        direction += cameraDirection * velocity;
-    }
-    if (glfwGetKey(glfwGetCurrentContext(), GLFW_KEY_S)) {
-        direction -= cameraDirection * velocity;
-    }
-    if (glfwGetKey(glfwGetCurrentContext(), GLFW_KEY_A)) {
-        direction += Math::normalize(m_camera->getright()) * velocity;
-    }
-    if (glfwGetKey(glfwGetCurrentContext(), GLFW_KEY_D)) {
-        direction -= Math::normalize(m_camera->getright()) * velocity;
-    }
+    // if (glfwGetKey(glfwGetCurrentContext(), GLFW_KEY_W)) {
+    //     direction += cameraDirection * velocity;
+    // }
+    // if (glfwGetKey(glfwGetCurrentContext(), GLFW_KEY_S)) {
+    //     direction -= cameraDirection * velocity;
+    // }
+    // if (glfwGetKey(glfwGetCurrentContext(), GLFW_KEY_A)) {
+    //     direction += Math::normalize(m_camera->getright()) * velocity;
+    // }
+    // if (glfwGetKey(glfwGetCurrentContext(), GLFW_KEY_D)) {
+    //     direction -= Math::normalize(m_camera->getright()) * velocity;
+    // }
     direction.y += PhysicsScene::gravity.y;
  
     m_rigidbody->addlinearvelocity(direction);
 
-    if (glfwGetKey(glfwGetCurrentContext(), GLFW_KEY_SPACE)) {
-        m_rigidbody->addlinearvelocity(Vector3::up * velocity);
-    }
+    // if (glfwGetKey(glfwGetCurrentContext(), GLFW_KEY_SPACE)) {
+    //     m_rigidbody->addlinearvelocity(Vector3::up * velocity);
+    // }
 }
 

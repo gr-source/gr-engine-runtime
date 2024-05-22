@@ -160,9 +160,13 @@ void CreateModel(GameObject& gameobject, const FbxNode& node, const FbxScene& sc
         gameobject.addComponent<MeshCollider>(node.getmeshs()[0]);
 
         gameobject.addComponent<Rigidbody>(rigidbodyDef);
-    } else if (gameobject.getname() == "Beta_Surface") {
-        auto& animation = gameobject.addComponent<Animator>(node.getmeshs()[0].getskeleton());
-        animation.m_animations.insert(scene.getanimations().begin(), scene.getanimations().end());
+    }
+    
+    if (node.hasmesh()) {
+        if (node.getmeshs()[0].hasBones()) {
+            auto& animation = gameobject.addComponent<Animator>(node.getmeshs()[0].getskeleton());
+            animation.m_animations.insert(scene.getanimations().begin(), scene.getanimations().end());
+        }
     }
 }
 
@@ -216,7 +220,7 @@ void SceneLoaded(const FbxScene& scene) {
 }
 
 Game::Game() : objectselected(nullptr) {
-    m_filmbox = std::make_unique<Filmbox>("/home/grsource/Documentos/filmbox/sponza.fbx");
+    m_filmbox = std::make_unique<Filmbox>("/home/grsource/Documentos/filmbox/anim.fbx"); //untitled
     m_filmbox->SetLoaded(SceneLoaded);
     m_filmbox->load();
 
@@ -641,8 +645,30 @@ void Game::OnPropertyTransform(Transform* transform) {
     }
 }
 
+void ReadSkeleton(const Bone& bone) {
+    ImGui::PushID(bone.getname().c_str());
+
+    ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanFullWidth;
+    if (!bone.haschildren()) {
+        flags |= ImGuiTreeNodeFlags_Leaf;
+    }
+
+    const bool isOpen = ImGui::TreeNodeEx(bone.getname().c_str(), flags);
+    
+    if (isOpen) {
+        for (const auto& child : bone.getchildren()) {
+            ReadSkeleton(child);
+        }
+        ImGui::TreePop();
+    }
+    ImGui::PopID();
+}
+
 void Game::OnPropertyAnimator(Animator *animator) {
     if (ImGui::TreeNode("Animator")) {
+        ImGui::Text("Esqueleto:");
+
+        ReadSkeleton(animator->m_skeleton.getroot());
         ImGui::TreePop();
     }
 }

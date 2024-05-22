@@ -64,6 +64,10 @@ const Skeleton &Mesh::getskeleton() const {
     return m_skeleton;
 }
 
+const bool Mesh::hasBones() const {
+    return m_skeleton.hasbone();
+}
+
 bool Mesh::operator ==(const Mesh& other) const {
     return this == &other;
 }

@@ -20,33 +20,6 @@ Vector3 Keyframe::getInterpolateScaling(float time) {
     return finalScale;
 }
 
-Quaternion nlerp(Quaternion a, Quaternion b, float blend) {
-	//cout << a.w + a.x + a.y + a.z << endl;
-	a = Math::normalize(a);
-	b = Math::normalize(b);
-
-	Quaternion result;
-	float dot_product = a.x * b.x + a.y * b.y + a.z * b.z + a.w * b.w;
-	float one_minus_blend = 1.0f - blend;
-
-	if (dot_product < 0.0f)
-	{
-		result.x = a.x * one_minus_blend + blend * -b.x;
-		result.y = a.y * one_minus_blend + blend * -b.y;
-		result.z = a.z * one_minus_blend + blend * -b.z;
-		result.w = a.w * one_minus_blend + blend * -b.w;
-	}
-	else
-	{
-		result.x = a.x * one_minus_blend + blend * b.x;
-		result.y = a.y * one_minus_blend + blend * b.y;
-		result.z = a.z * one_minus_blend + blend * b.z;
-		result.w = a.w * one_minus_blend + blend * b.w;
-	}
-
-	return Math::normalize(result);
-}
-
 Quaternion Keyframe::getInterpolateRotation(float time) {
     if (1 == keyRotation.size()) {
         return keyRotation[0].value;
@@ -78,9 +51,9 @@ Vector3 Keyframe::getInterpolatePosition(float time) {
     return finalPosition;
 }
 
-float Keyframe::getScaleFactor(float lastTimeStamp, float nextTimeStamp, float animationTime) {
-    float midWayLength = animationTime - lastTimeStamp;
-    float framesDiff = nextTimeStamp - lastTimeStamp;
+float Keyframe::getScaleFactor(float last, float next, float time) {
+    float midWayLength = time - last;
+    float framesDiff = next - last;
     return (midWayLength / framesDiff);
 }
 
