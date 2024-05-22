@@ -30,7 +30,7 @@ Quaternion Keyframe::getInterpolateRotation(float time) {
 
     float scaleFactor = getScaleFactor(keyRotation[p0Index].time, keyRotation[p1Index].time, time);
     
-    return Quaternion::Slerp(keyRotation[p0Index].value, keyRotation[p1Index].value, scaleFactor);
+    return Math::slerp(keyRotation[p0Index].value, keyRotation[p1Index].value, scaleFactor);
 }
 
 Vector3 Keyframe::getInterpolatePosition(float time) {
@@ -58,15 +58,15 @@ float Keyframe::getScaleFactor(float last, float next, float time) {
 }
 
 void Keyframe::addKeyPosition(const Vector3& position, float time) {
-    keyPosition.emplace_back(position, time);
+    keyPosition.push_back({time, position});
 }
 
 void Keyframe::addKeyRotation(const Quaternion& rotation, float time) {
-    keyRotation.emplace_back(rotation, time);
+    keyRotation.push_back({time, rotation});
 }
 
 void Keyframe::addKeyScale(const Vector3& scale, float time) {
-    keyScale.emplace_back(scale, time);
+    keyScale.push_back({time, scale});
 }
 
 const std::string &Keyframe::getname() const {

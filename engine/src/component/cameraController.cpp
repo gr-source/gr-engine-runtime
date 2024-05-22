@@ -36,7 +36,7 @@ void CameraController::updateCursor() {
 }
 
 void CameraController::OnCameraUpdate() {
-    m_transform->rotation = Math::normalize(Quaternion::Euler({Math::rad(-pitch), Math::rad(-yaw), 0.0f}));
+    m_transform->rotation = Math::normalize(Math::euler({Math::rad(-pitch), Math::rad(-yaw), 0.0f}));
 }
 
 void CameraController::processMouse(const Vector2& direction) {

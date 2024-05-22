@@ -638,7 +638,7 @@ void Game::OnPropertyTransform(Transform* transform) {
 
         ImGui::Text("Rotação:");
         if (ImGui::DragFloatEx("##Rotacao", text, euler.data, 1.0f, -360.0f, 360.0f)) {
-            transform->rotation = Math::normalize(Quaternion::Euler({Math::rad(euler.x), Math::rad(euler.y), Math::rad(euler.z)}));
+            transform->rotation = Math::normalize(Math::euler({Math::rad(euler.x), Math::rad(euler.y), Math::rad(euler.z)}));
         }
 
         ImGui::TreePop();

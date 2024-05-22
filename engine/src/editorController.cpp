@@ -79,7 +79,7 @@ void EditorController::OnCameraUpdate() {
     CameraComponent& m_cameraComponent = CameraComponent::MainCamera();
 
     Transform* m_transform = m_cameraComponent.gettransform();
-    m_transform->rotation = Math::normalize(Quaternion::Euler({Math::rad(-pitch), Math::rad(-yaw), 0.0f}));
+    m_transform->rotation = Math::normalize(Math::euler({Math::rad(-pitch), Math::rad(-yaw), 0.0f}));
 }
 
 void EditorController::processMouse(const Vector2& direction) {

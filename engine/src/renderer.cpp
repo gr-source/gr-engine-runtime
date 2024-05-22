@@ -89,7 +89,7 @@ void DebugDraw::addSprite(const Vector3 &position, Texture*& sprite) {
     CameraComponent& m_cameraComponent = CameraComponent::MainCamera();
 
     Quaternion rotate = Math::normalize(Math::lookRotation(Math::normalize(position - m_cameraComponent.getposition()), Vector3::up));
-    rotate *= Math::normalize(Quaternion::Euler(Math::rad(90.0f), Vector3(1.0f, 0.0f, 0.0f)));
+    rotate *= Math::normalize(Math::euler(Vector3(1.0f, 0.0f, 0.0f), Math::rad(90.0f)));
     rotate = Math::normalize(rotate);
 
     const Matrix4x4 model = Math::translate(position) * Math::rotate(rotate) * Math::scale(Vector3::one);

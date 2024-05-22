@@ -10,12 +10,11 @@ struct Key {
 
     T value;
 
-    Key(const T& value, float time) : value(value), time(time) {}
+    // Key(const T& value, float time) : value(value), time(time) {}
 };
 
 class Keyframe {
 public:
-
     Keyframe(const std::string& name);
 
     Matrix4x4 getlocalmatrix(float time);
