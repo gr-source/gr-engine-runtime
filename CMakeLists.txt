@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.22.1)
 
-project(GameRenderGR VERSION 0.1.0 LANGUAGES C CXX HOMEPAGE_URL https://github.com/darlissomls/GameRenderGR)
+project(gr-engine VERSION 0.1.0 LANGUAGES C CXX HOMEPAGE_URL https://github.com/gr-source/gr-engine.git)
 
 # Definindo diretórios de saída
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
@@ -50,14 +50,13 @@ add_subdirectory(imgui)
 
 #### MAIN ####
 
-target_include_directories(${PROJECT_NAME} PRIVATE engine/src imgui imgui/backends)
+target_include_directories(${PROJECT_NAME} PRIVATE imgui/src imgui/src/backends engine/src)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE engine glfw imgui assimp ${GLEW_LIBRARIES} ${OPENGL_LIBRARIES})
 
-
 #### ENGINE ####
 
-target_include_directories(engine PRIVATE imgui imgui/backends ${CMAKE_HOME_DIRECTORY}/bullet3/src ${BULLET_INCLUDE_DIRS})
+target_include_directories(engine PRIVATE imgui/src imgui/src/backends ${BULLET_INCLUDE_DIRS})
 
 target_link_libraries(engine PRIVATE ${OPENGL_LIBRARIES} ${GRMATH_LIBRARIES} ${BULLET_LIBRARIES})
 
@@ -66,7 +65,7 @@ target_compile_definitions(engine PRIVATE IS_GAME=0 OPENGL_DEBUG=1)
 
 #### IMGUI ####
 
-target_include_directories(imgui PRIVATE imgui imgui/backends)
+target_include_directories(imgui PRIVATE imgui/src imgui/src/backends)
 
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
 set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})

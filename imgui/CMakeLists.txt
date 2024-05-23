@@ -1,25 +1,25 @@
 project("ImGui")
 
 set(imgui_src
-    backends/imgui_impl_opengl3.cpp
-    backends/imgui_impl_glfw.cpp
-    imgui_widgets.cpp
-    imgui_tables.cpp
-    imgui_demo.cpp
-    imgui_draw.cpp
-    imgui.cpp
+    src/backends/imgui_impl_opengl3.cpp
+    src/backends/imgui_impl_glfw.cpp
+    src/imgui_widgets.cpp
+    src/imgui_tables.cpp
+    src/imgui_demo.cpp
+    src/imgui_draw.cpp
+    src/imgui.cpp
 )
 
 set(imgui_hdr
-    backends/imgui_impl_opengl3_loader.h
-    backends/imgui_impl_opengl3.h
-    backends/imgui_impl_glfw.h
-    imstb_rectpack.h
-    imstb_textedit.h
-    imstb_truetype.h
-    imgui_internal.h
-    imconfig.h
-    imgui.h
+    src/backends/imgui_impl_opengl3_loader.h
+    src/backends/imgui_impl_opengl3.h
+    src/backends/imgui_impl_glfw.h
+    src/imstb_rectpack.h
+    src/imstb_textedit.h
+    src/imstb_truetype.h
+    src/imgui_internal.h
+    src/imconfig.h
+    src/imgui.h
 )
 
 add_library(imgui STATIC ${imgui_src} ${imgui_hdr})
