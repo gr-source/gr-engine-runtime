@@ -6,10 +6,10 @@
 
 class Shader {
 public:
-    enum : u8 {
+    enum : u32 {
         eNONE     = 1 << 1,
-        eFRAGMENT = 1 << 2,
-        eVERTEX   = 1 << 3,
+        eFRAGMENT = GL_FRAGMENT_SHADER,
+        eVERTEX   = GL_VERTEX_SHADER,
         eGEOMETRY = 1 << 4,
 
         eMAT4x4   = 2 << 1,
@@ -37,8 +37,10 @@ public:
     Shader(const std::string& path);
     ~Shader();
 
+    static Shader *Create(const char *fragment, const char *vertex);
+
     /* carregue a string source: frag | vert | geo */
-    void loadsource(const char** data, u32 count, u8 type);
+    void loadsource(const char** data, u32 count, u32 type);
 
     void RegisterUniform(const std::string& name, const u32& count, u8 type);
 
@@ -59,6 +61,10 @@ public:
     const std::string& getpath() const;
 
     const u32& getID() const;
+
+    void destroy();
+
+    static Shader* CurrentShader;
 
 protected:
     void checkerrors(GLuint& shaders, const std::string& path, bool compile);

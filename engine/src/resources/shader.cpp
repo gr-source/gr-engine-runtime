@@ -9,26 +9,13 @@
         programID = glCreateProgram(); \
     } \
 
+Shader* Shader::CurrentShader = nullptr;
+
 Shader::Shader(const std::string& path) : path(path), programID(-1) {}
 
-void Shader::loadsource(const char** data, u32 count, u8 type) {
+void Shader::loadsource(const char** data, u32 count, u32 type) {
     CHECK_PROGMA
-    switch (type) {
-    case eFRAGMENT: {
-        createshader(data, count, GL_FRAGMENT_SHADER);
-        break;
-    }
-    case eVERTEX: {
-        createshader(data, count, GL_VERTEX_SHADER);
-        break;
-    }
-    case eGEOMETRY: {
-        createshader(data, count, GL_GEOMETRY_SHADER);
-        break;
-    }
-    default:
-        assert(false && "Error type do not loadede!");
-    }
+    createshader(data, count, type);
 }
 
 void Shader::RegisterUniform(const std::string &name, const u32 &count, u8 type) {
@@ -49,6 +36,7 @@ void Shader::RegisterUniform(const std::string &name, const u32 &count, u8 type)
 
 void Shader::bind() {
     GL_CHECK(glUseProgram(programID));
+    Shader::CurrentShader = this;
 }
 
 template <>
@@ -56,6 +44,14 @@ void Shader::setUniform(const std::string& name, u32 num, const Matrix4x4* value
     Uniform* uniform = getUniformIndex(name);
     if (uniform) {
         GL_CHECK(glUniformMatrix4fv(uniform->location, num, GL_FALSE, reinterpret_cast<const GLfloat*>(value)));
+    }
+}
+
+template <>
+void Shader::setUniform(const std::string& name, u32 num, const int* value) {
+    Uniform* uniform = getUniformIndex(name);
+    if (uniform) {
+        GL_CHECK(glUniform1iv(uniform->location, num, reinterpret_cast<const GLint*>(value)));
     }
 }
 
@@ -109,10 +105,19 @@ void Shader::setUniform(const std::string& name, const int& value) {
 
 void Shader::unbind() {
     glUseProgram(0);
+    Shader::CurrentShader = nullptr;
 }
 
 Shader::~Shader() {
     glDeleteProgram(programID);
+}
+
+Shader *Shader::Create(const char *fragment, const char *vertex) {
+    Shader *shader = new Shader("default");
+    shader->programID = glCreateProgram();
+    shader->createshader(&fragment, 1, Shader::eFRAGMENT);
+    shader->createshader(&vertex, 1, Shader::eVERTEX);
+    return shader;
 }
 
 bool Shader::isvalid() const {
@@ -125,6 +130,10 @@ const std::string &Shader::getpath() const {
 
 const u32 &Shader::getID() const {
     return programID;
+}
+
+void Shader::destroy() {
+    delete this;
 }
 
 void Shader::checkerrors(GLuint& shader, const std::string& path, bool compile) {

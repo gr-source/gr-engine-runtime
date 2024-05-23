@@ -52,22 +52,6 @@ void engine::GLFWframebuffersizefunCallback(GLFWwindow* window, int width, int h
     Screen::SetResolution(width, height);
 }
 
-void engine::GLFWscrollfun(GLFWwindow* window, double xoffset, double yoffset) {
-    // std::cout << xoffset << " " << yoffset << std::endl;
-}
-
-void engine::GLFWcursorposfun(GLFWwindow* window, double xpos, double ypos) {
-}
-
-void engine::GLFWcharfun(GLFWwindow* window, unsigned int codepoint) {
-}
-
-void engine::GLFWmousebuttonfun(GLFWwindow* window, int button, int action, int mods) {
-}
-
-void engine::GLFWcursorenterfun(GLFWwindow* window, int entered) {
-}
-
 void engine::GLFWdropfun(GLFWwindow *window, int path_count, const char *paths[]) {
     std::vector<std::filesystem::path> m_files;
 
@@ -193,6 +177,7 @@ void engine::MainFramebuffer() {
     GEnableFrameBufferSRGB();
     GCullFaceBack();
 
+
     RenderScene();
 
     // trocara para o frame buffer do pos processamento.
@@ -225,9 +210,9 @@ void engine::RenderScene() {
 
     BatchingManager::OnRender();
 
-    glDepthFunc(GL_LEQUAL);
-    m_skybox->render();
-    glDepthFunc(GL_LESS);
+    // glDepthFunc(GL_LEQUAL);
+    // m_skybox->render();
+    // glDepthFunc(GL_LESS);
 }
 
 #if !IS_GAME

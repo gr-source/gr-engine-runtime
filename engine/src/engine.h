@@ -12,16 +12,6 @@ public:
 
     static void GLFWframebuffersizefunCallback(GLFWwindow* window, int width, int height);
 
-    static void GLFWscrollfun(GLFWwindow* window, double xoffset, double yoffset);
-
-    static void GLFWcursorposfun(GLFWwindow* window, double xpos, double ypos);
-
-    static void GLFWcharfun(GLFWwindow* window, unsigned int codepoint);
-
-    static void GLFWmousebuttonfun(GLFWwindow* window, int button, int action, int mods);
-
-    static void GLFWcursorenterfun(GLFWwindow* window, int entered);
-
     static void GLFWdropfun(GLFWwindow* window, int path_count, const char* paths[]);
 
     static void OnScreenSize(int width, int height);

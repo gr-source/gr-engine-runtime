@@ -52,16 +52,6 @@ void glfwInstallCallback(Window window) {
 
     glfwSetFramebufferSizeCallback(window, engine::GLFWframebuffersizefunCallback);
 
-    glfwSetScrollCallback(window, engine::GLFWscrollfun);
-
-    glfwSetCursorPosCallback(window, engine::GLFWcursorposfun);
-
-    glfwSetCharCallback(window, engine::GLFWcharfun);
-
-    glfwSetMouseButtonCallback(window, engine::GLFWmousebuttonfun);
-
-    glfwSetCursorEnterCallback(window, engine::GLFWcursorenterfun);
-
     glfwSetDropCallback(window, engine::GLFWdropfun);
 
     glfwSetWindowCloseCallback(window, GLFWwindowclosefunCallback);
