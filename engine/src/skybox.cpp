@@ -76,31 +76,7 @@ Skybox::Skybox() : play(false), currentTime(0.0f), distance(400.0f), m_backgroun
 
     TextureArgs args {Texture::eRGBA16F, Texture::eRGBA, Texture::eFLOAT, Texture::eBILINEAR, false};
 
-    m_texture = Resources::LoadTexture("/home/grsource/Downloads/lonely_road_afternoon_puresky_1k.hdr", &Skybox::SetupBackgroundTexture, this);
-
-    /*
-    m_texture = Resources::Load("/home/grsource/Downloads/lonely_road_afternoon_puresky_1k.hdr", [&](Texture* textulre) {
-        m_skyboxShader = Resources::Load<Shader>(Filesystem::getpublic(Filesystem::eShader) + "/Skybox", [&](Shader* shader) {
-            shader->RegisterUniform("projection", 1, Shader::eMAT4x4);
-            shader->RegisterUniform("view", 1, Shader::eMAT4x4);
-            shader->RegisterUniform("environmentMap", 1, Shader::eINT);
-
-            GenerateMap([&](u32 i) {
-                m_skyboxbuffer->addSkyColor(Cubemap::ePOSITIVE_X + i, Framebuffer::eCOLOR_ATTACHMENT0);
-            }, textulre);
-
-            m_skyboxShader = Resources::Load<Shader>(Filesystem::getpublic(Filesystem::eShader) + "/Irradiance", [&](Shader* shader) {
-                shader->RegisterUniform("projection", 1, Shader::eMAT4x4);
-                shader->RegisterUniform("view", 1, Shader::eMAT4x4);
-                shader->RegisterUniform("environmentMap", 1, Shader::eINT);
-
-                GenerateMap([&](u32 i) {
-                    m_skyboxbuffer->addIrradiance(Cubemap::ePOSITIVE_X + i, Framebuffer::eCOLOR_ATTACHMENT0);
-                }, m_skyboxbuffer->getSkyColor());
-            });
-        });
-    }, Texture::eSRBG, Texture::eRGB, Texture::eNONE, Texture::eBILINEAR, false);
-    */
+    m_texture = Resources::LoadTexture("/home/grsource/Downloads/industrial_sunset_puresky_1k.hdr", &Skybox::SetupBackgroundTexture, this);
 }
 
 void Skybox::update() {}
@@ -137,8 +113,6 @@ Cubemap *Skybox::getIrradiance() {
 void Skybox::SetupBackgroundTexture(Texture *texture) {
     m_skyboxShader = Resources::LoadShader(Filesystem::getpublic(Filesystem::eShader).string() + "/Skybox", &Skybox::setupSkybox, this);
 }
-
-void Skybox::prepareShader() {}
 
 void Skybox::setupSkybox(Shader* shader) {
     shader->RegisterUniform("projection", 1, Shader::eMAT4x4);

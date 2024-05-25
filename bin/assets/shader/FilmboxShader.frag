@@ -143,10 +143,33 @@ vec3 fresnelSchlick(float cosTheta, vec3 F0) {
     return F0 + (1.0 - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
 }
 
+float getShadow(vec4 fragPosLightSpace) {
+    vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
+    projCoords = projCoords * 0.5 + 0.5;
+    float currentDepth = projCoords.z;
+
+    float shadow = 0.0;
+    vec2 texelSize = 1.0 / textureSize(gShadow, 0);
+    for (int x = -1; x <= 1; ++x) {
+        for (int y = -1; y <= 1; ++y) {
+            float pcfDepth = texture(gShadow, projCoords.xy + vec2(x, y) * texelSize).r;
+            shadow += currentDepth > pcfDepth  ? 1.0 : 0.0;
+        }    
+    }
+    shadow /= 9.0;
+    
+    if (projCoords.z > 1.0)
+        shadow = 0.0;
+        
+    return shadow;
+}
+
 vec3 CreatePointLight(LightComponent light, vec3 V, vec3 N, vec3 F0, vec3 fragPos, vec3 albedo, float roughness, float metallic, float ao) {
     // Calcula o vetor de luz e o vetor de meia direção
     vec3 L = normalize(light.position - fragPos);
     vec3 H = normalize(V + L);
+
+    float shadow = getShadow(light.vp * vec4(m_fragPos, 1.0));
 
     // Calcula os produtos de ponto entre vetores
     float NdotL = max(0.0, dot(N, L));
@@ -170,6 +193,7 @@ vec3 CreatePointLight(LightComponent light, vec3 V, vec3 N, vec3 F0, vec3 fragPo
     vec3 kS = F;
     vec3 kD = vec3(1.0) - kS;
     kD *= 1.0 - metallic;
+    kD *= 1.0 - shadow;
     
     // Calcula a contribuição especular
     vec3 numerator    = NDF * G * F;
@@ -177,7 +201,7 @@ vec3 CreatePointLight(LightComponent light, vec3 V, vec3 N, vec3 F0, vec3 fragPo
     vec3 specular     = numerator / denominator;
         
     // Combina os componentes especulares e difusos e aplica à radiância de saída (Lo)
-    return (kD * albedo / PI + specular) * radiance * NdotL;
+    return (kD * albedo / PI + specular) * radiance * (1.0 - shadow) * NdotL;
 }
 
 vec3 CreateSpotLight(LightComponent light, vec3 V, vec3 N, vec3 F0, vec3 fragPos, vec3 albedo, float roughness, float metallic, float ao) {
@@ -218,27 +242,6 @@ vec3 CreateSpotLight(LightComponent light, vec3 V, vec3 N, vec3 F0, vec3 fragPos
         
     // Add to outgoing radiance Lo
     return (kD * albedo / PI + specular) * radiance * NdotL;
-}
-
-float getShadow(vec4 fragPosLightSpace) {
-    vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
-    projCoords = projCoords * 0.5 + 0.5;
-    float currentDepth = projCoords.z;
-
-    float shadow = 0.0;
-    vec2 texelSize = 1.0 / textureSize(gShadow, 0);
-    for (int x = -1; x <= 1; ++x) {
-        for (int y = -1; y <= 1; ++y) {
-            float pcfDepth = texture(gShadow, projCoords.xy + vec2(x, y) * texelSize).r;
-            shadow += currentDepth > pcfDepth  ? 1.0 : 0.0;
-        }    
-    }
-    shadow /= 9.0;
-    
-    if (projCoords.z > 1.0)
-        shadow = 0.0;
-        
-    return shadow;
 }
 
 vec3 CreateDirectLight(LightComponent light, vec3 V, vec3 N, vec3 F0, vec3 albedo, float roughness, float metallic) {
