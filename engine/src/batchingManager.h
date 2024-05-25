@@ -35,8 +35,6 @@ protected:
 
     static Shader* m_shaderModel;
 
-    static Shader* m_shaderLights;
-    
     static Frustum m_frustum;
 
     static CameraComponent* m_cameraComponent;
@@ -52,8 +50,6 @@ protected:
     static void SetupLight(Shader* shader);
 
     static void SetupEnableShaderModel(Shader* shader);
-
-    static void SetupEnableShaderLight(Shader* shader);
 
     static void SetupEnableShaderShadow(Shader* shader);
 };

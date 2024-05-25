@@ -14,9 +14,9 @@ out vec4 FragColor;
 #define TEXTURE_AO 3
 #define TEXTURE_METALLIC 4
 
-#define LIGHT_DIRECTION 1
-#define LIGHT_POINT 2
-#define LIGHT_SPOT 3
+#define LIGHT_DIRECTION 1.0
+#define LIGHT_POINT 2.0
+#define LIGHT_SPOT 3.0
 
 in vec3 m_normal;
 in vec3 m_fragPos;
@@ -32,13 +32,9 @@ struct Material {
 struct LightComponent {
     vec3 position;
     vec4 color;
-    float attenuationConstant;
-    float attenuationLinear;
-    float attenuationQuadratic;
-    int type;
+    vec3 attenuation; // (x - constant) (y - linear) (z - quadract)
     vec3 direction;
-    float angleInnerCone;
-    float angleOuterCone;
+    vec3 params; // (x - angleInCone) (y - angleOutCone) (z - type)
     mat4 vp;
 };
 
@@ -92,7 +88,7 @@ void main() {
     vec3 color = BaseColor(m_fragPos, albedo, roughness, metallic, ao, normal);
 
     color = color / (color + vec3(1.0));
-    color = pow(color, vec3(1.0 / 2.2)); 
+    color = pow(color, vec3(1.0 / 2.2));
 
     FragColor = vec4(color, 1.0);
 }
@@ -160,7 +156,7 @@ vec3 CreatePointLight(LightComponent light, vec3 V, vec3 N, vec3 F0, vec3 fragPo
 
     // Calcula a atenuação da luz
     float d = length(light.position - fragPos);
-    float attenuation = 1.0 / (light.attenuationConstant + light.attenuationLinear * d + light.attenuationQuadratic * d * d);
+    float attenuation = 1.0 / (light.attenuation.x + light.attenuation.y * d + light.attenuation.z * d * d);
 
     // Calcula a radiância da luz
     vec3 radiance = light.color.xyz * attenuation;
@@ -199,11 +195,11 @@ vec3 CreateSpotLight(LightComponent light, vec3 V, vec3 N, vec3 F0, vec3 fragPos
 
     float intensity = 0.0001;
 
-    float epsilon = (light.angleInnerCone - light.angleOuterCone);
-    intensity = clamp((theta - light.angleOuterCone) / epsilon, 0.0, 1.0);
+    float epsilon = (light.params.x - light.params.y);
+    intensity = clamp((theta - light.params.y) / epsilon, 0.0, 1.0);
 
     float d = length(light.position - fragPos);
-    float attenuation = 1.0 / (light.attenuationConstant + light.attenuationLinear * d + light.attenuationQuadratic * (d * d));
+    float attenuation = 1.0 / (light.attenuation.x + light.attenuation.y * d + light.attenuation.z * (d * d));
 
     vec3 radiance = light.color.xyz * attenuation * intensity;
     
@@ -292,11 +288,11 @@ vec3 BaseColor(vec3 fragPos, vec3 albedo, float roughness, float metallic, float
     // Calcula a iluminação
     vec3 Lo = vec3(0.0);
     for (int i = 0; i < m_lightcount; ++i) {
-        if (m_lights[i].type == LIGHT_POINT) {
+        if (m_lights[i].params.z == LIGHT_POINT) {
             Lo += CreatePointLight(m_lights[i], V, N, F0, fragPos, albedo, roughness, metallic, ao);
-        } else if (m_lights[i].type == LIGHT_SPOT) {
+        } else if (m_lights[i].params.z == LIGHT_SPOT) {
             Lo += CreateSpotLight(m_lights[i], V, N, F0, fragPos, albedo, roughness, metallic, ao);
-        } else if (m_lights[i].type == LIGHT_DIRECTION) {
+        } else if (m_lights[i].params.z == LIGHT_DIRECTION) {
             Lo += CreateDirectLight(m_lights[i], V, N, F0, albedo, roughness, metallic);
         }
     }

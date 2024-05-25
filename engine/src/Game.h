@@ -59,6 +59,10 @@ private:
     #if !IS_GAME
     ImGuiIO* m_io;
 
+    bool menuAdd;
+
+    ImVec4 FPSColor;
+
     ImGuizmo::OPERATION m_guizmoOperation;
 
     ImGuizmo::MODE m_guizmoManipulate;

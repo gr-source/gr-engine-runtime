@@ -26,8 +26,6 @@ u32 BatchingManager::drawCount = 0;
 
 Skybox* BatchingManager::m_skybox = nullptr;
 
-Shader* BatchingManager::m_shaderLights = nullptr;
-
 Shader* BatchingManager::m_shaderModel = nullptr;
 
 Frustum BatchingManager::m_frustum;
@@ -52,8 +50,6 @@ void BatchingManager::Initialize() {
     m_shadowbuffer = &Shadowbuffer::getInstance();
 
     m_shaderModel = Resources::Load<Shader>(Filesystem::getpublic(Filesystem::eShader).string() + "/FilmboxShader", BatchingManager::SetupEnableShaderModel);
-
-    m_shaderLights = Resources::Load<Shader>(Filesystem::getpublic(Filesystem::eShader).string() + "/ShaderLight", BatchingManager::SetupEnableShaderLight);
 
     m_shaderShadow = Resources::Load<Shader>(Filesystem::getpublic(Filesystem::eShader).string() + "/ShaderShadow", BatchingManager::SetupEnableShaderShadow);
 
@@ -224,13 +220,12 @@ void BatchingManager::SetupLight(Shader *shader) {
 
         shader->setUniform("m_lights[" + std::to_string(i) + "].position", m_light->getposition());
         shader->setUniform("m_lights[" + std::to_string(i) + "].color", m_light->getcolor());
-        shader->setUniform("m_lights[" + std::to_string(i) + "].attenuationConstant", m_light->getattenuationconstant());
-        shader->setUniform("m_lights[" + std::to_string(i) + "].attenuationLinear", m_light->getattenuationlinear());
-        shader->setUniform("m_lights[" + std::to_string(i) + "].attenuationQuadratic", m_light->getattenuationquadractc());
-        shader->setUniform("m_lights[" + std::to_string(i) + "].type", m_light->gettype());
+        shader->setUniform("m_lights[" + std::to_string(i) + "].attenuation", Vector3(m_light->getattenuationconstant(), m_light->getattenuationlinear(), m_light->getattenuationquadractc()));
+        // shader->setUniform("m_lights[" + std::to_string(i) + "].type", m_light->gettype());
         shader->setUniform("m_lights[" + std::to_string(i) + "].direction", m_light->getforward());
-        shader->setUniform("m_lights[" + std::to_string(i) + "].angleInnerCone", m_light->getinnecone());
-        shader->setUniform("m_lights[" + std::to_string(i) + "].angleOuterCone", m_light->getoutercone());
+        // shader->setUniform("m_lights[" + std::to_string(i) + "].angleInnerCone", m_light->getinnecone());
+        // shader->setUniform("m_lights[" + std::to_string(i) + "].angleOuterCone", m_light->getoutercone());
+        shader->setUniform("m_lights[" + std::to_string(i) + "].params", Vector3(m_light->getinnecone(), m_light->getoutercone(), (float)m_light->gettype()));
         shader->setUniform("m_lights[" + std::to_string(i) + "].vp", m_light->getprojectionview());
     }
 }
@@ -248,13 +243,9 @@ void BatchingManager::SetupEnableShaderModel(Shader *shader) {
     for (u32 i=0;i<10;i++) {
         shader->RegisterUniform("m_lights[" + std::to_string(i) + "].position", 1, Shader::eVECTOR3);
         shader->RegisterUniform("m_lights[" + std::to_string(i) + "].color", 1, Shader::eVECTOR4);
-        shader->RegisterUniform("m_lights[" + std::to_string(i) + "].attenuationConstant", 1, Shader::eFLOAT);
-        shader->RegisterUniform("m_lights[" + std::to_string(i) + "].attenuationLinear", 1, Shader::eFLOAT);
-        shader->RegisterUniform("m_lights[" + std::to_string(i) + "].attenuationQuadratic", 1, Shader::eFLOAT);
-        shader->RegisterUniform("m_lights[" + std::to_string(i) + "].type", 1, Shader::eFLOAT);
+        shader->RegisterUniform("m_lights[" + std::to_string(i) + "].attenuation", 1, Shader::eVECTOR3);
+        shader->RegisterUniform("m_lights[" + std::to_string(i) + "].params", 1, Shader::eVECTOR3);
         shader->RegisterUniform("m_lights[" + std::to_string(i) + "].direction", 1, Shader::eFLOAT);
-        shader->RegisterUniform("m_lights[" + std::to_string(i) + "].angleInnerCone", 1, Shader::eFLOAT);
-        shader->RegisterUniform("m_lights[" + std::to_string(i) + "].angleOuterCone", 1, Shader::eFLOAT);
         shader->RegisterUniform("m_lights[" + std::to_string(i) + "].vp", 1, Shader::eMAT4x4);
     }
 
@@ -271,18 +262,6 @@ void BatchingManager::SetupEnableShaderModel(Shader *shader) {
     }
     shader->RegisterUniform("gShadow", 1, Shader::eINT);
     shader->RegisterUniform("isanimation", 1, Shader::eINT);
-}
-
-void BatchingManager::SetupEnableShaderLight(Shader *shader) {
-    shader->RegisterUniform("gPosition", 1, Shader::eINT);
-    shader->RegisterUniform("gNormal", 1, Shader::eINT);
-    shader->RegisterUniform("gAlbedo", 1, Shader::eINT);
-    shader->RegisterUniform("gRoughness", 1, Shader::eINT);
-    shader->RegisterUniform("gAo", 1, Shader::eINT);
-    shader->RegisterUniform("gMetallic", 1, Shader::eINT);
-    // shader->RegisterUniform("gShadow", 1, Shader::eINT);
-
-    shader->RegisterUniform("gEye", 1, Shader::eVECTOR3);
 }
 
 void BatchingManager::SetupEnableShaderShadow(Shader *shader) {

@@ -38,6 +38,10 @@ void SceneManager::Load(const std::string &path) {
     is.close();
 }
 
+void SceneManager::remove(GameObject *gameobject) {
+    m_scene.remove(gameobject);
+}
+
 const std::string &SceneManager::GetName() {
     return m_scene.name;
 }

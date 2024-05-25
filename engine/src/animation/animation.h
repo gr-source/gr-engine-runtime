@@ -17,15 +17,9 @@ public:
 
     float ticksPerSecound;
 
-    //std::vector<Bone> pBones;
-    
-    AssimpNodeData m_RootNode;
-    
     std::map<std::string, BoneInfo> m_BoneInfoMap;
 
     Animation(const std::string& name);
-
-   // Bone* findBone(const std::string& name);
 };
 
 

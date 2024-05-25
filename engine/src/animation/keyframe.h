@@ -9,8 +9,6 @@ struct Key {
     float time;
 
     T value;
-
-    // Key(const T& value, float time) : value(value), time(time) {}
 };
 
 class Keyframe {

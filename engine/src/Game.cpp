@@ -187,6 +187,26 @@ GameObject& SetupNode(const FbxNode& node, const FbxScene& scene, Transform* tra
     return gameobject;
 }
 
+void AddChunk(u32 id, const FbxNode& node, const Vector3& position) {
+    GameObject* chunk = SceneManager::add("Chunk(" + std::to_string(id) + ")");
+    Transform& t = chunk->gettransform();
+    t.position = position + Vector3((16.0f * 2.5f) / 2.0f, 0.0f, (16.0f * 2.5f) / 2.0f);
+
+    for (u32 x=0;x<16;x++) {
+        for (u32 z=0;z<16;z++) {
+            GameObject* object = &ObjectManager::add("Cube[" + std::to_string(x) + "][" + std::to_string(z) + "]");
+            object->addComponent<MeshRender>(node.getmeshs(), node.materials);
+
+            Transform& transform = object->gettransform();
+            transform.parent = &t;
+
+            transform.position += Vector3(t.position.x - (x * 2.0f), 0.0f, t.position.z - (z * 2.0f));
+
+            t.addparent(object);
+        }
+    }
+}
+
 void ReaderNode(const FbxNode& node, const FbxScene& scene, const FbxNode* parent = nullptr, Transform* transform = nullptr) {
     if (parent != nullptr) {
         GameObject& gameObject = SetupNode(node, scene, transform);
@@ -202,16 +222,12 @@ void ReaderNode(const FbxNode& node, const FbxScene& scene, const FbxNode* paren
         }
     }
     /*if (parent != nullptr && node.getname() == "Cube") {
-        for (u32 x=0;x<100;x++) {
-            for (u32 z=0;z<100;z++) {
-                GameObject* object = SceneManager::add("Cube[" + std::to_string(x) + "][" + std::to_string(z) + "]");
-                object->addComponent<MeshRender>(node.getmeshs(), node.materials);
+        AddChunk(0, node, Vector3( 0.0f, 0.0f, 0.0f));
+        AddChunk(1, node, Vector3(16.0f, 0.0f, 16.0f));
+        AddChunk(2, node, Vector3(16.0f, 0.0f, 0.0f));
+        AddChunk(3, node, Vector3( 0.0f, 0.0f, 16.0f));
 
-                Transform& transform = object->gettransform();
-
-                transform.position += Vector3(x * node.scale.x * 2.0f, 0.0f, z * node.scale.z * 2.0f);
-            }
-        }
+        // AddChunk(2, node);
     }*/
 
     for (auto& child : node.children) {
@@ -229,7 +245,7 @@ void SceneLoaded(const FbxScene& scene) {
     m_filmbox = nullptr;
 }
 
-Game::Game() : objectselected(nullptr) {
+Game::Game() : objectselected(nullptr), FPSColor(255, 255, 255, 255) {
     m_filmbox = std::make_unique<Filmbox>("/home/grsource/Documentos/filmbox/anim.fbx"); //untitled
     m_filmbox->SetLoaded(SceneLoaded);
     m_filmbox->load();
@@ -302,15 +318,14 @@ void Game::RenderScenesUI() {
     }
 
     if (ImGui::IsKeyReleased(ImGuiKey_A) && m_io->KeyCtrl) {
-        ImGui::OpenPopup("##AddNewObject");
+        menuAdd = !menuAdd;
     }
-
-    if (ImGui::BeginPopup("##AddNewObject")) {
-        MenuAdd();
-        ImGui::EndPopup();
-    }
-
+    
     ImGui::End();
+
+    if (menuAdd) {
+        MenuAdd();
+    }
 }
 
 void Game::ReadHierarchy(std::vector<GameObject *>& list, GameObject* gameObject) {
@@ -335,7 +350,17 @@ void Game::ReadHierarchy(std::vector<GameObject *>& list, GameObject* gameObject
 
     if (ImGui::BeginDragDropTarget()) {
         if (const ImGuiPayload* data = ImGui::AcceptDragDropPayload("##GameObject", ImGuiDragDropFlags_None)) {
-            GameObject* child = reinterpret_cast<GameObject*>(data->Data);
+            GameObject* in = ObjectManager::find((const char*)data->Data);
+            if (in != nullptr) {
+                in->gettransform().parent = &transform;
+
+                transform.addparent(in);
+
+                SceneManager::remove(in);
+                
+                std::cout << "Drag: " << ((const char*)data->Data) << " In: " << gameObject->getname() << std::endl;
+            }
+
         }
         ImGui::EndDragDropTarget();
     }
@@ -360,9 +385,8 @@ void Game::RenderViewportUI() {
 
     ImGui::Begin("Viewport", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
     ImGuizmo::SetDrawlist();
-    float windowWidth = (float)ImGui::GetWindowWidth();
-    float windowHeight = (float)ImGui::GetWindowHeight();
-    ImGuizmo::SetRect(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y, windowWidth, windowHeight);
+    ImVec2 size = ImGui::GetWindowSize();
+    ImGuizmo::SetRect(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y, size.x, size.y);
 
     static ImVec2 lastSize = ImGui::GetContentRegionAvail();
     ImVec2 curSize = ImGui::GetContentRegionAvail();
@@ -406,11 +430,19 @@ void Game::RenderViewportUI() {
 
     const ImVec2 wSize =  ImGui::GetCursorPos();
 
+    if (Time::FPS > 50) {
+        FPSColor = {0, 255, 0, 255};
+    } else if (Time::FPS > 25) {
+        FPSColor = {255, 255, 0, 255};
+    } else if (Time::FPS > 0) {
+        FPSColor = {255, 0, 0, 255};
+    }
+
     std::string fps = "FPS: " + std::to_string(Time::FPS);
 
     ImGui::SetCursorPos(ImVec2(curSize.x - ImGui::CalcTextSize(fps.c_str()).x, ImGui::CalcTextSize(fps.c_str()).y * 2.5f));
 
-    ImGui::Text("%s", fps.c_str());
+    ImGui::TextColored(FPSColor, "%s", fps.c_str());
 
     ImGui::SetCursorPos(ImVec2(ImGui::GetContentRegionAvail().x / 2 - wSize.x, 32));
 
@@ -601,7 +633,7 @@ void Game::RenderPropertiUI() {
             ImGui::Text("Vertices: %d | %s", gameStatics.vertices, getfilesize(gameStatics.vertices).c_str());
             ImGui::Text("Indice: %d | %s", gameStatics.indices, getfilesize(gameStatics.indices).c_str());
             ImGui::Text("Eventos: %d", EventManager::getcount());
-            ImGui::Text("Triangulos: %dK", (gameStatics.indices / 3));
+            ImGui::Text("Triangulos: %.2f", (gameStatics.indices / 3.0f));
 
             ImGui::SeparatorText("Resources");
             ImGui::Text("Textures: %d", Resources::gettexturecount());
@@ -875,7 +907,6 @@ void Game::TextureInfo(Texture *&texture) {
     const ImVec2 textureSize(100, 100);
     const ImVec2 window(300, 400);
 
-    ImGui::SetWindowFocus("Texture Info");
     ImGui::SetNextWindowSize(window, ImGuiCond_Appearing);
     ImGui::SetNextWindowPos(ImVec2((Screen::width / 2) - (window.x / 2), (Screen::height / 2) - (window.y / 2)), ImGuiCond_Appearing);
     ImGui::Begin("Texture Info", &IsOpen);
@@ -897,6 +928,9 @@ void Game::TextureInfo(Texture *&texture) {
     ImGui::SeparatorText("Configurações");
     ImGui::Text("Espaço de cor: %s", Resources::gettextureformatname(texture->getinternalformat()));
 
+    if (!ImGui::IsWindowFocused()) {
+        texture = nullptr;
+    }
     ImGui::End();
 
     if (!IsOpen) {
@@ -905,41 +939,34 @@ void Game::TextureInfo(Texture *&texture) {
 }
 
 void Game::MenuAdd() {
+    ImGui::SetNextWindowPos(ImGui::GetMousePos(), ImGuiCond_Appearing);
+    ImGui::SetNextWindowSize(ImVec2(200, 300), ImGuiCond_Appearing);
+    ImGui::Begin("##Game::MenuAdd", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
     if (ImGui::TreeNode("Luzes")) {
         if (ImGui::Button("Direct")) {
             auto* m_spot = SceneManager::add("(Light) Direction");
             m_spot->addComponent<LightComponent>(LightComponent::eDirection);
 
-            // SceneManager::Add(&m_spot);
-
             ImGui::CloseCurrentPopup();
         }
         if (ImGui::Button("Point")) {
-            auto& m_spot = ObjectManager::add("(Light) Point");
-            m_spot.addComponent<LightComponent>(LightComponent::ePoint);
-
-            // SceneManager::Add(&m_spot);
+            auto* m_spot = SceneManager::add("(Light) Point");
+            m_spot->addComponent<LightComponent>(LightComponent::ePoint);
 
             ImGui::CloseCurrentPopup();
         }
         if (ImGui::Button("Spot")) {
-            auto& m_spot = ObjectManager::add("(Light) Spot");
-            m_spot.addComponent<LightComponent>(LightComponent::eSpot);
+            auto* m_spot = SceneManager::add("(Light) Spot");
+            m_spot->addComponent<LightComponent>(LightComponent::eSpot);
 
-            // SceneManager::Add(&m_spot);
-            
             ImGui::CloseCurrentPopup();
         }
         ImGui::TreePop();
     }
-}
-
-void Game::RenderRectSlide(const Color& color) {
-    const ImVec2 rectMin = ImGui::GetCursorScreenPos();
-
-    const ImVec2 size = ImGui::GetItemRectMax();
-
-    ImGui::GetWindowDrawList()->AddRectFilled(rectMin, size, ImColor(color.r, color.g, color.b, color.a));
+    if (!ImGui::IsWindowFocused()) {
+        menuAdd = false;
+    }
+    ImGui::End();
 }
 
 void Game::loadReources() {

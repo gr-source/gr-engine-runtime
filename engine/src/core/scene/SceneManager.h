@@ -11,6 +11,8 @@ public:
     template <typename... Args>
     static GameObject* add(Args&&... args);
 
+    static void remove(GameObject* gameobject);
+
     static const std::string& GetName();
 
     static std::vector<GameObject*>& GetObjects();

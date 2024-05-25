@@ -4,3 +4,5 @@ object Armature
 object Beta_Joints
 object Beta_Surface
 object Cube
+object Plane
+object Sun
