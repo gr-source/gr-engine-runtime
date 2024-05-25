@@ -232,9 +232,9 @@ void engine::RenderScene() {
 
     BatchingManager::OnRender();
 
-    // glDepthFunc(GL_LEQUAL);
-    // m_skybox->render();
-    // glDepthFunc(GL_LESS);
+    glDepthFunc(GL_LEQUAL);
+    m_skybox->render();
+    glDepthFunc(GL_LESS);
 }
 
 #if !IS_GAME
