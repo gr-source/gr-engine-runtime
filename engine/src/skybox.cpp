@@ -21,7 +21,7 @@ void SetupBackgroundShader(Shader* shader) {
     shader->RegisterUniform("environmentMap", 1, Shader::eINT);
 }
 
-Skybox::Skybox() : play(false), currentTime(0.0f), distance(400.0f), m_backgroundShader(Resources::Load<Shader>(Filesystem::getpublic(Filesystem::eShader) + "/Background", SetupBackgroundShader)), m_skyboxbuffer(std::make_unique<Skyboxbuffer>(512, 512)), m_skyboxShader(nullptr) {
+Skybox::Skybox() : play(false), currentTime(0.0f), distance(400.0f), m_backgroundShader(Resources::Load<Shader>(Filesystem::getpublic(Filesystem::eShader).string() + "/Background", SetupBackgroundShader)), m_skyboxbuffer(std::make_unique<Skyboxbuffer>(512, 512)), m_skyboxShader(nullptr) {
      captureProjection = Math::perspective(Math::rad(90.0f), 1.0f, 0.1f, 10.0f);
      
      captureViews = {

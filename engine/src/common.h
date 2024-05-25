@@ -3,6 +3,7 @@
 #include <memory>
 
 #include "types.h"
+#include "Color.h"
 
 class ObjectManager;
 class GameObject;
@@ -11,19 +12,22 @@ class Skybox;
 /* resources */
 class Shader;
 
+/* Component */
 class CameraController;
 class CameraComponent;
 class LightComponent;
-class Camera;
-class Light;
+class MeshRender;
+class Transform;
+class Rigidbody;
+class Animator;
 
 class GBuffer;
 
-/* Component */
-class MeshRender;
 
 /* framebuffer */
 class Shadowbuffer;
 
 /* src */
 class bufferManager;
+class BufferManager;
+

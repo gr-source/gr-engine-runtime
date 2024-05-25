@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../renderer.h"
+class Entity;
 
 class Component {
 public:

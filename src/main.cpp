@@ -88,27 +88,9 @@ int OnApplicationInit() {
 
     engine::OnInit();
 
-    std::thread th_loader(engine::OnLoader);
-
-    std::thread th_physics(engine::OnPhysics);
-
-    while (Settings::IsEngineRunning || !glfwWindowShouldClose(window)) {
-        engine::OnUpdate();
-
-        engine::OnRender();
-
-        glfwSwapBuffers(window);
-        glfwPollEvents();
-    }
+    engine::MainLoop();
+    
     Settings::IsEngineRunning = false;
-
-    if (th_loader.joinable()) {
-        th_loader.join();
-    }
-
-    if (th_physics.joinable()) {
-        th_physics.join();
-    }
 
     engine::OnDestroy();
 

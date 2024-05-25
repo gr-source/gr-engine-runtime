@@ -52,6 +52,8 @@ public:
 
     bool operator ==(const Mesh& other) const;
 
+    // static Mesh CreateCube();
+
 protected:
     std::string name;
 

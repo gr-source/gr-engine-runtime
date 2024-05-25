@@ -2,7 +2,7 @@
 
 #include "../Global.h"
 
-#include "../ecs/Component.h"
+#include "../ecs/entity.h"
 
 #include "../batchingManager.h"
 #include "../bufferManager.h"
@@ -11,19 +11,8 @@
 
 #include "../culling/occlusion.h"
 
-struct DrawCall {
-    BufferManager buffers;
-    bool IsElements;
-    GLuint count;
-
-    BoundBox m_boundBox;
-
-    DrawCall() : count(0), IsElements(false) {}
-};
-
 class MeshRender : public Component {
 public:
-    MeshRender(const Mesh& mesh, const std::unordered_map<u32, Material>& materials);
     MeshRender(const std::vector<Mesh>& meshs, const std::unordered_map<u32, Material>& materials);
 
     void OnInit() override;
@@ -34,7 +23,11 @@ public:
 
     std::unique_ptr<Occlusion> m_occlusion;
 
-    DrawCall m_drawcall;
+    // DrawCall m_drawcall;
+
+    BoundBox m_boundBox;
+
+    std::unique_ptr<BufferManager> m_bufferManager;
 
     u32 verticeCount;
     u32 indiceCount;

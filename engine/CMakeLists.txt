@@ -7,6 +7,17 @@ set(guizmo_hdr
     src/guizmo/ImGuizmo.h
 )
 
+set(ecs_src
+    src/ecs/entity.cpp
+    src/ecs/entityManager.cpp
+)
+
+set(ecs_hdr
+    src/ecs/entity.h
+    src/ecs/component.h
+    src/ecs/entityManager.h
+)
+
 set(engine_src
     ${guizmo_src}
 
@@ -78,8 +89,7 @@ set(engine_src
     src/core/scene/Scene.cpp
     src/core/scene/SceneManager.cpp
     
-    src/ecs/Entity.cpp
-    src/ecs/EntityManager.cpp
+    ${ecs_src}
 
     src/ui/View.cpp
     src/ui/ImGuiRender.cpp
@@ -90,7 +100,7 @@ set(engine_src
     src/physics/physicsScene.cpp
 
     src/filesystem/filesystem.cpp
-
+    src/filesystem/stream.cpp
 )
 
 set(engine_hdr
@@ -162,8 +172,7 @@ set(engine_hdr
     src/core/scene/Scene.h
     src/core/scene/SceneManager.h
 
-    src/ecs/Entity.h
-    src/ecs/EntityManager.h
+    ${ecs_hdr}
 
     src/ui/View.h
     src/ui/ImGuiRender.h
@@ -174,6 +183,7 @@ set(engine_hdr
     src/physics/physicsScene.h
 
     src/filesystem/filesystem.h
+    src/filesystem/stream.h
 )
 
 add_library(engine STATIC ${engine_src} ${engine_hdr})

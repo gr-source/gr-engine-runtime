@@ -1,6 +1,8 @@
 #pragma once
 
-#include "../ecs/Entity.h"
+#include "../ecs/entity.h"
+
+#include "../common.h"
 
 class CameraController : public Component {
 public:

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../ecs/Entity.h"
+#include "../ecs/entity.h"
 #include "../Global.h"
 
 class Transform : public Component {

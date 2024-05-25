@@ -1,9 +1,8 @@
 #pragma once
 
-#include "Entity.h"
+#include "entity.h"
 
 #include "../types.h"
-#include "../renderer.h"
 
 class EntityManager {
 public:
@@ -16,9 +15,6 @@ public:
 
     /* atualize as entidades */
     static void OnUpdate();
-
-    /* Renderize as entidades */
-    static void OnRender(DebugDraw& debugDraw);
 
     /* Inicie ao scripts das entidade */
     static void OnPlayGame();

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../ecs/Entity.h"
+#include "../ecs/entity.h"
 
 #include "../animation/animationClip.h"
 #include "../animation/skeleton.h"
@@ -27,6 +27,8 @@ protected:
     float currentTime;
 
     void CalculateBoneTransform(const Bone& bone, const Matrix4x4& parentTransform);
+
+    bool loaded;
 
     friend class Game;
 };

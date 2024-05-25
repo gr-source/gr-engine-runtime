@@ -28,7 +28,7 @@ Skybox* BatchingManager::m_skybox = nullptr;
 
 Shader* BatchingManager::m_shaderLights = nullptr;
 
-Shader* BatchingManager::m_shader = nullptr;
+Shader* BatchingManager::m_shaderModel = nullptr;
 
 Frustum BatchingManager::m_frustum;
 
@@ -42,6 +42,8 @@ Shader* m_shaderShadow = nullptr;
 
 Shadowbuffer* BatchingManager::m_shadowbuffer = nullptr;
 
+std::unordered_map<std::string, Batching> BatchingManager::m_batchingRender;
+
 void BatchingManager::Initialize() {
     Occlusion::Initialize();
     
@@ -49,11 +51,11 @@ void BatchingManager::Initialize() {
 
     m_shadowbuffer = &Shadowbuffer::getInstance();
 
-    m_shader = Resources::Load<Shader>(Filesystem::getpublic(Filesystem::eShader) + "/FilmboxShader", BatchingManager::SetupEnableShaderModel);
+    m_shaderModel = Resources::Load<Shader>(Filesystem::getpublic(Filesystem::eShader).string() + "/FilmboxShader", BatchingManager::SetupEnableShaderModel);
 
-    m_shaderLights = Resources::Load<Shader>(Filesystem::getpublic(Filesystem::eShader) + "/ShaderLight", BatchingManager::SetupEnableShaderLight);
+    m_shaderLights = Resources::Load<Shader>(Filesystem::getpublic(Filesystem::eShader).string() + "/ShaderLight", BatchingManager::SetupEnableShaderLight);
 
-    m_shaderShadow = Resources::Load<Shader>(Filesystem::getpublic(Filesystem::eShader) + "/ShaderShadow", BatchingManager::SetupEnableShaderShadow);
+    m_shaderShadow = Resources::Load<Shader>(Filesystem::getpublic(Filesystem::eShader).string() + "/ShaderShadow", BatchingManager::SetupEnableShaderShadow);
 
     std::vector<Vertex2D> vertice = {
         {Vector2(-1.0f,  1.0f), Vector2(0.0f, 1.0f)},
@@ -93,16 +95,11 @@ void BatchingManager::OnUpdate() {
 
         Transform& transform = gameObject->getComponent<Transform>();
 
-        const Vector3& min = meshRender.m_drawcall.m_boundBox.min;
-        const Vector3& max = meshRender.m_drawcall.m_boundBox.max;
+        const Vector3& min = meshRender.m_boundBox.min;
+        const Vector3& max = meshRender.m_boundBox.max;
 
         if (!m_frustum.IsCubeInFrustumOOBB(min, max, transform.getglobalmatrix()) /*&& !meshRender.m_occlusion->isvisible(vp, transform.getglobalmatrix())*/) {
             continue;
-        }
-
-        if (gameObject->hasComponent<Animator>()) {
-            Animator& animator = gameObject->getComponent<Animator>();
-            animator.OnUpdate();
         }
 
         m_objectrender.push_back(gameObject.get());
@@ -125,46 +122,45 @@ void BatchingManager::OnRenderShadow() {
 }
 
 void BatchingManager::OnRender() {
-    if (!m_shader->isvalid() || !m_shaderShadow->isvalid() || m_objectrender.empty()) return;
+    if (!m_shaderModel->isvalid() || !m_shaderShadow->isvalid() || m_objectrender.empty()) return;
 
-    m_shader->bind();
+    m_shaderModel->bind();
 
-    m_shader->setUniform("projection", m_cameraComponent->getperspesctive());
-    m_shader->setUniform("view", m_cameraComponent->getviewmatrix());
-    m_shader->setUniform("gEye", m_cameraComponent->getposition());
+    m_shaderModel->setUniform("projection", m_cameraComponent->getperspesctive());
+    m_shaderModel->setUniform("view", m_cameraComponent->getviewmatrix());
+    m_shaderModel->setUniform("gEye", m_cameraComponent->getposition());
 
-    SetupLight(m_shader);
+    SetupLight(m_shaderModel);
 
     for (auto& gameObject : m_objectrender) {
-        if (!gameObject->hasComponent<MeshRender>()) continue;
+        const bool hasAnimation = gameObject->hasComponent<Animator>();
 
-        m_shader->setUniform("isanimation", static_cast<int>(gameObject->hasComponent<Animator>()));
+        m_shaderModel->setUniform("isanimation", static_cast<int>(hasAnimation));
 
-        if (gameObject->hasComponent<Animator>()) {
-
+        if (hasAnimation) {
             Animator& animator = gameObject->getComponent<Animator>();
-            m_shader->setUniform("u_boneMatrices", 100, animator.m_FinalBoneMatrices.data());
+            m_shaderModel->setUniform("u_boneMatrices", 100, animator.m_FinalBoneMatrices.data());
         }
 
         MeshRender& meshRender = gameObject->getComponent<MeshRender>();
 
         Transform& transform = gameObject->getComponent<Transform>();
 
-        m_shader->setUniform("model", transform.getglobalmatrix());
+        m_shaderModel->setUniform("model", transform.getglobalmatrix());
 
-        SetupMaterial(meshRender, m_shader);
+        SetupMaterial(meshRender, m_shaderModel);
 
-        meshRender.m_drawcall.buffers.bind(BufferManager::eVAO);
+        meshRender.m_bufferManager->bind(BufferManager::eVAO);
 
-        meshRender.m_drawcall.buffers.draw(BufferManager::eTriangle, meshRender.indiceCount, BufferManager::eUint, nullptr);
+        meshRender.m_bufferManager->draw(BufferManager::eTriangle, meshRender.indiceCount, BufferManager::eUint, nullptr);
 
-        meshRender.m_drawcall.buffers.unbind();
+        meshRender.m_bufferManager->unbind();
         
         for (u32 i=0;i<MAX_TEXTURE;i++) {
             GDisableTexture(i);
         }
     }
-    m_shader->unbind();
+    m_shaderModel->unbind();
 }
 
 void BatchingManager::RenderModel(Shader *shader) {
@@ -184,72 +180,13 @@ void BatchingManager::RenderModel(Shader *shader) {
         shader->setUniform("model", transform.getglobalmatrix());
 
         MeshRender& meshRender = gameObject->getComponent<MeshRender>();
-        meshRender.m_drawcall.buffers.bind(BufferManager::eVAO);
+        meshRender.m_bufferManager->bind(BufferManager::eVAO);
 
-        meshRender.m_drawcall.buffers.draw(BufferManager::eTriangle, meshRender.indiceCount, BufferManager::eUint, nullptr);
+        meshRender.m_bufferManager->draw(BufferManager::eTriangle, meshRender.indiceCount, BufferManager::eUint, nullptr);
 
-        meshRender.m_drawcall.buffers.unbind();
+        meshRender.m_bufferManager->unbind();
     }
 }
-
-/*
-void BatchingManager::OnRenderLight(GBuffer* gbuffer) {
-    if (!m_shaderLights->isvalid()) return;
-    
-    CameraComponent& m_camera = CameraComponent::MainCamera();
-
-    m_shaderLights->bind();
-
-    gbuffer->GetTexture(GBuffer::Texture_Position)->bind(GL_TEXTURE0 + 0);
-    m_shaderLights->setUniform("gPosition", 0);
-
-    gbuffer->GetTexture(GBuffer::Texture_Normal)->bind(GL_TEXTURE0 + 1);
-    m_shaderLights->setUniform("gNormal", 1);
-
-    gbuffer->GetTexture(GBuffer::Texture_Albedo)->bind(GL_TEXTURE0 + 2);
-    m_shaderLights->setUniform("gAlbedo", 2);
-
-    gbuffer->GetTexture(GBuffer::Texture_Roughnness)->bind(GL_TEXTURE0 + 3);
-    m_shaderLights->setUniform("gRoughness", 3);
-
-    gbuffer->GetTexture(GBuffer::Texture_Ao)->bind(GL_TEXTURE0 + 4);
-    m_shaderLights->setUniform("gAo", 4);
-
-    gbuffer->GetTexture(GBuffer::Texture_Metallic)->bind(GL_TEXTURE0 + 5);
-    m_shaderLights->setUniform("gMetallic", 5);
-
-    m_shadowbuffer->GetTexture()->bind(GL_TEXTURE0 + 6);
-    m_shaderLights->setUniform("gShadow", 6);
-
-    m_shaderLights->setUniform("gEye", m_camera.getposition());
-
-    auto& lights = LightComponent::m_lights;
-
-    m_shaderLights->setUniform("m_lightcount", static_cast<int>(lights.size()));
-
-    // Matrix4x4 projection = Math::orthographic(-10.0f, 10.0f, -10.0f, 10.0f, 7.5f, 1.0f);
-    
-    for (u32 i=0;i<lights.size();i++) {
-        const auto& m_light = lights[i];
-
-        // Matrix4x4 projection = Math::orthographic(-10.0f, 10.0f, -10.0f, 10.0f, 7.5f, 1.0f);
-
-        m_shaderLights->setUniform("m_lights[" + std::to_string(i) + "].position", m_light->getposition());
-        m_shaderLights->setUniform("m_lights[" + std::to_string(i) + "].color", m_light->getcolor());
-        m_shaderLights->setUniform("m_lights[" + std::to_string(i) + "].attenuationConstant", m_light->getattenuationconstant());
-        m_shaderLights->setUniform("m_lights[" + std::to_string(i) + "].attenuationLinear", m_light->getattenuationlinear());
-        m_shaderLights->setUniform("m_lights[" + std::to_string(i) + "].attenuationQuadratic", m_light->getattenuationquadractc());
-        m_shaderLights->setUniform("m_lights[" + std::to_string(i) + "].type", m_light->gettype());
-        m_shaderLights->setUniform("m_lights[" + std::to_string(i) + "].direction", m_light->getforward());
-        m_shaderLights->setUniform("m_lights[" + std::to_string(i) + "].angleInnerCone", m_light->getinnecone());
-        m_shaderLights->setUniform("m_lights[" + std::to_string(i) + "].angleOuterCone", m_light->getoutercone());
-        // m_shaderLights->setUniform("m_lights[" + std::to_string(i) + "].vp", projection * m_light->getviewmatrix());
-    }
-
-    m_screenRender->bind(BufferManager::eVAO);
-    m_screenRender->draw(BufferManager::eTriangle, 0, 6);
-}
-*/
 
 void BatchingManager::SetupMaterial(const MeshRender &meshRender, Shader *shader) {
     for (const auto& material : meshRender.materials) {

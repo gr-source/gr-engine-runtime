@@ -2,6 +2,8 @@
 
 #include "Transform.h"
 
+#include "../renderer.h"
+
 std::vector<LightComponent*> LightComponent::m_lights;
 Matrix4x4 LightComponent::projection = Math::orthographic(-10.0f, 10.0f, -10.0f, 10.0f, 1.0f, 7.5f);
 

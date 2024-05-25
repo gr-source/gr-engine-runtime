@@ -1,7 +1,7 @@
 #pragma once
 
+#include "../ecs/entity.h"
 #include "../Global.h"
-#include "../ecs/Component.h"
 
 #include <bullet/btBulletDynamicsCommon.h>
 

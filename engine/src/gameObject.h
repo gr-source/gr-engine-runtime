@@ -3,8 +3,7 @@
 #include <utility>
 #include <string>
 
-#include "ecs/Component.h"
-#include "ecs/Entity.h"
+#include "ecs/entity.h"
 
 #include "component/Transform.h"
 
@@ -33,7 +32,7 @@ public:
 
     /* adiciono um componenet ao objeto */
     template <typename T, typename ...Argv>
-    T& addComponent(Argv&&... argv);
+    constexpr T& addComponent(Argv&&... argv);
 
     /* pegue um component do objeto */
     template <typename T>
@@ -41,7 +40,7 @@ public:
 
     /* verifique de o component existe nesse objeto */
     template <typename T>
-    const bool hasComponent() const;
+    constexpr bool hasComponent() const;
 
     Transform& gettransform();
 
@@ -52,7 +51,7 @@ public:
 };
 
 template <typename T, typename ...Argv>
-inline T& GameObject::addComponent(Argv&&... argv) {
+inline constexpr T& GameObject::addComponent(Argv&&... argv) {
     return entity->addComponent<T>(std::forward<Argv>(argv)...);
 }
 
@@ -62,7 +61,7 @@ inline T& GameObject::getComponent() {
 }
 
 template <typename T>
-inline const bool GameObject::hasComponent() const {
+inline constexpr bool GameObject::hasComponent() const {
     return entity->hasComponent<T>();
 }
 

@@ -11,6 +11,10 @@
 
 #include "culling/frustum.h"
 
+struct Batching {
+    BufferManager* m_bufferRender;
+};
+
 class BatchingManager {
 public:
     static void Initialize();
@@ -21,16 +25,15 @@ public:
 
     static void OnRenderShadow();
 
-    /* shader deffred */
-    // static void OnRenderLight(GBuffer* gbuffer);
-
     static u32 frustomDraw;
     static u32 drawCount;
+
+    static std::unordered_map<std::string, Batching> m_batchingRender;
 
 protected:
     static Skybox* m_skybox;
 
-    static Shader* m_shader;
+    static Shader* m_shaderModel;
 
     static Shader* m_shaderLights;
     

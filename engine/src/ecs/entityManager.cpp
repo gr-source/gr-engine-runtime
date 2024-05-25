@@ -1,5 +1,5 @@
-#include "EntityManager.h"
-#include "Entity.h"
+#include "entityManager.h"
+#include "entity.h"
 
 #include "../settings.h"
 

@@ -45,6 +45,7 @@ if(NOT BULLET_FOUND)
 endif()
 
 # Adicionando subdiretórios
+add_subdirectory(gr-render)
 add_subdirectory(engine)
 add_subdirectory(imgui)
 

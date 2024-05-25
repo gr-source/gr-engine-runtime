@@ -2,7 +2,7 @@
 
 #include "collider.h"
 
-#include "../ecs/Entity.h"
+#include "../ecs/entity.h"
 #include "../Global.h"
 
 class BoxCollider : public Component {

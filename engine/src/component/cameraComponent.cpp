@@ -14,14 +14,14 @@ u32 CameraComponent::CameraID = 0;
 
 CameraComponent &CameraComponent::MainCamera() {
     if (m_cameras.empty()) {
-        GameObject& m_mainCamera = ObjectManager::add("MainCamera");
+        GameObject* m_mainCamera = SceneManager::add("MainCamera");//ObjectManager::add("MainCamera");
 
-        Transform& m_transform = m_mainCamera.getComponent<Transform>();
+        Transform& m_transform = m_mainCamera->getComponent<Transform>();
         m_transform.position = {-22.098204f, 19.242348f, -27.375128f};
 
-        SceneManager::Add(&m_mainCamera);
+        // SceneManager::Add(&m_mainCamera);
 
-        return m_mainCamera.addComponent<CameraComponent>(45.0f, 0.001f, 500.0f, (float(Screen::width / Screen::height)));
+        return m_mainCamera->addComponent<CameraComponent>(45.0f, 0.001f, 100.0f, (float(Screen::width / Screen::height)));
     }
     return *m_cameras[CameraID];
 }

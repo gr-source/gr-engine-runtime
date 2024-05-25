@@ -54,7 +54,7 @@ void Occlusion::Initialize() {
 
     count = m_mesh.getelementcount();
 
-    m_shaderQuery = Resources::Load<Shader>(Filesystem::getpublic(Filesystem::eShader) + "/ShaderQuery");
+    m_shaderQuery = Resources::Load<Shader>(Filesystem::getpublic(Filesystem::eShader).string() + "/ShaderQuery");
 }
 
 Occlusion::Occlusion() : queryID(-1) {

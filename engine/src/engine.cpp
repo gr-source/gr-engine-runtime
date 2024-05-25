@@ -4,7 +4,7 @@
 
 #include "component/MeshRender.h"
 
-#include "ecs/EntityManager.h"
+#include "ecs/entityManager.h"
 
 #include "ui/ImGuiRender.h"
 
@@ -53,16 +53,33 @@ void engine::GLFWframebuffersizefunCallback(GLFWwindow* window, int width, int h
 }
 
 void engine::GLFWdropfun(GLFWwindow *window, int path_count, const char *paths[]) {
-    std::vector<std::filesystem::path> m_files;
+    /*std::vector<std::filesystem::path> m_files;
 
     for (int i=0;i<path_count;i++) {
         m_files.push_back(paths[i]);
-    }
-    // Game::ImportFiles(m_files);
+    }*/
 }
 
 void engine::OnScreenSize(int width, int height) {
     Screen::SetResolution(static_cast<float>(width), static_cast<float>(height));
+}
+
+void engine::MainLoop() {
+    m_thread[0] = std::thread(OnLoader);
+    m_thread[1] = std::thread(OnPhysics);
+
+    Time timer(60.0f);
+    while (Settings::IsEngineRunning) {
+        Time::deltaTime = gameStatics.updateMs = timer.SleepTick();
+        Time::FPS = timer.getFPS();
+
+        engine::OnUpdate();
+
+        engine::OnRender();
+
+        glfwSwapBuffers(glfwGetCurrentContext());
+        glfwPollEvents();
+    }
 }
 
 std::unique_ptr<Game> engine::m_game = nullptr;
@@ -80,6 +97,8 @@ ScreenBuffer* pScreenBuffer = nullptr;
 Imguibuffer* pImguibuffer = nullptr;
 
 GBuffer* m_gbuffer = nullptr;
+
+std::thread engine::m_thread[2];
 
 void engine::OnInit() {
     Input::SetInstance((void*)glfwGetCurrentContext());
@@ -109,10 +128,7 @@ void engine::OnInit() {
     #endif
 }
 
-Time timer_update(60.0f);
 void engine::OnUpdate() {
-    Time::deltaTime = gameStatics.updateMs = timer_update.SleepTick();
-
     EntityManager::OnUpdate();
 
     m_game->Update();
@@ -150,7 +166,14 @@ void engine::OnLoader() {
     } while (Settings::IsEngineRunning);
 }
 
-void engine::OnDestroy() {}
+void engine::OnDestroy() {
+    if (m_thread[0].joinable()) {
+        m_thread[0].join();
+    }
+    if (m_thread[1].joinable()) {
+        m_thread[1].join();
+    }
+}
 
 Time tickRender;
 void engine::MainFramebuffer() {
@@ -159,7 +182,7 @@ void engine::MainFramebuffer() {
     // Preparação ara renderização.
     BatchingManager::OnUpdate();
 
-    // Preparação do shadow
+    // // Preparação do shadow
     m_shadowbuffer->bind();
     GRender(GRENDERERDEPTH);
     GEnableDepthTest();
@@ -176,7 +199,6 @@ void engine::MainFramebuffer() {
     GEnableDepthTest();
     GEnableFrameBufferSRGB();
     GCullFaceBack();
-
 
     RenderScene();
 

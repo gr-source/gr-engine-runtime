@@ -43,7 +43,7 @@ public:
         NavegationFlags_models  = 1 << 4,
     };
 
-    static void ImportFiles(const std::vector<std::filesystem::path>& files);
+    // static void ImportFiles(const std::vector<std::filesystem::path>& files);
 
     #endif
 

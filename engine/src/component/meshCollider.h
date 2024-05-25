@@ -4,7 +4,7 @@
 
 #include "../geometry/mesh.h"
 
-#include "../ecs/Entity.h"
+#include "../ecs/entity.h"
 
 class MeshCollider : public Component {
 public:

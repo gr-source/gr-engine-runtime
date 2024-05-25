@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../ecs/Component.h"
+#include "../ecs/entity.h"
 
 #include <btBulletDynamicsCommon.h>
 #include <BulletCollision/CollisionShapes/btCapsuleShape.h>

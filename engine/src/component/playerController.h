@@ -1,6 +1,8 @@
 #pragma once
 
-#include "../ecs/Component.h"
+#include "../ecs/entity.h"
+
+#include "../common.h"
 
 class PlayerController : public Component {
 public:

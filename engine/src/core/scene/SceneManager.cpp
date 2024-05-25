@@ -38,10 +38,6 @@ void SceneManager::Load(const std::string &path) {
     is.close();
 }
 
-void SceneManager::Add(GameObject *gameobject) {
-    m_scene.add(gameobject);
-}
-
 const std::string &SceneManager::GetName() {
     return m_scene.name;
 }
@@ -49,3 +45,7 @@ const std::string &SceneManager::GetName() {
 std::vector<GameObject *> &SceneManager::GetObjects() {
     return m_scene.m_gameObjects;
 }
+
+
+
+

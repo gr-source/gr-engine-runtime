@@ -1,6 +1,6 @@
 #include "Game.h"
 
-#include "time.h"
+#include "timer.h"
 #include "screen.h"
 #include "memory.h"
 #include "skybox.h"
@@ -19,7 +19,7 @@
 
 #include "resources/resources.h"
 
-#include "ecs/EntityManager.h"
+#include "ecs/entityManager.h"
 
 #include "component/playerController.h"
 #include "component/cameraController.h"
@@ -39,13 +39,14 @@
 #include "core/scene/SceneManager.h"
 #include "core/scene/Scene.h"
 
-#include "ecs/EntityManager.h"
+#include "ecs/entityManager.h"
 
 #include "filesystem/filesystem.h"
 
 #include "ui/View.h"
 
 #include <sstream>
+#include <iomanip>
 
 const std::string getfilesize(std::size_t sz) {
     float kb = sz / 1024.0f;
@@ -94,27 +95,24 @@ EditorController mEditorController;
 std::unique_ptr<Filmbox> m_filmbox = nullptr;
 
 GameObject& GenGameObject(const FbxNode& node, bool local) {
-    GameObject& gameObject = ObjectManager::add(node.getname());
+    GameObject* gameObject = nullptr;
 
-    Transform& transform = gameObject.getComponent<Transform>();
+    if (local) {
+        gameObject = &ObjectManager::add(node.getname());
+    } else {
+        gameObject = SceneManager::add(node.getname());
+    }
 
-    // if (local) {
-        // transform.localScale = node.scale;
-        // transform.localRotation = node.rotation;
-        // transform.localPosition = node.position;
-    // } else {
-        transform.scale = node.scale;
-        transform.rotation = node.rotation;
-        transform.position = node.position;
+    Transform& transform = gameObject->getComponent<Transform>();
 
-        if (!local)
-        SceneManager::Add(&gameObject);
-    // }
+    transform.scale = node.scale;
+    transform.rotation = node.rotation;
+    transform.position = node.position;
 
     if (node.hasmesh()) {
-        gameObject.addComponent<MeshRender>(node.getmeshs(), node.materials);
+        gameObject->addComponent<MeshRender>(node.getmeshs(), node.materials);
     }
-    return gameObject;
+    return *gameObject;
 }
 
 void CreateLight(GameObject& gameobject, const FbxNode& node, const FbxScene& scene) {
@@ -203,6 +201,18 @@ void ReaderNode(const FbxNode& node, const FbxScene& scene, const FbxNode* paren
             transform = &gameObject.gettransform();
         }
     }
+    /*if (parent != nullptr && node.getname() == "Cube") {
+        for (u32 x=0;x<100;x++) {
+            for (u32 z=0;z<100;z++) {
+                GameObject* object = SceneManager::add("Cube[" + std::to_string(x) + "][" + std::to_string(z) + "]");
+                object->addComponent<MeshRender>(node.getmeshs(), node.materials);
+
+                Transform& transform = object->gettransform();
+
+                transform.position += Vector3(x * node.scale.x * 2.0f, 0.0f, z * node.scale.z * 2.0f);
+            }
+        }
+    }*/
 
     for (auto& child : node.children) {
         ReaderNode(child, scene, &node, transform);
@@ -251,7 +261,7 @@ void Game::Gui() {
     }
     
     if (ImGui::IsKeyReleased(ImGuiKey_S) && m_io->KeyCtrl) {
-        SceneManager::Save(Filesystem::getpublic(Filesystem::eScene) + "/SceneMain.scn");
+        SceneManager::Save(Filesystem::getpublic(Filesystem::eScene).string() + "/SceneMain.scn");
     }
 
     RenderDocking();
@@ -396,7 +406,14 @@ void Game::RenderViewportUI() {
 
     const ImVec2 wSize =  ImGui::GetCursorPos();
 
+    std::string fps = "FPS: " + std::to_string(Time::FPS);
+
+    ImGui::SetCursorPos(ImVec2(curSize.x - ImGui::CalcTextSize(fps.c_str()).x, ImGui::CalcTextSize(fps.c_str()).y * 2.5f));
+
+    ImGui::Text("%s", fps.c_str());
+
     ImGui::SetCursorPos(ImVec2(ImGui::GetContentRegionAvail().x / 2 - wSize.x, 32));
+
     if (ImGui::ImageButton(reinterpret_cast<ImTextureID>(texturePlayGame->getID()), ImVec2(16, 16))) {
         Settings::IsGameRunning =! Settings::IsGameRunning;
 
@@ -415,7 +432,7 @@ void Game::RenderViewportUI() {
 }
 
 void Game::RenderFilesUI() {
-    static std::filesystem::path resources = Filesystem::getpublic(Filesystem::eResource);
+    /*static Filesystem::path resources = Filesystem::getpublic(Filesystem::eResource);
     const ImVec2 iconSize = reinterpret_vector<ImVec2, Vector2>(Settings::IconSize);
     ImTextureID iconTexture = nullptr;
     Texture* m_texture = nullptr;
@@ -424,18 +441,15 @@ void Game::RenderFilesUI() {
     ImGui::Columns(5, "#Collums1", false);
     if (ImGui::ImageButton(reinterpret_cast<ImTextureID>(iconsUI[IconType::ICON_BACK_FILE]->getID()), iconSize)) {
         if (resources != Filesystem::getpublic(Filesystem::eResource)) {
-            resources = resources.parent_path();
+            // resources = {resources.parent, resources.parent};
         }
     }
     ImGui::Text("Voltar");
 
-    std::vector<std::filesystem::path> files;
-    for (const auto& entry : std::filesystem::directory_iterator(resources)) {
-        files.push_back(entry.path());
-    }
+    std::vector<Filesystem::path> files = Filesystem::getDirectoryEntry(resources.path);
 
-    std::sort(files.begin(), files.end(), [](const std::filesystem::path& a, const std::filesystem::path& b) {
-        return a.filename() < b.filename();
+    std::sort(files.begin(), files.end(), [](const Filesystem::path& a, const Filesystem::path& b) {
+        return a.name < b.name;
     });
 
     for (auto& entry : files) {
@@ -522,7 +536,7 @@ void Game::RenderFilesUI() {
     if (texture != nullptr) {
         TextureInfo(texture);
     }
-
+    */
     ImGui::Columns(1);
 }
 
@@ -595,7 +609,7 @@ void Game::RenderPropertiUI() {
 
             ImGui::SeparatorText("Threads");
             ImGui::Text("Update:  %fms  | FPS: %.2f",  gameStatics.updateMs,  (1.0f / gameStatics.updateMs));
-            ImGui::Text("Render:  %fms  | FPS: %.2f",  gameStatics.renderMs,  (1.0f / gameStatics.renderMs));
+            ImGui::Text("Render:  %fms  | FPS: %.2f",  gameStatics.renderMs,  (1.0f / (Time::deltaTime - gameStatics.renderMs)));
             ImGui::Text("Physics: %fms  | FPS: %.2f",  gameStatics.physicsMs, (1.0f / gameStatics.physicsMs));
             ImGui::Text("Script:  %fms  | FPS: %.2f",  gameStatics.scriptMS,  (1.0f / gameStatics.scriptMS));
 
@@ -893,10 +907,10 @@ void Game::TextureInfo(Texture *&texture) {
 void Game::MenuAdd() {
     if (ImGui::TreeNode("Luzes")) {
         if (ImGui::Button("Direct")) {
-            auto& m_spot = ObjectManager::add("(Light) Direction");
-            m_spot.addComponent<LightComponent>(LightComponent::eDirection);
+            auto* m_spot = SceneManager::add("(Light) Direction");
+            m_spot->addComponent<LightComponent>(LightComponent::eDirection);
 
-            SceneManager::Add(&m_spot);
+            // SceneManager::Add(&m_spot);
 
             ImGui::CloseCurrentPopup();
         }
@@ -904,7 +918,7 @@ void Game::MenuAdd() {
             auto& m_spot = ObjectManager::add("(Light) Point");
             m_spot.addComponent<LightComponent>(LightComponent::ePoint);
 
-            SceneManager::Add(&m_spot);
+            // SceneManager::Add(&m_spot);
 
             ImGui::CloseCurrentPopup();
         }
@@ -912,7 +926,7 @@ void Game::MenuAdd() {
             auto& m_spot = ObjectManager::add("(Light) Spot");
             m_spot.addComponent<LightComponent>(LightComponent::eSpot);
 
-            SceneManager::Add(&m_spot);
+            // SceneManager::Add(&m_spot);
             
             ImGui::CloseCurrentPopup();
         }
@@ -929,25 +943,25 @@ void Game::RenderRectSlide(const Color& color) {
 }
 
 void Game::loadReources() {
-    iconsUI.emplace(IconType::ICON_FILE,        Resources::Load<Texture>(Filesystem::getpublic(Filesystem::eIcon) + "/icons8-file-30.png"));
-    iconsUI.emplace(IconType::ICON_FOLDER,      Resources::Load<Texture>(Filesystem::getpublic(Filesystem::eIcon) + "/icons8-folder-50.png"));
-    iconsUI.emplace(IconType::ICON_BACK_FILE,   Resources::Load<Texture>(Filesystem::getpublic(Filesystem::eIcon) + "/icons8-go-back-50.png"));
-    iconsUI.emplace(IconType::ICON_GAMEOBJECT,  Resources::Load<Texture>(Filesystem::getpublic(Filesystem::eIcon) + "/icons8-3d-object-50.png"));
-    iconsUI.emplace(IconType::ICON_PENCIL,      Resources::Load<Texture>(Filesystem::getpublic(Filesystem::eIcon) + "/icons8-lápis-30.png"));
-    iconsUI.emplace(IconType::ICON_LIGHT,       Resources::Load<Texture>(Filesystem::getpublic(Filesystem::eIcon) + "/icons8-lâmpada-globular-64.png"));
-    iconsUI.emplace(IconType::ICON_TEXTURE,     Resources::Load<Texture>(Filesystem::getpublic(Filesystem::eIcon) + "/icons8-textura-de-renderização-32.png"));
-    iconsUI.emplace(IconType::ICON_PNG,         Resources::Load<Texture>(Filesystem::getpublic(Filesystem::eIcon) + "/icons8-png-24.png"));
-    iconsUI.emplace(IconType::ICON_PLAY_GAME,   Resources::Load<Texture>(Filesystem::getpublic(Filesystem::eIcon) + "/icons8-reproduzir-30.png"));
-    iconsUI.emplace(IconType::ICON_STOP_GAME,   Resources::Load<Texture>(Filesystem::getpublic(Filesystem::eIcon) + "/icons8-parar-50.png"));
-    iconsUI.emplace(IconType::ICON_BIN,         Resources::Load<Texture>(Filesystem::getpublic(Filesystem::eIcon) + "/icons8-resíduos-50.png"));
-    iconsUI.emplace(IconType::ICON_IMPORT,      Resources::Load<Texture>(Filesystem::getpublic(Filesystem::eIcon) + "/icons8-importar-50.png"));
-    iconsUI.emplace(IconType::ICON_ASCENDENTE,  Resources::Load<Texture>(Filesystem::getpublic(Filesystem::eIcon) + "/icons8-ordenar-para-a-direita-50.png"));
-    iconsUI.emplace(IconType::ICON_DESCENDENTE, Resources::Load<Texture>(Filesystem::getpublic(Filesystem::eIcon) + "/icons8-ordem-descendente-50.png"));
-    iconsUI.emplace(IconType::ICON_EDIT,        Resources::Load<Texture>(Filesystem::getpublic(Filesystem::eIcon) + "/icons8-editar-24.png"));
+    iconsUI.emplace(IconType::ICON_FILE,        Resources::Load<Texture>(Filesystem::getpublic(Filesystem::eIcon).string() + "/icons8-file-30.png"));
+    iconsUI.emplace(IconType::ICON_FOLDER,      Resources::Load<Texture>(Filesystem::getpublic(Filesystem::eIcon).string() + "/icons8-folder-50.png"));
+    iconsUI.emplace(IconType::ICON_BACK_FILE,   Resources::Load<Texture>(Filesystem::getpublic(Filesystem::eIcon).string() + "/icons8-go-back-50.png"));
+    iconsUI.emplace(IconType::ICON_GAMEOBJECT,  Resources::Load<Texture>(Filesystem::getpublic(Filesystem::eIcon).string() + "/icons8-3d-object-50.png"));
+    iconsUI.emplace(IconType::ICON_PENCIL,      Resources::Load<Texture>(Filesystem::getpublic(Filesystem::eIcon).string() + "/icons8-lápis-30.png"));
+    iconsUI.emplace(IconType::ICON_LIGHT,       Resources::Load<Texture>(Filesystem::getpublic(Filesystem::eIcon).string() + "/icons8-lâmpada-globular-64.png"));
+    iconsUI.emplace(IconType::ICON_TEXTURE,     Resources::Load<Texture>(Filesystem::getpublic(Filesystem::eIcon).string() + "/icons8-textura-de-renderização-32.png"));
+    iconsUI.emplace(IconType::ICON_PNG,         Resources::Load<Texture>(Filesystem::getpublic(Filesystem::eIcon).string() + "/icons8-png-24.png"));
+    iconsUI.emplace(IconType::ICON_PLAY_GAME,   Resources::Load<Texture>(Filesystem::getpublic(Filesystem::eIcon).string() + "/icons8-reproduzir-30.png"));
+    iconsUI.emplace(IconType::ICON_STOP_GAME,   Resources::Load<Texture>(Filesystem::getpublic(Filesystem::eIcon).string() + "/icons8-parar-50.png"));
+    iconsUI.emplace(IconType::ICON_BIN,         Resources::Load<Texture>(Filesystem::getpublic(Filesystem::eIcon).string() + "/icons8-resíduos-50.png"));
+    iconsUI.emplace(IconType::ICON_IMPORT,      Resources::Load<Texture>(Filesystem::getpublic(Filesystem::eIcon).string() + "/icons8-importar-50.png"));
+    iconsUI.emplace(IconType::ICON_ASCENDENTE,  Resources::Load<Texture>(Filesystem::getpublic(Filesystem::eIcon).string() + "/icons8-ordenar-para-a-direita-50.png"));
+    iconsUI.emplace(IconType::ICON_DESCENDENTE, Resources::Load<Texture>(Filesystem::getpublic(Filesystem::eIcon).string() + "/icons8-ordem-descendente-50.png"));
+    iconsUI.emplace(IconType::ICON_EDIT,        Resources::Load<Texture>(Filesystem::getpublic(Filesystem::eIcon).string() + "/icons8-editar-24.png"));
 
     texturePlayGame = iconsUI[IconType::ICON_PLAY_GAME];
 
-    SceneManager::Load(Filesystem::getpublic(Filesystem::eScene) + "/SceneMain.scn");
+    SceneManager::Load(Filesystem::getpublic(Filesystem::eScene).string() + "/SceneMain.scn");
 
     mEditorController.OnInit();
 }
@@ -982,6 +996,7 @@ void Game::ProgressLoad() {
     ImGui::End();
 }
 
+/*
 void Game::ImportFiles(const std::vector<std::filesystem::path> &files) {
     for (const auto& file : files) {
         if (std::filesystem::is_directory(file) || !std::filesystem::exists(file)) continue;
@@ -994,4 +1009,5 @@ void Game::ImportFiles(const std::vector<std::filesystem::path> &files) {
         // filmbox.load();
     }
 }
+*/
 #endif

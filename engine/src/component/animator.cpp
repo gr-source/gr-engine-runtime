@@ -11,7 +11,7 @@
 #include "../GameObject.h"*/
 #include "../timer.h"
 
-Animator::Animator(const Skeleton& skeleton) : m_skeleton(skeleton) {}
+Animator::Animator(const Skeleton& skeleton) : Component(true), m_skeleton(skeleton), loaded(false) {}
 
 void Animator::OnInit() {
     transform = &entity->getComponent<Transform>();
@@ -25,7 +25,7 @@ void Animator::OnStart() {
 }
 
 void Animator::OnUpdate() {
-    if (m_animations.empty()) return;
+    if (m_animations.empty() && !loaded) return;
 
     AnimationClip& animation = m_animations[0];
     
@@ -34,6 +34,8 @@ void Animator::OnUpdate() {
     currentTime = std::fmod(currentTime, animation.getduration());
 
     CalculateBoneTransform(m_skeleton.getroot(), Matrix4x4::identityMatrix);
+
+    loaded = true;
 }
 
 void Animator::CalculateBoneTransform(const Bone& bone, const Matrix4x4& parentTransform) {

@@ -2,12 +2,14 @@
 
 #include "../../common.h"
 #include "../../gameObject.h"
+#include "../../objectManager.h"
 
 class Scene {
 public:
     Scene(const std::string& name = "default");
 
-    void add(GameObject* gameobject);
+    template <typename... Args>
+    GameObject* add(Args... args);
 
     void remove(const GameObject* gameObject);
 private:
@@ -17,4 +19,7 @@ private:
     friend class SceneManager;
 };
 
-
+template <typename... Args>
+inline GameObject* Scene::add(Args... args) {
+    return m_gameObjects.emplace_back(&ObjectManager::add(std::forward<Args>(args)...));
+}

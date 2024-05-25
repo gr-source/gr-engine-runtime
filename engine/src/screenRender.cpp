@@ -10,7 +10,7 @@ void EnableShader(Shader* shader) {
     shader->RegisterUniform("screenTexture", 1, Shader::eINT);
 }
 
-ScreenRender::ScreenRender() : m_shader(Resources::Load<Shader>(Filesystem::getpublic(Filesystem::eShader) + "/Screen", EnableShader)), bufferManager(std::make_unique<BufferManager>(BufferManager::eSTATIC)) {
+ScreenRender::ScreenRender() : m_shader(Resources::Load<Shader>(Filesystem::getpublic(Filesystem::eShader).string() + "/Screen", EnableShader)), bufferManager(std::make_unique<BufferManager>(BufferManager::eSTATIC)) {
     std::vector<Vertex2D> vertice = {
         {Vector2(-1.0f,  1.0f), Vector2(0.0f, 1.0f)},
         {Vector2(-1.0f, -1.0f), Vector2(0.0f, 0.0f)},

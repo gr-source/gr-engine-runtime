@@ -1,9 +1,8 @@
 #pragma once
 
-#include "../Global.h"
-#include "../ecs/Entity.h"
-
 #include "../physics/physicsScene.h"
+#include "../ecs/entity.h"
+#include "../Global.h"
 
 struct RigidbodyDef {
     Vector3 loockRotation;

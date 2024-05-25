@@ -1,8 +1,8 @@
 #include "shader.h"
-
-#include "../Global.h"
-
 #include "resources.h"
+
+#include "../filesystem/filesystem.h"
+#include "../Global.h"
 
 #define CHECK_PROGMA \
     if (programID == -1) { \
@@ -181,12 +181,12 @@ void Shader::createshader(const char** data, u32 count, GLenum type) {
 
     GL_CHECK(glShaderSource(shaderID, count, data, nullptr));
     GL_CHECK(glCompileShader(shaderID));
-    checkerrors(shaderID, std::filesystem::path(path).filename(), true);
+    checkerrors(shaderID, Filesystem::path(path).filename(), true);
 
 
     GL_CHECK(glAttachShader(programID, shaderID));
     GL_CHECK(glLinkProgram(programID));
-    checkerrors(programID, std::filesystem::path(path).filename(), false);
+    checkerrors(programID, Filesystem::path(path).filename(), false);
 
     GL_CHECK(glDeleteShader(shaderID));
 }

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../ecs/Entity.h"
+#include "../ecs/entity.h"
 
 class MeshFilter : public Component {
 public:

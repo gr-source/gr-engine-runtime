@@ -16,6 +16,8 @@ public:
 
     static void OnScreenSize(int width, int height);
 
+    static void MainLoop();
+
     static void OnInit();
 
     static void OnRender();
@@ -33,10 +35,6 @@ protected:
     
     static void MainFramebuffer();
 
-    static void RenderLighs();
-
-    static void PosFramebuffer();
-
     #if !IS_GAME
     static void UIFramebuffer();
     #endif
@@ -46,5 +44,7 @@ protected:
     static std::unique_ptr<Game> m_game;
 
     static Skybox* m_skybox;
+    
+    static std::thread m_thread[2];
 };
 

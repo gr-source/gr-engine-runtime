@@ -22,7 +22,6 @@
 #include <istream>
 #include <iostream>
 #include <algorithm>
-#include <filesystem>
 
 #include <GL/glew.h>
 
@@ -130,90 +129,6 @@ FileType getFileType(const std::string& extension);
 
 /* pega o a externsao do arquivo pelo tipo */
 const char* getFileTypeName(const FileType& type);
-
-struct {
-	bool equals(const std::string& text, const std::string& last) {
-		return text == last;
-	};
-
-	bool contains(const std::string& text, const std::string& last) {
-		if (text.empty() || last.empty()) return false;
-
-		std::size_t npos = text.find(last);
-
-		return npos != std::string::npos;
-	}
-
-	bool endWith(const std::string& text, const std::string& last) {
-		if (text.empty() || last.empty()) return false;
-
-		int len = last.length();
-
-		std::string result = text.substr(text.length() - len, len);
-
-		return result == last;
-	}
-} String;
-
-enum class Enviropment {
-	DOWNLOADS,
-	DOCUMENTS
-};
-
-struct {
-
-	bool copy(const std::string& in, const std::string& out) {
-		std::fstream istream(in, std::ios::in);
-		if (!istream.is_open()) {
-			return false;
-		}
-
-		std::string source((std::istreambuf_iterator<char>(istream)), std::istreambuf_iterator<char>());
-		
-		std::fstream ostream(out, std::ios::out);
-		if (!(ostream << source)) {
-			istream.close();
-			return false;
-		}
-		ostream.close();
-
-		return true;
-	}
-
-	bool move(const std::string& in, const std::string& out) {
-		std::fstream istream(in, std::ios::in);
-		if (!istream.is_open()) {
-			return false;
-		}
-
-		std::string source((std::istreambuf_iterator<char>(istream)), std::istreambuf_iterator<char>());
-		
-		std::fstream ostream(out, std::ios::out);
-		if (!(ostream << source)) {
-			istream.close();
-			return false;
-		}
-		ostream.close();
-		
-		istream.close();
-
-		std::filesystem::remove(in);
-		return true;
-	}
-
-	std::string read(const std::string& path) {
-		std::fstream istream(path, std::ios::in);
-		if (!istream.is_open()) {
-			return "";
-		}
-
-		std::string source = std::string((std::istreambuf_iterator<char>(istream)), std::istreambuf_iterator<char>());
-
-		istream.close();
-
-		return source;
-	}
-} File;
 
 struct GameStatics {
 	u32 vertices;

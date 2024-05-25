@@ -2,8 +2,9 @@
 #include "Global.h"
 
 float Time::deltaTime = 0.0f;
+int Time::FPS = 0;
 
-Time::Time(float maxFPS) : a(std::chrono::system_clock::now()), b(std::chrono::system_clock::now()), m_targetFrameTime(1000.0 / static_cast<double>(maxFPS)) {}
+Time::Time(float maxFPS) : a(std::chrono::system_clock::now()), b(std::chrono::system_clock::now()), m_targetFrameTime(1000.0 / static_cast<double>(maxFPS)), elapsedTime(0.0f), fpsCount(0), fps(0) {}
 
 float Time::SleepTick() {
     a = std::chrono::system_clock::now();
@@ -16,7 +17,16 @@ float Time::SleepTick() {
     }
     b = std::chrono::system_clock::now();
     std::chrono::duration<double, std::milli> sleep_time = b - a;
-    return static_cast<float>((work_time.count() + sleep_time.count()) / 1e3f);
+    float dt = static_cast<float>((work_time.count() + sleep_time.count()) / 1e3f);
+
+    ++fpsCount;
+    elapsedTime += dt;
+    if (elapsedTime >= 1.0000) {
+        fps = fpsCount;
+        fpsCount = 0;
+        elapsedTime = 0.0f;
+    }
+    return dt;
 }
 
 float Time::start() {
@@ -27,4 +37,8 @@ float Time::start() {
 
 void Time::end() {
     b = std::chrono::system_clock::now();
+}
+
+const int &Time::getFPS() const {
+    return fps;
 }

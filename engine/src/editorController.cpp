@@ -4,8 +4,6 @@
 
 #include "component/cameraComponent.h"
 
-#include "ecs/EntityManager.h"
-
 #include "ui/ImGuiRender.h"
 
 #include "settings.h"

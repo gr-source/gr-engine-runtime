@@ -1,21 +1,17 @@
 #include "MeshRender.h"
 
-#include "cameraComponent.h"
 #include "Transform.h"
 
 #include "../bufferManager.h"
-#include "../screen.h"
 
-#include "../resources/resources.h"
+#include "../batchingManager.h"
 
-#include "../ecs/Entity.h"
-
-#include "../ui/View.h"
-
-MeshRender::MeshRender(const Mesh& mesh, const std::unordered_map<u32, Material>& materials) : Component(true), materials(materials), verticeCount(0), indiceCount(0), drawcount(0), m_occlusion(std::make_unique<Occlusion>()) {
-}
-
-MeshRender::MeshRender(const std::vector<Mesh>& meshes, const std::unordered_map<u32, Material>& materials) : Component(true), materials(materials), verticeCount(0), indiceCount(0), drawcount(0), m_occlusion(std::make_unique<Occlusion>()) {
+MeshRender::MeshRender(const std::vector<Mesh>& meshes, const std::unordered_map<u32, Material>& materials) : Component(true), materials(materials), verticeCount(0), indiceCount(0), drawcount(0), m_bufferManager(std::make_unique<BufferManager>(BufferManager::eSTATIC, true)) {
+    // auto it = BatchingManager::m_batchingRender.find(meshes[0].getname());
+    // if (it != BatchingManager::m_batchingRender.end()) {
+    //     return;
+    // }
+    
     std::vector<Vertex3D> m_vertices;
     std::vector<GLuint> m_indices;
 
@@ -25,7 +21,7 @@ MeshRender::MeshRender(const std::vector<Mesh>& meshes, const std::unordered_map
 
         m_vertices.insert(m_vertices.end(), vertices.begin(), vertices.end());
 
-        for (GLuint index : indices) {
+        for (const u32& index : indices) {
             m_indices.push_back(index + verticeCount);
         }
         verticeCount += vertices.size();
@@ -45,28 +41,29 @@ MeshRender::MeshRender(const std::vector<Mesh>& meshes, const std::unordered_map
         maxBound.z = std::max(maxBound.z, vertex.position.z);
     }
 
-    m_drawcall.m_boundBox.min = minBound;
-    m_drawcall.m_boundBox.max = maxBound;
+    m_boundBox.min = minBound;
+    m_boundBox.max = maxBound;
 
     indiceCount = m_indices.size();
 
     // Configura os buffers
-    m_drawcall.buffers.setup(BufferManager::eSTATIC, true);
-    m_drawcall.buffers.bind(BufferManager::eVAO);
+    m_bufferManager->bind(BufferManager::eVAO);
 
-    m_drawcall.buffers.bind(BufferManager::eEBO);
-    m_drawcall.buffers.pushElements(indiceCount * sizeof(GLuint), m_indices.data());
+    m_bufferManager->bind(BufferManager::eEBO);
+    m_bufferManager->pushElements(indiceCount * sizeof(GLuint), m_indices.data());
 
-    m_drawcall.buffers.bind(BufferManager::eVBO);
-    m_drawcall.buffers.pushBuffer(verticeCount * sizeof(Vertex3D), m_vertices.data());
+    m_bufferManager->bind(BufferManager::eVBO);
+    m_bufferManager->pushBuffer(verticeCount * sizeof(Vertex3D), m_vertices.data());
 
     /* configure o buffer do shader */
-    AddAttrib(m_drawcall.buffers);
+    AddAttrib(*m_bufferManager);
 
-    m_drawcall.buffers.unbind();
+    m_bufferManager->unbind();
 
     gameStatics.vertices += verticeCount;
     gameStatics.indices += indiceCount;
+
+    // BatchingManager::m_batchingRender.emplace(meshes[0].getname(), Batching{m_bufferManager.get()});
 
     BatchingManager::drawCount += 1;
 }

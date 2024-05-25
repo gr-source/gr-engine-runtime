@@ -1,13 +1,14 @@
 #pragma once
 
+#include <unordered_map>
 #include <algorithm>
+#include <stdexcept>
 #include <memory>
 #include <vector>
+#include <bitset>
 #include <array>
 
-#include "Component.h"
-
-#include "../renderer.h"
+#include "component.h"
 
 class EntityManager;
 
@@ -30,40 +31,26 @@ inline std::size_t GetIDFromComponent() noexcept {
 /* Classe de entidades */
 class Entity {
 public:
-    /// @brief lista de components, quardad todos os components na lista
-    std::array<std::shared_ptr<Component>, maxComponent> components;
+    std::unordered_map<std::size_t, std::shared_ptr<Component>> components;
+    std::bitset<32> m_bitset;
 
-    /* script esta abilitado (Função da game engine nao vai pro jogo final)*/
     bool IsActivate;
 
-    /* construto da classe */
     Entity();
 
-    /// @brief Adiciona um component a entidade atual
-    /// @tparam T Script classe eradde de component
-    /// @tparam ...Args tipos da onstrutor da classe
-    /// @param ...args argumentos a ser passado a classe do script
-    /// @return retorna o script
     template <typename T, typename... Args>
     T& addComponent(Args&& ... args);
 
-    /// @brief Pega um component da entidade atual
-    /// @tparam T a classe script desejada
-    /// @return retorna o a referencia da da classe script
     template <typename T>
     T& getComponent();
 
-    /* função pra verificar se o component existe */
     template <typename T>
     const bool hasComponent() const;
 
-    /* Função pra iniciar as script */
     void OnStart();
 
-    /* função pra atualizar a as scripts */
     void OnUpdate();
 
-    /* operador pra verificar se duas entidades sao iguais */
     bool operator==(const Entity& other) const;
 };
 
@@ -73,9 +60,13 @@ inline T& Entity::addComponent(Args&&... args) {
         return getComponent<T>();
     }
     
-    auto& c = components[GetIDFromComponent<T>()] = std::make_shared<T>(std::forward<Args>(args)...);
+    components.emplace(GetIDFromComponent<T>(), std::make_shared<T>(std::forward<Args>(args)...));
+
+    auto& c = components[GetIDFromComponent<T>()];
 
     c->entity = this;
+
+    m_bitset.set(GetIDFromComponent<T>(), true);
 
     c->OnInit();
 
@@ -83,17 +74,20 @@ inline T& Entity::addComponent(Args&&... args) {
     c->OnStart();
     #endif
 
-    return *reinterpret_cast<T*>(c.get());
+    return *dynamic_cast<T*>(c.get());
 }
 
 template <typename T>
 inline T& Entity::getComponent() {
-    return *reinterpret_cast<T*>(components[GetIDFromComponent<T>()].get());
+    if (m_bitset.test(GetIDFromComponent<T>())) {
+        return *dynamic_cast<T*>(components[GetIDFromComponent<T>()].get());
+    }
+    throw std::runtime_error("Component not exists!");
 }
 
 template <typename T>
 inline const bool Entity::hasComponent() const {
-    return components[GetIDFromComponent<T>()] != nullptr;
+    return m_bitset.test(GetIDFromComponent<T>());
 }
 
 

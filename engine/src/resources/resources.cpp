@@ -3,6 +3,7 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "../core/stb/stb_image.h"
 
+#include "../filesystem/filesystem.h"
 #include "../eventManager.h"
 #include "../settings.h"
 
@@ -22,16 +23,16 @@ u32 Resources::m_processCount = 0;
 
 template <>
 Shader* Resources::Load<Shader>(const std::string& path, const std::function<void(Shader*)>& callback) {
-    if (!std::filesystem::exists(path + ".frag")) {
+    if (!Filesystem::exists(path + ".frag")) {
         ERROR("[ Shader ] fragment shader file not found (" + path + ".frag)");
         return nullptr;
     }
-    if (!std::filesystem::exists(path + ".vert")) {
+    if (!Filesystem::exists(path + ".vert")) {
         ERROR("[ Shader ] vertex shader file not found (" + path + ".vert)");
         return nullptr;
     }
 
-    auto it = m_shaders.find(std::filesystem::path(path).filename());
+    auto it = m_shaders.find(Filesystem::path(path).filename());
     if (it != m_shaders.end()) {
         return (*it).second.get();
     }
@@ -55,7 +56,7 @@ Texture* Resources::Load<Texture>(const std::string& path, const std::function<v
         return nullptr;
     }
 
-    auto it = m_textures.find(std::filesystem::path(path).filename());
+    auto it = m_textures.find(Filesystem::path(path).filename());
     if (it != m_textures.end()) {
         return (*it).second.get();
     }
@@ -77,12 +78,12 @@ void Resources::Initialize() {
 }
 
 /*Texture *Resources::Load(const std::string& path, const std::function<void(Texture*)>& callback, u32 internalFormat, u32 format, u32 type, u32 filter, bool hasMipmap) {
-    if (!std::filesystem::exists(path)) {
+    if (!Filesystem::exists(path)) {
         ERROR("[ Texture ] file not found (" + path + ")");
         return nullptr;
     }
 
-    auto it = m_textures.find(std::filesystem::path(path).filename());
+    auto it = m_textures.find(Filesystem::path(path).filename());
     if (it != m_textures.end()) {
         return (*it).second.get();
     }
@@ -146,7 +147,7 @@ void Resources::setup_texture(ProcessLoader<Texture>& process, const int width, 
     stbi_image_free(data);
     data = nullptr;
 
-    m_textures.emplace(std::filesystem::path(process.data->getpath()).filename(), std::unique_ptr<Texture>(process.data));
+    m_textures.emplace(Filesystem::path(process.data->getpath()).filename(), std::unique_ptr<Texture>(process.data));
 
     --m_processCount;
 
@@ -210,7 +211,7 @@ void Resources::setup_shader(ProcessLoader<Shader>& process, const std::string& 
         process.data->loadsource(&str, 1, Shader::eGEOMETRY);
     }
 
-    m_shaders.emplace(std::filesystem::path(process.data->getpath()).filename(), std::unique_ptr<Shader>(process.data));
+    m_shaders.emplace(Filesystem::path(process.data->getpath()).filename(), std::unique_ptr<Shader>(process.data));
 
     --m_processCount;
     
