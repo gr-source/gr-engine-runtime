@@ -2,21 +2,13 @@
 
 #include "Game.h"
 
-#include <GLFW/glfw3.h>
-
 #include <iostream>
 
 class engine {
 public:
-    static void GLFWkeyfunCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
+    static void OnResizeWindow(u32 width, u32 height);
 
-    static void GLFWframebuffersizefunCallback(GLFWwindow* window, int width, int height);
-
-    static void GLFWdropfun(GLFWwindow* window, int path_count, const char* paths[]);
-
-    static void OnScreenSize(int width, int height);
-
-    static void MainLoop();
+    static void MainLoop(std::function<void()> func);
 
     static void OnInit();
 

@@ -41,22 +41,35 @@ void GLFWwindowclosefunCallback(GLFWwindow* window) {
     Settings::IsEngineRunning = false;
 }
 
-void GLFWerrorfunc(int error_code, const char* description) {
-    // std::cout << "GLFW ERROR: " << error_code << " " << description << std::endl;
+void GLFWframebuffersizefunCallback(GLFWwindow* window, int width, int height) {
+    engine::OnResizeWindow(u32(width), u32(height));
 }
 
+/*void GLFWkeyfunCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
+        #if IS_GAME
+        Settings::IsGameRunning = !Settings::IsGameRunning;
+
+        if (Settings::IsGameRunning) {
+            glfwSetInputMode(glfwGetCurrentContext(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+        } else {
+            glfwSetInputMode(glfwGetCurrentContext(), GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+        }
+        #else
+        ImGuiIO& io = ImGui::GetIO();
+
+        io.MouseDrawCursor = !io.MouseDrawCursor;
+        #endif
+    }
+}*/
+
 void glfwInstallCallback(Window window) {
-    engine::OnScreenSize(SCREEN_WIDTH, SCREEN_HEIGHT);
+    glfwSetFramebufferSizeCallback(window, GLFWframebuffersizefunCallback);
+    GLFWframebuffersizefunCallback(window, SCREEN_WIDTH, SCREEN_HEIGHT);
 
-    glfwSetKeyCallback(window, engine::GLFWkeyfunCallback);
-
-    glfwSetFramebufferSizeCallback(window, engine::GLFWframebuffersizefunCallback);
-
-    glfwSetDropCallback(window, engine::GLFWdropfun);
+    // glfwSetKeyCallback(window, GLFWkeyfunCallback);
 
     glfwSetWindowCloseCallback(window, GLFWwindowclosefunCallback);
-
-    glfwSetErrorCallback(GLFWerrorfunc);
 }
 
 int OnApplicationInit() {
@@ -88,7 +101,10 @@ int OnApplicationInit() {
 
     engine::OnInit();
 
-    engine::MainLoop();
+    engine::MainLoop([&]{
+        glfwSwapBuffers(window);
+        glfwPollEvents();
+    });
     
     Settings::IsEngineRunning = false;
 

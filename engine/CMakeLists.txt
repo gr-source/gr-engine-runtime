@@ -1,3 +1,4 @@
+project("engine")
 
 set(guizmo_src
     src/guizmo/ImGuizmo.cpp

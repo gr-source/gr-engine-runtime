@@ -1,4 +1,4 @@
-project("ImGui")
+project("imgui")
 
 set(imgui_src
     src/backends/imgui_impl_opengl3.cpp

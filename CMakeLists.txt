@@ -26,7 +26,7 @@ endif()
 
 find_package(GLEW REQUIRED)
 if(NOT GLEW_FOUND)
-message(FATAL_ERROR "GLEW não encontrado. Instale GLEW para compilar este projeto.")
+    message(FATAL_ERROR "GLEW não encontrado. Instale GLEW para compilar este projeto.")
 endif()
 
 find_package(OpenGL REQUIRED)

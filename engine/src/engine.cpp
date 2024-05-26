@@ -30,41 +30,11 @@
 #include "thread.h"
 #include "settings.h"
 
-void engine::GLFWkeyfunCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
-    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
-        #if IS_GAME
-        Settings::IsGameRunning = !Settings::IsGameRunning;
-
-        if (Settings::IsGameRunning) {
-            glfwSetInputMode(glfwGetCurrentContext(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-        } else {
-            glfwSetInputMode(glfwGetCurrentContext(), GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-        }
-        #else
-        ImGuiIO& io = ImGui::GetIO();
-
-        io.MouseDrawCursor = !io.MouseDrawCursor;
-        #endif
-    }
-}
-
-void engine::GLFWframebuffersizefunCallback(GLFWwindow* window, int width, int height) {
+void engine::OnResizeWindow(u32 width, u32 height) {
     Screen::SetResolution(width, height);
 }
 
-void engine::GLFWdropfun(GLFWwindow *window, int path_count, const char *paths[]) {
-    /*std::vector<std::filesystem::path> m_files;
-
-    for (int i=0;i<path_count;i++) {
-        m_files.push_back(paths[i]);
-    }*/
-}
-
-void engine::OnScreenSize(int width, int height) {
-    Screen::SetResolution(static_cast<float>(width), static_cast<float>(height));
-}
-
-void engine::MainLoop() {
+void engine::MainLoop(std::function<void()> func) {
     m_thread[0] = std::thread(OnLoader);
     m_thread[1] = std::thread(OnPhysics);
 
@@ -77,8 +47,7 @@ void engine::MainLoop() {
 
         engine::OnRender();
 
-        glfwSwapBuffers(glfwGetCurrentContext());
-        glfwPollEvents();
+        func();
     }
 }
 
@@ -101,7 +70,7 @@ GBuffer* m_gbuffer = nullptr;
 std::thread engine::m_thread[2];
 
 void engine::OnInit() {
-    Input::SetInstance((void*)glfwGetCurrentContext());
+    // Input::SetInstance((void*)glfwGetCurrentContext());
 
     pImGuiRender = std::make_unique<ImGuiRender>("#version 330 core");
 
