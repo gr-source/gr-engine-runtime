@@ -19,9 +19,7 @@ CameraComponent &CameraComponent::MainCamera() {
         Transform& m_transform = m_mainCamera->getComponent<Transform>();
         m_transform.position = {-22.098204f, 19.242348f, -27.375128f};
 
-        // SceneManager::Add(&m_mainCamera);
-
-        return m_mainCamera->addComponent<CameraComponent>(45.0f, 0.001f, 100.0f, (float(Screen::width / Screen::height)));
+        return m_mainCamera->addComponent<CameraComponent>(45.0f, 0.001f, 1000.0f, (float(Screen::width / Screen::height)));
     }
     return *m_cameras[CameraID];
 }

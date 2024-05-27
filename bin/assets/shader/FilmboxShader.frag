@@ -58,17 +58,16 @@ vec3 BaseColor(vec3 fragPos, vec3 albedo, float roughness, float metallic, float
 
 void main() {
     vec3 albedo     = materials[m_materialIndex].albedo.xyz;
-    /*float roughness = materials[m_materialIndex].params.x;
+    float roughness = materials[m_materialIndex].params.x;
     float metallic  = materials[m_materialIndex].params.y;
     float ao        = materials[m_materialIndex].params.z;
 
     vec3 normal     = m_normal;
 
-*/
+
     if (isactive[TEXTURE_ALBEDO]) {
         albedo = texture(textures[TEXTURE_ALBEDO], m_textCoord).xyz;
     }
-/*
 
     if (isactive[TEXTURE_NORMAL]) {
         normal = getNormalMap(textures[TEXTURE_NORMAL], m_textCoord, m_fragPos, m_normal);
@@ -90,9 +89,8 @@ void main() {
 
     color = color / (color + vec3(1.0));
     color = pow(color, vec3(1.0 / 2.2));
-    */
 
-    FragColor = vec4(albedo, 1.0);
+    FragColor = vec4(color, 1.0);
 }
 
 vec3 getNormalMap(sampler2D normalMap, vec2 textCoord, vec3 fragPos, vec3 normal) {

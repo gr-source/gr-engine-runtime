@@ -208,7 +208,7 @@ void AddChunk(u32 id, const FbxNode& node, const Vector3& position) {
 }
 
 void ReaderNode(const FbxNode& node, const FbxScene& scene, const FbxNode* parent = nullptr, Transform* transform = nullptr) {
-    /*if (parent != nullptr) {
+    if (parent != nullptr) {
         GameObject& gameObject = SetupNode(node, scene, transform);
 
         if (transform == nullptr) {
@@ -220,15 +220,15 @@ void ReaderNode(const FbxNode& node, const FbxScene& scene, const FbxNode* paren
 
             transform = &gameObject.gettransform();
         }
-    }*/
-    if (parent != nullptr && node.getname() == "Cube") {
+    }
+    /*if (parent != nullptr && node.getname() == "Cube") {
         AddChunk(0, node, Vector3( 0.0f, 0.0f, 0.0f));
         AddChunk(1, node, Vector3(16.0f, 0.0f, 16.0f));
         AddChunk(2, node, Vector3(16.0f, 0.0f, 0.0f));
         AddChunk(3, node, Vector3( 0.0f, 0.0f, 16.0f));
 
         // AddChunk(2, node);
-    }
+    }*/
 
     for (auto& child : node.children) {
         ReaderNode(child, scene, &node, transform);
@@ -246,7 +246,7 @@ void SceneLoaded(const FbxScene& scene) {
 }
 
 Game::Game() : objectselected(nullptr), FPSColor(255, 255, 255, 255) {
-    m_filmbox = std::make_unique<Filmbox>("/home/grsource/Documentos/filmbox/mine.fbx"); //untitled
+    m_filmbox = std::make_unique<Filmbox>("/home/grsource/Documentos/filmbox/anim.fbx"); //untitled
     m_filmbox->SetLoaded(SceneLoaded);
     m_filmbox->load();
 
