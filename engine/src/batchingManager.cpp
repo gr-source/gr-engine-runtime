@@ -253,7 +253,7 @@ void BatchingManager::SetupEnableShaderShadow(Shader *shader) {
 }
 
 void BatchingManager::SetupEnableModelInstanced(Shader *shader) {
-    shader->RegisterUniform("projection", 1, Shader::eMAT4x4);
+    /*shader->RegisterUniform("projection", 1, Shader::eMAT4x4);
     shader->RegisterUniform("view", 1, Shader::eMAT4x4);
 
     for (u32 i=0;i<50;i++) {
@@ -265,5 +265,5 @@ void BatchingManager::SetupEnableModelInstanced(Shader *shader) {
             shader->RegisterUniform("textures["+ std::to_string(j) + "]", 1, Shader::eINT);
             shader->RegisterUniform("isactive["+ std::to_string(j) + "]", 1, Shader::eINT);
         }
-    }
+    }*/
 }

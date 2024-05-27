@@ -11,7 +11,6 @@ public:
 
     EditorController();
     
-    void OnInit();
     void OnUpdate();
 
     void updateCursor();
@@ -22,8 +21,7 @@ private:
 
     GameObject* m_mainCamera;
 
-    float pitch;
-    float yaw;
+    Vector2 elapsed;
 
     void OnCameraUpdate();
 

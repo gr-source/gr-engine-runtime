@@ -11,10 +11,7 @@
 #include "input.h"
 #include "timer.h"
 
-EditorController::EditorController() : movementSpeed(30.0f), mouseSensitivity(10.5f), pitch(0.0f), yaw(0.0f) {}
-
-void EditorController::OnInit() {
-}
+EditorController::EditorController() : movementSpeed(30.0f), mouseSensitivity(10.5f), elapsed(Vector2::zero) {}
 
 void EditorController::OnUpdate() {
     static ImGuiIO& io = ImGui::GetIO();
@@ -32,7 +29,6 @@ void EditorController::OnUpdate() {
 
     Vector3 diretion;
 
-    // if (glfwGetKey(glfwGetCurrentContext(), GLFW_KEY_W)) {
     if (Input::IsKeyPress(Input::KEY_W)) {
         diretion += m_cameraComponent.gettransform()->getforward();
     }
@@ -45,10 +41,10 @@ void EditorController::OnUpdate() {
     if (Input::IsKeyPress(Input::KEY_D)) {
         diretion -= m_cameraComponent.gettransform()->getright();
     }
-    if (Input::IsKeyPress(Input::KEY_UP)) {// up
+    if (Input::IsKeyPress(Input::KEY_UP)) {
         diretion.y += 1.0f;
     }
-    if (Input::IsKeyPress(Input::KEY_DOWN)) {//down
+    if (Input::IsKeyPress(Input::KEY_DOWN)) {
         diretion.y -= 1.0f;
     }
 
@@ -77,24 +73,14 @@ void EditorController::OnCameraUpdate() {
     CameraComponent& m_cameraComponent = CameraComponent::MainCamera();
 
     Transform* m_transform = m_cameraComponent.gettransform();
-    m_transform->rotation = Math::normalize(Math::euler({Math::rad(-pitch), Math::rad(-yaw), 0.0f}));
+    m_transform->rotation = Math::normalize(Math::euler({Math::rad(elapsed.y), Math::rad(-elapsed.x), 0.0f}));
 }
 
 void EditorController::processMouse(const Vector2& direction) {
-    const Vector2 sensi = direction * mouseSensitivity * Time::deltaTime;
+    elapsed += direction * mouseSensitivity * Time::deltaTime;
 
-    pitch -= sensi.y;
-    yaw += sensi.x;
-
-    if (pitch > 89.0f)
-        pitch = 89.0f;
-    if (pitch < -89.0f)
-        pitch = -89.0f;
-
-    if (yaw > 360.0f)
-        yaw -= 360.0f;
-    if (yaw < 0.0f)
-        yaw += 360.0f;
+    elapsed.y = std::max(std::min(elapsed.y, 89.0f), -89.0f);
+    elapsed.x = std::fmod(elapsed.x, 360.0f);
 
     OnCameraUpdate();
 }

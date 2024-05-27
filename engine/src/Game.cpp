@@ -246,7 +246,7 @@ void SceneLoaded(const FbxScene& scene) {
 }
 
 Game::Game() : objectselected(nullptr), FPSColor(255, 255, 255, 255) {
-    m_filmbox = std::make_unique<Filmbox>("/home/grsource/Documentos/filmbox/anim.fbx"); //untitled
+    m_filmbox = std::make_unique<Filmbox>("/home/grsource/Documentos/filmbox/sponza.fbx"); //untitled
     m_filmbox->SetLoaded(SceneLoaded);
     m_filmbox->load();
 
@@ -989,8 +989,6 @@ void Game::loadReources() {
     texturePlayGame = iconsUI[IconType::ICON_PLAY_GAME];
 
     SceneManager::Load(Filesystem::getpublic(Filesystem::eScene).string() + "/SceneMain.scn");
-
-    mEditorController.OnInit();
 }
 
 void Game::ProgressLoad() {

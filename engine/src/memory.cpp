@@ -16,9 +16,9 @@ void *Memory::malloc(std::size_t size) {
         totalMemoryUsage += size;
     }
 
-    uint8_t* data = reinterpret_cast<uint8_t*>(ptr);
+    u8* data = reinterpret_cast<u8*>(ptr);
     data += sizeof(MemoryBlock);
-    data = reinterpret_cast<uint8_t*>(ALIGN16(reinterpret_cast<std::uintptr_t>(data)));
+    data = reinterpret_cast<u8*>(ALIGN16(reinterpret_cast<std::uintptr_t>(data)));
 
     MemoryBlock* mem = reinterpret_cast<MemoryBlock*>(data - sizeof(MemoryBlock));
     mem->origPtr = ptr;
@@ -32,15 +32,16 @@ void* Memory::realloc(void *ptr, std::size_t size) {
         return Memory::malloc(size);
     }
 
-    MemoryBlock* mem = reinterpret_cast<MemoryBlock*>(reinterpret_cast<uint8_t*>(ptr) - sizeof(MemoryBlock));
-    uint32_t offset = reinterpret_cast<uint8_t*>(ptr) - reinterpret_cast<uint8_t*>(mem->origPtr);
+    MemoryBlock* mem = reinterpret_cast<MemoryBlock*>(reinterpret_cast<u8*>(ptr) - sizeof(MemoryBlock));
+
+    u32 offset = reinterpret_cast<u8*>(ptr) - reinterpret_cast<u8*>(mem->origPtr);
+
 
     void* origPtr = std::realloc(mem->origPtr, size + sizeof(MemoryBlock) + 15);
     if (!origPtr) {
         throw std::bad_alloc();
     }
-    uint8_t* newPtr = reinterpret_cast<uint8_t*>(origPtr) + sizeof(MemoryBlock);
-    newPtr = reinterpret_cast<uint8_t*>(ALIGN16(reinterpret_cast<std::uintptr_t>(newPtr)));
+    u8* newPtr = reinterpret_cast<u8*>(origPtr) + offset;
 
     mem = reinterpret_cast<MemoryBlock*>(newPtr - sizeof(MemoryBlock));
     {
@@ -57,7 +58,7 @@ void* Memory::realloc(void *ptr, std::size_t size) {
 void Memory::free(void *ptr) noexcept {
     if (!ptr) return;
 
-    MemoryBlock *mem = reinterpret_cast<MemoryBlock*>(reinterpret_cast<uint8_t*>(ptr) - sizeof(MemoryBlock));
+    MemoryBlock *mem = reinterpret_cast<MemoryBlock*>(reinterpret_cast<u8*>(ptr) - sizeof(MemoryBlock));
     {
         std::lock_guard<std::mutex> lock(memoryMutex);
         totalMemoryUsage -= mem->sz;

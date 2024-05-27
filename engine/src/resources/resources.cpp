@@ -77,35 +77,6 @@ void Resources::Initialize() {
     // stbi_set_flip_vertically_on_load(true);
 }
 
-/*Texture *Resources::Load(const std::string& path, const std::function<void(Texture*)>& callback, u32 internalFormat, u32 format, u32 type, u32 filter, bool hasMipmap) {
-    if (!Filesystem::exists(path)) {
-        ERROR("[ Texture ] file not found (" + path + ")");
-        return nullptr;
-    }
-
-    auto it = m_textures.find(Filesystem::path(path).filename());
-    if (it != m_textures.end()) {
-        return (*it).second.get();
-    }
-
-    Texture* m_texture = new Texture(path);
-    m_texture->m_internalformat = internalFormat;
-    m_texture->m_format = format;
-    m_texture->m_type = type;
-    m_texture->m_filter = filter;
-    m_texture->m_hasMipmap = hasMipmap;
-
-    ++m_processCount;
-
-    {
-        std::lock_guard<std::mutex> lock(m_textureMutex);
-        m_textureLoader.emplace_back(m_texture, callback);
-    }
-
-    return nullptr;
-}
-*/
-
 u32 Resources::getTextureType(int ch) {
     switch (ch) {
     case 1:
@@ -134,18 +105,17 @@ GLenum Resources::getTextureTypeSRGB(int ch) {
     }
 }
 
-
 /***************** TEXTURE LOAD ****************/
-void Resources::setup_texture(ProcessLoader<Texture>& process, const int width, const int height, const int channel, stbi_uc* data) {
+void Resources::setup_texture(ProcessLoader<Texture>& process, const int width, const int height, const int channel, stbi_uc*& pixels) {
     u32 internalFormat = (process.data->m_internalformat != Texture::eNONE ? process.data->m_internalformat : Resources::getTextureTypeSRGB(channel));
     u32 format = (process.data->m_format != Texture::eNONE ? process.data->m_format : Resources::getTextureType(channel));
     u32 type = (process.data->m_type != Texture::eNONE ? process.data->m_type : Texture::eBYTE);
 
     process.data->resize(width, height, internalFormat, format, Texture::eTRILINEAR, type, true);
-    process.data->apply(data);
+    process.data->apply(pixels);
 
-    stbi_image_free(data);
-    data = nullptr;
+    stbi_image_free(pixels);
+    pixels = nullptr;
 
     m_textures.emplace(Filesystem::path(process.data->getpath()).filename(), std::unique_ptr<Texture>(process.data));
 
@@ -163,20 +133,22 @@ void Resources::LoadTexture() {
         lock.unlock();
 
         int width = 0, height = 0, channel = 0;
-        stbi_uc* data = stbi_load(process.data->getpath().c_str(), &width, &height, &channel, 0);
+        stbi_uc* pixels = stbi_load(process.data->getpath().c_str(), &width, &height, &channel, 0);
 
-        if (!data) {
-            Log::error << "[Texture] Data not loaded" << Log::end;
+        if (!pixels) {
+            Log::error << "[Texture] pixels not loaded" << Log::end;
 
             delete process.data;
             process.data = nullptr;
+
+            stbi_image_free(pixels);
 
             lock.lock();
             m_textureLoader.pop_front();
             continue;
         }
 
-        EventManager::addEvent(setup_texture, process, width, height, channel, std::move(data));
+        EventManager::addEvent(setup_texture, process, width, height, channel, pixels);
         lock.lock();
         m_textureLoader.pop_front();
     }

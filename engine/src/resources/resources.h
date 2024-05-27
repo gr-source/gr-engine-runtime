@@ -21,7 +21,7 @@ struct ProcessLoader {
     T* data;
     std::function<void(T*)> callback;
 
-    ProcessLoader(T*& _data, std::function<void(T*)> _callback) : data(_data), callback(_callback) {}
+    ProcessLoader(T* _data, std::function<void(T*)> _callback) : data(_data), callback(_callback) {}
 };
 
 struct TextureArgs {
@@ -70,7 +70,7 @@ private:
     static std::list<ProcessLoader<Shader>> m_shaderLoader;
     static std::mutex m_shaderMutex;
 
-    static void setup_texture(ProcessLoader<Texture>& process, const int width, const int height, const int channel, stbi_uc* data);
+    static void setup_texture(ProcessLoader<Texture>& process, const int width, const int height, const int channel, stbi_uc*& pixels);
 
     static void LoadTexture();
 
