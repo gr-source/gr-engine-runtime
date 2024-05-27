@@ -10,6 +10,10 @@ public:
 
     static void MainLoop(std::function<void()> func);
 
+    static void Escap();
+
+    static void WindowInstance(void* instance);
+
     static void OnInit();
 
     static void OnRender();

@@ -51,6 +51,26 @@ void engine::MainLoop(std::function<void()> func) {
     }
 }
 
+void engine::Escap() {
+    #if IS_GAME
+    Settings::IsGameRunning = !Settings::IsGameRunning;
+
+    if (Settings::IsGameRunning) {
+        glfwSetInputMode(glfwGetCurrentContext(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    } else {
+        glfwSetInputMode(glfwGetCurrentContext(), GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+    }
+    #else
+    ImGuiIO& io = ImGui::GetIO();
+
+    io.MouseDrawCursor = !io.MouseDrawCursor;
+    #endif
+}
+
+void engine::WindowInstance(void *instance) {
+    Input::SetInstance(instance);
+}
+
 std::unique_ptr<Game> engine::m_game = nullptr;
 
 Skybox* engine::m_skybox = nullptr;

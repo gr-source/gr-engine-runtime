@@ -45,29 +45,17 @@ void GLFWframebuffersizefunCallback(GLFWwindow* window, int width, int height) {
     engine::OnResizeWindow(u32(width), u32(height));
 }
 
-/*void GLFWkeyfunCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+void GLFWkeyfunCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
-        #if IS_GAME
-        Settings::IsGameRunning = !Settings::IsGameRunning;
-
-        if (Settings::IsGameRunning) {
-            glfwSetInputMode(glfwGetCurrentContext(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-        } else {
-            glfwSetInputMode(glfwGetCurrentContext(), GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-        }
-        #else
-        ImGuiIO& io = ImGui::GetIO();
-
-        io.MouseDrawCursor = !io.MouseDrawCursor;
-        #endif
+        engine::Escap();
     }
-}*/
+}
 
 void glfwInstallCallback(Window window) {
     glfwSetFramebufferSizeCallback(window, GLFWframebuffersizefunCallback);
     GLFWframebuffersizefunCallback(window, SCREEN_WIDTH, SCREEN_HEIGHT);
 
-    // glfwSetKeyCallback(window, GLFWkeyfunCallback);
+    glfwSetKeyCallback(window, GLFWkeyfunCallback);
 
     glfwSetWindowCloseCallback(window, GLFWwindowclosefunCallback);
 }
@@ -96,6 +84,8 @@ int OnApplicationInit() {
         OnDestroy();
         return printf("GLEW do not created");
     }
+
+    engine::WindowInstance((void*)window);
 
     Settings::IsEngineRunning = true;
 
