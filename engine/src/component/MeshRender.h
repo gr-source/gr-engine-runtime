@@ -19,15 +19,11 @@ public:
 
     ~MeshRender();
 
+    std::unique_ptr<BufferManager> m_bufferManager;
+
     std::unordered_map<u32, Material> materials;
 
-    std::unique_ptr<Occlusion> m_occlusion;
-
-    // DrawCall m_drawcall;
-
     BoundBox m_boundBox;
-
-    std::unique_ptr<BufferManager> m_bufferManager;
 
     u32 verticeCount;
     u32 indiceCount;

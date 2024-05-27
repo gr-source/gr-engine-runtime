@@ -39,12 +39,11 @@ std::unique_ptr<BufferManager> m_screenRender = nullptr;
 Shader* m_shaderShadow = nullptr;
 
 Shadowbuffer* BatchingManager::m_shadowbuffer = nullptr;
+Shader* BatchingManager::m_shaderModelInstanced = nullptr;
 
 std::unordered_map<std::string, Batching> BatchingManager::m_batchingRender;
 
 void BatchingManager::Initialize() {
-    Occlusion::Initialize();
-    
     m_skybox = &Skybox::getInstance();
 
     m_shadowbuffer = &Shadowbuffer::getInstance();
@@ -53,26 +52,7 @@ void BatchingManager::Initialize() {
 
     m_shaderShadow = Resources::Load<Shader>(Filesystem::getpublic(Filesystem::eShader).string() + "/ShaderShadow", BatchingManager::SetupEnableShaderShadow);
 
-    std::vector<Vertex2D> vertice = {
-        {Vector2(-1.0f,  1.0f), Vector2(0.0f, 1.0f)},
-        {Vector2(-1.0f, -1.0f), Vector2(0.0f, 0.0f)},
-        {Vector2( 1.0f, -1.0f), Vector2(1.0f, 0.0f)},
-        {Vector2(-1.0f,  1.0f), Vector2(0.0f, 1.0f)},
-        {Vector2( 1.0f, -1.0f), Vector2(1.0f, 0.0f)},
-        {Vector2( 1.0f,  1.0f), Vector2(1.0f, 1.0f)}
-    };
-
-    m_screenRender = std::make_unique<BufferManager>(BufferManager::eSTATIC);
-    
-    m_screenRender->bind(BufferManager::eVAO);
-
-    m_screenRender->bind(BufferManager::eVBO);
-    m_screenRender->pushBuffer(vertice.size() * sizeof(Vertex2D), vertice.data());
-
-    m_screenRender->attribPointer(0, 2, sizeof(Vertex2D), reinterpret_cast<void*>(offsetof(Vertex2D, position)));
-    m_screenRender->attribPointer(1, 2, sizeof(Vertex2D), reinterpret_cast<void*>(offsetof(Vertex2D, uv)));
-
-    m_screenRender->unbind();
+    m_shaderModelInstanced = Resources::Load<Shader>(Filesystem::getpublic(Filesystem::eShader).string() + "/model/ModelInstanced", BatchingManager::SetupEnableModelInstanced);
 }
 
 void BatchingManager::OnUpdate() {
@@ -94,7 +74,7 @@ void BatchingManager::OnUpdate() {
         const Vector3& min = meshRender.m_boundBox.min;
         const Vector3& max = meshRender.m_boundBox.max;
 
-        if (!m_frustum.IsCubeInFrustumOOBB(min, max, transform.getglobalmatrix()) /*&& !meshRender.m_occlusion->isvisible(vp, transform.getglobalmatrix())*/) {
+        if (!m_frustum.IsCubeInFrustumOOBB(min, max, transform.getglobalmatrix())) {
             continue;
         }
 
@@ -270,4 +250,20 @@ void BatchingManager::SetupEnableShaderShadow(Shader *shader) {
 
     shader->RegisterUniform("u_boneMatrices", 100, Shader::eMAT4x4);
     shader->RegisterUniform("isanimation", 1, Shader::eINT);
+}
+
+void BatchingManager::SetupEnableModelInstanced(Shader *shader) {
+    shader->RegisterUniform("projection", 1, Shader::eMAT4x4);
+    shader->RegisterUniform("view", 1, Shader::eMAT4x4);
+
+    for (u32 i=0;i<50;i++) {
+        shader->RegisterUniform("materials[" + std::to_string(i) + "].albedo", 1, Shader::eVECTOR3);
+        shader->RegisterUniform("materials[" + std::to_string(i) + "].params", 1, Shader::eVECTOR3);
+
+        for (u32 j=0;j<5;j++) {
+            shader->RegisterUniform("isactive["+ std::to_string(j) + "]", 1, Shader::eINT);
+            shader->RegisterUniform("textures["+ std::to_string(j) + "]", 1, Shader::eINT);
+            shader->RegisterUniform("isactive["+ std::to_string(j) + "]", 1, Shader::eINT);
+        }
+    }
 }

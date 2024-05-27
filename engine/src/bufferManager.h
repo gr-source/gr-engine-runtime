@@ -27,24 +27,15 @@ public:
     BufferManager(u16 type, bool elements = false);
     ~BufferManager();
 
-    void setup(u16 type, bool elements = false);
-
-    /* envia a data por completo(recomendado apos o load do objeto) */
     void pushBuffer(GLsizeiptr size, const void* data);
     
-    /* adiciona os dados no buffer ja sizado */
     void pushUpdateBuffer(GLintptr offset, GLsizeiptr size, const void* data);
 
-    /* adiocion o id do para cada buffer */
     void attribPointer(GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const void* pointer = nullptr);
     void attribPointer(GLuint index, GLint size, GLenum type, GLsizei stride, const void* pointer = nullptr);
     void attribPointer(GLuint index, GLint size, GLsizei stride, const void* pointer = nullptr);
 
-    /* divide o buffer pra isar (instancing) */
     void applyDivisor(GLuint index, GLuint divisor);
-
-    /* resize os indices */
-    void resizeElements(GLsizeiptr size);
 
     void pushElements(const GLsizeiptr& size, const void* data);
     void pushUpdateElements(const GLintptr& offset, const GLsizeiptr& size, const void* data);

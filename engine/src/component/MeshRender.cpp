@@ -72,30 +72,30 @@ void MeshRender::OnInit() {
     m_transform = &entity->getComponent<Transform>();
 }
 
-void MeshRender::AddAttrib(BufferManager& pBufferManager) {
+void MeshRender::AddAttrib(BufferManager& bufferManager) {
     /* posiçao do vertice no espaço mundial */
-    pBufferManager.attribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex3D), reinterpret_cast<void*>(offsetof(Vertex3D, position)));
+    bufferManager.attribPointer(0, 3, sizeof(Vertex3D), reinterpret_cast<void*>(offsetof(Vertex3D, position)));
 
     /* normal do objeto noe spaço mundial */
-    pBufferManager.attribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex3D), reinterpret_cast<void*>(offsetof(Vertex3D, normal)));
+    bufferManager.attribPointer(1, 3, sizeof(Vertex3D), reinterpret_cast<void*>(offsetof(Vertex3D, normal)));
 
     /* uv usada para desenhar textura */
-    pBufferManager.attribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex3D), reinterpret_cast<void*>(offsetof(Vertex3D, uv)));
+    bufferManager.attribPointer(2, 2, sizeof(Vertex3D), reinterpret_cast<void*>(offsetof(Vertex3D, uv)));
 
     /* tangente do objeto espaço mundial */
-    pBufferManager.attribPointer(3, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex3D), reinterpret_cast<void*>(offsetof(Vertex3D, tangent)));
+    bufferManager.attribPointer(3, 2, sizeof(Vertex3D), reinterpret_cast<void*>(offsetof(Vertex3D, tangent)));
 
     /* bitangent usado pra luz espaço mundial */
-    pBufferManager.attribPointer(4, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex3D), reinterpret_cast<void*>(offsetof(Vertex3D, bitangent)));
+    bufferManager.attribPointer(4, 2, sizeof(Vertex3D), reinterpret_cast<void*>(offsetof(Vertex3D, bitangent)));
 
     /* id do material attribuido a vertice */
-    pBufferManager.attribPointer(5, 1, GL_FLOAT, GL_FALSE, sizeof(Vertex3D), reinterpret_cast<void*>(offsetof(Vertex3D, materialIndex)));
+    bufferManager.attribPointer(5, 1, sizeof(Vertex3D), reinterpret_cast<void*>(offsetof(Vertex3D, materialIndex)));
     
     /* id do bone */
-    pBufferManager.attribPointer(6, 4, GL_INT, sizeof(Vertex3D), reinterpret_cast<void*>(offsetof(Vertex3D, boneIndex)));
+    bufferManager.attribPointer(6, 4, GL_INT, sizeof(Vertex3D), reinterpret_cast<void*>(offsetof(Vertex3D, boneIndex)));
 
     /* peso do bone attibuido ao vertice */
-    pBufferManager.attribPointer(7, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex3D), reinterpret_cast<void*>(offsetof(Vertex3D, weight)));
+    bufferManager.attribPointer(7, 4, sizeof(Vertex3D), reinterpret_cast<void*>(offsetof(Vertex3D, weight)));
 }
 
 MeshRender::~MeshRender() {

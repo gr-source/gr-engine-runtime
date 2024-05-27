@@ -34,6 +34,8 @@ protected:
     static Skybox* m_skybox;
 
     static Shader* m_shaderModel;
+    
+    static Shader* m_shaderModelInstanced;
 
     static Frustum m_frustum;
 
@@ -52,4 +54,6 @@ protected:
     static void SetupEnableShaderModel(Shader* shader);
 
     static void SetupEnableShaderShadow(Shader* shader);
+
+    static void SetupEnableModelInstanced(Shader* shader);
 };

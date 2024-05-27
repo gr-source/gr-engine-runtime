@@ -90,8 +90,6 @@ GBuffer* m_gbuffer = nullptr;
 std::thread engine::m_thread[2];
 
 void engine::OnInit() {
-    // Input::SetInstance((void*)glfwGetCurrentContext());
-
     pImGuiRender = std::make_unique<ImGuiRender>("#version 330 core");
 
     pScreenBuffer = &ScreenBuffer::getInstance();
@@ -171,7 +169,7 @@ void engine::MainFramebuffer() {
     // Preparação ara renderização.
     BatchingManager::OnUpdate();
 
-    // // Preparação do shadow
+    /* Preparação do shadow
     m_shadowbuffer->bind();
     GRender(GRENDERERDEPTH);
     GEnableDepthTest();
@@ -180,6 +178,7 @@ void engine::MainFramebuffer() {
     BatchingManager::OnRenderShadow();
 
     m_shadowbuffer->unbind();
+    */
 
     // aplicação do anti-alising mass4.
     pScreenBuffer->bind();

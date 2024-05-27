@@ -32,25 +32,6 @@ BufferManager::~BufferManager() {
         GL_CHECK(glDeleteBuffers(1, &ebo));
 }
 
-void BufferManager::setup(u16 type, bool elements) {
-    switch (type) {
-    case eSTATIC:
-        usage = GL_STATIC_DRAW;
-        break;
-    case eDYNAMIC:
-        usage = GL_DYNAMIC_DRAW;
-        break;
-    default:
-        assert(false && "BufferManager type status invalid");
-    }
-    GL_CHECK(glGenVertexArrays(1, &vao));
-    GL_CHECK(glGenBuffers(1, &vbo));
-
-    if (elements) {
-        GL_CHECK(glGenBuffers(1, &ebo));
-    }
-}
-
 void BufferManager::pushBuffer(GLsizeiptr size, const void* data) {
     GL_CHECK(glBufferData(GL_ARRAY_BUFFER, size, data, usage));
 }
@@ -76,11 +57,6 @@ void BufferManager::attribPointer(GLuint index, GLint size, GLsizei stride, cons
 
 void BufferManager::applyDivisor(GLuint index, GLuint divisor) {
     GL_CHECK(glVertexAttribDivisor(index, divisor));
-}
-
-void BufferManager::resizeElements(GLsizeiptr size) {
-    GL_CHECK(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo));
-    GL_CHECK(glBufferData(GL_ELEMENT_ARRAY_BUFFER, size, nullptr, usage));
 }
 
 void BufferManager::pushElements(const GLsizeiptr& size, const void* data) {

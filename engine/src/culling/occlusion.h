@@ -18,6 +18,6 @@ protected:
 
     static u32 count;
 
-    GLint samplesPassed = -1;
+    int samplesPassed = -1;
 
 };

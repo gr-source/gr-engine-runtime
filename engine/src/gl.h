@@ -17,11 +17,7 @@ const char* get_enum_name(GLenum err);
 
 void check_for_opengl_errors(const std::string& functionName);
 
-#if OPENGL_DEBUG
 #define GL_CHECK(func) func; check_for_opengl_errors(#func)
-#else
-#define GL_CHECK(func) func
-#endif
 
 #define CHECK_FUNCTION(index) if (index == -1) return;
 
