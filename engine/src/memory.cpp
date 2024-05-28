@@ -6,7 +6,7 @@ std::mutex Memory::memoryMutex;
 #define ALIGN16(x) (((x) + 0xF) & ~0xF)
 
 void *Memory::malloc(std::size_t size) {
-    void* ptr = std::malloc(size + sizeof(MemoryBlock) + 15);
+    /*void* ptr = std::malloc(size + sizeof(MemoryBlock) + 15);
     if (!ptr) {
         throw std::bad_alloc();
     }
@@ -24,11 +24,12 @@ void *Memory::malloc(std::size_t size) {
     mem->origPtr = ptr;
     mem->sz = size;
 
-    return data;
+    return data;*/
+    return std::malloc(size);
 }
 
 void* Memory::realloc(void *ptr, std::size_t size) {
-    if (!ptr) {
+    /*if (!ptr) {
         return Memory::malloc(size);
     }
 
@@ -50,13 +51,13 @@ void* Memory::realloc(void *ptr, std::size_t size) {
         totalMemoryUsage += size;
     }
     mem->origPtr = origPtr;
-    mem->sz = size;
+    mem->sz = size;*/
 
-    return newPtr;
+    return std::realloc(ptr, size);
 }
 
 void Memory::free(void *ptr) noexcept {
-    if (!ptr) return;
+    /*if (!ptr) return;
 
     MemoryBlock *mem = reinterpret_cast<MemoryBlock*>(reinterpret_cast<u8*>(ptr) - sizeof(MemoryBlock));
     {
@@ -64,7 +65,8 @@ void Memory::free(void *ptr) noexcept {
         totalMemoryUsage -= mem->sz;
     }
 
-    std::free(mem->origPtr);
+    std::free(mem->origPtr);*/
+    std::free(ptr);
 }
 
 void *operator new(std::size_t size) {

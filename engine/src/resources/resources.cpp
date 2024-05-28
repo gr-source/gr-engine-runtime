@@ -74,7 +74,7 @@ Texture* Resources::Load<Texture>(const std::string& path, const std::function<v
 }
 
 void Resources::Initialize() {
-    // stbi_set_flip_vertically_on_load(true);
+    stbi_set_flip_vertically_on_load(true);
 }
 
 u32 Resources::getTextureType(int ch) {
@@ -106,7 +106,7 @@ GLenum Resources::getTextureTypeSRGB(int ch) {
 }
 
 /***************** TEXTURE LOAD ****************/
-void Resources::setup_texture(ProcessLoader<Texture>& process, const int width, const int height, const int channel, stbi_uc*& pixels) {
+void Resources::setup_texture(ProcessLoader<Texture>& process, const u32 width, const u32 height, const int channel, stbi_uc*& pixels) {
     u32 internalFormat = (process.data->m_internalformat != Texture::eNONE ? process.data->m_internalformat : Resources::getTextureTypeSRGB(channel));
     u32 format = (process.data->m_format != Texture::eNONE ? process.data->m_format : Resources::getTextureType(channel));
     u32 type = (process.data->m_type != Texture::eNONE ? process.data->m_type : Texture::eBYTE);

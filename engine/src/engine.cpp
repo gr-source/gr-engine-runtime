@@ -94,7 +94,7 @@ void engine::OnInit() {
 
     pScreenBuffer = &ScreenBuffer::getInstance();
     pImguibuffer = &Imguibuffer::getInstance();
-    m_gbuffer = &GBuffer::getInstance();
+    // m_gbuffer = &GBuffer::getInstance();
 
     DebugDraw::initialize();
 

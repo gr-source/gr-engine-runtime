@@ -28,4 +28,10 @@ void Log::Write(LogType type, const std::string& append) {
 
 std::ostream& Log::error = std::cout << red;
 
-const std::string Log::end = "\n" + none;
+std::ostream& Log::info = std::cout << green;
+
+std::ostream& Log::warning = std::cout << orange;
+
+std::ostream& Log::end(std::ostream& os) {
+    return std::flush(os.put(os.widen('\n')));
+}

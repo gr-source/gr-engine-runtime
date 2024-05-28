@@ -40,7 +40,7 @@ public:
     static T* Load(const std::string& path, const std::function<void(T*)>& callback = nullptr);
 
     template <typename... Args>
-    static Texture* LoadTexture(const std::string& path, Args&&... args);
+    static Texture* LoadTexture(const std::string& path, Args&&... args, TextureArgs textureArgs={Texture::eNONE, Texture::eNONE, Texture::eNONE, Texture::eNONE, true});
 
     template <typename... Args>
     static Shader* LoadShader(const std::string& path, Args&&... args);
@@ -70,7 +70,7 @@ private:
     static std::list<ProcessLoader<Shader>> m_shaderLoader;
     static std::mutex m_shaderMutex;
 
-    static void setup_texture(ProcessLoader<Texture>& process, const int width, const int height, const int channel, stbi_uc*& pixels);
+    static void setup_texture(ProcessLoader<Texture>& process, const u32 width, const u32 height, const int channel, stbi_uc*& pixels);
 
     static void LoadTexture();
 
@@ -80,7 +80,7 @@ private:
 };
 
 template <typename... Args>
-inline Texture *Resources::LoadTexture(const std::string &path, Args &&...args) {
+inline Texture *Resources::LoadTexture(const std::string &path, Args &&...args, TextureArgs textureArgs) {
     if (!Filesystem::exists(path)) {
         Log::error << "File texture do not open: " << path << Log::end;
         return nullptr;
@@ -92,6 +92,11 @@ inline Texture *Resources::LoadTexture(const std::string &path, Args &&...args) 
     }
 
     Texture* texture = new Texture(path);
+    texture->m_internalformat = textureArgs.internalFormat;
+    texture->m_format = textureArgs.format;
+    texture->m_filter = textureArgs.filter;
+    texture->m_type = textureArgs.type;
+    texture->m_hasMipmap = textureArgs.hasMipmap;
 
     ++m_processCount;
 

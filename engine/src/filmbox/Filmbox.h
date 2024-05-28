@@ -74,6 +74,8 @@ protected:
 
     void loadNode(aiNode* node, const aiScene* scene, FbxNode& fbxNode);
 
+    void TextureLoadSucessfull(Texture* texture);
+
     FbxScene fbxScene;
 
     u32 m_BoneCounter;

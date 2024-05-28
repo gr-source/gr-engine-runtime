@@ -20,8 +20,13 @@ public:
 
     static std::ostream& error;
 
-    static const std::string end;
+    static std::ostream& info;
+
+    static std::ostream& warning;
+
+    static std::ostream& end(std::ostream& os);
 };
+
 
 #define INFO(msg) Log::Write(LogType::eINFO, msg)
 

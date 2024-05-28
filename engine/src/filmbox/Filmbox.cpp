@@ -383,6 +383,37 @@ void Filmbox::loadMaterials(const aiScene *scene) {
     }
 }
 
+const char* get_enum_name(aiTextureType type) {
+    #define GET_ENUM_NAME(e) case e:    return #e
+    switch (type) {
+        GET_ENUM_NAME(aiTextureType_NONE);
+        GET_ENUM_NAME(aiTextureType_DIFFUSE);
+        GET_ENUM_NAME(aiTextureType_SPECULAR);
+        GET_ENUM_NAME(aiTextureType_AMBIENT);
+        GET_ENUM_NAME(aiTextureType_EMISSIVE);
+        GET_ENUM_NAME(aiTextureType_HEIGHT);
+        GET_ENUM_NAME(aiTextureType_NORMALS);
+        GET_ENUM_NAME(aiTextureType_SHININESS);
+        GET_ENUM_NAME(aiTextureType_OPACITY);
+        GET_ENUM_NAME(aiTextureType_DISPLACEMENT);
+        GET_ENUM_NAME(aiTextureType_LIGHTMAP);
+        GET_ENUM_NAME(aiTextureType_REFLECTION);
+        GET_ENUM_NAME(aiTextureType_BASE_COLOR);
+        GET_ENUM_NAME(aiTextureType_NORMAL_CAMERA);
+        GET_ENUM_NAME(aiTextureType_EMISSION_COLOR);
+        GET_ENUM_NAME(aiTextureType_METALNESS);
+        GET_ENUM_NAME(aiTextureType_DIFFUSE_ROUGHNESS);
+        GET_ENUM_NAME(aiTextureType_AMBIENT_OCCLUSION);
+        GET_ENUM_NAME(aiTextureType_SHEEN);
+        GET_ENUM_NAME(aiTextureType_CLEARCOAT);
+        GET_ENUM_NAME(aiTextureType_TRANSMISSION);
+        GET_ENUM_NAME(aiTextureType_UNKNOWN);
+    default:
+        return "Invalid";
+    }
+    #undef GET_ENUM_NAME
+}
+
 TexturePBR getTexturePBRType(aiTextureType type) {
     switch (type) {
     case aiTextureType_DIFFUSE:
@@ -396,7 +427,7 @@ TexturePBR getTexturePBRType(aiTextureType type) {
     case aiTextureType_REFLECTION:
         return TexturePBR::METALLIC;
     default:
-        std::cout << "texture do not loaded: " << type << std::endl;
+        Log::error << "texture do not loaded: " << get_enum_name(type) << Log::end;
         return TexturePBR::Non;
     }
 }
@@ -423,21 +454,11 @@ void Filmbox::loadMaterialTexture(aiMaterial* pMaterial, Material& material) {
             if (pMaterial->GetTexture(type, 0, &texturePath) != AI_SUCCESS) continue;
 
             TexturePBR pbrType = getTexturePBRType(type);
+            TextureArgs args;
             if (pbrType == TexturePBR::Non) {
                 continue;
-            } //else if (pbrType == TexturePBR::ALBEDO) {
-                material.texture[pbrType] = Resources::Load<Texture>(texturePath.C_Str());
-            // } else {
-                // material.texture[pbrType] = Resources::Load(texturePath.C_Str(), nullptr, Texture::eRGB, Texture::eRGB, Texture::eBYTE, Texture::eTRILINEAR, true);
-            // }
-            // switch (pbrType) {
-            // case TexturePBR::ALBEDO:
-            //     continue;
-            // case TexturePBR::Non:
-            //     continue;
-            // default:
-            //     continue;
-            // }
+            }
+            material.texture[pbrType] = Resources::LoadTexture<void(Filmbox::*)(Texture*texture), Filmbox*>(texturePath.C_Str(), &Filmbox::TextureLoadSucessfull, this);
         }
     }
 }
@@ -495,6 +516,10 @@ void Filmbox::loadNode(aiNode* node, const aiScene* scene, FbxNode& fbxNode) {
             loadNode(child, scene, fbxNode);
         }
     }
+}
+
+void Filmbox::TextureLoadSucessfull(Texture *texture) {
+    // Log::info << "Texture loadde sucess: " << texture->getpath() << Log::end;
 }
 
 FbxScene& Filmbox::getscene() {
