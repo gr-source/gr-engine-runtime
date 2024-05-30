@@ -24,11 +24,11 @@ u32 Resources::m_processCount = 0;
 template <>
 Shader* Resources::Load<Shader>(const std::string& path, const std::function<void(Shader*)>& callback) {
     if (!Filesystem::exists(path + ".frag")) {
-        ERROR("[ Shader ] fragment shader file not found (" + path + ".frag)");
+        Log::error() << "[ Shader ] fragment shader file not found (" << path << ".frag)" << Log::end;
         return nullptr;
     }
     if (!Filesystem::exists(path + ".vert")) {
-        ERROR("[ Shader ] vertex shader file not found (" + path + ".vert)");
+        Log::error() << "[ Shader ] vertex shader file not found (" << path << ".vert)" << Log::end;
         return nullptr;
     }
 
@@ -52,7 +52,7 @@ Shader* Resources::Load<Shader>(const std::string& path, const std::function<voi
 template <>
 Texture* Resources::Load<Texture>(const std::string& path, const std::function<void(Texture*)>& callback) {
     if (!Filesystem::exists(path)) {
-        ERROR("[ Texture ] file not found (" + path + ")");
+        Log::error() << "[ Texture ] file not found (" << path << ")" << Log::end;
         return nullptr;
     }
 
@@ -136,7 +136,7 @@ void Resources::LoadTexture() {
         stbi_uc* pixels = stbi_load(process.data->getpath().c_str(), &width, &height, &channel, 0);
 
         if (!pixels) {
-            Log::error << "[Texture] pixels not loaded" << Log::end;
+            Log::error() << "[Texture] pixels not loaded" << Log::end;
 
             delete process.data;
             process.data = nullptr;
@@ -160,7 +160,7 @@ void Resources::setup_shader(ProcessLoader<Shader>& process, const std::string& 
         const char* str = fcontent.c_str();
         process.data->loadsource(&str, 1, Shader::eFRAGMENT);
     } else {
-        ERROR("[ Resources::setup_shader ] Fatal error f");
+        Log::error() << "[ Resources::setup_shader ] Fatal error f" << Log::end;
 
         delete process.data;
         process.data = nullptr;
@@ -171,7 +171,7 @@ void Resources::setup_shader(ProcessLoader<Shader>& process, const std::string& 
         const char* str = vcontent.c_str();
         process.data->loadsource(&str, 1, Shader::eVERTEX);
     } else {
-        ERROR("[ Resources::setup_shader ] Fatal error v");
+        Log::error() << "[ Resources::setup_shader ] Fatal error v" << Log::end;
 
         delete process.data;
         process.data = nullptr;
@@ -216,7 +216,7 @@ void Resources::LoadShader() {
         /* load geometry shader string */
         const std::string gcontent = Filesystem::getfilecontent(process.data->getpath() + ".geo");
         if (gcontent.empty()) {
-            WARNING("[ Shader ] geometry shader file do not open");
+            Log::warning() << "[ Shader ] geometry shader file do not open" << Log::end;
         }
 
         EventManager::addEvent(setup_shader, process, fcontent, vcontent, gcontent);

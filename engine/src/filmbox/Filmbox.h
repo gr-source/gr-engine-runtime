@@ -17,14 +17,27 @@
 
 class Filmbox {
 public:
-    enum : u8 {
-        eNoLoadTexture = 1 << 1,
-    };
+    static Filmbox* Load(const std::string& path);
 
-    Filmbox(const std::string& path);
-    ~Filmbox();
+    void destroy();
+private:
+    std::string m_path;
 
-    void load();
+    FbxScene fbxScene;
+
+    void process();
+
+    void StartupScene(const aiScene* scene);
+
+    void LoadAnimations(const aiScene* scene);
+
+    void LoadKeyframeScale(aiNodeAnim* nodeAnim, Keyframe& key);
+
+    void LoadKeyframeRotation(aiNodeAnim* nodeAnim, Keyframe& key);
+
+    void LoadKeyframePosition(aiNodeAnim* nodeAnim, Keyframe& key);
+    
+    /*void load();
     
     FbxScene& getscene();
 
@@ -56,19 +69,21 @@ protected:
 
     void setupFace(aiMesh* nodeMesh, Mesh& mesh);
 
-    void setupSkeleton(aiNode* node, Bone* bone);
+    void setupSkeleton(aiNode* node, Bone*& bone);
 
-    void setupBone(aiMesh* nodeMesh, Mesh& mesh, const aiScene* scene);
+    void setupBone(FbxNode& fbxNode, Mesh& mesh, aiMesh* nodeMesh, const aiScene* scene);
 
     void addBoneData(Vertex3D& vertex, u32 index, float weight);
 
-    void loadvertices(aiMesh* pMesh, Mesh& mesh, const aiScene* scene);
+    void loadvertices(FbxNode& fbxNode, Mesh& mesh, aiMesh* pMesh, const aiScene* scene);
 
     void loadMeshes(const aiScene* scene);
 
     void loadMaterials(const aiScene* scene);
 
     void loadMaterialTexture(aiMaterial* pMaterial, Material& material);
+
+    void setupBoneInNode(FbxNode& node, aiMesh* mesh, const aiScene* scene);
 
     void setupNode(aiNode* node, const aiScene* scene, FbxNode& fbxNode);
 
@@ -79,9 +94,6 @@ protected:
     FbxScene fbxScene;
 
     u32 m_BoneCounter;
-
-    std::unordered_map<std::string, Bone> m_boneMap;
-    std::unordered_map<std::string, bool> m_isBone;
 
     std::function<void(const FbxNode&, const FbxNode*, FbxScene&)> m_changenewgameobject;
 
@@ -96,6 +108,5 @@ protected:
     std::thread m_thread;
 
     std::mutex mt;
+    */
 };
-
-

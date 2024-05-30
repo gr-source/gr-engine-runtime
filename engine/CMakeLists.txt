@@ -83,8 +83,8 @@ set(engine_src
     src/filmbox/fbxLight.cpp
     src/filmbox/fbxCamera.cpp
 
-    src/geometry/queryRender.cpp
     src/geometry/material.cpp
+    src/geometry/model.cpp
     src/geometry/mesh.cpp
     
     src/core/scene/Scene.cpp
@@ -166,8 +166,8 @@ set(engine_hdr
     src/filmbox/fbxLight.h
     src/filmbox/fbxCamera.h
 
-    src/geometry/queryRender.h
     src/geometry/material.h
+    src/geometry/model.h
     src/geometry/mesh.h
 
     src/core/scene/Scene.h

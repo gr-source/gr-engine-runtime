@@ -14,29 +14,34 @@ public:
 
     void setduration(float val);
 
-    void setmaxtick(float val);
+    const float& getduration() const;
+
+    void setticks(float val);
+
+    const float& getticks() const;
 
     Keyframe* findKeyframe(const std::string& name);
 
     template <typename... Args>
     Keyframe& addkeyframe(Args&&... args);
 
+    const std::vector<Keyframe>& getKeyList() const;
+
+    const ptrsize getKeyframecout() const;
+
     const std::string& getname() const;
 
-    const float& getduration() const;
-
-    const float& getticks() const;
 protected:
-    std::vector<Keyframe> keyframes;
+    std::vector<Keyframe> m_keyframes;
 
-    std::string name;
+    std::string m_name;
 
-    float duration;
+    float m_duration;
 
-    float ticks;
+    float m_ticks;
 };
 
 template <typename... Args>
 inline Keyframe &AnimationClip::addkeyframe(Args &&...args) {
-    return keyframes.emplace_back(std::forward<Args>(args)...);
+    return m_keyframes.emplace_back(std::forward<Args>(args)...);
 }

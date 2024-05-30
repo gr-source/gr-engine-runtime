@@ -7,9 +7,9 @@
 #include "../batchingManager.h"
 #include "../bufferManager.h"
 
-#include "../geometry/queryRender.h"
-
 #include "../culling/occlusion.h"
+
+#include "../geometry/boundBox.h"
 
 class MeshRender : public Component {
 public:

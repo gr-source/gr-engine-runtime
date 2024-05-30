@@ -82,7 +82,7 @@ private:
 template <typename... Args>
 inline Texture *Resources::LoadTexture(const std::string &path, Args &&...args, TextureArgs textureArgs) {
     if (!Filesystem::exists(path)) {
-        Log::error << "File texture do not open: " << path << Log::end;
+        Log::error() << "File texture do not open: " << path << Log::end;
         return nullptr;
     }
 
@@ -111,11 +111,11 @@ inline Texture *Resources::LoadTexture(const std::string &path, Args &&...args, 
 template <typename... Args>
 inline Shader *Resources::LoadShader(const std::string &path, Args &&...args) {
     if (!Filesystem::exists(path + ".frag")) {
-        ERROR("[ Shader ] fragment shader file not found (" + path + ".frag)");
+        Log::error() << "[ Shader ] fragment shader file not found (" << path << ".frag)" << Log::end;
         return nullptr;
     }
     if (!Filesystem::exists(path + ".vert")) {
-        ERROR("[ Shader ] vertex shader file not found (" + path + ".vert)");
+        Log::error() << "[ Shader ] vertex shader file not found (" << path << ".vert)" << Log::end;
         return nullptr;
     }
 

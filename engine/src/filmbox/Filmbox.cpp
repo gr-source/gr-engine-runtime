@@ -1,45 +1,18 @@
 #include "Filmbox.h"
 
 #include "../resources/resources.h"
-#include "../eventManager.h"
-
 #include "../geometry/mesh.h"
 
-#include <iostream>
+#include "../eventManager.h"
+#include "../memory.h"
 
-#define NORMALIZE(vector) \
-    if (std::abs(vector.x) > 6.0f) \
-        vector.x /= 1e2f; \
-    if (std::abs(vector.y) > 6.0f) \
-        vector.y /= 1e2f; \
-    if (std::abs(vector.z) > 6.0f) \
-        vector.z /= 1e2f;
+#define NORMALIZE(vector) if (std::abs(vector.x) > 6.0f) vector.x /= 1e2f; if (std::abs(vector.y) > 6.0f) vector.y /= 1e2f; if (std::abs(vector.z) > 6.0f) vector.z /= 1e2f;
 
 #define NORM(value) value > 6.0f ? value / 1e2f : value
 
-#define DECOMPOSE(in, out) \
-    aiVector3D s; \
-    aiQuaternion r; \
-    aiVector3D t; \
-    in.Decompose(s, r, t); \
-    out.scale = {s.x, s.y, s.z}; \
-    out.rotation = {r.w, r.x, r.y, r.z}; \
-    out.position = {t.x, t.y, t.z}; \
+#define DECOMPOSE(in, out) aiVector3D s; aiQuaternion r; aiVector3D t; in.Decompose(s, r, t); out.scale = {s.x, s.y, s.z}; out.rotation = {r.w, r.x, r.y, r.z}; out.position = {t.x, t.y, t.z}; 
 
-
-Filmbox::Filmbox(const std::string& path) : path(path), m_BoneCounter(0), m_changenewgameobject(nullptr), m_changeloading(nullptr), m_loaded(nullptr) {}
-
-Filmbox::~Filmbox() {
-    {
-        std::lock_guard<std::mutex> lock(mt);
-        importer.FreeScene();
-    }
-
-    if (m_thread.joinable()) {
-        m_thread.join();
-    }
-}
-
+/*
 void Filmbox::load() {
     m_thread = std::thread(&Filmbox::setupLoader, this);
 }
@@ -49,7 +22,7 @@ void Filmbox::setupLoader() {
 
     {
         std::lock_guard<std::mutex> lock(mt);
-        scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_CalcTangentSpace);
+        scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_CalcTangentSpace | aiProcess_PopulateArmatureData | aiProcess_Triangulate);
     }
 
     if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
@@ -248,79 +221,123 @@ void Filmbox::setupFace(aiMesh *nodeMesh, Mesh &mesh) {
     for (u32 i=0;i<nodeMesh->mNumFaces;i++) {
         aiFace& face = nodeMesh->mFaces[i];
 
+        if (face.mNumIndices > 3) {
+            Log::error() << "Face não é um triangulo" << Log::end;
+        }
+
         for (u32 j=0;j<face.mNumIndices;j++) {
             mesh.addindice(face.mIndices[j]);
         }
     }
 }
 
-void Filmbox::setupSkeleton(aiNode* node, Bone* bone) {
+void Filmbox::setupSkeleton(aiNode* node, Bone*& bone) {
     Bone* newBone = nullptr;
-    if (node->mParent != nullptr && m_isBone[node->mName.C_Str()]) {
-        Bone& boneMap = m_boneMap[node->mName.C_Str()];
-        boneMap.m_parent = bone;
-
-        if (bone->getname() == "none") {
-            newBone = bone;
-            newBone->setname(node->mName.C_Str());
+    if (node->mParent != nullptr) {
+        if (bone == nullptr) {
+            newBone = bone = new Bone(node->mName.C_Str());
         } else {
-            newBone = &bone->addchild(boneMap);
+            newBone = &bone->addchild(node->mName.C_Str());
         }
     }
-
+    
     for (u32 i=0;i<node->mNumChildren;i++) {
         aiNode* child = node->mChildren[i];
 
-        if (newBone != nullptr) {
-            setupSkeleton(child, newBone);
-        } else {
-            setupSkeleton(child, bone);
-        }
+        setupSkeleton(child, newBone);
     }
 }
 
-void Filmbox::setupBone(aiMesh *nodeMesh, Mesh &mesh, const aiScene* scene) {
-    if (!nodeMesh->HasBones()) return;
+void Filmbox::setupBone(FbxNode& fbxNode, Mesh &mesh, aiMesh *nodeMesh, const aiScene* scene) {
+    if (!nodeMesh->HasBones()) {
+        return;
+    }
+
+    std::vector<std::string> boneNames;
 
     for (u32 i=0;i<nodeMesh->mNumBones;i++) {
-        aiBone* nodeBone = nodeMesh->mBones[i];
+        aiBone* pBone = nodeMesh->mBones[i];
 
-        std::string boneName = nodeBone->mName.C_Str();
+        std::string name = pBone->mName.C_Str();
 
-        auto it = m_boneMap.find(boneName);
-        if (it != m_boneMap.end()) {
-            Log::error << "Bone has already been added. " << boneName << Log::end;
-            continue;
+        boneNames.emplace_back(name);
+
+        aiNode* armature = pBone->mArmature;
+
+        Skeleton* skeleton = fbxScene.findSkeleton(armature->mName.C_Str());
+        if (!skeleton) {
+            skeleton = &fbxScene.addskeleton(armature->mName.C_Str());
+            
+            setupSkeleton(armature, skeleton->m_root);
+
+            Log::info() << "New Skeleton: " << skeleton->getname() << Log::end;
         }
 
-        Bone& bone = m_boneMap[boneName];
-        bone.m_name = boneName;
-        bone.id = i;
+        Bone* bone = skeleton->findBone(name);
+        if (!bone) {
+            Log::error() << "Bone not found in skeleton" << std::endl;
+            continue;
+        }
+        bone->m_name = name;
+        bone->id = i;
 
-        DECOMPOSE(nodeBone->mOffsetMatrix, bone);
+        DECOMPOSE(pBone->mOffsetMatrix, (*bone));
 
-        for (u32 j=0;j<nodeBone->mNumWeights;j++) {
-            aiVertexWeight vertexWeight = nodeBone->mWeights[j];
+        for (u32 j=0;j<pBone->mNumWeights;j++) {
+            aiVertexWeight& vertexWeight = pBone->mWeights[j];
 
             Vertex3D& vertex = mesh.GetVertex(vertexWeight.mVertexId);
 
-            addBoneData(vertex, bone.id, vertexWeight.mWeight);
+            addBoneData(vertex, bone->id, vertexWeight.mWeight);
         }
-
-        m_isBone[boneName] = true;
     }
 
-    Skeleton& m_skeleton = mesh.m_skeleton;
-    setupSkeleton(scene->mRootNode, &m_skeleton.m_root);
+    for (auto& skeleton : fbxScene.m_skeletons) {
+        bool allBonesFound = true;
+
+        for (const auto& name : boneNames) {
+            auto* bone = skeleton.findBone(name);
+            if (!bone) {
+                allBonesFound = false;
+                break;
+            }
+        }
+
+        if (allBonesFound) {
+            fbxNode.m_skeleton = new Skeleton(skeleton);
+            break;
+        }
+    }
+
+    /*
+    auto& animations = fbxScene.getanimations();
+
+    for (auto& entry : animations) {
+        auto& anim = entry.second;
+
+        bool allBonesFound = true;
+
+        for (auto& keyframe : anim.getKeyList()) {
+            auto* bone = fbxNode.m_skeleton->findBone(keyframe.getname());
+            if (!bone) {
+                allBonesFound = false;
+                break;
+            }
+        }
+
+        if (allBonesFound) {
+            fbxNode.m_animations.emplace_back(anim);
+            break;
+        }
+    }
     
-    m_boneMap.clear();
-    m_isBone.clear();
+
     m_BoneCounter = 0;
 }
 
 void Filmbox::addBoneData(Vertex3D &vertex, u32 index, float weight) {
     if (weight == 0.0f || index >= 100) {
-        Log::error << "Bone invalid wight or index. " << weight << " " << index << Log::end;
+        Log::error() << "Bone invalid wight or index. " << weight << " " << index << Log::end;
         return;
     }
 
@@ -333,16 +350,16 @@ void Filmbox::addBoneData(Vertex3D &vertex, u32 index, float weight) {
     }
 }
 
-void Filmbox::loadvertices(aiMesh* pMesh, Mesh& mesh, const aiScene* scene) {
+void Filmbox::loadvertices(FbxNode& fbxNode, Mesh& mesh, aiMesh* pMesh, const aiScene* scene) {
     setupVertice(pMesh, mesh);
 
     setupFace(pMesh, mesh);
 
-    setupBone(pMesh, mesh, scene);
+    setupBone(fbxNode, mesh, pMesh, scene);
 }
 
 void Filmbox::loadMeshes(const aiScene *scene) {
-    for (u32 i=0;i<scene->mNumMeshes;i++) {
+    /*for (u32 i=0;i<scene->mNumMeshes;i++) {
         aiMesh* pMesh = scene->mMeshes[i];
 
         auto& mesh = fbxScene.addmesh(i, pMesh->mName.C_Str());
@@ -427,7 +444,7 @@ TexturePBR getTexturePBRType(aiTextureType type) {
     case aiTextureType_REFLECTION:
         return TexturePBR::METALLIC;
     default:
-        Log::error << "texture do not loaded: " << get_enum_name(type) << Log::end;
+        Log::error() << "texture do not loaded: " << get_enum_name(type) << Log::end;
         return TexturePBR::Non;
     }
 }
@@ -470,18 +487,13 @@ void Filmbox::setupNode(aiNode* node, const aiScene* scene, FbxNode& fbxNode) {
     NORMALIZE(fbxNode.position);
 
     for (u32 i=0;i<node->mNumMeshes;i++) {
-        Mesh* mesh = fbxScene.findmesh(node->mMeshes[i]);
-        if (!mesh) {
-            Log::Write(LogType::eERROR, "[ Filmbox ] Mesh do not loaded");
-            continue;
-        }
+        aiMesh* pMesh = scene->mMeshes[node->mMeshes[i]];
 
-        fbxNode.addmesh(*mesh);
+        auto& mesh = fbxNode.addmesh(pMesh->mName.C_Str());
 
-        /* Improviso */
-        aiMesh* m = scene->mMeshes[node->mMeshes[i]];
+        loadvertices(fbxNode, mesh, pMesh, scene);
 
-        fbxNode.materials[m->mMaterialIndex] = fbxScene.m_materials[m->mMaterialIndex];
+        fbxNode.materials[pMesh->mMaterialIndex] = fbxScene.m_materials[pMesh->mMaterialIndex];
     }
 }
 
@@ -494,6 +506,7 @@ void Filmbox::loadNode(aiNode* node, const aiScene* scene, FbxNode& fbxNode) {
         if (light != fbxScene.m_lights.end()) {
             type = FbxNode::eLIGHT;
         }
+        
         auto camera = fbxScene.m_cameras.find(node->mName.C_Str());
         if (camera != fbxScene.m_cameras.end()) {
             type = FbxNode::eCAMERA;
@@ -509,6 +522,11 @@ void Filmbox::loadNode(aiNode* node, const aiScene* scene, FbxNode& fbxNode) {
 
     for (u32 i=0;i<node->mNumChildren;i++) {
         aiNode* child = node->mChildren[i];
+
+        Skeleton* it = fbxScene.findSkeleton(child->mName.C_Str());
+        if (it != nullptr) {
+            continue;
+        }
 
         if (newNode != nullptr) {
             loadNode(child, scene, *newNode);
@@ -536,4 +554,112 @@ void Filmbox::SetLoadingStatus(std::function<void(u32, u32, const std::string&)>
 
 void Filmbox::SetLoaded(const std::function<void(const FbxScene &)> func) {
     m_loaded = func;
+}
+*/
+
+Filmbox *Filmbox::Load(const std::string &path) {
+    Filmbox* filmbox = new Filmbox();
+    filmbox->m_path = path;
+    filmbox->process();
+
+    return filmbox;
+}
+
+void Filmbox::destroy() {
+    delete this;
+}
+
+void Filmbox::process() {
+    Assimp::Importer importer;
+
+    const aiScene* scene = importer.ReadFile(m_path, aiProcess_Triangulate | aiProcess_CalcTangentSpace | aiProcess_PopulateArmatureData | aiProcess_Triangulate);
+
+    if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
+        throw std::runtime_error("Erro ao carregar o modelo FBX: " + std::string(importer.GetErrorString()));
+    }
+
+    StartupScene(scene);
+
+    importer.FreeScene();
+}
+
+void Filmbox::StartupScene(const aiScene *scene) {
+    if (scene->HasAnimations()) {
+        Log::info() << "Process: Animations" << Log::end;
+
+        LoadAnimations(scene);
+    }
+
+    if (scene->HasCameras()) {
+        Log::info() << "Cameras loaded" << Log::end;
+    }
+
+    if (scene->HasLights()) {
+        Log::info() << "Lights loaded" << Log::end;
+    }
+
+    if (scene->HasMeshes()) {
+        Log::info() << "Meshs loaded" << Log::end;
+    }
+
+    if (scene->HasMaterials()) {
+        Log::info() << "Materials loaded" << Log::end;
+    }
+
+    if (scene->HasTextures()) {
+        Log::info() << "Textures loaded" << Log::end;
+    }
+}
+
+void Filmbox::LoadAnimations(const aiScene *scene) {
+    for (u32 i=0;i<scene->mNumAnimations;i++) {
+        aiAnimation* animation = scene->mAnimations[i];
+
+        std::string name = animation->mName.C_Str();
+
+        auto& anim = fbxScene.addanimation(name);
+        anim.setduration(static_cast<float>(animation->mDuration));
+        anim.setticks(static_cast<float>(animation->mTicksPerSecond));
+
+        for (u32 j=0;j<animation->mNumChannels;j++) {
+            aiNodeAnim* nodeAnim = animation->mChannels[j];
+
+            std::string nodeName = nodeAnim->mNodeName.C_Str();
+
+            auto& keyframe = anim.addkeyframe(nodeName);
+
+            LoadKeyframeScale(nodeAnim, keyframe);
+
+            LoadKeyframeRotation(nodeAnim, keyframe);
+
+            LoadKeyframePosition(nodeAnim, keyframe);
+        }
+
+        Log::info() << "Animation: " << name << Log::end;
+        Log::warning() << "Total keyframes: " << anim.getKeyframecout() << Log::end;
+    }
+}
+
+void Filmbox::LoadKeyframeScale(aiNodeAnim *nodeAnim, Keyframe &key) {
+    for (int i=0;i<nodeAnim->mNumScalingKeys;i++) {
+        aiVectorKey& vecKey = nodeAnim->mScalingKeys[i];
+
+        key.addKeyScale({vecKey.mValue.x, vecKey.mValue.y, vecKey.mValue.z}, static_cast<float>(vecKey.mTime));
+    }
+}
+
+void Filmbox::LoadKeyframeRotation(aiNodeAnim *nodeAnim, Keyframe &key) {
+    for (int i=0;i<nodeAnim->mNumRotationKeys;i++) {
+        aiQuatKey& quatKey = nodeAnim->mRotationKeys[i];
+
+        key.addKeyRotation({quatKey.mValue.w, quatKey.mValue.x, quatKey.mValue.y, quatKey.mValue.z}, static_cast<float>(quatKey.mTime));
+    }
+}
+
+void Filmbox::LoadKeyframePosition(aiNodeAnim *nodeAnim, Keyframe &key) {
+    for (int i=0;i<nodeAnim->mNumPositionKeys;i++) {
+        aiVectorKey& vecKey = nodeAnim->mPositionKeys[i];
+
+        key.addKeyPosition({vecKey.mValue.x, vecKey.mValue.y, vecKey.mValue.z}, static_cast<float>(vecKey.mTime));
+    }
 }

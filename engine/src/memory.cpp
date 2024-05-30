@@ -57,9 +57,9 @@ void* Memory::realloc(void *ptr, std::size_t size) {
 }
 
 void Memory::free(void *ptr) noexcept {
-    /*if (!ptr) return;
+    if (!ptr) return;
 
-    MemoryBlock *mem = reinterpret_cast<MemoryBlock*>(reinterpret_cast<u8*>(ptr) - sizeof(MemoryBlock));
+    /*MemoryBlock *mem = reinterpret_cast<MemoryBlock*>(reinterpret_cast<u8*>(ptr) - sizeof(MemoryBlock));
     {
         std::lock_guard<std::mutex> lock(memoryMutex);
         totalMemoryUsage -= mem->sz;

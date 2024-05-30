@@ -14,8 +14,18 @@ const std::string& FbxScene::getname() const {
     return name;
 }
 
-const std::unordered_map<u32, AnimationClip> &FbxScene::getanimations() const {
+const std::vector<AnimationClip> &FbxScene::getanimations() const {
     return m_animations;
+}
+
+Skeleton *FbxScene::findSkeleton(const std::string &name) {
+    auto it = std::find_if(m_skeletons.begin(), m_skeletons.end(), [&](auto& skeleton) {
+        return skeleton.getname() == name;
+    });
+    if (it != m_skeletons.end()) {
+        return &(*it);
+    }
+    return nullptr;
 }
 
 const FbxLight *FbxScene::findlight(const std::string &name) const {

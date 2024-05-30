@@ -43,6 +43,8 @@
 
 #include "filesystem/filesystem.h"
 
+#include "animation/skeleton.h"
+
 #include "ui/View.h"
 
 #include <sstream>
@@ -92,8 +94,6 @@ std::unordered_map<IconType, Texture*> iconsUI;
 EditorController mEditorController;
 #endif
 
-std::unique_ptr<Filmbox> m_filmbox = nullptr;
-
 GameObject& GenGameObject(const FbxNode& node, bool local) {
     GameObject* gameObject = nullptr;
 
@@ -135,36 +135,9 @@ void CreateCamera(GameObject& gameobject, const FbxNode& node, const FbxScene& s
 void CreateModel(GameObject& gameobject, const FbxNode& node, const FbxScene& scene) {
     Transform& transform = gameobject.gettransform();
 
-    RigidbodyDef rigidbodyDef;
-    rigidbodyDef.mass = 1.0f;
-
-    if (gameobject.getname() == "player") {
-        rigidbodyDef.isDynamic = true;
-
-        gameobject.addComponent<BoxCollider>(transform.scale);
-
-        gameobject.addComponent<Rigidbody>(rigidbodyDef);
-
-        gameobject.addComponent<PlayerController>();
-    } else if (gameobject.getname() == "ground") {
-        rigidbodyDef.mass = 0.0f;
-
-        gameobject.addComponent<BoxCollider>(transform.scale);
-
-        gameobject.addComponent<Rigidbody>(rigidbodyDef);
-    } else if (gameobject.getname() == "whall") {
-        rigidbodyDef.mass = 0.0f;
-        
-        gameobject.addComponent<MeshCollider>(node.getmeshs()[0]);
-
-        gameobject.addComponent<Rigidbody>(rigidbodyDef);
-    }
-    
-    if (node.hasmesh()) {
-        if (node.getmeshs()[0].hasBones()) {
-            auto& animation = gameobject.addComponent<Animator>(node.getmeshs()[0].getskeleton());
-            animation.m_animations.insert(scene.getanimations().begin(), scene.getanimations().end());
-        }
+    if (node.hasSkeleton()) {
+        auto& animation = gameobject.addComponent<Animator>(*node.getSkeleton());
+        animation.m_animations.insert(animation.m_animations.begin(), node.m_animations.begin(), node.m_animations.end());
     }
 }
 
@@ -242,13 +215,15 @@ void SceneLoaded(const FbxScene& scene) {
     Settings::IsGameRunning = true;
     EntityManager::OnPlayGame();
     #endif
-    m_filmbox = nullptr;
+    // m_filmbox->destroy();
 }
 
 Game::Game() : objectselected(nullptr), FPSColor(255, 255, 255, 255) {
-    m_filmbox = std::make_unique<Filmbox>("/home/grsource/Documentos/filmbox/anim.fbx"); //untitled
-    m_filmbox->SetLoaded(SceneLoaded);
-    m_filmbox->load();
+    Filmbox* m_filmbox = Filmbox::Load("/home/grsource/Downloads/animation/Twist Dance.fbx");
+    // m_filmbox->SetLoaded(SceneLoaded);
+    // m_filmbox->load();
+
+    m_filmbox->destroy();
 
     #if !IS_GAME
     m_io = nullptr;
@@ -691,19 +666,21 @@ void Game::OnPropertyTransform(Transform* transform) {
     }
 }
 
-void ReadSkeleton(const Bone& bone) {
-    ImGui::PushID(bone.getname().c_str());
+void ReadSkeleton(const Bone* bone) {
+    if (!bone) return;
+
+    ImGui::PushID(bone->getname().c_str());
 
     ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanFullWidth;
-    if (!bone.haschildren()) {
+    if (!bone->haschildren()) {
         flags |= ImGuiTreeNodeFlags_Leaf;
     }
 
-    const bool isOpen = ImGui::TreeNodeEx(bone.getname().c_str(), flags);
+    const bool isOpen = ImGui::TreeNodeEx(bone->getname().c_str(), flags);
     
     if (isOpen) {
-        for (const auto& child : bone.getchildren()) {
-            ReadSkeleton(child);
+        for (const auto& child : bone->getchildren()) {
+            ReadSkeleton(&child);
         }
         ImGui::TreePop();
     }
@@ -712,9 +689,16 @@ void ReadSkeleton(const Bone& bone) {
 
 void Game::OnPropertyAnimator(Animator *animator) {
     if (ImGui::TreeNode("Animator")) {
+
         ImGui::Text("Esqueleto:");
 
         ReadSkeleton(animator->m_skeleton.getroot());
+
+        ImGui::Text("Animations:");
+
+        for (auto& anim : animator->m_animations) {
+            ImGui::Text("%s", anim.getname().c_str());
+        }
         ImGui::TreePop();
     }
 }
@@ -1021,18 +1005,4 @@ void Game::ProgressLoad() {
     ImGui::End();
 }
 
-/*
-void Game::ImportFiles(const std::vector<std::filesystem::path> &files) {
-    for (const auto& file : files) {
-        if (std::filesystem::is_directory(file) || !std::filesystem::exists(file)) continue;
-
-        if (file.filename().extension() != ".fbx") continue;
-
-        // Filmbox filmbox(file.string());
-        // filmbox.SetChangeGameObject(SetupGameObject);
-        // filmbox.SetLoaded(SetupLoaded);
-        // filmbox.load();
-    }
-}
-*/
 #endif

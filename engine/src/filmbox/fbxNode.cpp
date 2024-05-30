@@ -1,6 +1,6 @@
 #include "fbxNode.h"
 
-FbxNode::FbxNode(const std::string& name, FbxNode* parent, u8 type) : name(name), parent(parent), m_type(type) {}
+FbxNode::FbxNode(const std::string& name, FbxNode* parent, u8 type) : name(name), parent(parent), m_type(type), m_skeleton(nullptr) {}
 
 bool FbxNode::haschild() const {
     return !children.empty();
@@ -29,3 +29,12 @@ const u8 &FbxNode::gettype() const {
 const std::vector<FbxNode> &FbxNode::getchildren() const {
     return children;
 }
+
+const bool FbxNode::hasSkeleton() const {
+    return m_skeleton != nullptr;
+}
+
+const Skeleton *FbxNode::getSkeleton() const {
+    return m_skeleton;
+}
+

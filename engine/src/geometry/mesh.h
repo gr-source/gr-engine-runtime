@@ -6,10 +6,7 @@
 
 #include "../types.h"
 
-#include "boundBox.h"
 #include "vertex3D.h"
-
-#include "../animation/skeleton.h"
 
 class Mesh {
 public:
@@ -46,13 +43,7 @@ public:
 
     const std::string& getname() const;
 
-    const Skeleton& getskeleton() const;
-
-    const bool hasBones() const;
-
     bool operator ==(const Mesh& other) const;
-
-    // static Mesh CreateCube();
 
 protected:
     std::string name;
@@ -60,10 +51,6 @@ protected:
     std::vector<Vertex3D> vertices;
 
     std::vector<u32> indices;
-
-    Skeleton m_skeleton;
-
-    BoundBox m_boundBox;
 
     friend class Filmbox;
     friend class MeshRender;

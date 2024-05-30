@@ -9,17 +9,24 @@
 
 class Skeleton {
 public:
-    Skeleton() = default;
+    Skeleton(const std::string& name);
+    ~Skeleton();
 
-    Skeleton(const Skeleton& rhs);
+    const std::string& getname() const;
 
     Bone* findBone(const std::string& name);
 
-    Bone& getroot();
+    Bone* getroot();
+
+    const Bone* getroot() const;
 
     const bool hasbone() const;
 protected:
-    Bone m_root;
+    std::string m_name;
+
+    Bone* m_root;
+
+    Bone* find(Bone* bone, const std::string& name);
 
     friend class Filmbox;
 };

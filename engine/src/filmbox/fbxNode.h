@@ -1,10 +1,9 @@
 #pragma once
 
-#include <string>
-#include <vector>
-#include <map>
+#include "../common.h"
 
-#include <gr-math/gmath.h>
+#include "../animation/animationClip.h"
+#include "../animation/skeleton.h"
 
 #include "../geometry/material.h"
 #include "../geometry/mesh.h"
@@ -53,12 +52,23 @@ public:
 
     const std::vector<FbxNode>& getchildren() const;
 
+    const bool hasSkeleton() const;
+
+    const Skeleton* getSkeleton() const;
+
+    std::vector<AnimationClip> m_animations;
 protected:
-    std::string name;
 
     std::vector<Mesh> meshs;
 
+    Skeleton* m_skeleton;
+
+    std::string name;
+
     u8 m_type;
+
+    friend class Filmbox;
+    friend class Game;
 };
 
 template <typename ...Args>

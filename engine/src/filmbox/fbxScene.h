@@ -7,6 +7,7 @@
 #include "fbxNode.h"
 
 #include "../animation/animationClip.h"
+#include "../animation/skeleton.h"
 
 class FbxScene {
 public:
@@ -32,10 +33,15 @@ public:
 
     Mesh* findmesh(u32 index);
 
-    const std::unordered_map<u32, AnimationClip>& getanimations() const;
+    const std::vector<AnimationClip>& getanimations() const;
 
     template <typename... Args>
-    AnimationClip& addanimation(u32 index, Args&&... args);
+    AnimationClip& addanimation(Args&&... args);
+
+    template <typename... Args>
+    Skeleton& addskeleton(Args&&... args);
+
+    Skeleton* findSkeleton(const std::string& name);
 
 private:
     /* nome da cena */
@@ -51,11 +57,13 @@ private:
     std::unordered_map<u32, Material> m_materials;
 
     /* lista de animações na cena */
-    std::unordered_map<u32, AnimationClip> m_animations;
+    std::vector<AnimationClip> m_animations;
 
     std::unordered_map<std::string, FbxLight> m_lights;
 
     std::unordered_map<std::string, FbxCamera> m_cameras;
+
+    std::vector<Skeleton> m_skeletons;
 
     friend class Filmbox;
 };
@@ -73,7 +81,11 @@ inline Mesh &FbxScene::addmesh(u32 index, Args &&...args) {
 }
 
 template <typename... Args>
-inline AnimationClip &FbxScene::addanimation(u32 index, Args &&...args) {
-    m_animations.emplace(index, std::forward<Args>(args)...);
-    return m_animations[index];
+inline AnimationClip &FbxScene::addanimation(Args &&...args) {
+    return m_animations.emplace_back(std::forward<Args>(args)...);
+}
+
+template <typename... Args>
+inline Skeleton &FbxScene::addskeleton(Args &&...args) {
+    return m_skeletons.emplace_back(std::forward<Args>(args)...);
 }

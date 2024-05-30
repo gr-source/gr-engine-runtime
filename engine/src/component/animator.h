@@ -17,7 +17,7 @@ public:
     
     std::array<Matrix4x4, 100> m_FinalBoneMatrices;
     
-    std::unordered_map<u32, AnimationClip> m_animations;
+    std::vector<AnimationClip> m_animations;
 
 protected:
     Transform* transform;
@@ -26,7 +26,7 @@ protected:
     
     float currentTime;
 
-    void CalculateBoneTransform(const Bone& bone, const Matrix4x4& parentTransform);
+    void CalculateBoneTransform(const Bone* bone, const Matrix4x4& parentTransform);
 
     bool loaded;
 
