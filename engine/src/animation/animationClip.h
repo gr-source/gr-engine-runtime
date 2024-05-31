@@ -5,7 +5,7 @@
 
 #include "keyframe.h"
 
-#include "../filmbox/BoneInfo.h"
+#include "../types.h"
 
 class AnimationClip {
 public:

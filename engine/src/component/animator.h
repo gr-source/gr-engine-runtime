@@ -5,6 +5,8 @@
 #include "../animation/animationClip.h"
 #include "../animation/skeleton.h"
 
+#include "../common.h"
+
 class Animator : public Component {
 public:
     Animator(const Skeleton& skeleton);

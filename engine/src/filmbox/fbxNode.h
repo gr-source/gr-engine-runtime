@@ -27,8 +27,6 @@ public:
     Quaternion rotation;
 
     Vector3 scale;
-
-    std::unordered_map<u32, Material> materials;
     
     FbxNode(const std::string& name = "unamed", FbxNode* parent = nullptr, u8 type = eNONE);
 
@@ -57,8 +55,19 @@ public:
     const Skeleton* getSkeleton() const;
 
     std::vector<AnimationClip> m_animations;
+
+    template <typename... Args>
+    Material& addMaterial(u32 index, Args &&...args);
+
+    Material* findMaterial(u32 index);
+
+    const std::unordered_map<u32, Material>& getMaterials() const;
+
+    const u32 getMaterialCount() const;
 protected:
 
+    std::unordered_map<u32, Material> m_materials;
+    
     std::vector<Mesh> meshs;
 
     Skeleton* m_skeleton;
@@ -79,4 +88,10 @@ inline FbxNode& FbxNode::addchild(Args&&... args) {
 template <typename ...Args>
 inline Mesh& FbxNode::addmesh(Args&&... args) {
     return meshs.emplace_back(std::forward<Args>(args)...);
+}
+
+template <typename... Args>
+inline Material &FbxNode::addMaterial(u32 index, Args &&...args) {
+    m_materials.emplace(index, std::forward<Args>(args)...);
+    return m_materials[index];
 }

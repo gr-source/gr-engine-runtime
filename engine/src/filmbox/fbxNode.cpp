@@ -38,3 +38,18 @@ const Skeleton *FbxNode::getSkeleton() const {
     return m_skeleton;
 }
 
+Material *FbxNode::findMaterial(u32 index) {
+    auto it = m_materials.find(index);
+    if (it != m_materials.end()) {
+        return &(*it).second;
+    }
+    return nullptr;
+}
+
+const std::unordered_map<u32, Material> &FbxNode::getMaterials() const {
+    return m_materials;
+}
+
+const u32 FbxNode::getMaterialCount() const {
+    return static_cast<u32>(m_materials.size());
+}

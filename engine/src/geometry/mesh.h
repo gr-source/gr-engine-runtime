@@ -2,9 +2,7 @@
 
 #include <vector>
 
-#include <gr-math/gmath.h>
-
-#include "../types.h"
+#include "../common.h"
 
 #include "vertex3D.h"
 
@@ -45,12 +43,20 @@ public:
 
     bool operator ==(const Mesh& other) const;
 
+    void addMaterial(u32 index);
+
+    const std::vector<u32>& getMaterials() const;
+
+    u32* findMaterial(u32 index);
+
 protected:
     std::string name;
 
     std::vector<Vertex3D> vertices;
 
     std::vector<u32> indices;
+
+    std::vector<u32> m_material;
 
     friend class Filmbox;
     friend class MeshRender;

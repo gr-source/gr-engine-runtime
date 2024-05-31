@@ -169,7 +169,7 @@ void BatchingManager::SetupMaterial(const MeshRender &meshRender, Shader *shader
         auto& entry = material.second;
         auto& index = material.first;
 
-        shader->setUniform("materials[" + std::to_string(index) + "].albedo",    entry.albedo);
+        shader->setUniform("materials[" + std::to_string(index) + "].albedo", entry.albedo);
         shader->setUniform("materials[" + std::to_string(index) + "].params", Vector3(entry.roughness, entry.metallic, entry.ao));
 
         for (int i=0;i<MAX_TEXTURE;i++) {

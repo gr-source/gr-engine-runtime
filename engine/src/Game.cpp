@@ -94,134 +94,50 @@ std::unordered_map<IconType, Texture*> iconsUI;
 EditorController mEditorController;
 #endif
 
-GameObject& GenGameObject(const FbxNode& node, bool local) {
+GameObject& GenGameObject(const FbxNode* node, bool local) {
     GameObject* gameObject = nullptr;
 
     if (local) {
-        gameObject = &ObjectManager::add(node.getname());
+        gameObject = &ObjectManager::add(node->getname());
     } else {
-        gameObject = SceneManager::add(node.getname());
+        gameObject = SceneManager::add(node->getname());
     }
 
     Transform& transform = gameObject->getComponent<Transform>();
 
-    transform.scale = node.scale;
-    transform.rotation = node.rotation;
-    transform.position = node.position;
+    transform.scale = node->scale;
+    transform.rotation = node->rotation;
+    transform.position = node->position;
 
-    if (node.hasmesh()) {
-        gameObject->addComponent<MeshRender>(node.getmeshs(), node.materials);
+    if (node->hasmesh()) {
+        gameObject->addComponent<MeshRender>(node->getmeshs(), node->getMaterials());
     }
     return *gameObject;
 }
 
-void CreateLight(GameObject& gameobject, const FbxNode& node, const FbxScene& scene) {
-    const FbxLight* fbxLight = scene.findlight(node.getname());
-
-    // forward e up removido
-    LightComponent& light = gameobject.addComponent<LightComponent>(fbxLight->gettype(), fbxLight->getcolor(), fbxLight->getAttenuationConstant(), fbxLight->getAttenuationLinear(), fbxLight->getAttenuationQuadract(), fbxLight->getInneCone(), fbxLight->getOuterCone());
-}
-
-void CreateCamera(GameObject& gameobject, const FbxNode& node, const FbxScene& scene) {
-    const FbxCamera* m_camera = scene.findcamera(node.getname());
-    // forward e up removido
-    CameraComponent& m_cameraComponent = gameobject.addComponent<CameraComponent>(m_camera->getfov(), m_camera->getnearplane(), m_camera->getfarplane(), m_camera->getaspect());
-
-    if (gameobject.getname() == "Camera") {
-        gameobject.addComponent<CameraController>();
-    }
-}
-
-void CreateModel(GameObject& gameobject, const FbxNode& node, const FbxScene& scene) {
-    Transform& transform = gameobject.gettransform();
-
-    if (node.hasSkeleton()) {
-        auto& animation = gameobject.addComponent<Animator>(*node.getSkeleton());
-        animation.m_animations.insert(animation.m_animations.begin(), node.m_animations.begin(), node.m_animations.end());
-    }
-}
-
-GameObject& SetupNode(const FbxNode& node, const FbxScene& scene, Transform* transform) {
+void ReaderNode(const FbxNode* node, Transform* transform) {
     GameObject& gameobject = GenGameObject(node, transform != nullptr);
 
-    switch (node.gettype()) {
-    case FbxNode::eLIGHT:
-        CreateLight(gameobject, node, scene);
-        break;
-    case FbxNode::eCAMERA:
-        CreateCamera(gameobject, node, scene);
-        break;
-    case FbxNode::eMODEL:
-        CreateModel(gameobject, node, scene);
-        break;
-    default:
-        break;
+    if (transform) {
+        transform->addparent(&gameobject);
     }
-    return gameobject;
-}
 
-void AddChunk(u32 id, const FbxNode& node, const Vector3& position) {
-    GameObject* chunk = SceneManager::add("Chunk(" + std::to_string(id) + ")");
-    Transform& t = chunk->gettransform();
-    t.position = position + Vector3((16.0f * 2.5f) / 2.0f, 0.0f, (16.0f * 2.5f) / 2.0f);
-
-    for (u32 x=0;x<16;x++) {
-        for (u32 z=0;z<16;z++) {
-            GameObject* object = &ObjectManager::add("Cube[" + std::to_string(x) + "][" + std::to_string(z) + "]");
-            object->addComponent<MeshRender>(node.getmeshs(), node.materials);
-
-            Transform& transform = object->gettransform();
-            transform.parent = &t;
-
-            transform.position += Vector3(t.position.x - (x * 2.0f), 0.0f, t.position.z - (z * 2.0f));
-
-            t.addparent(object);
-        }
+    for (const auto& child : node->children) {
+        ReaderNode(&child, &gameobject.gettransform());
     }
 }
 
-void ReaderNode(const FbxNode& node, const FbxScene& scene, const FbxNode* parent = nullptr, Transform* transform = nullptr) {
-    if (parent != nullptr) {
-        GameObject& gameObject = SetupNode(node, scene, transform);
+void SceneLoaded(const FbxScene* scene) {
+    const FbxNode* rootNode = scene->getRoot();
 
-        if (transform == nullptr) {
-            transform = &gameObject.gettransform();
-        } else {
-            transform->addparent(&gameObject);
-
-            gameObject.gettransform().parent = transform;
-
-            transform = &gameObject.gettransform();
-        }
+    for (const auto& child : rootNode->getchildren()) {
+        ReaderNode(&child, nullptr);
     }
-    /*if (parent != nullptr && node.getname() == "Cube") {
-        AddChunk(0, node, Vector3( 0.0f, 0.0f, 0.0f));
-        AddChunk(1, node, Vector3(16.0f, 0.0f, 16.0f));
-        AddChunk(2, node, Vector3(16.0f, 0.0f, 0.0f));
-        AddChunk(3, node, Vector3( 0.0f, 0.0f, 16.0f));
-
-        // AddChunk(2, node);
-    }*/
-
-    for (auto& child : node.children) {
-        ReaderNode(child, scene, &node, transform);
-    }
-}
-
-void SceneLoaded(const FbxScene& scene) {
-    ReaderNode(scene.getroot(), scene, nullptr);
-
-    #if IS_GAME
-    Settings::IsGameRunning = true;
-    EntityManager::OnPlayGame();
-    #endif
-    // m_filmbox->destroy();
 }
 
 Game::Game() : objectselected(nullptr), FPSColor(255, 255, 255, 255) {
-    Filmbox* m_filmbox = Filmbox::Load("/home/grsource/Downloads/animation/Twist Dance.fbx");
-    // m_filmbox->SetLoaded(SceneLoaded);
-    // m_filmbox->load();
+    Filmbox* m_filmbox = Filmbox::Load("/home/grsource/Documentos/filmbox/anim.fbx");
+    SceneLoaded(m_filmbox->getScene());
 
     m_filmbox->destroy();
 
@@ -708,7 +624,7 @@ void Game::OnPropertyMeshRender(MeshRender *meshRender) {
         for (auto& entry : meshRender->materials) {
             Material& material = entry.second;
             
-            if (ImGui::TreeNode(std::string(material.name + "(" + std::to_string(entry.first) + ")").c_str())) {
+            if (ImGui::TreeNode(std::string(material.getname() + "(" + std::to_string(entry.first) + ")").c_str())) {
                 {
                     ImGui::SeparatorText("Albedo");
                     if (material.texture[TexturePBR::ALBEDO] != nullptr && material.texture[TexturePBR::ALBEDO]->isvalid()) {

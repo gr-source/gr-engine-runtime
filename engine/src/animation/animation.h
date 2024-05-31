@@ -1,6 +1,5 @@
 #pragma once
 
-#include "../filmbox/BoneInfo.h"
 #include "../Global.h"
 
 #include "bone.h"
@@ -17,7 +16,7 @@ public:
 
     float ticksPerSecound;
 
-    std::map<std::string, BoneInfo> m_BoneInfoMap;
+    // std::map<std::string, BoneInfo> m_BoneInfoMap;
 
     Animation(const std::string& name);
 };

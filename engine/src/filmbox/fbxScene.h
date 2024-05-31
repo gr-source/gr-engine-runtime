@@ -13,7 +13,10 @@ class FbxScene {
 public:
     FbxScene(const std::string& name = "MainScene");
 
-    const FbxNode& getroot() const;
+    template <typename... Args>
+    FbxNode* CreateRoot(Args&&... args);
+
+    const FbxNode* getRoot() const;
 
     void setname(const std::string& value);
 
@@ -25,6 +28,8 @@ public:
 
     template <typename... Args>
     Material& addmaterial(u32 index, Args&& ...args);
+
+    Material* findMaterial(u32 index);
 
     const std::unordered_map<u32, Material>& getmaterials() const;
 
@@ -48,7 +53,7 @@ private:
     std::string name;
 
     /* raiz principal do nó */
-    FbxNode root;
+    std::unique_ptr<FbxNode> m_rootNode;
 
     /* lista de meshs na cena */
     std::unordered_map<u32, Mesh> m_meshes;
@@ -69,7 +74,14 @@ private:
 };
 
 template <typename... Args>
-inline Material &FbxScene::addmaterial(u32 index, Args &&...args) {
+inline FbxNode *FbxScene::CreateRoot(Args &&...args) {
+    m_rootNode = std::make_unique<FbxNode>(std::forward<Args>(args)...);
+    return m_rootNode.get();
+}
+
+template <typename... Args>
+inline Material &FbxScene::addmaterial(u32 index, Args &&...args)
+{
     m_materials.emplace(index, std::forward<Args>(args)...);
     return m_materials[index];
 }

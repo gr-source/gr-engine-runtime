@@ -25,7 +25,7 @@ void Mesh::addindice(u32 indice) {
 }
 
 void Mesh::addindex(u32 indice) {
-     indices.emplace_back(indice);
+    indices.emplace_back(indice);
 }
 
 void Mesh::addtriangle(u32 t0, u32 t1, u32 t2) {
@@ -66,3 +66,18 @@ bool Mesh::operator ==(const Mesh& other) const {
     return this == &other;
 }
 
+void Mesh::addMaterial(u32 index) {
+    m_material.emplace_back(index);
+}
+
+const std::vector<u32> &Mesh::getMaterials() const {
+    return m_material;
+}
+
+u32 *Mesh::findMaterial(u32 index) {
+    auto it = std::find(m_material.begin(), m_material.end(), index);
+    if (it != m_material.end()) {
+        return &(*it);
+    }
+    return nullptr;
+}

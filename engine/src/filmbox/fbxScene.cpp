@@ -1,9 +1,9 @@
 #include "fbxScene.h"
 
-FbxScene::FbxScene(const std::string& name) : name(name), root("RootNode") {}
+FbxScene::FbxScene(const std::string& name) : name(name), m_rootNode(nullptr) {}
 
-const FbxNode& FbxScene::getroot() const {
-    return root;
+const FbxNode* FbxScene::getRoot() const {
+    return m_rootNode.get();
 }
 
 void FbxScene::setname(const std::string& value) {
@@ -40,6 +40,14 @@ const FbxCamera *FbxScene::findcamera(const std::string &name) const {
     auto it = m_cameras.find(name);
     if (it != m_cameras.end()) {
         return &(*it).second;
+    }
+    return nullptr;
+}
+
+Material *FbxScene::findMaterial(u32 index) {
+    auto material = m_materials.find(index);
+    if (material != m_materials.end()) {
+        return &(*material).second;
     }
     return nullptr;
 }

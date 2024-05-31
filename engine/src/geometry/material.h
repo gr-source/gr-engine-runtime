@@ -8,10 +8,8 @@
 
 #define MAX_TEXTURE 10
 
-struct Material {
-    /* nome do material */
-    std::string name;
-
+class Material {
+public:
     /* cor base */
     Color albedo;
 
@@ -24,7 +22,9 @@ struct Material {
     Texture* texture[MAX_TEXTURE];
 
     Material(const std::string& name = "Material");
-    
-    bool operator ==(const Material& other) const;
+
+    const std::string& getname() const;
+private:
+    std::string m_name;
 };
 

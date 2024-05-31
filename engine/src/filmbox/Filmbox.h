@@ -7,8 +7,6 @@
 #include "../animation/animation.h"
 #include "../animation/animationClip.h"
 
-#include "BoneInfo.h"
-
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
@@ -19,15 +17,41 @@ class Filmbox {
 public:
     static Filmbox* Load(const std::string& path);
 
+    Filmbox();
+
+    const FbxScene* getScene();
+
     void destroy();
 private:
     std::string m_path;
 
-    FbxScene fbxScene;
+    std::unique_ptr<FbxScene> m_fbxScene;
 
     void process();
 
     void StartupScene(const aiScene* scene);
+
+    void ProcessNodes(const aiScene* scene);
+
+    void ProcessChild(aiNode* ainode, FbxNode* fbxNode);
+
+    void SetupNode(aiNode* ainode, FbxNode* fbxNode);
+
+    void LoadMeshes(const aiScene* scene);
+
+    void SetupBone(aiMesh* aimesh);
+
+    void SetupSkeleton(aiNode* node, Bone*& bone);
+
+    void SetupVertice(aiMesh *aimesh, Mesh &mesh);
+
+    void LoadMaterials(const aiScene* scene);
+
+    void SetupTexture(aiMaterial* aimaterial, Material& material);
+
+    void TextureLoadSucessfull(Texture* texture);
+
+    void LoadTextures(const aiScene* scene);
 
     void LoadAnimations(const aiScene* scene);
 
