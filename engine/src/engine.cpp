@@ -12,8 +12,8 @@ bool Engine::Initialize(GRHandleEvent callback) {
     }
     m_handleEvent = callback;
 
-    m_handleEvent(Event::GRINITIALIZE);
-
+    Engine::SetHandleEvent(Engine::GRINITIALIZE);
+    
     Plataform::Initialize(monitor);
     return true;
 }

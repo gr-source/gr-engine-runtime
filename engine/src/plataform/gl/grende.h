@@ -17,4 +17,9 @@ void SetRenderState(RenderState state, RenderState value);
 
 const std::string getRenderStateName(RenderState state);
 
+void check_erros_opengl(const std::string& name);
+
+
+#define GL_CALL(func) func; check_erros_opengl(#func)
+
 

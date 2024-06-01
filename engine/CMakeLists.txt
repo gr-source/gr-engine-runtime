@@ -20,19 +20,30 @@ set(ecs_hdr
 )
 
 set(plataform_src
+    src/plataform/gl/gShader.cpp
     src/plataform/gl/grende.cpp
+
     src/plataform/plataform.cpp
 )
 
 set(plataform_hdr
+    src/plataform/gl/gShader.h
     src/plataform/gl/grende.h
+
     src/plataform/plataform.h
+)
+
+set(resources_src
+)
+
+set(resources_hdr
 )
 
 set(engine_src
     ${ecs_src}
     ${guizmo_src}
     ${plataform_src}
+    ${resources_src}
 
     src/gl.cpp
     src/log.cpp
@@ -118,6 +129,7 @@ set(engine_hdr
     ${ecs_hdr}
     ${guizmo_hdr}
     ${plataform_hdr}
+    ${resources_hdr}
 
     src/log.h
     src/timer.h

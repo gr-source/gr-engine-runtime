@@ -4,15 +4,45 @@
 #include <Color.h>
 
 #include <plataform/gl/grende.h>
+#include <plataform/gl/gShader.h>
+
+std::string fragment = R"(
+    #version 330 core
+
+    out vec4 FragColor;
+
+    void main() {
+        FragColor = vec4(1.0);
+    }
+)";
+
+std::string vertex = R"(
+    #version 330 core
+
+    layout (location = 0) in vec2 in_pos;
+
+    uniform mat4 projection;
+    uniform mat3 model;
+
+    void main() {
+        gl_Position = projection * vec4(model * vec3(in_pos, 1.0), 1.0);
+    }
+)";
 
 
-void Initilialize() {
+void Init() {
     Monitor& monitor = Engine::monitor;
     monitor.title = "gr - egine";
     monitor.width = 1280;
     monitor.height = 800;
     monitor.x = 0;
     monitor.y = 0;
+}
+
+gShader* m_shader = nullptr;
+
+void InitOpenGL() {
+    m_shader = gShader::Create({fragment}, {vertex});
 }
 
 void Update() {}
@@ -23,23 +53,24 @@ void Renderer() {
 }
 
 void Destroy() {
+    if (m_shader) {
+        m_shader->destroy();
+    }
     std::cout << "Engine Destroy." << std::endl;
 }
 
 void HandleEvent(Engine::Event event) {
     switch (event) {
     case Engine::GRINITIALIZE:
-        Initilialize();
-        break;
+        return Init();
+    case Engine::GRINITIALIZEOPENGL:
+        return InitOpenGL();
     case Engine::GRUPDATE:
-        Update();
-        break;
+        return Update();
     case Engine::GRRENDERER:
-        Renderer();
-        break;
+        return Renderer();
     case Engine::GRDESTROY:
-        Destroy();
-        break;
+        return Destroy();
     case Engine::GRERROR:
         std::cout << "Engine error: " << Engine::GetError() << std::endl;
         break;

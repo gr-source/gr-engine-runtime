@@ -34,6 +34,8 @@ void Plataform::Initialize(Monitor monitor) {
 
     glfwSetWindowPos((GLFWwindow*)m_window, static_cast<int>(monitor.x), static_cast<int>(monitor.y));
 
+    Engine::SetHandleEvent(Engine::GRINITIALIZEOPENGL);
+
     MainLoop();
 }
 

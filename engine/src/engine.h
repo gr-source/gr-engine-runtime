@@ -8,10 +8,11 @@ class Engine {
 public:
     enum Event {
         GRINITIALIZE = 1,
-        GRDESTROY = 2,
-        GRERROR = 3,
-        GRUPDATE = 4,
-        GRRENDERER = 5
+        GRINITIALIZEOPENGL = 2,
+        GRDESTROY = 5,
+        GRERROR = 10,
+        GRUPDATE = 20,
+        GRRENDERER = 30
     };
 
     typedef void (*GRHandleEvent)(Engine::Event event);
