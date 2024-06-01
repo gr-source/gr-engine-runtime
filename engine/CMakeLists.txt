@@ -19,8 +19,20 @@ set(ecs_hdr
     src/ecs/entityManager.h
 )
 
+set(plataform_src
+    src/plataform/gl/grende.cpp
+    src/plataform/plataform.cpp
+)
+
+set(plataform_hdr
+    src/plataform/gl/grende.h
+    src/plataform/plataform.h
+)
+
 set(engine_src
+    ${ecs_src}
     ${guizmo_src}
+    ${plataform_src}
 
     src/gl.cpp
     src/log.cpp
@@ -90,8 +102,6 @@ set(engine_src
     src/core/scene/Scene.cpp
     src/core/scene/SceneManager.cpp
     
-    ${ecs_src}
-
     src/ui/View.cpp
     src/ui/ImGuiRender.cpp
 
@@ -105,7 +115,10 @@ set(engine_src
 )
 
 set(engine_hdr
+    ${ecs_hdr}
     ${guizmo_hdr}
+    ${plataform_hdr}
+
     src/log.h
     src/timer.h
     src/Game.h
@@ -172,8 +185,6 @@ set(engine_hdr
 
     src/core/scene/Scene.h
     src/core/scene/SceneManager.h
-
-    ${ecs_hdr}
 
     src/ui/View.h
     src/ui/ImGuiRender.h

@@ -1,109 +1,58 @@
+#include <iostream>
+
 #include <engine.h>
-#include <settings.h>
+#include <Color.h>
 
-#include <GLFW/glfw3.h>
-
-//#define STB_IMAGE_IMPLEMENTATION
-#include <core/stb/stb_image.h>
-
-#define SCREEN_WIDTH 1024
-#define SCREEN_HEIGHT 720
+#include <plataform/gl/grende.h>
 
 
-typedef GLFWwindow* Window;
+void Initilialize() {
+    Monitor& monitor = Engine::monitor;
+    monitor.title = "gr - egine";
+    monitor.width = 1280;
+    monitor.height = 800;
+    monitor.x = 0;
+    monitor.y = 0;
+}
 
-Window window = nullptr;
+void Update() {}
 
-Window CreateWindown(const char* name, int width, int height, Window share, bool isVisible) {
-    if (isVisible) {
-        glfwWindowHint(GLFW_VISIBLE, GL_TRUE);
-    } else {
-        glfwWindowHint(GLFW_VISIBLE, GL_FALSE);
+void Renderer() {
+    SetRenderState(GR_BACKGROUND_COLOR, (void*)&Color::white);
+    SetRenderState(GR_BACKGROUND, GR_COLOR_BUFFER);
+}
+
+void Destroy() {
+    std::cout << "Engine Destroy." << std::endl;
+}
+
+void HandleEvent(Engine::Event event) {
+    switch (event) {
+    case Engine::GRINITIALIZE:
+        Initilialize();
+        break;
+    case Engine::GRUPDATE:
+        Update();
+        break;
+    case Engine::GRRENDERER:
+        Renderer();
+        break;
+    case Engine::GRDESTROY:
+        Destroy();
+        break;
+    case Engine::GRERROR:
+        std::cout << "Engine error: " << Engine::GetError() << std::endl;
+        break;
+    default:
+        break;
     }
-
-    return glfwCreateWindow(width, height, name, nullptr, share);
-}
-
-void OnDestroy() {
-    glfwTerminate(); // Error?
-    if (window != nullptr) {
-        glfwDestroyWindow(window);
-    }
-}
-
-void OnPreLoad() {
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-}
-
-void GLFWwindowclosefunCallback(GLFWwindow* window) {
-    Settings::IsEngineRunning = false;
-}
-
-void GLFWframebuffersizefunCallback(GLFWwindow* window, int width, int height) {
-    engine::OnResizeWindow(u32(width), u32(height));
-}
-
-void GLFWkeyfunCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
-    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
-        engine::Escap();
-    }
-}
-
-void glfwInstallCallback(Window window) {
-    glfwSetFramebufferSizeCallback(window, GLFWframebuffersizefunCallback);
-    GLFWframebuffersizefunCallback(window, SCREEN_WIDTH, SCREEN_HEIGHT);
-
-    glfwSetKeyCallback(window, GLFWkeyfunCallback);
-
-    glfwSetWindowCloseCallback(window, GLFWwindowclosefunCallback);
-}
-
-int OnApplicationInit() {
-    /* iniicializa o glew */
-    if (glfwInit() != GLFW_TRUE) {
-        return printf("GLFW do not created");
-    }
-
-    OnPreLoad();
-
-    /* cria o window principal */
-    window = CreateWindown("GR - GameRender", SCREEN_WIDTH, SCREEN_HEIGHT, nullptr, true);
-    if (window == nullptr) {
-        return printf("Window do not created");
-    }
-
-    glfwInstallCallback(window);
-
-    glfwMakeContextCurrent(window);
-
-    glfwSetWindowPos(window, 0, 0);
-
-    if (glewInit() != GLEW_OK) {
-        OnDestroy();
-        return printf("GLEW do not created");
-    }
-
-    engine::WindowInstance((void*)window);
-
-    Settings::IsEngineRunning = true;
-
-    engine::OnInit();
-
-    engine::MainLoop([&]{
-        glfwSwapBuffers(window);
-        glfwPollEvents();
-    });
-    
-    Settings::IsEngineRunning = false;
-
-    engine::OnDestroy();
-
-    OnDestroy();
-    return 0;
 }
 
 int main() {
-    return OnApplicationInit();
+    if (!Engine::Initialize(HandleEvent)) {
+        std::cout << "Falha ao iniciar a engine." << std::endl;
+        return 1;
+    }
+    return 0;
 }
+

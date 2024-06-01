@@ -27,6 +27,8 @@ private:
 
     std::unique_ptr<FbxScene> m_fbxScene;
 
+    std::unordered_map<std::string, Texture*> m_textures;
+
     void process();
 
     void StartupScene(const aiScene* scene);
@@ -39,7 +41,7 @@ private:
 
     void LoadMeshes(const aiScene* scene);
 
-    void SetupBone(aiMesh* aimesh);
+    void SetupBone(Mesh& mesh, aiMesh* aimesh);
 
     void SetupSkeleton(aiNode* node, Bone*& bone);
 

@@ -1,46 +1,34 @@
 #pragma once
 
-#include "Game.h"
+#include <string>
 
-#include <iostream>
+#include "plataform/plataform.h"
 
-class engine {
+class Engine {
 public:
-    static void OnResizeWindow(u32 width, u32 height);
+    enum Event {
+        GRINITIALIZE = 1,
+        GRDESTROY = 2,
+        GRERROR = 3,
+        GRUPDATE = 4,
+        GRRENDERER = 5
+    };
 
-    static void MainLoop(std::function<void()> func);
+    typedef void (*GRHandleEvent)(Engine::Event event);
 
-    static void Escap();
+    static bool Initialize(GRHandleEvent handleEnevt);
 
-    static void WindowInstance(void* instance);
+    static void SetHandleEvent(Event event);
 
-    static void OnInit();
+    static void SetError(const std::string& error);
 
-    static void OnRender();
+    static const std::string GetError();
 
-    static void OnUpdate();
+    static Monitor monitor;
 
-    static void OnPhysics();
+private:
+    static GRHandleEvent m_handleEvent;
 
-    static void OnLoader();
-
-    static void OnDestroy();
-
-protected:
-    static void RenderScene();
-    
-    static void MainFramebuffer();
-
-    #if !IS_GAME
-    static void UIFramebuffer();
-    #endif
-    
-    static void SetupEnable();
-
-    static std::unique_ptr<Game> m_game;
-
-    static Skybox* m_skybox;
-    
-    static std::thread m_thread[2];
+    static std::string m_error;
 };
 

@@ -21,6 +21,7 @@ out vec4 FragColor;
 in vec3 m_normal;
 in vec3 m_fragPos;
 in vec2 m_textCoord;
+in vec4 m_weights;
 
 flat in int m_materialIndex;
 

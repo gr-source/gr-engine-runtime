@@ -112,6 +112,9 @@ GameObject& GenGameObject(const FbxNode* node, bool local) {
     if (node->hasmesh()) {
         gameObject->addComponent<MeshRender>(node->getmeshs(), node->getMaterials());
     }
+    if (node->hasSkeleton()) {
+        gameObject->addComponent<Animator>(*node->getSkeleton());
+    }
     return *gameObject;
 }
 

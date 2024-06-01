@@ -57,7 +57,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE engine glfw imgui assimp ${GLEW_LI
 
 #### ENGINE ####
 
-target_include_directories(engine PRIVATE imgui/src imgui/src/backends gr-render/src ${BULLET_INCLUDE_DIRS})
+target_include_directories(engine PRIVATE imgui/src imgui/src/backends gr-render/src ${BULLET_INCLUDE_DIRS} ${OPENGL_INCLUDE_DIRS} ${GLEW_INCLUDE_DIRS})
 
 target_link_libraries(engine PRIVATE render ${OPENGL_LIBRARIES} ${GRMATH_LIBRARIES} ${BULLET_LIBRARIES})
 

@@ -59,7 +59,7 @@ void EditorController::updateCursor() {
     static Vector2 lastMousePos = Input::GetCursorPos();
     const Vector2 delta = Input::GetCursorPos() - lastMousePos;
 
-    if (Math::magnitude(delta) > 0.00001f)
+    // if (Math::magnitude(delta) > 0.00001f)
         processMouse(delta);
 
     lastMousePos = Screen::GetResolution() / 2.0f;
