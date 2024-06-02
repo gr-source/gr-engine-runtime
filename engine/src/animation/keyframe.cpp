@@ -3,7 +3,7 @@
 Keyframe::Keyframe(const std::string& name) : name(name) {}
 
 Matrix4x4 Keyframe::getlocalmatrix(float time) {
-    return Math::translate(getInterpolatePosition(time)) * Math::rotate(getInterpolateRotation(time)) * Math::scale(getInterpolateScaling(time));
+    return Math::translate<Matrix4x4>(getInterpolatePosition(time)) * Math::rotate<Matrix4x4>(getInterpolateRotation(time)) * Math::scale<Matrix4x4>(getInterpolateScaling(time));
 }
 
 Vector3 Keyframe::getInterpolateScaling(float time) {

@@ -1,21 +1,27 @@
 #pragma once
 
-#include <vector>
-#include <string>
+#include "common.h"
 
-#include "types.h"
+namespace gr {
+    class gShader {
+    public:
+        gShader();
 
-class gShader {
-public:
-    gShader();
+        static gShader* Create(const std::vector<const char*>& fragments, const std::vector<const char*>& vertex);
 
-    static gShader* Create(const std::vector<std::string>& fragments, const std::vector<std::string>& vertex);
+        void bind();
 
-    void destroy();
+        void SetUniformMat4(const std::string& name, const Matrix4x4& value);
 
-private:
-    u32 m_index;
+        void unbind();
 
-    static gShader* instance;
-};
+        void destroy();
 
+    private:
+        u32 m_index;
+
+        static gShader* instance;
+
+        static void checkerrors(u32 shader, bool compile);
+    };
+}

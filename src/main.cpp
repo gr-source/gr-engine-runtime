@@ -1,34 +1,13 @@
 #include <iostream>
+#include <vector>
 
 #include <engine.h>
+#include <timer.h>
 #include <Color.h>
 
-#include <plataform/gl/grende.h>
-#include <plataform/gl/gShader.h>
+#include <plataform/gl/gRender.h>
 
-std::string fragment = R"(
-    #version 330 core
-
-    out vec4 FragColor;
-
-    void main() {
-        FragColor = vec4(1.0);
-    }
-)";
-
-std::string vertex = R"(
-    #version 330 core
-
-    layout (location = 0) in vec2 in_pos;
-
-    uniform mat4 projection;
-    uniform mat3 model;
-
-    void main() {
-        gl_Position = projection * vec4(model * vec3(in_pos, 1.0), 1.0);
-    }
-)";
-
+using namespace gr;
 
 void Init() {
     Monitor& monitor = Engine::monitor;
@@ -39,23 +18,66 @@ void Init() {
     monitor.y = 0;
 }
 
-gShader* m_shader = nullptr;
-
 void InitOpenGL() {
-    m_shader = gShader::Create({fragment}, {vertex});
 }
 
 void Update() {}
 
+std::vector<Vertex3D> vertex {
+    {Vector3(-1.0f, -1.0f,  1.0f)},
+    {Vector3(-1.0f,  1.0f,  1.0f)},
+    {Vector3(-1.0f, -1.0f, -1.0f)},
+    {Vector3(-1.0f,  1.0f, -1.0f)},
+    {Vector3( 1.0f, -1.0f,  1.0f)},
+    {Vector3( 1.0f,  1.0f,  1.0f)},
+    {Vector3( 1.0f, -1.0f, -1.0f)},
+    {Vector3( 1.0f,  1.0f, -1.0f)}
+};
+
+std::vector<u32> indices {
+    1, 2, 0,
+    3, 6, 2,
+    7, 4, 6,
+    5, 0, 4,
+    6, 0, 2,
+    3, 5, 7,
+    1, 3, 2,
+    3, 7, 6,
+    7, 5, 4,
+    5, 1, 0,
+    6, 4, 0,
+    3, 1, 5
+};
+
 void Renderer() {
-    SetRenderState(GR_BACKGROUND_COLOR, (void*)&Color::white);
-    SetRenderState(GR_BACKGROUND, GR_COLOR_BUFFER);
+
+    std::vector<Vertex3D> vertices;
+
+    Matrix4x4 model =
+        Math::translate<Matrix4x4>(Vector3::zero) *
+        Math::rotate<Matrix4x4>(Quaternion::identity) *
+        Math::scale<Matrix4x4>(Vector3::one);
+
+    for (const auto& v : vertex) {
+        vertices.push_back({Vector3(model * Vector4(v.position))});
+    }
+
+    gRender::SetRenderState(GR_BACKGROUND_COLOR, (void*)&Color::black);
+    gRender::SetRenderState(GR_BACKGROUND, GR_COLOR_BUFFER | GR_DEPTH_BUFFER);
+
+    gRender::Render3D();
+
+    gRender::RenderIndexedPrimitive3D(PrimitiveType_Triangles, vertices.size(), vertices.data(), indices.size(), indices.data());
+
+    /*gRender::SetRenderState(GR_BACKGROUND_COLOR, (void*)&Color::black);
+    gRender::SetRenderState(GR_BACKGROUND, GR_COLOR_BUFFER);
+
+    gRender::Render2D();
+
+    gRender::RenderPrimitive2D(PrimitiveType_LineLoop, vertices.size(), vertices.data());*/
 }
 
 void Destroy() {
-    if (m_shader) {
-        m_shader->destroy();
-    }
     std::cout << "Engine Destroy." << std::endl;
 }
 

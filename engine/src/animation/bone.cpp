@@ -19,7 +19,7 @@ const std::vector<Bone> &Bone::getchildren() const {
 }
 
 Matrix4x4 Bone::getlocalmatrix() const {
-    return Math::translate(position) * Math::rotate(rotation) * Math::scale(scale);
+    return Math::translate<Matrix4x4>(position) * Math::rotate<Matrix4x4>(rotation) * Math::scale<Matrix4x4>(scale);
 }
 
 const bool Bone::hasparent() const {

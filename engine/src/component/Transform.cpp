@@ -36,14 +36,14 @@ const Vector3 Transform::getposition() const {
 }
 
 const Matrix4x4 Transform::getglobalmatrix() const {
-    Matrix4x4 localMatrix = Math::translate(position) * Math::rotate(rotation) * Math::scale(scale);
+    Matrix4x4 localMatrix = Math::translate<Matrix4x4>(position) * Math::rotate<Matrix4x4>(rotation) * Math::scale<Matrix4x4>(scale);
     if (parent)
         return parent->getglobalmatrix() * localMatrix;
     return localMatrix;
 }
 
 const Matrix4x4 Transform::getLocalMatrix() const {
-    return Math::translate(position) * Math::rotate(rotation) * Math::scale(scale);
+    return Math::translate<Matrix4x4>(position) * Math::rotate<Matrix4x4>(rotation) * Math::scale<Matrix4x4>(scale);
 }
 
 bool Transform::hasparent() const {

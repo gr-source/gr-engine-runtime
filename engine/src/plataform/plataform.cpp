@@ -1,8 +1,10 @@
 #include "plataform.h"
 
-#include "../engine.h"
+#include "gl/gRender.h"
 
-#include <GL/glew.h>
+#include "../engine.h"
+#include "../timer.h"
+
 #include <GLFW/glfw3.h>
 
 Window Plataform::m_window = nullptr;
@@ -26,7 +28,7 @@ void Plataform::Initialize(Monitor monitor) {
     }
     glfwMakeContextCurrent((GLFWwindow*)m_window);
 
-    if (glewInit() != GLEW_OK) {
+    if (!gr::gRender::OpenGLInit()) {
         Engine::SetError("Glew do not initialize.");
         Engine::SetHandleEvent(Engine::GRERROR);
         return Destroy();
@@ -46,7 +48,10 @@ void Plataform::MainLoop() {
         return Destroy();
     }
 
+    Time timer(60.0f);
     while (!glfwWindowShouldClose((GLFWwindow*)m_window)) {
+        Time::deltaTime = timer.SleepTick();
+
         Engine::SetHandleEvent(Engine::GRUPDATE);
 
         Engine::SetHandleEvent(Engine::GRRENDERER);
@@ -59,6 +64,8 @@ void Plataform::MainLoop() {
 }
 
 void Plataform::Destroy() {
+    gr::gRender::OpenGLShutsown();
+    
     if (m_window) {
         glfwDestroyWindow((GLFWwindow*)m_window);
     }

@@ -92,7 +92,7 @@ void DebugDraw::addSprite(const Vector3 &position, Texture*& sprite) {
     rotate *= Math::normalize(Math::euler(Vector3(1.0f, 0.0f, 0.0f), Math::rad(90.0f)));
     rotate = Math::normalize(rotate);
 
-    const Matrix4x4 model = Math::translate(position) * Math::rotate(rotate) * Math::scale(Vector3::one);
+    const Matrix4x4 model = Math::translate<Matrix4x4>(position) * Math::rotate<Matrix4x4>(rotate) * Math::scale<Matrix4x4>(Vector3::one);
     m_sprites.push_back({sprite, model});
 }
 
