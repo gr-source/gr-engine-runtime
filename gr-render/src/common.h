@@ -1,21 +1,18 @@
 #pragma once
 
-#include <stdexcept>
-#include <cstdint>
-#include <cstdlib>
+#include <unordered_map>
+#include <iostream>
+#include <string>
+#include <vector>
 
-#define GCALLOC(sz, ptr) std::calloc(sz, ptr)
-#define GMALLOC(sz) std::malloc(sz)
-#define GFREE(ptr) std::free(ptr)
+#include <gr-math/gmath.h>
 
-#define GEXCEPTION(str) std::runtime_error(str)
+#include "types.h"
 
-namespace grr {
-    using u8 = std::uint8_t;
-
-    using u16 = std::uint16_t;
-
-    using u32 = std::uint32_t;
-
-    using ptrsize = std::ptrdiff_t;
+namespace gr {
+    class gTexture;
+    class gRender;
+    class gShader;
 };
+
+

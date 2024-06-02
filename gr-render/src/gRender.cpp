@@ -1,31 +1,46 @@
 #include "gRender.h"
 
+#include "gTexture.h"
 #include "gShader.h"
 #include "gl.h" 
 
-#include "../../screen.h"
-#include "../../Color.h"
+#include "gColor.h"
 
 namespace gr {
+    const char* vertexShader2D = R"(
+        #version 330 core
+
+        layout (location = 0) in vec2 in_pos;
+        layout (location = 1) in vec2 in_texCoord;
+
+        out vec2 m_texCoord;
+
+        uniform mat4 projection;
+
+        void main() {
+            m_texCoord = in_texCoord;
+
+            gl_Position = projection * vec4(in_pos, 0.0, 1.0);
+        }
+    )";
+
     const char* fragmentShader2D = R"(
         #version 330 core
 
         out vec4 FragColor;
 
-        void main() {
-            FragColor = vec4(1.0);
-        }
-    )";
+        in vec2 m_texCoord;
 
-    const char* vertexShader2D = R"(
-        #version 330 core
-
-        layout (location = 0) in vec2 in_pos;
-
-        uniform mat4 projection;
+        uniform sampler2D m_texture;
+        uniform bool isTexture;
+        uniform vec4 m_color;
 
         void main() {
-            gl_Position = projection * vec4(in_pos, 0.0, 1.0);
+            vec4 color = m_color;
+            // if (isTexture) {
+                color = texture(m_texture, m_texCoord);
+            // }
+            FragColor = color;
         }
     )";
 
@@ -65,10 +80,13 @@ namespace gr {
     gShader* gRender::m_shader2D = nullptr;
     gShader* gRender::m_shader3D = nullptr;
 
+    u32 gRender::m_height = 0;
+    u32 gRender::m_width = 0;
+
     void gRender::SetRenderState(RenderState state, void *value) {
         switch (state) {
         case GR_BACKGROUND_COLOR: {
-            Color* color = (Color*)value;
+            gColor* color = (gColor*)value;
             GL_CALL(glClearColor(color->r, color->g, color->b, color->a));
             break;
         }
@@ -130,7 +148,7 @@ namespace gr {
         #undef GET_ENUM_NAME
     }
 
-    u32 vao2D, vbo2D;
+    u32 vao2D, vbo2D, ebo2D;
     u32 vao3D, vbo3D, ebo3D;
 
     const bool gRender::OpenGLInit() {
@@ -142,12 +160,19 @@ namespace gr {
             glGenVertexArrays(1, &vao2D);
             glBindVertexArray(vao2D);
 
+            glGenBuffers(1, &ebo2D);
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo2D);
+            glBufferData(GL_ELEMENT_ARRAY_BUFFER, 1000 * sizeof(u32), nullptr, GL_STATIC_DRAW);
+
             glGenBuffers(1, &vbo2D);
             glBindBuffer(GL_ARRAY_BUFFER, vbo2D);
             glBufferData(GL_ARRAY_BUFFER, 1000 * sizeof(Vertex2D), nullptr, GL_STATIC_DRAW);
 
             glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex2D), reinterpret_cast<void*>(offsetof(Vertex2D, position)));
             glEnableVertexAttribArray(0);
+
+            glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex2D), reinterpret_cast<void*>(offsetof(Vertex2D, uv)));
+            glEnableVertexAttribArray(1);
 
             glBindVertexArray(0);
             glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -179,12 +204,45 @@ namespace gr {
         return true;
     }
 
+    void gRender::SetResolution(u32 width, u32 height) {
+        m_height = height;
+        m_width = width;
+    }
+
     void gRender::Render2D() {
-        Matrix4x4 projection = Math::orthographic(0.0f, Screen::width, 0.0f, Screen::height, -1.0f, 1.0f);
+        Matrix4x4 projection = Math::orthographic(0.0f, m_width, 0.0f, m_height, -1.0f, 1.0f);
         
         m_shader2D->bind();
         m_shader2D->SetUniformMat4("projection", projection);
     }
+
+    void gRender::RenderTexture2D(const Matrix3x3 &model, gTexture *texture) {
+        std::vector<Vertex2D> vertex2D {
+            {Vector2(-1.0f,  1.0f), Vector2(0.0f, 1.0f)}, // Top-left vertex
+            {Vector2( 1.0f,  1.0f), Vector2(1.0f, 1.0f)}, // Top-right vertex
+            {Vector2(-1.0f, -1.0f), Vector2(0.0f, 0.0f)}, // Bottom-left vertex
+            {Vector2( 1.0f, -1.0f), Vector2(1.0f, 0.0f)}  // Bottom-right vertex
+        };
+
+        std::vector<u32> indices2D {
+            0, 2, 1,
+            1, 2, 3
+        };
+
+        std::vector<Vertex2D> vertices;
+
+        for (const auto& v : vertex2D) {
+            vertices.push_back({model * Vector3(v.position), v.uv});
+        }
+
+        glBindTexture(GL_TEXTURE_2D, texture->getIndex());
+        glActiveTexture(GL_TEXTURE0);
+
+        m_shader2D->SetUniformInt("m_texture", 0);
+
+        gRender::RenderIndexedPrimitive2D(PrimitiveType_Triangles, vertices.size(), vertices.data(), indices2D.size(), indices2D.data());
+    }
+
 
     void gRender::RenderPrimitive2D(PrimitiveType primitive, u32 numVertice, void *vertice) {
         glBindVertexArray(vao2D);
@@ -198,8 +256,20 @@ namespace gr {
         glBindBuffer(GL_ARRAY_BUFFER, 0);
     }
 
+    void gRender::RenderIndexedPrimitive2D(PrimitiveType primitive, u32 numVertice, void *vertice, u32 numIndice, void *indice) {
+        glBindVertexArray(vao2D);
+
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo2D);
+        glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, numIndice * sizeof(u32), indice);
+
+        glBindBuffer(GL_ARRAY_BUFFER, vbo2D);
+        glBufferSubData(GL_ARRAY_BUFFER, 0, numVertice * sizeof(Vertex2D), vertice);
+
+        glDrawElements(m_primitiveMap[primitive], numIndice, GL_UNSIGNED_INT, nullptr);
+    }
+
     void gRender::Render3D() {
-        Matrix4x4 projection = Math::perspective(Math::rad(90.0f), (float)(Screen::width / Screen::height), 1000.0f, 0.01f);
+        Matrix4x4 projection = Math::perspective(Math::rad(90.0f), (float)(m_width / m_height), 1000.0f, 0.01f);
         Matrix4x4 view = Math::lookAt(Vector3(0.0f, 0.0f, -5.0f), Vector3::zero, Vector3::up);
 
         m_shader3D->bind();

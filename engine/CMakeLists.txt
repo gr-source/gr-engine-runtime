@@ -20,20 +20,10 @@ set(ecs_hdr
 )
 
 set(plataform_src
-    src/plataform/gl/gl.cpp
-    src/plataform/gl/gShader.cpp
-    src/plataform/gl/gRender.cpp
-
     src/plataform/plataform.cpp
 )
 
 set(plataform_hdr
-    src/plataform/gl/gl.h
-    src/plataform/gl/types.h
-    src/plataform/gl/common.h
-    src/plataform/gl/gShader.h
-    src/plataform/gl/gRender.h
-
     src/plataform/plataform.h
 )
 

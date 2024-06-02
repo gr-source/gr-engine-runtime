@@ -2,12 +2,16 @@
 #include <vector>
 
 #include <engine.h>
+#include <screen.h>
 #include <timer.h>
 #include <Color.h>
 
-#include <plataform/gl/gRender.h>
+#include <gTexture.h>
+#include <gRender.h>
 
 #include <imgui.h>
+
+#include <core/stb/stb_image.h>
 
 using namespace gr;
 
@@ -20,12 +24,19 @@ void Init() {
     monitor.y = 0;
 }
 
+gTexture* m_texture = nullptr;
+
 void InitOpenGL() {
+
+    int x, y, ch;
+    auto pixels = stbi_load("/home/grsource/Downloads/16158812-eeeeeeee_xl.jpg", &x, &y, &ch, 0);
+
+    m_texture = gTexture::Create(x, y, 0, pixels);
 }
 
 void Update() {}
 
-std::vector<Vertex3D> vertex {
+std::vector<Vertex3D> vertex3D {
     {Vector3(-1.0f, -1.0f,  1.0f)},
     {Vector3(-1.0f,  1.0f,  1.0f)},
     {Vector3(-1.0f, -1.0f, -1.0f)},
@@ -36,7 +47,7 @@ std::vector<Vertex3D> vertex {
     {Vector3( 1.0f,  1.0f, -1.0f)}
 };
 
-std::vector<u32> indices {
+std::vector<u32> indices3D {
     1, 2, 0,
     3, 6, 2,
     7, 4, 6,
@@ -51,34 +62,33 @@ std::vector<u32> indices {
     3, 1, 5
 };
 
+std::vector<Vertex2D> vertex2D {
+    {Vector2(-1.0f,  1.0f), Vector2(1.0f, 0.0f)},
+    {Vector2( 1.0f,  1.0f), Vector2(0.0f, 1.0f)},
+    {Vector2(-1.0f, -1.0f), Vector2(0.0f, 0.0f)},
+    {Vector2( 1.0f, -1.0f), Vector2(1.0f, 1.0f)}
+};
+
+std::vector<u32> indices2D {
+    1, 2, 0,
+    1, 3, 2
+};
+
 void Renderer() {
-    std::vector<Vertex3D> vertices;
+    Vector2 centerScreen(Screen::width / 2.0f, Screen::height / 2.0f);
 
-    Matrix4x4 model =
-        Math::translate<Matrix4x4>(Vector3::zero) *
-        Math::rotate<Matrix4x4>(Quaternion::identity) *
-        Math::scale<Matrix4x4>(Vector3::one);
+    Matrix3x3 model =
+        Math::translate<Matrix3x3>(centerScreen) *
+        Math::rotate<Matrix3x3>(Quaternion::identity) *
+        Math::scale<Matrix3x3>(Vector2(32, 32));
 
-    for (const auto& v : vertex) {
-        vertices.push_back({Vector3(model * Vector4(v.position))});
-    }
 
     gRender::SetRenderState(GR_BACKGROUND_COLOR, (void*)&Color::black);
-    gRender::SetRenderState(GR_BACKGROUND, GR_COLOR_BUFFER | GR_DEPTH_BUFFER);
-    gRender::SetRenderState(GR_CULL_FACE, GR_TRUE);
-    gRender::SetRenderState(GR_CULL, GR_BACK);
-    gRender::SetRenderState(GR_DEPTH, GR_TRUE);
+    gRender::SetRenderState(GR_BACKGROUND, GR_COLOR_BUFFER);
 
-    gRender::Render3D();
+    gRender::Render2D();
 
-    gRender::RenderIndexedPrimitive3D(PrimitiveType_Triangles, vertices.size(), vertices.data(), indices.size(), indices.data());
-
-    // gRender::SetRenderState(GR_BACKGROUND_COLOR, (void*)&Color::black);
-    // gRender::SetRenderState(GR_BACKGROUND, GR_COLOR_BUFFER);
-
-    // gRender::Render2D();
-
-    // gRender::RenderPrimitive2D(PrimitiveType_LineLoop, vertices.size(), vertices.data());
+    gRender::RenderTexture2D(model, m_texture);
 }
 
 void Destroy() {

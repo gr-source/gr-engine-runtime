@@ -44,6 +44,13 @@ void gShader::SetUniformMat4(const std::string &name, const Matrix4x4 &value) {
     }
 }
 
+void gShader::SetUniformInt(const std::string &name, int value) {
+    u32 location = GL_CALL(glGetUniformLocation(m_index, name.c_str()));
+    if (location != -1) {
+        GL_CALL(glUniform1i(location, value));
+    }
+}
+
 void gShader::unbind() {
     GL_CALL(glUseProgram(0));
     gShader::instance = nullptr;

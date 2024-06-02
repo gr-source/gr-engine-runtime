@@ -53,7 +53,7 @@ add_subdirectory(imgui)
 
 target_include_directories(${PROJECT_NAME} PRIVATE imgui/src imgui/src/backends engine/src gr-render/src)
 
-target_link_libraries(${PROJECT_NAME} PRIVATE engine glfw imgui assimp ${GLEW_LIBRARIES} ${OPENGL_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} PRIVATE render engine glfw imgui assimp ${GLEW_LIBRARIES} ${OPENGL_LIBRARIES})
 
 #### ENGINE ####
 

@@ -13,6 +13,8 @@ namespace gr {
 
         void SetUniformMat4(const std::string& name, const Matrix4x4& value);
 
+        void SetUniformInt(const std::string& name, int value);
+
         void unbind();
 
         void destroy();

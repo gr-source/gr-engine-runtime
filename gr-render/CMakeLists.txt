@@ -1,16 +1,19 @@
 project("gr-render")
 
 set(gr_render_src
-    src/grender.cpp
-    src/gbuffer.cpp
-    src/common.cpp
+    src/gTexture.cpp
+    src/gRender.cpp
+    src/gShader.cpp
     src/gl.cpp
 )
 
 set(gr_render_hdr
-    src/grender.h
-    src/gbuffer.h
+    src/gTexture.h
+    src/gRender.h
+    src/gShader.h
     src/common.h
+    src/gColor.h
+    src/types.h
     src/gl.h
 )
 

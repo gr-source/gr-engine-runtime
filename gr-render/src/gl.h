@@ -1,13 +1,13 @@
 #pragma once
 
+#include "common.h"
+
 #include <GL/glew.h>
 
-#include <string>
+namespace gr {
+    const char* get_enum_name(GLenum err);
 
-namespace grr {
+    void check_erros_opengl(const std::string& name);
 
-    #define GL_CHECK(func) func; gl_gleck_function(#func)
-
-    void gl_gleck_function(const std::string& name);
-
-};
+    #define GL_CALL(func) func; check_erros_opengl(#func)
+}

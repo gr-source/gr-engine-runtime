@@ -29,6 +29,7 @@ namespace gr {
 
     struct Vertex2D {
         Vector2 position;
+        Vector2 uv;
     };
 
     struct Vertex3D {
@@ -46,9 +47,15 @@ namespace gr {
 
         static const bool OpenGLInit();
 
+        static void SetResolution(u32 width, u32 height);
+
         static void Render2D();
 
+        static void RenderTexture2D(const Matrix3x3& model, gTexture* texture);
+
         static void RenderPrimitive2D(PrimitiveType primitive, u32 numVertice, void* vertice);
+
+        static void RenderIndexedPrimitive2D(PrimitiveType primitive, u32 numVertice, void* vertice, u32 numIndice, void* indice);
 
         static void Render3D();
 
@@ -62,5 +69,8 @@ namespace gr {
 
         static gShader* m_shader2D;
         static gShader* m_shader3D;
+
+        static u32 m_height;
+        static u32 m_width;
     };
 }

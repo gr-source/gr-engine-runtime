@@ -1,6 +1,6 @@
 #include "plataform.h"
 
-#include "gl/gRender.h"
+#include <gRender.h>
 
 #include "../engine.h"
 #include "../screen.h"
@@ -38,10 +38,13 @@ void Plataform::Initialize() {
     }
     Screen::SetResolution(m_monitor.width, m_monitor.height);
 
+    gr::gRender::SetResolution(m_monitor.width, m_monitor.height);
+
     glfwSetWindowPos((GLFWwindow*)m_window, static_cast<int>(m_monitor.x), static_cast<int>(m_monitor.y));
     
     glfwSetFramebufferSizeCallback((GLFWwindow*)m_window, [](GLFWwindow* window, int width, int height) {
         Screen::SetResolution(static_cast<u32>(width), static_cast<u32>(height));
+        gr::gRender::SetResolution(static_cast<u32>(width), static_cast<u32>(height));
         Engine::SetHandleEvent(Engine::GRRESIZE);
     });
 
