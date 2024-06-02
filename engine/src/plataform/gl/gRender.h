@@ -6,10 +6,15 @@ namespace gr {
     enum RenderState : u8 {
         GR_FALSE            = 0x000,
         GR_TRUE             = 0x001,
-        GR_BACKGROUND_COLOR = 0x002,
-        GR_BACKGROUND       = 0x003,
-        GR_DEPTH_BUFFER     = 0x004,
-        GR_COLOR_BUFFER     = 0x005,
+        GR_BACKGROUND_COLOR = 1 << 1,
+        GR_BACKGROUND       = 1 << 2,
+        GR_DEPTH_BUFFER     = 1 << 3,
+        GR_COLOR_BUFFER     = 1 << 4,
+        GR_CULL_FACE        = 1 << 5,
+        GR_CULL             = 1 << 6,
+        GR_FRONT            = 1 << 7,
+        GR_BACK             = 2 << 1,
+        GR_DEPTH            = 2 << 2
     };
 
     enum PrimitiveType {

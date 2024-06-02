@@ -1,13 +1,13 @@
 #pragma once
 
-#include <gr-math/vector2.h>
+#include "types.h"
 
 class Screen {
 public:
-    static float width;
-    static float height;
+    static u32 width;
+    static u32 height;
 
-    static void SetResolution(float width, float height);
+    static void SetResolution(u32 width, u32 height);
 
     static const Vector2 GetResolution();
 };

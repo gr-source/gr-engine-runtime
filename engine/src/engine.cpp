@@ -4,8 +4,6 @@ Engine::GRHandleEvent Engine::m_handleEvent = nullptr;
 
 std::string Engine::m_error;
 
-Monitor Engine::monitor;
-
 bool Engine::Initialize(GRHandleEvent callback) {
     if (!callback) {
         return false;
@@ -14,7 +12,7 @@ bool Engine::Initialize(GRHandleEvent callback) {
 
     Engine::SetHandleEvent(Engine::GRINITIALIZE);
     
-    Plataform::Initialize(monitor);
+    Plataform::Initialize();
     return true;
 }
 

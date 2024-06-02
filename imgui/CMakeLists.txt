@@ -1,8 +1,7 @@
 project("imgui")
 
 set(imgui_src
-    src/backends/imgui_impl_opengl3.cpp
-    src/backends/imgui_impl_glfw.cpp
+    src/backends/imgui_impl_gr.cpp
     src/imgui_widgets.cpp
     src/imgui_tables.cpp
     src/imgui_demo.cpp
@@ -11,9 +10,7 @@ set(imgui_src
 )
 
 set(imgui_hdr
-    src/backends/imgui_impl_opengl3_loader.h
-    src/backends/imgui_impl_opengl3.h
-    src/backends/imgui_impl_glfw.h
+    src/backends/imgui_impl_gr.h
     src/imstb_rectpack.h
     src/imstb_textedit.h
     src/imstb_truetype.h

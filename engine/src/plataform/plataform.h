@@ -14,8 +14,12 @@ using Window = void*;
 
 class Plataform {
 public:
-    static void Initialize(Monitor window);
+    static void Initialize();
+
+    static Monitor& GetMonitor();
 private:
+    static Monitor m_monitor;
+
     static Window m_window;
 
     static void MainLoop();

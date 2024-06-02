@@ -7,12 +7,13 @@
 class Engine {
 public:
     enum Event {
-        GRINITIALIZE = 1,
+        GRINITIALIZE       = 1,
         GRINITIALIZEOPENGL = 2,
-        GRDESTROY = 5,
-        GRERROR = 10,
-        GRUPDATE = 20,
-        GRRENDERER = 30
+        GRRESIZE           = 3,
+        GRDESTROY          = 10,
+        GRERROR            = 20,
+        GRUPDATE           = 30,
+        GRRENDERER         = 40
     };
 
     typedef void (*GRHandleEvent)(Engine::Event event);
@@ -24,8 +25,6 @@ public:
     static void SetError(const std::string& error);
 
     static const std::string GetError();
-
-    static Monitor monitor;
 
 private:
     static GRHandleEvent m_handleEvent;

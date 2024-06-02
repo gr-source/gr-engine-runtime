@@ -3,13 +3,16 @@
 #include "gl/gRender.h"
 
 #include "../engine.h"
+#include "../screen.h"
 #include "../timer.h"
 
 #include <GLFW/glfw3.h>
 
 Window Plataform::m_window = nullptr;
 
-void Plataform::Initialize(Monitor monitor) {
+Monitor Plataform::m_monitor;
+
+void Plataform::Initialize() {
     if (glfwInit() != GLFW_TRUE) {
         Engine::SetError("glfw do not initialize.");
         Engine::SetHandleEvent(Engine::GRERROR);
@@ -20,7 +23,7 @@ void Plataform::Initialize(Monitor monitor) {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    m_window = glfwCreateWindow(monitor.width, monitor.height, monitor.title.c_str(), nullptr, nullptr);
+    m_window = glfwCreateWindow(m_monitor.width, m_monitor.height, m_monitor.title.c_str(), nullptr, nullptr);
     if (!m_window) {
         Engine::SetError("Window do not created.");
         Engine::SetHandleEvent(Engine::GRERROR);
@@ -33,12 +36,22 @@ void Plataform::Initialize(Monitor monitor) {
         Engine::SetHandleEvent(Engine::GRERROR);
         return Destroy();
     }
+    Screen::SetResolution(m_monitor.width, m_monitor.height);
 
-    glfwSetWindowPos((GLFWwindow*)m_window, static_cast<int>(monitor.x), static_cast<int>(monitor.y));
+    glfwSetWindowPos((GLFWwindow*)m_window, static_cast<int>(m_monitor.x), static_cast<int>(m_monitor.y));
+    
+    glfwSetFramebufferSizeCallback((GLFWwindow*)m_window, [](GLFWwindow* window, int width, int height) {
+        Screen::SetResolution(static_cast<u32>(width), static_cast<u32>(height));
+        Engine::SetHandleEvent(Engine::GRRESIZE);
+    });
 
     Engine::SetHandleEvent(Engine::GRINITIALIZEOPENGL);
 
     MainLoop();
+}
+
+Monitor &Plataform::GetMonitor() {
+    return m_monitor;
 }
 
 void Plataform::MainLoop() {

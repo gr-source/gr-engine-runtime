@@ -3,8 +3,7 @@
 #include "gShader.h"
 #include "gl.h" 
 
-#include "../../engine.h"
-
+#include "../../screen.h"
 #include "../../Color.h"
 
 namespace gr {
@@ -70,7 +69,7 @@ namespace gr {
         switch (state) {
         case GR_BACKGROUND_COLOR: {
             Color* color = (Color*)value;
-            glClearColor(color->r, color->g, color->b, color->a);
+            GL_CALL(glClearColor(color->r, color->g, color->b, color->a));
             break;
         }
         default:
@@ -89,8 +88,27 @@ namespace gr {
             if (value & GR_COLOR_BUFFER) {
                 filter |= GL_COLOR_BUFFER_BIT;
             }
-            glClear(filter);
-            break;
+            return GL_CALL(glClear(filter));
+        }
+        case GR_CULL_FACE: {
+            if (value == GR_TRUE) {
+                return GL_CALL(glEnable(GL_CULL_FACE));
+            }
+            return GL_CALL(glDisable(GL_CULL_FACE));
+        }
+        case GR_CULL: {
+            if ((value & GR_FRONT) == GR_FRONT && (value & GR_BACK) == GR_BACK) {
+                return GL_CALL(glCullFace(GL_FRONT_AND_BACK));
+            } else if ((value & GR_BACK) == GR_BACK) {
+                return GL_CALL(glCullFace(GL_BACK));
+            }
+            return GL_CALL(glCullFace(GL_FRONT));
+        }
+        case GR_DEPTH: {
+            if (value == GR_TRUE) {
+                return GL_CALL(glEnable(GL_DEPTH_TEST));
+            }
+            return GL_CALL(glDisable(GL_DEPTH_TEST));
         }
         default:
             std::cout << "Invalid type: " << getRenderStateName(state) << std::endl;
@@ -107,7 +125,7 @@ namespace gr {
         GET_ENUM_NAME(GR_FALSE);
         GET_ENUM_NAME(GR_TRUE);
         default:
-            break;
+            return "undefined";
         }
         #undef GET_ENUM_NAME
     }
@@ -162,7 +180,7 @@ namespace gr {
     }
 
     void gRender::Render2D() {
-        Matrix4x4 projection = Math::orthographic(0.0f, Engine::monitor.width, 0.0f, Engine::monitor.height, -1.0f, 1.0f);
+        Matrix4x4 projection = Math::orthographic(0.0f, Screen::width, 0.0f, Screen::height, -1.0f, 1.0f);
         
         m_shader2D->bind();
         m_shader2D->SetUniformMat4("projection", projection);
@@ -181,7 +199,7 @@ namespace gr {
     }
 
     void gRender::Render3D() {
-        Matrix4x4 projection = Math::perspective(Math::rad(90.0f), (float)(Engine::monitor.width / Engine::monitor.height), 1000.0f, 0.01f);
+        Matrix4x4 projection = Math::perspective(Math::rad(90.0f), (float)(Screen::width / Screen::height), 1000.0f, 0.01f);
         Matrix4x4 view = Math::lookAt(Vector3(0.0f, 0.0f, -5.0f), Vector3::zero, Vector3::up);
 
         m_shader3D->bind();

@@ -7,10 +7,12 @@
 
 #include <plataform/gl/gRender.h>
 
+#include <imgui.h>
+
 using namespace gr;
 
 void Init() {
-    Monitor& monitor = Engine::monitor;
+    Monitor& monitor = Plataform::GetMonitor();
     monitor.title = "gr - egine";
     monitor.width = 1280;
     monitor.height = 800;
@@ -50,7 +52,6 @@ std::vector<u32> indices {
 };
 
 void Renderer() {
-
     std::vector<Vertex3D> vertices;
 
     Matrix4x4 model =
@@ -64,17 +65,20 @@ void Renderer() {
 
     gRender::SetRenderState(GR_BACKGROUND_COLOR, (void*)&Color::black);
     gRender::SetRenderState(GR_BACKGROUND, GR_COLOR_BUFFER | GR_DEPTH_BUFFER);
+    gRender::SetRenderState(GR_CULL_FACE, GR_TRUE);
+    gRender::SetRenderState(GR_CULL, GR_BACK);
+    gRender::SetRenderState(GR_DEPTH, GR_TRUE);
 
     gRender::Render3D();
 
     gRender::RenderIndexedPrimitive3D(PrimitiveType_Triangles, vertices.size(), vertices.data(), indices.size(), indices.data());
 
-    /*gRender::SetRenderState(GR_BACKGROUND_COLOR, (void*)&Color::black);
-    gRender::SetRenderState(GR_BACKGROUND, GR_COLOR_BUFFER);
+    // gRender::SetRenderState(GR_BACKGROUND_COLOR, (void*)&Color::black);
+    // gRender::SetRenderState(GR_BACKGROUND, GR_COLOR_BUFFER);
 
-    gRender::Render2D();
+    // gRender::Render2D();
 
-    gRender::RenderPrimitive2D(PrimitiveType_LineLoop, vertices.size(), vertices.data());*/
+    // gRender::RenderPrimitive2D(PrimitiveType_LineLoop, vertices.size(), vertices.data());
 }
 
 void Destroy() {
