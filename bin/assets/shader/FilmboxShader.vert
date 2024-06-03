@@ -18,6 +18,7 @@ uniform mat4 model;
 uniform mat4 vpLight;
 uniform bool isanimation;
 
+out mat3 m_TBN;
 out vec3 m_normal;
 out vec3 m_fragPos;
 out vec2 m_textCoord;
@@ -45,14 +46,16 @@ void main() {
         SkinNormal = in_normal;
     }
 
-    vec4 worldPos = model * vec4(SkinVertex, 1.0);//* vec4(in_pos, 1.0);
+    
+    vec4 worldPos = model * vec4(SkinVertex, 1.0);
 
-    // mat4 normalMatrix = transpose(inverse(model));
-    // vec3 T = normalize(vec3(normalMatrix * vec4(aTangent,   0.0)));
-    // vec3 B = normalize(vec3(normalMatrix * vec4(aBitangent, 0.0)));
+    mat3 normalMatrix = transpose(inverse(mat3(model)));
+
+    vec3 T = normalize(mat3(model) * aTangent);
+    vec3 B = normalize(mat3(model) * aBitangent);
     vec3 N = normalize(mat3(model) * SkinNormal);
 
-    // m_TBN = mat3(T, B, N);
+    m_TBN = inverse(mat3(T, B, N));
 
     m_normal = N;
 

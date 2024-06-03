@@ -18,6 +18,7 @@ out vec4 FragColor;
 #define LIGHT_POINT 2.0
 #define LIGHT_SPOT 3.0
 
+in mat3 m_TBN;
 in vec3 m_normal;
 in vec3 m_fragPos;
 in vec2 m_textCoord;
@@ -93,20 +94,20 @@ void main() {
     FragColor = vec4(color, 1.0);
 }
 
-vec3 getNormalMap(sampler2D normalMap, vec2 textCoord, vec3 fragPos, vec3 normal) {
-    vec3 tangentNormal = texture(normalMap, textCoord).xyz * 2.0 - 1.0;
+vec3 getNormalMap(sampler2D normalMap, vec2 texCoord, vec3 fragPos, vec3 normal) {
+    vec3 normalMapNormal = texture(normalMap, texCoord).rgb * 2.0 - 1.0;
 
-    vec3 Q1 = dFdx(fragPos);
-    vec3 Q2 = dFdy(fragPos);
-    vec2 du = dFdx(textCoord);
-    vec2 dv = dFdy(textCoord);
+    // vec3 Q1 = dFdx(fragPos);
+    // vec3 Q2 = dFdy(fragPos);
+    // vec2 du = dFdx(textCoord);
+    // vec2 dv = dFdy(textCoord);
 
-    vec3 N = normalize(normal);
-    vec3 T = normalize(Q1 * dv.y - Q2 * du.y);
-    vec3 B = -normalize(cross(N, T));
-    mat3 TBN = mat3(T, B, N);
+    // vec3 N = normalize(normal);
+    // vec3 T = normalize(Q1 * dv.y - Q2 * du.y);
+    // vec3 B = -normalize(cross(N, T));
+    // mat3 TBN = mat3(T, B, N);
 
-    return normalize(TBN * tangentNormal);
+    return normalize(m_TBN * normalMapNormal);
 }
 
 float DistributionGGX(float NdotH, float roughness) {

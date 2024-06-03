@@ -94,7 +94,6 @@ void engine::OnInit() {
 
     pScreenBuffer = &ScreenBuffer::getInstance();
     pImguibuffer = &Imguibuffer::getInstance();
-    // m_gbuffer = &GBuffer::getInstance();
 
     DebugDraw::initialize();
 
@@ -145,6 +144,7 @@ void engine::OnPhysics() {
 
 void engine::OnLoader() {
     Resources::Initialize();
+    
     Time timer(5.0f);
     
     do {

@@ -51,8 +51,6 @@ void BatchingManager::Initialize() {
     m_shaderModel = Resources::Load<Shader>(Filesystem::getpublic(Filesystem::eShader).string() + "/FilmboxShader", BatchingManager::SetupEnableShaderModel);
 
     m_shaderShadow = Resources::Load<Shader>(Filesystem::getpublic(Filesystem::eShader).string() + "/ShaderShadow", BatchingManager::SetupEnableShaderShadow);
-
-    m_shaderModelInstanced = Resources::Load<Shader>(Filesystem::getpublic(Filesystem::eShader).string() + "/model/ModelInstanced", BatchingManager::SetupEnableModelInstanced);
 }
 
 void BatchingManager::OnUpdate() {
@@ -74,9 +72,9 @@ void BatchingManager::OnUpdate() {
         const Vector3& min = meshRender.m_boundBox.min;
         const Vector3& max = meshRender.m_boundBox.max;
 
-        if (!m_frustum.IsCubeInFrustumOOBB(min, max, transform.getglobalmatrix())) {
+        // if (!m_frustum.IsCubeInFrustumOOBB(min, max, transform.getglobalmatrix())) {
             // continue;
-        }
+        // }
 
         m_objectrender.push_back(gameObject.get());
     }
@@ -201,10 +199,7 @@ void BatchingManager::SetupLight(Shader *shader) {
         shader->setUniform("m_lights[" + std::to_string(i) + "].position", m_light->getposition());
         shader->setUniform("m_lights[" + std::to_string(i) + "].color", m_light->getcolor());
         shader->setUniform("m_lights[" + std::to_string(i) + "].attenuation", Vector3(m_light->getattenuationconstant(), m_light->getattenuationlinear(), m_light->getattenuationquadractc()));
-        // shader->setUniform("m_lights[" + std::to_string(i) + "].type", m_light->gettype());
         shader->setUniform("m_lights[" + std::to_string(i) + "].direction", m_light->getforward());
-        // shader->setUniform("m_lights[" + std::to_string(i) + "].angleInnerCone", m_light->getinnecone());
-        // shader->setUniform("m_lights[" + std::to_string(i) + "].angleOuterCone", m_light->getoutercone());
         shader->setUniform("m_lights[" + std::to_string(i) + "].params", Vector3(m_light->getinnecone(), m_light->getoutercone(), (float)m_light->gettype()));
         shader->setUniform("m_lights[" + std::to_string(i) + "].vp", m_light->getprojectionview());
     }
@@ -252,18 +247,3 @@ void BatchingManager::SetupEnableShaderShadow(Shader *shader) {
     shader->RegisterUniform("isanimation", 1, Shader::eINT);
 }
 
-void BatchingManager::SetupEnableModelInstanced(Shader *shader) {
-    /*shader->RegisterUniform("projection", 1, Shader::eMAT4x4);
-    shader->RegisterUniform("view", 1, Shader::eMAT4x4);
-
-    for (u32 i=0;i<50;i++) {
-        shader->RegisterUniform("materials[" + std::to_string(i) + "].albedo", 1, Shader::eVECTOR3);
-        shader->RegisterUniform("materials[" + std::to_string(i) + "].params", 1, Shader::eVECTOR3);
-
-        for (u32 j=0;j<5;j++) {
-            shader->RegisterUniform("isactive["+ std::to_string(j) + "]", 1, Shader::eINT);
-            shader->RegisterUniform("textures["+ std::to_string(j) + "]", 1, Shader::eINT);
-            shader->RegisterUniform("isactive["+ std::to_string(j) + "]", 1, Shader::eINT);
-        }
-    }*/
-}
