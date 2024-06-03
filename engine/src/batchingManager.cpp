@@ -75,7 +75,7 @@ void BatchingManager::OnUpdate() {
         const Vector3& max = meshRender.m_boundBox.max;
 
         if (!m_frustum.IsCubeInFrustumOOBB(min, max, transform.getglobalmatrix())) {
-            continue;
+            // continue;
         }
 
         m_objectrender.push_back(gameObject.get());
