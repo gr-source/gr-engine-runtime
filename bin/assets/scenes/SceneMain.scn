@@ -1,0 +1,6 @@
+name: default
+object Chunk(0)
+object Chunk(1)
+object Chunk(2)
+object Chunk(3)
+object MainCamera
