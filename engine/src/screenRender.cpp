@@ -15,6 +15,10 @@ ScreenRender::ScreenRender() : m_shader(Resources::Load<Shader>(Filesystem::getp
         {Vector2(-1.0f,  1.0f), Vector2(0.0f, 1.0f)},
         {Vector2(-1.0f, -1.0f), Vector2(0.0f, 0.0f)},
         {Vector2( 1.0f, -1.0f), Vector2(1.0f, 0.0f)},
+<<<<<<< HEAD
+=======
+
+>>>>>>> 7c9a1b2 (	new file:   .gitignore)
         {Vector2(-1.0f,  1.0f), Vector2(0.0f, 1.0f)},
         {Vector2( 1.0f, -1.0f), Vector2(1.0f, 0.0f)},
         {Vector2( 1.0f,  1.0f), Vector2(1.0f, 1.0f)}

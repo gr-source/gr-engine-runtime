@@ -5,7 +5,11 @@
 ImGuiRender::ImGuiRender() : io(nullptr) {}
 
 ImGuiRender::ImGuiRender(const char* openglVersion) {
+<<<<<<< HEAD
     /*IMGUI_CHECKVERSION();
+=======
+    IMGUI_CHECKVERSION();
+>>>>>>> 7c9a1b2 (	new file:   .gitignore)
     ImGui::CreateContext();
 
     io = &ImGui::GetIO();
@@ -18,7 +22,11 @@ ImGuiRender::ImGuiRender(const char* openglVersion) {
 
     io->ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
+<<<<<<< HEAD
     io->Fonts->AddFontFromFileTTF("/usr/share/fonts/truetype/ubuntu/Ubuntu-R.ttf", 16.5f);*/
+=======
+    io->Fonts->AddFontFromFileTTF("/usr/share/fonts/truetype/ubuntu/Ubuntu-R.ttf", 16.5f);
+>>>>>>> 7c9a1b2 (	new file:   .gitignore)
 }
 
 void ImGuiRender::PushStyle(ImGuiStyle& dst) {
@@ -86,6 +94,7 @@ void ImGuiRender::addFont(const char* path) {
 }
 
 void ImGuiRender::Begin() {
+<<<<<<< HEAD
     // ImGui_ImplOpenGL3_NewFrame();
     // ImGui_ImplGlfw_NewFrame();
     // ImGui::NewFrame();
@@ -100,5 +109,21 @@ ImGuiRender::~ImGuiRender() {
     // ImGui_ImplOpenGL3_Shutdown();
     // ImGui_ImplGlfw_Shutdown();
     // ImGui::DestroyContext();
+=======
+    ImGui_ImplOpenGL3_NewFrame();
+    ImGui_ImplGlfw_NewFrame();
+    ImGui::NewFrame();
+}
+
+void ImGuiRender::End() {
+    ImGui::Render();
+    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+}
+
+ImGuiRender::~ImGuiRender() {
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
+>>>>>>> 7c9a1b2 (	new file:   .gitignore)
 }
 

@@ -29,7 +29,10 @@ void EditorController::OnUpdate() {
 
     Vector3 diretion;
 
+<<<<<<< HEAD
     /*
+=======
+>>>>>>> 7c9a1b2 (	new file:   .gitignore)
     if (Input::IsKeyPress(Input::KEY_W)) {
         diretion += m_cameraComponent.gettransform()->getforward();
     }
@@ -48,7 +51,10 @@ void EditorController::OnUpdate() {
     if (Input::IsKeyPress(Input::KEY_DOWN)) {
         diretion.y -= 1.0f;
     }
+<<<<<<< HEAD
     */
+=======
+>>>>>>> 7c9a1b2 (	new file:   .gitignore)
 
     if (diretion != Vector3::zero) {
         m_cameraComponent.gettransform()->position += Math::normalize(diretion) * velocity;
@@ -58,11 +64,18 @@ void EditorController::OnUpdate() {
 }
 
 void EditorController::updateCursor() {
+<<<<<<< HEAD
     /*
     static Vector2 lastMousePos = Input::GetCursorPos();
     const Vector2 delta = Input::GetCursorPos() - lastMousePos;
 
     // if (Math::magnitude(delta) > 0.00001f)
+=======
+    static Vector2 lastMousePos = Input::GetCursorPos();
+    const Vector2 delta = Input::GetCursorPos() - lastMousePos;
+
+    if (Math::magnitude(delta) > 0.00001f)
+>>>>>>> 7c9a1b2 (	new file:   .gitignore)
         processMouse(delta);
 
     lastMousePos = Screen::GetResolution() / 2.0f;
@@ -70,7 +83,10 @@ void EditorController::updateCursor() {
     if (!Input::IsMousePress(Input::BUTTON_MIDDLE)) {
         Input::SetCursorPos(lastMousePos);
     }
+<<<<<<< HEAD
     */
+=======
+>>>>>>> 7c9a1b2 (	new file:   .gitignore)
 }
 
 void EditorController::OnCameraUpdate() {

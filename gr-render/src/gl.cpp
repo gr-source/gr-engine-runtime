@@ -1,5 +1,6 @@
 #include "gl.h"
 
+<<<<<<< HEAD
 namespace gr {
 
 const char* get_enum_name(GLenum err) {
@@ -30,3 +31,20 @@ void check_erros_opengl(const std::string &name) {
     }
 }
 }
+=======
+#include <iostream>
+
+namespace grr {
+
+    void gl_gleck_function(const std::string& name) {
+        int numErrors = 0;
+        GLenum err;
+
+        while ((err = glGetError()) != GL_NO_ERROR) {
+            numErrors++;
+
+            std::runtime_error("Opengl Error: " + name + " " + std::to_string(numErrors));
+        }
+    }
+};
+>>>>>>> 7c9a1b2 (	new file:   .gitignore)

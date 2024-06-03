@@ -21,7 +21,10 @@ out vec4 FragColor;
 in vec3 m_normal;
 in vec3 m_fragPos;
 in vec2 m_textCoord;
+<<<<<<< HEAD
 in vec4 m_weights;
+=======
+>>>>>>> 7c9a1b2 (	new file:   .gitignore)
 
 flat in int m_materialIndex;
 

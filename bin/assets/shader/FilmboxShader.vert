@@ -21,7 +21,10 @@ uniform bool isanimation;
 out vec3 m_normal;
 out vec3 m_fragPos;
 out vec2 m_textCoord;
+<<<<<<< HEAD
 out vec4 m_weights;
+=======
+>>>>>>> 7c9a1b2 (	new file:   .gitignore)
 
 flat out int m_materialIndex;
 
@@ -40,7 +43,10 @@ void main() {
             }
             SkinVertex += (u_boneMatrices[in_indices[i]] * vec4(in_pos, 1.0)).xyz * in_weights[i];
             SkinNormal += (mat3(u_boneMatrices[in_indices[i]]) * in_normal) * in_weights[i];
+<<<<<<< HEAD
             m_weights += in_weights[i];
+=======
+>>>>>>> 7c9a1b2 (	new file:   .gitignore)
         }
     } else {
         SkinVertex = in_pos;

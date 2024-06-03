@@ -19,6 +19,7 @@ set(ecs_hdr
     src/ecs/entityManager.h
 )
 
+<<<<<<< HEAD
 set(plataform_src
     src/plataform/plataform.cpp
 )
@@ -38,6 +39,10 @@ set(engine_src
     ${guizmo_src}
     ${plataform_src}
     ${resources_src}
+=======
+set(engine_src
+    ${guizmo_src}
+>>>>>>> 7c9a1b2 (	new file:   .gitignore)
 
     src/gl.cpp
     src/log.cpp
@@ -107,6 +112,11 @@ set(engine_src
     src/core/scene/Scene.cpp
     src/core/scene/SceneManager.cpp
     
+<<<<<<< HEAD
+=======
+    ${ecs_src}
+
+>>>>>>> 7c9a1b2 (	new file:   .gitignore)
     src/ui/View.cpp
     src/ui/ImGuiRender.cpp
 
@@ -120,11 +130,15 @@ set(engine_src
 )
 
 set(engine_hdr
+<<<<<<< HEAD
     ${ecs_hdr}
     ${guizmo_hdr}
     ${plataform_hdr}
     ${resources_hdr}
 
+=======
+    ${guizmo_hdr}
+>>>>>>> 7c9a1b2 (	new file:   .gitignore)
     src/log.h
     src/timer.h
     src/Game.h
@@ -192,6 +206,11 @@ set(engine_hdr
     src/core/scene/Scene.h
     src/core/scene/SceneManager.h
 
+<<<<<<< HEAD
+=======
+    ${ecs_hdr}
+
+>>>>>>> 7c9a1b2 (	new file:   .gitignore)
     src/ui/View.h
     src/ui/ImGuiRender.h
 

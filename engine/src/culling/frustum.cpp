@@ -157,6 +157,7 @@ const bool Frustum::IsCubeInFrustumAABB(const Vector3& min, const Vector3& max) 
 
 const bool Frustum::IsCubeInFrustumOOBB(const Vector3 &min, const Vector3 &max, const Matrix4x4 &model) const {
     Vector3 points[8] {
+<<<<<<< HEAD
         model * Vector4(min.x, min.y, min.z),
         model * Vector4(max.x, min.y, min.z),
         model * Vector4(max.x, max.y, min.z),
@@ -166,6 +167,17 @@ const bool Frustum::IsCubeInFrustumOOBB(const Vector3 &min, const Vector3 &max, 
         model * Vector4(max.x, min.y, max.z),
         model * Vector4(max.x, max.y, max.z),
         model * Vector4(min.x, max.y, max.z)
+=======
+        Vector3(model * Vector4(min.x, min.y, min.z, 1.0f)),
+        Vector3(model * Vector4(max.x, min.y, min.z, 1.0f)),
+        Vector3(model * Vector4(max.x, max.y, min.z, 1.0f)),
+        Vector3(model * Vector4(min.x, max.y, min.z, 1.0f)),
+ 
+        Vector3(model * Vector4(min.x, min.y, max.z, 1.0f)),
+        Vector3(model * Vector4(max.x, min.y, max.z, 1.0f)),
+        Vector3(model * Vector4(max.x, max.y, max.z, 1.0f)),
+        Vector3(model * Vector4(min.x, max.y, max.z, 1.0f))
+>>>>>>> 7c9a1b2 (	new file:   .gitignore)
     };
 
 	// Desenhar as linhas do cubo usando as coordenadas dos pontos do frustum

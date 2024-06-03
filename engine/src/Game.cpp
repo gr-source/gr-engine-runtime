@@ -112,9 +112,12 @@ GameObject& GenGameObject(const FbxNode* node, bool local) {
     if (node->hasmesh()) {
         gameObject->addComponent<MeshRender>(node->getmeshs(), node->getMaterials());
     }
+<<<<<<< HEAD
     if (node->hasSkeleton()) {
         gameObject->addComponent<Animator>(*node->getSkeleton());
     }
+=======
+>>>>>>> 7c9a1b2 (	new file:   .gitignore)
     return *gameObject;
 }
 
