@@ -1,28 +1,25 @@
 #pragma once
 
+#include "params.h"
+
+#include <unordered_map>
+
 #include "../types.h"
 
-struct Monitor {
-    std::string title;
-    u32 width;
-    u32 height;
-    u32 x;
-    u32 y;
-};
+#include "../engine.h"
 
 using Window = void*;
 
 class Plataform {
 public:
-    static void Initialize();
+    static void Initialize(const GWindow& window);
 
-    static Monitor& GetMonitor();
 private:
-    static Monitor m_monitor;
-
     static Window m_window;
 
     static void MainLoop();
 
     static void Destroy();
+
+    static std::unordered_map<u32, u32> m_keyMap;
 };

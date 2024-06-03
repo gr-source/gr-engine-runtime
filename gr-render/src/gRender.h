@@ -57,7 +57,7 @@ namespace gr {
 
         static void RenderIndexedPrimitive2D(PrimitiveType primitive, u32 numVertice, void* vertice, u32 numIndice, void* indice);
 
-        static void Render3D();
+        static void Render3D(const Matrix4x4& projection, const Matrix4x4& model);
 
         static void RenderPrimitive3D(PrimitiveType primitive, u32 numVertice, void* vertice);
 

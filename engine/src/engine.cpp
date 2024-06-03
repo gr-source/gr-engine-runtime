@@ -10,14 +10,16 @@ bool Engine::Initialize(GRHandleEvent callback) {
     }
     m_handleEvent = callback;
 
-    Engine::SetHandleEvent(Engine::GRINITIALIZE);
+    GParams params;
+
+    Engine::SetHandleEvent(Engine::GR_CREATEWINDOW, &params);
     
-    Plataform::Initialize();
+    Plataform::Initialize(params.window);
     return true;
 }
 
-void Engine::SetHandleEvent(Event event) {
-    m_handleEvent(event);
+void* Engine::SetHandleEvent(Event event, GParams* params) {
+    return m_handleEvent(event, params);
 }
 
 void Engine::SetError(const std::string &error) {

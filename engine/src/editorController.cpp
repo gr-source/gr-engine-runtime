@@ -29,6 +29,7 @@ void EditorController::OnUpdate() {
 
     Vector3 diretion;
 
+    /*
     if (Input::IsKeyPress(Input::KEY_W)) {
         diretion += m_cameraComponent.gettransform()->getforward();
     }
@@ -47,6 +48,7 @@ void EditorController::OnUpdate() {
     if (Input::IsKeyPress(Input::KEY_DOWN)) {
         diretion.y -= 1.0f;
     }
+    */
 
     if (diretion != Vector3::zero) {
         m_cameraComponent.gettransform()->position += Math::normalize(diretion) * velocity;
@@ -56,6 +58,7 @@ void EditorController::OnUpdate() {
 }
 
 void EditorController::updateCursor() {
+    /*
     static Vector2 lastMousePos = Input::GetCursorPos();
     const Vector2 delta = Input::GetCursorPos() - lastMousePos;
 
@@ -67,6 +70,7 @@ void EditorController::updateCursor() {
     if (!Input::IsMousePress(Input::BUTTON_MIDDLE)) {
         Input::SetCursorPos(lastMousePos);
     }
+    */
 }
 
 void EditorController::OnCameraUpdate() {

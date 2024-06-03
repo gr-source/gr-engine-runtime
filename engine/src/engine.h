@@ -7,20 +7,23 @@
 class Engine {
 public:
     enum Event {
-        GRINITIALIZE       = 1,
-        GRINITIALIZEOPENGL = 2,
-        GRRESIZE           = 3,
-        GRDESTROY          = 10,
-        GRERROR            = 20,
-        GRUPDATE           = 30,
-        GRRENDERER         = 40
+        GR_CREATEWINDOW = 1,
+        GR_INITIALIZE   = 2,
+        GR_RESIZE       = 3,
+        GR_DESTROY      = 10,
+        GR_ERROR        = 20,
+        GR_UPDATE       = 30,
+        GR_RENDERER     = 40,
+        GR_KEYBOARD     = 50,
+        GR_MOUSE        = 60,
+        GR_MOUSE_POS    = 65
     };
 
-    typedef void (*GRHandleEvent)(Engine::Event event);
+    typedef void* (*GRHandleEvent)(Engine::Event, GParams*);
 
     static bool Initialize(GRHandleEvent handleEnevt);
 
-    static void SetHandleEvent(Event event);
+    static void* SetHandleEvent(Event event, GParams* params = nullptr);
 
     static void SetError(const std::string& error);
 

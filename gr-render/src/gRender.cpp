@@ -268,10 +268,7 @@ namespace gr {
         glDrawElements(m_primitiveMap[primitive], numIndice, GL_UNSIGNED_INT, nullptr);
     }
 
-    void gRender::Render3D() {
-        Matrix4x4 projection = Math::perspective(Math::rad(90.0f), (float)(m_width / m_height), 1000.0f, 0.01f);
-        Matrix4x4 view = Math::lookAt(Vector3(0.0f, 0.0f, -5.0f), Vector3::zero, Vector3::up);
-
+    void gRender::Render3D(const Matrix4x4& projection, const Matrix4x4& view) {
         m_shader3D->bind();
         m_shader3D->SetUniformMat4("projection", projection);
         m_shader3D->SetUniformMat4("view", view);
