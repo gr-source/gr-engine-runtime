@@ -53,25 +53,17 @@ add_subdirectory(imgui)
 
 target_include_directories(${PROJECT_NAME} PRIVATE imgui/src imgui/src/backends engine/src gr-render/src)
 
-<<<<<<< HEAD
-=======
-<<<<<<< HEAD
 target_link_libraries(${PROJECT_NAME} PRIVATE render engine glfw imgui assimp ${GLEW_LIBRARIES} ${OPENGL_LIBRARIES})
 
 #### ENGINE ####
 
 target_include_directories(engine PRIVATE imgui/src imgui/src/backends gr-render/src ${BULLET_INCLUDE_DIRS} ${OPENGL_INCLUDE_DIRS} ${GLEW_INCLUDE_DIRS})
-=======
->>>>>>> d4ce7c552c427d74e2f8608b297ea5f89d2fe0ee
+
 target_link_libraries(${PROJECT_NAME} PRIVATE engine glfw imgui assimp ${GLEW_LIBRARIES} ${OPENGL_LIBRARIES})
 
 #### ENGINE ####
 
 target_include_directories(engine PRIVATE imgui/src imgui/src/backends gr-render/src ${BULLET_INCLUDE_DIRS})
-<<<<<<< HEAD
-=======
->>>>>>> 7c9a1b2 (	new file:   .gitignore)
->>>>>>> d4ce7c552c427d74e2f8608b297ea5f89d2fe0ee
 
 target_link_libraries(engine PRIVATE render ${OPENGL_LIBRARIES} ${GRMATH_LIBRARIES} ${BULLET_LIBRARIES})
 
