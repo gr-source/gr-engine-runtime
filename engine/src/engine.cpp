@@ -169,7 +169,7 @@ void engine::MainFramebuffer() {
     // Preparação ara renderização.
     BatchingManager::OnUpdate();
 
-    // Preparação do shadow
+    /* Preparação do shadow
     m_shadowbuffer->bind();
     GRender(GRENDERERDEPTH);
     GEnableDepthTest();
@@ -178,6 +178,7 @@ void engine::MainFramebuffer() {
     BatchingManager::OnRenderShadow();
 
     m_shadowbuffer->unbind();
+    */
 
     // aplicação do anti-alising mass4.
     pScreenBuffer->bind();

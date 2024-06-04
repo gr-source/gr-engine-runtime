@@ -36,6 +36,7 @@ public:
         eSRBG_APHA   = GL_SRGB_ALPHA,
         eSRBG8_APHA8 = GL_SRGB8_ALPHA8,
         eDEPTH_COMPONENT = GL_DEPTH_COMPONENT,
+        eDEPTH_COMPONENT32 = GL_DEPTH_COMPONENT32,
 
         /* texture filter */
         eBILINEAR  = 2 << 1,
@@ -48,6 +49,8 @@ public:
 
         /* texture type */
         eBYTE      = GL_UNSIGNED_BYTE,
+        eINT      = GL_UNSIGNED_INT,
+        eINT32      = GL_UNSIGNED_INT_24_8,
         eFLOAT     = GL_FLOAT,
 
         eTEXTURE2D = GL_TEXTURE_2D,

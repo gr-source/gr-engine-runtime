@@ -1,6 +1,8 @@
 name: default
-object Chunk(0)
-object Chunk(1)
-object Chunk(2)
-object Chunk(3)
+object Plane
+object Beta_Joints
+object Beta_Surface
+object Warrok
+object Cube
+object Cube.001
 object MainCamera

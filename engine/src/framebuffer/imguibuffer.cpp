@@ -13,13 +13,8 @@ Imguibuffer::Imguibuffer(u32 width, u32 height) : FrameBuffer(width, height), m_
     m_texture->resize(m_width, m_height, Texture::eSRBG8, Texture::eRGB, Texture::eBILINEAR, Texture::eBYTE, false);
     m_texture->apply();
 
-    // m_renderbuffer->bind();
-    // m_renderbuffer->bufferStorage(Renderbuffer::eDEPTH_COMPONENT, width, height);
-    // m_renderbuffer->unbind();
-
     m_framebuffer->bind();
     m_framebuffer->SetTexture2D(Framebuffer::eCOLOR_ATTACHMENT0, Framebuffer::eTexture2D, m_texture.get());
-    // m_framebuffer->bufferRender(Framebuffer::eDEPTH_ATTACHMENT, m_renderbuffer.get());
     m_framebuffer->unbind();
 }
 

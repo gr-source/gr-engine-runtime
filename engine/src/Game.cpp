@@ -273,6 +273,7 @@ void Game::ReadHierarchy(std::vector<GameObject *>& list, GameObject* gameObject
 
 void Game::RenderViewportUI() {
     static Imguibuffer& m_imguibuffer = Imguibuffer::getInstance();
+    static ScreenBuffer& m_screenBuffer = ScreenBuffer::getInstance();;
 
     ImGui::Begin("Viewport", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
     ImGuizmo::SetDrawlist();
@@ -285,7 +286,9 @@ void Game::RenderViewportUI() {
     if (lastSize.x != curSize.x || lastSize.y != curSize.y) {
         Settings::ViewportSize = {curSize.x, curSize.y};
 
-        m_imguibuffer.resize({curSize.x, curSize.y});
+
+        m_screenBuffer.resize({curSize.x, curSize.y});
+        // m_imguibuffer.resize({curSize.x, curSize.y});
         lastSize = curSize;
     }
     
