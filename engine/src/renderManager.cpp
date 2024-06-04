@@ -10,30 +10,13 @@
 #include "resources/resources.h"
 #include "resources/shader.h"
 
-Shader* m_shaderModel = nullptr;
+#include "culling/frustum.h"
 
-const char* fragment = R"(
-    #version 330 core
+Shader* RenderManager::m_shaderModel = nullptr;
 
-    out vec4 FragColor;
-
-    void main() {
-        FragColor = vec4(1.0, 0.0, 1.0, 1.0);
-    }
-)";
-
-const char* vertex = R"(
-    #version 330 core
-
-    layout (location = 0) in vec3 in_pos;
-
-    uniform mat4 projection;
-    uniform mat4 view;
-
-    void main() {
-        gl_Position = projection * view * vec4(in_pos, 1.0);
-    }
-)";
+u32 RenderManager::drawBatchinCount = 0;
+u32 RenderManager::drawCallCount = 0;
+u32 RenderManager::drawCount = 0;
 
 void RenderManager::Initialize() {
     m_shaderModel = Resources::Load<Shader>(Filesystem::getpublic(Filesystem::eShader).string() + "/Terrain", [](Shader*shader){
@@ -43,19 +26,26 @@ void RenderManager::Initialize() {
 }
 
 void RenderManager::Process() {
-    // Adicionar código de processamento, se necessário.
 }
 
 void RenderManager::Renderer() {
     if (!m_shaderModel->isvalid()) return;
 
-    auto& batch = BatchedGeometry::m_batchins; // Presumo que haja um método estático que retorne os batches.
+    drawBatchinCount = 0;
+    drawCallCount = 0;
+    drawCount = 0;
+
+    auto& batch = BatchedGeometry::m_batchins;
 
     CameraComponent& cameraComponent = CameraComponent::MainCamera();
 
     m_shaderModel->bind();
     m_shaderModel->setUniform("projection", cameraComponent.getperspesctive());
     m_shaderModel->setUniform("view", cameraComponent.getviewmatrix());
+
+    Frustum m_frustum;
+    m_frustum.CalculateFrustum(cameraComponent.getviewmatrix() * cameraComponent.getperspesctive());
+
 
     for (auto& b : batch) {
         auto& batchedGeometry = b.second;
@@ -68,9 +58,16 @@ void RenderManager::Renderer() {
         u32 vertexCount = 0;
 
         for (const auto& object : batchedGeometry->getObjects()) {
+            auto& meshRender = object->getComponent<MeshRender>();
             auto& transform = object->getComponent<Transform>();
 
             Matrix4x4 model = transform.getglobalmatrix();
+
+            auto& boundBox = meshRender.m_boundBox;
+
+            if (!m_frustum.IsCubeInFrustumOOBB(boundBox.min, boundBox.max, model)) {
+                continue;
+            }
 
             for (const auto& vertex : mesh.getvertices()) {
                 Vector4 position = model * Vector4(vertex.position, 1.0f);
@@ -81,8 +78,12 @@ void RenderManager::Renderer() {
                 indices.push_back(vertexCount + index);
             }
 
-            vertexCount += vertices.size();
+            vertexCount += mesh.getvertices().size();
+
+            drawBatchinCount++;
         }
+
+        drawCount += batchedGeometry->getObjects().size();
         
         bufferManager->bind(BufferManager::eVAO);
 
@@ -93,5 +94,10 @@ void RenderManager::Renderer() {
         bufferManager->pushUpdateBuffer(0, vertices.size() * sizeof(Vertex3D), vertices.data());
 
         bufferManager->draw(BufferManager::eTriangle, indices.size(), BufferManager::eUint, nullptr);
+
+        drawCallCount++;
     }
 }
+
+
+

@@ -21,6 +21,7 @@ public:
 
     std::unordered_map<u32, Material> m_materials;
 
+    BoundBox m_boundBox;
 protected:
     std::vector<Mesh> m_meshes;
 

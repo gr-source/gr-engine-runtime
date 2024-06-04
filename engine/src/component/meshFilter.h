@@ -21,5 +21,4 @@ private:
 
 
     void AddAttrib(BufferManager& bufferManager);
-
 };

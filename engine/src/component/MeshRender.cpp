@@ -39,5 +39,19 @@ void MeshRender::OnInit() {
         verticeCount += vertices.size();
     }
 
+    m_boundBox.min = Vector3(std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), std::numeric_limits<float>::max());
+    m_boundBox.max = Vector3(std::numeric_limits<float>::min(), std::numeric_limits<float>::min(), std::numeric_limits<float>::min());
+    
+    for (const auto& vertex : batch->m_mesh.m_vertices) {
+        // Atualize os valores mínimos e máximos para cada dimensão
+        m_boundBox.min.x = std::min(m_boundBox.min.x, vertex.position.x);
+        m_boundBox.min.y = std::min(m_boundBox.min.y, vertex.position.y);
+        m_boundBox.min.z = std::min(m_boundBox.min.z, vertex.position.z);
+
+        m_boundBox.max.x = std::max(m_boundBox.max.x, vertex.position.x);
+        m_boundBox.max.y = std::max(m_boundBox.max.y, vertex.position.y);
+        m_boundBox.max.z = std::max(m_boundBox.max.z, vertex.position.z);
+    }
+
     batch->add(entity->m_gameobject);
 }

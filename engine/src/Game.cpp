@@ -9,6 +9,7 @@
 #include "gameObject.h"
 #include "eventManager.h"
 #include "objectManager.h"
+#include "renderManager.h"
 #include "batchingManager.h"
 #include "editorController.h"
 
@@ -543,8 +544,12 @@ void Game::RenderPropertiUI() {
 
             ImGui::SeparatorText("Renderização");
             // ImGui::Text("Objetos: %d/%d", BatchingManager::frustomDraw, BatchingManager::drawCount);
-            ImGui::Text("Luzes: %ld",     LightComponent::m_lights.size());
             ImGui::Text("Cameras: %ld",   CameraComponent::m_cameras.size());
+            ImGui::Text("Luzes: %ld",     LightComponent::m_lights.size());
+
+            ImGui::Text("DrawCall: %d", RenderManager::drawCallCount);
+            ImGui::Text("Models: %d", RenderManager::drawCount);
+            ImGui::Text("Occlusion: %d/%d", RenderManager::drawCount, RenderManager::drawBatchinCount);
             
             ImGui::EndTabItem();
         }
