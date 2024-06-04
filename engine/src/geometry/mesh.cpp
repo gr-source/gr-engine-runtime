@@ -2,64 +2,60 @@
 
 #include "../filesystem/stream.h"
 
-Mesh::Mesh(const std::string& name) : name(name) {}
+Mesh::Mesh(const std::string& name) : m_name(name) {}
+
+const std::string& Mesh::getname() const {
+    return m_name;
+}
 
 const std::vector<Vertex3D>& Mesh::getvertices() const {
-    return vertices;
+    return m_vertices;
 }
 
 Vertex3D& Mesh::GetVertex(u32 index) {
-    return vertices[index];
+    return m_vertices[index];
 }
 
 const u32 Mesh::getverticecount() const {
-    return vertices.size();
+    return m_vertices.size();
 }
 
 const Vertex3D *Mesh::getverticedata() const {
-    return vertices.data();
+    return m_vertices.data();
 }
 
 void Mesh::addindice(u32 indice) {
-    indices.emplace_back(indice);
+    m_indices.emplace_back(indice);
 }
 
 void Mesh::addindex(u32 indice) {
-    indices.emplace_back(indice);
+    m_indices.emplace_back(indice);
 }
 
 void Mesh::addtriangle(u32 t0, u32 t1, u32 t2) {
-    indices.emplace_back(t0);
-    indices.emplace_back(t1);
-    indices.emplace_back(t2);
+    m_indices.emplace_back(t0);
+    m_indices.emplace_back(t1);
+    m_indices.emplace_back(t2);
 }
 
 const std::vector<u32>& Mesh::getindices() const {
-    return indices;
+    return m_indices;
 }
 
 const u32 Mesh::getelementcount() const {
-    return indices.size();
+    return m_indices.size();
 }
 
 const u32 *Mesh::getelementdata() const {
-    return indices.data();
+    return m_indices.data();
 }
 
 u32& Mesh::GetIndice(u32 index) {
-    return indices[index];
+    return m_indices[index];
 }
 
 const bool Mesh::hasindices() const {
-    return !indices.empty();
-}
-
-void Mesh::setname(const std::string& name) {
-    this->name = name;
-}
-
-const std::string& Mesh::getname() const {
-    return name;
+    return !m_indices.empty();
 }
 
 bool Mesh::operator ==(const Mesh& other) const {

@@ -27,6 +27,7 @@
 #include "component/lightComponent.h"
 #include "component/meshCollider.h"
 #include "component/boxCollider.h"
+#include "component/meshFilter.h"
 #include "component/MeshRender.h"
 #include "component/Transform.h"
 #include "component/Rigidbody.h"
@@ -110,6 +111,7 @@ GameObject& GenGameObject(const FbxNode* node, bool local) {
     transform.position = node->position;
 
     if (node->hasmesh()) {
+        // gameObject->addComponent<MeshFilter>(node->getmeshs());
         gameObject->addComponent<MeshRender>(node->getmeshs(), node->getMaterials());
     }
     return *gameObject;
@@ -624,7 +626,7 @@ void Game::OnPropertyAnimator(Animator *animator) {
 
 void Game::OnPropertyMeshRender(MeshRender *meshRender) {
     if (ImGui::TreeNode("MeshRender")) {
-        for (auto& entry : meshRender->materials) {
+        for (auto& entry : meshRender->m_materials) {
             Material& material = entry.second;
             
             if (ImGui::TreeNode(std::string(material.getname() + "(" + std::to_string(entry.first) + ")").c_str())) {

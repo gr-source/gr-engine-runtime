@@ -17,6 +17,7 @@ class Shader;
 class CameraController;
 class CameraComponent;
 class LightComponent;
+class MeshFilter;
 class MeshRender;
 class Transform;
 class Rigidbody;

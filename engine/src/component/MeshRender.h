@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../Global.h"
+#include "../common.h"
 
 #include "../ecs/entity.h"
 
@@ -13,27 +13,18 @@
 
 class MeshRender : public Component {
 public:
-    MeshRender(const std::vector<Mesh>& meshs, const std::unordered_map<u32, Material>& materials);
+    MeshRender(const std::vector<Mesh> &meshes, const std::unordered_map<u32, Material>& materials);
 
     void OnInit() override;
 
     ~MeshRender();
 
-    std::unique_ptr<BufferManager> m_bufferManager;
+    std::unordered_map<u32, Material> m_materials;
 
-    std::unordered_map<u32, Material> materials;
-
-    BoundBox m_boundBox;
-
-    u32 verticeCount;
-    u32 indiceCount;
 protected:
-
-    u32 drawcount;
-
     Transform* m_transform;
 
-    void AddAttrib(BufferManager& pBufferManager);
+    static std::unordered_map<std::size_t, bool> m_batchins;
 };
 
 

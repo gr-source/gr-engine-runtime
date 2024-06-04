@@ -4,6 +4,7 @@
 
 #include "component/cameraComponent.h"
 #include "component/lightComponent.h"
+#include "component/meshFilter.h"
 #include "component/MeshRender.h"
 #include "component/Rigidbody.h"
 #include "component/Transform.h"
@@ -53,8 +54,8 @@ void BatchingManager::Initialize() {
     m_shaderShadow = Resources::Load<Shader>(Filesystem::getpublic(Filesystem::eShader).string() + "/ShaderShadow", BatchingManager::SetupEnableShaderShadow);
 }
 
-void BatchingManager::OnUpdate() {
-    m_objectrender.clear();
+void BatchingManager::OnUpdate() {return;
+    /*m_objectrender.clear();
 
     m_cameraComponent = &CameraComponent::MainCamera();
 
@@ -69,8 +70,8 @@ void BatchingManager::OnUpdate() {
 
         Transform& transform = gameObject->getComponent<Transform>();
 
-        const Vector3& min = meshRender.m_boundBox.min;
-        const Vector3& max = meshRender.m_boundBox.max;
+        const Vector3& min = meshRender.getMeshFilter()->m_boundBox.min;
+        const Vector3& max = meshRender.getMeshFilter()->m_boundBox.max;
 
         if (!m_frustum.IsCubeInFrustumOOBB(min, max, transform.getglobalmatrix())) {
             continue;
@@ -78,7 +79,7 @@ void BatchingManager::OnUpdate() {
 
         m_objectrender.push_back(gameObject.get());
     }
-    frustomDraw = m_objectrender.size();
+    frustomDraw = m_objectrender.size();*/
 }
 
 void BatchingManager::OnRenderShadow() {
@@ -96,7 +97,7 @@ void BatchingManager::OnRenderShadow() {
 }
 
 void BatchingManager::OnRender() {
-    if (!m_shaderModel->isvalid() || !m_shaderShadow->isvalid() || m_objectrender.empty()) return;
+    /*if (!m_shaderModel->isvalid() || !m_shaderShadow->isvalid() || m_objectrender.empty()) return;
 
     m_shaderModel->bind();
 
@@ -124,20 +125,21 @@ void BatchingManager::OnRender() {
 
         SetupMaterial(meshRender, m_shaderModel);
 
-        meshRender.m_bufferManager->bind(BufferManager::eVAO);
+        meshRender.getMeshFilter()->m_bufferManager->bind(BufferManager::eVAO);
 
-        meshRender.m_bufferManager->draw(BufferManager::eTriangle, meshRender.indiceCount, BufferManager::eUint, nullptr);
+        meshRender.getMeshFilter()->m_bufferManager->draw(BufferManager::eTriangle, meshRender.getMeshFilter()->m_indiceCount, BufferManager::eUint, nullptr);
 
-        meshRender.m_bufferManager->unbind();
+        meshRender.getMeshFilter()->m_bufferManager->unbind();
         
         for (u32 i=0;i<MAX_TEXTURE;i++) {
             GDisableTexture(i);
         }
     }
-    m_shaderModel->unbind();
+    m_shaderModel->unbind();*/
 }
 
 void BatchingManager::RenderModel(Shader *shader) {
+    /*
     for (const auto& gameObject : m_objectrender) {
         if (!gameObject->hasComponent<MeshRender>()) continue;
 
@@ -154,16 +156,17 @@ void BatchingManager::RenderModel(Shader *shader) {
         shader->setUniform("model", transform.getglobalmatrix());
 
         MeshRender& meshRender = gameObject->getComponent<MeshRender>();
-        meshRender.m_bufferManager->bind(BufferManager::eVAO);
+        meshRender.getMeshFilter()->m_bufferManager->bind(BufferManager::eVAO);
 
-        meshRender.m_bufferManager->draw(BufferManager::eTriangle, meshRender.indiceCount, BufferManager::eUint, nullptr);
+        meshRender.getMeshFilter()->m_bufferManager->draw(BufferManager::eTriangle, meshRender.getMeshFilter()->m_indiceCount, BufferManager::eUint, nullptr);
 
-        meshRender.m_bufferManager->unbind();
+        meshRender.getMeshFilter()->m_bufferManager->unbind();
     }
+    */
 }
 
 void BatchingManager::SetupMaterial(const MeshRender &meshRender, Shader *shader) {
-    for (const auto& material : meshRender.materials) {
+    for (const auto& material : meshRender.m_materials) {
         auto& entry = material.second;
         auto& index = material.first;
 

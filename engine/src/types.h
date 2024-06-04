@@ -14,3 +14,5 @@ using u8  = std::uint8_t;
 
 using ptrsize = std::ptrdiff_t;
 
+using ulong = std::size_t;
+

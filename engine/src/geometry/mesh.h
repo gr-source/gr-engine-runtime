@@ -10,6 +10,8 @@ class Mesh {
 public:
     Mesh(const std::string& name = "unnamed");
 
+    const std::string& getname() const;
+
     template <typename ...Args>
     Vertex3D& addvertex(Args&& ...args);
 
@@ -37,10 +39,6 @@ public:
 
     const bool hasindices() const;
 
-    void setname(const std::string& name);
-
-    const std::string& getname() const;
-
     bool operator ==(const Mesh& other) const;
 
     void addMaterial(u32 index);
@@ -50,13 +48,13 @@ public:
     u32* findMaterial(u32 index);
 
 protected:
-    std::string name;
+    std::string m_name;
 
-    std::vector<Vertex3D> vertices;
-
-    std::vector<u32> indices;
+    std::vector<Vertex3D> m_vertices;
 
     std::vector<u32> m_material;
+
+    std::vector<u32> m_indices;
 
     friend class Filmbox;
     friend class MeshRender;
@@ -64,5 +62,5 @@ protected:
 
 template <typename ...Args>
 inline Vertex3D& Mesh::addvertex(Args&& ...args) {
-    return vertices.emplace_back(std::forward<Args>(args)...);
+    return m_vertices.emplace_back(std::forward<Args>(args)...);
 }

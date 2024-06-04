@@ -48,6 +48,7 @@ set(engine_src
     src/component/Transform.cpp
     src/component/Rigidbody.cpp
     src/component/MeshRender.cpp
+    src/component/meshFilter.cpp
     src/component/boxCollider.cpp
     src/component/meshCollider.cpp
     src/component/lightComponent.cpp
@@ -83,6 +84,7 @@ set(engine_src
     src/filmbox/fbxLight.cpp
     src/filmbox/fbxCamera.cpp
 
+    src/geometry/batchedGeometry.cpp
     src/geometry/material.cpp
     src/geometry/model.cpp
     src/geometry/mesh.cpp
@@ -131,6 +133,7 @@ set(engine_hdr
     src/component/Transform.h
     src/component/Rigidbody.h
     src/component/MeshRender.h
+    src/component/meshFilter.h
     src/component/boxCollider.h
     src/component/meshCollider.h
     src/component/lightComponent.h
@@ -166,6 +169,7 @@ set(engine_hdr
     src/filmbox/fbxLight.h
     src/filmbox/fbxCamera.h
 
+    src/geometry/batchedGeometry.h
     src/geometry/material.h
     src/geometry/model.h
     src/geometry/mesh.h
