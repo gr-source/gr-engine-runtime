@@ -43,7 +43,7 @@ void Occlusion::Initialize() {
     m_bufferManager->bind(BufferManager::eVAO);
 
     m_bufferManager->bind(BufferManager::eEBO);
-    m_bufferManager->pushElements(m_mesh.getelementcount() * sizeof(u32), m_mesh.getelementdata());
+    m_bufferManager->pushElements(m_mesh.getindicecount() * sizeof(u32), m_mesh.getindicedata());
 
     m_bufferManager->bind(BufferManager::eVBO);
     m_bufferManager->pushBuffer(m_mesh.getverticecount() * sizeof(Vertex3D), m_mesh.getverticedata());
@@ -52,7 +52,7 @@ void Occlusion::Initialize() {
 
     m_bufferManager->unbind();
 
-    count = m_mesh.getelementcount();
+    count = m_mesh.getindicecount();
 
     m_shaderQuery = Resources::Load<Shader>(Filesystem::getpublic(Filesystem::eShader).string() + "/ShaderQuery");
 }

@@ -138,7 +138,7 @@ void SceneLoaded(const FbxScene* scene) {
 }
 
 Game::Game() : objectselected(nullptr), FPSColor(255, 255, 255, 255) {
-    Filmbox* m_filmbox = Filmbox::Load("/home/grsource/Documentos/filmbox/anim.fbx");
+    Filmbox* m_filmbox = Filmbox::Load("/home/grsource/Documentos/filmbox/mine.fbx");
     SceneLoaded(m_filmbox->getScene());
 
     m_filmbox->destroy();
@@ -542,7 +542,7 @@ void Game::RenderPropertiUI() {
             ImGui::Text("Script:  %fms  | FPS: %.2f",  gameStatics.scriptMS,  (1.0f / gameStatics.scriptMS));
 
             ImGui::SeparatorText("Renderização");
-            ImGui::Text("Objetos: %d/%d", BatchingManager::frustomDraw, BatchingManager::drawCount);
+            // ImGui::Text("Objetos: %d/%d", BatchingManager::frustomDraw, BatchingManager::drawCount);
             ImGui::Text("Luzes: %ld",     LightComponent::m_lights.size());
             ImGui::Text("Cameras: %ld",   CameraComponent::m_cameras.size());
             

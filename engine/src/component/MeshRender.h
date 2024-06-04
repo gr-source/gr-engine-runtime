@@ -9,7 +9,9 @@
 
 #include "../culling/occlusion.h"
 
+#include "../geometry/material.h"
 #include "../geometry/boundBox.h"
+#include "../geometry/batchedGeometry.h"
 
 class MeshRender : public Component {
 public:
@@ -17,14 +19,13 @@ public:
 
     void OnInit() override;
 
-    ~MeshRender();
-
     std::unordered_map<u32, Material> m_materials;
 
 protected:
+    std::vector<Mesh> m_meshes;
+
     Transform* m_transform;
 
-    static std::unordered_map<std::size_t, bool> m_batchins;
 };
 
 

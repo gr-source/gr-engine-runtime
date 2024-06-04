@@ -42,11 +42,11 @@ const std::vector<u32>& Mesh::getindices() const {
     return m_indices;
 }
 
-const u32 Mesh::getelementcount() const {
+const u32 Mesh::getindicecount() const {
     return m_indices.size();
 }
 
-const u32 *Mesh::getelementdata() const {
+const u32 *Mesh::getindicedata() const {
     return m_indices.data();
 }
 

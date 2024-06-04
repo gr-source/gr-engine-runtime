@@ -19,6 +19,7 @@
 #include "physics/physicsScene.h"
 
 #include "batchingManager.h"
+#include "renderManager.h"
 #include "objectManager.h"
 #include "eventManager.h"
 #include "screenRender.h"
@@ -107,7 +108,7 @@ void engine::OnInit() {
 
     SetupEnable();
 
-    BatchingManager::Initialize();
+    RenderManager::Initialize();
 
     #if IS_GAME
     glfwSetInputMode(glfwGetCurrentContext(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
@@ -167,7 +168,7 @@ void engine::MainFramebuffer() {
     gameStatics.renderMs = tickRender.start();
 
     // Preparação ara renderização.
-    BatchingManager::OnUpdate();
+    RenderManager::Process();
 
     /* Preparação do shadow
     m_shadowbuffer->bind();
@@ -218,7 +219,7 @@ void engine::MainFramebuffer() {
 void engine::RenderScene() {
     DebugDraw::Renderer();
 
-    BatchingManager::OnRender();
+    RenderManager::Renderer();
 
     glDepthFunc(GL_LEQUAL);
     m_skybox->render();

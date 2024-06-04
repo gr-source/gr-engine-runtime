@@ -3,7 +3,7 @@
 #include "Transform.h"
 
 MeshCollider::MeshCollider(const Mesh &mesh) : m_transform(nullptr), m_TriangleMeshShape(nullptr), m_triangleMesh(std::make_unique<btTriangleMesh>()) {
-    for (u32 i=0;i<mesh.getelementcount();i+=3) {
+    for (u32 i=0;i<mesh.getindicecount();i+=3) {
         const Vertex3D& vertex1 = mesh.getvertices()[mesh.getindices()[i]];
         const Vertex3D& vertex2 = mesh.getvertices()[mesh.getindices()[i + 1]];
         const Vertex3D& vertex3 = mesh.getvertices()[mesh.getindices()[i + 2]];

@@ -1,35 +1,43 @@
 #include "MeshRender.h"
-#include "meshFilter.h"
-
 #include "Transform.h"
-
 #include "../bufferManager.h"
 
-std::unordered_map<std::size_t, bool> MeshRender::m_batchins;
-
-MeshRender::MeshRender(const std::vector<Mesh> &meshes, const std::unordered_map<u32, Material>& materials) : m_materials(materials), m_transform(nullptr) {
-    std::hash<std::string> m_hashName;
-
-    std::size_t hash{0};
-
-    for (const auto& m : materials) {
-        hash ^= m_hashName(m.second.getname());
-    }
-    auto it = m_batchins.find(hash);
-    if (it != m_batchins.end()) {
-        std::cout << "Mesh added ind bacthin: " << meshes[0].getname() << std::endl;
-    }
-    
-    m_batchins.emplace(hash, true);
+MeshRender::MeshRender(const std::vector<Mesh> &meshes, const std::unordered_map<u32, Material>& materials)
+    : m_meshes(meshes), m_materials(materials), m_transform(nullptr) {
 }
 
 void MeshRender::OnInit() {
-    m_transform = &entity->getComponent<Transform>();
-}
+    std::hash<std::string> hashFunc;
+    std::size_t hash{0};
 
-MeshRender::~MeshRender() {
-    // gameStatics.vertices -= verticeCount;
-    // gameStatics.indices  -= indiceCount;
+    for (const auto& material : m_materials) {
+        hash ^= hashFunc(material.second.getname());
+    }
 
-    // BatchingManager::drawCount -= 1;
+    auto it = BatchedGeometry::m_batchins.find(hash);
+    if (it != BatchedGeometry::m_batchins.end()) {
+        auto& batch = BatchedGeometry::m_batchins[hash];
+        batch->add(entity->m_gameobject);
+        return;
+    }
+
+    u32 verticeCount = 0;
+
+    BatchedGeometry::m_batchins.emplace(hash, std::make_unique<BatchedGeometry>(99999));
+    auto& batch = BatchedGeometry::m_batchins[hash];
+
+    for (const auto& mesh : m_meshes) {
+        const auto& vertices = mesh.getvertices();
+        const auto& indices = mesh.getindices();
+
+        batch->m_mesh.m_vertices.insert(batch->m_mesh.m_vertices.end(), vertices.begin(), vertices.end());
+
+        for (const auto& index : indices) {
+            batch->m_mesh.addindex(index + verticeCount);
+        }
+
+        verticeCount += vertices.size();
+    }
+
+    batch->add(entity->m_gameobject);
 }

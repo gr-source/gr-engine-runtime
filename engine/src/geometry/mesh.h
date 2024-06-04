@@ -31,9 +31,9 @@ public:
 
     const std::vector<u32>& getindices() const;
 
-    const u32 getelementcount() const;
+    const u32 getindicecount() const;
 
-    const u32* getelementdata() const;
+    const u32* getindicedata() const;
 
     u32& GetIndice(u32 index);
 

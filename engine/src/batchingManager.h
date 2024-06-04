@@ -1,5 +1,6 @@
 #pragma once
 
+/*
 #include "common.h"
 
 #include <map>
@@ -57,3 +58,7 @@ protected:
 
     static void SetupEnableModelInstanced(Shader* shader);
 };
+*/
+
+
+

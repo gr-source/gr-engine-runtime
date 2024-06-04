@@ -10,7 +10,7 @@
 
 #include "component.h"
 
-class EntityManager;
+class GameObject;
 
 /* tamanho maximo de componenets */
 constexpr std::size_t maxComponent = 32;
@@ -33,10 +33,12 @@ class Entity {
 public:
     std::unordered_map<std::size_t, std::shared_ptr<Component>> components;
     std::bitset<32> m_bitset;
-
     bool IsActivate;
 
-    Entity();
+public:
+    GameObject* m_gameobject;
+
+    Entity(GameObject* gameobject);
 
     template <typename T, typename... Args>
     T& addComponent(Args&& ... args);

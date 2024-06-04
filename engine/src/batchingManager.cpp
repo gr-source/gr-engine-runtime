@@ -1,5 +1,6 @@
 #include "batchingManager.h"
 
+/*
 #include "objectManager.h"
 
 #include "component/cameraComponent.h"
@@ -55,7 +56,7 @@ void BatchingManager::Initialize() {
 }
 
 void BatchingManager::OnUpdate() {return;
-    /*m_objectrender.clear();
+    m_objectrender.clear();
 
     m_cameraComponent = &CameraComponent::MainCamera();
 
@@ -79,7 +80,7 @@ void BatchingManager::OnUpdate() {return;
 
         m_objectrender.push_back(gameObject.get());
     }
-    frustomDraw = m_objectrender.size();*/
+    frustomDraw = m_objectrender.size();
 }
 
 void BatchingManager::OnRenderShadow() {
@@ -97,7 +98,7 @@ void BatchingManager::OnRenderShadow() {
 }
 
 void BatchingManager::OnRender() {
-    /*if (!m_shaderModel->isvalid() || !m_shaderShadow->isvalid() || m_objectrender.empty()) return;
+    if (!m_shaderModel->isvalid() || !m_shaderShadow->isvalid() || m_objectrender.empty()) return;
 
     m_shaderModel->bind();
 
@@ -135,11 +136,10 @@ void BatchingManager::OnRender() {
             GDisableTexture(i);
         }
     }
-    m_shaderModel->unbind();*/
+    m_shaderModel->unbind();
 }
 
 void BatchingManager::RenderModel(Shader *shader) {
-    /*
     for (const auto& gameObject : m_objectrender) {
         if (!gameObject->hasComponent<MeshRender>()) continue;
 
@@ -162,7 +162,6 @@ void BatchingManager::RenderModel(Shader *shader) {
 
         meshRender.getMeshFilter()->m_bufferManager->unbind();
     }
-    */
 }
 
 void BatchingManager::SetupMaterial(const MeshRender &meshRender, Shader *shader) {
@@ -215,7 +214,6 @@ void BatchingManager::SetupEnableShaderModel(Shader *shader) {
     shader->RegisterUniform("view", 1, Shader::eMAT4x4);
     shader->RegisterUniform("gEye", 1, Shader::eVECTOR3);
 
-    /* light */
     shader->RegisterUniform("m_lightcount", 1, Shader::eINT);
 
     for (u32 i=0;i<10;i++) {
@@ -227,7 +225,6 @@ void BatchingManager::SetupEnableShaderModel(Shader *shader) {
         shader->RegisterUniform("m_lights[" + std::to_string(i) + "].vp", 1, Shader::eMAT4x4);
     }
 
-    /* material */
     for (u32 i=0;i<50;i++) {
         shader->RegisterUniform("materials[" + std::to_string(i) + "].albedo", 1, Shader::eVECTOR3);
         shader->RegisterUniform("materials[" + std::to_string(i) + "].params", 1, Shader::eVECTOR3);
@@ -249,4 +246,8 @@ void BatchingManager::SetupEnableShaderShadow(Shader *shader) {
     shader->RegisterUniform("u_boneMatrices", 100, Shader::eMAT4x4);
     shader->RegisterUniform("isanimation", 1, Shader::eINT);
 }
+
+*/
+
+
 

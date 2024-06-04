@@ -2,7 +2,7 @@
 
 #include "../settings.h"
 
-Entity::Entity() : IsActivate(false), components(32), m_bitset(0) {}
+Entity::Entity(GameObject* gameobject) : m_gameobject(gameobject), IsActivate(false), components(32), m_bitset(0) {}
 
 void Entity::OnStart() {
     std::for_each(components.begin(), components.end(), [&](auto& current) {

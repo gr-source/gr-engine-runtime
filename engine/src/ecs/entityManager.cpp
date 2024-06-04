@@ -5,8 +5,8 @@
 
 std::vector<std::unique_ptr<Entity>> EntityManager::m_entities;
 
-Entity& EntityManager::CreateEntity() {
-    return *m_entities.emplace_back(std::make_unique<Entity>());
+Entity& EntityManager::CreateEntity(GameObject* gameobject) {
+    return *m_entities.emplace_back(std::make_unique<Entity>(gameobject));
 }
 
 void EntityManager::remove(const Entity& entitie) {

@@ -38,6 +38,7 @@ set(engine_src
     src/gameObject.cpp
     src/screenRender.cpp
     src/eventManager.cpp
+    src/renderManager.cpp
     src/objectManager.cpp
     src/bufferManager.cpp
     src/batchingManager.cpp
@@ -123,6 +124,7 @@ set(engine_hdr
     src/gameObject.h
     src/screenRender.h
     src/eventManager.h
+    src/renderManager.h
     src/objectManager.h
     src/bufferManager.h
     src/batchingManager.h

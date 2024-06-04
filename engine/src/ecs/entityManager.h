@@ -2,13 +2,13 @@
 
 #include "entity.h"
 
-#include "../types.h"
+#include "../common.h"
 
 class EntityManager {
 public:
 
     /* Crie um a entidade */
-    static Entity& CreateEntity();
+    static Entity& CreateEntity(GameObject* gameobject);
 
     /* remova uma entidade da lista (delete) */
     static void remove(const Entity& entitie);
