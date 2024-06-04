@@ -4,7 +4,7 @@
 
 #include "ecs/entityManager.h"
 
-GameObject::GameObject(const std::string& name, const std::string& tag) : name(name), tag(tag), isStatic(false), isDelete(false), entity(&EntityManager::CreateEntity()) {
+GameObject::GameObject(const std::string& name, const std::string& tag) : name(name), tag(tag), entity(&EntityManager::CreateEntity()) {
     entity->addComponent<Transform>();
 }
 

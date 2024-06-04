@@ -17,12 +17,6 @@ public:
     /* defini um grupo de objetos */
     std::string tag;
 
-    /* objeto statico verifica se o objeto vai se mover na cena */
-    bool isStatic;
-
-    /* deletar o objeto na proxima verificaçao */
-    bool isDelete;
-
     GameObject(const std::string& name = "none", const std::string& tag = "none");
     ~GameObject();
 
@@ -44,8 +38,8 @@ public:
 
     Transform& gettransform();
 
-    template <typename T, typename Callback, typename... Args>
-    void RenderProperty(Callback&& callback, Args&&... args);
+    template <typename T, typename... Args>
+    void RenderProperty(Args&&... args);
 
     bool operator ==(const GameObject& other) const;
 };
@@ -65,9 +59,9 @@ inline constexpr bool GameObject::hasComponent() const {
     return entity->hasComponent<T>();
 }
 
-template <typename T, typename Callback, typename... Args>
-inline void GameObject::RenderProperty(Callback&& callback, Args&&... args) {
+template <typename T, typename... Args>
+inline void GameObject::RenderProperty(Args&&... args) {
     if (!entity->hasComponent<T>()) return;
 
-    std::bind(std::forward<Callback>(callback), std::forward<Args>(args)..., &entity->getComponent<T>())();
+    std::bind(std::forward<Args>(args)..., &entity->getComponent<T>())();
 }

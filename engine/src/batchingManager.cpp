@@ -58,7 +58,7 @@ void BatchingManager::OnUpdate() {
 
     m_cameraComponent = &CameraComponent::MainCamera();
 
-    const Matrix4x4 vp = m_cameraComponent->getperspesctive() * m_cameraComponent->getviewmatrix();
+    const Matrix4x4 vp = m_cameraComponent->getviewmatrix() * m_cameraComponent->getperspesctive();
 
     m_frustum.CalculateFrustum(vp);
 
@@ -72,9 +72,9 @@ void BatchingManager::OnUpdate() {
         const Vector3& min = meshRender.m_boundBox.min;
         const Vector3& max = meshRender.m_boundBox.max;
 
-        // if (!m_frustum.IsCubeInFrustumOOBB(min, max, transform.getglobalmatrix())) {
-            // continue;
-        // }
+        if (!m_frustum.IsCubeInFrustumOOBB(min, max, transform.getglobalmatrix())) {
+            continue;
+        }
 
         m_objectrender.push_back(gameObject.get());
     }
