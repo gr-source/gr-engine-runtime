@@ -41,7 +41,6 @@ set(engine_src
     src/renderManager.cpp
     src/objectManager.cpp
     src/bufferManager.cpp
-    src/batchingManager.cpp
     src/editorController.cpp
 
     src/component/animator.cpp
@@ -127,7 +126,6 @@ set(engine_hdr
     src/renderManager.h
     src/objectManager.h
     src/bufferManager.h
-    src/batchingManager.h
     src/editorController.h
 
     src/component/animator.h

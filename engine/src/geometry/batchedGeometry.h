@@ -3,7 +3,9 @@
 #include "../bufferManager.h"
 #include "../common.h"
 
+#include "material.h"
 #include "mesh.h"
+
 
 class BatchedGeometry {
 public:
@@ -18,6 +20,8 @@ public:
     BufferManager* getBufferManager();
 
     static std::unordered_map<ulong, std::unique_ptr<BatchedGeometry>> m_batchins;
+
+    std::unordered_map<u32, Material> m_materials;
 
     Mesh m_mesh;
 

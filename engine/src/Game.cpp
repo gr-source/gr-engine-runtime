@@ -10,7 +10,6 @@
 #include "eventManager.h"
 #include "objectManager.h"
 #include "renderManager.h"
-#include "batchingManager.h"
 #include "editorController.h"
 
 #include "framebuffer/shadowbuffer.h"
@@ -112,14 +111,49 @@ GameObject& GenGameObject(const FbxNode* node, bool local) {
     transform.position = node->position;
 
     if (node->hasmesh()) {
-        // gameObject->addComponent<MeshFilter>(node->getmeshs());
         gameObject->addComponent<MeshRender>(node->getmeshs(), node->getMaterials());
     }
     return *gameObject;
 }
 
+void CreateChunk(const Vector3& position, u8 id, const FbxNode* node) {
+    auto& scale = node->scale;
+    
+    auto parent = SceneManager::add("Chunk[" + std::to_string(id) + "]");
+
+    auto& t = parent->gettransform();
+    t.position = position + Vector3((16.0f * scale.x), 0.0f, (16.0f * scale.z));
+
+
+    for (u8 x=0;x<16;x++) {
+        for (u8 z=0;z<16;z++) {
+            auto gameObject = &ObjectManager::add("Chunk[" + std::to_string(x) + "][" + std::to_string(z) + "]");
+            
+            auto& transform = gameObject->gettransform();
+            transform.position += Vector3(t.position.x - (x * (scale.x * 2.0f)), 0.0f, t.position.z - (z * (scale.x * 2.0f)));
+            transform.scale = scale;
+
+            transform.parent = &t;
+
+            if (node->hasmesh()) {
+                gameObject->addComponent<MeshRender>(node->getmeshs(), node->getMaterials());
+            }
+
+            t.addparent(gameObject);
+        }
+    }
+}
+
 void ReaderNode(const FbxNode* node, Transform* transform) {
-    GameObject& gameobject = GenGameObject(node, transform != nullptr);
+    int index = 0;
+    for (int x = 0; x <= 32; x += 16) {
+        for (int z = 0; z <= 32; z += 16) {
+            CreateChunk(Vector3(x, 0.0f, z), index++, node);
+        }
+    }
+
+
+    /*
 
     if (transform) {
         transform->addparent(&gameobject);
@@ -128,6 +162,7 @@ void ReaderNode(const FbxNode* node, Transform* transform) {
     for (const auto& child : node->children) {
         ReaderNode(&child, &gameobject.gettransform());
     }
+    */
 }
 
 void SceneLoaded(const FbxScene* scene) {
@@ -521,7 +556,7 @@ void Game::RenderPropertiUI() {
         }
         
         ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
-        if (ImGui::BeginTabItem("Statisticas", nullptr)) {
+        if (ImGui::BeginTabItem("Estatística", nullptr)) {
             ImGui::SeparatorText("Scripts");
             ImGui::Text("Entidades: %d", EntityManager::getcount());
             ImGui::Text("Memoria: %s", getfilesize(Memory::totalMemoryUsage).c_str());
@@ -543,13 +578,10 @@ void Game::RenderPropertiUI() {
             ImGui::Text("Script:  %fms  | FPS: %.2f",  gameStatics.scriptMS,  (1.0f / gameStatics.scriptMS));
 
             ImGui::SeparatorText("Renderização");
-            // ImGui::Text("Objetos: %d/%d", BatchingManager::frustomDraw, BatchingManager::drawCount);
             ImGui::Text("Cameras: %ld",   CameraComponent::m_cameras.size());
             ImGui::Text("Luzes: %ld",     LightComponent::m_lights.size());
-
             ImGui::Text("DrawCall: %d", RenderManager::drawCallCount);
-            ImGui::Text("Models: %d", RenderManager::drawCount);
-            ImGui::Text("Occlusion: %d/%d", RenderManager::drawCount, RenderManager::drawBatchinCount);
+            ImGui::Text("Objetos: %d/%d", RenderManager::drawCount, RenderManager::drawBatchinCount);
             
             ImGui::EndTabItem();
         }

@@ -53,5 +53,6 @@ void MeshRender::OnInit() {
         m_boundBox.max.z = std::max(m_boundBox.max.z, vertex.position.z);
     }
 
+    batch->m_materials.insert(m_materials.begin(), m_materials.end());
     batch->add(entity->m_gameobject);
 }

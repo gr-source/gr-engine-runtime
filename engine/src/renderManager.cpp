@@ -15,13 +15,16 @@
 Shader* RenderManager::m_shaderModel = nullptr;
 
 u32 RenderManager::drawBatchinCount = 0;
+u32 RenderManager::drawCallRender = 0;
 u32 RenderManager::drawCallCount = 0;
 u32 RenderManager::drawCount = 0;
 
 void RenderManager::Initialize() {
-    m_shaderModel = Resources::Load<Shader>(Filesystem::getpublic(Filesystem::eShader).string() + "/Terrain", [](Shader*shader){
+    m_shaderModel = Resources::Load<Shader>(Filesystem::getpublic(Filesystem::eShader).string() + "/model/default3D", [](Shader*shader){
         shader->RegisterUniform("projection", 1, Shader::eMAT4x4);
         shader->RegisterUniform("view", 1, Shader::eMAT4x4);
+
+        shader->RegisterUniform("m_texture", 1, Shader::eINT);
     });
 }
 
@@ -45,7 +48,6 @@ void RenderManager::Renderer() {
 
     Frustum m_frustum;
     m_frustum.CalculateFrustum(cameraComponent.getviewmatrix() * cameraComponent.getperspesctive());
-
 
     for (auto& b : batch) {
         auto& batchedGeometry = b.second;
@@ -83,7 +85,13 @@ void RenderManager::Renderer() {
             drawBatchinCount++;
         }
 
+        if (vertices.empty() || indices.empty()) {
+            continue;
+        }
+
         drawCount += batchedGeometry->getObjects().size();
+
+        SetupMaterial(m_shaderModel, batchedGeometry->m_materials);
         
         bufferManager->bind(BufferManager::eVAO);
 
@@ -99,5 +107,9 @@ void RenderManager::Renderer() {
     }
 }
 
-
-
+void RenderManager::SetupMaterial(Shader *shader, std::unordered_map<u32, Material> &materials) {
+    if (!materials[0].texture[TexturePBR::ALBEDO]->isvalid()) return;
+    
+    materials[0].texture[TexturePBR::ALBEDO]->bind();
+    shader->setUniform("m_texture", 0);
+}

@@ -18,7 +18,6 @@
 
 #include "physics/physicsScene.h"
 
-#include "batchingManager.h"
 #include "renderManager.h"
 #include "objectManager.h"
 #include "eventManager.h"
@@ -217,10 +216,10 @@ void engine::MainFramebuffer() {
 }
 
 void engine::RenderScene() {
-    DebugDraw::Renderer();
 
     RenderManager::Renderer();
 
+    DebugDraw::Renderer();
     glDepthFunc(GL_LEQUAL);
     m_skybox->render();
     glDepthFunc(GL_LESS);

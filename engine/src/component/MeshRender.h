@@ -4,7 +4,6 @@
 
 #include "../ecs/entity.h"
 
-#include "../batchingManager.h"
 #include "../bufferManager.h"
 
 #include "../culling/occlusion.h"

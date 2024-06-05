@@ -38,7 +38,7 @@ const Vector3 Transform::getposition() const {
 const Matrix4x4 Transform::getglobalmatrix() const {
     Matrix4x4 localMatrix = Math::scale<Matrix4x4>(scale) * Math::rotate<Matrix4x4>(rotation) * Math::translate<Matrix4x4>(position);
     if (parent)
-        return parent->getglobalmatrix() * localMatrix;
+        return localMatrix * parent->getglobalmatrix();
     return localMatrix;
 }
 

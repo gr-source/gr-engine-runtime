@@ -1,6 +1,8 @@
 #pragma once
 
+#include <unordered_map>
 #include <functional>
+#include <vector>
 #include <memory>
 
 #include "types.h"
