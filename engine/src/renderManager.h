@@ -4,6 +4,8 @@
 
 #include "geometry/material.h"
 
+#include "culling/frustum.h"
+
 class RenderManager {
 public:
     
@@ -21,6 +23,8 @@ public:
 
 private:
     static Shader* m_shaderModel;
+
+    static Frustum m_frustum;
 
     static void SetupMaterial(Shader* shader, std::unordered_map<u32, Material>& materials);
 };

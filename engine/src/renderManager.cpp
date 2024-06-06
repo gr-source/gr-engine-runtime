@@ -10,14 +10,14 @@
 #include "resources/resources.h"
 #include "resources/shader.h"
 
-#include "culling/frustum.h"
-
 Shader* RenderManager::m_shaderModel = nullptr;
 
 u32 RenderManager::drawBatchinCount = 0;
 u32 RenderManager::drawCallRender = 0;
 u32 RenderManager::drawCallCount = 0;
 u32 RenderManager::drawCount = 0;
+
+Frustum RenderManager::m_frustum;
 
 void RenderManager::Initialize() {
     m_shaderModel = Resources::Load<Shader>(Filesystem::getpublic(Filesystem::eShader).string() + "/model/default3D", [](Shader*shader){
@@ -46,7 +46,6 @@ void RenderManager::Renderer() {
     m_shaderModel->setUniform("projection", cameraComponent.getperspesctive());
     m_shaderModel->setUniform("view", cameraComponent.getviewmatrix());
 
-    Frustum m_frustum;
     m_frustum.CalculateFrustum(cameraComponent.getviewmatrix() * cameraComponent.getperspesctive());
 
     for (auto& b : batch) {

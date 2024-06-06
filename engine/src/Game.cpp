@@ -146,8 +146,8 @@ void CreateChunk(const Vector3& position, u8 id, const FbxNode* node) {
 
 void ReaderNode(const FbxNode* node, Transform* transform) {
     int index = 0;
-    for (int x = 0; x <= 32; x += 16) {
-        for (int z = 0; z <= 32; z += 16) {
+    for (int x = 0; x <= 16; x += 16) {
+        for (int z = 0; z <= 16; z += 16) {
             CreateChunk(Vector3(x, 0.0f, z), index++, node);
         }
     }
@@ -353,9 +353,11 @@ void Game::RenderViewportUI() {
         }
         Transform& transform = objectselected->gettransform();
 
-        Matrix4x4 model = transform.getglobalmatrix();
+        Matrix4x4 model = transform.getglobalmatrix().transpose();
 
         if (ImGuizmo::Manipulate(m_cameraComponent.getviewmatrix().data, m_cameraComponent.getperspesctive().data, m_guizmoOperation, m_guizmoManipulate, model.data)) {
+            model = model.transpose();
+            
             model.decompose(transform.scale, transform.rotation, transform.position);
         }
     }

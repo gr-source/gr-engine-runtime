@@ -36,14 +36,14 @@ const Vector3 Transform::getposition() const {
 }
 
 const Matrix4x4 Transform::getglobalmatrix() const {
-    Matrix4x4 localMatrix = Math::scale<Matrix4x4>(scale) * Math::rotate<Matrix4x4>(rotation) * Math::translate<Matrix4x4>(position);
+    Matrix4x4 localMatrix = Math::translate<Matrix4x4>(position) * Math::rotate<Matrix4x4>(rotation) * Math::scale<Matrix4x4>(scale);
     if (parent)
-        return localMatrix * parent->getglobalmatrix();
+        return parent->getglobalmatrix() * localMatrix;
     return localMatrix;
 }
 
 const Matrix4x4 Transform::getLocalMatrix() const {
-    return Math::scale<Matrix4x4>(scale) * Math::rotate<Matrix4x4>(rotation) * Math::translate<Matrix4x4>(position);
+    return Math::translate<Matrix4x4>(position) * Math::rotate<Matrix4x4>(rotation) * Math::scale<Matrix4x4>(scale);
 }
 
 bool Transform::hasparent() const {
@@ -57,29 +57,5 @@ void Transform::addparent(GameObject* parent) {
 std::vector<GameObject*>& Transform::getparents() {
     return parents;
 }
-
-/*void Transform::OnGui() {
-    ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
-    if (ImGui::TreeNode("Transform")) {
-        const char* text[] {"X", "Y", "Z"};
-
-        ImGui::Text("Posição:");
-        ImGui::DragFloatEx("##Posicao", text, position.data, 1.0f, 0.0f, 0.0f, "%.3f");
-
-        ImGui::Text("Escala:");
-        ImGui::DragFloatEx("##Escala", text, scale.data, 1.0f, 1.0f, 0.0f, "%.3f");
-
-        Vector3 euler = rotation.eulerAngles();
-
-        ImGui::Text("Rotação:");
-        if (ImGui::DragFloatEx("##Rotacao", text, euler.data, 1.0f, -360.0f, 360.0f)) {
-            rotation = Math::normalize(Quaternion::Euler({Math::rad(euler.x), Math::rad(euler.y), Math::rad(euler.z)}));
-        }
-        ImGui::TreePop();
-    }
-}
-
-*/
-
 
 
