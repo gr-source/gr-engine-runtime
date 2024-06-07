@@ -6,6 +6,8 @@
 
 #include "culling/frustum.h"
 
+#include "octree/octree.h"
+
 class RenderManager {
 public:
     
@@ -22,6 +24,8 @@ public:
     static u32 drawCount;
 
 private:
+    static std::unique_ptr<Octree> m_octree;
+
     static Shader* m_shaderModel;
 
     static Frustum m_frustum;

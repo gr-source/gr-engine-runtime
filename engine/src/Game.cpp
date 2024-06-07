@@ -124,7 +124,6 @@ void CreateChunk(const Vector3& position, u8 id, const FbxNode* node) {
     auto& t = parent->gettransform();
     t.position = position + Vector3((16.0f * scale.x), 0.0f, (16.0f * scale.z));
 
-
     for (u8 x=0;x<16;x++) {
         for (u8 z=0;z<16;z++) {
             auto gameObject = &ObjectManager::add("Chunk[" + std::to_string(x) + "][" + std::to_string(z) + "]");
@@ -146,9 +145,9 @@ void CreateChunk(const Vector3& position, u8 id, const FbxNode* node) {
 
 void ReaderNode(const FbxNode* node, Transform* transform) {
     int index = 0;
-    for (int x = 0; x <= 16; x += 16) {
-        for (int z = 0; z <= 16; z += 16) {
-            CreateChunk(Vector3(x, 0.0f, z), index++, node);
+    for (int x = 0; x <= 32; x += 16) {
+        for (int z = 0; z <= 32; z += 16) {
+            CreateChunk(Vector3(x, 1.0f, z), index++, node);
         }
     }
 

@@ -5,10 +5,12 @@
 #include "component/MeshRender.h"
 #include "component/Transform.h"
 
-#include "geometry/batchedGeometry.h"
-
 #include "resources/resources.h"
 #include "resources/shader.h"
+
+#include "geometry/batchedGeometry.h"
+
+std::unique_ptr<Octree> RenderManager::m_octree = nullptr;
 
 Shader* RenderManager::m_shaderModel = nullptr;
 
@@ -29,9 +31,56 @@ void RenderManager::Initialize() {
 }
 
 void RenderManager::Process() {
+    if (!m_shaderModel->isvalid()) return;
+
+    drawBatchinCount = 0;
+    drawCallCount = 0;
+    drawCount = 0;
+
+    auto& batch = BatchedGeometry::m_batchins;
+
+    m_octree = std::make_unique<Octree>(Vector3::zero, Vector3(100, 100, 100));
+
+    CameraComponent& cameraComponent = CameraComponent::MainCamera();
+
+    m_frustum.CalculateFrustum(cameraComponent.getviewmatrix() * cameraComponent.getperspesctive());
+
+    for (auto& b : batch) {
+        auto& batchedGeometry = b.second;
+
+        auto bufferManager = batchedGeometry->getBufferManager();
+        auto& mesh = batchedGeometry->m_mesh;
+
+        std::vector<Vertex3D> vertices;
+        std::vector<u32> indices;
+        u32 vertexCount = 0;
+
+        for (const auto& object : batchedGeometry->getObjects()) {
+            auto& meshRender = object->getComponent<MeshRender>();
+            auto& transform = object->getComponent<Transform>();
+
+            auto& boundBox = meshRender.m_boundBox;
+
+            Matrix4x4 model = transform.getglobalmatrix();
+
+            if (!m_frustum.IsCubeInFrustumOOBB(boundBox.min, boundBox.max, model)) {
+                continue;
+            }
+
+            Vector3 t, s;
+            Quaternion r;
+
+            model.decompose(s, r, t);
+
+            m_octree->insert(t);
+        }
+    }
 }
 
 void RenderManager::Renderer() {
+    if (!m_octree) return;
+    m_octree->render();
+    /*
     if (!m_shaderModel->isvalid()) return;
 
     drawBatchinCount = 0;
@@ -104,6 +153,7 @@ void RenderManager::Renderer() {
 
         drawCallCount++;
     }
+    */
 }
 
 void RenderManager::SetupMaterial(Shader *shader, std::unordered_map<u32, Material> &materials) {

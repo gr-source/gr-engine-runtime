@@ -19,8 +19,17 @@ set(ecs_hdr
     src/ecs/entityManager.h
 )
 
+set(octree_src
+    src/octree/octree.cpp
+)
+
+set(octree_hdr
+    src/octree/octree.h
+)
+
 set(engine_src
     ${guizmo_src}
+    ${octree_src}
 
     src/gl.cpp
     src/log.cpp
@@ -108,6 +117,8 @@ set(engine_src
 
 set(engine_hdr
     ${guizmo_hdr}
+    ${octree_hdr}
+    
     src/log.h
     src/timer.h
     src/Game.h
