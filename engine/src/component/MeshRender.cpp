@@ -14,12 +14,12 @@ void MeshRender::OnInit() {
         hash ^= hashFunc(material.second.getname());
     }
 
-    // auto it = BatchedGeometry::m_batchins.find(hash);
-    // if (it != BatchedGeometry::m_batchins.end()) {
-    //     auto& batch = BatchedGeometry::m_batchins[hash];
-    //     batch->add(entity->m_gameobject);
-    //     return;
-    // }
+    auto it = BatchedGeometry::m_batchins.find(hash);
+    if (it != BatchedGeometry::m_batchins.end()) {
+        auto& batch = BatchedGeometry::m_batchins[hash];
+        batch->add(entity->m_gameobject);
+        return;
+    }
 
     u32 verticeCount = 0;
 
@@ -50,9 +50,9 @@ void MeshRender::OnInit() {
     }
 
 
-    // BatchedGeometry::m_batchins.emplace(hash, std::make_unique<BatchedGeometry>(m_outmesh));
-    // auto& batch = BatchedGeometry::m_batchins[hash];
-    // batch->m_materials.insert(m_materials.begin(), m_materials.end());
+    BatchedGeometry::m_batchins.emplace(hash, std::make_unique<BatchedGeometry>(m_outmesh));
+    auto& batch = BatchedGeometry::m_batchins[hash];
+    batch->m_materials.insert(m_materials.begin(), m_materials.end());
 
-    // batch->add(entity->m_gameobject);
+    batch->add(entity->m_gameobject);
 }
