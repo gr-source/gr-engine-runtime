@@ -144,15 +144,15 @@ void CreateChunk(const Vector3& position, u8 id, const FbxNode* node) {
 }
 
 void ReaderNode(const FbxNode* node, Transform* transform) {
-    int index = 0;
-    for (int x = 0; x <= 34; x += 16) {
-        for (int z = 0; z <= 34; z += 16) {
-            CreateChunk(Vector3(x, 1.0f, z), index++, node);
-        }
-    }
+    // int index = 0;
+    // for (int x = 0; x <= 160; x += 16) {
+    //     for (int z = 0; z <= 160; z += 16) {
+    //         CreateChunk(Vector3(x, 1.0f, z), index++, node);
+    //     }
+    // }
 
+    auto& gameobject = GenGameObject(node, transform != nullptr);
 
-    /*
 
     if (transform) {
         transform->addparent(&gameobject);
@@ -161,7 +161,6 @@ void ReaderNode(const FbxNode* node, Transform* transform) {
     for (const auto& child : node->children) {
         ReaderNode(&child, &gameobject.gettransform());
     }
-    */
 }
 
 void SceneLoaded(const FbxScene* scene) {
@@ -173,10 +172,10 @@ void SceneLoaded(const FbxScene* scene) {
 }
 
 Game::Game() : objectselected(nullptr), FPSColor(255, 255, 255, 255) {
-    Filmbox* m_filmbox = Filmbox::Load("/home/grsource/Documentos/filmbox/mine.fbx");
-    SceneLoaded(m_filmbox->getScene());
+    // Filmbox* m_filmbox = Filmbox::Load("/home/grsource/Documentos/filmbox/mine.fbx");
+    // SceneLoaded(m_filmbox->getScene());
 
-    m_filmbox->destroy();
+    // m_filmbox->destroy();
 
     #if !IS_GAME
     m_io = nullptr;

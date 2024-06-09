@@ -55,4 +55,6 @@ void MeshRender::OnInit() {
     batch->m_materials.insert(m_materials.begin(), m_materials.end());
 
     batch->add(entity->m_gameobject);
+
+    m_meshes.clear();
 }

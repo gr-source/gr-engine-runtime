@@ -58,6 +58,9 @@ void BatchedGeometry::remove(GameObject *gameobject) {
 }
 
 void BatchedGeometry::render(const Frustum& frustum, Shader* shader) {
+    // models.clear();
+
+    m_vertexArray->bind();
 
     if (!m_isCalculated) {
         for (const auto& object : m_objects) {
@@ -67,17 +70,15 @@ void BatchedGeometry::render(const Frustum& frustum, Shader* shader) {
             const Matrix4x4 model = transform.getglobalmatrix();
 
             // if (!frustum.IsCubeInFrustumOOBB(meshRender.m_boundBox.min, meshRender.m_boundBox.max, model)) {
-                // continue;
+            //     continue;
             // }
 
             models.push_back(model.transpose());
         }
-        m_isCalculated = true;
+        // m_isCalculated = true;
     }
 
     if (models.empty()) return;
-
-    m_vertexArray->bind();
 
     grr::gVertexArray::Bind(m_indexPrim);
     grr::gVertexArray::UpdateResize(m_indexPrim, models.size(), sizeof(Matrix4x4));
@@ -86,49 +87,9 @@ void BatchedGeometry::render(const Frustum& frustum, Shader* shader) {
     grr::gVertexArray::DrawElementsInstanced(grr::PrimitiveType_Triangles, m_mesh.getindicecount(), nullptr, models.size());
 }
 
-/*
-void BatchedGeometry::calculate() {
-    if (m_isCalculated) return;
-
-    m_vertices.clear();
-    m_indices.clear();
-    vertexCount = 0;
-
-    for (const auto& object : m_objects) {
-        auto& meshRender = object->getComponent<MeshRender>();
-        auto& transform = object->getComponent<Transform>();
-
-        Matrix4x4 model = transform.getglobalmatrix();
-
-        for (const auto& vertex : m_mesh.getvertices()) {
-            Vector4 position = model * Vector4(vertex.position, 1.0f);
-
-            m_vertices.emplace_back(Vector3(position), vertex.normal, vertex.uv, vertex.tangent, vertex.bitangent, vertex.materialIndex);
-        }
-
-        if (m_vertices.empty()) {
-            continue;
-        }
-
-        for (const auto& index : m_mesh.getindices()) {
-            m_indices.push_back(vertexCount + index);
-        }
-
-        vertexCount += m_mesh.getverticecount();
-    }
-
-    m_isCalculated = true;
-}
-*/
-
 const std::vector<GameObject *> &BatchedGeometry::getObjects() const {
     return m_objects;
 }
 
-/*
-BufferManager *BatchedGeometry::getBufferManager() {
-    return m_bufferManager.get();
-}
-*/
 
 
