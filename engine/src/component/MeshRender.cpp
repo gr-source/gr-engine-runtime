@@ -14,26 +14,23 @@ void MeshRender::OnInit() {
         hash ^= hashFunc(material.second.getname());
     }
 
-    auto it = BatchedGeometry::m_batchins.find(hash);
-    if (it != BatchedGeometry::m_batchins.end()) {
-        auto& batch = BatchedGeometry::m_batchins[hash];
-        batch->add(entity->m_gameobject);
-        return;
-    }
+    // auto it = BatchedGeometry::m_batchins.find(hash);
+    // if (it != BatchedGeometry::m_batchins.end()) {
+    //     auto& batch = BatchedGeometry::m_batchins[hash];
+    //     batch->add(entity->m_gameobject);
+    //     return;
+    // }
 
     u32 verticeCount = 0;
-
-    BatchedGeometry::m_batchins.emplace(hash, std::make_unique<BatchedGeometry>(99999));
-    auto& batch = BatchedGeometry::m_batchins[hash];
 
     for (const auto& mesh : m_meshes) {
         const auto& vertices = mesh.getvertices();
         const auto& indices = mesh.getindices();
 
-        batch->m_mesh.m_vertices.insert(batch->m_mesh.m_vertices.end(), vertices.begin(), vertices.end());
+        m_outmesh.m_vertices.insert(m_outmesh.m_vertices.end(), vertices.begin(), vertices.end());
 
         for (const auto& index : indices) {
-            batch->m_mesh.addindex(index + verticeCount);
+            m_outmesh.addindex(index + verticeCount);
         }
 
         verticeCount += vertices.size();
@@ -42,8 +39,7 @@ void MeshRender::OnInit() {
     m_boundBox.min = Vector3(std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), std::numeric_limits<float>::max());
     m_boundBox.max = Vector3(std::numeric_limits<float>::min(), std::numeric_limits<float>::min(), std::numeric_limits<float>::min());
     
-    for (const auto& vertex : batch->m_mesh.m_vertices) {
-        // Atualize os valores mínimos e máximos para cada dimensão
+    for (const auto& vertex : m_outmesh.m_vertices) {
         m_boundBox.min.x = std::min(m_boundBox.min.x, vertex.position.x);
         m_boundBox.min.y = std::min(m_boundBox.min.y, vertex.position.y);
         m_boundBox.min.z = std::min(m_boundBox.min.z, vertex.position.z);
@@ -53,6 +49,10 @@ void MeshRender::OnInit() {
         m_boundBox.max.z = std::max(m_boundBox.max.z, vertex.position.z);
     }
 
-    batch->m_materials.insert(m_materials.begin(), m_materials.end());
-    batch->add(entity->m_gameobject);
+
+    // BatchedGeometry::m_batchins.emplace(hash, std::make_unique<BatchedGeometry>(m_outmesh));
+    // auto& batch = BatchedGeometry::m_batchins[hash];
+    // batch->m_materials.insert(m_materials.begin(), m_materials.end());
+
+    // batch->add(entity->m_gameobject);
 }

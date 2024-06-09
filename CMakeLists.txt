@@ -20,52 +20,33 @@ add_executable(${PROJECT_NAME} src/main.cpp)
 
 # Encontrando as bibliotecas necessárias
 find_package(glfw3 REQUIRED)
-if(NOT glfw3_FOUND)
-    message(FATAL_ERROR "GLFW não encontrado. Instale GLFW para compilar este projeto.")
-endif()
-
 find_package(GLEW REQUIRED)
-if(NOT GLEW_FOUND)
-    message(FATAL_ERROR "GLEW não encontrado. Instale GLEW para compilar este projeto.")
-endif()
-
 find_package(OpenGL REQUIRED)
-if(NOT OPENGL_FOUND)
-    message(FATAL_ERROR "OpenGL não encontrado. Verifique a instalação do OpenGL.")
-endif()
-
 find_package(gr-math REQUIRED)
-if(NOT gr-math_FOUND)
-    message(FATAL_ERROR "gr-math não encontrado. Verifique a instalação do gr-math.")
-endif()
-
+find_package(gr-render REQUIRED)
 find_package(Bullet REQUIRED)
-if(NOT BULLET_FOUND)
-    message(FATAL_ERROR "Bullet não encontrado. Verifique a instalação do Bullet.")
-endif()
 
 # Adicionando subdiretórios
-add_subdirectory(gr-render)
 add_subdirectory(engine)
 add_subdirectory(imgui)
 
 #### MAIN ####
 
-target_include_directories(${PROJECT_NAME} PRIVATE imgui/src imgui/src/backends engine/src gr-render/src)
-
-target_link_libraries(${PROJECT_NAME} PRIVATE render engine glfw imgui assimp ${GLEW_LIBRARIES} ${OPENGL_LIBRARIES})
-
-#### ENGINE ####
-
-target_include_directories(engine PRIVATE imgui/src imgui/src/backends gr-render/src ${BULLET_INCLUDE_DIRS} ${OPENGL_INCLUDE_DIRS} ${GLEW_INCLUDE_DIRS})
+target_include_directories(${PROJECT_NAME} PRIVATE imgui/src imgui/src/backends engine/src)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE engine glfw imgui assimp ${GLEW_LIBRARIES} ${OPENGL_LIBRARIES})
 
 #### ENGINE ####
 
-target_include_directories(engine PRIVATE imgui/src imgui/src/backends gr-render/src ${BULLET_INCLUDE_DIRS})
+target_include_directories(engine PRIVATE imgui/src imgui/src/backends ${BULLET_INCLUDE_DIRS} ${OPENGL_INCLUDE_DIRS} ${GLEW_INCLUDE_DIRS})
 
-target_link_libraries(engine PRIVATE render ${OPENGL_LIBRARIES} ${GRMATH_LIBRARIES} ${BULLET_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} PRIVATE engine glfw imgui assimp ${GLEW_LIBRARIES} ${OPENGL_LIBRARIES})
+
+#### ENGINE ####
+
+target_include_directories(engine PRIVATE imgui/src imgui/src/backends ${BULLET_INCLUDE_DIRS})
+
+target_link_libraries(engine PRIVATE ${OPENGL_LIBRARIES} ${GRMATH_LIBRARIES} ${GRRENDER_LIBRARIES} ${BULLET_LIBRARIES})
 
 target_compile_definitions(engine PRIVATE IS_GAME=0 OPENGL_DEBUG=1)
 

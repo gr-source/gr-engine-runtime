@@ -145,8 +145,8 @@ void CreateChunk(const Vector3& position, u8 id, const FbxNode* node) {
 
 void ReaderNode(const FbxNode* node, Transform* transform) {
     int index = 0;
-    for (int x = 0; x <= 32; x += 16) {
-        for (int z = 0; z <= 32; z += 16) {
+    for (int x = 0; x <= 34; x += 16) {
+        for (int z = 0; z <= 34; z += 16) {
             CreateChunk(Vector3(x, 1.0f, z), index++, node);
         }
     }

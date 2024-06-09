@@ -94,6 +94,7 @@ set(engine_src
     src/filmbox/fbxCamera.cpp
 
     src/geometry/batchedGeometry.cpp
+    src/geometry/geometryRender.cpp
     src/geometry/material.cpp
     src/geometry/model.cpp
     src/geometry/mesh.cpp
@@ -181,6 +182,7 @@ set(engine_hdr
     src/filmbox/fbxCamera.h
 
     src/geometry/batchedGeometry.h
+    src/geometry/geometryRender.h
     src/geometry/material.h
     src/geometry/model.h
     src/geometry/mesh.h

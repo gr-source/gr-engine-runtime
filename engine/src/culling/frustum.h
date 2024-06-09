@@ -8,9 +8,11 @@ class Frustum {
 public:
     void CalculateFrustum(const Matrix4x4& vp);
 
-    bool PointInFrustum(const Vector3& point);
+    const bool PointInFrustum(const Vector3& point) const;
 
-    bool SphereInFrustum(const Vector3& point, float radius);
+    const bool SphereInFrustum(const Vector3& point, float radius) const;
+
+    const bool IsCubeInFrustum(const Vector3* vertice) const;
 
     const bool IsCubeInFrustumAABB(const Vector3& min, const Vector3& max) const;
 

@@ -1,5 +1,9 @@
 #include "octree.h"
 
+#include "../component/MeshRender.h"
+#include "../component/Transform.h"
+
+#include "../gameObject.h"
 #include "../renderer.h"
 
 Octree::Octree(const Vector3 &position, const Vector3& scale) : m_position(position), m_scale(scale), m_subdivid(false) {
@@ -8,12 +12,13 @@ Octree::Octree(const Vector3 &position, const Vector3& scale) : m_position(posit
     }
 }
 
-void Octree::insert(const Vector3 &position, u32 depth) {
+void Octree::insert(const Vector3 &position, GameObject* gameobject, u32 depth) {
     if (!contais(position) || depth > MAX_OCTREE_DEPTH) {
         return;
     }
     if (m_points.size() < MAX_OCTREE_POINTS) {
-        return m_points.push_back(position);
+        m_points.push_back(gameobject);
+        return;
     }
     
     if (!m_subdivid) {
@@ -22,7 +27,7 @@ void Octree::insert(const Vector3 &position, u32 depth) {
     }
 
     for (auto& child : m_childrent) {
-        child->insert(position, depth + 1);
+        child->insert(position, gameobject, depth + 1);
     }
 }
 
@@ -36,7 +41,7 @@ const bool Octree::contais(const Vector3 &position) const {
         );
 }
 
-void Octree::render() {
+std::vector<GameObject*> Octree::render(const Frustum& frustum) {
 
     Vector3 vertices[8];
     vertices[0] = m_position + Vector3(-m_scale.x, -m_scale.y, -m_scale.z) / 2.0f;
@@ -48,8 +53,24 @@ void Octree::render() {
     vertices[6] = m_position + Vector3( m_scale.x,  m_scale.y,  m_scale.z) / 2.0f;
     vertices[7] = m_position + Vector3(-m_scale.x,  m_scale.y,  m_scale.z) / 2.0f;
 
+    if (!frustum.IsCubeInFrustum(vertices)) {
+        return std::vector<GameObject*>();
+    }
 
-    // Desenha as linhas do cubo
+    std::vector<GameObject*> models;
+
+    for (const auto& point : m_points) {
+        Transform& transform = point->getComponent<Transform>();
+        MeshRender& meshRender = point->getComponent<MeshRender>();
+
+        if (!frustum.IsCubeInFrustumOOBB(meshRender.m_boundBox.min, meshRender.m_boundBox.max, transform.getglobalmatrix())) {
+            continue;
+        }
+        models.push_back(point);
+    }
+
+
+    /* Desenha as linhas do cubo
     DebugDraw::addLine(vertices[0], vertices[1], m_points.empty() ? Color::black : Color::blue);
     DebugDraw::addLine(vertices[1], vertices[2], m_points.empty() ? Color::black : Color::blue);
     DebugDraw::addLine(vertices[2], vertices[3], m_points.empty() ? Color::black : Color::blue);
@@ -69,14 +90,18 @@ void Octree::render() {
 
     for (const auto& p : m_points) {
         DebugDraw::addPoint(p, Color::red);
-    }
+    }*/
 
     for (auto& child : m_childrent) {
         if (!child) {
             continue;
         }
-        child->render();
+        auto childModel = child->render(frustum);
+
+        models.insert(models.end(), childModel.begin(), childModel.end());
     }
+
+    return models;
 }
 
 void Octree::subdivid() {

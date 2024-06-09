@@ -1,5 +1,7 @@
 #include "bufferManager.h"
 
+#include "geometry/vertex3D.h"
+
 BufferManager::BufferManager() : vao(-1), vbo(-1), ebo(-1), usage(GL_STATIC_DRAW), isElements(false) {}
 
 BufferManager::BufferManager(u16 type, bool elements) : vao(-1), vbo(-1), ebo(-1), isElements(elements) {
@@ -36,7 +38,22 @@ void BufferManager::pushBuffer(GLsizeiptr size, const void* data) {
     GL_CHECK(glBufferData(GL_ARRAY_BUFFER, size, data, usage));
 }
 
+void ReizeBuffer(GLenum target, u16 stride, u32 size) {
+    int arraySize = 0;
+    GL_CHECK(glGetBufferParameteriv(target, GL_BUFFER_SIZE,  &arraySize));
+    arraySize = (arraySize / stride);
+    
+    while (size > arraySize) {
+        GL_CHECK(glBufferData(target, arraySize * stride + MAX_BLOCK_BUFFER * stride, nullptr, GL_STATIC_DRAW));
+
+        GL_CHECK(glGetBufferParameteriv(target, GL_BUFFER_SIZE,  &arraySize));
+        arraySize = (arraySize / stride);
+    }
+}
+
 void BufferManager::pushUpdateBuffer(GLintptr offset, GLsizeiptr size, const void* data) {
+    ReizeBuffer(GL_ARRAY_BUFFER, sizeof(Vertex3D), size / sizeof(Vertex3D));
+
     GL_CHECK(glBufferSubData(GL_ARRAY_BUFFER, offset, size, data));
 }
 
@@ -65,6 +82,7 @@ void BufferManager::pushElements(const GLsizeiptr& size, const void* data) {
 }
 
 void BufferManager::pushUpdateElements(const GLintptr& offset, const GLsizeiptr& size, const void* data) {
+    ReizeBuffer(GL_ELEMENT_ARRAY_BUFFER, sizeof(u32), size / sizeof(u32));
     GL_CHECK(glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, offset, size, data));
 }
 

@@ -82,7 +82,7 @@ void Frustum::CalculateFrustum(const Matrix4x4& vp) {
 	NormalizePlane(m_Frustum, FRONT);
 }
 
-bool Frustum::PointInFrustum(const Vector3& point) {
+const bool Frustum::PointInFrustum(const Vector3& point) const {
 	for (int i = 0; i < 6; i++) {
 		if (m_Frustum[i][A] * point.x + m_Frustum[i][B] * point.y + m_Frustum[i][C] * point.z + m_Frustum[i][D] <= 0) {
 			return false;
@@ -91,11 +91,34 @@ bool Frustum::PointInFrustum(const Vector3& point) {
 	return true;
 }
 
-bool Frustum::SphereInFrustum(const Vector3& point, float radius) {
+const bool Frustum::SphereInFrustum(const Vector3& point, float radius) const {
 	for (int i = 0; i < 6; i++)	{
 		if (m_Frustum[i][A] * point.x + m_Frustum[i][B] * point.y + m_Frustum[i][C] * point.z + m_Frustum[i][D] <= -radius) {
 			return false;
 		}
+	}
+	return true;
+}
+
+const bool Frustum::IsCubeInFrustum(const Vector3 *vertice) const {
+    for (int i = 0; i < 6; i++ ) {
+		if (m_Frustum[i][A] * (vertice[0].x) + m_Frustum[i][B] * (vertice[0].y) + m_Frustum[i][C] * (vertice[0].z) + m_Frustum[i][D] > 0)
+		   continue;
+		if (m_Frustum[i][A] * (vertice[1].x) + m_Frustum[i][B] * (vertice[1].y) + m_Frustum[i][C] * (vertice[1].z) + m_Frustum[i][D] > 0)
+		   continue;
+		if (m_Frustum[i][A] * (vertice[2].x) + m_Frustum[i][B] * (vertice[2].y) + m_Frustum[i][C] * (vertice[2].z) + m_Frustum[i][D] > 0)
+		   continue;
+		if (m_Frustum[i][A] * (vertice[3].x) + m_Frustum[i][B] * (vertice[3].y) + m_Frustum[i][C] * (vertice[3].z) + m_Frustum[i][D] > 0)
+		   continue;
+		if (m_Frustum[i][A] * (vertice[4].x) + m_Frustum[i][B] * (vertice[4].y) + m_Frustum[i][C] * (vertice[4].z) + m_Frustum[i][D] > 0)
+		   continue;
+		if (m_Frustum[i][A] * (vertice[5].x) + m_Frustum[i][B] * (vertice[5].y) + m_Frustum[i][C] * (vertice[5].z) + m_Frustum[i][D] > 0)
+		   continue;
+		if (m_Frustum[i][A] * (vertice[6].x) + m_Frustum[i][B] * (vertice[6].y) + m_Frustum[i][C] * (vertice[6].z) + m_Frustum[i][D] > 0)
+		   continue;
+		if (m_Frustum[i][A] * (vertice[7].x) + m_Frustum[i][B] * (vertice[7].y) + m_Frustum[i][C] * (vertice[7].z) + m_Frustum[i][D] > 0)
+		   continue;
+		return false;
 	}
 	return true;
 }
