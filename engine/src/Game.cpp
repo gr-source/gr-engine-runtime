@@ -172,10 +172,10 @@ void SceneLoaded(const FbxScene* scene) {
 }
 
 Game::Game() : objectselected(nullptr), FPSColor(255, 255, 255, 255) {
-    // Filmbox* m_filmbox = Filmbox::Load("/home/grsource/Documentos/filmbox/mine.fbx");
-    // SceneLoaded(m_filmbox->getScene());
+    Filmbox* m_filmbox = Filmbox::Load("/home/grsource/Documentos/filmbox/mine.fbx");
+    SceneLoaded(m_filmbox->getScene());
 
-    // m_filmbox->destroy();
+    m_filmbox->destroy();
 
     #if !IS_GAME
     m_io = nullptr;
@@ -351,11 +351,9 @@ void Game::RenderViewportUI() {
         }
         Transform& transform = objectselected->gettransform();
 
-        Matrix4x4 model = transform.getglobalmatrix().transpose();
+        Matrix4x4 model = transform.getglobalmatrix();
 
         if (ImGuizmo::Manipulate(m_cameraComponent.getviewmatrix().data, m_cameraComponent.getperspesctive().data, m_guizmoOperation, m_guizmoManipulate, model.data)) {
-            model = model.transpose();
-            
             model.decompose(transform.scale, transform.rotation, transform.position);
         }
     }

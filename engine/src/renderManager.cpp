@@ -103,33 +103,6 @@ void RenderManager::Renderer() {
         auto& batchedGeometry = batch.second;
 
         batchedGeometry->render(m_frustum, m_shaderModel);
-
-        /*auto bufferManager = batchedGeometry->getBufferManager();
-
-        batchedGeometry->calculate();
-
-        auto& vertices = batchedGeometry->m_vertices;
-        auto& indices = batchedGeometry->m_indices;
-
-        if (vertices.empty() || indices.empty()) {
-            continue;
-        }
-
-        drawCount += batchedGeometry->getObjects().size();
-
-        SetupMaterial(m_shaderModel, batchedGeometry->m_materials);
-        
-        bufferManager->bind(BufferManager::eVAO);
-
-        bufferManager->bind(BufferManager::eEBO);
-        bufferManager->pushUpdateElements(0, indices.size() * sizeof(u32), indices.data());
-
-        bufferManager->bind(BufferManager::eVBO);
-        bufferManager->pushUpdateBuffer(0, vertices.size() * sizeof(Vertex3D), vertices.data());
-
-        bufferManager->draw(BufferManager::eTriangle, indices.size(), BufferManager::eUint, nullptr);*/
-
-        // drawCallCount++;
     }
 }
 

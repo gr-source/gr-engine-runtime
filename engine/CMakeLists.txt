@@ -110,10 +110,12 @@ set(engine_src
     src/culling/occlusion.cpp
     src/culling/frustum.cpp
 
-    src/physics/physicsScene.cpp
-
     src/filesystem/filesystem.cpp
     src/filesystem/stream.cpp
+
+    src/physics/physicsScene.cpp
+
+    src/game/terrain.cpp
 )
 
 set(engine_hdr
@@ -197,11 +199,14 @@ set(engine_hdr
 
     src/culling/occlusion.h
     src/culling/frustum.h
+    
+    src/filesystem/filesystem.h
+    src/filesystem/stream.h
 
     src/physics/physicsScene.h
 
-    src/filesystem/filesystem.h
-    src/filesystem/stream.h
+    src/game/terrain.h
+
 )
 
 add_library(engine STATIC ${engine_src} ${engine_hdr})

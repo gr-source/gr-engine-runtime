@@ -58,7 +58,7 @@ void BatchedGeometry::remove(GameObject *gameobject) {
 }
 
 void BatchedGeometry::render(const Frustum& frustum, Shader* shader) {
-    // models.clear();
+    models.clear();
 
     m_vertexArray->bind();
 
@@ -69,11 +69,11 @@ void BatchedGeometry::render(const Frustum& frustum, Shader* shader) {
 
             const Matrix4x4 model = transform.getglobalmatrix();
 
-            // if (!frustum.IsCubeInFrustumOOBB(meshRender.m_boundBox.min, meshRender.m_boundBox.max, model)) {
-            //     continue;
-            // }
+            if (!frustum.IsCubeInFrustumOOBB(meshRender.m_boundBox.min, meshRender.m_boundBox.max, model)) {
+                continue;
+            }
 
-            models.push_back(model.transpose());
+            models.push_back(model);
         }
         // m_isCalculated = true;
     }
