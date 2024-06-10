@@ -59,15 +59,15 @@ std::vector<GameObject*> Octree::render(const Frustum& frustum) {
 
     std::vector<GameObject*> models;
 
-    for (const auto& point : m_points) {
-        Transform& transform = point->getComponent<Transform>();
-        MeshRender& meshRender = point->getComponent<MeshRender>();
+    // for (const auto& point : m_points) {
+    //     Transform& transform = point->getComponent<Transform>();
+    //     MeshRender& meshRender = point->getComponent<MeshRender>();
 
-        if (!frustum.IsCubeInFrustumOOBB(meshRender.m_boundBox.min, meshRender.m_boundBox.max, transform.getglobalmatrix())) {
-            continue;
-        }
-        models.push_back(point);
-    }
+    //     if (!frustum.IsCubeInFrustumOOBB(meshRender.m_boundBox.min, meshRender.m_boundBox.max, transform.getglobalmatrix())) {
+    //         continue;
+    //     }
+    //     models.push_back(point);
+    // }
 
 
     /* Desenha as linhas do cubo

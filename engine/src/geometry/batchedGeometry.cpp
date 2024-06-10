@@ -62,21 +62,21 @@ void BatchedGeometry::render(const Frustum& frustum, Shader* shader) {
 
     m_vertexArray->bind();
 
-    if (!m_isCalculated) {
-        for (const auto& object : m_objects) {
-            Transform& transform = object->getComponent<Transform>();
-            MeshRender& meshRender = object->getComponent<MeshRender>();
+    // if (!m_isCalculated) {
+    //     for (const auto& object : m_objects) {
+    //         Transform& transform = object->getComponent<Transform>();
+    //         MeshRender& meshRender = object->getComponent<MeshRender>();
 
-            const Matrix4x4 model = transform.getglobalmatrix();
+    //         const Matrix4x4 model = transform.getglobalmatrix();
 
-            if (!frustum.IsCubeInFrustumOOBB(meshRender.m_boundBox.min, meshRender.m_boundBox.max, model)) {
-                continue;
-            }
+    //         if (!frustum.IsCubeInFrustumOOBB(meshRender.m_boundBox.min, meshRender.m_boundBox.max, model)) {
+    //             continue;
+    //         }
 
-            models.push_back(model);
-        }
-        // m_isCalculated = true;
-    }
+    //         models.push_back(model);
+    //     }
+    //     // m_isCalculated = true;
+    // }
 
     if (models.empty()) return;
 

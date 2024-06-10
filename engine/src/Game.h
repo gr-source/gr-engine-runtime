@@ -10,8 +10,12 @@
 class Game {
 public:
     Game();
+
+    void GeneRateVoxel(u32 width, u32 height, u32 depth);
     
     void Update();
+
+    void Render();
 
     #if !IS_GAME
     void Gui();
@@ -30,8 +34,6 @@ public:
 
     void RenderPropertiUI();
 
-    void RenderRectSlide(const Color& color);
-
     void loadReources();
 
     void ProgressLoad();
@@ -42,8 +44,6 @@ public:
         NavegationFlags_files   = 1 << 3,
         NavegationFlags_models  = 1 << 4,
     };
-
-    // static void ImportFiles(const std::vector<std::filesystem::path>& files);
 
     #endif
 

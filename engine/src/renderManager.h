@@ -24,6 +24,8 @@ public:
     static u32 drawCount;
 
 private:
+    static std::vector<GameObject*> m_objects;
+
     static std::unique_ptr<Octree> m_octree;
 
     static Shader* m_shaderModel;

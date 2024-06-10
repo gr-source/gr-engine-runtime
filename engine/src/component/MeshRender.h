@@ -14,21 +14,25 @@
 
 class MeshRender : public Component {
 public:
-    MeshRender(const std::vector<Mesh> &meshes, const std::unordered_map<u32, Material>& materials);
+    MeshRender(const Mesh &mesh);
+    ~MeshRender();
 
-    void OnInit() override;
+    const BoundBox& getBoundBox() const;
+
+    void draw();
 
     std::unordered_map<u32, Material> m_materials;
 
+private:
     BoundBox m_boundBox;
 
     Mesh m_outmesh;
 
-protected:
-    std::vector<Mesh> m_meshes;
+    u32 m_indexEBO;
 
-    Transform* m_transform;
+    u32 m_indexVBO;
 
+    grr::gVertexArray* m_vertexArray;
 };
 
 

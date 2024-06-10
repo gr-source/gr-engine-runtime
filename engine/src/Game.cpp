@@ -48,6 +48,8 @@
 
 #include "ui/View.h"
 
+#include "simplexNoise/SimplexNoise.h"
+
 #include <sstream>
 #include <iomanip>
 
@@ -95,6 +97,7 @@ std::unordered_map<IconType, Texture*> iconsUI;
 EditorController mEditorController;
 #endif
 
+/*
 GameObject& GenGameObject(const FbxNode* node, bool local) {
     GameObject* gameObject = nullptr;
 
@@ -170,12 +173,43 @@ void SceneLoaded(const FbxScene* scene) {
         ReaderNode(&child, nullptr);
     }
 }
+*/
 
 Game::Game() : objectselected(nullptr), FPSColor(255, 255, 255, 255) {
-    Filmbox* m_filmbox = Filmbox::Load("/home/grsource/Documentos/filmbox/mine.fbx");
-    SceneLoaded(m_filmbox->getScene());
+    // Filmbox* m_filmbox = Filmbox::Load("/home/grsource/Documentos/filmbox/mine.fbx");
+    // SceneLoaded(m_filmbox->getScene());
 
-    m_filmbox->destroy();
+    // m_filmbox->destroy();
+
+    // GeneRateVoxel(16, 16, 16);
+
+    Mesh m_mesh("Cube");
+    m_mesh.addvertex(Vector3( 1.0f, -1.0f, -1.0f));
+    m_mesh.addvertex(Vector3( 1.0f,  1.0f, -1.0f));
+    m_mesh.addvertex(Vector3( 1.0f, -1.0f,  1.0f));
+    m_mesh.addvertex(Vector3( 1.0f,  1.0f,  1.0f));
+    m_mesh.addvertex(Vector3(-1.0f, -1.0f, -1.0f));
+    m_mesh.addvertex(Vector3(-1.0f,  1.0f, -1.0f));
+    m_mesh.addvertex(Vector3(-1.0f, -1.0f,  1.0f));
+    m_mesh.addvertex(Vector3(-1.0f,  1.0f,  1.0f));
+
+    m_mesh.addtriangle(1, 2, 0);
+    m_mesh.addtriangle(3, 6, 2);
+    m_mesh.addtriangle(7, 4, 6);
+    m_mesh.addtriangle(5, 0, 4);
+    m_mesh.addtriangle(6, 0, 2);
+    m_mesh.addtriangle(3, 5, 7);
+    m_mesh.addtriangle(1, 3, 2);
+    m_mesh.addtriangle(3, 7, 6);
+    m_mesh.addtriangle(7, 5, 4);
+    m_mesh.addtriangle(5, 1, 0);
+    m_mesh.addtriangle(6, 4, 0);
+    m_mesh.addtriangle(3, 1, 5);
+
+
+    auto cube = SceneManager::add("Cube");
+    cube->addComponent<MeshRender>(m_mesh);
+
 
     #if !IS_GAME
     m_io = nullptr;
@@ -190,10 +224,85 @@ Game::Game() : objectselected(nullptr), FPSColor(255, 255, 255, 255) {
     #endif
 }
 
+Vector3 vertice[8] {
+    {-1,  1, -1}, {-1,  1,  1},
+    { 1,  1,  1}, { 1,  1, -1},
+    {-1, -1, -1}, {-1, -1,  1},
+    { 1, -1,  1}, { 1, -1,  1}
+};
+
+void addQuad(Mesh& mesh, u32 ai, u32 bi, u32 ci, u32 di, u32 i) {
+    mesh.addvertex(vertice[ai]);
+    mesh.addvertex(vertice[bi]);
+    mesh.addvertex(vertice[ci]);
+    mesh.addvertex(vertice[di]);
+
+    mesh.addtriangle(i, i + 1, i + 2);
+    mesh.addtriangle(i, i + 2, i + 3);
+}
+
+void Game::GeneRateVoxel(u32 width, u32 height, u32 depth) {
+    bool block[width][height][depth];
+    for (int x=0;x<width;x++) {
+        for (int y=0;y<height;y++) {
+            for (int z=0;z<depth;z++) {
+                block[x][y][z] = SimplexNoise::noise(x, y, z) > 0.0f ? true : false;
+            }
+        }
+    }
+
+    Mesh m_mesh;
+
+    for (int x=0;x<width;x++) {
+        for (int y=0;y<height;y++) {
+            for (int z=0;z<depth;z++) {
+                if (!block[x][y][z]) {
+                    // top face
+                    if (!block[x][y + 1][z]) {
+                        addQuad(m_mesh, 0, 1, 2, 3, m_mesh.getverticecount());
+                    }
+
+                    // bottom face
+                    if (!block[x][y - 1][z]) {
+                        addQuad(m_mesh, 7, 6, 5, 4, m_mesh.getverticecount());
+                    }
+
+                    // front face
+                    if (!block[x + 1][y][z]) {
+                        addQuad(m_mesh, 2, 1, 5, 6, m_mesh.getverticecount());
+                    }
+
+                    // back face
+                    if (!block[x -1][y][z]) {
+                        addQuad(m_mesh, 0, 3, 7, 4, m_mesh.getverticecount());
+                    }
+
+                    // right face
+                    if (!block[x][y][z + 1]) {
+                        addQuad(m_mesh, 3, 2, 6, 7, m_mesh.getverticecount());
+                    }
+
+                    // left face
+                    if (!block[x][y][z - 1]) {
+                        addQuad(m_mesh, 1, 0, 4, 5, m_mesh.getverticecount());
+                    }
+                }
+
+            }
+        }
+    }
+
+    auto gameobject = SceneManager::add("Chunck[0]");
+    gameobject->addComponent<MeshRender>(m_mesh);
+}
+
 void Game::Update() {
     #if !IS_GAME
     mEditorController.OnUpdate();
     #endif
+}
+
+void Game::Render() {
 }
 
 #if !IS_GAME
@@ -962,3 +1071,4 @@ void Game::ProgressLoad() {
 }
 
 #endif
+

@@ -1,4 +1,6 @@
 #include "renderManager.h"
+
+#include "objectManager.h"
 #include "gameObject.h"
 
 #include "component/cameraComponent.h"
@@ -12,6 +14,8 @@
 
 std::unique_ptr<Octree> RenderManager::m_octree = nullptr;
 
+std::vector<GameObject*> RenderManager::m_objects;
+
 Shader* RenderManager::m_shaderModel = nullptr;
 
 u32 RenderManager::drawBatchinCount = 0;
@@ -21,88 +25,60 @@ u32 RenderManager::drawCount = 0;
 
 Frustum RenderManager::m_frustum;
 
+
 void RenderManager::Initialize() {
     m_shaderModel = Resources::Load<Shader>(Filesystem::getpublic(Filesystem::eShader).string() + "/model/default3D", [](Shader*shader){
         shader->RegisterUniform("projection", 1, Shader::eMAT4x4);
         shader->RegisterUniform("view", 1, Shader::eMAT4x4);
+        shader->RegisterUniform("model", 1, Shader::eMAT4x4);
 
         shader->RegisterUniform("m_texture", 1, Shader::eINT);
     });
 }
 
 void RenderManager::Process() {
-    /*if (!m_shaderModel->isvalid()) return;
+    m_objects.clear();
 
-    drawBatchinCount = 0;
-    drawCallCount = 0;
-    drawCount = 0;
+    auto& camera = CameraComponent::MainCamera();
 
-    auto& batch = BatchedGeometry::m_batchins;
+    m_frustum.CalculateFrustum(camera.getperspesctive() * camera.getviewmatrix());
 
-    m_octree = std::make_unique<Octree>(Vector3::zero, Vector3(100, 100, 100));
-
-    CameraComponent& cameraComponent = CameraComponent::MainCamera();
-
-    m_frustum.CalculateFrustum(cameraComponent.getviewmatrix() * cameraComponent.getperspesctive());
-
-    for (auto& b : batch) {
-        auto& batchedGeometry = b.second;
-
-        auto bufferManager = batchedGeometry->getBufferManager();
-        auto& mesh = batchedGeometry->m_mesh;
-
-        std::vector<Vertex3D> vertices;
-        std::vector<u32> indices;
-        u32 vertexCount = 0;
-
-        for (const auto& object : batchedGeometry->getObjects()) {
-            auto& meshRender = object->getComponent<MeshRender>();
-            auto& transform = object->getComponent<Transform>();
-
-            auto& boundBox = meshRender.m_boundBox;
-
-            Matrix4x4 model = transform.getglobalmatrix();
-
-            if (!m_frustum.IsCubeInFrustumOOBB(boundBox.min, boundBox.max, model)) {
-                continue;
-            }
-
-            Vector3 t, s;
-            Quaternion r;
-
-            model.decompose(s, r, t);
-
-            m_octree->insert(t);
+    for (auto& object : ObjectManager::getobjects()) {
+        if (!object->hasComponent<MeshRender>()) {
+            continue;
         }
-    }*/
+
+        auto& meshRender = object->getComponent<MeshRender>();
+        auto& transform = object->getComponent<Transform>();
+
+        auto& boundBox = meshRender.getBoundBox();
+        auto& model = transform.getglobalmatrix();
+
+        // if (!m_frustum.IsCubeInFrustumOOBB(boundBox.min, boundBox.max, model)) {
+        //     continue;
+        // }
+        m_objects.push_back(object.get());
+    }
 }
 
 
 
 void RenderManager::Renderer() {
-    /*if (!m_octree) return;
-    m_octree->render();
-    */
-    if (!m_shaderModel->isvalid()) return;
+    if (!m_shaderModel->isvalid() || m_objects.empty()) return;
 
-    drawBatchinCount = 0;
-    drawCallCount = 0;
-    drawCount = 0;
-
-    auto& batchedGeometry = BatchedGeometry::m_batchins;
-
-    CameraComponent& cameraComponent = CameraComponent::MainCamera();
+    auto& camera = CameraComponent::MainCamera();
 
     m_shaderModel->bind();
-    m_shaderModel->setUniform("projection", cameraComponent.getperspesctive());
-    m_shaderModel->setUniform("view", cameraComponent.getviewmatrix());
+    m_shaderModel->setUniform("projection", camera.getperspesctive());
+    m_shaderModel->setUniform("view", camera.getviewmatrix());
 
-    m_frustum.CalculateFrustum(cameraComponent.getviewmatrix() * cameraComponent.getperspesctive());
+    for (const auto& object : m_objects) {
+        auto& transform = object->getComponent<Transform>();
+        auto& meshRender = object->getComponent<MeshRender>();
 
-    for (auto& batch : batchedGeometry) {
-        auto& batchedGeometry = batch.second;
+        m_shaderModel->setUniform("model", transform.getglobalmatrix());
 
-        batchedGeometry->render(m_frustum, m_shaderModel);
+        meshRender.draw();
     }
 }
 
