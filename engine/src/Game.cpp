@@ -181,8 +181,9 @@ Game::Game() : objectselected(nullptr), FPSColor(255, 255, 255, 255) {
 
     // m_filmbox->destroy();
 
-    // GeneRateVoxel(16, 16, 16);
+    GeneRateVoxel(16, 16, 16);
 
+    /*
     Mesh m_mesh("Cube");
     m_mesh.addvertex(Vector3( 1.0f, -1.0f, -1.0f));
     m_mesh.addvertex(Vector3( 1.0f,  1.0f, -1.0f));
@@ -209,6 +210,7 @@ Game::Game() : objectselected(nullptr), FPSColor(255, 255, 255, 255) {
 
     auto cube = SceneManager::add("Cube");
     cube->addComponent<MeshRender>(m_mesh);
+    */
 
 
     #if !IS_GAME
@@ -224,76 +226,150 @@ Game::Game() : objectselected(nullptr), FPSColor(255, 255, 255, 255) {
     #endif
 }
 
-Vector3 vertice[8] {
-    {-1,  1, -1}, {-1,  1,  1},
-    { 1,  1,  1}, { 1,  1, -1},
-    {-1, -1, -1}, {-1, -1,  1},
-    { 1, -1,  1}, { 1, -1,  1}
+std::array<Vertex3D, 8> vertices {
+    Vertex3D(Vector3( 1.0f, -1.0f, -1.0f), Vector3( 1.0f, 0.0f, 0.0f)),
+    Vertex3D(Vector3( 1.0f,  1.0f, -1.0f), Vector3( 1.0f, 0.0f, 0.0f)),
+    Vertex3D(Vector3( 1.0f, -1.0f,  1.0f), Vector3( 1.0f, 0.0f, 0.0f)),
+    Vertex3D(Vector3( 1.0f,  1.0f,  1.0f), Vector3( 1.0f, 0.0f, 0.0f)),
+    Vertex3D(Vector3(-1.0f, -1.0f, -1.0f), Vector3(-1.0f, 0.0f, 0.0f)),
+    Vertex3D(Vector3(-1.0f,  1.0f, -1.0f), Vector3(-1.0f, 0.0f, 0.0f)),
+    Vertex3D(Vector3(-1.0f, -1.0f,  1.0f), Vector3(-1.0f, 0.0f, 0.0f)),
+    Vertex3D(Vector3(-1.0f,  1.0f,  1.0f), Vector3(-1.0f, 0.0f, 0.0f))
 };
 
-void addQuad(Mesh& mesh, u32 ai, u32 bi, u32 ci, u32 di, u32 i) {
-    mesh.addvertex(vertice[ai]);
-    mesh.addvertex(vertice[bi]);
-    mesh.addvertex(vertice[ci]);
-    mesh.addvertex(vertice[di]);
+std::vector<u32> indices = {
+    // Top Face
+    1, 2, 0,
+    3, 6, 2,
 
-    mesh.addtriangle(i, i + 1, i + 2);
-    mesh.addtriangle(i, i + 2, i + 3);
-}
+    // Bottom Face
+    7, 4, 6,
+    5, 0, 4,
 
-void Game::GeneRateVoxel(u32 width, u32 height, u32 depth) {
-    bool block[width][height][depth];
-    for (int x=0;x<width;x++) {
-        for (int y=0;y<height;y++) {
-            for (int z=0;z<depth;z++) {
-                block[x][y][z] = SimplexNoise::noise(x, y, z) > 0.0f ? true : false;
+    // Front Face
+    6, 0, 2,
+    3, 5, 7,
+
+    // Back Face
+    1, 3, 2,
+    3, 7, 6,
+
+    // Right Face
+    7, 5, 4,
+    5, 1, 0,
+
+    // Left Face
+    6, 4, 0,
+    3, 1, 5
+};
+
+void Game::GeneRateVoxel(int width, int height, int depth) {
+    bool block[16][16][16];
+
+    auto noise = std::make_unique<SimplexNoise>(0.5f, 1.0f, 1.0f, 1.5f);
+    
+    for (int x = 0; x < width; x++) {
+        for (int y = 0; y < height; y++) {
+            for (int z = 0; z < depth; z++) {
+                block[x][y][z] = noise->noise(x, y, z) > 0 ? true : false;
             }
         }
     }
 
     Mesh m_mesh;
 
-    for (int x=0;x<width;x++) {
-        for (int y=0;y<height;y++) {
-            for (int z=0;z<depth;z++) {
-                if (!block[x][y][z]) {
-                    // top face
-                    if (!block[x][y + 1][z]) {
-                        addQuad(m_mesh, 0, 1, 2, 3, m_mesh.getverticecount());
+    for (int x = 0; x < width; x++) {
+        for (int y = 0; y < height; y++) {
+            for (int z = 0; z < depth; z++) {
+                if (block[x][y][z]) {
+                    Vector3 position(x, y, z);
+
+                    // Top face
+                    if (!block[x][y + 1][z] || x < 0 || x >= width || (y + 1) < 0 || (y + 1) >= height || z < 0 || z >= height) {
+                        m_mesh.addvertex(Vertex3D(position + Vector3(-1.0f, 1.0f, -1.0f), Vector3(0.0f, 1.0f, 0.0f))); // 0
+                        m_mesh.addvertex(Vertex3D(position + Vector3( 1.0f, 1.0f, -1.0f), Vector3(0.0f, 1.0f, 0.0f)));  // 1
+                        m_mesh.addvertex(Vertex3D(position + Vector3( 1.0f, 1.0f,  1.0f), Vector3(0.0f, 1.0f, 0.0f)));   // 2
+                        m_mesh.addvertex(Vertex3D(position + Vector3(-1.0f, 1.0f,  1.0f), Vector3(0.0f, 1.0f, 0.0f)));  // 3
+
+                        u32 baseIndex = m_mesh.getverticecount() - 4;
+                        m_mesh.addtriangle(baseIndex, baseIndex + 2, baseIndex + 1);
+                        m_mesh.addtriangle(baseIndex, baseIndex + 3, baseIndex + 2);
                     }
 
-                    // bottom face
-                    if (!block[x][y - 1][z]) {
-                        addQuad(m_mesh, 7, 6, 5, 4, m_mesh.getverticecount());
+                    // Bottom face
+                    if (!block[x][y - 1][z] || x < 0 || x >= width || (y - 1) < 0 || (y - 1) >= height || z < 0 || z >= height) {
+                        m_mesh.addvertex(Vertex3D(position + Vector3(-1.0f, -1.0f,  1.0f), Vector3(0.0f, -1.0f, 0.0f))); // 4
+                        m_mesh.addvertex(Vertex3D(position + Vector3( 1.0f, -1.0f,  1.0f), Vector3(0.0f, -1.0f, 0.0f)));  // 5
+                        m_mesh.addvertex(Vertex3D(position + Vector3( 1.0f, -1.0f, -1.0f), Vector3(0.0f, -1.0f, 0.0f))); // 6
+                        m_mesh.addvertex(Vertex3D(position + Vector3(-1.0f, -1.0f, -1.0f), Vector3(0.0f, -1.0f, 0.0f))); // 7
+
+                        u32 baseIndex = m_mesh.getverticecount() - 4;
+                        m_mesh.addtriangle(baseIndex, baseIndex + 2, baseIndex + 1);
+                        m_mesh.addtriangle(baseIndex, baseIndex + 3, baseIndex + 2);
                     }
 
-                    // front face
-                    if (!block[x + 1][y][z]) {
-                        addQuad(m_mesh, 2, 1, 5, 6, m_mesh.getverticecount());
+                    // Front face
+                    if (!block[x + 1][y][z] || (x + 1) < 0 || (x + 1) >= width || y < 0 || y >= height || z < 0 || z >= height) {
+                        m_mesh.addvertex(Vertex3D(position + Vector3(1.0f, -1.0f, -1.0f), Vector3(1.0f, 0.0f, 0.0f))); // 8
+                        m_mesh.addvertex(Vertex3D(position + Vector3(1.0f, 1.0f, -1.0f), Vector3(1.0f, 0.0f, 0.0f)));  // 9
+                        m_mesh.addvertex(Vertex3D(position + Vector3(1.0f, 1.0f, 1.0f), Vector3(1.0f, 0.0f, 0.0f)));   // 10
+                        m_mesh.addvertex(Vertex3D(position + Vector3(1.0f, -1.0f, 1.0f), Vector3(1.0f, 0.0f, 0.0f)));  // 11
+
+                        u32 baseIndex = m_mesh.getverticecount() - 4;
+                        m_mesh.addtriangle(baseIndex, baseIndex + 1, baseIndex + 2);
+                        m_mesh.addtriangle(baseIndex, baseIndex + 2, baseIndex + 3);
                     }
 
-                    // back face
-                    if (!block[x -1][y][z]) {
-                        addQuad(m_mesh, 0, 3, 7, 4, m_mesh.getverticecount());
+                    // Back face
+                    if (!block[x - 1][y][z] || (x - 1) < 0 || (x - 1) >= width || y < 0 || y >= height || z < 0 || z >= height) {
+                        m_mesh.addvertex(Vertex3D(position + Vector3(-1.0f, -1.0f, -1.0f), Vector3(-1.0f, 0.0f, 0.0f))); // 12
+                        m_mesh.addvertex(Vertex3D(position + Vector3(-1.0f, 1.0f, -1.0f), Vector3(-1.0f, 0.0f, 0.0f))); // 13
+                        m_mesh.addvertex(Vertex3D(position + Vector3(-1.0f, 1.0f, 1.0f), Vector3(-1.0f, 0.0f, 0.0f))); // 14
+                        m_mesh.addvertex(Vertex3D(position + Vector3(-1.0f, -1.0f, 1.0f), Vector3(-1.0f, 0.0f, 0.0f))); // 15
+
+                        u32 baseIndex = m_mesh.getverticecount() - 4;
+                        m_mesh.addtriangle(baseIndex, baseIndex + 2, baseIndex + 1);
+                        m_mesh.addtriangle(baseIndex, baseIndex + 3, baseIndex + 2);
                     }
 
-                    // right face
-                    if (!block[x][y][z + 1]) {
-                        addQuad(m_mesh, 3, 2, 6, 7, m_mesh.getverticecount());
+                    // Right face
+                    if (!block[x][y][z + 1] || x < 0 || x >= width || y < 0 || y >= height || (z + 1) < 0 || (z + 1) >= height) {
+                        m_mesh.addvertex(Vertex3D(position + Vector3(1.0f, -1.0f, 1.0f), Vector3(0.0f, 0.0f, 1.0f))); // 16
+                        m_mesh.addvertex(Vertex3D(position + Vector3(1.0f, 1.0f, 1.0f), Vector3(0.0f, 0.0f, 1.0f))); // 17
+                        m_mesh.addvertex(Vertex3D(position + Vector3(-1.0f, 1.0f, 1.0f), Vector3(0.0f, 0.0f, 1.0f))); // 18
+                        m_mesh.addvertex(Vertex3D(position + Vector3(-1.0f, -1.0f, 1.0f), Vector3(0.0f, 0.0f, 1.0f))); // 19
+
+                        u32 baseIndex = m_mesh.getverticecount() - 4;
+                        m_mesh.addtriangle(baseIndex, baseIndex + 1, baseIndex + 2);
+                        m_mesh.addtriangle(baseIndex, baseIndex + 2, baseIndex + 3);
                     }
 
-                    // left face
-                    if (!block[x][y][z - 1]) {
-                        addQuad(m_mesh, 1, 0, 4, 5, m_mesh.getverticecount());
+                    // Left face
+                    if (!block[x][y][z - 1] || x < 0 || x >= width || y < 0 || y >= height || (z - 1) < 0 || (z - 1) >= height) {
+                        m_mesh.addvertex(Vertex3D(position + Vector3(1.0f, -1.0f, -1.0f), Vector3(0.0f, 0.0f, -1.0f))); // 20
+                        m_mesh.addvertex(Vertex3D(position + Vector3(1.0f, 1.0f, -1.0f), Vector3(0.0f, 0.0f, -1.0f))); // 21
+                        m_mesh.addvertex(Vertex3D(position + Vector3(-1.0f, 1.0f, -1.0f), Vector3(0.0f, 0.0f, -1.0f))); // 22
+                        m_mesh.addvertex(Vertex3D(position + Vector3(-1.0f, -1.0f, -1.0f), Vector3(0.0f, 0.0f, -1.0f))); // 23
+
+                        u32 baseIndex = m_mesh.getverticecount() - 4;
+                        m_mesh.addtriangle(baseIndex, baseIndex + 2, baseIndex + 1);
+                        m_mesh.addtriangle(baseIndex, baseIndex + 3, baseIndex + 2);
                     }
                 }
-
             }
         }
     }
 
     auto gameobject = SceneManager::add("Chunck[0]");
-    gameobject->addComponent<MeshRender>(m_mesh);
+    auto& meshRender = gameobject->addComponent<MeshRender>(m_mesh);
+
+    Material m;
+    m.albedo = {1.0f, 0.0f, 1.0f, 1.0f};
+    m.ao = 1.0f;
+    m.roughness = 0.32f;
+    m.metallic = 0.5f;
+
+    meshRender.m_materials.emplace(0, m);
 }
 
 void Game::Update() {

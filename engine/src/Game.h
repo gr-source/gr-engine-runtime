@@ -11,7 +11,7 @@ class Game {
 public:
     Game();
 
-    void GeneRateVoxel(u32 width, u32 height, u32 depth);
+    void GeneRateVoxel(int width, int height, int depth);
     
     void Update();
 

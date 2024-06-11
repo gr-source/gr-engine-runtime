@@ -29,6 +29,9 @@ MeshRender::MeshRender(const Mesh &mesh) : m_outmesh(mesh), m_vertexArray(nullpt
     grr::gVertexArray::SetBufferUpdate(m_indexVBO, 0, mesh.getverticecount() * sizeof(Vertex3D), mesh.getverticedata());
 
     grr::gVertexArray::SetAttrib(0, 3, sizeof(Vertex3D), reinterpret_cast<const void*>(offsetof(Vertex3D, position)));
+    grr::gVertexArray::SetAttrib(1, 3, sizeof(Vertex3D), reinterpret_cast<const void*>(offsetof(Vertex3D, normal)));
+    grr::gVertexArray::SetAttrib(2, 2, sizeof(Vertex3D), reinterpret_cast<const void*>(offsetof(Vertex3D, uv)));
+    grr::gVertexArray::SetAttrib(3, 1, sizeof(Vertex3D), reinterpret_cast<const void*>(offsetof(Vertex3D, materialIndex)));
 
     m_vertexArray->unbind();
 }

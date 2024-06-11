@@ -1,8 +1,3 @@
 name: default
-object Plane
-object Beta_Joints
-object Beta_Surface
-object Warrok
-object Cube
-object Cube.001
+object Chunck[0]
 object MainCamera

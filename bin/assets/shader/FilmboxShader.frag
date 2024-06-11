@@ -61,7 +61,7 @@ void main() {
     vec3 albedo     = materials[m_materialIndex].albedo.xyz;
     float roughness = materials[m_materialIndex].params.x;
     float metallic  = materials[m_materialIndex].params.y;
-    float ao        = materials[m_materialIndex].params.z;
+    float ao        = matereFLOATials[m_materialIndex].params.z;
 
     vec3 normal     = m_normal;
 

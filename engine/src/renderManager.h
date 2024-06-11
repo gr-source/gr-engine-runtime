@@ -33,4 +33,6 @@ private:
     static Frustum m_frustum;
 
     static void SetupMaterial(Shader* shader, std::unordered_map<u32, Material>& materials);
+    
+    static void SetupLight(Shader* shader);
 };
