@@ -77,6 +77,8 @@ private:
 
     void OnPropertyLightComponent(LightComponent* lightComponent);
 
+    void OnPropertyChunkController(ChunkController* chunkController);
+
     void TextureInfo(Texture*& texture);
 
     void MenuAdd();

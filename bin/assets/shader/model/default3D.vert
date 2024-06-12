@@ -17,11 +17,11 @@ void main() {
     vec4 worldPos = model * vec4(in_pos, 1.0);
     vec4 worldNorm = model * vec4(in_normal, 1.0);
 
-    gl_Position = projection * view * worldPos;
-
     u_fragPos = worldPos.xyz;
 
     u_index = in_index;
 
-    u_normal = worldNorm.xyz;
+    u_normal = mat3(model) * in_normal;
+
+    gl_Position = projection * view * worldPos;
 }

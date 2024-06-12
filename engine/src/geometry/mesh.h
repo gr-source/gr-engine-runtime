@@ -47,6 +47,8 @@ public:
 
     u32* findMaterial(u32 index);
 
+    void clear();
+
 protected:
     std::string m_name;
 

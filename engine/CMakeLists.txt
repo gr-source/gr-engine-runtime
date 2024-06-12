@@ -70,6 +70,7 @@ set(engine_src
     src/component/boxCollider.cpp
     src/component/meshCollider.cpp
     src/component/lightComponent.cpp
+    src/component/chunkController.cpp
     src/component/cameraComponent.cpp
     src/component/playerController.cpp
     src/component/cameraController.cpp
@@ -161,6 +162,7 @@ set(engine_hdr
     src/component/boxCollider.h
     src/component/meshCollider.h
     src/component/lightComponent.h
+    src/component/chunkController.h
     src/component/cameraComponent.h
     src/component/playerController.h
     src/component/cameraController.h

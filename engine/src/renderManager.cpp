@@ -69,9 +69,9 @@ void RenderManager::Process() {
         auto& boundBox = meshRender.getBoundBox();
         auto& model = transform.getglobalmatrix();
 
-        // if (!m_frustum.IsCubeInFrustumOOBB(boundBox.min, boundBox.max, model)) {
-        //     continue;
-        // }
+        if (!m_frustum.IsCubeInFrustumOOBB(boundBox.min, boundBox.max, model)) {
+            continue;
+        }
         m_objects.push_back(object.get());
     }
 }
@@ -89,8 +89,8 @@ void RenderManager::Renderer() {
     SetupLight(m_shaderModel);
 
     for (const auto& object : m_objects) {
-        auto& transform = object->getComponent<Transform>();
         auto& meshRender = object->getComponent<MeshRender>();
+        auto& transform = object->getComponent<Transform>();
 
         m_shaderModel->setUniform("model", transform.getglobalmatrix());
 
@@ -108,11 +108,6 @@ void RenderManager::SetupMaterial(Shader *shader, std::unordered_map<u32, Materi
         shader->setUniform("m_material[" + std::to_string(index) + "].albedo", material.albedo);
         shader->setUniform("m_material[" + std::to_string(index) + "].params", Vector3(material.roughness, material.metallic, material.ao));
     }
-
-    // if (!materials[0].texture[TexturePBR::ALBEDO]->isvalid()) return;
-    
-    // materials[0].texture[TexturePBR::ALBEDO]->bind();
-    // shader->setUniform("m_texture", 0);
 }
 
 void RenderManager::SetupLight(Shader *shader) {

@@ -77,3 +77,8 @@ u32 *Mesh::findMaterial(u32 index) {
     }
     return nullptr;
 }
+
+void Mesh::clear() {
+    m_indices.clear();
+    m_vertices.clear();
+}

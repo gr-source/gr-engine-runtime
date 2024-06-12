@@ -2,6 +2,24 @@
 #include "Transform.h"
 #include "../bufferManager.h"
 
+MeshRender::MeshRender() : m_vertexArray(nullptr), m_indexEBO(-1), m_indexVBO(-1) {
+    m_indexEBO = grr::gVertexArray::CreateBuffer(grr::BufferType_EBO, 1024, sizeof(u32));
+    m_indexVBO = grr::gVertexArray::CreateBuffer(grr::BufferType_VBO, 1024, sizeof(Vertex3D));
+
+    m_vertexArray = grr::gVertexArray::Create();
+    m_vertexArray->bind();
+
+    grr::gVertexArray::Bind(m_indexEBO);
+    grr::gVertexArray::Bind(m_indexVBO);
+
+    grr::gVertexArray::SetAttrib(0, 3, sizeof(Vertex3D), reinterpret_cast<const void*>(offsetof(Vertex3D, position)));
+    grr::gVertexArray::SetAttrib(1, 3, sizeof(Vertex3D), reinterpret_cast<const void*>(offsetof(Vertex3D, normal)));
+    grr::gVertexArray::SetAttrib(2, 2, sizeof(Vertex3D), reinterpret_cast<const void*>(offsetof(Vertex3D, uv)));
+    grr::gVertexArray::SetAttrib(3, 1, sizeof(Vertex3D), reinterpret_cast<const void*>(offsetof(Vertex3D, materialIndex)));
+
+    m_vertexArray->unbind();
+}
+
 MeshRender::MeshRender(const Mesh &mesh) : m_outmesh(mesh), m_vertexArray(nullptr), m_indexEBO(-1), m_indexVBO(-1) {
     m_boundBox.min = Vector3(std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), std::numeric_limits<float>::max());
     m_boundBox.max = Vector3(std::numeric_limits<float>::min(), std::numeric_limits<float>::min(), std::numeric_limits<float>::min());
@@ -54,43 +72,11 @@ const BoundBox &MeshRender::getBoundBox() const {
     return m_boundBox;
 }
 
-void MeshRender::draw() {
-    m_vertexArray->bind();
-    
-    grr::gVertexArray::DrawElements(grr::PrimitiveType_Triangles, m_outmesh.getindicecount(), nullptr);
+Mesh &MeshRender::getMesh() {
+    return m_outmesh;
 }
 
-/*
-void MeshRender::OnInit() {
-    std::hash<std::string> hashFunc;
-    std::size_t hash{0};
-
-    for (const auto& material : m_materials) {
-        hash ^= hashFunc(material.second.getname());
-    }
-
-    auto it = BatchedGeometry::m_batchins.find(hash);
-    if (it != BatchedGeometry::m_batchins.end()) {
-        auto& batch = BatchedGeometry::m_batchins[hash];
-        batch->add(entity->m_gameobject);
-        return;
-    }
-
-    u32 verticeCount = 0;
-
-    for (const auto& mesh : m_meshes) {
-        const auto& vertices = mesh.getvertices();
-        const auto& indices = mesh.getindices();
-
-        m_outmesh.m_vertices.insert(m_outmesh.m_vertices.end(), vertices.begin(), vertices.end());
-
-        for (const auto& index : indices) {
-            m_outmesh.addindex(index + verticeCount);
-        }
-
-        verticeCount += vertices.size();
-    }
-
+void MeshRender::buildMesh() {
     m_boundBox.min = Vector3(std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), std::numeric_limits<float>::max());
     m_boundBox.max = Vector3(std::numeric_limits<float>::min(), std::numeric_limits<float>::min(), std::numeric_limits<float>::min());
     
@@ -104,16 +90,23 @@ void MeshRender::OnInit() {
         m_boundBox.max.z = std::max(m_boundBox.max.z, vertex.position.z);
     }
 
+    m_vertexArray->bind();
 
-    BatchedGeometry::m_batchins.emplace(hash, std::make_unique<BatchedGeometry>(m_outmesh));
-    auto& batch = BatchedGeometry::m_batchins[hash];
-    batch->m_materials.insert(m_materials.begin(), m_materials.end());
+    grr::gVertexArray::Bind(m_indexEBO);
+    grr::gVertexArray::UpdateResize(m_indexEBO, m_outmesh.getindicecount(), sizeof(u32));
+    grr::gVertexArray::SetBufferUpdate(m_indexEBO, 0, m_outmesh.getindicecount() * sizeof(u32), m_outmesh.getindicedata());
 
-    batch->add(entity->m_gameobject);
+    grr::gVertexArray::Bind(m_indexVBO);
+    grr::gVertexArray::UpdateResize(m_indexVBO, m_outmesh.getverticecount(), sizeof(Vertex3D));
+    grr::gVertexArray::SetBufferUpdate(m_indexVBO, 0, m_outmesh.getverticecount() * sizeof(Vertex3D), m_outmesh.getverticedata());
 
-    m_meshes.clear();
+    m_vertexArray->unbind();
 }
-*/
 
+void MeshRender::draw() {
+    m_vertexArray->bind();
+    
+    grr::gVertexArray::DrawElements(grr::PrimitiveType_Triangles, m_outmesh.getindicecount(), nullptr);
+}
 
 

@@ -14,10 +14,15 @@
 
 class MeshRender : public Component {
 public:
+    MeshRender();
     MeshRender(const Mesh &mesh);
     ~MeshRender();
 
     const BoundBox& getBoundBox() const;
+
+    Mesh& getMesh();
+
+    void buildMesh();
 
     void draw();
 

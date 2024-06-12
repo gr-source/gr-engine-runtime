@@ -24,6 +24,7 @@
 #include "component/playerController.h"
 #include "component/cameraController.h"
 #include "component/cameraComponent.h"
+#include "component/chunkController.h"
 #include "component/lightComponent.h"
 #include "component/meshCollider.h"
 #include "component/boxCollider.h"
@@ -97,122 +98,7 @@ std::unordered_map<IconType, Texture*> iconsUI;
 EditorController mEditorController;
 #endif
 
-/*
-GameObject& GenGameObject(const FbxNode* node, bool local) {
-    GameObject* gameObject = nullptr;
-
-    if (local) {
-        gameObject = &ObjectManager::add(node->getname());
-    } else {
-        gameObject = SceneManager::add(node->getname());
-    }
-
-    Transform& transform = gameObject->getComponent<Transform>();
-
-    transform.scale = node->scale;
-    transform.rotation = node->rotation;
-    transform.position = node->position;
-
-    if (node->hasmesh()) {
-        gameObject->addComponent<MeshRender>(node->getmeshs(), node->getMaterials());
-    }
-    return *gameObject;
-}
-
-void CreateChunk(const Vector3& position, u8 id, const FbxNode* node) {
-    auto& scale = node->scale;
-    
-    auto parent = SceneManager::add("Chunk[" + std::to_string(id) + "]");
-
-    auto& t = parent->gettransform();
-    t.position = position + Vector3((16.0f * scale.x), 0.0f, (16.0f * scale.z));
-
-    for (u8 x=0;x<16;x++) {
-        for (u8 z=0;z<16;z++) {
-            auto gameObject = &ObjectManager::add("Chunk[" + std::to_string(x) + "][" + std::to_string(z) + "]");
-            
-            auto& transform = gameObject->gettransform();
-            transform.position += Vector3(t.position.x - (x * (scale.x * 2.0f)), 0.0f, t.position.z - (z * (scale.x * 2.0f)));
-            transform.scale = scale;
-
-            transform.parent = &t;
-
-            if (node->hasmesh()) {
-                gameObject->addComponent<MeshRender>(node->getmeshs(), node->getMaterials());
-            }
-
-            t.addparent(gameObject);
-        }
-    }
-}
-
-void ReaderNode(const FbxNode* node, Transform* transform) {
-    // int index = 0;
-    // for (int x = 0; x <= 160; x += 16) {
-    //     for (int z = 0; z <= 160; z += 16) {
-    //         CreateChunk(Vector3(x, 1.0f, z), index++, node);
-    //     }
-    // }
-
-    auto& gameobject = GenGameObject(node, transform != nullptr);
-
-
-    if (transform) {
-        transform->addparent(&gameobject);
-    }
-
-    for (const auto& child : node->children) {
-        ReaderNode(&child, &gameobject.gettransform());
-    }
-}
-
-void SceneLoaded(const FbxScene* scene) {
-    const FbxNode* rootNode = scene->getRoot();
-
-    for (const auto& child : rootNode->getchildren()) {
-        ReaderNode(&child, nullptr);
-    }
-}
-*/
-
 Game::Game() : objectselected(nullptr), FPSColor(255, 255, 255, 255) {
-    // Filmbox* m_filmbox = Filmbox::Load("/home/grsource/Documentos/filmbox/mine.fbx");
-    // SceneLoaded(m_filmbox->getScene());
-
-    // m_filmbox->destroy();
-
-    GeneRateVoxel(16, 16, 16);
-
-    /*
-    Mesh m_mesh("Cube");
-    m_mesh.addvertex(Vector3( 1.0f, -1.0f, -1.0f));
-    m_mesh.addvertex(Vector3( 1.0f,  1.0f, -1.0f));
-    m_mesh.addvertex(Vector3( 1.0f, -1.0f,  1.0f));
-    m_mesh.addvertex(Vector3( 1.0f,  1.0f,  1.0f));
-    m_mesh.addvertex(Vector3(-1.0f, -1.0f, -1.0f));
-    m_mesh.addvertex(Vector3(-1.0f,  1.0f, -1.0f));
-    m_mesh.addvertex(Vector3(-1.0f, -1.0f,  1.0f));
-    m_mesh.addvertex(Vector3(-1.0f,  1.0f,  1.0f));
-
-    m_mesh.addtriangle(1, 2, 0);
-    m_mesh.addtriangle(3, 6, 2);
-    m_mesh.addtriangle(7, 4, 6);
-    m_mesh.addtriangle(5, 0, 4);
-    m_mesh.addtriangle(6, 0, 2);
-    m_mesh.addtriangle(3, 5, 7);
-    m_mesh.addtriangle(1, 3, 2);
-    m_mesh.addtriangle(3, 7, 6);
-    m_mesh.addtriangle(7, 5, 4);
-    m_mesh.addtriangle(5, 1, 0);
-    m_mesh.addtriangle(6, 4, 0);
-    m_mesh.addtriangle(3, 1, 5);
-
-
-    auto cube = SceneManager::add("Cube");
-    cube->addComponent<MeshRender>(m_mesh);
-    */
-
-
     #if !IS_GAME
     m_io = nullptr;
     m_guizmoOperation = ImGuizmo::TRANSLATE;
@@ -224,152 +110,6 @@ Game::Game() : objectselected(nullptr), FPSColor(255, 255, 255, 255) {
 
     Settings::IsGameRunning = false;
     #endif
-}
-
-std::array<Vertex3D, 8> vertices {
-    Vertex3D(Vector3( 1.0f, -1.0f, -1.0f), Vector3( 1.0f, 0.0f, 0.0f)),
-    Vertex3D(Vector3( 1.0f,  1.0f, -1.0f), Vector3( 1.0f, 0.0f, 0.0f)),
-    Vertex3D(Vector3( 1.0f, -1.0f,  1.0f), Vector3( 1.0f, 0.0f, 0.0f)),
-    Vertex3D(Vector3( 1.0f,  1.0f,  1.0f), Vector3( 1.0f, 0.0f, 0.0f)),
-    Vertex3D(Vector3(-1.0f, -1.0f, -1.0f), Vector3(-1.0f, 0.0f, 0.0f)),
-    Vertex3D(Vector3(-1.0f,  1.0f, -1.0f), Vector3(-1.0f, 0.0f, 0.0f)),
-    Vertex3D(Vector3(-1.0f, -1.0f,  1.0f), Vector3(-1.0f, 0.0f, 0.0f)),
-    Vertex3D(Vector3(-1.0f,  1.0f,  1.0f), Vector3(-1.0f, 0.0f, 0.0f))
-};
-
-std::vector<u32> indices = {
-    // Top Face
-    1, 2, 0,
-    3, 6, 2,
-
-    // Bottom Face
-    7, 4, 6,
-    5, 0, 4,
-
-    // Front Face
-    6, 0, 2,
-    3, 5, 7,
-
-    // Back Face
-    1, 3, 2,
-    3, 7, 6,
-
-    // Right Face
-    7, 5, 4,
-    5, 1, 0,
-
-    // Left Face
-    6, 4, 0,
-    3, 1, 5
-};
-
-void Game::GeneRateVoxel(int width, int height, int depth) {
-    bool block[16][16][16];
-
-    auto noise = std::make_unique<SimplexNoise>(0.5f, 1.0f, 1.0f, 1.5f);
-    
-    for (int x = 0; x < width; x++) {
-        for (int y = 0; y < height; y++) {
-            for (int z = 0; z < depth; z++) {
-                block[x][y][z] = noise->noise(x, y, z) > 0 ? true : false;
-            }
-        }
-    }
-
-    Mesh m_mesh;
-
-    for (int x = 0; x < width; x++) {
-        for (int y = 0; y < height; y++) {
-            for (int z = 0; z < depth; z++) {
-                if (block[x][y][z]) {
-                    Vector3 position(x, y, z);
-
-                    // Top face
-                    if (!block[x][y + 1][z] || x < 0 || x >= width || (y + 1) < 0 || (y + 1) >= height || z < 0 || z >= height) {
-                        m_mesh.addvertex(Vertex3D(position + Vector3(-1.0f, 1.0f, -1.0f), Vector3(0.0f, 1.0f, 0.0f))); // 0
-                        m_mesh.addvertex(Vertex3D(position + Vector3( 1.0f, 1.0f, -1.0f), Vector3(0.0f, 1.0f, 0.0f)));  // 1
-                        m_mesh.addvertex(Vertex3D(position + Vector3( 1.0f, 1.0f,  1.0f), Vector3(0.0f, 1.0f, 0.0f)));   // 2
-                        m_mesh.addvertex(Vertex3D(position + Vector3(-1.0f, 1.0f,  1.0f), Vector3(0.0f, 1.0f, 0.0f)));  // 3
-
-                        u32 baseIndex = m_mesh.getverticecount() - 4;
-                        m_mesh.addtriangle(baseIndex, baseIndex + 2, baseIndex + 1);
-                        m_mesh.addtriangle(baseIndex, baseIndex + 3, baseIndex + 2);
-                    }
-
-                    // Bottom face
-                    if (!block[x][y - 1][z] || x < 0 || x >= width || (y - 1) < 0 || (y - 1) >= height || z < 0 || z >= height) {
-                        m_mesh.addvertex(Vertex3D(position + Vector3(-1.0f, -1.0f,  1.0f), Vector3(0.0f, -1.0f, 0.0f))); // 4
-                        m_mesh.addvertex(Vertex3D(position + Vector3( 1.0f, -1.0f,  1.0f), Vector3(0.0f, -1.0f, 0.0f)));  // 5
-                        m_mesh.addvertex(Vertex3D(position + Vector3( 1.0f, -1.0f, -1.0f), Vector3(0.0f, -1.0f, 0.0f))); // 6
-                        m_mesh.addvertex(Vertex3D(position + Vector3(-1.0f, -1.0f, -1.0f), Vector3(0.0f, -1.0f, 0.0f))); // 7
-
-                        u32 baseIndex = m_mesh.getverticecount() - 4;
-                        m_mesh.addtriangle(baseIndex, baseIndex + 2, baseIndex + 1);
-                        m_mesh.addtriangle(baseIndex, baseIndex + 3, baseIndex + 2);
-                    }
-
-                    // Front face
-                    if (!block[x + 1][y][z] || (x + 1) < 0 || (x + 1) >= width || y < 0 || y >= height || z < 0 || z >= height) {
-                        m_mesh.addvertex(Vertex3D(position + Vector3(1.0f, -1.0f, -1.0f), Vector3(1.0f, 0.0f, 0.0f))); // 8
-                        m_mesh.addvertex(Vertex3D(position + Vector3(1.0f, 1.0f, -1.0f), Vector3(1.0f, 0.0f, 0.0f)));  // 9
-                        m_mesh.addvertex(Vertex3D(position + Vector3(1.0f, 1.0f, 1.0f), Vector3(1.0f, 0.0f, 0.0f)));   // 10
-                        m_mesh.addvertex(Vertex3D(position + Vector3(1.0f, -1.0f, 1.0f), Vector3(1.0f, 0.0f, 0.0f)));  // 11
-
-                        u32 baseIndex = m_mesh.getverticecount() - 4;
-                        m_mesh.addtriangle(baseIndex, baseIndex + 1, baseIndex + 2);
-                        m_mesh.addtriangle(baseIndex, baseIndex + 2, baseIndex + 3);
-                    }
-
-                    // Back face
-                    if (!block[x - 1][y][z] || (x - 1) < 0 || (x - 1) >= width || y < 0 || y >= height || z < 0 || z >= height) {
-                        m_mesh.addvertex(Vertex3D(position + Vector3(-1.0f, -1.0f, -1.0f), Vector3(-1.0f, 0.0f, 0.0f))); // 12
-                        m_mesh.addvertex(Vertex3D(position + Vector3(-1.0f, 1.0f, -1.0f), Vector3(-1.0f, 0.0f, 0.0f))); // 13
-                        m_mesh.addvertex(Vertex3D(position + Vector3(-1.0f, 1.0f, 1.0f), Vector3(-1.0f, 0.0f, 0.0f))); // 14
-                        m_mesh.addvertex(Vertex3D(position + Vector3(-1.0f, -1.0f, 1.0f), Vector3(-1.0f, 0.0f, 0.0f))); // 15
-
-                        u32 baseIndex = m_mesh.getverticecount() - 4;
-                        m_mesh.addtriangle(baseIndex, baseIndex + 2, baseIndex + 1);
-                        m_mesh.addtriangle(baseIndex, baseIndex + 3, baseIndex + 2);
-                    }
-
-                    // Right face
-                    if (!block[x][y][z + 1] || x < 0 || x >= width || y < 0 || y >= height || (z + 1) < 0 || (z + 1) >= height) {
-                        m_mesh.addvertex(Vertex3D(position + Vector3(1.0f, -1.0f, 1.0f), Vector3(0.0f, 0.0f, 1.0f))); // 16
-                        m_mesh.addvertex(Vertex3D(position + Vector3(1.0f, 1.0f, 1.0f), Vector3(0.0f, 0.0f, 1.0f))); // 17
-                        m_mesh.addvertex(Vertex3D(position + Vector3(-1.0f, 1.0f, 1.0f), Vector3(0.0f, 0.0f, 1.0f))); // 18
-                        m_mesh.addvertex(Vertex3D(position + Vector3(-1.0f, -1.0f, 1.0f), Vector3(0.0f, 0.0f, 1.0f))); // 19
-
-                        u32 baseIndex = m_mesh.getverticecount() - 4;
-                        m_mesh.addtriangle(baseIndex, baseIndex + 1, baseIndex + 2);
-                        m_mesh.addtriangle(baseIndex, baseIndex + 2, baseIndex + 3);
-                    }
-
-                    // Left face
-                    if (!block[x][y][z - 1] || x < 0 || x >= width || y < 0 || y >= height || (z - 1) < 0 || (z - 1) >= height) {
-                        m_mesh.addvertex(Vertex3D(position + Vector3(1.0f, -1.0f, -1.0f), Vector3(0.0f, 0.0f, -1.0f))); // 20
-                        m_mesh.addvertex(Vertex3D(position + Vector3(1.0f, 1.0f, -1.0f), Vector3(0.0f, 0.0f, -1.0f))); // 21
-                        m_mesh.addvertex(Vertex3D(position + Vector3(-1.0f, 1.0f, -1.0f), Vector3(0.0f, 0.0f, -1.0f))); // 22
-                        m_mesh.addvertex(Vertex3D(position + Vector3(-1.0f, -1.0f, -1.0f), Vector3(0.0f, 0.0f, -1.0f))); // 23
-
-                        u32 baseIndex = m_mesh.getverticecount() - 4;
-                        m_mesh.addtriangle(baseIndex, baseIndex + 2, baseIndex + 1);
-                        m_mesh.addtriangle(baseIndex, baseIndex + 3, baseIndex + 2);
-                    }
-                }
-            }
-        }
-    }
-
-    auto gameobject = SceneManager::add("Chunck[0]");
-    auto& meshRender = gameobject->addComponent<MeshRender>(m_mesh);
-
-    Material m;
-    m.albedo = {1.0f, 0.0f, 1.0f, 1.0f};
-    m.ao = 1.0f;
-    m.roughness = 0.32f;
-    m.metallic = 0.5f;
-
-    meshRender.m_materials.emplace(0, m);
 }
 
 void Game::Update() {
@@ -506,7 +246,6 @@ void Game::RenderViewportUI() {
 
     if (lastSize.x != curSize.x || lastSize.y != curSize.y) {
         Settings::ViewportSize = {curSize.x, curSize.y};
-
 
         m_screenBuffer.resize({curSize.x, curSize.y});
         // m_imguibuffer.resize({curSize.x, curSize.y});
@@ -733,6 +472,7 @@ void Game::RenderPropertiUI() {
                 objectselected->RenderProperty<CameraComponent>(&Game::OnPropertyCameraComponent, this);
                 objectselected->RenderProperty<LightComponent>(&Game::OnPropertyLightComponent, this);
                 objectselected->RenderProperty<Animator>(&Game::OnPropertyAnimator, this);
+                objectselected->RenderProperty<ChunkController>(&Game::OnPropertyChunkController, this);
             }
 
             ImGui::EndTabItem();
@@ -1026,6 +766,16 @@ void Game::OnPropertyLightComponent(LightComponent *lightComponent) {
     }
 }
 
+void Game::OnPropertyChunkController(ChunkController *chunkController) {
+    if (ImGui::TreeNode("ChunkController")) {
+        if (ImGui::Button("Generate")) {
+            chunkController->BuildMesh();
+        }
+        
+        ImGui::TreePop();
+    }
+}
+
 void Game::TextureInfo(Texture *&texture) {
     bool IsOpen = true;
 
@@ -1147,4 +897,3 @@ void Game::ProgressLoad() {
 }
 
 #endif
-
