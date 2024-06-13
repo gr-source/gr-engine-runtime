@@ -23,6 +23,12 @@ int get_key_to_glfw(Input::Key key) {
         return GLFW_KEY_UP;
     case Input::KEY_DOWN:
         return GLFW_KEY_DOWN;
+    case Input::BUTTON_LAST:
+        return GLFW_MOUSE_BUTTON_LAST;
+    case Input::BUTTON_LEFT:
+        return GLFW_MOUSE_BUTTON_LEFT;
+    case Input::BUTTON_RIGHT:
+        return GLFW_MOUSE_BUTTON_RIGHT;
     case Input::BUTTON_MIDDLE:
         return GLFW_MOUSE_BUTTON_MIDDLE;
     default:
@@ -44,23 +50,23 @@ std::string Input::getKeyName(Key key) {
     #undef GET_ENUM_NAME
 }
 
-int Input::IsKeyDown(Key key) {
+const bool Input::IsKeyDown(Key key) {
     return 0;
 }
 
-int Input::IsKeyUp(Key key) {
+const bool Input::IsKeyUp(Key key) {
     return 0;
 }
 
-int Input::IsKeyPress(Key key) {
+const bool Input::IsKeyPress(Key key) {
     return GET_INSTANCE_PRESS(get_key_to_glfw(key));
 }
 
-int Input::IsMouseUp(Key button) {
-    return 0;
+const bool Input::IsMouseUp(Key button) {
+    return glfwGetMouseButton((GLFWwindow*)m_instance, get_key_to_glfw(button)) == GLFW_PRESS;
 }
 
-int Input::IsMousePress(Key button) {
+const bool Input::IsMousePress(Key button) {
     return 0;
 }
 
@@ -68,11 +74,12 @@ void Input::SetCursorPos(const Vector2& position) {
     SET_INSTANCE_MOUSE_POS(position);
 }
 
-Vector2 Input::GetCursorPos() {
+const Vector2 Input::GetCursorPos() {
     GET_INSTANCE_MOUSE_POS();
 }
 
 void Input::SetInstance(void *instance) {
     m_instance = instance;
 }
+
 

@@ -11,7 +11,9 @@
 #include "input.h"
 #include "timer.h"
 
-EditorController::EditorController() : movementSpeed(30.0f), mouseSensitivity(10.5f), elapsed(Vector2::zero) {}
+float EditorController::movementSpeed = 30.0f;
+
+EditorController::EditorController() : mouseSensitivity(10.5f), elapsed(Vector2::zero) {}
 
 void EditorController::OnUpdate() {
     static ImGuiIO& io = ImGui::GetIO();

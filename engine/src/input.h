@@ -19,30 +19,30 @@ public:
         KEY_UP = 1 << 5,
         KEY_DOWN = 1 << 6,
         KEY_SPACE = 1 << 7,
-        BUTTON_MIDDLE = 1 << 8
+        BUTTON_MIDDLE = 1 << 8,
+        BUTTON_RIGHT = 1 << 9,
+        BUTTON_LEFT = 1 << 10,
+        BUTTON_LAST = 1 << 11
     };
 
     static std::string getKeyName(Key key);
 
-    Key getKeyAction(int c);
+    static const bool IsKeyDown(Key key);
 
-    static int IsKeyDown(Key key);
+    static const bool IsKeyUp(Key key);
 
-    static int IsKeyUp(Key key);
+    static const bool IsKeyPress(Key key);
 
-    static int IsKeyPress(Key key);
+    static const bool IsMouseUp(Key button);
 
-    static int IsMouseUp(Key button);
-
-    static int IsMousePress(Key button);
-
-    static Key getMouseButton(int button);
+    static const bool IsMousePress(Key button);
 
     static void SetCursorPos(const Vector2& position);
 
-    static Vector2 GetCursorPos();
+    static const Vector2 GetCursorPos();
 
     static void SetInstance(void* instance);
-private:
+
     static void* m_instance;
+private:
 };

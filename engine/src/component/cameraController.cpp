@@ -22,6 +22,7 @@ void CameraController::OnUpdate() {
 }
 
 void CameraController::updateCursor() {
+    /*
     static Vector2 lastMousePos = Input::GetCursorPos();
     const Vector2 delta = Input::GetCursorPos() - lastMousePos;
 
@@ -33,6 +34,7 @@ void CameraController::updateCursor() {
     if (!Input::IsMousePress(Input::BUTTON_MIDDLE)) {
         Input::SetCursorPos(lastMousePos);
     }
+    */
 }
 
 void CameraController::OnCameraUpdate() {

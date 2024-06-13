@@ -22,6 +22,8 @@ public:
 
     Mesh& getMesh();
 
+    void addMaterial(u32 index, const Material& material);
+
     void buildMesh();
 
     void draw();

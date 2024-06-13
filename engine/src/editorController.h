@@ -6,7 +6,8 @@
 
 class EditorController {
 public:
-    float movementSpeed;
+    static float movementSpeed;
+    
     float mouseSensitivity;
 
     EditorController();
@@ -22,6 +23,8 @@ private:
     GameObject* m_mainCamera;
 
     Vector2 elapsed;
+
+    Vector2 start;
 
     void OnCameraUpdate();
 

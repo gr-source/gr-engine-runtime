@@ -4,15 +4,30 @@
 
 #include <iostream>
 
-class engine {
+class Engine {
 public:
-    static void OnResizeWindow(u32 width, u32 height);
+    enum EngineEvent {
+        GR_INITIALIZE = 1 << 1,
+        GR_DESTROY = 1 << 2,
+        GR_RESIZE = 1 << 3,
+        GR_KEYBOARD_DOWN = 1 << 4,
+        GR_KEYBOARD_UP = 1 << 5,
+        GR_CURSOR_POS = 1 << 6,
+        GR_MAINLOOP = 1 << 7,
+        GR_CURSOR_SCROLL = 1 << 8
+    };
+
+    static void HandleEvent(EngineEvent event, const void* data);
+
+protected:
+    static void GRWindowResize(u32 width, u32 height);
 
     static void MainLoop(std::function<void()> func);
 
-    static void Escap();
-
-    static void WindowInstance(void* instance);
+    static void GRKeyboardDown(u32 key);
+    static void GRKeyboardUp(u32 key);
+    static void GRCursorPos(float xpos, float ypos);
+    static void GRCursorScrool(float xoffset, float yoffset);
 
     static void OnInit();
 
@@ -26,7 +41,6 @@ public:
 
     static void OnDestroy();
 
-protected:
     static void RenderScene();
     
     static void MainFramebuffer();

@@ -1,13 +1,22 @@
-#include <engine.h>
 #include <settings.h>
+#include <engine.h>
+#include <input.h>
+
+#include <linux/input-event-codes.h>
 
 #include <GLFW/glfw3.h>
 
-//#define STB_IMAGE_IMPLEMENTATION
-#include <core/stb/stb_image.h>
 
 #define SCREEN_WIDTH 1024
 #define SCREEN_HEIGHT 720
+
+std::unordered_map<int, u32> m_keyMap = {
+    {GLFW_KEY_ESCAPE, KEY_ESC},
+    {GLFW_KEY_W, KEY_W},
+    {GLFW_KEY_S, KEY_S},
+    {GLFW_KEY_A, KEY_A},
+    {GLFW_KEY_D, KEY_D}
+};
 
 
 typedef GLFWwindow* Window;
@@ -42,22 +51,41 @@ void GLFWwindowclosefunCallback(GLFWwindow* window) {
 }
 
 void GLFWframebuffersizefunCallback(GLFWwindow* window, int width, int height) {
-    engine::OnResizeWindow(u32(width), u32(height));
+    const u32 scale[2]{static_cast<const u32>(width), static_cast<const u32>(height)};
+    Engine::HandleEvent(Engine::GR_RESIZE, scale);
 }
 
 void GLFWkeyfunCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
-    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
-        engine::Escap();
-    }
+    if (action == GLFW_PRESS)
+        Engine::HandleEvent(Engine::GR_KEYBOARD_DOWN, reinterpret_cast<const void*>(&m_keyMap[key]));
+    
+    if (action == GLFW_RELEASE)
+        Engine::HandleEvent(Engine::GR_KEYBOARD_UP, reinterpret_cast<const void*>(&m_keyMap[key]));
+}
+
+void GLFWcursorposfunCallback(GLFWwindow* window, double xpos, double ypos) {
+    const float pos[2] {static_cast<const float>(xpos), static_cast<const float>(ypos)};
+
+    Engine::HandleEvent(Engine::GR_CURSOR_POS, pos);
+}
+
+void GLFWscrollfunCallback(GLFWwindow* window, double xoffset, double yoffset) {
+    const float offset[2] {static_cast<const float>(xoffset), static_cast<const float>(yoffset)};
+
+    Engine::HandleEvent(Engine::GR_CURSOR_SCROLL, offset);
 }
 
 void glfwInstallCallback(Window window) {
+    glfwSetWindowCloseCallback(window, GLFWwindowclosefunCallback);
+
     glfwSetFramebufferSizeCallback(window, GLFWframebuffersizefunCallback);
     GLFWframebuffersizefunCallback(window, SCREEN_WIDTH, SCREEN_HEIGHT);
 
     glfwSetKeyCallback(window, GLFWkeyfunCallback);
 
-    glfwSetWindowCloseCallback(window, GLFWwindowclosefunCallback);
+    glfwSetCursorPosCallback(window, GLFWcursorposfunCallback);
+
+    glfwSetScrollCallback(window, GLFWscrollfunCallback);
 }
 
 int OnApplicationInit() {
@@ -74,9 +102,9 @@ int OnApplicationInit() {
         return printf("Window do not created");
     }
 
-    glfwInstallCallback(window);
-
     glfwMakeContextCurrent(window);
+
+    glfwInstallCallback(window);
 
     glfwSetWindowPos(window, 0, 0);
 
@@ -85,20 +113,18 @@ int OnApplicationInit() {
         return printf("GLEW do not created");
     }
 
-    engine::WindowInstance((void*)window);
+    Input::m_instance = window;
 
-    Settings::IsEngineRunning = true;
+    Engine::HandleEvent(Engine::GR_INITIALIZE, nullptr);
 
-    engine::OnInit();
-
-    engine::MainLoop([&]{
+    std::function<void()> func([&]() {
         glfwSwapBuffers(window);
         glfwPollEvents();
     });
-    
-    Settings::IsEngineRunning = false;
 
-    engine::OnDestroy();
+    Engine::HandleEvent(Engine::GR_MAINLOOP, &func);
+
+    Engine::HandleEvent(Engine::GR_DESTROY, nullptr);
 
     OnDestroy();
     return 0;

@@ -76,6 +76,10 @@ Mesh &MeshRender::getMesh() {
     return m_outmesh;
 }
 
+void MeshRender::addMaterial(u32 index, const Material &material) {
+    m_materials.emplace(index, material);
+}
+
 void MeshRender::buildMesh() {
     m_boundBox.min = Vector3(std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), std::numeric_limits<float>::max());
     m_boundBox.max = Vector3(std::numeric_limits<float>::min(), std::numeric_limits<float>::min(), std::numeric_limits<float>::min());

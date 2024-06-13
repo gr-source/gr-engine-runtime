@@ -1,6 +1,7 @@
 #include "engine.h"
 #include "input.h"
 #include "screen.h"
+#include "editorController.h"
 
 #include "component/MeshRender.h"
 
@@ -30,11 +31,13 @@
 #include "thread.h"
 #include "settings.h"
 
-void engine::OnResizeWindow(u32 width, u32 height) {
+#include <linux/input-event-codes.h>
+
+void Engine::GRWindowResize(u32 width, u32 height) {
     Screen::SetResolution(width, height);
 }
 
-void engine::MainLoop(std::function<void()> func) {
+void Engine::MainLoop(std::function<void()> func) {
     m_thread[0] = std::thread(OnLoader);
     m_thread[1] = std::thread(OnPhysics);
 
@@ -43,37 +46,42 @@ void engine::MainLoop(std::function<void()> func) {
         Time::deltaTime = gameStatics.updateMs = timer.SleepTick();
         Time::FPS = timer.getFPS();
 
-        engine::OnUpdate();
+        Engine::OnUpdate();
 
-        engine::OnRender();
+        Engine::OnRender();
 
         func();
     }
 }
 
-void engine::Escap() {
-    #if IS_GAME
-    Settings::IsGameRunning = !Settings::IsGameRunning;
+void Engine::GRKeyboardDown(u32 key) {
+    switch (key) {
+    case KEY_ESC: {
+        ImGuiIO& io = ImGui::GetIO();
 
-    if (Settings::IsGameRunning) {
-        glfwSetInputMode(glfwGetCurrentContext(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-    } else {
-        glfwSetInputMode(glfwGetCurrentContext(), GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+        io.MouseDrawCursor = !io.MouseDrawCursor;
+        break;
     }
-    #else
-    ImGuiIO& io = ImGui::GetIO();
-
-    io.MouseDrawCursor = !io.MouseDrawCursor;
-    #endif
+    default:
+        break;
+    }
 }
 
-void engine::WindowInstance(void *instance) {
-    Input::SetInstance(instance);
+void Engine::GRKeyboardUp(u32 key) {}
+
+void Engine::GRCursorPos(float xpos, float ypos) {}
+
+void Engine::GRCursorScrool(float xoffset, float yoffset) {
+    if (yoffset == -1.0f) {
+        EditorController::movementSpeed += 5.0f;
+    } else if (yoffset == 1.0f) {
+        EditorController::movementSpeed -= 5.0f;
+    }
 }
 
-std::unique_ptr<Game> engine::m_game = nullptr;
+std::unique_ptr<Game> Engine::m_game = nullptr;
 
-Skybox* engine::m_skybox = nullptr;
+Skybox* Engine::m_skybox = nullptr;
 
 std::unique_ptr<ScreenRender> pScreenRender = nullptr;
 
@@ -87,9 +95,11 @@ Imguibuffer* pImguibuffer = nullptr;
 
 GBuffer* m_gbuffer = nullptr;
 
-std::thread engine::m_thread[2];
+std::thread Engine::m_thread[2];
 
-void engine::OnInit() {
+void Engine::OnInit() {
+    Settings::IsEngineRunning = true;
+
     pImGuiRender = std::make_unique<ImGuiRender>("#version 330 core");
 
     pScreenBuffer = &ScreenBuffer::getInstance();
@@ -114,13 +124,13 @@ void engine::OnInit() {
     #endif
 }
 
-void engine::OnUpdate() {
+void Engine::OnUpdate() {
     EntityManager::OnUpdate();
 
     m_game->Update();
 }
 
-void engine::OnRender() {
+void Engine::OnRender() {
     EventManager::ProcessEvent();
 
     MainFramebuffer();
@@ -130,7 +140,7 @@ void engine::OnRender() {
     #endif
 }
 
-void engine::OnPhysics() {
+void Engine::OnPhysics() {
     PhysicsScene&  pPhysicsScene  = PhysicsScene::getInstance();
     Time timer(60.0f);
 
@@ -142,7 +152,7 @@ void engine::OnPhysics() {
     } while (Settings::IsEngineRunning);
 }
 
-void engine::OnLoader() {
+void Engine::OnLoader() {
     Resources::Initialize();
     
     Time timer(5.0f);
@@ -153,7 +163,7 @@ void engine::OnLoader() {
     } while (Settings::IsEngineRunning);
 }
 
-void engine::OnDestroy() {
+void Engine::OnDestroy() {
     if (m_thread[0].joinable()) {
         m_thread[0].join();
     }
@@ -162,11 +172,58 @@ void engine::OnDestroy() {
     }
 }
 
+void Engine::HandleEvent(EngineEvent event, const void* data) {
+    switch (event) {
+    case GR_INITIALIZE: {
+        OnInit();
+        break;
+    }
+    case GR_RESIZE: {
+        const u32* scale = static_cast<const u32*>(data);
+
+        GRWindowResize(scale[0], scale[1]);
+        break;
+    }
+    case GR_KEYBOARD_DOWN: {
+        GRKeyboardDown(*static_cast<const u32*>(data));
+        break;
+    }
+    case GR_KEYBOARD_UP: {
+        GRKeyboardUp(*static_cast<const u32*>(data));
+        break;
+    }
+    case GR_CURSOR_POS: {
+        auto pos = static_cast<const float*>(data);
+        GRCursorPos(pos[0], pos[1]);
+        break;
+    }
+    case GR_CURSOR_SCROLL: {
+        auto offset = static_cast<const float*>(data);
+        GRCursorScrool(offset[0], offset[1]);
+        break;
+    }
+    case GR_MAINLOOP: {
+        auto func = *static_cast<const std::function<void()>*>(data);
+        if (!func) {
+            throw std::runtime_error(Log::red + "Faliure initiaçize function loop." + Log::none);
+        }
+        MainLoop(func);
+        break;
+    }
+    case GR_DESTROY: {
+        OnDestroy();
+        break;
+    }
+    default:
+        break;
+    }
+}
+
 Time tickRender;
-void engine::MainFramebuffer() {
+void Engine::MainFramebuffer() {
     gameStatics.renderMs = tickRender.start();
 
-    // Preparação ara renderização.
+    // Preparação para renderização.
     RenderManager::Process();
 
     /* Preparação do shadow
@@ -215,7 +272,7 @@ void engine::MainFramebuffer() {
     tickRender.end();
 }
 
-void engine::RenderScene() {
+void Engine::RenderScene() {
 
     RenderManager::Renderer();
 
@@ -226,7 +283,7 @@ void engine::RenderScene() {
 }
 
 #if !IS_GAME
-void engine::UIFramebuffer() {
+void Engine::UIFramebuffer() {
     GSetViewport(Screen::width, Screen::height);
 
     GClearColor(Color::black);
@@ -238,7 +295,7 @@ void engine::UIFramebuffer() {
 }
 #endif
 
-void engine::SetupEnable() {
+void Engine::SetupEnable() {
     glEnable(GL_MULTISAMPLE);
 
     glEnable(GL_DEPTH_TEST);

@@ -98,7 +98,72 @@ std::unordered_map<IconType, Texture*> iconsUI;
 EditorController mEditorController;
 #endif
 
+GameObject& GenGameObject(const FbxNode* node, bool local) {
+    GameObject* gameObject = nullptr;
+
+    if (local) {
+        gameObject = &ObjectManager::add(node->getname());
+    } else {
+        gameObject = SceneManager::add(node->getname());
+    }
+
+    Transform& transform = gameObject->getComponent<Transform>();
+
+    transform.scale = node->scale;
+    transform.rotation = node->rotation;
+    transform.position = node->position;
+
+    if (node->hasmesh()) {
+        Mesh m_mesh(node->getmeshs()[0].getname());
+
+        u32 vertexCount = 0;
+
+        for (const auto& mesh : node->getmeshs()) {
+            for (const auto& vertex : mesh.getvertices()) {
+                m_mesh.addvertex(vertex);
+            }
+            for (const auto& index : mesh.getindices()) {
+                m_mesh.addindex(vertexCount + index);
+            }
+            vertexCount += mesh.getverticecount();
+        }
+        auto& meshRender = gameObject->addComponent<MeshRender>(m_mesh);
+
+        for (const auto& entry : node->getMaterials()) {
+            meshRender.addMaterial(entry.first, entry.second);
+        }
+        //node->getmeshs(), node->getMaterials()
+    }
+    return *gameObject;
+}
+
+void ReaderNode(const FbxNode* node, Transform* transform) {
+    auto& gameobject = GenGameObject(node, transform != nullptr);
+
+
+    if (transform) {
+        transform->addparent(&gameobject);
+    }
+
+    for (const auto& child : node->children) {
+        ReaderNode(&child, &gameobject.gettransform());
+    }
+}
+
+void SceneLoaded(const FbxScene* scene) {
+    const FbxNode* rootNode = scene->getRoot();
+
+    for (const auto& child : rootNode->getchildren()) {
+        ReaderNode(&child, nullptr);
+    }
+}
+
 Game::Game() : objectselected(nullptr), FPSColor(255, 255, 255, 255) {
+    Filmbox* m_filmbox = Filmbox::Load("/home/grsource/Documentos/filmbox/anim.fbx");
+    SceneLoaded(m_filmbox->getScene());
+
+    m_filmbox->destroy();
+
     #if !IS_GAME
     m_io = nullptr;
     m_guizmoOperation = ImGuizmo::TRANSLATE;
