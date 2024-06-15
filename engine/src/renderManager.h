@@ -17,11 +17,8 @@ public:
 
     static void Renderer();
 
-    static u32 drawBatchinCount;
-
-    static u32 drawCallRender;
-    static u32 drawCallCount;
-    static u32 drawCount;
+    static u32 TotalDrawCall;
+    static u32 CountDrawCall;
 
 private:
     static std::vector<GameObject*> m_objects;

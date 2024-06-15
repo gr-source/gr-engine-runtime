@@ -568,8 +568,8 @@ void Game::RenderPropertiUI() {
             ImGui::SeparatorText("Renderização");
             ImGui::Text("Cameras: %ld",   CameraComponent::m_cameras.size());
             ImGui::Text("Luzes: %ld",     LightComponent::m_lights.size());
-            ImGui::Text("DrawCall: %d", RenderManager::drawCallCount);
-            ImGui::Text("Objetos: %d/%d", RenderManager::drawCount, RenderManager::drawBatchinCount);
+            ImGui::Text("DrawCall: %d", RenderManager::TotalDrawCall);
+            ImGui::Text("Objetos: %d/%d", RenderManager::TotalDrawCall, RenderManager::CountDrawCall);
             
             ImGui::EndTabItem();
         }

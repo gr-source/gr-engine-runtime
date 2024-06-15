@@ -19,10 +19,8 @@ std::vector<GameObject*> RenderManager::m_objects;
 
 Shader* RenderManager::m_shaderModel = nullptr;
 
-u32 RenderManager::drawBatchinCount = 0;
-u32 RenderManager::drawCallRender = 0;
-u32 RenderManager::drawCallCount = 0;
-u32 RenderManager::drawCount = 0;
+u32 RenderManager::TotalDrawCall = 0;
+u32 RenderManager::CountDrawCall = 0;
 
 Frustum RenderManager::m_frustum;
 
@@ -54,6 +52,8 @@ void RenderManager::Initialize() {
 void RenderManager::Process() {
     m_objects.clear();
 
+    TotalDrawCall = 0;
+
     auto& camera = CameraComponent::MainCamera();
 
     m_frustum.CalculateFrustum(camera.getperspesctive() * camera.getviewmatrix());
@@ -62,6 +62,8 @@ void RenderManager::Process() {
         if (!object->hasComponent<MeshRender>()) {
             continue;
         }
+
+        TotalDrawCall++;
 
         auto& meshRender = object->getComponent<MeshRender>();
         auto& transform = object->getComponent<Transform>();
@@ -72,8 +74,10 @@ void RenderManager::Process() {
         if (!m_frustum.IsCubeInFrustumOOBB(boundBox.min, boundBox.max, model)) {
             continue;
         }
+
         m_objects.push_back(object.get());
     }
+    CountDrawCall = m_objects.size();
 }
 
 void RenderManager::Renderer() {
