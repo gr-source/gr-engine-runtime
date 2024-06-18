@@ -20,7 +20,7 @@ const std::string &GameObject::gettag() const {
     return tag;
 }
 
-Transform& GameObject::gettransform() {
+Transform& GameObject::getTransform() {
     return entity->getComponent<Transform>();
 }
 

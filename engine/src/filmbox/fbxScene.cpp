@@ -56,7 +56,7 @@ const std::unordered_map<u32, Material> &FbxScene::getmaterials() const {
     return m_materials;
 }
 
-Mesh *FbxScene::findmesh(u32 index) {
+FbxMesh *FbxScene::findmesh(u32 index) {
     auto it = m_meshes.find(index);
     if (it != m_meshes.end()) {
         return &(*it).second;

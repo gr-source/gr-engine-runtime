@@ -6,7 +6,8 @@
 #include "../animation/skeleton.h"
 
 #include "../geometry/material.h"
-#include "../geometry/mesh.h"
+
+#include "fbxMesh.h"
 
 class FbxNode {
 public:
@@ -17,10 +18,7 @@ public:
         eMODEL  = 1 << 3,
     };
 
-    std::vector<FbxNode> children;
     FbxNode* parent;
-
-    Matrix4x4 localTransform;
 
     Vector3 position;
 
@@ -36,15 +34,17 @@ public:
     bool haschild() const;
 
     template <typename... Args>
-    Mesh& addmesh(Args&&... args);
+    FbxMesh& addmesh(Args&&... args);
 
     bool hasmesh() const;
 
-    const std::vector<Mesh>& getmeshs() const;
+    const std::vector<FbxMesh>& getmeshs() const;
 
     void setname(const std::string& value);
 
     const std::string& getname() const;
+
+    const Matrix4x4 getGlobalMatrix() const ;
 
     const u8& gettype() const;
 
@@ -65,10 +65,11 @@ public:
 
     const u32 getMaterialCount() const;
 protected:
-
     std::unordered_map<u32, Material> m_materials;
     
-    std::vector<Mesh> meshs;
+    std::vector<FbxNode> m_children;
+
+    std::vector<FbxMesh> m_meshs;
 
     Skeleton* m_skeleton;
 
@@ -82,12 +83,12 @@ protected:
 
 template <typename ...Args>
 inline FbxNode& FbxNode::addchild(Args&&... args) {
-    return children.emplace_back(std::forward<Args>(args)...);
+    return m_children.emplace_back(std::forward<Args>(args)...);
 }
 
 template <typename ...Args>
-inline Mesh& FbxNode::addmesh(Args&&... args) {
-    return meshs.emplace_back(std::forward<Args>(args)...);
+inline FbxMesh& FbxNode::addmesh(Args&&... args) {
+    return m_meshs.emplace_back(std::forward<Args>(args)...);
 }
 
 template <typename... Args>

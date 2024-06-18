@@ -3,7 +3,7 @@
 #include "MeshRender.h"
 #include "Transform.h"
 
-SimplexNoise ChunkController::Noise;
+SimplexNoise ChunkController::Noise(0.1f, 0.1f, 1.0f, 1.0f);
 
 int ChunkController::ChunkSize = 16;
 
@@ -21,17 +21,17 @@ void ChunkController::BuildMesh() {
     auto& transform = entity->getComponent<Transform>(); // chunck
 
     for (int x = 0; x < ChunkSize; x++) {
-        for (int y = 0; y < ChunkSize; y++) {
-            for (int z = 0; z < ChunkSize; z++) {
-                auto height = SimplexNoise::noise(x, y, z);
+        for (int z = 0; z < ChunkSize; z++) {
+            auto height = Noise.noise(transform.position.x + (x * ChunkSize), transform.position.z + (z * ChunkSize));
+                  
+            int maxHeight = static_cast<int>(std::floor(height * ChunkSize));
 
-                m_blocks[x][y][z].isExists = height > 0;
+            for (int y = 0; y < maxHeight; y++) {
+                m_blocks[x][y][z].isSolid = true;
                 m_blocks[x][y][z].transform.position = {(float)x, (float)y, (float)z};
             }
         }
     }
-
-
 
     auto& meshRender = entity->getComponent<MeshRender>();
     auto& mesh = meshRender.getMesh();
@@ -43,14 +43,14 @@ void ChunkController::BuildMesh() {
                 auto& block = m_blocks[x][y][z];
 
                 // verifica se o bloco atual existe
-                if (block.isExists) {
+                if (block.isSolid) {
                     auto& model = block.transform.getglobalmatrix();
 
                     // verifica se existe o bloco acima existe se for o caso não adiciona um face.
                     // Vericica se o bloco acima esta na borda da chunck se tiver adiciona uma face
 
                     // Top face
-                    if (!m_blocks[x][y + 1][z].isExists || x < 0 || x >= ChunkSize || (y + 1) < 0 || (y + 1) >= ChunkSize || z < 0 || z >= ChunkSize) {
+                    if (x < 0 || x >= ChunkSize || (y + 1) < 0 || (y + 1) >= ChunkSize || z < 0 || z >= ChunkSize || !m_blocks[x][y + 1][z].isSolid) {
                         mesh.addvertex(Vertex3D(Vector3(model * Vector4(-1.0f, 1.0f, -1.0f, 1.0f)), Vector3(0.0f, 1.0f, 0.0f)));
                         mesh.addvertex(Vertex3D(Vector3(model * Vector4( 1.0f, 1.0f, -1.0f, 1.0f)), Vector3(0.0f, 1.0f, 0.0f)));
                         mesh.addvertex(Vertex3D(Vector3(model * Vector4( 1.0f, 1.0f,  1.0f, 1.0f)), Vector3(0.0f, 1.0f, 0.0f)));
@@ -62,7 +62,7 @@ void ChunkController::BuildMesh() {
                     }
 
                     // Bottom face
-                    if (y - 1 > 0 && !m_blocks[x][y - 1][z].isExists || x < 0 || x >= ChunkSize || (y - 1) < 0 || (y - 1) >= ChunkSize || z < 0 || z >= ChunkSize) {
+                    if (x < 0 || x >= ChunkSize || (y - 1) < 0 || (y - 1) >= ChunkSize || z < 0 || z >= ChunkSize || !m_blocks[x][y - 1][z].isSolid) {
                         mesh.addvertex(Vertex3D(Vector3(model * Vector4(-1.0f, -1.0f,  1.0f, 1.0f)), Vector3(0.0f, -1.0f, 0.0f)));
                         mesh.addvertex(Vertex3D(Vector3(model * Vector4( 1.0f, -1.0f,  1.0f, 1.0f)), Vector3(0.0f, -1.0f, 0.0f)));
                         mesh.addvertex(Vertex3D(Vector3(model * Vector4( 1.0f, -1.0f, -1.0f, 1.0f)), Vector3(0.0f, -1.0f, 0.0f)));
@@ -74,7 +74,7 @@ void ChunkController::BuildMesh() {
                     }
 
                     // Front face
-                    if (!m_blocks[x + 1][y][z].isExists || (x + 1) < 0 || (x + 1) >= ChunkSize || y < 0 || y >= ChunkSize || z < 0 || z >= ChunkSize) {
+                    if ((x + 1) < 0 || (x + 1) >= ChunkSize || y < 0 || y >= ChunkSize || z < 0 || z >= ChunkSize || !m_blocks[x + 1][y][z].isSolid) {
                         mesh.addvertex(Vertex3D(Vector3(model * Vector4(1.0f, -1.0f, -1.0f, 1.0f)), Vector3(1.0f, 0.0f, 0.0f)));
                         mesh.addvertex(Vertex3D(Vector3(model * Vector4(1.0f,  1.0f, -1.0f, 1.0f)), Vector3(1.0f, 0.0f, 0.0f)));
                         mesh.addvertex(Vertex3D(Vector3(model * Vector4(1.0f,  1.0f,  1.0f, 1.0f)), Vector3(1.0f, 0.0f, 0.0f)));
@@ -86,7 +86,7 @@ void ChunkController::BuildMesh() {
                     }
 
                     // Back face
-                    if (x - 1 > 0 && !m_blocks[x - 1][y][z].isExists || (x - 1) < 0 || (x - 1) >= ChunkSize || y < 0 || y >= ChunkSize || z < 0 || z >= ChunkSize) {
+                    if ((x - 1) < 0 || (x - 1) >= ChunkSize || y < 0 || y >= ChunkSize || z < 0 || z >= ChunkSize || !m_blocks[x - 1][y][z].isSolid) {
                         mesh.addvertex(Vertex3D(Vector3(model * Vector4(-1.0f, -1.0f, -1.0f, 1.0f)), Vector3(-1.0f, 0.0f, 0.0f)));
                         mesh.addvertex(Vertex3D(Vector3(model * Vector4(-1.0f,  1.0f, -1.0f, 1.0f)), Vector3(-1.0f, 0.0f, 0.0f)));
                         mesh.addvertex(Vertex3D(Vector3(model * Vector4(-1.0f,  1.0f,  1.0f, 1.0f)), Vector3(-1.0f, 0.0f, 0.0f)));
@@ -98,7 +98,7 @@ void ChunkController::BuildMesh() {
                     }
 
                     // Right face
-                    if (!m_blocks[x][y][z + 1].isExists || x < 0 || x >= ChunkSize || y < 0 || y >= ChunkSize || (z + 1) < 0 || (z + 1) >= ChunkSize) {
+                    if (x < 0 || x >= ChunkSize || y < 0 || y >= ChunkSize || (z + 1) < 0 || (z + 1) >= ChunkSize || !m_blocks[x][y][z + 1].isSolid) {
                         mesh.addvertex(Vertex3D(Vector3(model * Vector4( 1.0f, -1.0f, 1.0f, 1.0f)), Vector3(0.0f, 0.0f, 1.0f)));
                         mesh.addvertex(Vertex3D(Vector3(model * Vector4( 1.0f,  1.0f, 1.0f, 1.0f)), Vector3(0.0f, 0.0f, 1.0f)));
                         mesh.addvertex(Vertex3D(Vector3(model * Vector4(-1.0f,  1.0f, 1.0f, 1.0f)), Vector3(0.0f, 0.0f, 1.0f)));
@@ -110,7 +110,7 @@ void ChunkController::BuildMesh() {
                     }
 
                     // Left face
-                    if (z - 1 > 0 && !m_blocks[x][y][z - 1].isExists || x < 0 || x >= ChunkSize || y < 0 || y >= ChunkSize || (z - 1) < 0 || (z - 1) >= ChunkSize) {
+                    if (x < 0 || x >= ChunkSize || y < 0 || y >= ChunkSize || (z - 1) < 0 || (z - 1) >= ChunkSize || !m_blocks[x][y][z - 1].isSolid) {
                         mesh.addvertex(Vertex3D(Vector3(model * Vector4( 1.0f, -1.0f, -1.0f, 1.0f)), Vector3(0.0f, 0.0f, -1.0f)));
                         mesh.addvertex(Vertex3D(Vector3(model * Vector4( 1.0f,  1.0f, -1.0f, 1.0f)), Vector3(0.0f, 0.0f, -1.0f)));
                         mesh.addvertex(Vertex3D(Vector3(model * Vector4(-1.0f,  1.0f, -1.0f, 1.0f)), Vector3(0.0f, 0.0f, -1.0f)));

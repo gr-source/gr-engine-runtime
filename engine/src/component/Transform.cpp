@@ -8,7 +8,7 @@
 
 #include "cameraComponent.h"
 
-Transform::Transform() : Component(true), position(Vector3::zero), scale(Vector3::one), rotation(Quaternion::identity), parent(nullptr) {}
+Transform::Transform() : Component(true), position(Vector3::zero), scale(Vector3::one), rotation(Quaternion::identity), parent(nullptr), root(nullptr) {}
 
 const Vector3 Transform::getright() const {
     if (parent)
@@ -46,16 +46,18 @@ const Matrix4x4 Transform::getLocalMatrix() const {
     return Math::translate<Matrix4x4>(position) * Math::rotate<Matrix4x4>(rotation) * Math::scale<Matrix4x4>(scale);
 }
 
-bool Transform::hasparent() const {
-    return !parents.empty();
+bool Transform::hasParent() const {
+    return parent != nullptr;
 }
 
-void Transform::addparent(GameObject* parent) {
-    parents.push_back(parent);
+void Transform::setParent(Transform *transform) {
+    parent = transform;
 }
 
-std::vector<GameObject*>& Transform::getparents() {
-    return parents;
+Transform *Transform::getRoot() {
+    return root;
 }
 
-
+void Transform::setRoot(Transform *transform) {
+    root = transform;
+}

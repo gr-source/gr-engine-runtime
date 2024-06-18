@@ -43,7 +43,7 @@ private:
 
     void SetupSkeleton(aiNode* node, Bone*& bone);
 
-    void SetupVertice(aiMesh *aimesh, Mesh &mesh);
+    void SetupVertice(aiMesh *aimesh, FbxMesh &mesh);
 
     void LoadMaterials(const aiScene* scene);
 

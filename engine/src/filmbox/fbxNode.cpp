@@ -3,15 +3,15 @@
 FbxNode::FbxNode(const std::string& name, FbxNode* parent, u8 type) : name(name), parent(parent), m_type(type), m_skeleton(nullptr) {}
 
 bool FbxNode::haschild() const {
-    return !children.empty();
+    return !m_children.empty();
 }
 
 bool FbxNode::hasmesh() const {
-    return !meshs.empty();
+    return !m_meshs.empty();
 }
 
-const std::vector<Mesh>& FbxNode::getmeshs() const {
-    return meshs;
+const std::vector<FbxMesh>& FbxNode::getmeshs() const {
+    return m_meshs;
 }
 
 void FbxNode::setname(const std::string& value) {
@@ -22,12 +22,16 @@ const std::string& FbxNode::getname() const {
     return name;
 }
 
+const Matrix4x4 FbxNode::getGlobalMatrix() const {
+    return Math::translate<Matrix4x4>(position) * Math::rotate<Matrix4x4>(rotation) * Math::scale<Matrix4x4>(scale);
+}
+
 const u8 &FbxNode::gettype() const {
     return m_type;
 }
 
 const std::vector<FbxNode> &FbxNode::getchildren() const {
-    return children;
+    return m_children;
 }
 
 const bool FbxNode::hasSkeleton() const {

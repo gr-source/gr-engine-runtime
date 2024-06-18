@@ -56,6 +56,7 @@ set(engine_src
     src/gameObject.cpp
     src/screenRender.cpp
     src/eventManager.cpp
+    src/chunkManager.cpp
     src/renderManager.cpp
     src/objectManager.cpp
     src/bufferManager.cpp
@@ -96,12 +97,13 @@ set(engine_src
     src/animation/animation.cpp
     src/animation/animationClip.cpp
 
+    src/filmbox/fbxMaterial.cpp
+    src/filmbox/fbxCamera.cpp
+    src/filmbox/fbxLight.cpp
+    src/filmbox/fbxScene.cpp
     src/filmbox/fbxNode.cpp
     src/filmbox/fbxMesh.cpp
     src/filmbox/Filmbox.cpp
-    src/filmbox/fbxScene.cpp
-    src/filmbox/fbxLight.cpp
-    src/filmbox/fbxCamera.cpp
 
     src/geometry/batchedGeometry.cpp
     src/geometry/geometryRender.cpp
@@ -148,6 +150,7 @@ set(engine_hdr
     src/gameObject.h
     src/screenRender.h
     src/eventManager.h
+    src/chunkManager.h
     src/renderManager.h
     src/objectManager.h
     src/bufferManager.h
@@ -188,12 +191,13 @@ set(engine_hdr
     src/animation/animation.h
     src/animation/animationClip.h
 
+    src/filmbox/fbxMaterial.h
+    src/filmbox/fbxCamera.h
+    src/filmbox/fbxLight.h
+    src/filmbox/fbxScene.h
     src/filmbox/fbxNode.h
     src/filmbox/fbxMesh.h
     src/filmbox/Filmbox.h
-    src/filmbox/fbxScene.h
-    src/filmbox/fbxLight.h
-    src/filmbox/fbxCamera.h
 
     src/geometry/batchedGeometry.h
     src/geometry/geometryRender.h

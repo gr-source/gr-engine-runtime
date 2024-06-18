@@ -5,6 +5,7 @@
 #include "fbxCamera.h"
 #include "fbxLight.h"
 #include "fbxNode.h"
+#include "fbxMesh.h"
 
 #include "../animation/animationClip.h"
 #include "../animation/skeleton.h"
@@ -34,9 +35,9 @@ public:
     const std::unordered_map<u32, Material>& getmaterials() const;
 
     template <typename... Args>
-    Mesh& addmesh(u32 index, Args&&... args);
+    FbxMesh& addmesh(u32 index, Args&&... args);
 
-    Mesh* findmesh(u32 index);
+    FbxMesh* findmesh(u32 index);
 
     const std::vector<AnimationClip>& getanimations() const;
 
@@ -56,7 +57,7 @@ private:
     std::unique_ptr<FbxNode> m_rootNode;
 
     /* lista de meshs na cena */
-    std::unordered_map<u32, Mesh> m_meshes;
+    std::unordered_map<u32, FbxMesh> m_meshes;
 
     /* lista de materials na cena */
     std::unordered_map<u32, Material> m_materials;
@@ -80,14 +81,13 @@ inline FbxNode *FbxScene::CreateRoot(Args &&...args) {
 }
 
 template <typename... Args>
-inline Material &FbxScene::addmaterial(u32 index, Args &&...args)
-{
+inline Material &FbxScene::addmaterial(u32 index, Args &&...args) {
     m_materials.emplace(index, std::forward<Args>(args)...);
     return m_materials[index];
 }
 
 template <typename... Args>
-inline Mesh &FbxScene::addmesh(u32 index, Args &&...args) {
+inline FbxMesh &FbxScene::addmesh(u32 index, Args &&...args) {
     m_meshes.emplace(index, std::forward<Args>(args)...);
     return m_meshes[index];
 }

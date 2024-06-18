@@ -5,7 +5,7 @@
 #include "Transform.h"
 
 struct Block {
-    bool isExists;
+    bool isSolid;
 
     Transform transform;
 };

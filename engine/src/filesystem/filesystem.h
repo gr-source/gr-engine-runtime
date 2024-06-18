@@ -10,7 +10,8 @@ public:
         eResource   = 1 << 0,
         eIcon       = 1 << 1,
         eShader     = 1 << 2,
-        eScene      = 1 << 3
+        eScene      = 1 << 3,
+        eModel      = 1 << 4
     };
 
     struct path {

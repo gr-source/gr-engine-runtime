@@ -22,7 +22,7 @@ void PlayerController::OnInit() {
 void PlayerController::OnStart() {
     GameObject* camera = ObjectManager::find("Camera");
     if (camera != nullptr) {
-        m_camera = &camera->gettransform();
+        m_camera = &camera->getTransform();
     }
 }
 

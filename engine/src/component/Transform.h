@@ -13,8 +13,6 @@ public:
 
     Transform* parent;
 
-    std::vector<GameObject*> parents;
-
     Transform();
 
     const Vector3 getright() const;
@@ -29,11 +27,16 @@ public:
 
     const Matrix4x4 getLocalMatrix() const;
 
-    bool hasparent() const;
+    bool hasParent() const;
 
-    void addparent(GameObject* parent);
+    void setParent(Transform* transform);
 
-    std::vector<GameObject*>& getparents();
+    Transform* getRoot();
+
+    void setRoot(Transform* transform);
+    
+public:
+    Transform* root;
 
 };
 

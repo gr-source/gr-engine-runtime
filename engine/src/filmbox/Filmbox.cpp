@@ -748,14 +748,14 @@ void Filmbox::SetupSkeleton(aiNode* node, Bone*& bone) {
     // }
 }
 
-void Filmbox::SetupVertice(aiMesh *aimesh, Mesh &mesh) {
+void Filmbox::SetupVertice(aiMesh *aimesh, FbxMesh &mesh) {
     const bool hasTangentBitangent = aimesh->HasTangentsAndBitangents();
     const bool hasTexCoord = aimesh->HasTextureCoords(0);
     const bool hasPositions = aimesh->HasPositions();
     const bool hasNormals = aimesh->HasNormals();
 
     for (u32 i=0;i<aimesh->mNumVertices;i++) {
-        Vertex3D& vertex = mesh.addvertex();
+        FbxVertex3D& vertex = mesh.addVertex();
 
         if (hasPositions) {
             aiVector3D position = aimesh->mVertices[i];
@@ -799,7 +799,7 @@ void Filmbox::SetupVertice(aiMesh *aimesh, Mesh &mesh) {
                 continue;
             }
 
-            mesh.addtriangle(face.mIndices[0], face.mIndices[1], face.mIndices[2]);
+            mesh.addTriangle(face.mIndices[0], face.mIndices[1], face.mIndices[2]);
         }
     }
 }

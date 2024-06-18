@@ -19,6 +19,8 @@
 
 #include "physics/physicsScene.h"
 
+#include "filesystem/stream.h"
+
 #include "renderManager.h"
 #include "objectManager.h"
 #include "eventManager.h"
@@ -32,6 +34,7 @@
 #include "settings.h"
 
 #include <linux/input-event-codes.h>
+#include <filesystem>
 
 void Engine::GRWindowResize(u32 width, u32 height) {
     Screen::SetResolution(width, height);
@@ -79,6 +82,18 @@ void Engine::GRCursorScrool(float xoffset, float yoffset) {
     }
 }
 
+void Engine::GRDropFunc(const char *path) {
+    if (!std::filesystem::exists(path)) {
+        return;
+    }
+    std::string extension = std::filesystem::path(path).extension();
+    if (extension == ".fbx") {
+        return UploadFBX(path);
+    } else if (extension == ".gmd") {
+        return SetupGMD(path);
+    }
+}
+
 std::unique_ptr<Game> Engine::m_game = nullptr;
 
 Skybox* Engine::m_skybox = nullptr;
@@ -118,10 +133,6 @@ void Engine::OnInit() {
     SetupEnable();
 
     RenderManager::Initialize();
-
-    #if IS_GAME
-    glfwSetInputMode(glfwGetCurrentContext(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-    #endif
 }
 
 void Engine::OnUpdate() {
@@ -208,6 +219,10 @@ void Engine::HandleEvent(EngineEvent event, const void* data) {
             throw std::runtime_error(Log::red + "Faliure initiaçize function loop." + Log::none);
         }
         MainLoop(func);
+        break;
+    }
+    case GR_DROFUNC: {
+        GRDropFunc((const char*)data);
         break;
     }
     case GR_DESTROY: {
@@ -306,4 +321,151 @@ void Engine::SetupEnable() {
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+}
+
+struct ChunkModel {
+    float version;
+};
+
+#include "core/scene/SceneManager.h"
+
+void Engine::SetupGMD(const std::string &path) {
+    Stream::open(path, std::ios_base::in | std::ios_base::binary);
+
+    ChunkModel chunck {0.0f};
+
+    Stream::read<ChunkModel>(&chunck, 1);
+
+    std::cout << "gmd vertion: " << chunck.version << std::endl;
+
+    std::size_t nameSize;
+    Stream::read<std::size_t>(&nameSize, 1);
+
+    std::string name(nameSize, '\0');
+
+    Stream::read<char>(name.data(), name.size());
+
+    std::size_t meshCount;
+    Stream::read<std::size_t>(&meshCount, 1);
+
+    std::cout << "MeshCount: " << meshCount << std::endl;
+
+    std::vector<FbxMesh> meshes;
+
+    auto object = SceneManager::add(name);
+
+    name.clear();
+
+    for (std::size_t i={};i<meshCount;++i) {
+        Stream::read<std::size_t>(&nameSize, 1);
+
+        name.resize(nameSize);
+
+        Stream::read<char>(name.data(), nameSize);
+
+        std::size_t indicesSize;
+        Stream::read<std::size_t>(&indicesSize, 1);
+
+        std::vector<u32> indices(indicesSize);
+        Stream::read<u32>(indices.data(), indices.size());
+
+        std::size_t verticesSize;
+        Stream::read<std::size_t>(&verticesSize, 1);
+
+        std::vector<FbxVertex3D> vertices(verticesSize);
+        Stream::read<FbxVertex3D>(vertices.data(), vertices.size());
+
+        auto& mesh = meshes.emplace_back(name);
+        mesh.insert(indices);
+        mesh.insert(vertices);
+    }
+
+    if (!meshes.empty()) {
+        Mesh m_mesh(meshes[0].getName());
+
+        ulong verticeCount = 0;
+        for (const auto& mesh : meshes) {
+            for (const auto& vertice : mesh.getVertices()) {
+                m_mesh.addvertex(vertice.position, vertice.normal, vertice.uv);
+            }
+
+            for (const auto& index : mesh.getIndices()) {
+                m_mesh.addindice(verticeCount + index);
+            }
+
+            verticeCount += mesh.getVerticeCount();
+        }
+        object->addComponent<MeshRender>(m_mesh);
+    }
+
+    Stream::close();
+}
+
+void Engine::WriteModel(const FbxNode *node, const std::string &path) {
+    Stream::open(path, std::ios_base::out | std::ios_base::binary);
+
+    ChunkModel chunck {1.0};
+
+    Stream::write<ChunkModel>(&chunck, 1);
+
+    auto name = node->getname();
+    auto nameSize = name.size();
+
+    auto& meshes = node->getmeshs();
+    auto mesheCount = meshes.size();
+
+    Stream::write<std::size_t>(&nameSize, 1);
+    Stream::write<char>(name.data(), nameSize);
+
+    Stream::write<std::size_t>(&mesheCount, 1);
+    for (const auto& fbxMesh : meshes) {
+        name = fbxMesh.getName();
+        nameSize = name.size();
+
+        // auto material = fbxMesh.getMaterials();
+        auto indices = fbxMesh.getIndices();
+        auto indicesSize = indices.size();
+
+        auto vertices = fbxMesh.getVertices();
+        auto verticesSize = vertices.size();
+
+        Stream::write<std::size_t>(&nameSize, 1);
+        Stream::write<char>(name.data(), nameSize);
+        
+        Stream::write<std::size_t>(&indicesSize, 1);
+        Stream::write<u32>(indices.data(), indices.size());
+
+        Stream::write<std::size_t>(&verticesSize, 1);
+        Stream::write<FbxVertex3D>(vertices.data(), vertices.size());
+    }
+
+    Stream::close();
+}
+
+void Engine::ReadNode(const FbxNode *node) {
+    auto dir = Filesystem::getpublic(Filesystem::eModel).m_path + "/" + node->getname() + ".gmd";
+
+    WriteModel(node, dir);
+
+    for (const auto& child : node->getchildren()) {
+        ReadNode(&child);
+    }
+}
+
+void Engine::UploadFBX(const std::string &path) {
+    auto filmbox = Filmbox::Load(path);
+
+    auto scene = filmbox->getScene();
+
+    auto materials = scene->getmaterials();
+    for (const auto& entry : materials) {
+        const auto& material = entry.second;
+    }
+
+    auto root = scene->getRoot();
+    for (const auto& child : root->getchildren()) {
+        ReadNode(&child);
+    }
+
+    filmbox->destroy();
 }

@@ -24,7 +24,7 @@ public:
 
     void RenderScenesUI();
 
-    void ReadHierarchy(std::vector<GameObject *>& list, GameObject* gameObject);
+    void ReadHierarchy(Transform* transform);
 
     void RenderViewportUI();
 

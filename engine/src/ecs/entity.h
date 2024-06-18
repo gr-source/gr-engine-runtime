@@ -65,7 +65,7 @@ inline T& Entity::addComponent(Args&&... args) {
     components.emplace(GetIDFromComponent<T>(), std::make_shared<T>(std::forward<Args>(args)...));
 
     auto& c = components[GetIDFromComponent<T>()];
-
+    c->gameObject = m_gameobject;
     c->entity = this;
 
     m_bitset.set(GetIDFromComponent<T>(), true);

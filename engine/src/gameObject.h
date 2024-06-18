@@ -36,7 +36,7 @@ public:
     template <typename T>
     constexpr bool hasComponent() const;
 
-    Transform& gettransform();
+    Transform& getTransform();
 
     template <typename T, typename... Args>
     void RenderProperty(Args&&... args);

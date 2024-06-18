@@ -15,6 +15,8 @@ Filesystem::path Filesystem::getpublic(u8 type) {
             return {"assets/shader"};
         case eScene:
             return {"assets/scenes"};
+        case eModel:
+            return {"assets/model"};
         default:
             throw std::runtime_error(Log::red + "[ Filesystem::getpublic ] - invalid type." + Log::none);
     }

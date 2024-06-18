@@ -114,39 +114,43 @@ GameObject& GenGameObject(const FbxNode* node, bool local) {
     transform.position = node->position;
 
     if (node->hasmesh()) {
-        Mesh m_mesh(node->getmeshs()[0].getname());
+        Mesh m_mesh(node->getmeshs()[0].getName());
 
         u32 vertexCount = 0;
 
         for (const auto& mesh : node->getmeshs()) {
-            for (const auto& vertex : mesh.getvertices()) {
-                m_mesh.addvertex(vertex);
+            for (const auto& vertex : mesh.getVertices()) {
+                m_mesh.addvertex(vertex.position, vertex.normal, vertex.uv);
             }
-            for (const auto& index : mesh.getindices()) {
+            for (const auto& index : mesh.getIndices()) {
                 m_mesh.addindex(vertexCount + index);
             }
-            vertexCount += mesh.getverticecount();
+            vertexCount += mesh.getVerticeCount();
         }
         auto& meshRender = gameObject->addComponent<MeshRender>(m_mesh);
 
-        for (const auto& entry : node->getMaterials()) {
-            meshRender.addMaterial(entry.first, entry.second);
-        }
+        // for (const auto& entry : node->getMaterials()) {
+        //     meshRender.addMaterial(entry.first, entry.second);
+        // }
         //node->getmeshs(), node->getMaterials()
     }
     return *gameObject;
 }
 
-void ReaderNode(const FbxNode* node, Transform* transform) {
+void ReaderNode(const FbxNode* node, Transform* transform, Transform* root = nullptr) {
     auto& gameobject = GenGameObject(node, transform != nullptr);
 
 
     if (transform) {
-        transform->addparent(&gameobject);
+        gameobject.getTransform().setParent(transform);
+        
+        if (root) {
+            transform->setRoot(root);
+        }
     }
 
-    for (const auto& child : node->children) {
-        ReaderNode(&child, &gameobject.gettransform());
+    for (const auto& child : node->getchildren()) {
+        ReaderNode(&child, &gameobject.getTransform(), (root == nullptr ? &gameobject.getTransform() : root));
     }
 }
 
@@ -159,7 +163,7 @@ void SceneLoaded(const FbxScene* scene) {
 }
 
 Game::Game() : objectselected(nullptr), FPSColor(255, 255, 255, 255) {
-    Filmbox* m_filmbox = Filmbox::Load("/home/grsource/Documentos/filmbox/anim.fbx");
+    Filmbox* m_filmbox = Filmbox::Load("/home/grsource/Documentos/filmbox/untitled.fbx");
     SceneLoaded(m_filmbox->getScene());
 
     m_filmbox->destroy();
@@ -229,7 +233,9 @@ void Game::RenderScenesUI() {
     ImGui::SetNextItemOpen(true, ImGuiCond_Appearing);
     if (ImGui::TreeNodeEx(SceneManager::GetName().c_str(), ImGuiTreeNodeFlags_SpanFullWidth)) {
         for (auto& gameObject : SceneManager::GetObjects()) {
-            ReadHierarchy(SceneManager::GetObjects(), gameObject);
+            auto& transform = gameObject->getTransform();
+
+            ReadHierarchy(&transform);
         }
         ImGui::TreePop();
     }
@@ -245,18 +251,19 @@ void Game::RenderScenesUI() {
     }
 }
 
-void Game::ReadHierarchy(std::vector<GameObject *>& list, GameObject* gameObject) {
+void Game::ReadHierarchy(Transform *transform) {
     ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanFullWidth;
 
-    Transform& transform = gameObject->getComponent<Transform>();
+    auto gameObject = transform->gameObject;
+    Transform* root = transform->getRoot();
 
     if (objectselected == gameObject) {
         flags |= ImGuiTreeNodeFlags_Selected;
     } else {
         flags &= ~ImGuiTreeNodeFlags_Selected;
     }
-    
-    if (!transform.hasparent()) {
+
+    if (!root) {
         flags |= ImGuiTreeNodeFlags_Leaf;
     }
 
@@ -265,36 +272,13 @@ void Game::ReadHierarchy(std::vector<GameObject *>& list, GameObject* gameObject
         objectselected = gameObject;
     }
 
-    if (ImGui::BeginDragDropTarget()) {
-        if (const ImGuiPayload* data = ImGui::AcceptDragDropPayload("##GameObject", ImGuiDragDropFlags_None)) {
-            GameObject* in = ObjectManager::find((const char*)data->Data);
-            if (in != nullptr) {
-                in->gettransform().parent = &transform;
-
-                transform.addparent(in);
-
-                SceneManager::remove(in);
-                
-                std::cout << "Drag: " << ((const char*)data->Data) << " In: " << gameObject->getname() << std::endl;
-            }
-
-        }
-        ImGui::EndDragDropTarget();
-    }
-
-    if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID)) {
-        ImGui::SetTooltip("%s", gameObject->name.c_str());
-        ImGui::SetDragDropPayload("##GameObject", gameObject->name.data(), gameObject->name.size(), ImGuiCond_Always);
-        ImGui::EndDragDropSource();
-    }
-
     if (isOpen) {
-        for (auto& child : transform.getparents()) {
-            ReadHierarchy(list, child);
+        if (root) {
+            ReadHierarchy(root);
         }
+
         ImGui::TreePop();
     }
-
 }
 
 void Game::RenderViewportUI() {
@@ -338,7 +322,7 @@ void Game::RenderViewportUI() {
                 m_guizmoManipulate = ImGuizmo::WORLD;
             }
         }
-        Transform& transform = objectselected->gettransform();
+        Transform& transform = objectselected->getTransform();
 
         Matrix4x4 model = transform.getglobalmatrix();
 
@@ -382,112 +366,26 @@ void Game::RenderViewportUI() {
     ImGui::End();
 }
 
+#include <filesystem>
+
 void Game::RenderFilesUI() {
-    /*static Filesystem::path resources = Filesystem::getpublic(Filesystem::eResource);
-    const ImVec2 iconSize = reinterpret_vector<ImVec2, Vector2>(Settings::IconSize);
-    ImTextureID iconTexture = nullptr;
-    Texture* m_texture = nullptr;
-    static Texture* texture = nullptr;
-
+    static std::filesystem::path root = Filesystem::getpublic(Filesystem::eResource).string();
     ImGui::Columns(5, "#Collums1", false);
-    if (ImGui::ImageButton(reinterpret_cast<ImTextureID>(iconsUI[IconType::ICON_BACK_FILE]->getID()), iconSize)) {
-        if (resources != Filesystem::getpublic(Filesystem::eResource)) {
-            // resources = {resources.parent, resources.parent};
-        }
+
+    if (ImGui::Button("Back") && root.has_parent_path()) {
+        root = root.parent_path();
     }
-    ImGui::Text("Voltar");
-
-    std::vector<Filesystem::path> files = Filesystem::getDirectoryEntry(resources.path);
-
-    std::sort(files.begin(), files.end(), [](const Filesystem::path& a, const Filesystem::path& b) {
-        return a.name < b.name;
-    });
-
-    for (auto& entry : files) {
-        ImGui::PushID(entry.string().c_str());
+    for (auto file : std::filesystem::directory_iterator(root)) {
         ImGui::NextColumn();
 
-        if (std::filesystem::is_directory(entry)) {
-            if (ImGui::ImageButton(reinterpret_cast<ImTextureID>(iconsUI[IconType::ICON_FOLDER]->getID()), iconSize)) {
-                resources = entry;
+        if (file.is_directory()) {
+            if (ImGui::Button(file.path().filename().c_str())) {
+                root = file.path();
             }
-        } else {
-            FileType fileType = getFileType(entry.extension());
-
-            switch (fileType) {
-                case FileType::OBJ:
-                case FileType::GR:
-                case FileType::GOT:
-                    iconTexture = reinterpret_cast<ImTextureID>(iconsUI[IconType::ICON_GAMEOBJECT]->getID());
-                    break;
-                case FileType::JPG:
-                case FileType::PNG: {
-                    m_texture = Resources::Load<Texture>(entry.string());
-                    if (!m_texture->isvalid()) {
-                        iconTexture = reinterpret_cast<ImTextureID>(iconsUI[IconType::ICON_PNG]->getID());
-                        break;
-                    }
-                    iconTexture = reinterpret_cast<ImTextureID>(m_texture->getID());
-                    break;
-                }
-                default:
-                    iconTexture = reinterpret_cast<ImTextureID>(iconsUI[IconType::ICON_FILE]->getID());
-                    break;
-            }
-
-            if (ImGui::ImageButton(iconTexture, iconSize)) {
-                texture = m_texture;
-            }
-
-            if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID)) {
-                const char* dragDropType = nullptr;
-
-                switch (fileType) {
-                    case FileType::OBJ:
-                    case FileType::GR:
-                    case FileType::GOT:
-                        dragDropType = getDragDrop(DragDrop::GAMEOBJECT);
-                        break;
-                    case FileType::JPG:
-                    case FileType::PNG:
-                        dragDropType = getDragDrop(DragDrop::TEXTURE);
-                        break;
-                    case FileType::MT:
-                        dragDropType = getDragDrop(DragDrop::MATERIAL);
-                        break;
-                    default:
-                        break;
-                }
-
-                if (dragDropType) {
-                    ImGui::SetDragDropPayload(dragDropType, entry.string().data(), entry.string().size());
-                    ImGui::ImageButton(iconTexture, iconSize);
-                }
-
-                ImGui::EndDragDropSource();
-            }
+            continue;
         }
-        
-        std::string filename = entry.filename().c_str();
-        if (filename.length() > 5) {
-            // Dividir em várias linhas
-            int chunkSize = 7;
-            for (size_t i = 0; i < filename.length(); i += chunkSize) {
-                std::string chunk = filename.substr(i, chunkSize);
-                ImGui::Text("%s", chunk.c_str());
-            }
-        } else {
-            // Se for menor ou igual a 5, imprime em uma única linha
-            ImGui::Text("%s", filename.c_str());
-        }
-
-        ImGui::PopID();
+        ImGui::Text("%s", file.path().filename().c_str());
     }
-
-    if (texture != nullptr) {
-        TextureInfo(texture);
-    }
-    */
     ImGui::Columns(1);
 }
 
@@ -884,22 +782,22 @@ void Game::MenuAdd() {
     ImGui::Begin("##Game::MenuAdd", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
     if (ImGui::TreeNode("Luzes")) {
         if (ImGui::Button("Direct")) {
-            auto* m_spot = SceneManager::add("(Light) Direction");
-            m_spot->addComponent<LightComponent>(LightComponent::eDirection);
+            objectselected = SceneManager::add("(Light) Direction");
+            objectselected->addComponent<LightComponent>(LightComponent::eDirection);
 
-            ImGui::CloseCurrentPopup();
+            menuAdd = false;
         }
         if (ImGui::Button("Point")) {
-            auto* m_spot = SceneManager::add("(Light) Point");
-            m_spot->addComponent<LightComponent>(LightComponent::ePoint);
+            objectselected = SceneManager::add("(Light) Point");
+            objectselected->addComponent<LightComponent>(LightComponent::ePoint);
 
-            ImGui::CloseCurrentPopup();
+            menuAdd = false;
         }
         if (ImGui::Button("Spot")) {
-            auto* m_spot = SceneManager::add("(Light) Spot");
-            m_spot->addComponent<LightComponent>(LightComponent::eSpot);
+            objectselected = SceneManager::add("(Light) Spot");
+            objectselected->addComponent<LightComponent>(LightComponent::eSpot);
 
-            ImGui::CloseCurrentPopup();
+            menuAdd = false;
         }
         ImGui::TreePop();
     }

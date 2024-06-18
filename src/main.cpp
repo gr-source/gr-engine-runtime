@@ -75,6 +75,14 @@ void GLFWscrollfunCallback(GLFWwindow* window, double xoffset, double yoffset) {
     Engine::HandleEvent(Engine::GR_CURSOR_SCROLL, offset);
 }
 
+void GLFWdropfunCallback(GLFWwindow* window, int path_count, const char* paths[]) {
+    for (int i=0;i<path_count;i++) {
+        const char* path = paths[i];
+
+        Engine::HandleEvent(Engine::GR_DROFUNC, (const void*)path);
+    }
+}
+
 void glfwInstallCallback(Window window) {
     glfwSetWindowCloseCallback(window, GLFWwindowclosefunCallback);
 
@@ -86,6 +94,8 @@ void glfwInstallCallback(Window window) {
     glfwSetCursorPosCallback(window, GLFWcursorposfunCallback);
 
     glfwSetScrollCallback(window, GLFWscrollfunCallback);
+
+    glfwSetDropCallback(window, GLFWdropfunCallback);
 }
 
 int OnApplicationInit() {
@@ -97,7 +107,7 @@ int OnApplicationInit() {
     OnPreLoad();
 
     /* cria o window principal */
-    window = CreateWindown("GR - GameRender", SCREEN_WIDTH, SCREEN_HEIGHT, nullptr, true);
+    window = CreateWindown("GR - GameEngine", SCREEN_WIDTH, SCREEN_HEIGHT, nullptr, true);
     if (window == nullptr) {
         return printf("Window do not created");
     }

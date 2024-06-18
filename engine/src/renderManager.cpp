@@ -85,6 +85,8 @@ void RenderManager::Renderer() {
 
     auto& camera = CameraComponent::MainCamera();
 
+    // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
     m_shaderModel->bind();
     m_shaderModel->setUniform("projection", camera.getperspesctive());
     m_shaderModel->setUniform("view", camera.getviewmatrix());
@@ -102,6 +104,8 @@ void RenderManager::Renderer() {
 
         meshRender.draw();
     }
+
+    // glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 }
 
 void RenderManager::SetupMaterial(Shader *shader, std::unordered_map<u32, Material> &materials) {
