@@ -25,7 +25,7 @@ public:
 
         const std::string filename();
 
-        std::string string();
+        const std::string& string() const;
 
         const bool operator!=(const Filesystem::path& lhs);
     };

@@ -1,11 +1,12 @@
 #pragma once
 
 #include "Global.h"
-#include "renderer.h"
 
 #include "filmbox/Filmbox.h"
 
 #include "guizmo/ImGuizmo.h"
+
+#include <gr-render/gTexture.h>
 
 class Game {
 public:
@@ -62,6 +63,8 @@ private:
     bool menuAdd;
 
     ImVec4 FPSColor;
+
+    grr::gTexture* m_texture;
 
     ImGuizmo::OPERATION m_guizmoOperation;
 

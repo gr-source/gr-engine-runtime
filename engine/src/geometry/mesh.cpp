@@ -16,11 +16,11 @@ Vertex3D& Mesh::GetVertex(u32 index) {
     return m_vertices[index];
 }
 
-const u32 Mesh::getverticecount() const {
+const u32 Mesh::getVerticeCount() const {
     return m_vertices.size();
 }
 
-const Vertex3D *Mesh::getverticedata() const {
+const Vertex3D *Mesh::getVerticeData() const {
     return m_vertices.data();
 }
 
@@ -42,11 +42,11 @@ const std::vector<u32>& Mesh::getindices() const {
     return m_indices;
 }
 
-const u32 Mesh::getindicecount() const {
+const u32 Mesh::getIndiceCount() const {
     return m_indices.size();
 }
 
-const u32 *Mesh::getindicedata() const {
+const u32 *Mesh::getIndiceData() const {
     return m_indices.data();
 }
 
@@ -76,6 +76,16 @@ u32 *Mesh::findMaterial(u32 index) {
         return &(*it);
     }
     return nullptr;
+}
+
+template <>
+void Mesh::insert(const std::vector<Vertex3D>& vector) {
+    m_vertices.insert(m_vertices.begin(), vector.begin(), vector.end());
+}
+
+template <>
+void Mesh::insert(const std::vector<u32>& vector) {
+    m_indices.insert(m_indices.begin(), vector.begin(), vector.end());
 }
 
 void Mesh::clear() {

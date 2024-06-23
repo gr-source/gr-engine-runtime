@@ -123,8 +123,6 @@ const bool Frustum::IsCubeInFrustum(const Vector3 *vertice) const {
 	return true;
 }
 
-#include "../renderer.h"
-
 const bool Frustum::IsCubeInFrustumAABB(const Vector3& min, const Vector3& max) const {
     Vector3 points[8] {
         Vector3(min.x, min.y, min.z),
@@ -192,6 +190,7 @@ const bool Frustum::IsCubeInFrustumOOBB(const Vector3 &min, const Vector3 &max, 
     };
 
 	// Desenhar as linhas do cubo usando as coordenadas dos pontos do frustum
+	/*
 	DebugDraw::addLine(points[0], points[1], Color::blue);
 	DebugDraw::addLine(points[1], points[2], Color::blue);
 	DebugDraw::addLine(points[2], points[3], Color::blue);
@@ -206,6 +205,7 @@ const bool Frustum::IsCubeInFrustumOOBB(const Vector3 &min, const Vector3 &max, 
 	DebugDraw::addLine(points[1], points[5], Color::blue);
 	DebugDraw::addLine(points[2], points[6], Color::blue);
 	DebugDraw::addLine(points[3], points[7], Color::blue);
+	*/
 
 	for (int i = 0; i < 6; i++ ) {
 		if (m_Frustum[i][A] * (points[0].x) + m_Frustum[i][B] * (points[0].y) + m_Frustum[i][C] * (points[0].z) + m_Frustum[i][D] > 0)

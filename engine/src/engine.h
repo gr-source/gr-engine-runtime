@@ -37,34 +37,16 @@ protected:
 
     static void OnUpdate();
 
+    static void OnPostRender();
+
+    static void OnPreRender(Camera* camera);
+
     static void OnPhysics();
 
     static void OnLoader();
 
     static void OnDestroy();
 
-    static void RenderScene();
-    
-    static void MainFramebuffer();
-
-    #if !IS_GAME
-    static void UIFramebuffer();
-    #endif
-    
-    static void SetupEnable();
-
-    static void SetupGMD(const std::string& path);
-
-    static void WriteModel(const FbxNode* node, const std::string& path);
-
-    static void ReadNode(const FbxNode* node);
-
-    static void UploadFBX(const std::string& path);
-
-    static std::unique_ptr<Game> m_game;
-
-    static Skybox* m_skybox;
-    
     static std::thread m_thread[2];
 };
 

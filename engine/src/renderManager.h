@@ -2,34 +2,13 @@
 
 #include "common.h"
 
-#include "geometry/material.h"
-
-#include "culling/frustum.h"
-
-#include "octree/octree.h"
+#include <gr-render/gShader.h>
 
 class RenderManager {
 public:
-    
-    static void Initialize();
+    static void OnRenderer(grr::gShader *shader);
 
-    static void Process();
-
-    static void Renderer();
-
-    static u32 TotalDrawCall;
-    static u32 CountDrawCall;
-
+    static void ModelFromRender(GameObject *gameObject);
 private:
-    static std::vector<GameObject*> m_objects;
-
-    static std::unique_ptr<Octree> m_octree;
-
-    static Shader* m_shaderModel;
-
-    static Frustum m_frustum;
-
-    static void SetupMaterial(Shader* shader, std::unordered_map<u32, Material>& materials);
-    
-    static void SetupLight(Shader* shader);
+    static std::unordered_map<std::string, GameObject*> models;
 };

@@ -10,6 +10,7 @@ set(guizmo_hdr
 
 set(ecs_src
     src/ecs/entity.cpp
+    src/ecs/component.cpp
     src/ecs/entityManager.cpp
 )
 
@@ -35,33 +36,46 @@ set(simplexNoise_hdr
     src/simplexNoise/SimplexNoise.h
 )
 
+set(editor_src
+    src/editor/editorController.cpp
+)
+
+set(editor_hdr
+    src/editor/editorController.hpp
+)
+
 set(engine_src
     ${guizmo_src}
     ${octree_src}
+    ${editor_src}
     ${simplexNoise_src}
 
     src/gl.cpp
     src/log.cpp
-    src/timer.cpp
     src/Game.cpp
+    src/timer.cpp
     src/input.cpp
+    src/buffer.cpp
     src/engine.cpp
     src/memory.cpp
     src/Global.cpp
     src/skybox.cpp
     src/screen.cpp
     src/thread.cpp
-    src/renderer.cpp
+    src/render.cpp
+    src/random.cpp
     src/settings.cpp
     src/gameObject.cpp
+    src/taskRuntime.cpp
     src/screenRender.cpp
     src/eventManager.cpp
     src/chunkManager.cpp
     src/renderManager.cpp
     src/objectManager.cpp
     src/bufferManager.cpp
-    src/editorController.cpp
 
+    src/component/camera.cpp
+    src/component/renderer.cpp
     src/component/animator.cpp
     src/component/collider.cpp
     src/component/Transform.cpp
@@ -105,8 +119,6 @@ set(engine_src
     src/filmbox/fbxMesh.cpp
     src/filmbox/Filmbox.cpp
 
-    src/geometry/batchedGeometry.cpp
-    src/geometry/geometryRender.cpp
     src/geometry/material.cpp
     src/geometry/model.cpp
     src/geometry/mesh.cpp
@@ -126,36 +138,39 @@ set(engine_src
     src/filesystem/stream.cpp
 
     src/physics/physicsScene.cpp
-
-    src/game/terrain.cpp
 )
 
 set(engine_hdr
     ${guizmo_hdr}
     ${octree_hdr}
+    ${editor_hdr}
     ${simplexNoise_hdr}
     
     src/log.h
-    src/timer.h
     src/Game.h
+    src/timer.h
     src/input.h
+    src/buffer.h
     src/engine.h
     src/memory.h
     src/Global.h
     src/skybox.h
     src/screen.h
     src/thread.h
-    src/renderer.h
+    src/render.h
+    src/random.hpp
     src/settings.h
     src/gameObject.h
+    src/taskRuntime.h
     src/screenRender.h
     src/eventManager.h
     src/chunkManager.h
     src/renderManager.h
     src/objectManager.h
     src/bufferManager.h
-    src/editorController.h
 
+    src/component/camera.h
+    src/component/renderer.h
     src/component/animator.h
     src/component/collider.h
     src/component/Transform.h
@@ -199,8 +214,6 @@ set(engine_hdr
     src/filmbox/fbxMesh.h
     src/filmbox/Filmbox.h
 
-    src/geometry/batchedGeometry.h
-    src/geometry/geometryRender.h
     src/geometry/material.h
     src/geometry/model.h
     src/geometry/mesh.h
@@ -220,9 +233,6 @@ set(engine_hdr
     src/filesystem/stream.h
 
     src/physics/physicsScene.h
-
-    src/game/terrain.h
-
 )
 
 add_library(engine STATIC ${engine_src} ${engine_hdr})

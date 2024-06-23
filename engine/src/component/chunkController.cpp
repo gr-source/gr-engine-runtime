@@ -3,7 +3,7 @@
 #include "MeshRender.h"
 #include "Transform.h"
 
-SimplexNoise ChunkController::Noise(0.1f, 0.1f, 1.0f, 1.0f);
+SimplexNoise ChunkController::Noise;
 
 int ChunkController::ChunkSize = 16;
 
@@ -18,17 +18,30 @@ void ChunkController::OnInit() {
 }
 
 void ChunkController::BuildMesh() {
+    /*
     auto& transform = entity->getComponent<Transform>(); // chunck
 
     for (int x = 0; x < ChunkSize; x++) {
-        for (int z = 0; z < ChunkSize; z++) {
-            auto height = Noise.noise(transform.position.x + (x * ChunkSize), transform.position.z + (z * ChunkSize));
-                  
-            int maxHeight = static_cast<int>(std::floor(height * ChunkSize));
+        for (int y = 0; y < ChunkSize; y++) {
+            for (int z = 0; z < ChunkSize; z++) {
+                m_blocks[x][y][z].isSolid = false;
+            }
+        }
+    }
 
-            for (int y = 0; y < maxHeight; y++) {
+    for (int x = 0; x < ChunkSize; x++) {
+        for (int z = 0; z < ChunkSize; z++) {
+            auto height = Noise.noise((x + transform.position.x) * 0.005f, (z + transform.position.z) * 0.005f);
+            height = (height * 0.5f + 0.5f) * float(ChunkSize);
+
+            height = std::floor(height);
+            if (height <= 0) {
+                height = 1;
+            }
+
+            for (int y = 0; y < height; y++) {
                 m_blocks[x][y][z].isSolid = true;
-                m_blocks[x][y][z].transform.position = {(float)x, (float)y, (float)z};
+                m_blocks[x][y][z].transform.position = Vector3((float)x, (float)y, (float)z);
             }
         }
     }
@@ -134,4 +147,7 @@ void ChunkController::BuildMesh() {
     meshRender.m_materials.emplace(0, m);
 
     meshRender.buildMesh();
+    */
 }
+
+

@@ -17,6 +17,6 @@ void EventManager::ProcessEvent() {
 }
 
 const u32 EventManager::getcount() {
-    return m_events.size();
+    return 0;
 }
 

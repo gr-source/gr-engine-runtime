@@ -250,9 +250,6 @@ vec3 CreateDirectLight(LightComponent light, vec3 V, vec3 N, vec3 F0, vec3 albed
     vec3 H = normalize(L + V);
     vec3 R = reflect(-V, N);
 
-    // Calcula o fator de sombreamento
-    float shadow = getShadow(light.vp * vec4(m_fragPos, 1.0));
-
     // Calcula os produtos de ponto entre vetores
     float NdotL = max(0.0, dot(N, L));
     float NdotV = max(0.001, dot(N, V));
@@ -276,10 +273,8 @@ vec3 CreateDirectLight(LightComponent light, vec3 V, vec3 N, vec3 F0, vec3 albed
     
     // Atenuação do metal
     kD *= 1.0 - metallic;
-    kD *= 1.0 - shadow;
-
     // Aplica o fator de sombreamento
-    return (kD * albedo / PI + specular) * light.color.xyz * (1.0 - shadow) * NdotL;
+    return (kD * albedo / PI + specular) * light.color.xyz * NdotL;
 }
 
 vec3 BaseColor(vec3 fragPos, vec3 albedo, float roughness, float metallic, float ao, vec3 normal) {

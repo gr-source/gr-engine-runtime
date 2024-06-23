@@ -19,9 +19,9 @@ public:
 
     Vertex3D& GetVertex(u32 index);
 
-    const u32 getverticecount() const;
+    const u32 getVerticeCount() const;
 
-    const Vertex3D* getverticedata() const;
+    const Vertex3D* getVerticeData() const;
 
     void addindice(u32 indice);
 
@@ -31,9 +31,9 @@ public:
 
     const std::vector<u32>& getindices() const;
 
-    const u32 getindicecount() const;
+    const u32 getIndiceCount() const;
 
-    const u32* getindicedata() const;
+    const u32* getIndiceData() const;
 
     u32& GetIndice(u32 index);
 
@@ -46,6 +46,9 @@ public:
     const std::vector<u32>& getMaterials() const;
 
     u32* findMaterial(u32 index);
+
+    template <typename T>
+    void insert(const std::vector<T>& vector);
 
     void clear();
 

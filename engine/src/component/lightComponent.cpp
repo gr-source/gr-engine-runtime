@@ -2,8 +2,6 @@
 
 #include "Transform.h"
 
-#include "../renderer.h"
-
 std::vector<LightComponent*> LightComponent::m_lights;
 Matrix4x4 LightComponent::projection = Math::orthographic(-10.0f, 10.0f, -10.0f, 10.0f, 0.1f, 75.0f);
 
@@ -18,8 +16,8 @@ LightComponent::~LightComponent() {
 }
 
 void LightComponent::OnUpdate() {
-    DebugDraw::addLine(m_transform->position, (m_transform->position + m_transform->getforward()), m_color);
-    DebugDraw::addPoint(m_transform->position, Color::red);
+    // DebugDraw::addLine(m_transform->position, (m_transform->position + m_transform->getforward()), m_color);
+    // DebugDraw::addPoint(m_transform->position, Color::red);
 }
 
 void LightComponent::OnInit() {

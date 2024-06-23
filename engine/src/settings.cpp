@@ -1,6 +1,6 @@
 #include "settings.h"
 
-bool Settings::IsEngineRunning = false;
+bool Settings::IsEngineRunning = true;
 
 bool Settings::IsGameRunning = false;
 

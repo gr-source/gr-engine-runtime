@@ -9,16 +9,9 @@
 
 class MeshFilter : public Component {
 public:
-    MeshFilter(const std::vector<Mesh>& meshes);
-    BufferManager* m_bufferManager;
+    MeshFilter();
 
-    BoundBox m_boundBox;
-
-    u32 m_verticeCount;
-    u32 m_indiceCount;
+    Mesh& getMesh();
 private:
-    static std::unordered_map<std::string, std::unique_ptr<BufferManager>> m_globalMesh;
-
-
-    void AddAttrib(BufferManager& bufferManager);
+    Mesh m_mesh;
 };

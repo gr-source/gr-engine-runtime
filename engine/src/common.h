@@ -24,6 +24,7 @@ class MeshFilter;
 class MeshRender;
 class Transform;
 class Rigidbody;
+class Renderer;
 class Animator;
 
 class GBuffer;

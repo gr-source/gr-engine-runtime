@@ -24,6 +24,10 @@ CameraComponent &CameraComponent::MainCamera() {
     return *m_cameras[CameraID];
 }
 
+CameraComponent &CameraComponent::GetCurrent() {
+    return *m_cameras[CameraID];
+}
+
 CameraComponent::CameraComponent(float fov, float nearPlane, float farPlane, float aspect) : m_fov(fov), m_nearPlane(nearPlane), m_farPlane(farPlane), m_aspect(aspect), m_projection(Projection::ePerspective) {
     m_cameras.push_back(this);
 }

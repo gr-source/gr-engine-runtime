@@ -4,7 +4,6 @@
 #include "../component/Transform.h"
 
 #include "../gameObject.h"
-#include "../renderer.h"
 
 Octree::Octree(const Vector3 &position, const Vector3& scale) : m_position(position), m_scale(scale), m_subdivid(false) {
     for (u32 i=0;i<MAX_OCTREE_CHILD;i++) {

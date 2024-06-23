@@ -5,7 +5,7 @@
 
 #include <bullet/btBulletDynamicsCommon.h>
 
-#include "../renderer.h"
+#include "../common.h"
 
 #define FROMVEC3(vec) btVector3(vec.x, vec.y, vec.z)
 #define FROMQUAT(q) btQuaternion(q.x, q.y, q.z, q.w)

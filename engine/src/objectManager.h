@@ -8,6 +8,8 @@ public:
     
     template <typename... Args>
     static GameObject& add(Args&&... args);
+
+    static GameObject* Instantiate(GameObject* gameObject);
     
     static std::vector<std::unique_ptr<GameObject>>& getobjects();
 

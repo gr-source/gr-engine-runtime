@@ -1,9 +1,17 @@
 #include "engine.h"
 #include "input.h"
 #include "screen.h"
-#include "editorController.h"
+#include "random.hpp"
+#include "taskRuntime.h"
 
+
+#include "editor/editorController.hpp"
+
+#include "component/cameraController.h"
 #include "component/MeshRender.h"
+#include "component/meshFilter.h"
+#include "component/Transform.h"
+#include "component/camera.h"
 
 #include "ecs/entityManager.h"
 
@@ -21,11 +29,11 @@
 
 #include "filesystem/stream.h"
 
+#include "core/scene/SceneManager.h"
 #include "renderManager.h"
 #include "objectManager.h"
 #include "eventManager.h"
 #include "screenRender.h"
-#include "renderer.h"
 #include "skybox.h"
 #include "Global.h"
 #include "timer.h"
@@ -36,13 +44,45 @@
 #include <linux/input-event-codes.h>
 #include <filesystem>
 
+#include <gr-render/gRender.h>
+#include <gr-render/gShader.h>
+
+std::thread Engine::m_thread[2];
+
+std::vector<Vertex3D> vertex3D {
+    {Vector3(-1.0f, -1.0f,  1.0f), Vector3(0.0f, 0.0f,  1.0f), Vector2(0.0f, 0.0f)},
+    {Vector3(-1.0f,  1.0f,  1.0f), Vector3(0.0f, 0.0f,  1.0f), Vector2(0.0f, 1.0f)},
+    {Vector3(-1.0f, -1.0f, -1.0f), Vector3(0.0f, 0.0f,  1.0f), Vector2(1.0f, 0.0f)},
+    {Vector3(-1.0f,  1.0f, -1.0f), Vector3(0.0f, 0.0f,  1.0f), Vector2(1.0f, 1.0f)},
+
+    {Vector3( 1.0f, -1.0f,  1.0f), Vector3(0.0f, 0.0f, -1.0f), Vector2(1.0f, 0.0f)},
+    {Vector3( 1.0f,  1.0f,  1.0f), Vector3(0.0f, 0.0f, -1.0f), Vector2(1.0f, 1.0f)},
+    {Vector3( 1.0f, -1.0f, -1.0f), Vector3(0.0f, 0.0f, -1.0f), Vector2(0.0f, 0.0f)},
+    {Vector3( 1.0f,  1.0f, -1.0f), Vector3(0.0f, 0.0f, -1.0f), Vector2(0.0f, 1.0f)}
+};
+
+std::vector<u32> indices3D {
+    1, 2, 0,
+    3, 6, 2,
+    7, 4, 6,
+    5, 0, 4,
+    6, 0, 2,
+    3, 5, 7,
+    1, 3, 2,
+    3, 7, 6,
+    7, 5, 4,
+    5, 1, 0,
+    6, 4, 0,
+    3, 1, 5
+};
+
 void Engine::GRWindowResize(u32 width, u32 height) {
     Screen::SetResolution(width, height);
 }
 
 void Engine::MainLoop(std::function<void()> func) {
     m_thread[0] = std::thread(OnLoader);
-    m_thread[1] = std::thread(OnPhysics);
+    // m_thread[1] = std::thread(OnPhysics);
 
     Time timer(60.0f);
     while (Settings::IsEngineRunning) {
@@ -53,6 +93,8 @@ void Engine::MainLoop(std::function<void()> func) {
 
         Engine::OnRender();
 
+        EventManager::ProcessEvent();
+
         func();
     }
 }
@@ -60,9 +102,7 @@ void Engine::MainLoop(std::function<void()> func) {
 void Engine::GRKeyboardDown(u32 key) {
     switch (key) {
     case KEY_ESC: {
-        ImGuiIO& io = ImGui::GetIO();
-
-        io.MouseDrawCursor = !io.MouseDrawCursor;
+        Settings::IsEngineRunning = false;
         break;
     }
     default:
@@ -70,85 +110,101 @@ void Engine::GRKeyboardDown(u32 key) {
     }
 }
 
-void Engine::GRKeyboardUp(u32 key) {}
+void Engine::GRKeyboardUp(u32 key) {
+}
 
-void Engine::GRCursorPos(float xpos, float ypos) {}
+void Engine::GRCursorPos(float xpos, float ypos) {
+}
 
 void Engine::GRCursorScrool(float xoffset, float yoffset) {
     if (yoffset == -1.0f) {
-        EditorController::movementSpeed += 5.0f;
+        // EditorController::movementSpeed += 5.0f;
     } else if (yoffset == 1.0f) {
-        EditorController::movementSpeed -= 5.0f;
+        // EditorController::movementSpeed -= 5.0f;
     }
 }
 
 void Engine::GRDropFunc(const char *path) {
-    if (!std::filesystem::exists(path)) {
-        return;
-    }
-    std::string extension = std::filesystem::path(path).extension();
-    if (extension == ".fbx") {
-        return UploadFBX(path);
-    } else if (extension == ".gmd") {
-        return SetupGMD(path);
-    }
 }
 
-std::unique_ptr<Game> Engine::m_game = nullptr;
+grr::gShader* shader = nullptr;
 
-Skybox* Engine::m_skybox = nullptr;
+GameObject* CreateCube(u8 index, const Vector3& position) {
+    auto cube = SceneManager::add("Cube[" + std::to_string(index) + "]");
 
-std::unique_ptr<ScreenRender> pScreenRender = nullptr;
+    auto& transform = cube->getTransform();
+    transform.position = position;
 
-std::unique_ptr<ImGuiRender> pImGuiRender = nullptr;
+    auto& meshFilter = cube->addComponent<MeshFilter>();
 
-Shadowbuffer* m_shadowbuffer = nullptr;
+    auto& mesh = meshFilter.getMesh();
+    mesh.insert(vertex3D);
+    mesh.insert(indices3D);
 
-ScreenBuffer* pScreenBuffer = nullptr;
+    auto& meshRender = cube->addComponent<MeshRender>();
+    auto& material = meshRender.addMaterial("material");
+    material.albedo = {1.0f, 0.0f, 1.0f, 1.0f};
+    material.metallic = 0.5f;
+    material.roughness = 0.32f;
+    material.ao = 0.5f;
+    return cube;
+}
 
-Imguibuffer* pImguibuffer = nullptr;
-
-GBuffer* m_gbuffer = nullptr;
-
-std::thread Engine::m_thread[2];
+GameObject* cube = nullptr;
 
 void Engine::OnInit() {
-    Settings::IsEngineRunning = true;
+    auto mainCamera = SceneManager::add("MainCamera");
 
-    pImGuiRender = std::make_unique<ImGuiRender>("#version 330 core");
+    auto& transform = mainCamera->getTransform();
+    transform.position = {0.0f, 0.0f, -5.0f};
 
-    pScreenBuffer = &ScreenBuffer::getInstance();
-    pImguibuffer = &Imguibuffer::getInstance();
+    mainCamera->addComponent<Camera>();
+    mainCamera->setActive(true);
 
-    DebugDraw::initialize();
+    Random::SetSeed(std::time(nullptr));
 
-    pScreenRender = std::make_unique<ScreenRender>();
+    cube = CreateCube(0, Vector3::zero);
 
-    m_shadowbuffer = &Shadowbuffer::getInstance();
+    std::string vert = Filesystem::getfilecontent(Filesystem::getpublic(Filesystem::eShader).string() + "/default.vert");
+    std::string frag = Filesystem::getfilecontent(Filesystem::getpublic(Filesystem::eShader).string() + "/default.frag");
 
-    m_skybox = &Skybox::getInstance();
+    shader = grr::gShader::Create({frag.c_str()}, {vert.c_str()});
 
-    m_game = std::make_unique<Game>();
-
-    SetupEnable();
-
-    RenderManager::Initialize();
+    EditorController::Initialize();
 }
 
 void Engine::OnUpdate() {
-    EntityManager::OnUpdate();
+    EditorController::Update();
 
-    m_game->Update();
+    EntityManager::OnUpdate();
 }
 
 void Engine::OnRender() {
-    EventManager::ProcessEvent();
+    auto camera = Camera::GetCurrent();
+    if (!camera) {
+        grr::gRender::SetRenderState(grr::GR_BACKGROUND_COLOR, (void*)&Color::red);
+        grr::gRender::SetRenderState(grr::GR_BACKGROUND, grr::GR_DEPTH_BUFFER | grr::GR_COLOR_BUFFER);
+        return;
+    }
 
-    MainFramebuffer();
+    grr::gRender::SetRenderState(grr::GR_BACKGROUND_COLOR, (void*)&Color::black);
+    grr::gRender::SetRenderState(grr::GR_BACKGROUND, grr::GR_DEPTH_BUFFER | grr::GR_COLOR_BUFFER);
+    grr::gRender::SetRenderState(grr::GR_DEPTH, grr::GR_TRUE);
 
-    #if !IS_GAME
-    UIFramebuffer();
-    #endif
+    OnPreRender(camera);
+}
+
+void Engine::OnPostRender() {
+}
+
+void Engine::OnPreRender(Camera *camera) {
+    shader->bind();
+
+    grr::gShader::SetUniform("projection", 1, camera->getPerspesctive());
+    grr::gShader::SetUniform("view", 1, camera->getViewMatrix());
+    grr::gShader::SetUniform("viewPos", 1, camera->getPosition());
+
+    RenderManager::OnRenderer(shader);
 }
 
 void Engine::OnPhysics() {
@@ -232,240 +288,4 @@ void Engine::HandleEvent(EngineEvent event, const void* data) {
     default:
         break;
     }
-}
-
-Time tickRender;
-void Engine::MainFramebuffer() {
-    gameStatics.renderMs = tickRender.start();
-
-    // Preparação para renderização.
-    RenderManager::Process();
-
-    /* Preparação do shadow
-    m_shadowbuffer->bind();
-    GRender(GRENDERERDEPTH);
-    GEnableDepthTest();
-    GCullFaceFront();
-
-    BatchingManager::OnRenderShadow();
-
-    m_shadowbuffer->unbind();
-    */
-
-    // aplicação do anti-alising mass4.
-    pScreenBuffer->bind();
-
-    GRender(GRENDERER3D);
-    GEnableDepthTest();
-    GEnableFrameBufferSRGB();
-    GCullFaceBack();
-
-    RenderScene();
-
-    // trocara para o frame buffer do pos processamento.
-    pScreenBuffer->swap();
-
-    pScreenBuffer->unbind();
-
-    #if !IS_GAME
-    pImguibuffer->bind();
-    #else
-    GSetViewport(Screen::width, Screen::height);
-    #endif
-
-    // renderização da cena 2d e utilização do pos processamento;
-    GRender(GRENDERER2D);
-    GDisableDepthTest();
-    GDisableFrameBufferSRGB();
-
-    pScreenRender->render(pScreenBuffer->GetTexture());
-
-    #if !IS_GAME
-    pImguibuffer->unbind();
-    #endif
-    
-    tickRender.end();
-}
-
-void Engine::RenderScene() {
-
-    RenderManager::Renderer();
-
-    DebugDraw::Renderer();
-    glDepthFunc(GL_LEQUAL);
-    m_skybox->render();
-    glDepthFunc(GL_LESS);
-}
-
-#if !IS_GAME
-void Engine::UIFramebuffer() {
-    GSetViewport(Screen::width, Screen::height);
-
-    GClearColor(Color::black);
-    GRender(GRENDERER2D);
-
-    pImGuiRender->Begin();
-    m_game->Gui();
-    pImGuiRender->End();
-}
-#endif
-
-void Engine::SetupEnable() {
-    glEnable(GL_MULTISAMPLE);
-
-    glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LESS);
-
-    glEnable(GL_CULL_FACE);
-    glCullFace(GL_BACK);
-
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-}
-
-struct ChunkModel {
-    float version;
-};
-
-#include "core/scene/SceneManager.h"
-
-void Engine::SetupGMD(const std::string &path) {
-    Stream::open(path, std::ios_base::in | std::ios_base::binary);
-
-    ChunkModel chunck {0.0f};
-
-    Stream::read<ChunkModel>(&chunck, 1);
-
-    std::cout << "gmd vertion: " << chunck.version << std::endl;
-
-    std::size_t nameSize;
-    Stream::read<std::size_t>(&nameSize, 1);
-
-    std::string name(nameSize, '\0');
-
-    Stream::read<char>(name.data(), name.size());
-
-    std::size_t meshCount;
-    Stream::read<std::size_t>(&meshCount, 1);
-
-    std::cout << "MeshCount: " << meshCount << std::endl;
-
-    std::vector<FbxMesh> meshes;
-
-    auto object = SceneManager::add(name);
-
-    name.clear();
-
-    for (std::size_t i={};i<meshCount;++i) {
-        Stream::read<std::size_t>(&nameSize, 1);
-
-        name.resize(nameSize);
-
-        Stream::read<char>(name.data(), nameSize);
-
-        std::size_t indicesSize;
-        Stream::read<std::size_t>(&indicesSize, 1);
-
-        std::vector<u32> indices(indicesSize);
-        Stream::read<u32>(indices.data(), indices.size());
-
-        std::size_t verticesSize;
-        Stream::read<std::size_t>(&verticesSize, 1);
-
-        std::vector<FbxVertex3D> vertices(verticesSize);
-        Stream::read<FbxVertex3D>(vertices.data(), vertices.size());
-
-        auto& mesh = meshes.emplace_back(name);
-        mesh.insert(indices);
-        mesh.insert(vertices);
-    }
-
-    if (!meshes.empty()) {
-        Mesh m_mesh(meshes[0].getName());
-
-        ulong verticeCount = 0;
-        for (const auto& mesh : meshes) {
-            for (const auto& vertice : mesh.getVertices()) {
-                m_mesh.addvertex(vertice.position, vertice.normal, vertice.uv);
-            }
-
-            for (const auto& index : mesh.getIndices()) {
-                m_mesh.addindice(verticeCount + index);
-            }
-
-            verticeCount += mesh.getVerticeCount();
-        }
-        object->addComponent<MeshRender>(m_mesh);
-    }
-
-    Stream::close();
-}
-
-void Engine::WriteModel(const FbxNode *node, const std::string &path) {
-    Stream::open(path, std::ios_base::out | std::ios_base::binary);
-
-    ChunkModel chunck {1.0};
-
-    Stream::write<ChunkModel>(&chunck, 1);
-
-    auto name = node->getname();
-    auto nameSize = name.size();
-
-    auto& meshes = node->getmeshs();
-    auto mesheCount = meshes.size();
-
-    Stream::write<std::size_t>(&nameSize, 1);
-    Stream::write<char>(name.data(), nameSize);
-
-    Stream::write<std::size_t>(&mesheCount, 1);
-    for (const auto& fbxMesh : meshes) {
-        name = fbxMesh.getName();
-        nameSize = name.size();
-
-        // auto material = fbxMesh.getMaterials();
-        auto indices = fbxMesh.getIndices();
-        auto indicesSize = indices.size();
-
-        auto vertices = fbxMesh.getVertices();
-        auto verticesSize = vertices.size();
-
-        Stream::write<std::size_t>(&nameSize, 1);
-        Stream::write<char>(name.data(), nameSize);
-        
-        Stream::write<std::size_t>(&indicesSize, 1);
-        Stream::write<u32>(indices.data(), indices.size());
-
-        Stream::write<std::size_t>(&verticesSize, 1);
-        Stream::write<FbxVertex3D>(vertices.data(), vertices.size());
-    }
-
-    Stream::close();
-}
-
-void Engine::ReadNode(const FbxNode *node) {
-    auto dir = Filesystem::getpublic(Filesystem::eModel).m_path + "/" + node->getname() + ".gmd";
-
-    WriteModel(node, dir);
-
-    for (const auto& child : node->getchildren()) {
-        ReadNode(&child);
-    }
-}
-
-void Engine::UploadFBX(const std::string &path) {
-    auto filmbox = Filmbox::Load(path);
-
-    auto scene = filmbox->getScene();
-
-    auto materials = scene->getmaterials();
-    for (const auto& entry : materials) {
-        const auto& material = entry.second;
-    }
-
-    auto root = scene->getRoot();
-    for (const auto& child : root->getchildren()) {
-        ReadNode(&child);
-    }
-
-    filmbox->destroy();
 }

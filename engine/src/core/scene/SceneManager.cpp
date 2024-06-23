@@ -6,15 +6,15 @@
 Scene SceneManager::m_scene;
 
 void SceneManager::Save(const std::string &path) {
-    std::ofstream os(path);
+    // std::ofstream os(path);
 
-    os << "name: " << m_scene.name << std::endl;
+    // os << "name: " << m_scene.name << std::endl;
 
-    for (const auto& object : m_scene.m_gameObjects) {
-        os << "object " << object->name << std::endl;
-    }
+    // for (const auto& object : m_scene.m_gameObjects) {
+    //     os << "object " << object->name << std::endl;
+    // }
 
-    os.close();
+    // os.close();
 }
 
 void SceneManager::Load(const std::string &path) {

@@ -5,7 +5,7 @@
 #include <linux/input-event-codes.h>
 
 #include <GLFW/glfw3.h>
-
+#include <gr-render/gRender.h>
 
 #define SCREEN_WIDTH 1024
 #define SCREEN_HEIGHT 720
@@ -118,10 +118,12 @@ int OnApplicationInit() {
 
     glfwSetWindowPos(window, 0, 0);
 
-    if (glewInit() != GLEW_OK) {
+    if (!grr::gRender::OpenGLInit()) {
         OnDestroy();
         return printf("GLEW do not created");
     }
+
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
 
     Input::m_instance = window;
 
@@ -135,6 +137,8 @@ int OnApplicationInit() {
     Engine::HandleEvent(Engine::GR_MAINLOOP, &func);
 
     Engine::HandleEvent(Engine::GR_DESTROY, nullptr);
+
+    grr::gRender::OpenGLShutdown();
 
     OnDestroy();
     return 0;

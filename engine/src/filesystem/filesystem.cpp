@@ -25,7 +25,9 @@ Filesystem::path Filesystem::getpublic(u8 type) {
 
 std::string Filesystem::getfilecontent(const std::string &path) {
     std::ifstream is(path);
-    if (!is.is_open()) return "";
+    if (!is.is_open()) {
+        throw std::runtime_error("Falied to opengl file: " + path);
+    }
     std::string content((std::istreambuf_iterator<char>(is)), std::istreambuf_iterator<char>());
     is.close();
     return content;
@@ -52,7 +54,7 @@ const std::string Filesystem::path::filename() {
     return std::filesystem::path(m_path).filename();
 }
 
-std::string Filesystem::path::string() {
+const std::string& Filesystem::path::string() const {
     return m_path;
 }
 

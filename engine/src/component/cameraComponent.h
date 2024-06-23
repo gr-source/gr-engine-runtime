@@ -14,11 +14,13 @@ public:
 
     static std::vector<CameraComponent*> m_cameras;
 
-    static CameraComponent& MainCamera();
-
     static u32 CameraID;
 
     CameraComponent(float fov = 60.0f, float nearPlane = 1.0f, float farPlane = 1.0f, float aspect = 1.0f);
+
+    static CameraComponent& MainCamera();
+
+    static CameraComponent& GetCurrent();
 
     void OnInit() override;
 
@@ -46,6 +48,8 @@ private:
     Transform* m_transform;
 
     Projection m_projection;
+
+    static CameraComponent* s_CurrentCamera;
 
     friend class EditorController;
     friend class Game;
