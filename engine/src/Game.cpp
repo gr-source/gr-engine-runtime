@@ -38,8 +38,8 @@
 
 #include "ui/ImGuiRender.h"
 
-#include "core/scene/SceneManager.h"
-#include "core/scene/Scene.h"
+#include "scene/SceneManager.h"
+#include "scene/Scene.h"
 
 #include "ecs/entityManager.h"
 

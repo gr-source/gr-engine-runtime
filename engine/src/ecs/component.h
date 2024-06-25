@@ -5,6 +5,8 @@ class GameObject;
 
 #include <gr-math/gmath.h>
 
+#include "../timer.h"
+
 class Component {
 public:
     Component(bool active = false) : active(active), entity(nullptr) {}

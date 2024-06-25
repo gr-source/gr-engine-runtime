@@ -14,7 +14,7 @@
 #include "texture.h"
 #include "shader.h"
 
-#include "../core/stb/stb_image.h"
+#include "../stb/stb_image.h"
 
 template <typename T>
 struct ProcessLoader {

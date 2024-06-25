@@ -31,7 +31,7 @@
 #include "Color.h"
 #include "log.h"
 
-#include "core/exception/Exception.h"
+#include "exception/Exception.h"
 
 #include "types.h"
 

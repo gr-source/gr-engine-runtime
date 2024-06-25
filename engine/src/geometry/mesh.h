@@ -13,7 +13,7 @@ public:
     const std::string& getname() const;
 
     template <typename ...Args>
-    Vertex3D& addvertex(Args&& ...args);
+    Vertex3D& addVertice(Args&& ...args);
 
     const std::vector<Vertex3D>& getvertices() const;
 
@@ -66,6 +66,6 @@ protected:
 };
 
 template <typename ...Args>
-inline Vertex3D& Mesh::addvertex(Args&& ...args) {
+inline Vertex3D& Mesh::addVertice(Args&& ...args) {
     return m_vertices.emplace_back(std::forward<Args>(args)...);
 }

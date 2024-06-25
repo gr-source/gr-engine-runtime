@@ -16,7 +16,7 @@ public:
         eMAT3x3   = 2 << 2,
         eINT      = 2 << 3,
         eFLOAT    = 2 << 4,
-        eVECTOR3  = 2 << 5,
+        eVector3  = 2 << 5,
         eVECTOR4  = 2 << 6,
         eCOLOR    = 3 << 1,
     };

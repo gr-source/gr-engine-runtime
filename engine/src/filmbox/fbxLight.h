@@ -1,10 +1,7 @@
 #pragma once
 
-#include <string>
-
+#include "../common.h"
 #include "../Color.h"
-
-#include <gr-math/vector3.h>
 
 class FbxLight {
 public:

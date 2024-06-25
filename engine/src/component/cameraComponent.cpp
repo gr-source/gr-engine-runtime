@@ -7,7 +7,7 @@
 #include "../screen.h"
 #include "../time.h"
 
-#include "../core/scene/SceneManager.h"
+#include "../scene/SceneManager.h"
 
 std::vector<CameraComponent*> CameraComponent::m_cameras;
 u32 CameraComponent::CameraID = 0;

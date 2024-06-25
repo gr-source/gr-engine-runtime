@@ -1,7 +1,7 @@
 #include "resources.h"
 
 #define STB_IMAGE_IMPLEMENTATION
-#include "../core/stb/stb_image.h"
+#include "../stb/stb_image.h"
 
 #include "../filesystem/filesystem.h"
 #include "../eventManager.h"

@@ -1,8 +1,8 @@
 #pragma once
 
-#include "../../common.h"
-#include "../../gameObject.h"
-#include "../../objectManager.h"
+#include "../common.h"
+#include "../gameObject.h"
+#include "../objectManager.h"
 
 class Scene {
 public:

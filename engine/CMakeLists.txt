@@ -69,7 +69,6 @@ set(engine_src
     src/taskRuntime.cpp
     src/screenRender.cpp
     src/eventManager.cpp
-    src/chunkManager.cpp
     src/renderManager.cpp
     src/objectManager.cpp
     src/bufferManager.cpp
@@ -84,6 +83,7 @@ set(engine_src
     src/component/meshFilter.cpp
     src/component/boxCollider.cpp
     src/component/meshCollider.cpp
+    src/component/chunkManager.cpp
     src/component/lightComponent.cpp
     src/component/chunkController.cpp
     src/component/cameraComponent.cpp
@@ -123,8 +123,8 @@ set(engine_src
     src/geometry/model.cpp
     src/geometry/mesh.cpp
     
-    src/core/scene/Scene.cpp
-    src/core/scene/SceneManager.cpp
+    src/scene/Scene.cpp
+    src/scene/SceneManager.cpp
     
     ${ecs_src}
 
@@ -164,7 +164,6 @@ set(engine_hdr
     src/taskRuntime.h
     src/screenRender.h
     src/eventManager.h
-    src/chunkManager.h
     src/renderManager.h
     src/objectManager.h
     src/bufferManager.h
@@ -179,6 +178,7 @@ set(engine_hdr
     src/component/meshFilter.h
     src/component/boxCollider.h
     src/component/meshCollider.h
+    src/component/chunkManager.hpp
     src/component/lightComponent.h
     src/component/chunkController.h
     src/component/cameraComponent.h
@@ -218,8 +218,8 @@ set(engine_hdr
     src/geometry/model.h
     src/geometry/mesh.h
 
-    src/core/scene/Scene.h
-    src/core/scene/SceneManager.h
+    src/scene/Scene.h
+    src/scene/SceneManager.h
 
     ${ecs_hdr}
 

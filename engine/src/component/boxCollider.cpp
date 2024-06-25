@@ -6,7 +6,7 @@ void BoxCollider::OnInit() {
     Collider& m_Collider = entity->addComponent<Collider>(ColliderType::BoxCollider);
 
     m_boxShape = reinterpret_cast<btBoxShape*>(m_Collider.getshape());
-    m_boxShape->setLocalScaling(btVector3(size.x, size.y, size.z));
+    // m_boxShape->setLocalScaling(btVector3(size.x, size.y, size.z));
 }
 
 /*

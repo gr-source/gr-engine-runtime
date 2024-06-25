@@ -8,6 +8,7 @@
 #include "editor/editorController.hpp"
 
 #include "component/cameraController.h"
+#include "component/chunkManager.hpp"
 #include "component/MeshRender.h"
 #include "component/meshFilter.h"
 #include "component/Transform.h"
@@ -29,7 +30,7 @@
 
 #include "filesystem/stream.h"
 
-#include "core/scene/SceneManager.h"
+#include "scene/SceneManager.h"
 #include "renderManager.h"
 #include "objectManager.h"
 #include "eventManager.h"
@@ -118,9 +119,9 @@ void Engine::GRCursorPos(float xpos, float ypos) {
 
 void Engine::GRCursorScrool(float xoffset, float yoffset) {
     if (yoffset == -1.0f) {
-        // EditorController::movementSpeed += 5.0f;
+        EditorController::s_camSpeed += 0.2f;
     } else if (yoffset == 1.0f) {
-        // EditorController::movementSpeed -= 5.0f;
+        EditorController::s_camSpeed -= 0.2f;
     }
 }
 
@@ -161,9 +162,8 @@ void Engine::OnInit() {
     mainCamera->addComponent<Camera>();
     mainCamera->setActive(true);
 
-    Random::SetSeed(std::time(nullptr));
-
-    cube = CreateCube(0, Vector3::zero);
+    auto chunckManager = SceneManager::add("Chunkmanager");
+    chunckManager->addComponent<ChunkManager>();
 
     std::string vert = Filesystem::getfilecontent(Filesystem::getpublic(Filesystem::eShader).string() + "/default.vert");
     std::string frag = Filesystem::getfilecontent(Filesystem::getpublic(Filesystem::eShader).string() + "/default.frag");
@@ -187,9 +187,12 @@ void Engine::OnRender() {
         return;
     }
 
-    grr::gRender::SetRenderState(grr::GR_BACKGROUND_COLOR, (void*)&Color::black);
+    grr::gRender::SetRenderState(grr::GR_BACKGROUND_COLOR, (void*)&Color::blue);
     grr::gRender::SetRenderState(grr::GR_BACKGROUND, grr::GR_DEPTH_BUFFER | grr::GR_COLOR_BUFFER);
     grr::gRender::SetRenderState(grr::GR_DEPTH, grr::GR_TRUE);
+    grr::gRender::SetRenderState(grr::GR_DEPTH_FUNC, grr::GR_DEPTH_LESS);
+    grr::gRender::SetRenderState(grr::GR_CULL_FACE, grr::GR_TRUE);
+    grr::gRender::SetRenderState(grr::GR_CULL, grr::GR_BACK);
 
     OnPreRender(camera);
 }
@@ -289,3 +292,5 @@ void Engine::HandleEvent(EngineEvent event, const void* data) {
         break;
     }
 }
+
+
