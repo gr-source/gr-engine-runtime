@@ -1,6 +1,7 @@
 #include "chunkManager.hpp"
 
 #include "chunkController.h"
+#include "voxelSettings.hpp"
 #include "camera.h"
 
 #include "../scene/SceneManager.h"
@@ -8,52 +9,45 @@
 #include "../eventManager.h"
 #include "../input.h"
 
-u8 ChunkManager::s_chunckSize = 16;
 
-ChunkManager::ChunkManager() : Component(true) {
-    // for (int i=0;i<9;i++) {
-    //     m_chunks[i] = nullptr;
-    // }
-}
+ChunkManager::ChunkManager() : Component(true) {}
 
 void ChunkManager::OnInit() {
     auto camera = Camera::GetCurrent();
     auto& position = camera->getPosition();
 
-    int centerX = position.x / int(s_chunckSize);
-    // int centerY = position.y / int(s_chunckSize);
-    int centerZ = position.z / int(s_chunckSize);
+    int centerX = position.x / int(VoxelSettings::ChunkSize);
+    int centerZ = position.z / int(VoxelSettings::ChunkSize);
 
-    int loadDistance = 3;
+    int loadDistance = 1;
+    u32 a1 = 0, a2 = 0;
     for (int dx = -loadDistance; dx <= loadDistance; ++dx) {
+        a1++;
         for (int dz = -loadDistance; dz <= loadDistance; ++dz) {
-            int chunkX = dx * s_chunckSize;
-            int chunkZ = dz * s_chunckSize;
+            a2++;
+            int chunkX = dx * VoxelSettings::ChunkSize;
+            int chunkZ = dz * VoxelSettings::ChunkSize;
 
-            std::cout << chunkX << " " << chunkZ << std::endl;
+            std::cout << dx << " " << dz << std::endl;
             
             // if (!ChunkIsLoaded(chunkX, chunkZ)) {
                 EventManager::addEvent(&ChunkManager::LoadChunk, this, chunkX, chunkZ);
             // }
         }
+        a2 = 0;
     }
 }
 
 void ChunkManager::OnUpdate() {
-    static float t = 0.0f;
-
-    t += Time::deltaTime;
-
-    if (t >= 1.0f) {
-        // OnInit();
-        t = 0.0f;
-    }
 }
 
 void ChunkManager::LoadChunk(int x, int z) {
-    // if (m_chunks.size() >= 9) return;
-
+    if (m_hasChunks[hash(x) ^ hash(z)]) {
+        return;
+    }
+    
     auto chunk = SceneManager::add("Chunk[" + std::to_string(x) + "][" + std::to_string(z) + "]");
+    
     auto& transform = chunk->getTransform();
     transform.position = {float(x), 0.0f, float(z)};
 
@@ -61,16 +55,17 @@ void ChunkManager::LoadChunk(int x, int z) {
 
     m_chunks.push_back(chunk);
 
-    // for (auto& slot : m_chunks) {
-    //     if (slot) {
-    //         continue;
-    //     }
-    //     slot = chunk;
+    m_hasChunks.emplace(hash(x) ^ hash(z), chunk);
+}
 
+GameObject *ChunkManager::findChunk(const Vector3 &position) {
+    int x = ((static_cast<int>(position.x) - VoxelSettings::ChunkSize) / VoxelSettings::ChunkSize) * VoxelSettings::ChunkSize;
+    int z = ((static_cast<int>(position.z) - VoxelSettings::ChunkSize) / VoxelSettings::ChunkSize) * VoxelSettings::ChunkSize;
 
-        m_hasChunks.emplace(hash(x) ^ hash(z), chunk);
-        // break;
-    // }
+    // std::cout << x << " " << z << std::endl;
+
+    auto it = m_hasChunks.find(hash(x) ^ hash(z));
+    return (it != m_hasChunks.end() ? (*it).second : nullptr);
 }
 
 const bool ChunkManager::ChunkIsLoaded(int x, int z) {

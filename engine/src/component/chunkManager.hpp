@@ -4,12 +4,6 @@
 
 #include "../common.h"
 
-struct Vector2Hash {
-    std::size_t operator()(const Vector2& v) const {
-        return std::hash<float>()(v.x) ^ (std::hash<float>()(v.y) << 1);
-    }
-};
-
 class ChunkManager : public Component {
 public:
     ChunkManager();
@@ -24,10 +18,10 @@ public:
 private:
     std::vector<GameObject*> m_chunks;
 
-    std::unordered_map<ulong, bool> m_hasChunks;
+    std::unordered_map<ulong, GameObject*> m_hasChunks;
 
     std::hash<int> hash;
 
-    static u8 s_chunckSize;
+    GameObject* findChunk(const Vector3& position);
 };
 

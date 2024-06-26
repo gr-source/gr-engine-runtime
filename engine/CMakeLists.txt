@@ -84,6 +84,7 @@ set(engine_src
     src/component/boxCollider.cpp
     src/component/meshCollider.cpp
     src/component/chunkManager.cpp
+    src/component/voxelSettings.cpp
     src/component/lightComponent.cpp
     src/component/chunkController.cpp
     src/component/cameraComponent.cpp
@@ -180,6 +181,7 @@ set(engine_hdr
     src/component/meshCollider.h
     src/component/chunkManager.hpp
     src/component/lightComponent.h
+    src/component/voxelSettings.hpp
     src/component/chunkController.h
     src/component/cameraComponent.h
     src/component/playerController.h
