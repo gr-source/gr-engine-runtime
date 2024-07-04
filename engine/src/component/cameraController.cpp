@@ -20,13 +20,15 @@ void CameraController::OnUpdate() {
 }
 
 void CameraController::updateCursor() {
-    static Vector2 lastMousePos = Input::GetCursorPos();
-    const Vector2 delta = Input::GetCursorPos() - lastMousePos;
+    static dVector2 lastMousePos = Input::GetCursorPos();
+    const dVector2 delta = Input::GetCursorPos() - lastMousePos;
 
-    if (Math::magnitude(delta) > 0.001f)
+    // if (Math::magnitude(delta) > 0.001f)
         processMouse(delta);
 
-    lastMousePos = Screen::GetResolution() / 2.0f;
+    auto screenSize = Screen::GetResolution() / 2;
+
+    lastMousePos = {double(screenSize.x), double(screenSize.y)};
 
     if (!Input::IsMousePress(Input::BUTTON_MIDDLE)) {
         Input::SetCursorPos(lastMousePos);
@@ -37,8 +39,8 @@ void CameraController::OnCameraUpdate() {
     m_transform->rotation = Math::normalize(Math::euler({Math::rad(-pitch), Math::rad(-yaw), 0.0f}));
 }
 
-void CameraController::processMouse(const Vector2& direction) {
-    const Vector2 sensi = direction * 10.5f * Time::deltaTime;
+void CameraController::processMouse(const dVector2& direction) {
+    const dVector2 sensi = direction * 10.5f * Time::deltaTime;
 
     pitch -= sensi.y;
     yaw += sensi.x;
@@ -54,6 +56,7 @@ void CameraController::processMouse(const Vector2& direction) {
         yaw -= 360.0f;
     if (yaw < 0.0f)
         yaw += 360.0f;
+        
     OnCameraUpdate();
 }
 

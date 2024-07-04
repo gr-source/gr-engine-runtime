@@ -25,7 +25,7 @@ protected:
 
     void OnCameraUpdate();
 
-    void processMouse(const Vector2& direction);
+    void processMouse(const dVector2& direction);
 };
 
 

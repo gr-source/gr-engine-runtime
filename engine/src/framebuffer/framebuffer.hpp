@@ -9,9 +9,11 @@ public:
     
     static Framebuffer* Create(u32 width, u32 height);
 
-    void bind(u32 width, u32 height);
-
     grr::gTexture* getTexture();
+
+    void bind();
+
+    void updateViewport(u32 width, u32 height);
 
     void unbind();
 
@@ -22,7 +24,12 @@ private:
 
     u32 m_rbo;
 
+    u32 m_width;
+
+    u32 m_height;
+
     grr::gTexture* m_texture;
+
 };
 
 

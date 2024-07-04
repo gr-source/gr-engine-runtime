@@ -7,7 +7,18 @@
 
 SimplexNoise ChunkController::Noise;
 
-ChunkController::ChunkController() {}
+std::vector<ChunkController*> ChunkController::m_chunks;
+
+ChunkController::ChunkController() {
+    m_chunks.push_back(this);
+}
+
+ChunkController::~ChunkController() {
+    auto it = std::find(m_chunks.begin(), m_chunks.end(), this);
+    if (it != m_chunks.end()) {
+        m_chunks.erase(it);
+    }
+}
 
 void ChunkController::OnInit() {
     if (!entity->hasComponent<MeshFilter>()) {
@@ -20,7 +31,7 @@ void ChunkController::OnInit() {
 }
 
 void ChunkController::BuildMesh() {
-    auto& transform = entity->getComponent<Transform>(); // chunck
+    auto& transform = entity->getComponent<Transform>();
 
     for (int x = 0; x < VoxelSettings::ChunkSize; x++) {
         for (int y = 0; y < VoxelSettings::ChunkSize; y++) {
@@ -51,6 +62,14 @@ void ChunkController::BuildMesh() {
     auto& meshFilter = entity->getComponent<MeshFilter>();
     auto& mesh = meshFilter.getMesh();
     mesh.clear();
+
+    ChunkController* frontChunk = findChunk(transform.position * Vector3::forward * VoxelSettings::ChunkSize);
+    // if (frontChunk) {
+    //     std::cout << frontChunk << std::endl;
+    // }
+    // if (frontChunk && frontChunk->m_blocks[0][y][z].isSolid) {
+    //     return true; // Existe uma chunk à frente e há um bloco sólido nela
+    // }
 
     for (int x = 0; x < VoxelSettings::ChunkSize; x++) {
         for (int y = 0; y < VoxelSettings::ChunkSize; y++) {
@@ -110,7 +129,7 @@ void ChunkController::BuildMesh() {
                     }
 
                     // Front face
-                    if (checkFace({float(x), float(y), float(z + 1)})) {
+                    if (checkFace({float(x), float(y), float(z + 1)}) || frontChunk && frontChunk->m_blocks[x][y][z + 1].isSolid && frontChunk->checkFace({float(x), float(y), float(z + 1)})) {
                         mesh.addVertice(Vector3(model * Vector4(-1.0f, -1.0f, 1.0f, 1.0f)), Vector3(1.0f, 0.0f, 0.0f));
                         mesh.addVertice(Vector3(model * Vector4( 1.0f, -1.0f, 1.0f, 1.0f)), Vector3(1.0f, 0.0f, 0.0f));
                         mesh.addVertice(Vector3(model * Vector4( 1.0f,  1.0f, 1.0f, 1.0f)), Vector3(1.0f, 0.0f, 0.0f));
@@ -148,19 +167,32 @@ void ChunkController::BuildMesh() {
     meshRender.buildMesh();
 }
 
+const Vector3 &ChunkController::getPosition() const {
+    return entity->getComponent<Transform>().position;
+}
+
 const bool ChunkController::checkFace(const Vector3 &position) {
-    int x = static_cast<int>(position.x);
-    int y = static_cast<int>(position.y);
-    int z = static_cast<int>(position.z);
+    int x = int(std::floor(position.x));
+    int y = int(std::floor(position.y));
+    int z = int(std::floor(position.z));
 
     if (x < 0 || x >= VoxelSettings::ChunkSize ||
         y < 0 || y >= VoxelSettings::ChunkSize ||
         z < 0 || z >= VoxelSettings::ChunkSize ||
-        !m_blocks[x][y][z].isSolid
-    ) {
-        return true;
+        m_blocks[x][y][z].isSolid) {
+
+        return false;
     }
 
-    return false;
+    return true;
 }
 
+ChunkController *ChunkController::findChunk(const Vector3 &postion) {
+    for (auto chunk : m_chunks) {
+        auto p = chunk->getPosition();
+        if (p == postion) {
+            return chunk;
+        }
+    }
+    return nullptr;
+}

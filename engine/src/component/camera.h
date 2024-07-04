@@ -8,8 +8,6 @@ class Camera : public Component {
 public:
     static Camera *GetCurrent();
 
-    static Camera& GetMain();
-
     Camera();
 
     void OnInit() override;
@@ -20,9 +18,9 @@ public:
 
     const Vector3& getPosition() const;
 
-private:
-    static Camera s_main;
+    void setAspectRation(float aspect);
 
+private:
     static Camera* s_current;
 
     float m_fov;

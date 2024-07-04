@@ -9,9 +9,9 @@
 float EditorController::s_camSpeed = 10.0f;
 float EditorController::s_camSensivity = 10.0f;
 
-Vector2 EditorController::lastMousePos = Vector2::zero;
+dVector2 EditorController::lastMousePos = {0, 0};//Vector2::zero;
 
-Vector2 EditorController::elapsed = Vector2::zero;
+dVector2 EditorController::elapsed = {0, 0};
 
 void EditorController::Initialize() {
 }
@@ -65,16 +65,18 @@ void EditorController::MouseMovment(Transform &transform) {
     auto afterMousePos = Input::GetCursorPos();
 
     auto direction = afterMousePos - lastMousePos;
-    if (Math::magnitude(direction) > 0.001f) {
+    if (Math::Magnitude(direction) > 0.001f) {
         elapsed += direction * s_camSensivity * Time::deltaTime;
 
-        elapsed.y = std::max(std::min(elapsed.y, 89.0f), -89.0f);
-        elapsed.x = std::fmod(elapsed.x, 360.0f);
+        elapsed.y = std::max(std::min(elapsed.y, 89.0), -89.0);
+        elapsed.x = std::fmod(elapsed.x, 360.0);
 
         transform.rotation = Math::normalize(Math::euler({Math::rad(elapsed.y), Math::rad(-elapsed.x), 0.0f}));
     }
 
-    lastMousePos = Screen::GetResolution() / 2.0f;
+    auto screenSize = Screen::GetResolution() / 2;
+
+    lastMousePos = {double(screenSize.x), double(screenSize.y)};
 
     if (!Input::IsMousePress(Input::BUTTON_MIDDLE)) {
         Input::SetCursorPos(lastMousePos);

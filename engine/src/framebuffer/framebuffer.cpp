@@ -7,6 +7,9 @@
 
 Framebuffer *Framebuffer::Create(u32 width, u32 height) {
     Framebuffer* framebuffer = new Framebuffer();
+    framebuffer->m_width = width;
+    framebuffer->m_height = height;
+
     framebuffer->m_fbo = grr::gFramebuffer::Create();
     framebuffer->m_rbo = grr::gRenderbuffer::Create();
     framebuffer->m_texture = grr::gTexture::Create(width, height, grr::TextureFormat_RGB, nullptr);
@@ -24,8 +27,8 @@ Framebuffer *Framebuffer::Create(u32 width, u32 height) {
     return framebuffer;
 }
 
-void Framebuffer::bind(u32 width, u32 height) {
-    Vector2 scal = {static_cast<float>(width), static_cast<float>(height)};
+void Framebuffer::bind() {
+    Vector2 scal = {static_cast<float>(m_width), static_cast<float>(m_height)};
     grr::gRender::SetRenderState(grr::GR_VIEWPORT, (void*)&scal);
 
     grr::gFramebuffer::Bind(m_fbo);
@@ -52,4 +55,29 @@ void Framebuffer::destroy() {
         m_texture->destroy();
     }
     delete this;
+}
+
+void Framebuffer::updateViewport(u32 width, u32 height) {
+    m_width = width;
+    m_height = height;
+
+    if (m_texture) {
+        m_texture->destroy();
+    }
+    m_texture = grr::gTexture::Create(width, height, grr::TextureFormat_RGB, nullptr);
+
+    if (m_rbo) {
+        grr::gRenderbuffer::Destoy(m_rbo);
+
+        m_rbo = grr::gRenderbuffer::Create();
+    }
+
+    grr::gRenderbuffer::Bind(m_rbo);
+    grr::gRenderbuffer::SetBufferStorage(grr::RenderbufferType_Depth_Component, width, height);
+    grr::gRenderbuffer::Unbind();
+
+    grr::gFramebuffer::Bind(m_fbo);
+    grr::gFramebuffer::SetRenderbuffer(grr::FramebufferType_Depth_Attachiment, m_rbo);
+    grr::gFramebuffer::SetTexture(grr::FramebufferType_Color_Attachiment0, m_texture->getID());
+    grr::gFramebuffer::Unbind();
 }

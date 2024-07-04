@@ -28,8 +28,6 @@ void ChunkManager::OnInit() {
             int chunkX = dx * VoxelSettings::ChunkSize;
             int chunkZ = dz * VoxelSettings::ChunkSize;
 
-            std::cout << dx << " " << dz << std::endl;
-            
             // if (!ChunkIsLoaded(chunkX, chunkZ)) {
                 EventManager::addEvent(&ChunkManager::LoadChunk, this, chunkX, chunkZ);
             // }

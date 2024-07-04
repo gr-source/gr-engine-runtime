@@ -37,9 +37,9 @@ public:
 
     static const bool IsMousePress(Key button);
 
-    static void SetCursorPos(const Vector2& position);
+    static void SetCursorPos(const dVector2& position);
 
-    static const Vector2 GetCursorPos();
+    static const dVector2 GetCursorPos();
 
     static void SetInstance(void* instance);
 

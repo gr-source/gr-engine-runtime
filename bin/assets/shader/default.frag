@@ -9,12 +9,12 @@ in vec2 s_texCoord;
 uniform vec3 viewPos;
 
 void main() {
-    vec3 lightPos = vec3(0.0, 100.0, -5.0);
+    vec3 lightPos = vec3(0.0, 100.0, -10.0);
     vec3 lightColor = vec3(1.0);
     vec3 objectColor = vec3(0.8);
 
     // Ambiente
-    float ambientStrength = 0.01;
+    float ambientStrength = 0.08;
     vec3 ambient = ambientStrength * lightColor;
 
     // Difusa

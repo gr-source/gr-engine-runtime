@@ -7,8 +7,8 @@
 #include <GLFW/glfw3.h>
 #include <gr-render/gRender.h>
 
-#define SCREEN_WIDTH 1024
-#define SCREEN_HEIGHT 720
+#define SCREEN_WIDTH 768
+#define SCREEN_HEIGHT 512
 
 std::unordered_map<int, u32> m_keyMap = {
     {GLFW_KEY_ESCAPE, KEY_ESC},
@@ -123,7 +123,7 @@ int OnApplicationInit() {
         return printf("GLEW do not created");
     }
 
-    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+    // glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
 
     Input::m_instance = window;
 

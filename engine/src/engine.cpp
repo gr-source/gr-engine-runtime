@@ -46,10 +46,11 @@
 
 std::thread Engine::m_thread[2];
 
+Vector2 Engine::s_viewportSize = {};
+
 std::unique_ptr<ImGuiRender> Engine::m_imGuiRender = nullptr;
 
 void Engine::GRWindowResize(u32 width, u32 height) {
-    Screen::SetResolution(width, height);
 }
 
 void Engine::MainLoop(std::function<void()> func) {
@@ -76,7 +77,7 @@ void Engine::GRKeyboardDown(u32 key) {
     switch (key) {
     case KEY_ESC: {
         io.MouseDrawCursor = !io.MouseDrawCursor;
-        // Settings::IsEngineRunning = false;
+        Settings::IsCursorLock = !Settings::IsCursorLock;
         break;
     }
     default:
@@ -127,23 +128,29 @@ void Engine::OnInit() {
     m_imGuiRender = std::make_unique<ImGuiRender>("#version 330 core");
 
     m_framebuffer = Framebuffer::Create(Screen::width, Screen::height);
+
+    iVector2 v = {25, 2};
+
+    std::cout << v << std::endl;
 }
 
 void Engine::OnUpdate() {
-    EditorController::Update();
+    if (Settings::IsCursorLock) {
+        EditorController::Update();
+    }
 
     EntityManager::OnUpdate();
 }
 
 void Engine::OnRender() {
     auto camera = Camera::GetCurrent();
-    if (!camera) {
+    if (!camera || !shader->isValid()) {
         grr::gRender::SetRenderState(grr::GR_BACKGROUND_COLOR, (void*)&Color::red);
         grr::gRender::SetRenderState(grr::GR_BACKGROUND, grr::GR_DEPTH_BUFFER | grr::GR_COLOR_BUFFER);
         return;
     }
 
-    m_framebuffer->bind(Screen::width, Screen::height);
+    m_framebuffer->bind();
     grr::gRender::SetRenderState(grr::GR_BACKGROUND_COLOR, (void*)&Color::blue);
     grr::gRender::SetRenderState(grr::GR_BACKGROUND, grr::GR_DEPTH_BUFFER | grr::GR_COLOR_BUFFER);
     grr::gRender::SetRenderState(grr::GR_DEPTH, grr::GR_TRUE);
@@ -165,8 +172,20 @@ void Engine::OnRender() {
 
     auto avail = ImGui::GetContentRegionAvail();
 
+    if (s_viewportSize.x != avail.x || s_viewportSize.y != avail.y) {
+        camera->setAspectRation(avail.x / avail.y);
+
+        m_framebuffer->updateViewport(avail.x, avail.y);
+
+        Screen::SetResolution(avail.x, avail.y);
+
+        s_viewportSize = {avail.x, avail.y};
+    }
+
     ImGui::Image(reinterpret_cast<ImTextureID>(m_framebuffer->getTexture()->getID()), ImVec2(avail.x, avail.y), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
+
     ImGui::End();
+    
     m_imGuiRender->End();
 }
 
@@ -207,6 +226,10 @@ void Engine::OnLoader() {
 }
 
 void Engine::OnDestroy() {
+    if (shader) {
+        shader->destroy();
+    }
+
     if (m_framebuffer) {
         m_framebuffer->destroy();
     }

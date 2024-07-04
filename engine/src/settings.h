@@ -7,6 +7,8 @@ struct Settings {
 
     static bool IsGameRunning;
 
+    static bool IsCursorLock;
+
     static Vector2 GameGrapicQiality;
 
     static Vector2 IconSize;

@@ -2,9 +2,6 @@
 #include "Transform.h"
 
 #include "../gameObject.h"
-#include "../screen.h"
-
-Camera Camera::s_main;
 
 Camera* Camera::s_current = nullptr;
 
@@ -15,11 +12,7 @@ Camera *Camera::GetCurrent() {
     return nullptr;
 }
 
-Camera &Camera::GetMain() {
-    return s_main;
-}
-
-Camera::Camera() : m_transform(nullptr), m_fov(60.0f), m_nearPlane(0.001f), m_farPlane(1000.0f), m_aspect(Screen::width / Screen::height) {}
+Camera::Camera() : m_transform(nullptr), m_fov(60.0f), m_nearPlane(0.001f), m_farPlane(1000.0f), m_aspect(1.0f) {}
 
 void Camera::OnInit() {
     m_transform = &entity->getComponent<Transform>();
@@ -35,4 +28,11 @@ const Matrix4x4 Camera::getPerspesctive() const {
 
 const Vector3 &Camera::getPosition() const {
     return m_transform->position;
+}
+
+void Camera::setAspectRation(float aspect) {
+    if (aspect < 0.0001f) {
+        return;
+    }
+    m_aspect = aspect;
 }

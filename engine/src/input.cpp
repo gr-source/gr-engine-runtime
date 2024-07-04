@@ -60,15 +60,15 @@ const bool Input::IsMousePress(Key button) {
 }
 
 // Sets the cursor position
-void Input::SetCursorPos(const Vector2& position) {
-    glfwSetCursorPos(static_cast<GLFWwindow*>(m_instance), static_cast<double>(position.x), static_cast<double>(position.y));
+void Input::SetCursorPos(const dVector2& position) {
+    glfwSetCursorPos(static_cast<GLFWwindow*>(m_instance), position.x, position.y);
 }
 
 // Gets the cursor position
-const Vector2 Input::GetCursorPos() {
-    double x, y;
-    glfwGetCursorPos(static_cast<GLFWwindow*>(m_instance), &x, &y);
-    return { static_cast<float>(x), static_cast<float>(y) };
+const dVector2 Input::GetCursorPos() {
+    dVector2 pos = {0, 0};
+    glfwGetCursorPos(static_cast<GLFWwindow*>(m_instance), &pos.x, &pos.y);
+    return pos;
 }
 
 // Sets the instance of GLFWwindow
