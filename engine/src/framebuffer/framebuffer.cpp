@@ -1,46 +1,55 @@
-#include "framebuffer.h"
+#include "framebuffer.hpp"
 
-#include "../../resources/texture.h"
+#include <gr-render/gRenderbuffer.h>
+#include <gr-render/gFramebuffer.h>
+#include <gr-render/gTexture.h>
+#include <gr-render/gRender.h>
 
-Framebuffer::Framebuffer() : m_fbo(-1) {
-    GL_CHECK(glGenFramebuffers(1, &m_fbo));
+Framebuffer *Framebuffer::Create(u32 width, u32 height) {
+    Framebuffer* framebuffer = new Framebuffer();
+    framebuffer->m_fbo = grr::gFramebuffer::Create();
+    framebuffer->m_rbo = grr::gRenderbuffer::Create();
+    framebuffer->m_texture = grr::gTexture::Create(width, height, grr::TextureFormat_RGB, nullptr);
+
+    grr::gRenderbuffer::Bind(framebuffer->m_rbo);
+    grr::gRenderbuffer::SetBufferStorage(grr::RenderbufferType_Depth_Component, width, height);
+    grr::gRenderbuffer::Unbind();
+
+    grr::gFramebuffer::Bind(framebuffer->m_fbo);
+    grr::gFramebuffer::SetRenderbuffer(grr::FramebufferType_Depth_Attachiment, framebuffer->m_rbo);
+
+    grr::gFramebuffer::SetTexture(grr::FramebufferType_Color_Attachiment0, framebuffer->m_texture->getID());
+    grr::gFramebuffer::Unbind();
+
+    return framebuffer;
 }
 
-Framebuffer::~Framebuffer() {
-    if (m_fbo != -1) {
-        GL_CHECK(glDeleteFramebuffers(1, &m_fbo));
-    }
+void Framebuffer::bind(u32 width, u32 height) {
+    Vector2 scal = {static_cast<float>(width), static_cast<float>(height)};
+    grr::gRender::SetRenderState(grr::GR_VIEWPORT, (void*)&scal);
+
+    grr::gFramebuffer::Bind(m_fbo);
 }
 
-void Framebuffer::bind() {
-    GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, m_fbo));
+grr::gTexture *Framebuffer::getTexture() {
+    return m_texture;
 }
 
 void Framebuffer::unbind() {
-    GL_CHECK(glBindFramebuffer(GL_FRAMEBUFFER, 0));
+    grr::gFramebuffer::Unbind();
 }
 
-void Framebuffer::read() {
-    GL_CHECK(glBindFramebuffer(GL_READ_FRAMEBUFFER, m_fbo));
-}
+void Framebuffer::destroy() {
+    if (m_fbo) {
+        grr::gFramebuffer::Destroy(m_fbo);
+    }
 
-void Framebuffer::draw() {
-    GL_CHECK(glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_fbo));
-}
+    if (m_rbo) {
+        grr::gRenderbuffer::Destoy(m_rbo);
+    }
 
-void Framebuffer::none() {
-    GL_CHECK(glDrawBuffer(GL_NONE));
-    GL_CHECK(glReadBuffer(GL_NONE));
-}
-
-void Framebuffer::SetTexture2D(u32 attachment, u32 textTarget, Texture *texture) {
-    GL_CHECK(glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, textTarget, texture->getID(), 0));
-}
-
-void Framebuffer::SetRenderbuffer(u32 attachment, Renderbuffer *renderbuffer) {
-    GL_CHECK(glFramebufferRenderbuffer(GL_FRAMEBUFFER, attachment, GL_RENDERBUFFER, renderbuffer->getRBO()));
-}
-
-const u32& Framebuffer::getID() const {
-    return m_fbo;
+    if (m_texture) {
+        m_texture->destroy();
+    }
+    delete this;
 }

@@ -61,6 +61,30 @@ void ChunkController::BuildMesh() {
                 if (block.isSolid) {
                     auto& model = block.transform.getglobalmatrix();
 
+                    // Right face
+                    if (checkFace({float(x + 1), float(y), float(z)})) {
+                        mesh.addVertice(Vector3(model * Vector4(1.0f, -1.0f,  1.0f, 1.0f)), Vector3(0.0f, 0.0f, 1.0f));
+                        mesh.addVertice(Vector3(model * Vector4(1.0f, -1.0f, -1.0f, 1.0f)), Vector3(0.0f, 0.0f, 1.0f));
+                        mesh.addVertice(Vector3(model * Vector4(1.0f,  1.0f, -1.0f, 1.0f)), Vector3(0.0f, 0.0f, 1.0f));
+                        mesh.addVertice(Vector3(model * Vector4(1.0f,  1.0f,  1.0f, 1.0f)), Vector3(0.0f, 0.0f, 1.0f));
+
+                        u32 baseIndex = mesh.getVerticeCount() - 4;
+                        mesh.addtriangle(baseIndex, baseIndex + 1, baseIndex + 2);
+                        mesh.addtriangle(baseIndex, baseIndex + 2, baseIndex + 3);
+                    }
+
+                    // Left face
+                    if (checkFace({float(x - 1), float(y), float(z)})) {
+                        mesh.addVertice(Vector3(model * Vector4(-1.0f, -1.0f,  1.0f, 1.0f)), Vector3(0.0f, 0.0f, -1.0f));
+                        mesh.addVertice(Vector3(model * Vector4(-1.0f,  1.0f,  1.0f, 1.0f)), Vector3(0.0f, 0.0f, -1.0f));
+                        mesh.addVertice(Vector3(model * Vector4(-1.0f,  1.0f, -1.0f, 1.0f)), Vector3(0.0f, 0.0f, -1.0f));
+                        mesh.addVertice(Vector3(model * Vector4(-1.0f, -1.0f, -1.0f, 1.0f)), Vector3(0.0f, 0.0f, -1.0f));
+
+                        u32 baseIndex = mesh.getVerticeCount() - 4;
+                        mesh.addtriangle(baseIndex, baseIndex + 1, baseIndex + 2);
+                        mesh.addtriangle(baseIndex, baseIndex + 2, baseIndex + 3);
+                    }
+                    
                     // Top face
                     if (checkFace({float(x), float(y + 1), float(z)})) {
                         mesh.addVertice(Vector3(model * Vector4(-1.0f, 1.0f,  1.0f, 1.0f)), Vector3(0.0f, 1.0f, 0.0f));
@@ -86,7 +110,7 @@ void ChunkController::BuildMesh() {
                     }
 
                     // Front face
-                    if (checkFace({float(x), float(y), float(z + 1)}) && (!(z + 1 == VoxelSettings::ChunkSize))) {
+                    if (checkFace({float(x), float(y), float(z + 1)})) {
                         mesh.addVertice(Vector3(model * Vector4(-1.0f, -1.0f, 1.0f, 1.0f)), Vector3(1.0f, 0.0f, 0.0f));
                         mesh.addVertice(Vector3(model * Vector4( 1.0f, -1.0f, 1.0f, 1.0f)), Vector3(1.0f, 0.0f, 0.0f));
                         mesh.addVertice(Vector3(model * Vector4( 1.0f,  1.0f, 1.0f, 1.0f)), Vector3(1.0f, 0.0f, 0.0f));
@@ -98,35 +122,11 @@ void ChunkController::BuildMesh() {
                     }
 
                     // Back face
-                    if (checkFace({float(x), float(y), float(z - 1)}) && (!(z - 1 == VoxelSettings::ChunkSize) && ((z - 1 >= 0)))) {
+                    if (checkFace({float(x), float(y), float(z - 1)})) {
                         mesh.addVertice(Vector3(model * Vector4(-1.0f, -1.0f, -1.0f, 1.0f)), Vector3(-1.0f, 0.0f, 0.0f));
                         mesh.addVertice(Vector3(model * Vector4(-1.0f,  1.0f, -1.0f, 1.0f)), Vector3(-1.0f, 0.0f, 0.0f));
                         mesh.addVertice(Vector3(model * Vector4( 1.0f,  1.0f, -1.0f, 1.0f)), Vector3(-1.0f, 0.0f, 0.0f));
                         mesh.addVertice(Vector3(model * Vector4( 1.0f, -1.0f, -1.0f, 1.0f)), Vector3(-1.0f, 0.0f, 0.0f));
-
-                        u32 baseIndex = mesh.getVerticeCount() - 4;
-                        mesh.addtriangle(baseIndex, baseIndex + 1, baseIndex + 2);
-                        mesh.addtriangle(baseIndex, baseIndex + 2, baseIndex + 3);
-                    }
-
-                    // Right face
-                    if (checkFace({float(x + 1), float(y), float(z)}) && (!(x + 1 == VoxelSettings::ChunkSize))) {
-                        mesh.addVertice(Vector3(model * Vector4(1.0f, -1.0f,  1.0f, 1.0f)), Vector3(0.0f, 0.0f, 1.0f));
-                        mesh.addVertice(Vector3(model * Vector4(1.0f, -1.0f, -1.0f, 1.0f)), Vector3(0.0f, 0.0f, 1.0f));
-                        mesh.addVertice(Vector3(model * Vector4(1.0f,  1.0f, -1.0f, 1.0f)), Vector3(0.0f, 0.0f, 1.0f));
-                        mesh.addVertice(Vector3(model * Vector4(1.0f,  1.0f,  1.0f, 1.0f)), Vector3(0.0f, 0.0f, 1.0f));
-
-                        u32 baseIndex = mesh.getVerticeCount() - 4;
-                        mesh.addtriangle(baseIndex, baseIndex + 1, baseIndex + 2);
-                        mesh.addtriangle(baseIndex, baseIndex + 2, baseIndex + 3);
-                    }
-
-                    // Left face
-                    if (checkFace({float(x - 1), float(y), float(z)}) && (!(x - 1 == VoxelSettings::ChunkSize) && ((x - 1 >= 0)))) {
-                        mesh.addVertice(Vector3(model * Vector4(-1.0f, -1.0f,  1.0f, 1.0f)), Vector3(0.0f, 0.0f, -1.0f));
-                        mesh.addVertice(Vector3(model * Vector4(-1.0f,  1.0f,  1.0f, 1.0f)), Vector3(0.0f, 0.0f, -1.0f));
-                        mesh.addVertice(Vector3(model * Vector4(-1.0f,  1.0f, -1.0f, 1.0f)), Vector3(0.0f, 0.0f, -1.0f));
-                        mesh.addVertice(Vector3(model * Vector4(-1.0f, -1.0f, -1.0f, 1.0f)), Vector3(0.0f, 0.0f, -1.0f));
 
                         u32 baseIndex = mesh.getVerticeCount() - 4;
                         mesh.addtriangle(baseIndex, baseIndex + 1, baseIndex + 2);
@@ -153,13 +153,11 @@ const bool ChunkController::checkFace(const Vector3 &position) {
     int y = static_cast<int>(position.y);
     int z = static_cast<int>(position.z);
 
-    // verifica se esta dentro dos limites da chunk
-    if (x < 0 || x >= VoxelSettings::ChunkSize || y < 0 || y >= VoxelSettings::ChunkSize || z < 0 || z >= VoxelSettings::ChunkSize) {
-        return true;
-    }
-
-    // verifica de o bloco e um solido - esta visivel
-    if (!m_blocks[x][y][z].isSolid) {
+    if (x < 0 || x >= VoxelSettings::ChunkSize ||
+        y < 0 || y >= VoxelSettings::ChunkSize ||
+        z < 0 || z >= VoxelSettings::ChunkSize ||
+        !m_blocks[x][y][z].isSolid
+    ) {
         return true;
     }
 

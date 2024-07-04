@@ -59,7 +59,6 @@ set(engine_src
     src/engine.cpp
     src/memory.cpp
     src/Global.cpp
-    src/skybox.cpp
     src/screen.cpp
     src/thread.cpp
     src/render.cpp
@@ -74,6 +73,7 @@ set(engine_src
     src/bufferManager.cpp
 
     src/component/camera.cpp
+    src/component/terrain.cpp
     src/component/renderer.cpp
     src/component/animator.cpp
     src/component/collider.cpp
@@ -91,15 +91,6 @@ set(engine_src
     src/component/playerController.cpp
     src/component/cameraController.cpp
     src/component/characterController.cpp
-
-    src/framebuffer/gBuffer.cpp
-    src/framebuffer/thumbnails.cpp
-    src/framebuffer/imguibuffer.cpp
-    src/framebuffer/screenbuffer.cpp
-    src/framebuffer/shadowbuffer.cpp
-    src/framebuffer/skyboxbuffer.cpp
-    src/framebuffer/internal/framebuffer.cpp
-    src/framebuffer/internal/renderbuffer.cpp
     
     src/resources/shader.cpp
     src/resources/cubemap.cpp
@@ -139,6 +130,8 @@ set(engine_src
     src/filesystem/stream.cpp
 
     src/physics/physicsScene.cpp
+
+    src/framebuffer/framebuffer.cpp
 )
 
 set(engine_hdr
@@ -155,7 +148,6 @@ set(engine_hdr
     src/engine.h
     src/memory.h
     src/Global.h
-    src/skybox.h
     src/screen.h
     src/thread.h
     src/render.h
@@ -174,6 +166,7 @@ set(engine_hdr
     src/component/animator.h
     src/component/collider.h
     src/component/Transform.h
+    src/component/terrain.hpp
     src/component/Rigidbody.h
     src/component/MeshRender.h
     src/component/meshFilter.h
@@ -187,15 +180,6 @@ set(engine_hdr
     src/component/playerController.h
     src/component/cameraController.h
     src/component/characterController.h
-
-    src/framebuffer/gBuffer.h
-    src/framebuffer/thumbnails.h
-    src/framebuffer/imguibuffer.h
-    src/framebuffer/screenbuffer.h
-    src/framebuffer/shadowbuffer.h
-    src/framebuffer/skyboxbuffer.h
-    src/framebuffer/internal/framebuffer.h
-    src/framebuffer/internal/renderbuffer.h
 
     src/resources/shader.h
     src/resources/cubemap.h
@@ -235,6 +219,8 @@ set(engine_hdr
     src/filesystem/stream.h
 
     src/physics/physicsScene.h
+
+    src/framebuffer/framebuffer.hpp
 )
 
 add_library(engine STATIC ${engine_src} ${engine_hdr})

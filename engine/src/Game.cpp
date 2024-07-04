@@ -3,7 +3,6 @@
 #include "timer.h"
 #include "screen.h"
 #include "memory.h"
-#include "skybox.h"
 #include "settings.h"
 #include "gameObject.h"
 #include "eventManager.h"
@@ -11,11 +10,6 @@
 #include "renderManager.h"
 
 #include "editor/editorController.hpp"
-
-#include "framebuffer/shadowbuffer.h"
-#include "framebuffer/screenbuffer.h"
-#include "framebuffer/imguibuffer.h"
-#include "framebuffer/thumbnails.h"
 
 #include "resources/resources.h"
 
@@ -214,7 +208,7 @@ void Game::ReadHierarchy(Transform *transform) {
 }
 
 void Game::RenderViewportUI() {
-    static Imguibuffer& m_imguibuffer = Imguibuffer::getInstance();
+    /*static Imguibuffer& m_imguibuffer = Imguibuffer::getInstance();
     static ScreenBuffer& m_screenBuffer = ScreenBuffer::getInstance();;
 
     ImGui::Begin("Viewport", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);

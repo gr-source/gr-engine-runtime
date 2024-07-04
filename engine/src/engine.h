@@ -48,5 +48,7 @@ protected:
     static void OnDestroy();
 
     static std::thread m_thread[2];
+
+    static std::unique_ptr<ImGuiRender> m_imGuiRender;
 };
 

@@ -2,6 +2,7 @@ project("imgui")
 
 set(imgui_src
     src/backends/imgui_impl_opengl3.cpp
+    src/backends/ImGui_Impl_grender.cpp
     src/backends/imgui_impl_glfw.cpp
     src/imgui_widgets.cpp
     src/imgui_tables.cpp
@@ -13,6 +14,7 @@ set(imgui_src
 set(imgui_hdr
     src/backends/imgui_impl_opengl3_loader.h
     src/backends/imgui_impl_opengl3.h
+    src/backends/ImGui_Impl_grender.h
     src/backends/imgui_impl_glfw.h
     src/imstb_rectpack.h
     src/imstb_textedit.h

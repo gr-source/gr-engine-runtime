@@ -4,7 +4,6 @@
 #include "random.hpp"
 #include "taskRuntime.h"
 
-
 #include "editor/editorController.hpp"
 
 #include "component/cameraController.h"
@@ -12,17 +11,14 @@
 #include "component/MeshRender.h"
 #include "component/meshFilter.h"
 #include "component/Transform.h"
+#include "component/terrain.hpp"
 #include "component/camera.h"
 
 #include "ecs/entityManager.h"
 
 #include "ui/ImGuiRender.h"
 
-#include "framebuffer/screenbuffer.h"
-#include "framebuffer/skyboxbuffer.h"
-#include "framebuffer/shadowbuffer.h"
-#include "framebuffer/imguibuffer.h"
-#include "framebuffer/gBuffer.h"
+#include "framebuffer/framebuffer.hpp"
 
 #include "resources/resources.h"
 
@@ -35,7 +31,6 @@
 #include "objectManager.h"
 #include "eventManager.h"
 #include "screenRender.h"
-#include "skybox.h"
 #include "Global.h"
 #include "timer.h"
 
@@ -45,37 +40,13 @@
 #include <linux/input-event-codes.h>
 #include <filesystem>
 
+#include <gr-render/gFramebuffer.h>
 #include <gr-render/gRender.h>
 #include <gr-render/gShader.h>
 
 std::thread Engine::m_thread[2];
 
-std::vector<Vertex3D> vertex3D {
-    {Vector3(-1.0f, -1.0f,  1.0f), Vector3(0.0f, 0.0f,  1.0f), Vector2(0.0f, 0.0f)},
-    {Vector3(-1.0f,  1.0f,  1.0f), Vector3(0.0f, 0.0f,  1.0f), Vector2(0.0f, 1.0f)},
-    {Vector3(-1.0f, -1.0f, -1.0f), Vector3(0.0f, 0.0f,  1.0f), Vector2(1.0f, 0.0f)},
-    {Vector3(-1.0f,  1.0f, -1.0f), Vector3(0.0f, 0.0f,  1.0f), Vector2(1.0f, 1.0f)},
-
-    {Vector3( 1.0f, -1.0f,  1.0f), Vector3(0.0f, 0.0f, -1.0f), Vector2(1.0f, 0.0f)},
-    {Vector3( 1.0f,  1.0f,  1.0f), Vector3(0.0f, 0.0f, -1.0f), Vector2(1.0f, 1.0f)},
-    {Vector3( 1.0f, -1.0f, -1.0f), Vector3(0.0f, 0.0f, -1.0f), Vector2(0.0f, 0.0f)},
-    {Vector3( 1.0f,  1.0f, -1.0f), Vector3(0.0f, 0.0f, -1.0f), Vector2(0.0f, 1.0f)}
-};
-
-std::vector<u32> indices3D {
-    1, 2, 0,
-    3, 6, 2,
-    7, 4, 6,
-    5, 0, 4,
-    6, 0, 2,
-    3, 5, 7,
-    1, 3, 2,
-    3, 7, 6,
-    7, 5, 4,
-    5, 1, 0,
-    6, 4, 0,
-    3, 1, 5
-};
+std::unique_ptr<ImGuiRender> Engine::m_imGuiRender = nullptr;
 
 void Engine::GRWindowResize(u32 width, u32 height) {
     Screen::SetResolution(width, height);
@@ -101,9 +72,11 @@ void Engine::MainLoop(std::function<void()> func) {
 }
 
 void Engine::GRKeyboardDown(u32 key) {
+    auto& io = ImGui::GetIO();
     switch (key) {
     case KEY_ESC: {
-        Settings::IsEngineRunning = false;
+        io.MouseDrawCursor = !io.MouseDrawCursor;
+        // Settings::IsEngineRunning = false;
         break;
     }
     default:
@@ -130,28 +103,7 @@ void Engine::GRDropFunc(const char *path) {
 
 grr::gShader* shader = nullptr;
 
-GameObject* CreateCube(u8 index, const Vector3& position) {
-    auto cube = SceneManager::add("Cube[" + std::to_string(index) + "]");
-
-    auto& transform = cube->getTransform();
-    transform.position = position;
-
-    auto& meshFilter = cube->addComponent<MeshFilter>();
-
-    auto& mesh = meshFilter.getMesh();
-    mesh.insert(vertex3D);
-    mesh.insert(indices3D);
-
-    auto& meshRender = cube->addComponent<MeshRender>();
-    auto& material = meshRender.addMaterial("material");
-    material.albedo = {1.0f, 0.0f, 1.0f, 1.0f};
-    material.metallic = 0.5f;
-    material.roughness = 0.32f;
-    material.ao = 0.5f;
-    return cube;
-}
-
-GameObject* cube = nullptr;
+Framebuffer* m_framebuffer = nullptr;
 
 void Engine::OnInit() {
     auto mainCamera = SceneManager::add("MainCamera");
@@ -171,6 +123,10 @@ void Engine::OnInit() {
     shader = grr::gShader::Create({frag.c_str()}, {vert.c_str()});
 
     EditorController::Initialize();
+
+    m_imGuiRender = std::make_unique<ImGuiRender>("#version 330 core");
+
+    m_framebuffer = Framebuffer::Create(Screen::width, Screen::height);
 }
 
 void Engine::OnUpdate() {
@@ -187,6 +143,7 @@ void Engine::OnRender() {
         return;
     }
 
+    m_framebuffer->bind(Screen::width, Screen::height);
     grr::gRender::SetRenderState(grr::GR_BACKGROUND_COLOR, (void*)&Color::blue);
     grr::gRender::SetRenderState(grr::GR_BACKGROUND, grr::GR_DEPTH_BUFFER | grr::GR_COLOR_BUFFER);
     grr::gRender::SetRenderState(grr::GR_DEPTH, grr::GR_TRUE);
@@ -195,6 +152,22 @@ void Engine::OnRender() {
     grr::gRender::SetRenderState(grr::GR_CULL, grr::GR_BACK);
 
     OnPreRender(camera);
+
+    m_framebuffer->unbind();
+
+    grr::gRender::SetRenderState(grr::GR_BACKGROUND_COLOR, (void*)&Color::black);
+    grr::gRender::SetRenderState(grr::GR_BACKGROUND, grr::GR_COLOR_BUFFER);
+    grr::gRender::SetRenderState(grr::GR_DEPTH, grr::GR_FALSE);
+
+    m_imGuiRender->Begin();
+
+    ImGui::Begin("Viewport");
+
+    auto avail = ImGui::GetContentRegionAvail();
+
+    ImGui::Image(reinterpret_cast<ImTextureID>(m_framebuffer->getTexture()->getID()), ImVec2(avail.x, avail.y), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
+    ImGui::End();
+    m_imGuiRender->End();
 }
 
 void Engine::OnPostRender() {
@@ -234,6 +207,10 @@ void Engine::OnLoader() {
 }
 
 void Engine::OnDestroy() {
+    if (m_framebuffer) {
+        m_framebuffer->destroy();
+    }
+
     if (m_thread[0].joinable()) {
         m_thread[0].join();
     }
