@@ -39,7 +39,19 @@ protected:
 
     static void OnPostRender();
 
-    static void OnPreRender(Camera* camera);
+    static void OnPreRender(Camera *camera);
+
+    static void OnImGuiRender(Camera *camera);
+
+    static void OnSetupUIViewport(Camera *camera);
+
+    static void OnSetupProperty();
+
+    static void OnSetupUIHierarchy();
+
+    static void ForechSceneGameObject(GameObject *gameObject);
+
+    static const bool IsEnableDocking();
 
     static void OnPhysics();
 
@@ -52,5 +64,7 @@ protected:
     static std::unique_ptr<ImGuiRender> m_imGuiRender;
 
     static Vector2 s_viewportSize;
+
+    static GameObject* s_gameObjectSelected;
 };
 

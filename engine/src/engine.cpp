@@ -48,6 +48,8 @@ std::thread Engine::m_thread[2];
 
 Vector2 Engine::s_viewportSize = {};
 
+GameObject* Engine::s_gameObjectSelected = nullptr;
+
 std::unique_ptr<ImGuiRender> Engine::m_imGuiRender = nullptr;
 
 void Engine::GRWindowResize(u32 width, u32 height) {
@@ -128,10 +130,6 @@ void Engine::OnInit() {
     m_imGuiRender = std::make_unique<ImGuiRender>("#version 330 core");
 
     m_framebuffer = Framebuffer::Create(Screen::width, Screen::height);
-
-    iVector2 v = {25, 2};
-
-    std::cout << v << std::endl;
 }
 
 void Engine::OnUpdate() {
@@ -168,6 +166,43 @@ void Engine::OnRender() {
 
     m_imGuiRender->Begin();
 
+    OnImGuiRender(camera);
+    
+    m_imGuiRender->End();
+}
+
+void Engine::OnPostRender() {
+}
+
+void Engine::OnPreRender(Camera *camera) {
+    shader->bind();
+
+    grr::gShader::SetUniform("projection", 1, camera->getPerspesctive());
+    grr::gShader::SetUniform("view", 1, camera->getViewMatrix());
+    grr::gShader::SetUniform("viewPos", 1, camera->getPosition());
+
+    RenderManager::OnRenderer(shader);
+
+    shader->unbind();
+}
+
+void Engine::OnImGuiRender(Camera *camera) {
+    // ImGui Docking
+    if (!IsEnableDocking()) {
+        return;
+    }
+
+    // Window - hierarchy
+    OnSetupUIHierarchy();
+
+    // Window - viewport
+    OnSetupUIViewport(camera);
+
+    // Window - viewport
+    OnSetupProperty();
+}
+
+void Engine::OnSetupUIViewport(Camera *camera) {
     ImGui::Begin("Viewport");
 
     auto avail = ImGui::GetContentRegionAvail();
@@ -185,21 +220,75 @@ void Engine::OnRender() {
     ImGui::Image(reinterpret_cast<ImTextureID>(m_framebuffer->getTexture()->getID()), ImVec2(avail.x, avail.y), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
 
     ImGui::End();
+}
+
+void Engine::OnSetupProperty() {
+    ImGui::Begin("Property");
+    if (s_gameObjectSelected) {
+        auto name = s_gameObjectSelected->getName();
+
+        ImGui::SeparatorText(name.c_str());
+    }
+    ImGui::End();
+}
+
+void Engine::OnSetupUIHierarchy() {
+    ImGui::Begin("Hierarchy");
     
-    m_imGuiRender->End();
+    auto name = SceneManager::GetName();
+
+    auto isOpen = ImGui::TreeNode(name.c_str());
+
+    if (isOpen) {
+        auto objects = SceneManager::GetObjects();
+
+        std::for_each(objects.begin(), objects.end(), ForechSceneGameObject);
+
+        ImGui::TreePop();
+    }
+    ImGui::End();
 }
 
-void Engine::OnPostRender() {
+void Engine::ForechSceneGameObject(GameObject *gameObject) {
+    auto transform = gameObject->getTransform();
+
+    auto name = gameObject->getName();
+
+    ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_None | ImGuiTreeNodeFlags_Leaf;
+
+    if (transform.hasParent()) {
+        flags =~ ImGuiTreeNodeFlags_Leaf;
+    }
+
+    if (s_gameObjectSelected == gameObject) {
+        flags |= ImGuiTreeNodeFlags_Selected;
+    }
+
+    auto isOpen = ImGui::TreeNodeEx(name.c_str(), flags);
+    if (ImGui::IsItemClicked()) {
+        s_gameObjectSelected = gameObject;
+    }
+
+    if (isOpen) {
+        ImGui::TreePop();
+    }
 }
 
-void Engine::OnPreRender(Camera *camera) {
-    shader->bind();
+const bool Engine::IsEnableDocking() {
+    ImGuiViewport* viewport = ImGui::GetMainViewport();
+    ImGui::SetNextWindowPos(viewport->WorkPos);
+    ImGui::SetNextWindowSize(viewport->WorkSize);
+    ImGui::SetNextWindowViewport(viewport->ID);
+    ImGuiIO& io = ImGui::GetIO();
 
-    grr::gShader::SetUniform("projection", 1, camera->getPerspesctive());
-    grr::gShader::SetUniform("view", 1, camera->getViewMatrix());
-    grr::gShader::SetUniform("viewPos", 1, camera->getPosition());
-
-    RenderManager::OnRenderer(shader);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+    ImGui::Begin("#GRGameEngine3D", nullptr, ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoNavFocus | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoTitleBar);
+    if (io.ConfigFlags & ImGuiConfigFlags_DockingEnable) {
+        ImGui::DockSpace(ImGui::GetID("##RenderDocking"), ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_PassthruCentralNode);
+    }
+    ImGui::End();
+    ImGui::PopStyleVar();
+    return true;
 }
 
 void Engine::OnPhysics() {

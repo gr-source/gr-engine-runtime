@@ -99,7 +99,7 @@ void ChunkController::BuildMesh() {
                         mesh.addVertice(Vector3(model * Vector4(-1.0f,  1.0f, -1.0f, 1.0f)), Vector3(0.0f, 0.0f, -1.0f));
                         mesh.addVertice(Vector3(model * Vector4(-1.0f, -1.0f, -1.0f, 1.0f)), Vector3(0.0f, 0.0f, -1.0f));
 
-                        u32 baseIndex = mesh.getVerticeCount() - 4;
+                        u32 baseIndex = mesh.getVerticeCount() - 4; 
                         mesh.addtriangle(baseIndex, baseIndex + 1, baseIndex + 2);
                         mesh.addtriangle(baseIndex, baseIndex + 2, baseIndex + 3);
                     }

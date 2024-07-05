@@ -10,14 +10,21 @@ Framebuffer *Framebuffer::Create(u32 width, u32 height) {
     framebuffer->m_width = width;
     framebuffer->m_height = height;
 
+    // Cria um frame buffer
     framebuffer->m_fbo = grr::gFramebuffer::Create();
+
+    // Cria um render buffer - Depth
     framebuffer->m_rbo = grr::gRenderbuffer::Create();
+
+    // Cria uma texture - Result
     framebuffer->m_texture = grr::gTexture::Create(width, height, grr::TextureFormat_RGB, nullptr);
 
+    // Configura o render buffer para gravar profundidade
     grr::gRenderbuffer::Bind(framebuffer->m_rbo);
     grr::gRenderbuffer::SetBufferStorage(grr::RenderbufferType_Depth_Component, width, height);
     grr::gRenderbuffer::Unbind();
 
+    // Configura frame buffer
     grr::gFramebuffer::Bind(framebuffer->m_fbo);
     grr::gFramebuffer::SetRenderbuffer(grr::FramebufferType_Depth_Attachiment, framebuffer->m_rbo);
 
