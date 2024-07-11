@@ -31,7 +31,7 @@ const Vector3 &Camera::getPosition() const {
 }
 
 void Camera::setAspectRation(float aspect) {
-    if (aspect < 0.0001f) {
+    if (aspect < 0.001f) {
         return;
     }
     m_aspect = aspect;

@@ -63,14 +63,6 @@ void ChunkController::BuildMesh() {
     auto& mesh = meshFilter.getMesh();
     mesh.clear();
 
-    ChunkController* frontChunk = findChunk(transform.position * Vector3::forward * VoxelSettings::ChunkSize);
-    // if (frontChunk) {
-    //     std::cout << frontChunk << std::endl;
-    // }
-    // if (frontChunk && frontChunk->m_blocks[0][y][z].isSolid) {
-    //     return true; // Existe uma chunk à frente e há um bloco sólido nela
-    // }
-
     for (int x = 0; x < VoxelSettings::ChunkSize; x++) {
         for (int y = 0; y < VoxelSettings::ChunkSize; y++) {
             for (int z = 0; z < VoxelSettings::ChunkSize; z++) {
@@ -129,7 +121,7 @@ void ChunkController::BuildMesh() {
                     }
 
                     // Front face
-                    if (checkFace({float(x), float(y), float(z + 1)}) || frontChunk && frontChunk->m_blocks[x][y][z + 1].isSolid && frontChunk->checkFace({float(x), float(y), float(z + 1)})) {
+                    if (checkFace({float(x), float(y), float(z + 1)})) {
                         mesh.addVertice(Vector3(model * Vector4(-1.0f, -1.0f, 1.0f, 1.0f)), Vector3(1.0f, 0.0f, 0.0f));
                         mesh.addVertice(Vector3(model * Vector4( 1.0f, -1.0f, 1.0f, 1.0f)), Vector3(1.0f, 0.0f, 0.0f));
                         mesh.addVertice(Vector3(model * Vector4( 1.0f,  1.0f, 1.0f, 1.0f)), Vector3(1.0f, 0.0f, 0.0f));

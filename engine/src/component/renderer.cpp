@@ -8,8 +8,6 @@ std::vector<GameObject*> Renderer::objects;
 
 void Renderer::OnInit() {
     objects.push_back(entity->m_gameobject);
-
-    buildMesh();
 }
 
 Renderer::Renderer() : m_buffer(std::make_unique<Buffer>()) {}

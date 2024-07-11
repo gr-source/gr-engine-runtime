@@ -44,6 +44,8 @@
 #include <gr-render/gRender.h>
 #include <gr-render/gShader.h>
 
+#include <imgui_internal.h>
+
 std::thread Engine::m_thread[2];
 
 Vector2 Engine::s_viewportSize = {};
@@ -108,6 +110,33 @@ grr::gShader* shader = nullptr;
 
 Framebuffer* m_framebuffer = nullptr;
 
+std::vector<Vertex3D> vertex3D {
+    {Vector3(-1.0f, -1.0f,  1.0f), Vector3(0.0f, 0.0f,  1.0f), Vector2(0.0f, 0.0f)},
+    {Vector3(-1.0f,  1.0f,  1.0f), Vector3(0.0f, 0.0f,  1.0f), Vector2(0.0f, 1.0f)},
+    {Vector3(-1.0f, -1.0f, -1.0f), Vector3(0.0f, 0.0f,  1.0f), Vector2(1.0f, 0.0f)},
+    {Vector3(-1.0f,  1.0f, -1.0f), Vector3(0.0f, 0.0f,  1.0f), Vector2(1.0f, 1.0f)},
+
+    {Vector3( 1.0f, -1.0f,  1.0f), Vector3(0.0f, 0.0f, -1.0f), Vector2(1.0f, 0.0f)},
+    {Vector3( 1.0f,  1.0f,  1.0f), Vector3(0.0f, 0.0f, -1.0f), Vector2(1.0f, 1.0f)},
+    {Vector3( 1.0f, -1.0f, -1.0f), Vector3(0.0f, 0.0f, -1.0f), Vector2(0.0f, 0.0f)},
+    {Vector3( 1.0f,  1.0f, -1.0f), Vector3(0.0f, 0.0f, -1.0f), Vector2(0.0f, 1.0f)}
+};
+
+std::vector<u32> indices3D {
+    1, 2, 0,
+    3, 6, 2,
+    7, 4, 6,
+    5, 0, 4,
+    6, 0, 2,
+    3, 5, 7,
+    1, 3, 2,
+    3, 7, 6,
+    7, 5, 4,
+    5, 1, 0,
+    6, 4, 0,
+    3, 1, 5
+};
+
 void Engine::OnInit() {
     auto mainCamera = SceneManager::add("MainCamera");
 
@@ -120,16 +149,37 @@ void Engine::OnInit() {
     auto chunckManager = SceneManager::add("Chunkmanager");
     chunckManager->addComponent<ChunkManager>();
 
+    /*
+    auto cube = SceneManager::add("Cube");
+    cube->setActive(true);
+
+    auto& meshFilter = cube->addComponent<MeshFilter>();
+
+    auto& mesh = meshFilter.getMesh();
+
+    mesh.insert(indices3D);
+    mesh.insert(vertex3D);
+
+    auto& meshRender = cube->addComponent<MeshRender>();
+    auto& material = meshRender.addMaterial("default");
+    material.albedo = {1.0f, 0.0f, 1.0f, 1.0f};
+    material.ao = 1.0f;
+    material.roughness = 0.32f;
+    material.metallic = 0.2f;
+
+    meshRender.buildMesh();
+    */
+
     std::string vert = Filesystem::getfilecontent(Filesystem::getpublic(Filesystem::eShader).string() + "/default.vert");
     std::string frag = Filesystem::getfilecontent(Filesystem::getpublic(Filesystem::eShader).string() + "/default.frag");
 
+    m_framebuffer = Framebuffer::Create(1, 1);
+    
     shader = grr::gShader::Create({frag.c_str()}, {vert.c_str()});
 
     EditorController::Initialize();
 
     m_imGuiRender = std::make_unique<ImGuiRender>("#version 330 core");
-
-    m_framebuffer = Framebuffer::Create(Screen::width, Screen::height);
 }
 
 void Engine::OnUpdate() {
@@ -222,20 +272,80 @@ void Engine::OnSetupUIViewport(Camera *camera) {
     ImGui::End();
 }
 
+bool DragFloatXYZ(const std::string& name, float* data) {
+    ImGui::Text("%s", name.c_str());
+
+    ImGui::PushMultiItemsWidths(3, ImGui::CalcItemWidth());
+
+    bool isChanged = false;
+
+    ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "X");
+    ImGui::SameLine();
+    if (ImGui::DragFloat(("##DragFloatX_" + name).c_str(), &data[0])) {
+        isChanged = true;
+    }
+
+    ImGui::PopItemWidth();
+
+    ImGui::SameLine();
+
+    ImGui::TextColored(ImVec4(0.0f, 1.0f, 0.0f, 1.0f), "Y");
+    ImGui::SameLine();
+    if (ImGui::DragFloat(("##DragFloatY_" + name).c_str(), &data[1])) {
+        isChanged = true;
+    }
+    
+    ImGui::PopItemWidth();
+
+    ImGui::SameLine();
+
+    ImGui::TextColored(ImVec4(0.0f, 0.0f, 1.0f, 1.0f), "Z");
+    ImGui::SameLine();
+    if (ImGui::DragFloat(("##DragFloatZ_" + name).c_str(), &data[2])) {
+        isChanged = true;
+    }
+    ImGui::PopItemWidth();
+
+    return isChanged;
+}
+
+void OnSetupComponent(Transform* transform) {
+    auto isOpen = ImGui::TreeNode("Transform");
+
+    if (isOpen) {
+        DragFloatXYZ("Posição", reinterpret_cast<float*>(&transform->position));
+
+        DragFloatXYZ("Escala", reinterpret_cast<float*>(&transform->scale));
+
+        auto& rotation = transform->rotation;
+
+        auto euler = rotation.eulerAngles();
+        if (DragFloatXYZ("Rotação", reinterpret_cast<float*>(&euler))) {
+            rotation = Math::normalize(Math::euler({Math::rad(euler.x), Math::rad(euler.y), Math::rad(euler.z)}));
+        }
+        ImGui::TreePop();
+    }
+}
+
 void Engine::OnSetupProperty() {
     ImGui::Begin("Property");
     if (s_gameObjectSelected) {
         auto name = s_gameObjectSelected->getName();
 
         ImGui::SeparatorText(name.c_str());
+
+        s_gameObjectSelected->RenderProperty<Transform>(OnSetupComponent);
     }
     ImGui::End();
 }
+
 
 void Engine::OnSetupUIHierarchy() {
     ImGui::Begin("Hierarchy");
     
     auto name = SceneManager::GetName();
+
+    ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
 
     auto isOpen = ImGui::TreeNode(name.c_str());
 

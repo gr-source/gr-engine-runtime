@@ -43,6 +43,8 @@ void Buffer::buildMesh(const Mesh &mesh) {
     m_vertexArray->unbind();
 
     m_count = mesh.getIndiceCount();
+
+    std::cout << m_count << std::endl;
 }
 
 void Buffer::drawMesh() {
