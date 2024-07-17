@@ -42,10 +42,10 @@ void Terrain::build() {
             u32 index3 = (x + 1) * TerrainSize + (z + 1);
 
             // Triângulo 1 (index0, index1, index2)
-            mesh.addtriangle(index0, index1, index2);
+            mesh.addTriangle(index0, index1, index2);
 
             // Triângulo 2 (index1, index3, index2)
-            mesh.addtriangle(index0, index2, index3);
+            mesh.addTriangle(index0, index2, index3);
         }
     }
 }

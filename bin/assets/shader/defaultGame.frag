@@ -1,6 +1,115 @@
 #version 330 core
 
+out vec4 FragColor;
+
 #define PI 3.14159265358979323846
+
+#define MAX_MATERIAL 50
+#define MAX_TEXTURE 10
+#define MAX_LIGHT 10
+
+#define TEXTURE_ALBEDO 0
+#define TEXTURE_NORMAL 1
+#define TEXTURE_ROUGHNESS 2
+#define TEXTURE_AO 3
+#define TEXTURE_METALLIC 4
+
+#define LIGHT_DIRECTION 1.0
+#define LIGHT_POINT 2.0
+#define LIGHT_SPOT 3.0
+
+in mat3 m_TBN;
+in vec3 s_normal;
+in vec3 s_fragPos;
+in vec2 s_texCoord;
+
+flat in int s_materialIndex;
+
+struct Material {
+    vec4 albedo;
+    vec3 params; // roughness, metallic, ao
+};
+
+struct LightComponent {
+    vec3 position;
+    vec4 color;
+    vec3 attenuation; // (x - constant) (y - linear) (z - quadract)
+    vec3 direction;
+    vec3 params; // (x - angleInCone) (y - angleOutCone) (z - type)
+    mat4 vp;
+};
+
+uniform LightComponent m_lights[MAX_LIGHT];
+uniform Material materials[MAX_MATERIAL];
+
+uniform sampler2D textures[MAX_TEXTURE];
+uniform sampler2D gShadow;
+
+uniform bool isactive[MAX_TEXTURE];
+
+uniform int m_lightcount;
+
+uniform vec3 viewPos;
+
+// Function to get the normal from the normal map
+vec3 getNormalMap(sampler2D normalMap, vec2 textCoord, vec3 fragPos, vec3 normal);
+
+// pbr settings 
+vec3 BaseColor(vec3 fragPos, vec3 albedo, float roughness, float metallic, float ao, vec3 normal);
+
+void main() {
+    vec3 albedo     = materials[s_materialIndex].albedo.xyz;
+    float roughness = materials[s_materialIndex].params.x;
+    float metallic  = materials[s_materialIndex].params.y;
+    float ao        = materials[s_materialIndex].params.z;
+
+    vec3 normal     = s_normal;
+
+
+    /*if (isactive[TEXTURE_ALBEDO]) {
+        albedo = texture(textures[TEXTURE_ALBEDO], m_textCoord).xyz;
+    }
+
+    if (isactive[TEXTURE_NORMAL]) {
+        normal = getNormalMap(textures[TEXTURE_NORMAL], m_textCoord, m_fragPos, m_normal);
+    }
+
+    if (isactive[TEXTURE_ROUGHNESS]) {
+        roughness = texture(textures[TEXTURE_ROUGHNESS], m_textCoord).r;
+    }
+
+    if (isactive[TEXTURE_METALLIC]) {
+        metallic = texture(textures[TEXTURE_METALLIC], m_textCoord).r;
+    }
+
+    if (isactive[TEXTURE_AO]) {
+        ao = texture(textures[TEXTURE_AO], m_textCoord).r;
+    }
+    */
+
+    vec3 color = BaseColor(s_fragPos, albedo, roughness, metallic, ao, normal);
+
+    color = color / (color + vec3(1.0));
+    color = pow(color, vec3(1.0 / 2.2));
+
+    FragColor = vec4(color, 1.0);
+}
+
+vec3 getNormalMap(sampler2D normalMap, vec2 texCoord, vec3 fragPos, vec3 normal) {
+    vec3 normalMapNormal = texture(normalMap, texCoord).rgb * 2.0 - 1.0;
+
+    // vec3 Q1 = dFdx(fragPos);
+    // vec3 Q2 = dFdy(fragPos);
+    // vec2 du = dFdx(textCoord);
+    // vec2 dv = dFdy(textCoord);
+
+    // vec3 N = normalize(normal);
+    // vec3 T = normalize(Q1 * dv.y - Q2 * du.y);
+    // vec3 B = -normalize(cross(N, T));
+    // mat3 TBN = mat3(T, B, N);
+
+    return normalize(m_TBN * normalMapNormal);
+}
 
 float DistributionGGX(float NdotH, float roughness) {
     float a      = roughness * roughness;
@@ -36,39 +145,33 @@ vec3 fresnelSchlick(float cosTheta, vec3 F0) {
     return F0 + (1.0 - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
 }
 
-#define LIGHT_DIRECTION 1.0
-#define LIGHT_POINT 2.0
-#define LIGHT_SPOT 3.0
+float getShadow(vec4 fragPosLightSpace) {
+    vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
+    projCoords = projCoords * 0.5 + 0.5;
+    float currentDepth = projCoords.z;
 
-out vec4 FragColor;
-
-flat in int u_index;
-in vec3 u_fragPos;
-in vec3 u_normal;
-
-struct Material {
-    vec4 albedo;
-    vec3 params; // roughness, metallic, ao
-};
-
-struct LightComponent {
-    vec3 position;
-    vec4 color;
-    vec3 attenuation; // (x - constant) (y - linear) (z - quadract)
-    vec3 direction;
-    vec3 params; // (x - angleInCone) (y - angleOutCone) (z - type)
-    mat4 vp;
-};
-
-uniform LightComponent m_light[10];
-uniform Material m_material[10];
-uniform int m_lightcount;
-uniform vec3 m_eye;
+    float shadow = 0.0;
+    vec2 texelSize = 1.0 / textureSize(gShadow, 0);
+    for (int x = -1; x <= 1; ++x) {
+        for (int y = -1; y <= 1; ++y) {
+            float pcfDepth = texture(gShadow, projCoords.xy + vec2(x, y) * texelSize).r;
+            shadow += currentDepth > pcfDepth  ? 1.0 : 0.0;
+        }    
+    }
+    shadow /= 9.0;
+    
+    if (projCoords.z > 1.0)
+        shadow = 0.0;
+        
+    return shadow;
+}
 
 vec3 CreatePointLight(LightComponent light, vec3 V, vec3 N, vec3 F0, vec3 fragPos, vec3 albedo, float roughness, float metallic, float ao) {
     // Calcula o vetor de luz e o vetor de meia direção
     vec3 L = normalize(light.position - fragPos);
     vec3 H = normalize(V + L);
+
+    // float shadow = getShadow(light.vp * vec4(m_fragPos, 1.0));
 
     // Calcula os produtos de ponto entre vetores
     float NdotL = max(0.0, dot(N, L));
@@ -142,8 +245,8 @@ vec3 CreateSpotLight(LightComponent light, vec3 V, vec3 N, vec3 F0, vec3 fragPos
     return (kD * albedo / PI + specular) * radiance * NdotL;
 }
 
-vec3 CreateDirectLight(LightComponent light, vec3 fragPos, vec3 V, vec3 N, vec3 F0, vec3 albedo, float roughness, float metallic) {
-    vec3 L = normalize(light.position - fragPos);
+vec3 CreateDirectLight(LightComponent light, vec3 V, vec3 N, vec3 F0, vec3 albedo, float roughness, float metallic) {
+    vec3 L = normalize(light.position - s_fragPos);
     vec3 H = normalize(L + V);
     vec3 R = reflect(-V, N);
 
@@ -170,14 +273,13 @@ vec3 CreateDirectLight(LightComponent light, vec3 fragPos, vec3 V, vec3 N, vec3 
     
     // Atenuação do metal
     kD *= 1.0 - metallic;
-
     // Aplica o fator de sombreamento
     return (kD * albedo / PI + specular) * light.color.xyz * NdotL;
 }
 
-vec3 BaseColor(vec3 eye, vec3 fragPos, vec3 albedo, float roughness, float metallic, float ao, vec3 normal) {
+vec3 BaseColor(vec3 fragPos, vec3 albedo, float roughness, float metallic, float ao, vec3 normal) {
     vec3 N = normalize(normal);
-    vec3 V = normalize(eye - fragPos);
+    vec3 V = normalize(viewPos - fragPos);
 
     vec3 F0 = vec3(0.04);
     F0 = mix(F0, albedo, metallic);
@@ -185,12 +287,12 @@ vec3 BaseColor(vec3 eye, vec3 fragPos, vec3 albedo, float roughness, float metal
     // Calcula a iluminação
     vec3 Lo = vec3(0.0);
     for (int i = 0; i < m_lightcount; ++i) {
-        if (m_light[i].params.z == LIGHT_POINT) {
-            Lo += CreatePointLight(m_light[i], V, N, F0, fragPos, albedo, roughness, metallic, ao);
-        } else if (m_light[i].params.z == LIGHT_SPOT) {
-            Lo += CreateSpotLight(m_light[i], V, N, F0, fragPos, albedo, roughness, metallic, ao);
-        } else if (m_light[i].params.z == LIGHT_DIRECTION) {
-            Lo += CreateDirectLight(m_light[i], fragPos, V, N, F0, albedo, roughness, metallic);
+        if (m_lights[i].params.z == LIGHT_POINT) {
+            Lo += CreatePointLight(m_lights[i], V, N, F0, fragPos, albedo, roughness, metallic, ao);
+        } else if (m_lights[i].params.z == LIGHT_SPOT) {
+            Lo += CreateSpotLight(m_lights[i], V, N, F0, fragPos, albedo, roughness, metallic, ao);
+        } else if (m_lights[i].params.z == LIGHT_DIRECTION) {
+            Lo += CreateDirectLight(m_lights[i], V, N, F0, albedo, roughness, metallic);
         }
     }
 
@@ -200,19 +302,4 @@ vec3 BaseColor(vec3 eye, vec3 fragPos, vec3 albedo, float roughness, float metal
     // Combinando a iluminação ambiente
     return ambient + Lo;
 }
-
-void main() {
-    vec3 albedo     = m_material[u_index].albedo.xyz;
-    float roughness = m_material[u_index].params.x;
-    float metallic  = m_material[u_index].params.y;
-    float ao        = m_material[u_index].params.z;
-
-    vec3 color = BaseColor(m_eye, u_fragPos, albedo, roughness, metallic, ao, u_normal);
-
-    color = color / (color + vec3(1.0));
-    color = pow(color, vec3(1.0 / 2.2));
-
-    FragColor = vec4(color, 1.0);
-}
-
 

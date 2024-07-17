@@ -74,74 +74,74 @@ void ChunkController::BuildMesh() {
 
                     // Right face
                     if (checkFace({float(x + 1), float(y), float(z)})) {
-                        mesh.addVertice(Vector3(model * Vector4(1.0f, -1.0f,  1.0f, 1.0f)), Vector3(0.0f, 0.0f, 1.0f));
-                        mesh.addVertice(Vector3(model * Vector4(1.0f, -1.0f, -1.0f, 1.0f)), Vector3(0.0f, 0.0f, 1.0f));
-                        mesh.addVertice(Vector3(model * Vector4(1.0f,  1.0f, -1.0f, 1.0f)), Vector3(0.0f, 0.0f, 1.0f));
-                        mesh.addVertice(Vector3(model * Vector4(1.0f,  1.0f,  1.0f, 1.0f)), Vector3(0.0f, 0.0f, 1.0f));
+                        mesh.addVertice(Vector3(model * Vector4(1.0f, -1.0f,  1.0f, 1.0f)), Vector3(0.0f, 0.0f, 1.0f), Vector2(0.0f, 0.0f));
+                        mesh.addVertice(Vector3(model * Vector4(1.0f, -1.0f, -1.0f, 1.0f)), Vector3(0.0f, 0.0f, 1.0f), Vector2(1.0f, 0.0f));
+                        mesh.addVertice(Vector3(model * Vector4(1.0f,  1.0f, -1.0f, 1.0f)), Vector3(0.0f, 0.0f, 1.0f), Vector2(1.0f, 1.0f));
+                        mesh.addVertice(Vector3(model * Vector4(1.0f,  1.0f,  1.0f, 1.0f)), Vector3(0.0f, 0.0f, 1.0f), Vector2(0.0f, 1.0f));
 
                         u32 baseIndex = mesh.getVerticeCount() - 4;
-                        mesh.addtriangle(baseIndex, baseIndex + 1, baseIndex + 2);
-                        mesh.addtriangle(baseIndex, baseIndex + 2, baseIndex + 3);
+                        mesh.addTriangle(baseIndex, baseIndex + 1, baseIndex + 2);
+                        mesh.addTriangle(baseIndex, baseIndex + 2, baseIndex + 3);
                     }
 
                     // Left face
                     if (checkFace({float(x - 1), float(y), float(z)})) {
-                        mesh.addVertice(Vector3(model * Vector4(-1.0f, -1.0f,  1.0f, 1.0f)), Vector3(0.0f, 0.0f, -1.0f));
-                        mesh.addVertice(Vector3(model * Vector4(-1.0f,  1.0f,  1.0f, 1.0f)), Vector3(0.0f, 0.0f, -1.0f));
-                        mesh.addVertice(Vector3(model * Vector4(-1.0f,  1.0f, -1.0f, 1.0f)), Vector3(0.0f, 0.0f, -1.0f));
-                        mesh.addVertice(Vector3(model * Vector4(-1.0f, -1.0f, -1.0f, 1.0f)), Vector3(0.0f, 0.0f, -1.0f));
+                        mesh.addVertice(Vector3(model * Vector4(-1.0f, -1.0f,  1.0f, 1.0f)), Vector3(0.0f, 0.0f, -1.0f), Vector2(0.0f, 0.0f));
+                        mesh.addVertice(Vector3(model * Vector4(-1.0f,  1.0f,  1.0f, 1.0f)), Vector3(0.0f, 0.0f, -1.0f), Vector2(1.0f, 0.0f));
+                        mesh.addVertice(Vector3(model * Vector4(-1.0f,  1.0f, -1.0f, 1.0f)), Vector3(0.0f, 0.0f, -1.0f), Vector2(1.0f, 1.0f));
+                        mesh.addVertice(Vector3(model * Vector4(-1.0f, -1.0f, -1.0f, 1.0f)), Vector3(0.0f, 0.0f, -1.0f), Vector2(0.0f, 1.0f));
 
                         u32 baseIndex = mesh.getVerticeCount() - 4; 
-                        mesh.addtriangle(baseIndex, baseIndex + 1, baseIndex + 2);
-                        mesh.addtriangle(baseIndex, baseIndex + 2, baseIndex + 3);
+                        mesh.addTriangle(baseIndex, baseIndex + 1, baseIndex + 2);
+                        mesh.addTriangle(baseIndex, baseIndex + 2, baseIndex + 3);
                     }
                     
                     // Top face
                     if (checkFace({float(x), float(y + 1), float(z)})) {
-                        mesh.addVertice(Vector3(model * Vector4(-1.0f, 1.0f,  1.0f, 1.0f)), Vector3(0.0f, 1.0f, 0.0f));
-                        mesh.addVertice(Vector3(model * Vector4( 1.0f, 1.0f,  1.0f, 1.0f)), Vector3(0.0f, 1.0f, 0.0f));
-                        mesh.addVertice(Vector3(model * Vector4( 1.0f, 1.0f, -1.0f, 1.0f)), Vector3(0.0f, 1.0f, 0.0f));
-                        mesh.addVertice(Vector3(model * Vector4(-1.0f, 1.0f, -1.0f, 1.0f)), Vector3(0.0f, 1.0f, 0.0f));
+                        mesh.addVertice(Vector3(model * Vector4(-1.0f, 1.0f,  1.0f, 1.0f)), Vector3(0.0f, 1.0f, 0.0f), Vector2(0.0f, 0.0f));
+                        mesh.addVertice(Vector3(model * Vector4( 1.0f, 1.0f,  1.0f, 1.0f)), Vector3(0.0f, 1.0f, 0.0f), Vector2(1.0f, 0.0f));
+                        mesh.addVertice(Vector3(model * Vector4( 1.0f, 1.0f, -1.0f, 1.0f)), Vector3(0.0f, 1.0f, 0.0f), Vector2(1.0f, 1.0f));
+                        mesh.addVertice(Vector3(model * Vector4(-1.0f, 1.0f, -1.0f, 1.0f)), Vector3(0.0f, 1.0f, 0.0f), Vector2(0.0f, 1.0f));
 
                         u32 baseIndex = mesh.getVerticeCount() - 4;
-                        mesh.addtriangle(baseIndex, baseIndex + 1, baseIndex + 2);
-                        mesh.addtriangle(baseIndex, baseIndex + 2, baseIndex + 3);
+                        mesh.addTriangle(baseIndex, baseIndex + 1, baseIndex + 2);
+                        mesh.addTriangle(baseIndex, baseIndex + 2, baseIndex + 3);
                     }
 
                     // Bottom face
                     if (checkFace({float(x), float(y - 1), float(z)})) {
-                        mesh.addVertice(Vector3(model * Vector4(-1.0f, -1.0f,  1.0f, 1.0f)), Vector3(0.0f, -1.0f, 0.0f));
-                        mesh.addVertice(Vector3(model * Vector4(-1.0f, -1.0f, -1.0f, 1.0f)), Vector3(0.0f, -1.0f, 0.0f));
-                        mesh.addVertice(Vector3(model * Vector4( 1.0f, -1.0f, -1.0f, 1.0f)), Vector3(0.0f, -1.0f, 0.0f));
-                        mesh.addVertice(Vector3(model * Vector4( 1.0f, -1.0f,  1.0f, 1.0f)), Vector3(0.0f, -1.0f, 0.0f));
+                        mesh.addVertice(Vector3(model * Vector4(-1.0f, -1.0f,  1.0f, 1.0f)), Vector3(0.0f, -1.0f, 0.0f), Vector2(0.0f, 0.0f));
+                        mesh.addVertice(Vector3(model * Vector4(-1.0f, -1.0f, -1.0f, 1.0f)), Vector3(0.0f, -1.0f, 0.0f), Vector2(1.0f, 0.0f));
+                        mesh.addVertice(Vector3(model * Vector4( 1.0f, -1.0f, -1.0f, 1.0f)), Vector3(0.0f, -1.0f, 0.0f), Vector2(1.0f, 1.0f));
+                        mesh.addVertice(Vector3(model * Vector4( 1.0f, -1.0f,  1.0f, 1.0f)), Vector3(0.0f, -1.0f, 0.0f), Vector2(0.0f, 1.0f));
 
                         u32 baseIndex = mesh.getVerticeCount() - 4;
-                        mesh.addtriangle(baseIndex, baseIndex + 1, baseIndex + 2);
-                        mesh.addtriangle(baseIndex, baseIndex + 2, baseIndex + 3);
+                        mesh.addTriangle(baseIndex, baseIndex + 1, baseIndex + 2);
+                        mesh.addTriangle(baseIndex, baseIndex + 2, baseIndex + 3);
                     }
 
                     // Front face
-                    if (checkFace({float(x), float(y), float(z + 1)})) {
-                        mesh.addVertice(Vector3(model * Vector4(-1.0f, -1.0f, 1.0f, 1.0f)), Vector3(1.0f, 0.0f, 0.0f));
-                        mesh.addVertice(Vector3(model * Vector4( 1.0f, -1.0f, 1.0f, 1.0f)), Vector3(1.0f, 0.0f, 0.0f));
-                        mesh.addVertice(Vector3(model * Vector4( 1.0f,  1.0f, 1.0f, 1.0f)), Vector3(1.0f, 0.0f, 0.0f));
-                        mesh.addVertice(Vector3(model * Vector4(-1.0f,  1.0f, 1.0f, 1.0f)), Vector3(1.0f, 0.0f, 0.0f));
+                    if (checkFace({float(x), float(y), float(z + 1)}) || !block.isSolid) {
+                        mesh.addVertice(Vector3(model * Vector4(-1.0f, -1.0f, 1.0f, 1.0f)), Vector3(1.0f, 0.0f, 0.0f), Vector2(0.0f, 0.0f));
+                        mesh.addVertice(Vector3(model * Vector4( 1.0f, -1.0f, 1.0f, 1.0f)), Vector3(1.0f, 0.0f, 0.0f), Vector2(1.0f, 0.0f));
+                        mesh.addVertice(Vector3(model * Vector4( 1.0f,  1.0f, 1.0f, 1.0f)), Vector3(1.0f, 0.0f, 0.0f), Vector2(1.0f, 1.0f));
+                        mesh.addVertice(Vector3(model * Vector4(-1.0f,  1.0f, 1.0f, 1.0f)), Vector3(1.0f, 0.0f, 0.0f), Vector2(0.0f, 1.0f));
 
                         u32 baseIndex = mesh.getVerticeCount() - 4;
-                        mesh.addtriangle(baseIndex, baseIndex + 1, baseIndex + 2);
-                        mesh.addtriangle(baseIndex, baseIndex + 2, baseIndex + 3);
+                        mesh.addTriangle(baseIndex, baseIndex + 1, baseIndex + 2);
+                        mesh.addTriangle(baseIndex, baseIndex + 2, baseIndex + 3);
                     }
 
                     // Back face
-                    if (checkFace({float(x), float(y), float(z - 1)})) {
-                        mesh.addVertice(Vector3(model * Vector4(-1.0f, -1.0f, -1.0f, 1.0f)), Vector3(-1.0f, 0.0f, 0.0f));
-                        mesh.addVertice(Vector3(model * Vector4(-1.0f,  1.0f, -1.0f, 1.0f)), Vector3(-1.0f, 0.0f, 0.0f));
-                        mesh.addVertice(Vector3(model * Vector4( 1.0f,  1.0f, -1.0f, 1.0f)), Vector3(-1.0f, 0.0f, 0.0f));
-                        mesh.addVertice(Vector3(model * Vector4( 1.0f, -1.0f, -1.0f, 1.0f)), Vector3(-1.0f, 0.0f, 0.0f));
+                    if (checkFace({float(x), float(y), float(z - 1)})|| !block.isSolid) {
+                        mesh.addVertice(Vector3(model * Vector4(-1.0f, -1.0f, -1.0f, 1.0f)), Vector3(-1.0f, 0.0f, 0.0f), Vector2(1.0f, 1.0f));
+                        mesh.addVertice(Vector3(model * Vector4(-1.0f,  1.0f, -1.0f, 1.0f)), Vector3(-1.0f, 0.0f, 0.0f), Vector2(0.0f, 1.0f));
+                        mesh.addVertice(Vector3(model * Vector4( 1.0f,  1.0f, -1.0f, 1.0f)), Vector3(-1.0f, 0.0f, 0.0f), Vector2(0.0f, 0.0f));
+                        mesh.addVertice(Vector3(model * Vector4( 1.0f, -1.0f, -1.0f, 1.0f)), Vector3(-1.0f, 0.0f, 0.0f), Vector2(1.0f, 0.0f));
 
                         u32 baseIndex = mesh.getVerticeCount() - 4;
-                        mesh.addtriangle(baseIndex, baseIndex + 1, baseIndex + 2);
-                        mesh.addtriangle(baseIndex, baseIndex + 2, baseIndex + 3);
+                        mesh.addTriangle(baseIndex, baseIndex + 1, baseIndex + 2);
+                        mesh.addTriangle(baseIndex, baseIndex + 2, baseIndex + 3);
                     }
                 }
             }
@@ -168,11 +168,13 @@ const bool ChunkController::checkFace(const Vector3 &position) {
     int y = int(std::floor(position.y));
     int z = int(std::floor(position.z));
 
-    if (x < 0 || x >= VoxelSettings::ChunkSize ||
-        y < 0 || y >= VoxelSettings::ChunkSize ||
-        z < 0 || z >= VoxelSettings::ChunkSize ||
-        m_blocks[x][y][z].isSolid) {
+    if (x < 0 || x > (VoxelSettings::ChunkSize - 1) ||
+        y < 0 || y > (VoxelSettings::ChunkSize - 1) ||
+        z < 0 || z > (VoxelSettings::ChunkSize - 1)) {
+            return true;
+    }
 
+    if (m_blocks[x][y][z].isSolid) {
         return false;
     }
 

@@ -60,7 +60,6 @@ set(engine_src
     src/memory.cpp
     src/Global.cpp
     src/screen.cpp
-    src/thread.cpp
     src/render.cpp
     src/random.cpp
     src/settings.cpp
@@ -149,7 +148,6 @@ set(engine_hdr
     src/memory.h
     src/Global.h
     src/screen.h
-    src/thread.h
     src/render.h
     src/random.hpp
     src/settings.h

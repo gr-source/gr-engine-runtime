@@ -11,6 +11,7 @@ Buffer::Buffer() : m_vertexArray(grr::gVertexArray::Create()), m_vbo(grr::gVerte
     grr::gVertexArray::SetAttrib(0, 3, sizeof(Vertex3D), reinterpret_cast<const void*>(offsetof(Vertex3D, position)));
     grr::gVertexArray::SetAttrib(1, 3, sizeof(Vertex3D), reinterpret_cast<const void*>(offsetof(Vertex3D, normal)));
     grr::gVertexArray::SetAttrib(2, 2, sizeof(Vertex3D), reinterpret_cast<const void*>(offsetof(Vertex3D, texCoord)));
+    grr::gVertexArray::SetAttrib(3, 1, sizeof(Vertex3D), reinterpret_cast<const void*>(offsetof(Vertex3D, index)));
 
     m_vertexArray->unbind();
 }
@@ -43,8 +44,6 @@ void Buffer::buildMesh(const Mesh &mesh) {
     m_vertexArray->unbind();
 
     m_count = mesh.getIndiceCount();
-
-    std::cout << m_count << std::endl;
 }
 
 void Buffer::drawMesh() {

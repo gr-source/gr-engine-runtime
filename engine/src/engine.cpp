@@ -7,6 +7,7 @@
 #include "editor/editorController.hpp"
 
 #include "component/cameraController.h"
+#include "component/lightComponent.h"
 #include "component/chunkManager.hpp"
 #include "component/MeshRender.h"
 #include "component/meshFilter.h"
@@ -34,7 +35,6 @@
 #include "Global.h"
 #include "timer.h"
 
-#include "thread.h"
 #include "settings.h"
 
 #include <linux/input-event-codes.h>
@@ -49,8 +49,11 @@
 std::thread Engine::m_thread[2];
 
 Vector2 Engine::s_viewportSize = {};
+Vector2 Engine::s_viewportSizeGame = {};
 
 GameObject* Engine::s_gameObjectSelected = nullptr;
+
+bool Engine::IsEnnableCamview = true;
 
 std::unique_ptr<ImGuiRender> Engine::m_imGuiRender = nullptr;
 
@@ -106,9 +109,13 @@ void Engine::GRCursorScrool(float xoffset, float yoffset) {
 void Engine::GRDropFunc(const char *path) {
 }
 
-grr::gShader* shader = nullptr;
+grr::gShader* s_MainShader = nullptr;
+
+grr::gShader* s_GameShader = nullptr;
 
 Framebuffer* m_framebuffer = nullptr;
+
+Framebuffer* m_framebufferMain = nullptr;
 
 std::vector<Vertex3D> vertex3D {
     {Vector3(-1.0f, -1.0f,  1.0f), Vector3(0.0f, 0.0f,  1.0f), Vector2(0.0f, 0.0f)},
@@ -140,8 +147,8 @@ std::vector<u32> indices3D {
 void Engine::OnInit() {
     auto mainCamera = SceneManager::add("MainCamera");
 
-    auto& transform = mainCamera->getTransform();
-    transform.position = {0.0f, 0.0f, -5.0f};
+    auto transform = &mainCamera->getTransform();
+    transform->position = {0.0f, 0.0f, -5.0f};
 
     mainCamera->addComponent<Camera>();
     mainCamera->setActive(true);
@@ -149,33 +156,68 @@ void Engine::OnInit() {
     auto chunckManager = SceneManager::add("Chunkmanager");
     chunckManager->addComponent<ChunkManager>();
 
-    /*
-    auto cube = SceneManager::add("Cube");
-    cube->setActive(true);
 
-    auto& meshFilter = cube->addComponent<MeshFilter>();
+    // Light - sun
+    auto sun = SceneManager::add("Sun");
 
-    auto& mesh = meshFilter.getMesh();
+    transform = &sun->getTransform();
+    transform->position = {0.0f, 100.0f, 0.0f};
 
-    mesh.insert(indices3D);
-    mesh.insert(vertex3D);
+    auto& light = sun->addComponent<LightComponent>(LightComponent::eDirection, Color::white);
 
-    auto& meshRender = cube->addComponent<MeshRender>();
-    auto& material = meshRender.addMaterial("default");
-    material.albedo = {1.0f, 0.0f, 1.0f, 1.0f};
-    material.ao = 1.0f;
-    material.roughness = 0.32f;
-    material.metallic = 0.2f;
-
-    meshRender.buildMesh();
-    */
-
+    // Buffer
+    m_framebuffer = Framebuffer::Create(1, 1);
+    m_framebufferMain = Framebuffer::Create(1, 1);
+    
     std::string vert = Filesystem::getfilecontent(Filesystem::getpublic(Filesystem::eShader).string() + "/default.vert");
     std::string frag = Filesystem::getfilecontent(Filesystem::getpublic(Filesystem::eShader).string() + "/default.frag");
 
-    m_framebuffer = Framebuffer::Create(1, 1);
-    
-    shader = grr::gShader::Create({frag.c_str()}, {vert.c_str()});
+    s_MainShader = grr::gShader::Create({frag.c_str()}, {vert.c_str()});
+    s_MainShader->bind();
+
+    grr::gShader::Register("projection");
+    grr::gShader::Register("view");
+    grr::gShader::Register("model");
+    grr::gShader::Register("viewPos");
+
+    vert = Filesystem::getfilecontent(Filesystem::getpublic(Filesystem::eShader).string() + "/defaultGame.vert");
+    frag = Filesystem::getfilecontent(Filesystem::getpublic(Filesystem::eShader).string() + "/defaultGame.frag");
+
+    s_GameShader = grr::gShader::Create({frag.c_str()}, {vert.c_str()});
+    s_GameShader->bind();
+
+    grr::gShader::Register("projection");
+    grr::gShader::Register("view");
+    grr::gShader::Register("model");
+    grr::gShader::Register("m_lightcount");
+    grr::gShader::Register("viewPos");
+
+    for (u8 i=0;i<10;i++) {
+        // Light
+        grr::gShader::Register("m_lights[" + std::to_string(i) + "].position");
+        grr::gShader::Register("m_lights[" + std::to_string(i) + "].color");
+        grr::gShader::Register("m_lights[" + std::to_string(i) + "].attenuation");
+        grr::gShader::Register("m_lights[" + std::to_string(i) + "].direction");
+        grr::gShader::Register("m_lights[" + std::to_string(i) + "].params");
+
+        // Material
+        grr::gShader::Register("materials[" + std::to_string(i) + "]." + "albedo");
+        grr::gShader::Register("materials[" + std::to_string(i) + "]." + "params");
+    }
+
+    /*
+    uniform LightComponent m_lights[MAX_LIGHT];
+    uniform Material materials[MAX_MATERIAL];
+
+    uniform sampler2D textures[MAX_TEXTURE];
+    uniform sampler2D gShadow;
+
+    uniform bool isactive[MAX_TEXTURE];
+
+    uniform int m_lightcount;
+
+    uniform vec3 gEye;
+    */
 
     EditorController::Initialize();
 
@@ -192,7 +234,7 @@ void Engine::OnUpdate() {
 
 void Engine::OnRender() {
     auto camera = Camera::GetCurrent();
-    if (!camera || !shader->isValid()) {
+    if (!camera || !s_MainShader->isValid()) {
         grr::gRender::SetRenderState(grr::GR_BACKGROUND_COLOR, (void*)&Color::red);
         grr::gRender::SetRenderState(grr::GR_BACKGROUND, grr::GR_DEPTH_BUFFER | grr::GR_COLOR_BUFFER);
         return;
@@ -206,9 +248,24 @@ void Engine::OnRender() {
     grr::gRender::SetRenderState(grr::GR_CULL_FACE, grr::GR_TRUE);
     grr::gRender::SetRenderState(grr::GR_CULL, grr::GR_BACK);
 
-    OnPreRender(camera);
+    OnPreRender(s_MainShader, camera);
 
     m_framebuffer->unbind();
+
+    if (IsEnnableCamview && s_GameShader->isValid()) {
+        m_framebufferMain->bind();
+        
+        grr::gRender::SetRenderState(grr::GR_BACKGROUND_COLOR, (void*)&Color::blue);
+        grr::gRender::SetRenderState(grr::GR_BACKGROUND, grr::GR_DEPTH_BUFFER | grr::GR_COLOR_BUFFER);
+
+        s_GameShader->bind();
+
+        OnSetupLight();
+
+        OnPreRender(s_GameShader, camera);
+
+        m_framebufferMain->unbind();
+    }
 
     grr::gRender::SetRenderState(grr::GR_BACKGROUND_COLOR, (void*)&Color::black);
     grr::gRender::SetRenderState(grr::GR_BACKGROUND, grr::GR_COLOR_BUFFER);
@@ -224,14 +281,14 @@ void Engine::OnRender() {
 void Engine::OnPostRender() {
 }
 
-void Engine::OnPreRender(Camera *camera) {
+void Engine::OnPreRender(grr::gShader* shader, Camera *camera) {
     shader->bind();
 
     grr::gShader::SetUniform("projection", 1, camera->getPerspesctive());
     grr::gShader::SetUniform("view", 1, camera->getViewMatrix());
     grr::gShader::SetUniform("viewPos", 1, camera->getPosition());
 
-    RenderManager::OnRenderer(shader);
+    RenderManager::OnRenderer(shader, shader == s_GameShader);
 
     shader->unbind();
 }
@@ -248,8 +305,35 @@ void Engine::OnImGuiRender(Camera *camera) {
     // Window - viewport
     OnSetupUIViewport(camera);
 
+    // Window - Camview
+    OnSetupCamView(camera);
+
     // Window - viewport
     OnSetupProperty();
+}
+
+void Engine::OnSetupCamView(Camera *camera) {
+    ImGui::Begin("Camview", &IsEnnableCamview);
+
+    if (ImGui::IsWindowHovered()) {
+        ImGui::SetWindowFocus("Camview");
+    }
+    
+    auto avail = ImGui::GetContentRegionAvail();
+
+    if (s_viewportSizeGame.x != avail.x || s_viewportSizeGame.y != avail.y) {
+        camera->setAspectRation(avail.x / avail.y);
+
+        m_framebufferMain->updateViewport(avail.x, avail.y);
+
+        Screen::SetResolution(avail.x, avail.y);
+
+        s_viewportSizeGame = {avail.x, avail.y};
+    }
+
+    ImGui::Image(reinterpret_cast<ImTextureID>(m_framebufferMain->getTexture()->getID()), ImVec2(avail.x, avail.y), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
+
+    ImGui::End();
 }
 
 void Engine::OnSetupUIViewport(Camera *camera) {
@@ -270,6 +354,37 @@ void Engine::OnSetupUIViewport(Camera *camera) {
     ImGui::Image(reinterpret_cast<ImTextureID>(m_framebuffer->getTexture()->getID()), ImVec2(avail.x, avail.y), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
 
     ImGui::End();
+}
+
+void Engine::OnSetupLight() {
+    auto& lights = LightComponent::m_lights;
+    if (lights.empty()) {
+        return;
+    }
+
+    grr::gShader::SetUniform("m_lightcount", int(lights.size()));
+
+    for (u8 i=0;i<lights.size();i++) {
+        auto& light = lights[i];
+
+        grr::gShader::SetUniform("m_lights[" + std::to_string(i) + "].position", 1, light->getposition());
+        grr::gShader::SetUniform("m_lights[" + std::to_string(i) + "].color", 1, *reinterpret_cast<const grr::gColor*>(&light->getcolor()));
+        grr::gShader::SetUniform("m_lights[" + std::to_string(i) + "].attenuation", 1, Vector3(
+            light->getattenuationconstant(),
+            light->getattenuationlinear(),
+            light->getattenuationquadractc()
+        ));
+        grr::gShader::SetUniform("m_lights[" + std::to_string(i) + "].attenuation", 1, light->getforward());
+        grr::gShader::SetUniform("m_lights[" + std::to_string(i) + "].params", 1, Vector3(light->getinnecone(), light->getoutercone(), light->gettype()));
+    }
+
+    /*
+    grr::gShader::Register("m_lights[" + std::to_string(i) + "].position");
+    grr::gShader::Register("m_lights[" + std::to_string(i) + "].color");
+    grr::gShader::Register("m_lights[" + std::to_string(i) + "].attenuation");
+    grr::gShader::Register("m_lights[" + std::to_string(i) + "].direction");
+    grr::gShader::Register("m_lights[" + std::to_string(i) + "].params");
+    */
 }
 
 bool DragFloatXYZ(const std::string& name, float* data) {
@@ -339,7 +454,6 @@ void Engine::OnSetupProperty() {
     ImGui::End();
 }
 
-
 void Engine::OnSetupUIHierarchy() {
     ImGui::Begin("Hierarchy");
     
@@ -396,8 +510,10 @@ const bool Engine::IsEnableDocking() {
     if (io.ConfigFlags & ImGuiConfigFlags_DockingEnable) {
         ImGui::DockSpace(ImGui::GetID("##RenderDocking"), ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_PassthruCentralNode);
     }
+    
     ImGui::End();
     ImGui::PopStyleVar();
+
     return true;
 }
 
@@ -425,12 +541,20 @@ void Engine::OnLoader() {
 }
 
 void Engine::OnDestroy() {
-    if (shader) {
-        shader->destroy();
+    if (s_MainShader) {
+        s_MainShader->destroy();
+    }
+
+    if (s_GameShader) {
+        s_GameShader->destroy();
     }
 
     if (m_framebuffer) {
         m_framebuffer->destroy();
+    }
+
+    if (m_framebufferMain) {
+        m_framebufferMain->destroy();
     }
 
     if (m_thread[0].joinable()) {

@@ -20,11 +20,8 @@ void ChunkManager::OnInit() {
     int centerZ = position.z / int(VoxelSettings::ChunkSize);
 
     int loadDistance = 1;
-    u32 a1 = 0, a2 = 0;
     for (int dx = -loadDistance; dx <= loadDistance; ++dx) {
-        a1++;
         for (int dz = -loadDistance; dz <= loadDistance; ++dz) {
-            a2++;
             int chunkX = dx * VoxelSettings::ChunkSize;
             int chunkZ = dz * VoxelSettings::ChunkSize;
 
@@ -32,7 +29,6 @@ void ChunkManager::OnInit() {
                 EventManager::addEvent(&ChunkManager::LoadChunk, this, chunkX, chunkZ);
             // }
         }
-        a2 = 0;
     }
 }
 

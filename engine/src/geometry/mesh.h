@@ -27,7 +27,7 @@ public:
 
     void addindex(u32 indice);
 
-    void addtriangle(u32 t0, u32 t1, u32 t2);
+    void addTriangle(u32 t0, u32 t1, u32 t2);
 
     const std::vector<u32>& getindices() const;
 

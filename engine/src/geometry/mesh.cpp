@@ -32,7 +32,7 @@ void Mesh::addindex(u32 indice) {
     m_indices.emplace_back(indice);
 }
 
-void Mesh::addtriangle(u32 t0, u32 t1, u32 t2) {
+void Mesh::addTriangle(u32 t0, u32 t1, u32 t2) {
     m_indices.emplace_back(t0);
     m_indices.emplace_back(t1);
     m_indices.emplace_back(t2);

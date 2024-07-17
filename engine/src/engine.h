@@ -39,11 +39,15 @@ protected:
 
     static void OnPostRender();
 
-    static void OnPreRender(Camera *camera);
+    static void OnPreRender(grr::gShader* shader, Camera *camera);
 
     static void OnImGuiRender(Camera *camera);
 
+    static void OnSetupCamView(Camera *camera);
+
     static void OnSetupUIViewport(Camera *camera);
+
+    static void OnSetupLight();
 
     static void OnSetupProperty();
 
@@ -64,7 +68,10 @@ protected:
     static std::unique_ptr<ImGuiRender> m_imGuiRender;
 
     static Vector2 s_viewportSize;
+    static Vector2 s_viewportSizeGame;
 
     static GameObject* s_gameObjectSelected;
+
+    static bool IsEnnableCamview;
 };
 
