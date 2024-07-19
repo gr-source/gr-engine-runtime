@@ -44,11 +44,20 @@ set(editor_hdr
     src/editor/editorController.hpp
 )
 
+set(scriptManager_src
+    src/scriptManager/scriptManager.cpp
+)
+
+set(scriptManager_hdr
+    src/scriptManager/scriptManager.hpp
+)
+
 set(engine_src
     ${guizmo_src}
     ${octree_src}
     ${editor_src}
     ${simplexNoise_src}
+    ${scriptManager_src}
 
     src/gl.cpp
     src/log.cpp
@@ -138,6 +147,7 @@ set(engine_hdr
     ${octree_hdr}
     ${editor_hdr}
     ${simplexNoise_hdr}
+    ${scriptManager_hdr}
     
     src/log.h
     src/Game.h
@@ -221,6 +231,9 @@ set(engine_hdr
     src/framebuffer/framebuffer.hpp
 )
 
+find_package(Lua REQUIRED)
+
 add_library(engine STATIC ${engine_src} ${engine_hdr})
 
+target_link_libraries(engine PRIVATE ${LUA_LIBRARIES})
 

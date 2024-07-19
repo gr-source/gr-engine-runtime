@@ -28,6 +28,9 @@
 #include "filesystem/stream.h"
 
 #include "scene/SceneManager.h"
+
+#include "scriptManager/scriptManager.hpp"
+
 #include "renderManager.h"
 #include "objectManager.h"
 #include "eventManager.h"
@@ -117,33 +120,6 @@ Framebuffer* m_framebuffer = nullptr;
 
 Framebuffer* m_framebufferMain = nullptr;
 
-std::vector<Vertex3D> vertex3D {
-    {Vector3(-1.0f, -1.0f,  1.0f), Vector3(0.0f, 0.0f,  1.0f), Vector2(0.0f, 0.0f)},
-    {Vector3(-1.0f,  1.0f,  1.0f), Vector3(0.0f, 0.0f,  1.0f), Vector2(0.0f, 1.0f)},
-    {Vector3(-1.0f, -1.0f, -1.0f), Vector3(0.0f, 0.0f,  1.0f), Vector2(1.0f, 0.0f)},
-    {Vector3(-1.0f,  1.0f, -1.0f), Vector3(0.0f, 0.0f,  1.0f), Vector2(1.0f, 1.0f)},
-
-    {Vector3( 1.0f, -1.0f,  1.0f), Vector3(0.0f, 0.0f, -1.0f), Vector2(1.0f, 0.0f)},
-    {Vector3( 1.0f,  1.0f,  1.0f), Vector3(0.0f, 0.0f, -1.0f), Vector2(1.0f, 1.0f)},
-    {Vector3( 1.0f, -1.0f, -1.0f), Vector3(0.0f, 0.0f, -1.0f), Vector2(0.0f, 0.0f)},
-    {Vector3( 1.0f,  1.0f, -1.0f), Vector3(0.0f, 0.0f, -1.0f), Vector2(0.0f, 1.0f)}
-};
-
-std::vector<u32> indices3D {
-    1, 2, 0,
-    3, 6, 2,
-    7, 4, 6,
-    5, 0, 4,
-    6, 0, 2,
-    3, 5, 7,
-    1, 3, 2,
-    3, 7, 6,
-    7, 5, 4,
-    5, 1, 0,
-    6, 4, 0,
-    3, 1, 5
-};
-
 void Engine::OnInit() {
     auto mainCamera = SceneManager::add("MainCamera");
 
@@ -155,7 +131,6 @@ void Engine::OnInit() {
 
     auto chunckManager = SceneManager::add("Chunkmanager");
     chunckManager->addComponent<ChunkManager>();
-
 
     // Light - sun
     auto sun = SceneManager::add("Sun");
@@ -205,19 +180,9 @@ void Engine::OnInit() {
         grr::gShader::Register("materials[" + std::to_string(i) + "]." + "params");
     }
 
-    /*
-    uniform LightComponent m_lights[MAX_LIGHT];
-    uniform Material materials[MAX_MATERIAL];
+    ScriptManager::Initialize();
 
-    uniform sampler2D textures[MAX_TEXTURE];
-    uniform sampler2D gShadow;
-
-    uniform bool isactive[MAX_TEXTURE];
-
-    uniform int m_lightcount;
-
-    uniform vec3 gEye;
-    */
+    RegisterGlobalFunction();
 
     EditorController::Initialize();
 
@@ -563,6 +528,11 @@ void Engine::OnDestroy() {
     if (m_thread[1].joinable()) {
         m_thread[1].join();
     }
+    
+    ScriptManager::Destroy();
+}
+
+void Engine::RegisterGlobalFunction() {
 }
 
 void Engine::HandleEvent(EngineEvent event, const void* data) {
@@ -615,5 +585,3 @@ void Engine::HandleEvent(EngineEvent event, const void* data) {
         break;
     }
 }
-
-

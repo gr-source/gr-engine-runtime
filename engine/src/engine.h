@@ -63,6 +63,8 @@ protected:
 
     static void OnDestroy();
 
+    static void RegisterGlobalFunction();
+
     static std::thread m_thread[2];
 
     static std::unique_ptr<ImGuiRender> m_imGuiRender;

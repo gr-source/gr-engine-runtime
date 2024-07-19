@@ -114,6 +114,8 @@ int OnApplicationInit() {
 
     glfwMakeContextCurrent(window);
 
+    glfwSwapInterval(1);
+
     glfwInstallCallback(window);
 
     glfwSetWindowPos(window, 0, 0);
