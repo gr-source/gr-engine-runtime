@@ -1,0 +1,31 @@
+#pragma once
+
+#include "../ecs/entity.h"
+
+#include "../common.h"
+
+class CameraController : public Component {
+public:
+    CameraController();
+
+    void OnInit() override;
+
+    void OnStart() override;
+
+    void OnUpdate() override;
+
+protected:
+    Transform* m_transform;
+
+    float pitch;
+
+    float yaw;
+
+    void updateCursor();
+
+    void OnCameraUpdate();
+
+    void processMouse(const Vector2& direction);
+};
+
+
