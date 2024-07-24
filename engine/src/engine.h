@@ -53,14 +53,6 @@ protected:
     
     static void SetupEnable();
 
-    static void SetupGMD(const std::string& path);
-
-    static void WriteModel(const FbxNode* node, const std::string& path);
-
-    static void ReadNode(const FbxNode* node);
-
-    static void UploadFBX(const std::string& path);
-
     static std::unique_ptr<Game> m_game;
 
     static Skybox* m_skybox;
