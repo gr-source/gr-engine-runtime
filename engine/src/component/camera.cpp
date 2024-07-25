@@ -5,6 +5,9 @@
 #include "../scriptManager/scriptManager.hpp"
 
 Camera *Camera::Main() {
+    if (!ScriptManager::MainCamera) {
+        return nullptr;
+    }
     return ScriptManager::MainCamera();
 }
 

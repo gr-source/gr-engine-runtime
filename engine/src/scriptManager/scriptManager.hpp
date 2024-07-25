@@ -4,8 +4,6 @@
 
 #include "../gameObject.h"
 
-#define REGISTER_API(lhs, rhs, func) func = (lhs(*)(rhs))dlsym(ScriptManager::s_handle, #func)
-
 class ScriptManager {
 public:
     static void Initialzie();

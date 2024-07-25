@@ -4,6 +4,10 @@
 
 #include <dlfcn.h>
 
+#define REGISTER_API(lhs, rhs, func) func = (lhs(*)(rhs))dlsym(ScriptManager::s_handle, #func)
+
+#define UNREGISTER_API(func) func = nullptr
+
 void* ScriptManager::s_handle = nullptr;
 
 // [ Main ]
@@ -23,7 +27,7 @@ Camera *(*ScriptManager::MainCamera)();
 Camera *(*ScriptManager::CurrentCamera)();
 
 void ScriptManager::Initialzie() {
-    s_handle = dlopen("/home/grsource/Documentos/AppProjects/gr-component/lib/libgr-component.so", RTLD_LAZY | RTLD_LOCAL);
+    s_handle = dlopen("/home/grsource/Documentos/AppProjects/gr-component/lib/libgr-component.so", RTLD_LAZY);
     if (!s_handle) {
         std::cout << "Falied to load Script." << std::endl;
         return;
@@ -40,6 +44,21 @@ void ScriptManager::Shutdown() {
     if (Destroy) {
         Destroy();
     }
+
+    // [ Main ]
+    UNREGISTER_API(Initialize);
+    UNREGISTER_API(Destroy);
+
+    // [ Component - MeshRender ]
+    UNREGISTER_API(GetGameObjectsFromRender);
+    UNREGISTER_API(GetAllGameObject);
+
+    // [ Entity ]
+    UNREGISTER_API(GetEntityCount);
+
+    // [ Componenet - Camera ]
+    UNREGISTER_API(MainCamera);
+    UNREGISTER_API(CurrentCamera);
     
     if (!s_handle) {
         return;

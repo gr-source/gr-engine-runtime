@@ -236,10 +236,12 @@ void Game::RenderScenesUI() {
     ImGui::Begin("Cenario", nullptr, ImGuiWindowFlags_NoResize);
     ImGui::SetNextItemOpen(true, ImGuiCond_Appearing);
     if (ImGui::TreeNodeEx(SceneManager::GetName().c_str(), ImGuiTreeNodeFlags_SpanFullWidth)) {
-        for (auto& gameObject : ScriptManager::GetAllGameObject()) {
-            auto& transform = gameObject->getTransform();
+        if (ScriptManager::GetAllGameObject) {
+            for (auto& gameObject : ScriptManager::GetAllGameObject()) {
+                auto& transform = gameObject->getTransform();
 
-            ReadHierarchy(&transform);
+                ReadHierarchy(&transform);
+            }
         }
         ImGui::TreePop();
     }
@@ -366,7 +368,7 @@ void Game::RenderViewportUI() {
         } else {
             texturePlayGame = iconsUI[IconType::ICON_PLAY_GAME];
 
-            // ScriptManager::Initialzie();
+            ScriptManager::Initialzie();
             // EntityManager::OnPlayGame();
         }
     }
