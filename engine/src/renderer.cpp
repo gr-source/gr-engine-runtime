@@ -4,7 +4,7 @@
 
 #include "resources/resources.h"
 
-#include "component/cameraComponent.h"
+#include "component/camera.hpp"
 
 
 std::unique_ptr<BufferManager> DebugDraw::m_primitivebuffer = nullptr;
@@ -41,6 +41,7 @@ void DebugDraw::initialize() {
 }
 
 void DebugDraw::SetupSpriteRender(Shader* shader) {
+    /*
     shader->RegisterUniform("m_texture", 1, Shader::eINT);
 
     shader->RegisterUniform("model", 1, Shader::eMAT4x4);
@@ -69,6 +70,7 @@ void DebugDraw::SetupSpriteRender(Shader* shader) {
     m_spritebuffer->attribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex3D), reinterpret_cast<void*>(offsetof(Vertex3D, uv)));
 
     m_spritebuffer->unbind();
+    */
 }
 
 void DebugDraw::SetupShaderPrimitive(Shader *shader) {
@@ -86,9 +88,9 @@ void DebugDraw::addPoint(const Vector3 &position, const Color &color) {
 }
 
 void DebugDraw::addSprite(const Vector3 &position, Texture*& sprite) {
-    CameraComponent& m_cameraComponent = CameraComponent::MainCamera();
+    auto camera = Camera::Main();
 
-    Quaternion rotate = Math::normalize(Math::lookRotation(Math::normalize(position - m_cameraComponent.getposition()), Vector3::up));
+    Quaternion rotate = Math::normalize(Math::lookRotation(Math::normalize(position - camera->getPosition()), Vector3::up));
     rotate *= Math::normalize(Math::euler(Vector3(1.0f, 0.0f, 0.0f), Math::rad(90.0f)));
     rotate = Math::normalize(rotate);
 
@@ -105,12 +107,12 @@ const bool DebugDraw::hasLines() {
 }
 
 void DebugDraw::bind() {
-    CameraComponent& m_cameraComponent = CameraComponent::MainCamera();
+    auto camera = Camera::Main();
 
     m_shader->bind();
 
-    m_shader->setUniform("projection", m_cameraComponent.getperspesctive());
-    m_shader->setUniform("view", m_cameraComponent.getviewmatrix());
+    m_shader->setUniform("projection", camera->getPerspesctive());
+    m_shader->setUniform("view", camera->getViewmatrix());
 }
 
 void DebugDraw::unbind() {
@@ -167,13 +169,13 @@ const bool DebugDraw::hassprites() {
 }
 
 void DebugDraw::drawsprites() {
-    CameraComponent& m_cameraComponent = CameraComponent::MainCamera();
+    auto camera = Camera::Main();
 
     m_spriteRender->bind();
 
     m_spritebuffer->bind(BufferManager::eVAO);
 
-    m_spriteRender->setUniform("vp", m_cameraComponent.getperspesctive() * m_cameraComponent.getviewmatrix());
+    m_spriteRender->setUniform("vp", camera->getPerspesctive() * camera->getViewmatrix());
 
     for (auto& entry : m_sprites) {
         m_spriteRender->setUniform("model", entry.model);

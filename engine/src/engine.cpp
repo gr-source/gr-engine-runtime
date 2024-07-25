@@ -3,9 +3,8 @@
 #include "screen.h"
 #include "editorController.h"
 
-#include "component/MeshRender.h"
-
-#include "ecs/entityManager.h"
+#include "component/meshRender.hpp"
+#include "component/camera.hpp"
 
 #include "ui/ImGuiRender.h"
 
@@ -25,16 +24,18 @@
 #include "objectManager.h"
 #include "eventManager.h"
 #include "screenRender.h"
+#include "settings.h"
 #include "renderer.h"
 #include "skybox.h"
 #include "Global.h"
 #include "timer.h"
 
-#include "thread.h"
-#include "settings.h"
+#include "scriptManager/scriptManager.hpp"
 
 #include <linux/input-event-codes.h>
 #include <filesystem>
+
+#include <gr-render/gRender.h>
 
 void Engine::GRWindowResize(u32 width, u32 height) {
     Screen::SetResolution(width, height);
@@ -111,8 +112,6 @@ void Engine::OnInit() {
     pScreenBuffer = &ScreenBuffer::getInstance();
     pImguibuffer = &Imguibuffer::getInstance();
 
-    DebugDraw::initialize();
-
     pScreenRender = std::make_unique<ScreenRender>();
 
     m_shadowbuffer = &Shadowbuffer::getInstance();
@@ -123,12 +122,14 @@ void Engine::OnInit() {
 
     SetupEnable();
 
+    DebugDraw::initialize();
+
+    ScriptManager::Initialzie();
+
     RenderManager::Initialize();
 }
 
 void Engine::OnUpdate() {
-    EntityManager::OnUpdate();
-
     m_game->Update();
 }
 
@@ -166,6 +167,8 @@ void Engine::OnLoader() {
 }
 
 void Engine::OnDestroy() {
+    ScriptManager::Shutdown();
+
     if (m_thread[0].joinable()) {
         m_thread[0].join();
     }
@@ -229,6 +232,9 @@ Time tickRender;
 void Engine::MainFramebuffer() {
     gameStatics.renderMs = tickRender.start();
 
+    auto camera = Camera::Main();
+    if (camera) {
+
     // Preparação para renderização.
     RenderManager::Process();
 
@@ -246,10 +252,9 @@ void Engine::MainFramebuffer() {
     // aplicação do anti-alising mass4.
     pScreenBuffer->bind();
 
-    GRender(GRENDERER3D);
-    GEnableDepthTest();
-    GEnableFrameBufferSRGB();
-    GCullFaceBack();
+    grr::gRender::SetRenderState(grr::GR_BACKGROUND, grr::GR_DEPTH_BUFFER | grr::GR_COLOR_BUFFER);
+    grr::gRender::SetRenderState(grr::GR_DEPTH, grr::GR_TRUE);
+    grr::gRender::SetRenderState(grr::GR_FRAMEBUFFER_SRGB, grr::GR_TRUE);
 
     RenderScene();
 
@@ -257,6 +262,7 @@ void Engine::MainFramebuffer() {
     pScreenBuffer->swap();
 
     pScreenBuffer->unbind();
+    }
 
     #if !IS_GAME
     pImguibuffer->bind();
@@ -265,9 +271,9 @@ void Engine::MainFramebuffer() {
     #endif
 
     // renderização da cena 2d e utilização do pos processamento;
-    GRender(GRENDERER2D);
-    GDisableDepthTest();
-    GDisableFrameBufferSRGB();
+    grr::gRender::SetRenderState(grr::GR_BACKGROUND, grr::GR_COLOR_BUFFER);
+    grr::gRender::SetRenderState(grr::GR_DEPTH, grr::GR_FALSE);
+    grr::gRender::SetRenderState(grr::GR_FRAMEBUFFER_SRGB, grr::GR_FALSE);
 
     pScreenRender->render(pScreenBuffer->GetTexture());
 
@@ -280,12 +286,12 @@ void Engine::MainFramebuffer() {
 
 void Engine::RenderScene() {
 
-    RenderManager::Renderer();
+    // RenderManager::Renderer();
 
-    DebugDraw::Renderer();
-    glDepthFunc(GL_LEQUAL);
+    // DebugDraw::Renderer();
+    grr::gRender::SetRenderState(grr::GR_DEPTH_FUNC, grr::GR_DEPTH_LEQUAL);
     m_skybox->render();
-    glDepthFunc(GL_LESS);
+    grr::gRender::SetRenderState(grr::GR_DEPTH_FUNC, grr::GR_DEPTH_LESS);
 }
 
 #if !IS_GAME
@@ -302,13 +308,11 @@ void Engine::UIFramebuffer() {
 #endif
 
 void Engine::SetupEnable() {
-    glEnable(GL_MULTISAMPLE);
+    grr::gRender::SetRenderState(grr::GR_MULTISAMPLE, grr::GR_TRUE);
+    grr::gRender::SetRenderState(grr::GR_MULTISAMPLE, grr::GR_TRUE);
 
-    glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LESS);
-
-    glEnable(GL_CULL_FACE);
-    glCullFace(GL_BACK);
+    grr::gRender::SetRenderState(grr::GR_CULL_FACE, grr::GR_TRUE);
+    grr::gRender::SetRenderState(grr::GR_CULL, grr::GR_BACK);
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);

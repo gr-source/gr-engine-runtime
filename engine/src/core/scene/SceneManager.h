@@ -8,8 +8,8 @@ public:
 
     static void Load(const std::string& path);
     
-    template <typename... Args>
-    static GameObject* add(Args&&... args);
+    // template <typename... Args>
+    // static GameObject* add(Args&&... args);
 
     static void remove(GameObject* gameobject);
 
@@ -20,7 +20,10 @@ private:
     static Scene m_scene;
 };
 
+/*
 template <typename... Args>
 inline GameObject* SceneManager::add(Args &&...args) {
     return m_scene.add(std::forward<Args>(args)...);
 }
+*/
+

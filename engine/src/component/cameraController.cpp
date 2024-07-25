@@ -9,15 +9,15 @@
 
 CameraController::CameraController() : m_transform(nullptr), pitch(0.0f), yaw(0.0f) {}
 
-void CameraController::OnInit() {
-    m_transform = &entity->getComponent<Transform>();
+void CameraController::Init() {
+    // m_transform = &entity->getComponent<Transform>();
 }
 
-void CameraController::OnStart() {
+void CameraController::Start() {
     CameraComponent::CameraID = 1;
 }
 
-void CameraController::OnUpdate() {
+void CameraController::Update() {
     updateCursor();
 }
 

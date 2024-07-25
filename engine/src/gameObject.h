@@ -1,6 +1,5 @@
 #pragma once
 
-#include <utility>
 #include <string>
 
 #include "ecs/entity.h"
@@ -8,13 +7,33 @@
 #include "component/Transform.h"
 
 class GameObject {
+public:
+    const std::string &getName();
+
+    const std::string &getTag();
+
+    Transform &getTransform();
+    
+private:
+    std::string m_name;
+
+    std::string m_tag;
+
+    Entity* m_entity;
+
+protected:
+    static std::vector<std::unique_ptr<GameObject>> s_objects;
+};
+
+/*
+class GameObject {
 private:
     Entity* entity;
 public:
-    /* nome do objeto */
+    /* nome do objeto 
     std::string name;
 
-    /* defini um grupo de objetos */
+    /* defini um grupo de objetos 
     std::string tag;
 
     GameObject(const std::string& name = "none", const std::string& tag = "none");
@@ -24,15 +43,15 @@ public:
 
     const std::string& gettag() const;
 
-    /* adiciono um componenet ao objeto */
+    /* adiciono um componenet ao objeto 
     template <typename T, typename ...Argv>
     constexpr T& addComponent(Argv&&... argv);
 
-    /* pegue um component do objeto */
+    /* pegue um component do objeto 
     template <typename T>
     T& getComponent();
 
-    /* verifique de o component existe nesse objeto */
+    /* verifique de o component existe nesse objeto 
     template <typename T>
     constexpr bool hasComponent() const;
 
@@ -65,3 +84,4 @@ inline void GameObject::RenderProperty(Args&&... args) {
 
     std::bind(std::forward<Args>(args)..., &entity->getComponent<T>())();
 }
+*/

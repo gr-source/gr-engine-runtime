@@ -8,11 +8,11 @@ class CameraController : public Component {
 public:
     CameraController();
 
-    void OnInit() override;
+    void Init() override;
 
-    void OnStart() override;
+    void Start() override;
 
-    void OnUpdate() override;
+    void Update() override;
 
 protected:
     Transform* m_transform;

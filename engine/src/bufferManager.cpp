@@ -52,7 +52,7 @@ void ReizeBuffer(GLenum target, u16 stride, u32 size) {
 }
 
 void BufferManager::pushUpdateBuffer(GLintptr offset, GLsizeiptr size, const void* data) {
-    ReizeBuffer(GL_ARRAY_BUFFER, sizeof(Vertex3D), size / sizeof(Vertex3D));
+    ReizeBuffer(GL_ARRAY_BUFFER, sizeof(Vertex), size / sizeof(Vertex));
 
     GL_CHECK(glBufferSubData(GL_ARRAY_BUFFER, offset, size, data));
 }

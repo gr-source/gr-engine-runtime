@@ -8,61 +8,23 @@
 
 class Mesh {
 public:
-    Mesh(const std::string& name = "unnamed");
-
-    const std::string& getname() const;
+    Mesh(const std::string &name = "default");
 
     template <typename ...Args>
-    Vertex3D& addvertex(Args&& ...args);
+    Vertex& addVertex(Args &&...args);
 
-    const std::vector<Vertex3D>& getvertices() const;
+    void addTriangles(int t0, int t1, int t2);
 
-    Vertex3D& GetVertex(u32 index);
+    void addIndice(int t0);
+private:
+    std::vector<Vertex> m_vertices;
 
-    const u32 getverticecount() const;
+    std::vector<int> m_indices;
 
-    const Vertex3D* getverticedata() const;
-
-    void addindice(u32 indice);
-
-    void addindex(u32 indice);
-
-    void addtriangle(u32 t0, u32 t1, u32 t2);
-
-    const std::vector<u32>& getindices() const;
-
-    const u32 getindicecount() const;
-
-    const u32* getindicedata() const;
-
-    u32& GetIndice(u32 index);
-
-    const bool hasindices() const;
-
-    bool operator ==(const Mesh& other) const;
-
-    void addMaterial(u32 index);
-
-    const std::vector<u32>& getMaterials() const;
-
-    u32* findMaterial(u32 index);
-
-    void clear();
-
-protected:
     std::string m_name;
-
-    std::vector<Vertex3D> m_vertices;
-
-    std::vector<u32> m_material;
-
-    std::vector<u32> m_indices;
-
-    friend class Filmbox;
-    friend class MeshRender;
 };
 
 template <typename ...Args>
-inline Vertex3D& Mesh::addvertex(Args&& ...args) {
+inline Vertex& Mesh::addVertex(Args&& ...args) {
     return m_vertices.emplace_back(std::forward<Args>(args)...);
 }

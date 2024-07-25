@@ -5,7 +5,7 @@
 
 #include "resources/resources.h"
 
-#include "component/cameraComponent.h"
+#include "component/camera.hpp"
 #include "component/lightComponent.h"
 
 #include <functional>
@@ -90,10 +90,10 @@ void Skybox::render() {
             m_backgroundShader->setUniform("environmentMap", 0);
         }
 
-        CameraComponent& m_cameraComponent = CameraComponent::MainCamera();
+        auto camera = Camera::Main();
 
-        m_backgroundShader->setUniform("projection", m_cameraComponent.getperspesctive());
-        m_backgroundShader->setUniform("view", m_cameraComponent.getviewmatrix());
+        m_backgroundShader->setUniform("projection", camera->getPerspesctive());
+        m_backgroundShader->setUniform("view", camera->getViewmatrix());
 
         bufferManager->bind(BufferManager::eVAO);
         bufferManager->draw(BufferManager::eTriangle, count, BufferManager::eUint);

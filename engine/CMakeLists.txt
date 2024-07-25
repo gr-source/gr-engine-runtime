@@ -10,13 +10,11 @@ set(guizmo_hdr
 
 set(ecs_src
     src/ecs/entity.cpp
-    src/ecs/entityManager.cpp
 )
 
 set(ecs_hdr
     src/ecs/entity.h
     src/ecs/component.h
-    src/ecs/entityManager.h
 )
 
 set(octree_src
@@ -35,10 +33,19 @@ set(simplexNoise_hdr
     src/simplexNoise/SimplexNoise.h
 )
 
+set(scriptManager_cpp
+    src/scriptManager/scriptManager.cpp
+)
+
+set(scriptManager_hpp
+    src/scriptManager/scriptManager.hpp
+)
+
 set(engine_src
     ${guizmo_src}
     ${octree_src}
     ${simplexNoise_src}
+    ${scriptManager_cpp}
 
     src/gl.cpp
     src/log.cpp
@@ -50,7 +57,6 @@ set(engine_src
     src/Global.cpp
     src/skybox.cpp
     src/screen.cpp
-    src/thread.cpp
     src/renderer.cpp
     src/settings.cpp
     src/gameObject.cpp
@@ -62,20 +68,13 @@ set(engine_src
     src/bufferManager.cpp
     src/editorController.cpp
 
-    src/component/animator.cpp
-    src/component/collider.cpp
+    src/component/camera.cpp
     src/component/Transform.cpp
-    src/component/Rigidbody.cpp
-    src/component/MeshRender.cpp
+    src/component/meshRender.cpp
     src/component/meshFilter.cpp
-    src/component/boxCollider.cpp
-    src/component/meshCollider.cpp
     src/component/lightComponent.cpp
-    src/component/chunkController.cpp
     src/component/cameraComponent.cpp
-    src/component/playerController.cpp
     src/component/cameraController.cpp
-    src/component/characterController.cpp
 
     src/framebuffer/gBuffer.cpp
     src/framebuffer/thumbnails.cpp
@@ -105,8 +104,6 @@ set(engine_src
     src/filmbox/fbxMesh.cpp
     src/filmbox/Filmbox.cpp
 
-    src/geometry/batchedGeometry.cpp
-    src/geometry/geometryRender.cpp
     src/geometry/material.cpp
     src/geometry/model.cpp
     src/geometry/mesh.cpp
@@ -119,21 +116,19 @@ set(engine_src
     src/ui/View.cpp
     src/ui/ImGuiRender.cpp
 
-    src/culling/occlusion.cpp
     src/culling/frustum.cpp
 
     src/filesystem/filesystem.cpp
     src/filesystem/stream.cpp
 
     src/physics/physicsScene.cpp
-
-    src/game/terrain.cpp
 )
 
 set(engine_hdr
     ${guizmo_hdr}
     ${octree_hdr}
     ${simplexNoise_hdr}
+    ${scriptManager_hpp}
     
     src/log.h
     src/timer.h
@@ -144,7 +139,6 @@ set(engine_hdr
     src/Global.h
     src/skybox.h
     src/screen.h
-    src/thread.h
     src/renderer.h
     src/settings.h
     src/gameObject.h
@@ -156,20 +150,14 @@ set(engine_hdr
     src/bufferManager.h
     src/editorController.h
 
-    src/component/animator.h
-    src/component/collider.h
+    src/component/camera.hpp
+    src/component/default.hpp
     src/component/Transform.h
-    src/component/Rigidbody.h
-    src/component/MeshRender.h
-    src/component/meshFilter.h
-    src/component/boxCollider.h
-    src/component/meshCollider.h
+    src/component/meshRender.hpp
+    src/component/meshFilter.hpp
     src/component/lightComponent.h
-    src/component/chunkController.h
     src/component/cameraComponent.h
-    src/component/playerController.h
     src/component/cameraController.h
-    src/component/characterController.h
 
     src/framebuffer/gBuffer.h
     src/framebuffer/thumbnails.h
@@ -199,8 +187,6 @@ set(engine_hdr
     src/filmbox/fbxMesh.h
     src/filmbox/Filmbox.h
 
-    src/geometry/batchedGeometry.h
-    src/geometry/geometryRender.h
     src/geometry/material.h
     src/geometry/model.h
     src/geometry/mesh.h
@@ -213,16 +199,12 @@ set(engine_hdr
     src/ui/View.h
     src/ui/ImGuiRender.h
 
-    src/culling/occlusion.h
     src/culling/frustum.h
     
     src/filesystem/filesystem.h
     src/filesystem/stream.h
 
     src/physics/physicsScene.h
-
-    src/game/terrain.h
-
 )
 
 add_library(engine STATIC ${engine_src} ${engine_hdr})

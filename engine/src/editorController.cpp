@@ -2,7 +2,7 @@
 
 #include "objectManager.h"
 
-#include "component/cameraComponent.h"
+#include "component/camera.hpp"
 
 #include "ui/ImGuiRender.h"
 
@@ -21,27 +21,24 @@ void EditorController::OnUpdate() {
     if (!io.MouseDrawCursor || Settings::IsGameRunning) {
         return;
     }
-    if (CameraComponent::CameraID != 0) {
-        CameraComponent::CameraID = 0;
-    }
 
-    CameraComponent& m_cameraComponent = CameraComponent::MainCamera();
+    auto camera = Camera::Main();
 
     float velocity = movementSpeed * Time::deltaTime;
 
     Vector3 diretion;
 
     if (Input::IsKeyPress(Input::KEY_W)) {
-        diretion += m_cameraComponent.gettransform()->getforward();
+        diretion += camera->getTransform()->getforward();
     }
     if (Input::IsKeyPress(Input::KEY_S)) {
-        diretion -= m_cameraComponent.gettransform()->getforward();
+        diretion -= camera->getTransform()->getforward();
     }
     if (Input::IsKeyPress(Input::KEY_A)) {
-        diretion += m_cameraComponent.gettransform()->getright();
+        diretion += camera->getTransform()->getright();
     }
     if (Input::IsKeyPress(Input::KEY_D)) {
-        diretion -= m_cameraComponent.gettransform()->getright();
+        diretion -= camera->getTransform()->getright();
     }
     if (Input::IsKeyPress(Input::KEY_UP)) {
         diretion.y += 1.0f;
@@ -51,7 +48,7 @@ void EditorController::OnUpdate() {
     }
 
     if (diretion != Vector3::zero) {
-        m_cameraComponent.gettransform()->position += Math::normalize(diretion) * velocity;
+        camera->getTransform()->position += Math::normalize(diretion) * velocity;
     }
 
     updateCursor();
@@ -72,9 +69,10 @@ void EditorController::updateCursor() {
 }
 
 void EditorController::OnCameraUpdate() {
-    CameraComponent& m_cameraComponent = CameraComponent::MainCamera();
+    auto camera = Camera::Main();
+    // CameraComponent& m_cameraComponent = CameraComponent::MainCamera();
 
-    Transform* m_transform = m_cameraComponent.gettransform();
+    Transform* m_transform = camera->getTransform();
     m_transform->rotation = Math::normalize(Math::euler({Math::rad(elapsed.y), Math::rad(-elapsed.x), 0.0f}));
 }
 

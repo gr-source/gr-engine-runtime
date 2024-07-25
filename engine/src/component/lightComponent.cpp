@@ -10,20 +10,19 @@ Matrix4x4 LightComponent::projection = Math::orthographic(-10.0f, 10.0f, -10.0f,
 
 LightComponent::LightComponent(u8 type, const Color& color, float aConstant, float aLinear, float aQuadract, float inneCone, float outerCone) : m_type(type), m_color(color), m_attenuationConstant(aConstant), m_attenuationLinear(aLinear), m_attenuationQuadratic(aQuadract), m_transform(nullptr), m_angleInnerCone(inneCone), m_angleOuterCone(outerCone) {
     m_lights.push_back(this);
-    active = true;
 }
 
 LightComponent::~LightComponent() {
     m_lights.erase(std::remove(m_lights.begin(), m_lights.end(), this), m_lights.end());
 }
 
-void LightComponent::OnUpdate() {
+void LightComponent::Update() {
     DebugDraw::addLine(m_transform->position, (m_transform->position + m_transform->getforward()), m_color);
     DebugDraw::addPoint(m_transform->position, Color::red);
 }
 
-void LightComponent::OnInit() {
-    m_transform = &entity->getComponent<Transform>();
+void LightComponent::Init() {
+    // m_transform = &entity->getComponent<Transform>();
 }
 
 const Vector3 &LightComponent::getposition() const {

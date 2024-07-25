@@ -8,8 +8,8 @@ class Scene {
 public:
     Scene(const std::string& name = "default");
 
-    template <typename... Args>
-    GameObject* add(Args... args);
+    // template <typename... Args>
+    // GameObject* add(Args... args);
 
     void remove(const GameObject* gameObject);
 private:
@@ -19,7 +19,9 @@ private:
     friend class SceneManager;
 };
 
+/*
 template <typename... Args>
 inline GameObject* Scene::add(Args... args) {
     return m_gameObjects.emplace_back(&ObjectManager::add(std::forward<Args>(args)...));
 }
+*/

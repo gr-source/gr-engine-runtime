@@ -13,6 +13,7 @@ std::vector<CameraComponent*> CameraComponent::m_cameras;
 u32 CameraComponent::CameraID = 0;
 
 CameraComponent &CameraComponent::MainCamera() {
+    /*
     if (m_cameras.empty()) {
         GameObject* m_mainCamera = SceneManager::add("MainCamera");//ObjectManager::add("MainCamera");
 
@@ -21,6 +22,7 @@ CameraComponent &CameraComponent::MainCamera() {
 
         return m_mainCamera->addComponent<CameraComponent>(45.0f, 0.001f, 1000.0f, (float(Screen::width / Screen::height)));
     }
+    */
     return *m_cameras[CameraID];
 }
 
@@ -28,8 +30,8 @@ CameraComponent::CameraComponent(float fov, float nearPlane, float farPlane, flo
     m_cameras.push_back(this);
 }
 
-void CameraComponent::OnInit() {
-    m_transform = &entity->getComponent<Transform>();
+void CameraComponent::Init() {
+    // m_transform = &entity->getComponent<Transform>();
 }
 
 const Vector3 CameraComponent::getposition() {

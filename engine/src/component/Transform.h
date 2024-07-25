@@ -13,6 +13,8 @@ public:
 
     Transform* parent;
 
+    Transform* root;
+
     Transform();
 
     const Vector3 getright() const;
@@ -35,9 +37,6 @@ public:
 
     void setRoot(Transform* transform);
     
-public:
-    Transform* root;
-
 };
 
 

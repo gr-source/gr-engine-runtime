@@ -10,6 +10,8 @@
 
 #include "component.h"
 
+#define MAX_COMPONENT 16
+
 class GameObject;
 
 /* tamanho maximo de componenets */
@@ -31,66 +33,22 @@ inline std::size_t GetIDFromComponent() noexcept {
 /* Classe de entidades */
 class Entity {
 public:
-    std::unordered_map<std::size_t, std::shared_ptr<Component>> components;
-    std::bitset<32> m_bitset;
-    bool IsActivate;
-
-public:
-    GameObject* m_gameobject;
-
-    Entity(GameObject* gameobject);
-
-    template <typename T, typename... Args>
-    T& addComponent(Args&& ... args);
+    static std::size_t GetEntityCount();
 
     template <typename T>
     T& getComponent();
 
-    template <typename T>
-    const bool hasComponent() const;
+    GameObject *getGameObject();
+private:
+    std::unordered_map<std::string, std::shared_ptr<Component>> components;
 
-    void OnStart();
+    std::bitset<MAX_COMPONENT> sequence;
 
-    void OnUpdate();
-
-    bool operator==(const Entity& other) const;
+    GameObject *gameObject;
 };
 
-template <typename T, typename... Args>
-inline T& Entity::addComponent(Args&&... args) {
-    if (hasComponent<T>()) {
-        return getComponent<T>();
-    }
-    
-    components.emplace(GetIDFromComponent<T>(), std::make_shared<T>(std::forward<Args>(args)...));
-
-    auto& c = components[GetIDFromComponent<T>()];
-    c->gameObject = m_gameobject;
-    c->entity = this;
-
-    m_bitset.set(GetIDFromComponent<T>(), true);
-
-    c->OnInit();
-
-    #if IS_GAME
-    c->OnStart();
-    #endif
-
-    return *dynamic_cast<T*>(c.get());
-}
-
 template <typename T>
-inline T& Entity::getComponent() {
-    if (m_bitset.test(GetIDFromComponent<T>())) {
-        return *dynamic_cast<T*>(components[GetIDFromComponent<T>()].get());
-    }
-    throw std::runtime_error("Component not exists!");
+inline T &Entity::getComponent() {
+    return *dynamic_cast<T*>(components[typeid(T).name()].get());
 }
-
-template <typename T>
-inline const bool Entity::hasComponent() const {
-    return m_bitset.test(GetIDFromComponent<T>());
-}
-
-
 

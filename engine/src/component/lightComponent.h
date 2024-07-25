@@ -17,7 +17,7 @@ public:
     LightComponent(u8 type, const Color& color = Color::white, float aConstant = 1.0f, float aLinear = 1.0f, float aQuadract = 1.0f, float inneCone = 1.0f, float outerCone = 1.0f);
     ~LightComponent();
 
-    void OnUpdate() override;
+    void Update() override;
 
     const Vector3& getposition() const;
 
@@ -29,7 +29,7 @@ public:
 
     const int& gettype() const;
 
-    void OnInit() override;
+    void Init() override;
 
     const float& getattenuationconstant();
 

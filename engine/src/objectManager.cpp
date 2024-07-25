@@ -6,7 +6,7 @@ std::vector<std::unique_ptr<GameObject>> ObjectManager::m_gameobjects;
 
 GameObject* ObjectManager::find(const std::string &name) {
     auto it = std::find_if(m_gameobjects.begin(), m_gameobjects.end(), [&name](const std::unique_ptr<GameObject>& object) {
-        return object->name == name;
+        return object->getName() == name;
     });
     if (it != m_gameobjects.end()) {
         return (*it).get();

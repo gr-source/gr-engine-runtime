@@ -6,6 +6,7 @@
 Scene SceneManager::m_scene;
 
 void SceneManager::Save(const std::string &path) {
+    /*
     std::ofstream os(path);
 
     os << "name: " << m_scene.name << std::endl;
@@ -15,6 +16,7 @@ void SceneManager::Save(const std::string &path) {
     }
 
     os.close();
+    */
 }
 
 void SceneManager::Load(const std::string &path) {

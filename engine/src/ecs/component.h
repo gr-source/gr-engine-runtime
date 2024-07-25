@@ -1,23 +1,18 @@
 #pragma once
 
+#include <gr-math/gmath.h>
+
 class Entity;
-class GameObject;
 
 class Component {
 public:
-    Component(bool active = false) : active(active), entity(nullptr) {}
+    virtual void Init() {}
 
-    Entity* entity;
+    virtual void Start() {}
 
-    GameObject* gameObject;
-
-    bool active;
-
-    virtual void OnInit() {}
-
-    virtual void OnStart() {}
-
-    virtual void OnUpdate() {}
+    virtual void Update() {}
 
     virtual ~Component() {}
+
+    Entity* entity;
 };

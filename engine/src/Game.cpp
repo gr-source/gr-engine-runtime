@@ -19,20 +19,12 @@
 
 #include "resources/resources.h"
 
-#include "ecs/entityManager.h"
-
-#include "component/playerController.h"
 #include "component/cameraController.h"
 #include "component/cameraComponent.h"
-#include "component/chunkController.h"
 #include "component/lightComponent.h"
-#include "component/meshCollider.h"
-#include "component/boxCollider.h"
-#include "component/meshFilter.h"
-#include "component/MeshRender.h"
+#include "component/meshFilter.hpp"
+#include "component/meshRender.hpp"
 #include "component/Transform.h"
-#include "component/Rigidbody.h"
-#include "component/animator.h"
 
 #include "guizmo/ImGuizmo.h"
 
@@ -41,8 +33,6 @@
 #include "core/scene/SceneManager.h"
 #include "core/scene/Scene.h"
 
-#include "ecs/entityManager.h"
-
 #include "filesystem/filesystem.h"
 
 #include "animation/skeleton.h"
@@ -50,6 +40,8 @@
 #include "ui/View.h"
 
 #include "simplexNoise/SimplexNoise.h"
+
+#include "scriptManager/scriptManager.hpp"
 
 #include <sstream>
 #include <iomanip>
@@ -98,6 +90,7 @@ std::unordered_map<IconType, Texture*> iconsUI;
 EditorController mEditorController;
 #endif
 
+/*
 GameObject& GenGameObject(const FbxNode* node, bool local) {
     GameObject* gameObject = nullptr;
 
@@ -169,11 +162,15 @@ void SceneLoaded(const FbxScene* scene) {
     }
 }
 
+*/
+
 Game::Game() : objectselected(nullptr), FPSColor(255, 255, 255, 255) {
+    /*
     Filmbox* m_filmbox = Filmbox::Load("/home/grsource/Documentos/filmbox/backrooms.fbx");
     SceneLoaded(m_filmbox->getScene());
 
     m_filmbox->destroy();
+    */
 
     #if !IS_GAME
     m_io = nullptr;
@@ -239,7 +236,7 @@ void Game::RenderScenesUI() {
     ImGui::Begin("Cenario", nullptr, ImGuiWindowFlags_NoResize);
     ImGui::SetNextItemOpen(true, ImGuiCond_Appearing);
     if (ImGui::TreeNodeEx(SceneManager::GetName().c_str(), ImGuiTreeNodeFlags_SpanFullWidth)) {
-        for (auto& gameObject : SceneManager::GetObjects()) {
+        for (auto& gameObject : ScriptManager::GetAllGameObject()) {
             auto& transform = gameObject->getTransform();
 
             ReadHierarchy(&transform);
@@ -261,7 +258,7 @@ void Game::RenderScenesUI() {
 void Game::ReadHierarchy(Transform *transform) {
     ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanFullWidth;
 
-    auto gameObject = transform->gameObject;
+    auto gameObject = transform->entity->getGameObject();
     Transform* root = transform->getRoot();
 
     if (objectselected == gameObject) {
@@ -274,7 +271,7 @@ void Game::ReadHierarchy(Transform *transform) {
         flags |= ImGuiTreeNodeFlags_Leaf;
     }
 
-    const bool isOpen = ImGui::TreeNodeEx(gameObject->name.c_str(), flags);
+    const bool isOpen = ImGui::TreeNodeEx(gameObject->getName().c_str(), flags);
     if (ImGui::IsItemClicked(ImGuiMouseButton_Middle)) {
         objectselected = gameObject;
     }
@@ -310,9 +307,9 @@ void Game::RenderViewportUI() {
     
     ImGui::Image(reinterpret_cast<ImTextureID>(m_imguibuffer.gettexture()), ImGui::GetContentRegionAvail(), ImVec2(0, 1), ImVec2(1, 0));
 
-    CameraComponent& m_cameraComponent = CameraComponent::MainCamera();
-
+    //
     if (objectselected != nullptr) {
+        /*
         if (ImGui::IsKeyReleased(ImGuiKey_T)) {
             m_guizmoOperation = ImGuizmo::TRANSLATE;
         }
@@ -336,6 +333,7 @@ void Game::RenderViewportUI() {
         if (ImGuizmo::Manipulate(m_cameraComponent.getviewmatrix().data, m_cameraComponent.getperspesctive().data, m_guizmoOperation, m_guizmoManipulate, model.data)) {
             model.decompose(transform.scale, transform.rotation, transform.position);
         }
+        */
     }
 
     const ImVec2 wSize =  ImGui::GetCursorPos();
@@ -362,11 +360,14 @@ void Game::RenderViewportUI() {
         if (Settings::IsGameRunning) {
             texturePlayGame = iconsUI[IconType::ICON_STOP_GAME];
 
-            EntityManager::OnStopPlayGame();
+            ScriptManager::Shutdown();
+
+            // EntityManager::OnStopPlayGame();
         } else {
             texturePlayGame = iconsUI[IconType::ICON_PLAY_GAME];
 
-            EntityManager::OnPlayGame();
+            // ScriptManager::Initialzie();
+            // EntityManager::OnPlayGame();
         }
     }
 
@@ -435,14 +436,16 @@ void Game::RenderPropertiUI() {
 
                 ImGui::SameLine();
 
-                ImGui::Text("[ %s - %s ]", objectselected->name.c_str(), objectselected->tag.c_str());
+                ImGui::Text("[ %s - %s ]", objectselected->getName().c_str(), objectselected->getTag().c_str());
 
+                /*
                 objectselected->RenderProperty<Transform>(&Game::OnPropertyTransform, this);
                 objectselected->RenderProperty<MeshRender>(&Game::OnPropertyMeshRender, this);
                 objectselected->RenderProperty<CameraComponent>(&Game::OnPropertyCameraComponent, this);
                 objectselected->RenderProperty<LightComponent>(&Game::OnPropertyLightComponent, this);
                 objectselected->RenderProperty<Animator>(&Game::OnPropertyAnimator, this);
                 objectselected->RenderProperty<ChunkController>(&Game::OnPropertyChunkController, this);
+                */
             }
 
             ImGui::EndTabItem();
@@ -451,11 +454,11 @@ void Game::RenderPropertiUI() {
         ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
         if (ImGui::BeginTabItem("Estatística", nullptr)) {
             ImGui::SeparatorText("Scripts");
-            ImGui::Text("Entidades: %d", EntityManager::getcount());
+            ImGui::Text("Entidades: %ld", Entity::GetEntityCount());
             ImGui::Text("Memoria: %s", getfilesize(Memory::totalMemoryUsage).c_str());
 
             ImGui::SeparatorText("Cena");
-            ImGui::Text("Vertices: %d | %s", gameStatics.vertices, getfilesize(gameStatics.vertices * sizeof(Vertex3D)).c_str());
+            ImGui::Text("Vertices: %d | %s", gameStatics.vertices, getfilesize(gameStatics.vertices * sizeof(Vertex)).c_str());
             ImGui::Text("Indice: %d | %s", gameStatics.indices, getfilesize(gameStatics.indices * sizeof(u32)).c_str());
             ImGui::Text("Eventos: %d", EventManager::getcount());
             ImGui::Text("Triangulos: %.2f", (gameStatics.indices / 3.0f));
@@ -473,8 +476,8 @@ void Game::RenderPropertiUI() {
             ImGui::SeparatorText("Renderização");
             ImGui::Text("Cameras: %ld",   CameraComponent::m_cameras.size());
             ImGui::Text("Luzes: %ld",     LightComponent::m_lights.size());
-            ImGui::Text("DrawCall: %d", RenderManager::TotalDrawCall);
-            ImGui::Text("Objetos: %d/%d", RenderManager::TotalDrawCall, RenderManager::CountDrawCall);
+            // ImGui::Text("DrawCall: %d", RenderManager::TotalDrawCall);
+            // ImGui::Text("Objetos: %d/%d", RenderManager::TotalDrawCall, RenderManager::CountDrawCall);
             
             ImGui::EndTabItem();
         }
@@ -540,7 +543,7 @@ void ReadSkeleton(const Bone* bone) {
 
 void Game::OnPropertyAnimator(Animator *animator) {
     if (ImGui::TreeNode("Animator")) {
-
+        /*
         ImGui::Text("Esqueleto:");
 
         ReadSkeleton(animator->m_skeleton.getroot());
@@ -551,11 +554,13 @@ void Game::OnPropertyAnimator(Animator *animator) {
             ImGui::Text("%s", anim.getname().c_str());
         }
         ImGui::TreePop();
+        */
     }
 }
 
 void Game::OnPropertyMeshRender(MeshRender *meshRender) {
     if (ImGui::TreeNode("MeshRender")) {
+        /*
         for (auto& entry : meshRender->m_materials) {
             Material& material = entry.second;
             
@@ -677,6 +682,7 @@ void Game::OnPropertyMeshRender(MeshRender *meshRender) {
                 ImGui::TreePop();
             }
         }
+        */
         ImGui::TreePop();
     }
 }
@@ -738,11 +744,13 @@ void Game::OnPropertyLightComponent(LightComponent *lightComponent) {
 
 void Game::OnPropertyChunkController(ChunkController *chunkController) {
     if (ImGui::TreeNode("ChunkController")) {
+        /*
         if (ImGui::Button("Generate")) {
             chunkController->BuildMesh();
         }
         
         ImGui::TreePop();
+        */
     }
 }
 
@@ -789,20 +797,20 @@ void Game::MenuAdd() {
     ImGui::Begin("##Game::MenuAdd", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
     if (ImGui::TreeNode("Luzes")) {
         if (ImGui::Button("Direct")) {
-            objectselected = SceneManager::add("(Light) Direction");
-            objectselected->addComponent<LightComponent>(LightComponent::eDirection);
+            // objectselected = SceneManager::add("(Light) Direction");
+            //objectselected->addComponent<LightComponent>(LightComponent::eDirection);
 
             menuAdd = false;
         }
         if (ImGui::Button("Point")) {
-            objectselected = SceneManager::add("(Light) Point");
-            objectselected->addComponent<LightComponent>(LightComponent::ePoint);
+            // objectselected = SceneManager::add("(Light) Point");
+            //objectselected->addComponent<LightComponent>(LightComponent::ePoint);
 
             menuAdd = false;
         }
         if (ImGui::Button("Spot")) {
-            objectselected = SceneManager::add("(Light) Spot");
-            objectselected->addComponent<LightComponent>(LightComponent::eSpot);
+            // objectselected = SceneManager::add("(Light) Spot");
+            //objectselected->addComponent<LightComponent>(LightComponent::eSpot);
 
             menuAdd = false;
         }

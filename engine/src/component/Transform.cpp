@@ -8,7 +8,7 @@
 
 #include "cameraComponent.h"
 
-Transform::Transform() : Component(true), position(Vector3::zero), scale(Vector3::one), rotation(Quaternion::identity), parent(nullptr), root(nullptr) {}
+Transform::Transform() : position(Vector3::zero), scale(Vector3::one), rotation(Quaternion::identity), parent(nullptr), root(nullptr) {}
 
 const Vector3 Transform::getright() const {
     if (parent)

@@ -1,6 +1,6 @@
 #include "octree.h"
 
-#include "../component/MeshRender.h"
+#include "../component/meshRender.hpp"
 #include "../component/Transform.h"
 
 #include "../gameObject.h"

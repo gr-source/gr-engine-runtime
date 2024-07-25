@@ -20,7 +20,7 @@ public:
 
     CameraComponent(float fov = 60.0f, float nearPlane = 1.0f, float farPlane = 1.0f, float aspect = 1.0f);
 
-    void OnInit() override;
+    void Init() override;
 
     const Vector3 getposition();
 
