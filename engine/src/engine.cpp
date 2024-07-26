@@ -36,8 +36,17 @@
 
 #include <gr-render/gRender.h>
 
+Imguibuffer* pImguibuffer = nullptr;
+
+ScreenBuffer* pScreenBuffer = nullptr;
+
 void Engine::GRWindowResize(u32 width, u32 height) {
     Screen::SetResolution(width, height);
+
+    Vector2 size(static_cast<float>(width), static_cast<float>(height));
+    
+    if (pImguibuffer)
+        pImguibuffer->resize(size);
 }
 
 void Engine::MainLoop(std::function<void()> func) {
@@ -99,10 +108,6 @@ std::unique_ptr<ImGuiRender> pImGuiRender = nullptr;
 
 Shadowbuffer* m_shadowbuffer = nullptr;
 
-ScreenBuffer* pScreenBuffer = nullptr;
-
-Imguibuffer* pImguibuffer = nullptr;
-
 GBuffer* m_gbuffer = nullptr;
 
 std::thread Engine::m_thread[2];
@@ -130,12 +135,14 @@ void Engine::OnInit() {
     ScriptManager::Initialzie();
 
     RenderManager::Initialize();
+
+    EditorController::Initialize();
 }
 
 void Engine::OnUpdate() {
-    Entity::Process();
+    Entity::Update();
 
-    m_game->Update();
+    EditorController::Update();
 }
 
 void Engine::OnRender() {
@@ -239,8 +246,6 @@ void Engine::MainFramebuffer() {
 
     auto camera = Camera::Main();
     if (camera) {
-        camera->setAspectRatio(Screen::width / Screen::height);
-
         // Preparação para renderização.
         RenderManager::Process();
 
@@ -302,10 +307,12 @@ void Engine::RenderScene() {
 
 #if !IS_GAME
 void Engine::UIFramebuffer() {
-    GSetViewport(Screen::width, Screen::height);
+    Vector2 scale(Screen::width, Screen::height);
+    
+    grr::gRender::SetRenderState(grr::GR_VIEWPORT, (void*)&scale);
 
-    GClearColor(Color::black);
-    GRender(GRENDERER2D);
+    grr::gRender::SetRenderState(grr::GR_BACKGROUND_COLOR, (void*)&Color::black);
+    grr::gRender::SetRenderState(grr::GR_BACKGROUND, grr::GR_COLOR_BUFFER);
 
     pImGuiRender->Begin();
     m_game->Gui();

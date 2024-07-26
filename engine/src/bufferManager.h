@@ -4,7 +4,7 @@
 
 #include "gl.h"
 
-#define MAX_BLOCK_BUFFER 2045
+// #define MAX_BLOCK_BUFFER 2045
 
 class BufferManager {
 public:

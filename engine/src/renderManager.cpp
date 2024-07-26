@@ -88,3 +88,11 @@ void RenderManager::Renderer() {
 
     // m_shader->unbind();
 }
+
+void RenderManager::Shutdown() {
+    if (m_shader) {
+        m_shader->destroy();
+    }
+
+    s_objects.clear();
+}

@@ -16,6 +16,8 @@ public:
 
     static void Renderer();
 
+    static void Shutdown();
+
 public:
     static Frustum s_frustum;
 

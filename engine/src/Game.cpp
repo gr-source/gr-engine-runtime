@@ -81,84 +81,7 @@ enum class IconType : int {
 };
 
 std::unordered_map<IconType, Texture*> iconsUI;
-
-/* editor da game engine */
-EditorController mEditorController;
 #endif
-
-/*
-GameObject& GenGameObject(const FbxNode* node, bool local) {
-    GameObject* gameObject = nullptr;
-
-    if (local) {
-        gameObject = &ObjectManager::add(node->getname());
-    } else {
-        gameObject = SceneManager::add(node->getname());
-    }
-
-    Transform& transform = gameObject->getComponent<Transform>();
-
-    transform.scale = node->scale;
-    transform.rotation = node->rotation;
-    transform.position = node->position;
-
-    if (node->hasmesh()) {
-        Mesh m_mesh(node->getmeshs()[0].getName());
-
-        u32 vertexCount = 0;
-
-        for (const auto& mesh : node->getmeshs()) {
-            for (const auto& vertex : mesh.getVertices()) {
-                m_mesh.addvertex(vertex.position, vertex.normal, vertex.uv);
-            }
-            for (const auto& index : mesh.getIndices()) {
-                m_mesh.addindex(vertexCount + index);
-            }
-            vertexCount += mesh.getVerticeCount();
-        }
-        auto& meshRender = gameObject->addComponent<MeshRender>(m_mesh);
-
-        Material m;
-        m.albedo = {0.8f, 0.8f, 0.8f, 1.0f};
-        m.metallic = 0.5f;
-        m.roughness = 0.5f;
-        m.ao = 0.5f;
-        meshRender.addMaterial(0, m);
-
-        // for (const auto& entry : node->getMaterials()) {
-        //     meshRender.addMaterial(entry.first, entry.second);
-        // }
-        //node->getmeshs(), node->getMaterials()
-    }
-    return *gameObject;
-}
-
-void ReaderNode(const FbxNode* node, Transform* transform, Transform* root = nullptr) {
-    auto& gameobject = GenGameObject(node, transform != nullptr);
-
-
-    if (transform) {
-        gameobject.getTransform().setParent(transform);
-        
-        if (root) {
-            transform->setRoot(root);
-        }
-    }
-
-    for (const auto& child : node->getchildren()) {
-        ReaderNode(&child, &gameobject.getTransform(), (root == nullptr ? &gameobject.getTransform() : root));
-    }
-}
-
-void SceneLoaded(const FbxScene* scene) {
-    const FbxNode* rootNode = scene->getRoot();
-
-    for (const auto& child : rootNode->getchildren()) {
-        ReaderNode(&child, nullptr);
-    }
-}
-
-*/
 
 Game::Game() : objectselected(nullptr), FPSColor(255, 255, 255, 255) {
     /*
@@ -182,9 +105,6 @@ Game::Game() : objectselected(nullptr), FPSColor(255, 255, 255, 255) {
 }
 
 void Game::Update() {
-    #if !IS_GAME
-    mEditorController.OnUpdate();
-    #endif
 }
 
 void Game::Render() {
@@ -284,18 +204,25 @@ void Game::RenderViewportUI() {
     static ScreenBuffer& m_screenBuffer = ScreenBuffer::getInstance();;
 
     ImGui::Begin("Viewport", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+    
     ImGuizmo::SetDrawlist();
+    
     ImVec2 size = ImGui::GetWindowSize();
+
     ImGuizmo::SetRect(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y, size.x, size.y);
 
     static ImVec2 lastSize = ImGui::GetContentRegionAvail();
     ImVec2 curSize = ImGui::GetContentRegionAvail();
 
-    if (lastSize.x != curSize.x || lastSize.y != curSize.y) {
-        Settings::ViewportSize = {curSize.x, curSize.y};
+    if (lastSize.x != curSize.x || lastSize.y != curSize.y && curSize.x > 5.0f && curSize.y > 5.0f) {
+        Settings::ViewportSize = {static_cast<int>(curSize.x), static_cast<int>(curSize.y)};
+
+        auto camera = Camera::Main();
+        if (camera)
+            camera->setAspectRatio(curSize.x / curSize.y);
 
         m_screenBuffer.resize({curSize.x, curSize.y});
-        // m_imguibuffer.resize({curSize.x, curSize.y});
+        
         lastSize = curSize;
     }
     
@@ -319,6 +246,7 @@ void Game::RenderViewportUI() {
                 m_guizmoManipulate = ImGuizmo::WORLD;
             }
         }
+        
         Transform& transform = objectselected->getTransform();
 
         Matrix4x4 model = transform.getglobalmatrix();
@@ -432,8 +360,8 @@ void Game::RenderPropertiUI() {
 
                 ImGui::Text("[ %s - %s ]", objectselected->getName().c_str(), objectselected->getTag().c_str());
 
-                /*
                 objectselected->RenderProperty<Transform>(&Game::OnPropertyTransform, this);
+                /*
                 objectselected->RenderProperty<MeshRender>(&Game::OnPropertyMeshRender, this);
                 objectselected->RenderProperty<CameraComponent>(&Game::OnPropertyCameraComponent, this);
                 objectselected->RenderProperty<LightComponent>(&Game::OnPropertyLightComponent, this);

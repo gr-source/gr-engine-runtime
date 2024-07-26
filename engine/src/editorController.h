@@ -8,25 +8,25 @@ class EditorController {
 public:
     static float movementSpeed;
     
-    float mouseSensitivity;
+    static float mouseSensitivity;
 
-    EditorController();
-    
-    void OnUpdate();
+    static void Initialize();
 
-    void updateCursor();
+    static void Update();
+
+    static void updateCursor();
 private:
-    void processMouse(const Vector2& direction);
+    static void processMouse(const Vector2& direction);
 
-    Vector2 lastMousePos;
+    static Vector2 lastMousePos;
 
-    GameObject* m_mainCamera;
+    static GameObject* m_mainCamera;
 
-    Vector2 elapsed;
+    static Vector2 elapsed;
 
-    Vector2 start;
+    static Vector2 start;
 
-    void OnCameraUpdate();
+    static void OnCameraUpdate();
 
 };
 

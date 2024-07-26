@@ -35,10 +35,13 @@ class Entity {
 public:
     static std::size_t GetEntityCount();
 
-    static void Process();
+    static void Update();
 
     template <typename T>
     T& getComponent();
+    
+    template <typename T>
+    const bool hasComponent();
 
     GameObject *getGameObject();
 private:
@@ -52,5 +55,14 @@ private:
 template <typename T>
 inline T &Entity::getComponent() {
     return *dynamic_cast<T*>(components[typeid(T).name()].get());
+}
+
+template <typename T>
+inline const bool Entity::hasComponent() {
+    auto it = components.find(typeid(T).name());
+    if (it != components.end()) {
+        return true;
+    }
+    return false;
 }
 

@@ -16,6 +16,9 @@ public:
 
     template <typename T>
     T& getComponent();
+
+    template <typename T, typename... Args>
+    void RenderProperty(Args&&... args);
     
 private:
     std::string m_name;
@@ -31,6 +34,13 @@ protected:
 template <typename T>
 inline T& GameObject::getComponent() {
     return m_entity->getComponent<T>();
+}
+
+template <typename T, typename... Args>
+inline void GameObject::RenderProperty(Args&&... args) {
+    if (!m_entity->hasComponent<T>()) return;
+
+    std::bind(std::forward<Args>(args)..., &m_entity->getComponent<T>())();
 }
 
 /*

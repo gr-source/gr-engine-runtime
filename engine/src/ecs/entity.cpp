@@ -8,7 +8,7 @@ std::size_t Entity::GetEntityCount() {
     return ScriptManager::GetEntityCount();
 }
 
-void Entity::Process() {
+void Entity::Update() {
     if (!ScriptManager::EntityProcess) {
         return;
     }

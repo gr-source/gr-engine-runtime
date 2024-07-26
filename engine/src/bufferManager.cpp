@@ -44,7 +44,7 @@ void ReizeBuffer(GLenum target, u16 stride, u32 size) {
     arraySize = (arraySize / stride);
     
     while (size > arraySize) {
-        GL_CHECK(glBufferData(target, arraySize * stride + MAX_BLOCK_BUFFER * stride, nullptr, GL_STATIC_DRAW));
+        GL_CHECK(glBufferData(target, arraySize * stride + 2045 * stride, nullptr, GL_STATIC_DRAW));
 
         GL_CHECK(glGetBufferParameteriv(target, GL_BUFFER_SIZE,  &arraySize));
         arraySize = (arraySize / stride);
