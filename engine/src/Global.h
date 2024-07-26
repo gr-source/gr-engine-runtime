@@ -28,7 +28,6 @@
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
 
-#include "Color.h"
 #include "log.h"
 
 #include "core/exception/Exception.h"

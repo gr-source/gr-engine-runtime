@@ -4,7 +4,7 @@
 
 #include "../common.h"
 
-class LightComponent : public Component {
+class Light : public Component {
 public:
     enum : u8 {
         eDirection = 1,
@@ -12,12 +12,7 @@ public:
         eSpot      = 3,
     };
 
-    static std::vector<LightComponent*> m_lights;
-
-    LightComponent(u8 type, const Color& color = Color::white, float aConstant = 1.0f, float aLinear = 1.0f, float aQuadract = 1.0f, float inneCone = 1.0f, float outerCone = 1.0f);
-    ~LightComponent();
-
-    void Update() override;
+    static std::vector<Light *> &GetListLight();
 
     const Vector3& getposition() const;
 
@@ -29,8 +24,6 @@ public:
 
     const int& gettype() const;
 
-    void Init() override;
-
     const float& getattenuationconstant();
 
     const float& getattenuationlinear();
@@ -40,8 +33,6 @@ public:
     const float& getinnecone();
 
     const float& getoutercone();
-
-    const Matrix4x4 getprojectionview() const;
 
 protected:
     int m_type;
@@ -59,8 +50,4 @@ protected:
     float m_angleInnerCone;
 
     float m_angleOuterCone;
-
-    static Matrix4x4 projection;
-
-    friend class Game;
 };

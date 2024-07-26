@@ -22,6 +22,9 @@ std::vector<std::unique_ptr<GameObject>> &(*ScriptManager::GetAllGameObject)();
 std::size_t (*ScriptManager::GetEntityCount)();
 void (*ScriptManager::EntityProcess)();
 
+// LIght
+std::vector<Light *> &(*ScriptManager::GetListLight)();
+
 // [ Component - MeshRender ]
 std::vector<GameObject*> &(*ScriptManager::GetGameObjectsFromRender)(); 
 
@@ -61,6 +64,9 @@ void ScriptManager::Shutdown() {
     UNREGISTER_API(GetEntityCount);
     UNREGISTER_API(EntityProcess);
 
+    // Light
+    UNREGISTER_API(GetListLight);
+
     // [ Componenet - Camera ]
     UNREGISTER_API(MainCamera);
     UNREGISTER_API(CurrentCamera);
@@ -87,6 +93,9 @@ void ScriptManager::RegisterApi() {
     // [ Entity ]
     REGISTER_API(std::size_t, void, GetEntityCount);
     REGISTER_API(void, void, EntityProcess);
+
+    // Light
+    REGISTER_API(std::vector<Light *> &, void, GetListLight);
 
     // [ Componenet - Camera ]
     REGISTER_API(Camera*, void, MainCamera);

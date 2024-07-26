@@ -1,7 +1,0 @@
-name: default
-object whall
-object sun
-object ground
-object Cube
-object player
-object MainCamera

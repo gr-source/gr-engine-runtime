@@ -2,9 +2,7 @@
 
 #include <string>
 
-#include "../Color.h"
-
-#include <gr-math/vector3.h>
+#include <gr-math/gmath.h>
 
 class FbxLight {
 public:

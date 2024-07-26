@@ -6,7 +6,6 @@
 #include <memory>
 
 #include "types.h"
-#include "Color.h"
 
 class ObjectManager;
 class GameObject;

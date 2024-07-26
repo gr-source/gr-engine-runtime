@@ -11,6 +11,8 @@ class MeshRender : public Component {
 public:
     static std::vector<GameObject*> &GetGameObjectFromRender();
 
+    std::unordered_map<int, Material> &getMaterials();
+
     void draw();
 private:
     std::unordered_map<int, Material> m_materials;

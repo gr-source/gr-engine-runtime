@@ -7,6 +7,8 @@
 #include <gr-render/gRender.h>
 #include <gr-render/gShader.h>
 
+#include "geometry/material.h"
+
 class RenderManager {
 public:
     
@@ -24,4 +26,8 @@ public:
     static std::vector<GameObject*> s_objects;
 
     static grr::gShader *m_shader;
+
+    static void SetupLight();
+
+    static void SetupMaterial(const std::unordered_map<int, Material> &materials);
 };

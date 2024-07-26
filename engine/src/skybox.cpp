@@ -6,7 +6,7 @@
 #include "resources/resources.h"
 
 #include "component/camera.hpp"
-#include "component/lightComponent.h"
+// #include "component/lightComponent.h"
 
 #include <functional>
 

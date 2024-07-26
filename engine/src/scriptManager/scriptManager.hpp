@@ -25,6 +25,9 @@ public:
 
     static void (*SetDeltaTime)(float);
 
+    // Light
+    static std::vector<Light *> &(*GetListLight)();
+
 private:
     static void RegisterApi();
 

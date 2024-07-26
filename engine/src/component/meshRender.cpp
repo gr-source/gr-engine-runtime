@@ -6,6 +6,10 @@ std::vector<GameObject *> &MeshRender::GetGameObjectFromRender() {
     return ScriptManager::GetGameObjectsFromRender();
 }
 
+std::unordered_map<int, Material> &MeshRender::getMaterials() {
+    return m_materials;
+}
+
 void MeshRender::draw() {
     m_vertexArray->bind();
 

@@ -67,11 +67,11 @@ set(engine_src
     src/bufferManager.cpp
     src/editorController.cpp
 
+    src/component/light.cpp
     src/component/camera.cpp
     src/component/Transform.cpp
     src/component/meshRender.cpp
     src/component/meshFilter.cpp
-    src/component/lightComponent.cpp
     src/component/cameraController.cpp
 
     src/framebuffer/gBuffer.cpp
@@ -145,12 +145,12 @@ set(engine_hdr
     src/bufferManager.h
     src/editorController.h
 
+    src/component/light.hpp
     src/component/camera.hpp
     src/component/default.hpp
     src/component/Transform.h
     src/component/meshRender.hpp
     src/component/meshFilter.hpp
-    src/component/lightComponent.h
     src/component/cameraController.h
 
     src/framebuffer/gBuffer.h

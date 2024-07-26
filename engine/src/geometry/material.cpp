@@ -5,3 +5,19 @@ Material::Material(const std::string &name, const Vector4 &albedo, float metalli
 const std::string &Material::getName() const {
     return m_name;
 }
+
+const Vector4 &Material::getAlbedo() const {
+    return m_albedo;
+}
+
+const float Material::getMetallic() const {
+    return m_metallic;
+}
+
+const float Material::getRoughness() const {
+    return m_roughness;
+}
+
+const float Material::getAmbientOcclusion() const {
+    return m_ao;
+}

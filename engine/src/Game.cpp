@@ -19,7 +19,6 @@
 #include "resources/resources.h"
 
 #include "component/cameraController.h"
-#include "component/lightComponent.h"
 #include "component/meshFilter.hpp"
 #include "component/meshRender.hpp"
 #include "component/Transform.h"
@@ -284,12 +283,11 @@ void Game::RenderViewportUI() {
 
             ScriptManager::Shutdown();
 
-            // EntityManager::OnStopPlayGame();
+            objectselected = nullptr;
         } else {
             texturePlayGame = iconsUI[IconType::ICON_PLAY_GAME];
 
             ScriptManager::Initialzie();
-            // EntityManager::OnPlayGame();
         }
     }
 
@@ -397,7 +395,7 @@ void Game::RenderPropertiUI() {
 
             ImGui::SeparatorText("Renderização");
             // ImGui::Text("Cameras: %ld",   CameraComponent::m_cameras.size());
-            ImGui::Text("Luzes: %ld",     LightComponent::m_lights.size());
+            // ImGui::Text("Luzes: %ld",     LightComponent::m_lights.size());
             // ImGui::Text("DrawCall: %d", RenderManager::TotalDrawCall);
             // ImGui::Text("Objetos: %d/%d", RenderManager::TotalDrawCall, RenderManager::CountDrawCall);
             
@@ -639,6 +637,7 @@ void Game::OnPropertyCameraComponent(CameraComponent *cameraComponent) {
 
 void Game::OnPropertyLightComponent(LightComponent *lightComponent) {
     if (ImGui::TreeNode("LightComponent")) {
+        /*
         ImGui::Text("Constante:");
         ImGui::DragFloat("##constant", &lightComponent->m_attenuationConstant, 0.005f, 0.01f, 1.0f);
 
@@ -663,6 +662,8 @@ void Game::OnPropertyLightComponent(LightComponent *lightComponent) {
             ImGui::ColorPicker4("#LightColorPick", lightComponent->m_color.data);
             ImGui::EndPopup();
         }
+        */
+
         ImGui::TreePop();
     }
 }
