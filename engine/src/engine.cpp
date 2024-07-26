@@ -21,7 +21,6 @@
 #include "filesystem/stream.h"
 
 #include "renderManager.h"
-#include "objectManager.h"
 #include "eventManager.h"
 #include "screenRender.h"
 #include "settings.h"
@@ -49,6 +48,10 @@ void Engine::MainLoop(std::function<void()> func) {
     while (Settings::IsEngineRunning) {
         Time::deltaTime = gameStatics.updateMs = timer.SleepTick();
         Time::FPS = timer.getFPS();
+
+        if (ScriptManager::SetDeltaTime) {
+            ScriptManager::SetDeltaTime(Time::deltaTime);
+        }
 
         Engine::OnUpdate();
 
@@ -130,6 +133,8 @@ void Engine::OnInit() {
 }
 
 void Engine::OnUpdate() {
+    Entity::Process();
+
     m_game->Update();
 }
 
@@ -234,34 +239,35 @@ void Engine::MainFramebuffer() {
 
     auto camera = Camera::Main();
     if (camera) {
+        camera->setAspectRatio(Screen::width / Screen::height);
 
-    // Preparação para renderização.
-    RenderManager::Process();
+        // Preparação para renderização.
+        RenderManager::Process();
 
-    /* Preparação do shadow
-    m_shadowbuffer->bind();
-    GRender(GRENDERERDEPTH);
-    GEnableDepthTest();
-    GCullFaceFront();
+        /* Preparação do shadow
+        m_shadowbuffer->bind();
+        GRender(GRENDERERDEPTH);
+        GEnableDepthTest();
+        GCullFaceFront();
 
-    BatchingManager::OnRenderShadow();
+        BatchingManager::OnRenderShadow();
 
-    m_shadowbuffer->unbind();
-    */
+        m_shadowbuffer->unbind();
+        */
 
-    // aplicação do anti-alising mass4.
-    pScreenBuffer->bind();
+        // aplicação do anti-alising mass4.
+        pScreenBuffer->bind();
 
-    grr::gRender::SetRenderState(grr::GR_BACKGROUND, grr::GR_DEPTH_BUFFER | grr::GR_COLOR_BUFFER);
-    grr::gRender::SetRenderState(grr::GR_DEPTH, grr::GR_TRUE);
-    grr::gRender::SetRenderState(grr::GR_FRAMEBUFFER_SRGB, grr::GR_TRUE);
+        grr::gRender::SetRenderState(grr::GR_BACKGROUND, grr::GR_DEPTH_BUFFER | grr::GR_COLOR_BUFFER);
+        grr::gRender::SetRenderState(grr::GR_DEPTH, grr::GR_TRUE);
+        grr::gRender::SetRenderState(grr::GR_FRAMEBUFFER_SRGB, grr::GR_TRUE);
 
-    RenderScene();
+        RenderScene();
 
-    // trocara para o frame buffer do pos processamento.
-    pScreenBuffer->swap();
+        // trocara para o frame buffer do pos processamento.
+        pScreenBuffer->swap();
 
-    pScreenBuffer->unbind();
+        pScreenBuffer->unbind();
     }
 
     #if !IS_GAME
@@ -285,10 +291,10 @@ void Engine::MainFramebuffer() {
 }
 
 void Engine::RenderScene() {
+    RenderManager::Renderer();
 
-    // RenderManager::Renderer();
+    DebugDraw::Renderer();
 
-    // DebugDraw::Renderer();
     grr::gRender::SetRenderState(grr::GR_DEPTH_FUNC, grr::GR_DEPTH_LEQUAL);
     m_skybox->render();
     grr::gRender::SetRenderState(grr::GR_DEPTH_FUNC, grr::GR_DEPTH_LESS);
@@ -308,7 +314,6 @@ void Engine::UIFramebuffer() {
 #endif
 
 void Engine::SetupEnable() {
-    grr::gRender::SetRenderState(grr::GR_MULTISAMPLE, grr::GR_TRUE);
     grr::gRender::SetRenderState(grr::GR_MULTISAMPLE, grr::GR_TRUE);
 
     grr::gRender::SetRenderState(grr::GR_CULL_FACE, grr::GR_TRUE);

@@ -10,21 +10,19 @@
 
 class Material {
 public:
-    /* cor base */
-    Color albedo;
+    Material(const std::string& name = "Material", const Vector4& albedo = {1.0f, 1.0f, 1.0f, 1.0f}, float metallic = 0.5f, float roughness = 0.5f, float ao = 0.5f);
 
-    float metallic;
+    const std::string& getName() const;
 
-    float roughness;
-
-    float ao;
-
-    Texture* texture[MAX_TEXTURE];
-
-    Material(const std::string& name = "Material");
-
-    const std::string& getname() const;
 private:
     std::string m_name;
+
+    Vector4 m_albedo;
+
+    float m_metallic;
+
+    float m_roughness;
+
+    float m_ao;
 };
 

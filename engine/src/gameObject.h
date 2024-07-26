@@ -13,6 +13,9 @@ public:
     const std::string &getTag();
 
     Transform &getTransform();
+
+    template <typename T>
+    T& getComponent();
     
 private:
     std::string m_name;
@@ -24,6 +27,11 @@ private:
 protected:
     static std::vector<std::unique_ptr<GameObject>> s_objects;
 };
+
+template <typename T>
+inline T& GameObject::getComponent() {
+    return m_entity->getComponent<T>();
+}
 
 /*
 class GameObject {

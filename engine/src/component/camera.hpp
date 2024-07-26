@@ -20,6 +20,8 @@ public:
 
     Transform *getTransform();
 
+    void setAspectRatio(float aspect);
+
 private:
     Transform *m_transform;
 

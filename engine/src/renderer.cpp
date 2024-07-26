@@ -36,8 +36,8 @@ void DebugDraw::initialize() {
 
     m_primitivebuffer->unbind();
 
-    glPointSize(5.0f);
-    glLineWidth(2.5f);
+    // glPointSize(5.0f);
+    // glLineWidth(2.5f);
 }
 
 void DebugDraw::SetupSpriteRender(Shader* shader) {

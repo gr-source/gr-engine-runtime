@@ -35,6 +35,8 @@ class Entity {
 public:
     static std::size_t GetEntityCount();
 
+    static void Process();
+
     template <typename T>
     T& getComponent();
 

@@ -64,7 +64,6 @@ set(engine_src
     src/eventManager.cpp
     src/chunkManager.cpp
     src/renderManager.cpp
-    src/objectManager.cpp
     src/bufferManager.cpp
     src/editorController.cpp
 
@@ -73,7 +72,6 @@ set(engine_src
     src/component/meshRender.cpp
     src/component/meshFilter.cpp
     src/component/lightComponent.cpp
-    src/component/cameraComponent.cpp
     src/component/cameraController.cpp
 
     src/framebuffer/gBuffer.cpp
@@ -105,11 +103,9 @@ set(engine_src
     src/filmbox/Filmbox.cpp
 
     src/geometry/material.cpp
+    src/geometry/vertex3D.cpp
     src/geometry/model.cpp
     src/geometry/mesh.cpp
-    
-    src/core/scene/Scene.cpp
-    src/core/scene/SceneManager.cpp
     
     ${ecs_src}
 
@@ -146,7 +142,6 @@ set(engine_hdr
     src/eventManager.h
     src/chunkManager.h
     src/renderManager.h
-    src/objectManager.h
     src/bufferManager.h
     src/editorController.h
 
@@ -156,7 +151,6 @@ set(engine_hdr
     src/component/meshRender.hpp
     src/component/meshFilter.hpp
     src/component/lightComponent.h
-    src/component/cameraComponent.h
     src/component/cameraController.h
 
     src/framebuffer/gBuffer.h
@@ -188,11 +182,9 @@ set(engine_hdr
     src/filmbox/Filmbox.h
 
     src/geometry/material.h
+    src/geometry/vertex3D.h
     src/geometry/model.h
     src/geometry/mesh.h
-
-    src/core/scene/Scene.h
-    src/core/scene/SceneManager.h
 
     ${ecs_hdr}
 

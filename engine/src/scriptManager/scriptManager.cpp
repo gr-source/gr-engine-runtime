@@ -14,10 +14,13 @@ void* ScriptManager::s_handle = nullptr;
 void (*ScriptManager::Initialize)();
 void (*ScriptManager::Destroy)();
 
+void (*ScriptManager::SetDeltaTime)(float);
+
 std::vector<std::unique_ptr<GameObject>> &(*ScriptManager::GetAllGameObject)();
 
 // [ Entity ]
 std::size_t (*ScriptManager::GetEntityCount)();
+void (*ScriptManager::EntityProcess)();
 
 // [ Component - MeshRender ]
 std::vector<GameObject*> &(*ScriptManager::GetGameObjectsFromRender)(); 
@@ -48,6 +51,7 @@ void ScriptManager::Shutdown() {
     // [ Main ]
     UNREGISTER_API(Initialize);
     UNREGISTER_API(Destroy);
+    UNREGISTER_API(SetDeltaTime);
 
     // [ Component - MeshRender ]
     UNREGISTER_API(GetGameObjectsFromRender);
@@ -55,6 +59,7 @@ void ScriptManager::Shutdown() {
 
     // [ Entity ]
     UNREGISTER_API(GetEntityCount);
+    UNREGISTER_API(EntityProcess);
 
     // [ Componenet - Camera ]
     UNREGISTER_API(MainCamera);
@@ -73,6 +78,7 @@ void ScriptManager::RegisterApi() {
     // [ Main ]
     REGISTER_API(void, void, Initialize);
     REGISTER_API(void, void, Destroy);
+    REGISTER_API(void, float, SetDeltaTime);
 
     // [ Component - MeshRender ]
     REGISTER_API(std::vector<GameObject*>&, void, GetGameObjectsFromRender);
@@ -80,6 +86,7 @@ void ScriptManager::RegisterApi() {
 
     // [ Entity ]
     REGISTER_API(std::size_t, void, GetEntityCount);
+    REGISTER_API(void, void, EntityProcess);
 
     // [ Componenet - Camera ]
     REGISTER_API(Camera*, void, MainCamera);

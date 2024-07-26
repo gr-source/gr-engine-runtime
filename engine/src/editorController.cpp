@@ -1,7 +1,6 @@
 #include "editorController.h"
 
-#include "objectManager.h"
-
+#include "component/Transform.h"
 #include "component/camera.hpp"
 
 #include "ui/ImGuiRender.h"

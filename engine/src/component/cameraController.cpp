@@ -1,6 +1,4 @@
 #include "cameraController.h"
-#include "cameraComponent.h"
-#include "cameraComponent.h"
 #include "Transform.h"
 
 #include "../screen.h"
@@ -14,7 +12,6 @@ void CameraController::Init() {
 }
 
 void CameraController::Start() {
-    CameraComponent::CameraID = 1;
 }
 
 void CameraController::Update() {

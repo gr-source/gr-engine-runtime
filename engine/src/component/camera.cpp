@@ -22,13 +22,20 @@ const Matrix4x4 Camera::getPerspesctive() const {
 }
 
 const Matrix4x4 Camera::getViewmatrix() const {
-    return Math::lookAt(m_transform->getposition(), m_transform->getposition() + m_transform->getforward(), m_transform->getup());
+    return Math::lookAt(m_transform->getPosition(), m_transform->getPosition() + m_transform->getforward(), m_transform->getup());
 }
 
 const Vector3 Camera::getPosition() const {
-    return m_transform->getposition();
+    return m_transform->getPosition();
 }
 
 Transform *Camera::getTransform() {
     return m_transform;
+}
+
+void Camera::setAspectRatio(float aspect) {
+    if (aspect <= 0.0f) {
+        return;
+    }
+    m_aspect = aspect;
 }

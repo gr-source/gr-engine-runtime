@@ -8,7 +8,6 @@
 #include "renderer.h"
 #include "gameObject.h"
 #include "eventManager.h"
-#include "objectManager.h"
 #include "renderManager.h"
 #include "editorController.h"
 
@@ -20,18 +19,15 @@
 #include "resources/resources.h"
 
 #include "component/cameraController.h"
-#include "component/cameraComponent.h"
 #include "component/lightComponent.h"
 #include "component/meshFilter.hpp"
 #include "component/meshRender.hpp"
 #include "component/Transform.h"
+#include "component/camera.hpp"
 
 #include "guizmo/ImGuizmo.h"
 
 #include "ui/ImGuiRender.h"
-
-#include "core/scene/SceneManager.h"
-#include "core/scene/Scene.h"
 
 #include "filesystem/filesystem.h"
 
@@ -201,10 +197,6 @@ void Game::Gui() {
         return;
     }
     
-    if (ImGui::IsKeyReleased(ImGuiKey_S) && m_io->KeyCtrl) {
-        SceneManager::Save(Filesystem::getpublic(Filesystem::eScene).string() + "/SceneMain.scn");
-    }
-
     RenderDocking();
 
     RenderScenesUI();
@@ -235,7 +227,7 @@ void Game::RenderDocking() {
 void Game::RenderScenesUI() {
     ImGui::Begin("Cenario", nullptr, ImGuiWindowFlags_NoResize);
     ImGui::SetNextItemOpen(true, ImGuiCond_Appearing);
-    if (ImGui::TreeNodeEx(SceneManager::GetName().c_str(), ImGuiTreeNodeFlags_SpanFullWidth)) {
+    if (ImGui::TreeNodeEx("default", ImGuiTreeNodeFlags_SpanFullWidth)) {
         if (ScriptManager::GetAllGameObject) {
             for (auto& gameObject : ScriptManager::GetAllGameObject()) {
                 auto& transform = gameObject->getTransform();
@@ -311,7 +303,6 @@ void Game::RenderViewportUI() {
 
     //
     if (objectselected != nullptr) {
-        /*
         if (ImGui::IsKeyReleased(ImGuiKey_T)) {
             m_guizmoOperation = ImGuizmo::TRANSLATE;
         }
@@ -332,10 +323,11 @@ void Game::RenderViewportUI() {
 
         Matrix4x4 model = transform.getglobalmatrix();
 
-        if (ImGuizmo::Manipulate(m_cameraComponent.getviewmatrix().data, m_cameraComponent.getperspesctive().data, m_guizmoOperation, m_guizmoManipulate, model.data)) {
+        auto camera = Camera::Main();
+
+        if (ImGuizmo::Manipulate(camera->getViewmatrix().data, camera->getPerspesctive().data, m_guizmoOperation, m_guizmoManipulate, model.data)) {
             model.decompose(transform.scale, transform.rotation, transform.position);
         }
-        */
     }
 
     const ImVec2 wSize =  ImGui::GetCursorPos();
@@ -476,7 +468,7 @@ void Game::RenderPropertiUI() {
             ImGui::Text("Script:  %fms  | FPS: %.2f",  gameStatics.scriptMS,  (1.0f / gameStatics.scriptMS));
 
             ImGui::SeparatorText("Renderização");
-            ImGui::Text("Cameras: %ld",   CameraComponent::m_cameras.size());
+            // ImGui::Text("Cameras: %ld",   CameraComponent::m_cameras.size());
             ImGui::Text("Luzes: %ld",     LightComponent::m_lights.size());
             // ImGui::Text("DrawCall: %d", RenderManager::TotalDrawCall);
             // ImGui::Text("Objetos: %d/%d", RenderManager::TotalDrawCall, RenderManager::CountDrawCall);
@@ -485,6 +477,7 @@ void Game::RenderPropertiUI() {
         }
 
         if (ImGui::BeginTabItem("Configuraçoes")) {
+            /*
             ImGui::Text("Camera: %d", CameraComponent::CameraID);
             if (ImGui::Button("Change")) {
                 CameraComponent::CameraID++;
@@ -493,6 +486,7 @@ void Game::RenderPropertiUI() {
                     CameraComponent::CameraID = 0;
                 }
             }
+            */
             ImGui::EndTabItem();
         }
         ImGui::EndTabBar();
@@ -693,6 +687,7 @@ void Game::OnPropertyCameraComponent(CameraComponent *cameraComponent) {
     static int itemID = 0;
 
     if (ImGui::TreeNode("CameraComponent")) {
+        /*
         ImGui::Text("Fov:");
         ImGui::DragFloat("##CameraComponentFov", &cameraComponent->m_fov, 1.0f, 1.0f, 179.0f);
 
@@ -709,7 +704,7 @@ void Game::OnPropertyCameraComponent(CameraComponent *cameraComponent) {
         } else if (itemID == 1) {
             cameraComponent->m_projection = CameraComponent::erthographic;
         }
-
+        */
         ImGui::TreePop();
     }
 }
@@ -842,8 +837,6 @@ void Game::loadReources() {
     iconsUI.emplace(IconType::ICON_EDIT,        Resources::Load<Texture>(Filesystem::getpublic(Filesystem::eIcon).string() + "/icons8-editar-24.png"));
 
     texturePlayGame = iconsUI[IconType::ICON_PLAY_GAME];
-
-    SceneManager::Load(Filesystem::getpublic(Filesystem::eScene).string() + "/SceneMain.scn");
 }
 
 void Game::ProgressLoad() {

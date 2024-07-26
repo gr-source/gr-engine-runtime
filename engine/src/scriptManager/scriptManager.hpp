@@ -21,6 +21,10 @@ public:
     // [ Entity ]
     static std::size_t (*GetEntityCount)();
 
+    static void (*EntityProcess)();
+
+    static void (*SetDeltaTime)(float);
+
 private:
     static void RegisterApi();
 

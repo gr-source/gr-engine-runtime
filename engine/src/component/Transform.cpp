@@ -6,8 +6,6 @@
 
 #include "../timer.h"
 
-#include "cameraComponent.h"
-
 Transform::Transform() : position(Vector3::zero), scale(Vector3::one), rotation(Quaternion::identity), parent(nullptr), root(nullptr) {}
 
 const Vector3 Transform::getright() const {
@@ -28,9 +26,9 @@ const Vector3 Transform::getforward() const {
     return rotation * Vector3::forward;
 }
 
-const Vector3 Transform::getposition() const {
+const Vector3 Transform::getPosition() const {
     if (parent) {
-        return parent->getposition() - position;
+        return parent->getPosition() - position;
     }
     return position;
 }

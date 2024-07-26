@@ -805,6 +805,7 @@ void Filmbox::SetupVertice(aiMesh *aimesh, FbxMesh &mesh) {
 }
 
 void Filmbox::LoadMaterials(const aiScene *scene) {
+    /*
     for (u32 i=0;i<scene->mNumMaterials;i++) {
         aiMaterial* aimaterial = scene->mMaterials[i];
 
@@ -832,6 +833,7 @@ void Filmbox::LoadMaterials(const aiScene *scene) {
 
         aimaterial->Clear();
     }
+    */
 }
 
 TexturePBR getTexturePBRType(aiTextureType type) {
@@ -865,7 +867,7 @@ void Filmbox::SetupTexture(aiMaterial *aimaterial, Material &material) {
         auto pbr = getTexturePBRType(type);
         if (pbr == TexturePBR::Non) continue;
 
-        material.texture[pbr] = Resources::LoadTexture<void(Filmbox::*)(Texture*texture), Filmbox*>(path.C_Str(), &Filmbox::TextureLoadSucessfull, this);
+        // material.texture[pbr] = Resources::LoadTexture<void(Filmbox::*)(Texture*texture), Filmbox*>(path.C_Str(), &Filmbox::TextureLoadSucessfull, this);
     }
 }
 

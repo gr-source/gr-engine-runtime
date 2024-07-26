@@ -13,9 +13,13 @@ public:
     template <typename ...Args>
     Vertex& addVertex(Args &&...args);
 
+    std::vector<Vertex> &getVertices();
+
     void addTriangles(int t0, int t1, int t2);
 
     void addIndice(int t0);
+
+    std::vector<int> &getIndices();
 private:
     std::vector<Vertex> m_vertices;
 

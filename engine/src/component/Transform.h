@@ -23,7 +23,7 @@ public:
 
     const Vector3 getforward() const;
 
-    const Vector3 getposition() const;
+    const Vector3 getPosition() const;
 
     const Matrix4x4 getglobalmatrix() const;
 
