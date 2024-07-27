@@ -30,6 +30,7 @@
 #include "timer.h"
 
 #include "scriptManager/scriptManager.hpp"
+#include "memory.h"
 
 #include <linux/input-event-codes.h>
 #include <filesystem>
@@ -115,6 +116,8 @@ std::thread Engine::m_thread[2];
 void Engine::OnInit() {
     Settings::IsEngineRunning = true;
 
+    Memory::Initialize();
+
     pImGuiRender = std::make_unique<ImGuiRender>("#version 330 core");
 
     pScreenBuffer = &ScreenBuffer::getInstance();
@@ -187,6 +190,8 @@ void Engine::OnDestroy() {
     if (m_thread[1].joinable()) {
         m_thread[1].join();
     }
+    
+    Memory::Shutdown();
 }
 
 void Engine::HandleEvent(EngineEvent event, const void* data) {

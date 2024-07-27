@@ -2,7 +2,7 @@
 
 Mesh::Mesh(const std::string &name) : m_name(name) {}
 
-std::vector<Vertex> &Mesh::getVertices() {
+std::vector<Vertex3D> &Mesh::getVertices() {
     return m_vertices;
 }
 

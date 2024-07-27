@@ -4,11 +4,18 @@
 
 #include "../gameObject.h"
 
+#include "../console.hpp"
+
+#include <string>
+
 class ScriptManager {
 public:
     static void Initialzie();
 
     static void Shutdown();
+
+    // Main
+    static std::unordered_map<int, std::pair<const std::string, const std::string>> (*GetShader)();
 
     // [ Componenet - Camera ]
     static Camera *(*MainCamera)();

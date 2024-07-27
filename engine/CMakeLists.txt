@@ -49,20 +49,20 @@ set(engine_src
 
     src/gl.cpp
     src/log.cpp
-    src/timer.cpp
     src/Game.cpp
     src/input.cpp
+    src/timer.cpp
     src/engine.cpp
     src/memory.cpp
     src/Global.cpp
     src/skybox.cpp
     src/screen.cpp
+    src/console.cpp
     src/renderer.cpp
     src/settings.cpp
     src/gameObject.cpp
     src/screenRender.cpp
     src/eventManager.cpp
-    src/chunkManager.cpp
     src/renderManager.cpp
     src/bufferManager.cpp
     src/editorController.cpp
@@ -125,7 +125,7 @@ set(engine_hdr
     ${octree_hdr}
     ${simplexNoise_hdr}
     ${scriptManager_hpp}
-    
+
     src/log.h
     src/timer.h
     src/Game.h
@@ -135,12 +135,12 @@ set(engine_hdr
     src/Global.h
     src/skybox.h
     src/screen.h
+    src/console.hpp
     src/renderer.h
     src/settings.h
     src/gameObject.h
     src/screenRender.h
     src/eventManager.h
-    src/chunkManager.h
     src/renderManager.h
     src/bufferManager.h
     src/editorController.h
@@ -201,4 +201,7 @@ set(engine_hdr
 
 add_library(engine STATIC ${engine_src} ${engine_hdr})
 
+# target_include_directories(engine PRIVATE
+#     $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>
+# )
 

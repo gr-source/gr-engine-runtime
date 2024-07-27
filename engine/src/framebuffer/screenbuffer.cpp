@@ -62,7 +62,7 @@ void ScreenBuffer::resize(const Vector2& scale) {
 	m_renderbuffer->bufferStorageSampler(Renderbuffer::eDEPTH_COMPONENT, samples, m_width, m_height);
 	m_renderbuffer->unbind();
 
-	m_texture->resize(m_width, m_height, Texture::eRGBA16F, Texture::eRGBA, Texture::eBILINEAR, Texture::eFLOAT, false);
+	m_texture->resize(m_width, m_height, Texture::eRGB, Texture::eRGB, Texture::eBILINEAR, Texture::eFLOAT, false);
 	m_texture->apply();
 }
 

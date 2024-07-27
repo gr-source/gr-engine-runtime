@@ -1,6 +1,7 @@
 #include "renderManager.h"
 
 #include "gameObject.h"
+#include "console.hpp"
 
 #include "component/meshRender.hpp"
 #include "component/meshFilter.hpp"
@@ -16,17 +17,33 @@
 
 #include "filesystem/filesystem.h"
 
-Frustum RenderManager::s_frustum;
-
 std::vector<GameObject*> RenderManager::s_objects;
 
 grr::gShader *RenderManager::m_shader = nullptr;
 
-void RenderManager::Initialize() {
-    auto vstr = Filesystem::getfilecontent("assets/shader/model/default3D.vert");
-    auto fstr = Filesystem::getfilecontent("assets/shader/model/default3D.frag");
+Frustum RenderManager::s_frustum;
 
-    m_shader = grr::gShader::Create({fstr.c_str()}, {vstr.c_str()});
+bool RenderManager::s_running = false;
+
+void RenderManager::Initialize() {
+    auto source = ScriptManager::GetShader()[0];
+
+    const char *fragment = source.first.c_str();
+    const char *vertex = source.second.c_str();
+
+    Console::Print(LogInfo::INFO, "Loading shader...");
+
+    m_shader = grr::gShader::Create(&fragment, &vertex);
+    if (!m_shader) {
+        std::stringstream iss(grr::gError::GetError());
+
+        std::string line;
+        while (std::getline(iss, line)) {
+            Console::Print(LogInfo::ERROR, line);
+        }
+        grr::gError::Clean();
+        return;
+    }
     m_shader->bind();
 
     // VertexShader
@@ -53,11 +70,15 @@ void RenderManager::Initialize() {
     }
 
     m_shader->unbind();
+
+    Console::Print(LogInfo::INFO, "Shader loaded successfully.");
+
+    s_running = true;
 }
 
 void RenderManager::Process() {
     auto& models = MeshRender::GetGameObjectFromRender();
-    if (models.empty()) {
+    if (models.empty() && !s_running) {
         return;
     }
 
@@ -84,7 +105,7 @@ void RenderManager::Process() {
 }
 
 void RenderManager::Renderer() {
-    if (s_objects.empty() || !m_shader || !m_shader->isValid()) {
+    if (!s_running || s_objects.empty() || !m_shader || !m_shader->isValid()) {
         return;
     }
 
@@ -119,6 +140,8 @@ void RenderManager::Shutdown() {
     }
 
     s_objects.clear();
+
+    s_running = false;
 }
 
 void RenderManager::SetupLight() {
@@ -142,8 +165,8 @@ void RenderManager::SetupLight() {
 
 void RenderManager::SetupMaterial(const std::unordered_map<int, Material> &materials) {
     for (const auto& [index, material] : materials) {
-
         grr::gShader::SetUniform("m_material[" + std::to_string(index) + "].albedo", material.getAlbedo());
         grr::gShader::SetUniform("m_material[" + std::to_string(index) + "].params", Vector3(material.getRoughness(), material.getMetallic(), material.getAmbientOcclusion()));
     }
 }
+

@@ -13,8 +13,8 @@ void* ScriptManager::s_handle = nullptr;
 // [ Main ]
 void (*ScriptManager::Initialize)();
 void (*ScriptManager::Destroy)();
-
 void (*ScriptManager::SetDeltaTime)(float);
+std::unordered_map<int, std::pair<const std::string, const std::string>> (*ScriptManager::GetShader)();
 
 std::vector<std::unique_ptr<GameObject>> &(*ScriptManager::GetAllGameObject)();
 
@@ -33,20 +33,24 @@ Camera *(*ScriptManager::MainCamera)();
 Camera *(*ScriptManager::CurrentCamera)();
 
 void ScriptManager::Initialzie() {
+    Console::Print(LogInfo::INFO, "Loading script...");
     s_handle = dlopen("/home/grsource/Documentos/AppProjects/gr-component/lib/libgr-component.so", RTLD_LAZY);
     if (!s_handle) {
-        std::cout << "Falied to load Script." << std::endl;
+        Console::Print(LogInfo::ERROR, "Falied to load Script.");
         return;
     }
 
     RegisterApi();
 
     if (Initialize) {
+        Console::Print(LogInfo::INFO, "Script initialized.");
         Initialize();
     }
 }
 
 void ScriptManager::Shutdown() {
+    Console::Print(LogInfo::INFO, "Script destoyed.");
+
     if (Destroy) {
         Destroy();
     }
@@ -81,10 +85,14 @@ void ScriptManager::Shutdown() {
 }
 
 void ScriptManager::RegisterApi() {
+    // Functions
+
     // [ Main ]
     REGISTER_API(void, void, Initialize);
     REGISTER_API(void, void, Destroy);
     REGISTER_API(void, float, SetDeltaTime);
+
+    GetShader = (std::unordered_map<int, std::pair<const std::string, const std::string>>(*)(void))dlsym(ScriptManager::s_handle, "GetShader");
 
     // [ Component - MeshRender ]
     REGISTER_API(std::vector<GameObject*>&, void, GetGameObjectsFromRender);

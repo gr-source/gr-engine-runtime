@@ -1,9 +1,31 @@
 #include "memory.h"
 
-std::size_t Memory::totalMemoryUsage = 0;
-std::mutex Memory::memoryMutex;
+#include <cassert>
+
+#include <unistd.h>
+#include <fcntl.h>
 
 #define ALIGN16(x) (((x) + 0xF) & ~0xF)
+
+std::size_t Memory::totalMemoryUsage = 0;
+
+std::mutex Memory::memoryMutex;
+
+int Memory::s_handle = 0;
+
+void Memory::Initialize() {
+    s_handle = open64("/proc/self/mem", O_RDONLY);
+    if (!s_handle) {
+        std::cout << "Falied to Initialize memory." << std::endl;
+        return;
+    }
+}
+
+void Memory::Shutdown() {
+    if (s_handle) {
+        close(s_handle);
+    }
+}
 
 void *Memory::malloc(std::size_t size) {
     /*void* ptr = std::malloc(size + sizeof(MemoryBlock) + 15);
@@ -69,18 +91,17 @@ void Memory::free(void *ptr) noexcept {
     std::free(ptr);
 }
 
-void *operator new(std::size_t size) {
-    return Memory::malloc(size);
+void Memory::Hook(void *ptr, void *replace) {
+    assert(ptr != nullptr || replace != nullptr);
+
+    if (lseek64(s_handle, reinterpret_cast<std::intptr_t>(ptr), SEEK_SET) == -1) {
+        std::cout << "[ Memory::Hook ] falied to seek position." << std::endl;
+        return;
+    }
+
+    if (write(s_handle, replace, sizeof(replace)) == -1) {
+        std::cout << "[ Memory::Hook ] falied to write addr." << std::endl;
+    }
 }
 
-void *operator new[](std::size_t size) {
-    return Memory::malloc(size);
-}
 
-void operator delete(void *ptr) noexcept {
-    Memory::free(ptr);
-}
-
-void operator delete[](void *ptr) noexcept {
-    Memory::free(ptr);
-}

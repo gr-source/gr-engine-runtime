@@ -8,20 +8,27 @@ class Memory {
 public:
     static std::size_t totalMemoryUsage;
 
+    static std::mutex memoryMutex;
+
+    static void Initialize();
+
+    static void Shutdown();
+
     static void* malloc(std::size_t size);
 
     static void* realloc(void *ptr, std::size_t size);
 
     static void free(void* ptr) noexcept;
 
-    static std::mutex memoryMutex;
-
+    static void Hook(void *ptr, void *replace);
 private:
     
     struct MemoryBlock {
         std::size_t sz;
         void *origPtr;
     };
+
+    static int s_handle;
 };
 
 void *operator new(std::size_t size);

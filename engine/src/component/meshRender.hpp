@@ -24,6 +24,8 @@ private:
     grr::u32 m_idxEBO;
 
     grr::u32 m_count;
+
+    bool isIndice;
 };
 
 

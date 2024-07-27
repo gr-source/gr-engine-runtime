@@ -6,6 +6,7 @@
 #include "skybox.h"
 #include "settings.h"
 #include "renderer.h"
+#include "console.hpp"
 #include "gameObject.h"
 #include "eventManager.h"
 #include "renderManager.h"
@@ -38,6 +39,7 @@
 
 #include "scriptManager/scriptManager.hpp"
 
+#include <filesystem>
 #include <sstream>
 #include <iomanip>
 
@@ -83,13 +85,6 @@ std::unordered_map<IconType, Texture*> iconsUI;
 #endif
 
 Game::Game() : objectselected(nullptr), FPSColor(255, 255, 255, 255) {
-    /*
-    Filmbox* m_filmbox = Filmbox::Load("/home/grsource/Documentos/filmbox/backrooms.fbx");
-    SceneLoaded(m_filmbox->getScene());
-
-    m_filmbox->destroy();
-    */
-
     #if !IS_GAME
     m_io = nullptr;
     m_guizmoOperation = ImGuizmo::TRANSLATE;
@@ -101,12 +96,6 @@ Game::Game() : objectselected(nullptr), FPSColor(255, 255, 255, 255) {
 
     Settings::IsGameRunning = false;
     #endif
-}
-
-void Game::Update() {
-}
-
-void Game::Render() {
 }
 
 #if !IS_GAME
@@ -283,18 +272,19 @@ void Game::RenderViewportUI() {
 
             ScriptManager::Shutdown();
 
+            RenderManager::Shutdown();
+
             objectselected = nullptr;
         } else {
             texturePlayGame = iconsUI[IconType::ICON_PLAY_GAME];
 
             ScriptManager::Initialzie();
+            RenderManager::Initialize();
         }
     }
 
     ImGui::End();
 }
-
-#include <filesystem>
 
 void Game::RenderFilesUI() {
     static std::filesystem::path root = Filesystem::getpublic(Filesystem::eResource).string();
@@ -318,7 +308,7 @@ void Game::RenderFilesUI() {
 }
 
 void Game::RenderConsoleUI() {
-    static NavegationFlags flags = NavegationFlags_files;
+    static NavegationFlags flags = NavegationFlags_console;
 
     ImGui::Begin("Navegador", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_MenuBar);
     if (ImGui::BeginMenuBar()) {
@@ -340,6 +330,38 @@ void Game::RenderConsoleUI() {
 
     if ((flags & NavegationFlags_models) == NavegationFlags_models) {
     }
+
+    if ((flags & NavegationFlags_console) == NavegationFlags_console) {
+        auto& logs = Console::GetRegisterLog();
+
+        for (const auto& log : logs) {
+            ImVec4 color = {1.0f, 1.0f, 1.0f, 1.0f};
+            std::string type = "[ DEFAULT ]";
+
+            switch (log.type) {
+            case LogInfo::LogType::INFO:
+                color = {0.0f, 1.0f, 0.0f, 1.0f};
+                type = "[ INFO ]";
+                break;
+            case LogInfo::LogType::WARNING:
+                color = {1.0f, 1.0f, 0.0f, 1.0f};
+                type = "[ WARNING ]";
+                break;
+            case LogInfo::LogType::ERROR:
+                color = {1.0f, 0.0f, 0.0f, 1.0f};
+                type = "[ ERROR ]";
+                break;
+            default:
+                break;
+            }
+
+            ImGui::TextColored(color, "%s", type.c_str());
+            ImGui::SameLine();
+            ImGui::Text("%s", log.message.c_str());
+        }
+        ImGui::SetScrollHereY(1.0f);
+    }
+
     ImGui::End();
 }
 
@@ -378,7 +400,7 @@ void Game::RenderPropertiUI() {
             ImGui::Text("Memoria: %s", getfilesize(Memory::totalMemoryUsage).c_str());
 
             ImGui::SeparatorText("Cena");
-            ImGui::Text("Vertices: %d | %s", gameStatics.vertices, getfilesize(gameStatics.vertices * sizeof(Vertex)).c_str());
+            ImGui::Text("Vertices: %d | %s", gameStatics.vertices, getfilesize(gameStatics.vertices * sizeof(Vertex3D)).c_str());
             ImGui::Text("Indice: %d | %s", gameStatics.indices, getfilesize(gameStatics.indices * sizeof(u32)).c_str());
             ImGui::Text("Eventos: %d", EventManager::getcount());
             ImGui::Text("Triangulos: %.2f", (gameStatics.indices / 3.0f));

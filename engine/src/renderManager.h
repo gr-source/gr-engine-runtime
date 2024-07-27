@@ -21,11 +21,14 @@ public:
     static void Shutdown();
 
 public:
-    static Frustum s_frustum;
-
     static std::vector<GameObject*> s_objects;
 
     static grr::gShader *m_shader;
+
+    static Frustum s_frustum;
+    
+    static bool s_running;
+
 
     static void SetupLight();
 

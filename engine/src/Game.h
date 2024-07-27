@@ -11,12 +11,6 @@ class Game {
 public:
     Game();
 
-    void GeneRateVoxel(int width, int height, int depth);
-    
-    void Update();
-
-    void Render();
-
     #if !IS_GAME
     void Gui();
 
