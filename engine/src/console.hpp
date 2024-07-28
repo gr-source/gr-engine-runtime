@@ -19,9 +19,9 @@ class Console {
 public:
     static void Print(LogInfo::LogType type, const std::string &msg);
 
-    static void Print(const std::string &msg);
+    static std::list<LogInfo> &GetListLogs();
 
-    static std::list<LogInfo> &GetRegisterLog();
+    static bool bChanged;
     
 private:
     static std::list<LogInfo> s_logs;

@@ -2,9 +2,7 @@
 
 #include <string>
 
-#include "../resources/texture.h"
-
-#define MAX_TEXTURE 10
+#include <gr-render/gTexture.h>
 
 class Material {
 public:
@@ -20,6 +18,8 @@ public:
 
     const float getAmbientOcclusion() const;
 
+    grr::gTexture *getTexture(int idx);
+
 private:
     std::string m_name;
 
@@ -30,5 +30,7 @@ private:
     float m_roughness;
 
     float m_ao;
+
+    std::vector<grr::gTexture *> m_texture;
 };
 

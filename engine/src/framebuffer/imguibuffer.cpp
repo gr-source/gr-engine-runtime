@@ -10,7 +10,7 @@ Imguibuffer& Imguibuffer::getInstance() {
 Imguibuffer::Imguibuffer(u32 width, u32 height) : FrameBuffer(width, height), m_framebuffer(std::make_unique<Framebuffer>()), m_renderbuffer(std::make_unique<Renderbuffer>()) {
     m_texture = std::make_unique<Texture>();
     
-    m_texture->resize(m_width, m_height, Texture::eSRBG8, Texture::eRGB, Texture::eBILINEAR, Texture::eBYTE, false);
+    m_texture->resize(m_width, m_height, Texture::eSRBG, Texture::eRGB, Texture::eBILINEAR, Texture::eBYTE, false);
     m_texture->apply();
 
     m_framebuffer->bind();
@@ -31,7 +31,7 @@ void Imguibuffer::resize(const Vector2 &size) {
     m_width = size.x;
     m_height = size.y;
 
-    m_texture->resize(m_width, m_height, Texture::eSRBG8, Texture::eRGB, Texture::eBILINEAR, Texture::eBYTE, false);
+    m_texture->resize(m_width, m_height, Texture::eSRBG8_APHA8, Texture::eRGBA, Texture::eBILINEAR, Texture::eFLOAT, false);
     m_texture->apply();
 }
 

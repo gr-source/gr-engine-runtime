@@ -69,10 +69,9 @@ set(engine_src
 
     src/component/light.cpp
     src/component/camera.cpp
-    src/component/Transform.cpp
+    src/component/transform.cpp
     src/component/meshRender.cpp
     src/component/meshFilter.cpp
-    src/component/cameraController.cpp
 
     src/framebuffer/gBuffer.cpp
     src/framebuffer/thumbnails.cpp
@@ -148,10 +147,9 @@ set(engine_hdr
     src/component/light.hpp
     src/component/camera.hpp
     src/component/default.hpp
-    src/component/Transform.h
+    src/component/transform.hpp
     src/component/meshRender.hpp
     src/component/meshFilter.hpp
-    src/component/cameraController.h
 
     src/framebuffer/gBuffer.h
     src/framebuffer/thumbnails.h

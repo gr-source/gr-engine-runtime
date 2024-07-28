@@ -12,7 +12,7 @@ ScreenBuffer::ScreenBuffer(u32 width, u32 height) : m_width(width), m_height(hei
 	m_fbo[0] = std::make_unique<Framebuffer>();
 	m_fbo[1] = std::make_unique<Framebuffer>();
 
-	m_textureSample->resize(m_width, m_height, Texture::eSRBG8, Texture::eRGB, Texture::eBILINEAR, Texture::eBYTE, false);
+	m_textureSample->resize(m_width, m_height, Texture::eRGB, Texture::eRGB, Texture::eBILINEAR, Texture::eBYTE, false);
 	m_textureSample->apply();
 
 	m_renderbuffer->bind();
@@ -25,7 +25,7 @@ ScreenBuffer::ScreenBuffer(u32 width, u32 height) : m_width(width), m_height(hei
 	m_fbo[FRAMEFBO]->unbind();
 
 	/*********** POSPROCESSING ***********/
-	m_texture->resize(m_width, m_height, Texture::eRGBA16F, Texture::eRGBA, Texture::eBILINEAR, Texture::eFLOAT, false);
+	m_texture->resize(m_width, m_height, Texture::eRGB, Texture::eRGB, Texture::eBILINEAR, Texture::eBYTE, false);
 	m_texture->apply();
 
 	m_fbo[POSFBO]->bind();
@@ -55,14 +55,14 @@ void ScreenBuffer::resize(const Vector2& scale) {
     m_width = scale.x;
     m_height = scale.y;
 
-	m_textureSample->resize(m_width, m_height, Texture::eSRBG8, Texture::eRGB, Texture::eBILINEAR, Texture::eBYTE, false);
+	m_textureSample->resize(m_width, m_height, Texture::eRGB, Texture::eRGB, Texture::eBILINEAR, Texture::eBYTE, false);
 	m_textureSample->apply();
 
 	m_renderbuffer->bind();
 	m_renderbuffer->bufferStorageSampler(Renderbuffer::eDEPTH_COMPONENT, samples, m_width, m_height);
 	m_renderbuffer->unbind();
 
-	m_texture->resize(m_width, m_height, Texture::eRGB, Texture::eRGB, Texture::eBILINEAR, Texture::eFLOAT, false);
+	m_texture->resize(m_width, m_height, Texture::eRGB, Texture::eRGB, Texture::eBILINEAR, Texture::eBYTE, false);
 	m_texture->apply();
 }
 

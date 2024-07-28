@@ -1,6 +1,6 @@
 #include "camera.hpp"
 
-#include "Transform.h"
+#include "transform.hpp"
 
 #include "../scriptManager/scriptManager.hpp"
 

@@ -20,6 +20,12 @@ public:
 
     static void Shutdown();
 
+    static bool bWireFrame;
+
+    static int iDrawCount;
+
+    static int iDrawRender;
+
 public:
     static std::vector<GameObject*> s_objects;
 
@@ -27,10 +33,7 @@ public:
 
     static Frustum s_frustum;
     
-    static bool s_running;
-
-
     static void SetupLight();
 
-    static void SetupMaterial(const std::unordered_map<int, Material> &materials);
+    static void SetupMaterial(std::unordered_map<int, Material> &materials);
 };

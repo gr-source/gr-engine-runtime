@@ -1,7 +1,7 @@
 #include "octree.h"
 
 #include "../component/meshRender.hpp"
-#include "../component/Transform.h"
+#include "../component/transform.hpp"
 
 #include "../gameObject.h"
 #include "../renderer.h"

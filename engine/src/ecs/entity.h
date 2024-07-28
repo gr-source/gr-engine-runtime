@@ -12,23 +12,24 @@
 
 #define MAX_COMPONENT 16
 
+using ComponentID = std::size_t;
+
 class GameObject;
 
-/* tamanho maximo de componenets */
-constexpr std::size_t maxComponent = 32;
+class ComponentIDGenerator {
+public:
+    template <typename T>
+    static ComponentID GenerateIDByType() noexcept {
+        static ComponentID id = GenerateID();
+        return id;
+    }
 
-/* gere um id para */
-inline std::size_t GenerateID() noexcept {
-    static std::size_t id = 0;
-    return ++id;
-}
-
-/* Gere um id apartir de um componenet */
-template <typename T>
-inline std::size_t GetIDFromComponent() noexcept {
-    static std::size_t id = GenerateID();
-    return id;
-}
+private:
+    static ComponentID GenerateID() noexcept {
+        static ComponentID id = 0;
+        return id++;
+    }
+};
 
 /* Classe de entidades */
 class Entity {
@@ -43,7 +44,12 @@ public:
     template <typename T>
     const bool hasComponent();
 
+    void RemoveComponent(const std::string &name);
+
     GameObject *getGameObject();
+
+    std::unordered_map<std::string, std::shared_ptr<Component>> &getComponents();
+    
 private:
     std::unordered_map<std::string, std::shared_ptr<Component>> components;
 

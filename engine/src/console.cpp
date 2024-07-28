@@ -2,7 +2,9 @@
 
 std::list<LogInfo> Console::s_logs;
 
-int Console::s_maxLog = 20;
+int Console::s_maxLog = 500;
+
+bool Console::bChanged = false;
 
 void Console::Print(LogInfo::LogType type, const std::string &msg) {
     s_logs.push_back({type, msg});
@@ -10,16 +12,9 @@ void Console::Print(LogInfo::LogType type, const std::string &msg) {
     if (s_logs.size() >= s_maxLog) {
         s_logs.pop_front();
     }
+    Console::bChanged = true;
 }
 
-void Console::Print(const std::string &msg) {
-    s_logs.push_back({LogInfo::LogType::INFO, msg});
-
-    if (s_logs.size() >= s_maxLog) {
-        s_logs.pop_front();
-    }
-}
-
-std::list<LogInfo> &Console::GetRegisterLog() {
+std::list<LogInfo> &Console::GetListLogs() {
     return s_logs;
 }

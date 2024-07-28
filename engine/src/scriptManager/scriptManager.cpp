@@ -5,7 +5,11 @@
 #include <iostream>
 #include <dlfcn.h>
 
-#define REGISTER_API(lhs, rhs, func) func = (lhs(*)(rhs))dlsym(ScriptManager::s_handle, #func)
+#define REGISTER_API(r, p, f) \
+    f = (r(*)(p))dlsym(ScriptManager::s_handle, #f); \
+    if (!f) { \
+        std::cout << "Falied to register function: " << #f << std::endl; \
+    }
 
 #define REGISTER_FUNC(symbol, hookFunc) Memory::Hook(dlsym(ScriptManager::s_handle, symbol), (void *)&hookFunc)
 
@@ -37,6 +41,7 @@ Camera *(*ScriptManager::CurrentCamera)();
 
 void ScriptManager::Initialzie() {
     Console::Print(LogInfo::INFO, "Loading script...");
+
     s_handle = dlopen("/home/grsource/Documentos/AppProjects/gr-component/lib/libgr-component.so", RTLD_LAZY);
     if (!s_handle) {
         Console::Print(LogInfo::ERROR, "Falied to load Script.");
@@ -87,13 +92,9 @@ void ScriptManager::Shutdown() {
     s_handle = nullptr;
 }
 
-void HookConsolePrint(LogInfo::LogType type, const std::string &msg) {
-    Console::Print(type, msg);
-}
-
 void ScriptManager::RegisterApi() {
     // Functions
-    REGISTER_FUNC("ConsolePrint", HookConsolePrint);
+    REGISTER_FUNC("ConsolePrint", Console::Print);
 
     // [ Main ]
     REGISTER_API(void, void, Initialize);
@@ -101,11 +102,6 @@ void ScriptManager::RegisterApi() {
     REGISTER_API(void, float, SetDeltaTime);
 
     GetShader = (std::unordered_map<int, std::pair<const std::string, const std::string>>(*)(void))dlsym(ScriptManager::s_handle, "GetShader");
-
-    // Hook
-    
-
-    // ====================================================
 
     // [ Component - MeshRender ]
     REGISTER_API(std::vector<GameObject*>&, void, GetGameObjectsFromRender);

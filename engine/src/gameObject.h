@@ -4,7 +4,7 @@
 
 #include "ecs/entity.h"
 
-#include "component/Transform.h"
+#include "component/transform.hpp"
 
 class GameObject {
 public:
@@ -19,6 +19,8 @@ public:
 
     template <typename T, typename... Args>
     void RenderProperty(Args&&... args);
+
+    Entity *getEntity();
     
 private:
     std::string m_name;

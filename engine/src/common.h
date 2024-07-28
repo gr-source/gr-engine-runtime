@@ -16,9 +16,6 @@ class Shader;
 
 /* Component */
 class CameraController;
-class ChunkController;
-class CameraComponent;
-class LightComponent;
 class MeshFilter;
 class MeshRender;
 class Transform;

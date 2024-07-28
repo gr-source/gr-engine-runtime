@@ -48,12 +48,11 @@ private:
     /* Textura do play button */
     Texture* texturePlayGame;
 
-    std::mutex m_mutex;
-
     #if !IS_GAME
     ImGuiIO* m_io;
 
-    bool menuAdd;
+    bool bScriptReloaded;
+    bool bMenuAdd;
 
     ImVec4 FPSColor;
 
@@ -67,11 +66,11 @@ private:
 
     void OnPropertyMeshRender(MeshRender* meshRender);
 
-    void OnPropertyCameraComponent(CameraComponent* cameraComponent);
+    // void OnPropertyCameraComponent(CameraComponent* cameraComponent);
 
-    void OnPropertyLightComponent(LightComponent* lightComponent);
+    void OnPropertyLightComponent(Light *light);
 
-    void OnPropertyChunkController(ChunkController* chunkController);
+    // void OnPropertyChunkController(ChunkController* chunkController);
 
     void TextureInfo(Texture*& texture);
 

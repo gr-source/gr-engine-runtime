@@ -51,3 +51,5 @@ protected:
 
     float m_angleOuterCone;
 };
+
+

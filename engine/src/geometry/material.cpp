@@ -1,6 +1,6 @@
 #include "material.h"
 
-Material::Material(const std::string &name, const Vector4 &albedo, float metallic, float roughness, float ao) : m_name(name), m_albedo(albedo), m_metallic(metallic), m_roughness(roughness), m_ao(ao) {}
+Material::Material(const std::string &name, const Vector4 &albedo, float metallic, float roughness, float ao) : m_name(name), m_albedo(albedo), m_metallic(metallic), m_roughness(roughness), m_ao(ao), m_texture(10, nullptr) {}
 
 const std::string &Material::getName() const {
     return m_name;
@@ -20,4 +20,8 @@ const float Material::getRoughness() const {
 
 const float Material::getAmbientOcclusion() const {
     return m_ao;
+}
+
+grr::gTexture *Material::getTexture(int idx) {
+    return m_texture[idx];
 }
