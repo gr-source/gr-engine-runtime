@@ -20,7 +20,7 @@ public:
 
     static void free(void* ptr) noexcept;
 
-    static void Hook(void *ptr, void *replace);
+    static void Hook(void *origFunc, void *newFunc);
 private:
     
     struct MemoryBlock {

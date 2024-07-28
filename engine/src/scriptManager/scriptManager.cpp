@@ -1,10 +1,13 @@
 #include "scriptManager.hpp"
 
-#include <iostream>
+#include "../memory.h"
 
+#include <iostream>
 #include <dlfcn.h>
 
 #define REGISTER_API(lhs, rhs, func) func = (lhs(*)(rhs))dlsym(ScriptManager::s_handle, #func)
+
+#define REGISTER_FUNC(symbol, hookFunc) Memory::Hook(dlsym(ScriptManager::s_handle, symbol), (void *)&hookFunc)
 
 #define UNREGISTER_API(func) func = nullptr
 
@@ -84,8 +87,13 @@ void ScriptManager::Shutdown() {
     s_handle = nullptr;
 }
 
+void HookConsolePrint(LogInfo::LogType type, const std::string &msg) {
+    Console::Print(type, msg);
+}
+
 void ScriptManager::RegisterApi() {
     // Functions
+    REGISTER_FUNC("ConsolePrint", HookConsolePrint);
 
     // [ Main ]
     REGISTER_API(void, void, Initialize);
@@ -93,6 +101,11 @@ void ScriptManager::RegisterApi() {
     REGISTER_API(void, float, SetDeltaTime);
 
     GetShader = (std::unordered_map<int, std::pair<const std::string, const std::string>>(*)(void))dlsym(ScriptManager::s_handle, "GetShader");
+
+    // Hook
+    
+
+    // ====================================================
 
     // [ Component - MeshRender ]
     REGISTER_API(std::vector<GameObject*>&, void, GetGameObjectsFromRender);

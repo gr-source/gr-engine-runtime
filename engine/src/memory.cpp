@@ -2,7 +2,9 @@
 
 #include <cassert>
 
+#include <sys/mman.h>
 #include <unistd.h>
+#include <string.h>
 #include <fcntl.h>
 
 #define ALIGN16(x) (((x) + 0xF) & ~0xF)
@@ -91,17 +93,31 @@ void Memory::free(void *ptr) noexcept {
     std::free(ptr);
 }
 
-void Memory::Hook(void *ptr, void *replace) {
-    assert(ptr != nullptr || replace != nullptr);
+void Memory::Hook(void *origFunc, void *newFunc) {
+    auto pageSizeToProtect = sysconf(_SC_PAGESIZE);
+    auto start = reinterpret_cast<std::uintptr_t>(origFunc);
+    auto pageStart = start & ~(pageSizeToProtect - 1);
 
-    if (lseek64(s_handle, reinterpret_cast<std::intptr_t>(ptr), SEEK_SET) == -1) {
-        std::cout << "[ Memory::Hook ] falied to seek position." << std::endl;
+    if (mprotect(reinterpret_cast<void *>(pageStart), pageSizeToProtect, PROT_READ | PROT_WRITE | PROT_EXEC) == -1) {
+        std::cout << "Failed to change page permission in memory." << std::endl;
         return;
     }
 
-    if (write(s_handle, replace, sizeof(replace)) == -1) {
-        std::cout << "[ Memory::Hook ] falied to write addr." << std::endl;
+    // Cria a instrução de salto
+    uint8_t jumpInstruction[14];
+    jumpInstruction[0] = 0x49; // REX prefix
+    jumpInstruction[1] = 0xBB; // MOV r11, imm32
+    *(int64_t*)(jumpInstruction + 2) = (int64_t)newFunc;
+    jumpInstruction[10] = 0x41; // REX prefix
+    jumpInstruction[11] = 0xFF; // JMP r11
+    jumpInstruction[12] = 0xE3; // RIP-Relative Jump
+
+    if (!memcpy(origFunc, jumpInstruction, sizeof(jumpInstruction))) {
+        std::cout << "Falied to copy instructions." << std::endl;
+        return;
+    }
+
+    if (mprotect((void*)pageStart, pageSizeToProtect, PROT_READ | PROT_EXEC) == -1) {
+        std::cout << "Failed to roll back page permissions in memory." << std::endl;
     }
 }
-
-
