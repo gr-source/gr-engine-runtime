@@ -8,7 +8,6 @@
 #include "renderer.h"
 #include "console.hpp"
 #include "gameObject.h"
-#include "eventManager.h"
 #include "renderManager.h"
 #include "editorController.h"
 
@@ -38,8 +37,6 @@
 #include "simplexNoise/SimplexNoise.h"
 
 #include "scriptManager/scriptManager.hpp"
-
-#include "eventManager.h"
 
 #include <filesystem>
 #include <sstream>
@@ -433,7 +430,7 @@ void Game::RenderPropertiUI() {
             ImGui::SeparatorText("Cena");
             ImGui::Text("Vertices: %d | %s", gameStatics.vertices, getfilesize(gameStatics.vertices * sizeof(Vertex3D)).c_str());
             ImGui::Text("Indice: %d | %s", gameStatics.indices, getfilesize(gameStatics.indices * sizeof(u32)).c_str());
-            ImGui::Text("Eventos: %d", EventManager::getcount());
+            // ImGui::Text("Eventos: %d", EventManager::getcount());
             ImGui::Text("Triangulos: %.2f", (gameStatics.indices / 3.0f));
 
             ImGui::SeparatorText("Resources");
@@ -456,6 +453,7 @@ void Game::RenderPropertiUI() {
 
         if (ImGui::BeginTabItem("Configuraçoes")) {
             ImGui::Checkbox("Wireframe", &RenderManager::bWireFrame);
+            ImGui::Checkbox("Debug Mode", &DebugDraw::bDebugMode);
             ImGui::EndTabItem();
         }
         ImGui::EndTabBar();

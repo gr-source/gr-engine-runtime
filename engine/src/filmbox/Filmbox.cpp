@@ -3,7 +3,6 @@
 #include "../resources/resources.h"
 #include "../geometry/mesh.h"
 
-#include "../eventManager.h"
 #include "../memory.h"
 
 #define NORMALIZE(vector) if (std::abs(vector.x) > 6.0f) vector.x /= 1e2f; if (std::abs(vector.y) > 6.0f) vector.y /= 1e2f; if (std::abs(vector.z) > 6.0f) vector.z /= 1e2f;

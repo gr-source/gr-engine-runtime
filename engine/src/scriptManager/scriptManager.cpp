@@ -19,8 +19,10 @@ void* ScriptManager::s_handle = nullptr;
 
 // [ Main ]
 void (*ScriptManager::Initialize)();
+void (*ScriptManager::Update)();
 void (*ScriptManager::Destroy)();
 void (*ScriptManager::SetDeltaTime)(float);
+
 std::unordered_map<int, std::pair<const std::string, const std::string>> (*ScriptManager::GetShader)();
 
 std::vector<std::unique_ptr<GameObject>> &(*ScriptManager::GetAllGameObject)();
@@ -65,6 +67,7 @@ void ScriptManager::Shutdown() {
 
     // [ Main ]
     UNREGISTER_API(Initialize);
+    UNREGISTER_API(Update);
     UNREGISTER_API(Destroy);
     UNREGISTER_API(SetDeltaTime);
 
@@ -98,6 +101,7 @@ void ScriptManager::RegisterApi() {
 
     // [ Main ]
     REGISTER_API(void, void, Initialize);
+    REGISTER_API(void, void, Update);
     REGISTER_API(void, void, Destroy);
     REGISTER_API(void, float, SetDeltaTime);
 

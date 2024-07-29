@@ -143,6 +143,9 @@ void Engine::OnInit() {
 }
 
 void Engine::OnUpdate() {
+    if (ScriptManager::Update) {
+        ScriptManager::Update();
+    }
     Entity::Update();
 
     EditorController::Update();

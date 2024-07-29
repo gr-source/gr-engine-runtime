@@ -48,6 +48,8 @@ public:
 
     static void Renderer();
 
+    static bool bDebugMode;
+
 protected:
 	static std::unique_ptr<BufferManager> m_primitivebuffer;
 

@@ -6,7 +6,6 @@
 
 #include "component/camera.hpp"
 
-
 std::unique_ptr<BufferManager> DebugDraw::m_primitivebuffer = nullptr;
 
 std::unique_ptr<BufferManager> DebugDraw::m_spritebuffer = nullptr;
@@ -20,6 +19,8 @@ std::vector<Line> DebugDraw::m_points;
 Shader* DebugDraw::m_spriteRender = nullptr;
 
 Shader* DebugDraw::m_shader = nullptr;
+
+bool DebugDraw::bDebugMode = false;
 
 void DebugDraw::initialize() {
     m_spriteRender = Resources::Load<Shader>(Filesystem::getpublic(Filesystem::eShader).string() + "/SpriteRender", DebugDraw::SetupSpriteRender);
@@ -79,15 +80,21 @@ void DebugDraw::SetupShaderPrimitive(Shader *shader) {
 }
 
 void DebugDraw::addLine(const Vector3& start, const Vector3& end, const Color& color) {
+    if (!DebugDraw::bDebugMode) return;
+    
     m_lines.emplace_back(start, color);
     m_lines.emplace_back(end, color);
 }
 
 void DebugDraw::addPoint(const Vector3 &position, const Color &color) {
+    if (!DebugDraw::bDebugMode) return;
+
     m_points.emplace_back(position, color);
 }
 
 void DebugDraw::addSprite(const Vector3 &position, Texture*& sprite) {
+    if (!DebugDraw::bDebugMode) return;
+
     auto camera = Camera::Main();
 
     Quaternion rotate = Math::normalize(Math::lookRotation(Math::normalize(position - camera->getPosition()), Vector3::up));
@@ -123,7 +130,7 @@ void DebugDraw::unbind() {
 }
 
 void DebugDraw::Renderer() {
-    if (!m_shader->isvalid()) return;
+    if (!m_shader->isvalid() && !DebugDraw::bDebugMode) return;
 
     DebugDraw::bind();
     if (DebugDraw::hasLines()) {

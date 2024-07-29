@@ -61,6 +61,7 @@ void RenderManager::Initialize() {
 
     grr::gShader::Register("m_texture");
     grr::gShader::Register("m_activate");
+    
     for (auto i=0;i<10;i++) {
         // Textures
         // grr::gShader::Register("m_texture[" + std::to_string(i) + "]");

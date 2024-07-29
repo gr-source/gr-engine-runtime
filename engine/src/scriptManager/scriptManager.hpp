@@ -35,6 +35,8 @@ public:
     // Light
     static std::vector<Light *> &(*GetListLight)();
 
+    static void (*Update)();
+    
 private:
     static void RegisterApi();
 
@@ -43,6 +45,8 @@ protected:
 
     // [ Main ]
     static void (*Initialize)();
+    
+
     static void (*Destroy)();
 };
 
