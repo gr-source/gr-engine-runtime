@@ -28,14 +28,15 @@ public:
     // [ Entity ]
     static std::size_t (*GetEntityCount)();
 
-    static void (*EntityProcess)();
-
     static void (*SetDeltaTime)(float);
 
     // Light
     static std::vector<Light *> &(*GetListLight)();
 
     static void (*Update)();
+
+    // Event;
+    static void (*EventUpdate)();
     
 private:
     static void RegisterApi();

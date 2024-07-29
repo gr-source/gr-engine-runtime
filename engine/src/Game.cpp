@@ -335,7 +335,7 @@ void Game::RenderConsoleUI() {
     }
 
     if ((flags & NavegationFlags_console) == NavegationFlags_console) {
-        auto& logs = Console::GetListLogs();
+        auto logs = Console::GetListLogs();
 
         for (const auto& log : logs) {
             ImVec4 color = {1.0f, 1.0f, 1.0f, 1.0f};

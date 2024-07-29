@@ -36,7 +36,7 @@ class Entity {
 public:
     static std::size_t GetEntityCount();
 
-    static void Update();
+    static void (*Update)();
 
     template <typename T>
     T& getComponent();

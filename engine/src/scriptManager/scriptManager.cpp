@@ -1,5 +1,7 @@
 #include "scriptManager.hpp"
 
+#include "../ecs/entity.h"
+
 #include "../memory.h"
 
 #include <iostream>
@@ -9,7 +11,13 @@
     f = (r(*)(p))dlsym(ScriptManager::s_handle, #f); \
     if (!f) { \
         std::cout << "Falied to register function: " << #f << std::endl; \
-    }
+    } \
+
+#define REGISTER_API_FROM_NAME(n, r, p, f) \
+    f = (r(*)(p))dlsym(ScriptManager::s_handle, n); \
+    if (!f) { \
+        std::cout << "Falied to register function: " << #f << std::endl; \
+    } \
 
 #define REGISTER_FUNC(symbol, hookFunc) Memory::Hook(dlsym(ScriptManager::s_handle, symbol), (void *)&hookFunc)
 
@@ -29,7 +37,6 @@ std::vector<std::unique_ptr<GameObject>> &(*ScriptManager::GetAllGameObject)();
 
 // [ Entity ]
 std::size_t (*ScriptManager::GetEntityCount)();
-void (*ScriptManager::EntityProcess)();
 
 // LIght
 std::vector<Light *> &(*ScriptManager::GetListLight)();
@@ -40,6 +47,9 @@ std::vector<GameObject*> &(*ScriptManager::GetGameObjectsFromRender)();
 // [ Componenet - Camera ]
 Camera *(*ScriptManager::MainCamera)();
 Camera *(*ScriptManager::CurrentCamera)();
+
+// Event
+void (*ScriptManager::EventUpdate)();
 
 void ScriptManager::Initialzie() {
     Console::Print(LogInfo::INFO, "Loading script...");
@@ -77,7 +87,7 @@ void ScriptManager::Shutdown() {
 
     // [ Entity ]
     UNREGISTER_API(GetEntityCount);
-    UNREGISTER_API(EntityProcess);
+    UNREGISTER_API(Entity::Update);
 
     // Light
     UNREGISTER_API(GetListLight);
@@ -85,6 +95,8 @@ void ScriptManager::Shutdown() {
     // [ Componenet - Camera ]
     UNREGISTER_API(MainCamera);
     UNREGISTER_API(CurrentCamera);
+
+    UNREGISTER_API(EventUpdate);
     
     if (!s_handle) {
         return;
@@ -113,7 +125,7 @@ void ScriptManager::RegisterApi() {
 
     // [ Entity ]
     REGISTER_API(std::size_t, void, GetEntityCount);
-    REGISTER_API(void, void, EntityProcess);
+    REGISTER_API_FROM_NAME("EntityProcess", void, void, Entity::Update);
 
     // Light
     REGISTER_API(std::vector<Light *> &, void, GetListLight);
@@ -121,4 +133,7 @@ void ScriptManager::RegisterApi() {
     // [ Componenet - Camera ]
     REGISTER_API(Camera*, void, MainCamera);
     REGISTER_API(Camera*, void, CurrentCamera);
+
+    // Event
+    REGISTER_API(void, void, EventUpdate);
 }

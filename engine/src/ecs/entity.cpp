@@ -4,15 +4,10 @@
 
 #include "../settings.h"
 
+void (*Entity::Update)();
+
 std::size_t Entity::GetEntityCount() {
     return ScriptManager::GetEntityCount();
-}
-
-void Entity::Update() {
-    if (!ScriptManager::EntityProcess) {
-        return;
-    }
-    return ScriptManager::EntityProcess();
 }
 
 void Entity::RemoveComponent(const std::string &name) {

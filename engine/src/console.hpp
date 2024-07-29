@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <mutex>
 #include <list>
 
 struct LogInfo {
@@ -19,12 +20,14 @@ class Console {
 public:
     static void Print(LogInfo::LogType type, const std::string &msg);
 
-    static std::list<LogInfo> &GetListLogs();
+    static std::list<LogInfo> GetListLogs();
 
     static bool bChanged;
     
 private:
     static std::list<LogInfo> s_logs;
+
+    static std::mutex m_mutex;
 
     static int s_maxLog;
 };

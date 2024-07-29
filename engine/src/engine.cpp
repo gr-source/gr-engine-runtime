@@ -143,16 +143,22 @@ void Engine::OnInit() {
 }
 
 void Engine::OnUpdate() {
+    EditorController::Update();
+
     if (ScriptManager::Update) {
         ScriptManager::Update();
     }
-    Entity::Update();
-
-    EditorController::Update();
+    if (Entity::Update) {
+        Entity::Update();
+    }
 }
 
 void Engine::OnRender() {
     EventManager::ProcessEvent();
+
+    if (ScriptManager::EventUpdate) {
+        ScriptManager::EventUpdate();
+    }
 
     MainFramebuffer();
 
