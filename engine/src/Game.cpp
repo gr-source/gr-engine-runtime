@@ -11,6 +11,8 @@
 #include "renderManager.h"
 #include "editorController.h"
 
+#include "core/scene.hpp"
+
 #include "framebuffer/shadowbuffer.h"
 #include "framebuffer/screenbuffer.h"
 #include "framebuffer/imguibuffer.h"
@@ -33,8 +35,6 @@
 #include "animation/skeleton.h"
 
 #include "ui/View.h"
-
-#include "simplexNoise/SimplexNoise.h"
 
 #include "scriptManager/scriptManager.hpp"
 
@@ -135,8 +135,8 @@ void Game::RenderScenesUI() {
     ImGui::Begin("Cenario", nullptr, ImGuiWindowFlags_NoResize);
     ImGui::SetNextItemOpen(true, ImGuiCond_Appearing);
     if (ImGui::TreeNodeEx("default", ImGuiTreeNodeFlags_SpanFullWidth)) {
-        if (ScriptManager::GetAllGameObject) {
-            for (auto& gameObject : ScriptManager::GetAllGameObject()) {
+        if (Scene::GetGameObject) {
+            for (auto& gameObject : Scene::GetGameObject()) {
                 auto& transform = gameObject->getTransform();
 
                 ReadHierarchy(&transform);
@@ -408,10 +408,10 @@ void Game::RenderPropertiUI() {
 
                 objectselected->RenderProperty<Transform>(&Game::OnPropertyTransform, this);
                 objectselected->RenderProperty<MeshRender>(&Game::OnPropertyMeshRender, this);
+                objectselected->RenderProperty<Light>(&Game::OnPropertyLightComponent, this);
                 /*
                 objectselected->RenderProperty<CameraComponent>(&Game::OnPropertyCameraComponent, this);
                 */
-                // objectselected->RenderProperty<Light>(&Game::OnPropertyLightComponent, this);
                 /*
                 objectselected->RenderProperty<Animator>(&Game::OnPropertyAnimator, this);
                 objectselected->RenderProperty<ChunkController>(&Game::OnPropertyChunkController, this);
@@ -424,7 +424,8 @@ void Game::RenderPropertiUI() {
         ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
         if (ImGui::BeginTabItem("Estatística", nullptr)) {
             ImGui::SeparatorText("Scripts");
-            ImGui::Text("Entidades: %ld", Entity::GetEntityCount());
+            if (ScriptManager::GetEntityCount)
+                ImGui::Text("Entidades: %ld", ScriptManager::GetEntityCount());
             ImGui::Text("Memoria: %s", getfilesize(Memory::totalMemoryUsage).c_str());
 
             ImGui::SeparatorText("Cena");
@@ -526,6 +527,7 @@ void Game::OnPropertyMeshRender(MeshRender *meshRender) {
         for (auto&& [idx, material] : meshRender->getMaterials()) {
             if (ImGui::TreeNode(std::string(material.getName() + "(" + std::to_string(idx) + ")").c_str())) {
                 
+                auto& albedo = material.getAlbedo();
                 {
                     ImGui::SeparatorText("Albedo");
                     auto texture = material.getTexture(0);
@@ -536,11 +538,10 @@ void Game::OnPropertyMeshRender(MeshRender *meshRender) {
                             texture = nullptr;
                         }
                     } else {
-                        /*
-                        if (View::TextureInputUI(ImColor(material.albedo.r, material.albedo.g, material.albedo.b, material.albedo.a))) {
+
+                        if (View::TextureInputUI(ImColor(albedo.x, albedo.y, albedo.z, albedo.w))) {
                             ImGui::OpenPopup("#PopupChangeColorAlbedo");
                         }
-                        */
                     }
 
                     /*
@@ -644,9 +645,12 @@ void Game::OnPropertyMeshRender(MeshRender *meshRender) {
                         ImGui::EndDragDropTarget();
                     }
                 }
-
-                View::PopupChangeColor("Albedo", material.albedo);
                 */
+                
+                Color clr = {albedo.x, albedo.y, albedo.z, albedo.w};
+                if (View::PopupChangeColor("Albedo", clr)) {
+                    material.setAlbedo({clr.r, clr.g, clr.b, clr.a});
+                }
 
                 ImGui::TreePop();
             }
@@ -685,7 +689,6 @@ void Game::OnPropertyCameraComponent(CameraComponent *cameraComponent) {
 
 void Game::OnPropertyLightComponent(Light *light) {
     if (ImGui::TreeNode("Light")) {
-        /*
         ImGui::Text("Constante:");
         ImGui::DragFloat("##constant", &light->m_attenuationConstant, 0.005f, 0.01f, 1.0f);
 
@@ -707,10 +710,9 @@ void Game::OnPropertyLightComponent(Light *light) {
             ImGui::OpenPopup("##LightColorPopup");
         }
         if (ImGui::BeginPopup("##LightColorPopup")) {
-            ImGui::ColorPicker4("#LightColorPick", lightComponent->m_color.data);
+            ImGui::ColorPicker4("#LightColorPick", light->m_color.data);
             ImGui::EndPopup();
         }
-        */
 
         ImGui::TreePop();
     }

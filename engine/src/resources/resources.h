@@ -11,6 +11,8 @@
 #include <list>
 #include <map>
 
+#include <gr-render/gTexture.h>
+
 #include "texture.h"
 #include "shader.h"
 
@@ -45,6 +47,8 @@ public:
     template <typename... Args>
     static Shader* LoadShader(const std::string& path, Args&&... args);
 
+    static grr::gTexture *LoadTextureL(const std::string &path);
+
     static u32 getTextureType(int ch);
 
     static GLenum getTextureTypeSRGB(int ch);
@@ -70,6 +74,11 @@ private:
     static std::list<ProcessLoader<Shader>> m_shaderLoader;
     static std::mutex m_shaderMutex;
 
+    /***************** Texture *****************/
+    static std::unordered_map<std::string, std::unique_ptr<grr::gTexture>> s_listTexture;
+    static std::list<std::tuple<std::string, grr::gTexture *>> s_listFromLoader;
+    static std::mutex s_textureMutex;
+
     static void setup_texture(ProcessLoader<Texture>& process, const u32 width, const u32 height, const int channel, stbi_uc*& pixels);
 
     static void LoadTexture();
@@ -77,6 +86,10 @@ private:
     static void setup_shader(ProcessLoader<Shader>& process, const std::string& fcontent, const std::string& vcontent, const std::string& gcontent);
 
     static void LoadShader();
+
+    static void SetupTexture(grr::gTexture *texture, int width, int height, int ch, void *pixels);
+
+    static void LoadTextureF();
 };
 
 template <typename... Args>

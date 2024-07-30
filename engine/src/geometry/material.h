@@ -12,6 +12,8 @@ public:
 
     const Vector4 &getAlbedo() const;
 
+    void setAlbedo(const Vector4 &color);
+
     const float getMetallic() const;
     
     const float getRoughness() const;
@@ -32,5 +34,7 @@ private:
     float m_ao;
 
     std::vector<grr::gTexture *> m_texture;
+
+    friend class Game;
 };
 

@@ -1,6 +1,8 @@
 #include "scriptManager.hpp"
 
+#include "../resources/resources.h"
 #include "../ecs/entity.h"
+    #include "../core/scene.hpp"
 
 #include "../memory.h"
 
@@ -136,4 +138,10 @@ void ScriptManager::RegisterApi() {
 
     // Event
     REGISTER_API(void, void, EventUpdate);
+
+    // AssetManager
+    REGISTER_FUNC("LoadTexture", Resources::LoadTextureL);
+
+    //Scene
+    REGISTER_API_FROM_NAME("GetSceneGameObject", std::vector<GameObject *> &, void, Scene::GetGameObject);
 }

@@ -34,7 +34,7 @@ public:
 
     const float& getoutercone();
 
-protected:
+private:
     int m_type;
 
     Transform* m_transform;
@@ -50,6 +50,8 @@ protected:
     float m_angleInnerCone;
 
     float m_angleOuterCone;
+
+    friend class Game;
 };
 
 

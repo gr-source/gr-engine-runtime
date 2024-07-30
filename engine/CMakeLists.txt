@@ -25,23 +25,24 @@ set(octree_hdr
     src/octree/octree.h
 )
 
-set(simplexNoise_src
-    src/simplexNoise/SimplexNoise.cpp
-)
-
-set(simplexNoise_hdr
-    src/simplexNoise/SimplexNoise.h
-)
-
 set(scriptManager_cpp
     src/scriptManager/scriptManager.cpp
 )
 
-set(scriptManager_hpp
+set(scriptManager_hdr
     src/scriptManager/scriptManager.hpp
 )
 
+set(core_src
+    src/core/scene.cpp
+)
+
+set(core_hdr
+    src/core/scene.hpp
+)
+
 set(engine_src
+    ${core_src}
     ${guizmo_src}
     ${octree_src}
     ${simplexNoise_src}
@@ -120,10 +121,10 @@ set(engine_src
 )
 
 set(engine_hdr
+    ${core_hdr}
     ${guizmo_hdr}
     ${octree_hdr}
-    ${simplexNoise_hdr}
-    ${scriptManager_hpp}
+    ${scriptManager_hdr}
 
     src/log.h
     src/timer.h

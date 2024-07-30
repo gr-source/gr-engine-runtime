@@ -37,6 +37,9 @@ public:
 
     // Event;
     static void (*EventUpdate)();
+
+    // AssetManager
+    // grr::gTexture *Resources::LoadTexture(const std::string &path)
     
 private:
     static void RegisterApi();

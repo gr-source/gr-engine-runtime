@@ -4,10 +4,15 @@
 #include "../core/stb/stb_image.h"
 
 #include "../filesystem/filesystem.h"
+
 #include "../eventManager.h"
+#include "../console.hpp"
 #include "../settings.h"
 
+#include <filesystem>
 #include <future>
+
+u32 Resources::m_processCount = 0;
 
 /***************** Texture *****************/
 std::unordered_map<std::string, std::unique_ptr<Texture>> Resources::m_textures;
@@ -19,7 +24,11 @@ std::unordered_map<std::string, std::unique_ptr<Shader>> Resources::m_shaders;
 std::list<ProcessLoader<Shader>> Resources::m_shaderLoader;
 std::mutex Resources::m_shaderMutex;
 
-u32 Resources::m_processCount = 0;
+
+/***************** Texture *****************/
+std::unordered_map<std::string, std::unique_ptr<grr::gTexture>> Resources::s_listTexture;
+std::list<std::tuple<std::string, grr::gTexture *>> Resources::s_listFromLoader;
+std::mutex Resources::s_textureMutex;
 
 template <>
 Shader* Resources::Load<Shader>(const std::string& path, const std::function<void(Shader*)>& callback) {
@@ -27,6 +36,7 @@ Shader* Resources::Load<Shader>(const std::string& path, const std::function<voi
         Log::error() << "[ Shader ] fragment shader file not found (" << path << ".frag)" << Log::end;
         return nullptr;
     }
+
     if (!Filesystem::exists(path + ".vert")) {
         Log::error() << "[ Shader ] vertex shader file not found (" << path << ".vert)" << Log::end;
         return nullptr;
@@ -75,6 +85,31 @@ Texture* Resources::Load<Texture>(const std::string& path, const std::function<v
 
 void Resources::Initialize() {
     stbi_set_flip_vertically_on_load(true);
+}
+
+grr::gTexture *Resources::LoadTextureL(const std::string &path) {
+    if (!std::filesystem::exists(path)) { 
+        Console::Print(LogInfo::ERROR, "[ Resources::LoadTexture ] Falied to load texture: " + path);
+        return nullptr;
+    }
+
+    auto it = s_listTexture.find(path);
+    if (it != s_listTexture.end()) {
+        Console::Print(LogInfo::WARNING, "The texture has already been loaded.");
+        return (*it).second.get();
+    }
+
+    auto m_texture = new grr::gTexture();
+    if (!m_texture) {
+        Console::Print(LogInfo::ERROR, "[ Resources::LoadTexture ] Falied to create texture.");
+        return nullptr;
+    }
+    
+    {
+        std::lock_guard<std::mutex> lock(s_textureMutex);
+        s_listFromLoader.emplace_back(path, m_texture);
+    }
+    return m_texture;
 }
 
 u32 Resources::getTextureType(int ch) {
@@ -225,10 +260,68 @@ void Resources::LoadShader() {
     }
 }
 
+void Resources::SetupTexture(grr::gTexture *texture, int width, int height, int ch, void *pixels) {
+    Console::Print(LogInfo::INFO, "Texture loading success.");
+
+    grr::TextureFormat format;
+
+    switch (ch) {
+    case 1:
+        // return Texture::eRED;
+    case 2:
+        // return Texture::eRG;
+    case 3:
+        format = grr::TextureFormat_SRGB;
+        break;
+    case 4:
+        format = grr::TextureFormat_SRGBA;
+        break;
+    default:
+        assert(false && "[ Resources::getTextureType ] typo invalido");
+        break;
+    }
+
+    grr::gTexture::PushTexture(texture, width, height, format, pixels);
+
+    stbi_image_free(pixels);
+}
+
+void Resources::LoadTextureF() {
+    std::unique_lock<std::mutex> lock(s_textureMutex);
+    while (!s_listFromLoader.empty()) {
+        auto tuple = s_listFromLoader.front();
+        lock.unlock();
+
+        auto path = std::get<std::string>(tuple);
+        auto texture = std::get<grr::gTexture *>(tuple);
+
+        int width, height, ch;
+        auto pixels = stbi_load(path.c_str(), &width, &height, &ch, 0);
+        if (!pixels) {
+            Console::Print(LogInfo::ERROR, "Failed to load texture: " + path);
+
+            delete texture;
+
+            lock.lock();
+            s_listFromLoader.pop_front();
+            continue;
+        }
+
+        s_listTexture.emplace(path, std::unique_ptr<grr::gTexture>(texture));
+
+        EventManager::addEvent(Resources::SetupTexture, texture, width, height, ch, (void *)pixels);
+
+        lock.lock();
+        s_listFromLoader.pop_front();
+    }
+}
+
 void Resources::OnThread() {
     LoadShader();
 
     LoadTexture();
+
+    LoadTextureF();
 }
 
 const u32 Resources::gettexturecount() {
@@ -269,3 +362,5 @@ const char *Resources::gettextureformatname(u32 format) {
         return "<ERROR>";
     }
 }
+
+

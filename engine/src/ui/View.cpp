@@ -16,9 +16,11 @@ bool View::TextureInputUI(const ImColor& color) {
     return ImGui::InvisibleButton(std::string("#TextureInputUI" + std::to_string(color.Value.x)).c_str(), ImVec2(rectMax.x - rectMin.x, size.y));
 }
 
-void View::PopupChangeColor(const std::string& name, Color& color) {
+const bool View::PopupChangeColor(const std::string& name, Color& color) {
     if (ImGui::BeginPopup(std::string("#PopupChangeColor" + name).c_str())) {
-        ImGui::ColorPicker4(name.c_str(), color.data);
+        auto isOpen = ImGui::ColorPicker4(name.c_str(), color.data);
         ImGui::EndPopup();
+        return isOpen;
     }
+    return false;
 }

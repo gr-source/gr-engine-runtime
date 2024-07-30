@@ -34,8 +34,6 @@ private:
 /* Classe de entidades */
 class Entity {
 public:
-    static std::size_t GetEntityCount();
-
     static void (*Update)();
 
     template <typename T>

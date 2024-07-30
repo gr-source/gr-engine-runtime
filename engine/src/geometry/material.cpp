@@ -10,6 +10,10 @@ const Vector4 &Material::getAlbedo() const {
     return m_albedo;
 }
 
+void Material::setAlbedo(const Vector4 &color) {
+    m_albedo = color;
+}
+
 const float Material::getMetallic() const {
     return m_metallic;
 }
