@@ -36,6 +36,13 @@ public:
     Transform* getRoot();
 
     void setRoot(Transform* transform);
+
+    std::vector<Transform *> &getChildren();
+
+    const bool hasChildren() const;
+
+private:
+    std::vector<Transform *> m_children;
 };
 
 

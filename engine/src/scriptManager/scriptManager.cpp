@@ -99,6 +99,9 @@ void ScriptManager::Shutdown() {
     UNREGISTER_API(CurrentCamera);
 
     UNREGISTER_API(EventUpdate);
+
+    // Scene
+    UNREGISTER_API(Scene::GetGameObject);
     
     if (!s_handle) {
         return;

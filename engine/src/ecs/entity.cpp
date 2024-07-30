@@ -6,13 +6,6 @@
 
 void (*Entity::Update)();
 
-void Entity::RemoveComponent(const std::string &name) {
-    auto it = components.find(name);
-    if (it != components.end()) {
-        components.erase(it);
-    }
-}
-
 GameObject *Entity::getGameObject() {
     return gameObject;
 }

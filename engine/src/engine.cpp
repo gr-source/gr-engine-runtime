@@ -97,6 +97,7 @@ void Engine::GRCursorScrool(float xoffset, float yoffset) {
 }
 
 void Engine::GRDropFunc(const char *path) {
+    m_game->dropFile(path);
 }
 
 std::unique_ptr<Game> Engine::m_game = nullptr;

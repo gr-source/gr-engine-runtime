@@ -1,9 +1,9 @@
 #pragma once
 
+#include <filesystem>
+
 #include "Global.h"
 #include "renderer.h"
-
-#include "filmbox/Filmbox.h"
 
 #include "guizmo/ImGuizmo.h"
 
@@ -11,7 +11,8 @@ class Game {
 public:
     Game();
 
-    #if !IS_GAME
+    void dropFile(const std::filesystem::path &path);
+
     void Gui();
 
     void RenderDocking();
@@ -39,8 +40,6 @@ public:
         NavegationFlags_models  = 1 << 4,
     };
 
-    #endif
-
 private:
     /* Seleciona um objeto no scenes(UI)*/
     GameObject* objectselected;
@@ -48,7 +47,6 @@ private:
     /* Textura do play button */
     Texture* texturePlayGame;
 
-    #if !IS_GAME
     ImGuiIO* m_io;
 
     bool bScriptReloaded;
@@ -75,6 +73,4 @@ private:
     void TextureInfo(Texture*& texture);
 
     void MenuAdd();
-
-    #endif
 };

@@ -42,8 +42,6 @@ public:
     template <typename T>
     const bool hasComponent();
 
-    void RemoveComponent(const std::string &name);
-
     GameObject *getGameObject();
 
     std::unordered_map<std::string, std::shared_ptr<Component>> &getComponents();

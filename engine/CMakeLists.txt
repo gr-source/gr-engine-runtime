@@ -34,17 +34,38 @@ set(scriptManager_hdr
 )
 
 set(core_src
+    src/core/thread.cpp
     src/core/scene.cpp
 )
 
 set(core_hdr
+    src/core/thread.hpp
     src/core/scene.hpp
+)
+
+set(filmbox_src
+    src/core/filmbox/fbxMaterial.cpp
+    src/core/filmbox/fbxVertex.cpp
+    src/core/filmbox/fbxScene.cpp
+    src/core/filmbox/fbxMesh.cpp
+    src/core/filmbox/fbxNode.cpp
+    src/core/filmbox/filmbox.cpp
+)
+
+set(filmbox_hdr
+    src/core/filmbox/fbxMaterial.hpp
+    src/core/filmbox/fbxVertex.hpp
+    src/core/filmbox/fbxScene.hpp
+    src/core/filmbox/fbxMesh.hpp
+    src/core/filmbox/fbxNode.hpp
+    src/core/filmbox/filmbox.hpp
 )
 
 set(engine_src
     ${core_src}
     ${guizmo_src}
     ${octree_src}
+    ${filmbox_src}
     ${simplexNoise_src}
     ${scriptManager_cpp}
 
@@ -94,14 +115,6 @@ set(engine_src
     src/animation/animation.cpp
     src/animation/animationClip.cpp
 
-    src/filmbox/fbxMaterial.cpp
-    src/filmbox/fbxCamera.cpp
-    src/filmbox/fbxLight.cpp
-    src/filmbox/fbxScene.cpp
-    src/filmbox/fbxNode.cpp
-    src/filmbox/fbxMesh.cpp
-    src/filmbox/Filmbox.cpp
-
     src/geometry/material.cpp
     src/geometry/vertex3D.cpp
     src/geometry/model.cpp
@@ -124,6 +137,7 @@ set(engine_hdr
     ${core_hdr}
     ${guizmo_hdr}
     ${octree_hdr}
+    ${filmbox_hdr}
     ${scriptManager_hdr}
 
     src/log.h
@@ -171,14 +185,6 @@ set(engine_hdr
     src/animation/skeleton.h
     src/animation/animation.h
     src/animation/animationClip.h
-
-    src/filmbox/fbxMaterial.h
-    src/filmbox/fbxCamera.h
-    src/filmbox/fbxLight.h
-    src/filmbox/fbxScene.h
-    src/filmbox/fbxNode.h
-    src/filmbox/fbxMesh.h
-    src/filmbox/Filmbox.h
 
     src/geometry/material.h
     src/geometry/vertex3D.h

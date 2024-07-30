@@ -59,3 +59,11 @@ Transform *Transform::getRoot() {
 void Transform::setRoot(Transform *transform) {
     root = transform;
 }
+
+std::vector<Transform *> &Transform::getChildren() {
+    return m_children;
+}
+
+const bool Transform::hasChildren() const {
+    return !m_children.empty();
+}

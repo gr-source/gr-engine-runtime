@@ -38,6 +38,9 @@
 
 #include "scriptManager/scriptManager.hpp"
 
+
+#include "core/filmbox/filmbox.hpp"
+
 #include <filesystem>
 #include <sstream>
 #include <iomanip>
@@ -83,6 +86,8 @@ enum class IconType : int {
 std::unordered_map<IconType, Texture*> iconsUI;
 #endif
 
+std::vector<std::unique_ptr<Filmbox>> m_filmboxList;
+
 Game::Game() : bScriptReloaded(false), bMenuAdd(false), objectselected(nullptr), FPSColor(255, 255, 255, 255) {
     #if !IS_GAME
     m_io = nullptr;
@@ -97,7 +102,58 @@ Game::Game() : bScriptReloaded(false), bMenuAdd(false), objectselected(nullptr),
     #endif
 }
 
-#if !IS_GAME
+#include "core/binary/gHeader.hpp"
+
+void WriteNode(const FbxNode &node) {
+    const std::string path = Filesystem::getpublic(Filesystem::eModel).string() + "/" + node.getName() + ".3d";
+
+    Console::Print(LogInfo::INFO, path + " Writing...");
+
+    std::string name = node.getName();
+
+    // Binary - Header
+    gHeader header{{'G', 'R', 'M', 'D'}, 10};
+    std::strcpy(header.name, name.c_str());
+
+    auto meshes = node.getMeshes();
+
+    std::ofstream os(path, std::ios_base::binary);
+    // File header
+    os.write(reinterpret_cast<const char *>(&header), sizeof(gHeader));
+
+    // Mesh header
+    gMeshHeader meshHeader{meshes.size()};
+    
+    for (const auto &mesh : meshes) {
+    }
+    os.close();
+}
+
+void ReadNode(const FbxNode &node) {
+    WriteNode(node);
+
+    for (const auto& child : node.getChildren()) {
+        ReadNode(child);
+    }
+}
+
+void PostProcess(const FbxScene *scene) {
+    auto& fRootNode = scene->getRootNode();
+    for (const auto& node : fRootNode.getChildren()) {
+        ReadNode(node);
+    }
+}
+
+void Game::dropFile(const std::filesystem::path &path) {
+    if (path.extension() != ".fbx") {
+        return;
+    }
+    Console::Print(LogInfo::INFO, "Loading fbx: " + path.extension().string());
+
+    auto& filmbox = m_filmboxList.emplace_back(std::make_unique<Filmbox>(path.string()));
+    filmbox->setPostProcess(PostProcess);
+}
+
 void Game::Gui() {
     if (Resources::m_processCount != 0) {
         ProgressLoad();
@@ -157,10 +213,10 @@ void Game::RenderScenesUI() {
 }
 
 void Game::ReadHierarchy(Transform *transform) {
-    ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanFullWidth;
+    ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanFullWidth;
 
     auto gameObject = transform->entity->getGameObject();
-    Transform* root = transform->getRoot();
+    // Transform* root = transform->getRoot();
 
     if (objectselected == gameObject) {
         flags |= ImGuiTreeNodeFlags_Selected;
@@ -168,8 +224,8 @@ void Game::ReadHierarchy(Transform *transform) {
         flags &= ~ImGuiTreeNodeFlags_Selected;
     }
 
-    if (!root) {
-        flags |= ImGuiTreeNodeFlags_Leaf;
+    if (transform->hasChildren()) {
+        flags &= ~ImGuiTreeNodeFlags_Leaf;
     }
 
     const bool isOpen = ImGui::TreeNodeEx(gameObject->getName().c_str(), flags);
@@ -178,10 +234,9 @@ void Game::ReadHierarchy(Transform *transform) {
     }
 
     if (isOpen) {
-        if (root) {
-            ReadHierarchy(root);
+        for (auto& child : transform->getChildren()) {
+            ReadHierarchy(child);
         }
-
         ImGui::TreePop();
     }
 }
@@ -216,18 +271,18 @@ void Game::RenderViewportUI() {
 
     ImGui::Image(reinterpret_cast<ImTextureID>(m_imguibuffer.gettexture()), ImGui::GetContentRegionAvail(), ImVec2(0, 1), ImVec2(1, 0));
 
-    //
     if (objectselected != nullptr) {
-        if (ImGui::IsKeyReleased(ImGuiKey_T)) {
+        ImGuiIO& io = ImGui::GetIO();
+        if (io.KeyCtrl && ImGui::IsKeyReleased(ImGuiKey_T)) {
             m_guizmoOperation = ImGuizmo::TRANSLATE;
         }
-        if (ImGui::IsKeyReleased(ImGuiKey_R)) {
+        if (io.KeyCtrl && ImGui::IsKeyReleased(ImGuiKey_R)) {
             m_guizmoOperation = ImGuizmo::ROTATE;
         }
-        if (ImGui::IsKeyReleased(ImGuiKey_S)) {
+        if (io.KeyCtrl && ImGui::IsKeyReleased(ImGuiKey_S)) {
             m_guizmoOperation = ImGuizmo::SCALE;
         }
-        if (ImGui::IsKeyReleased(ImGuiKey_Space)) {
+        if (io.KeyCtrl && ImGui::IsKeyReleased(ImGuiKey_Space)) {
             if (m_guizmoManipulate == ImGuizmo::WORLD) {
                 m_guizmoManipulate = ImGuizmo::LOCAL;
             } else if (m_guizmoManipulate == ImGuizmo::LOCAL) {
@@ -848,4 +903,3 @@ void Game::ProgressLoad() {
     ImGui::End();
 }
 
-#endif
