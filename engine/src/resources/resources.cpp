@@ -24,10 +24,14 @@ std::unordered_map<std::string, std::unique_ptr<Shader>> Resources::m_shaders;
 std::list<ProcessLoader<Shader>> Resources::m_shaderLoader;
 std::mutex Resources::m_shaderMutex;
 
+/***************** Shader *****************/
+std::unordered_map<std::string, std::unique_ptr<grr::gShader>> Resources::s_shaderList;
+std::list<std::tuple<std::string, grr::gShader *>> Resources::s_shaderFromLoader;
+std::mutex Resources::s_shaderMutex;
 
 /***************** Texture *****************/
-std::unordered_map<std::string, std::unique_ptr<grr::gTexture>> Resources::s_listTexture;
-std::list<std::tuple<std::string, grr::gTexture *>> Resources::s_listFromLoader;
+std::unordered_map<std::string, std::unique_ptr<grr::gTexture>> Resources::s_textureList;
+std::list<std::tuple<std::string, grr::gTexture *>> Resources::s_textureFromLoader;
 std::mutex Resources::s_textureMutex;
 
 template <>
@@ -93,8 +97,8 @@ grr::gTexture *Resources::LoadTextureL(const std::string &path) {
         return nullptr;
     }
 
-    auto it = s_listTexture.find(path);
-    if (it != s_listTexture.end()) {
+    auto it = s_textureList.find(path);
+    if (it != s_textureList.end()) {
         Console::Print(LogInfo::WARNING, "The texture has already been loaded.");
         return (*it).second.get();
     }
@@ -107,9 +111,38 @@ grr::gTexture *Resources::LoadTextureL(const std::string &path) {
     
     {
         std::lock_guard<std::mutex> lock(s_textureMutex);
-        s_listFromLoader.emplace_back(path, m_texture);
+        s_textureFromLoader.emplace_back(path, m_texture);
     }
     return m_texture;
+}
+
+grr::gShader *Resources::LoadShaderL(const std::string &path) {
+    if (!Filesystem::exists(path + ".frag")) {
+        Console::Print(LogInfo::ERROR, "File do not found: " + path + ".frag");
+        return nullptr;
+    }
+
+    if (!Filesystem::exists(path + ".vert")) {
+        Console::Print(LogInfo::ERROR, "File do not found: " + path + ".vert");
+        return nullptr;
+    }
+
+    auto it = s_shaderList.find(path);
+    if (it != s_shaderList.end()) {
+        return (*it).second.get();
+    }
+
+    grr::gShader *shader = new grr::gShader();
+    if (!shader) {
+        Console::Print(LogInfo::ERROR, "Falied to create shader.");
+        return nullptr;
+    }
+
+    {
+        std::lock_guard<std::mutex> lock(s_shaderMutex);
+        s_shaderFromLoader.emplace_back(path, shader);
+    }
+    return shader;
 }
 
 u32 Resources::getTextureType(int ch) {
@@ -124,6 +157,7 @@ u32 Resources::getTextureType(int ch) {
         return Texture::eRGBA;
     default:
         assert(false && "[ Resources::getTextureType ] typo invalido");
+        break;
     }
 }
 
@@ -288,8 +322,8 @@ void Resources::SetupTexture(grr::gTexture *texture, int width, int height, int 
 
 void Resources::LoadTextureF() {
     std::unique_lock<std::mutex> lock(s_textureMutex);
-    while (!s_listFromLoader.empty()) {
-        auto tuple = s_listFromLoader.front();
+    while (!s_textureFromLoader.empty()) {
+        auto tuple = s_textureFromLoader.front();
         lock.unlock();
 
         auto path = std::get<std::string>(tuple);
@@ -303,16 +337,75 @@ void Resources::LoadTextureF() {
             delete texture;
 
             lock.lock();
-            s_listFromLoader.pop_front();
+            s_textureFromLoader.pop_front();
             continue;
         }
 
-        s_listTexture.emplace(path, std::unique_ptr<grr::gTexture>(texture));
+        s_textureList.emplace(path, std::unique_ptr<grr::gTexture>(texture));
 
         EventManager::addEvent(Resources::SetupTexture, texture, width, height, ch, (void *)pixels);
 
         lock.lock();
-        s_listFromLoader.pop_front();
+        s_textureFromLoader.pop_front();
+    }
+}
+
+void Resources::SetupShader(grr::gShader *shader, const std::string &frag, const std::string &vert) {
+    Console::Print(LogInfo::INFO, "Shader loadedd sucessfull.");
+
+    const char *fShader = frag.c_str();
+    const char *vShader = vert.c_str();
+
+    grr::gShader::Create(shader, &fShader, &vShader);
+}
+
+void Resources::LoadShaderF() {
+    std::unique_lock<std::mutex> lock(s_shaderMutex);
+    while (!s_shaderFromLoader.empty()) {
+        auto tuple = s_shaderFromLoader.front();
+        lock.unlock();
+
+        // Processing shader
+        auto path = std::get<std::string>(tuple);
+        auto shader = std::get<grr::gShader *>(tuple);
+
+        std::string frag = path + ".frag";
+        std::string vert = path + ".vert";
+
+
+        // Loading Fragment shader
+        Console::Print(LogInfo::WARNING, "Loading FragmentShader: " + frag + " - " + vert);
+
+        auto fragSource = Filesystem::getfilecontent(frag);
+        if (fragSource.empty()) {
+            Console::Print(LogInfo::ERROR, "Falied to load: " + frag);
+            delete shader;
+
+            lock.lock();
+            s_shaderFromLoader.pop_front();
+            continue;
+        }
+
+        // Loading vertex shader
+
+        Console::Print(LogInfo::WARNING, "Loading VertexShader: " + vert);
+        auto vertSource = Filesystem::getfilecontent(vert);
+        if (vertSource.empty()) {
+            Console::Print(LogInfo::ERROR, "Falied to load: " + vert);
+            delete shader;
+
+            lock.lock();
+            s_shaderFromLoader.pop_front();
+            continue;
+        }
+
+        // Setup Shader
+        s_shaderList.emplace(path, std::unique_ptr<grr::gShader>(shader));
+
+        EventManager::addEvent(Resources::SetupShader, shader, fragSource, vertSource);
+
+        lock.lock();
+        s_shaderFromLoader.pop_front();
     }
 }
 
@@ -320,6 +413,9 @@ void Resources::OnThread() {
     LoadShader();
 
     LoadTexture();
+
+    // Script Loader
+    LoadShaderF();
 
     LoadTextureF();
 }
@@ -363,4 +459,10 @@ const char *Resources::gettextureformatname(u32 format) {
     }
 }
 
+const grm::size Resources::GetTextureCount() {
+    return s_textureList.size();
+}
 
+const grm::size Resources::GetShaderCount() {
+    return s_shaderList.size();
+}

@@ -7,22 +7,20 @@
 
 class ImGuiRender {
 public:
+    static void Initialize(const char* openglVersion);
+    
+    static void Shutdown();
 
-    ImGuiRender();
+    static void PushStyle(ImGuiStyle& dst);
 
-    ImGuiRender(const char* openglVersion);
+    static void AddFont(const char* path);
 
-    void PushStyle(ImGuiStyle& dst);
+    static void Begin();
 
-    void addFont(const char* path);
+    static void End();
 
-    void Begin();
-
-    void End();
-
-    ~ImGuiRender();
 protected:
-    ImGuiIO* io;
+    static ImGuiIO* s_io;
 };
 
 

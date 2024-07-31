@@ -4,15 +4,15 @@
 
 #include "../Global.h"
 
-namespace View {
-    struct Item {
-        const char* name;
-        ImVec4 color;
+class View {
+public:
+    static const bool TextureInputUI(const ImColor& color);
 
-        Item(const char* name, const ImVec4& color) : name(name), color(color) {}
-    };
+    static const bool PopupChangeColor(const std::string& name, Color& color);
+};
 
-    bool TextureInputUI(const ImColor& color);
 
-    const bool PopupChangeColor(const std::string& name, Color& color);
-}
+
+
+
+

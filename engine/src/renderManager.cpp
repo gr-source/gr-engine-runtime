@@ -1,14 +1,14 @@
 #include "renderManager.h"
 
-#include "gameObject.h"
 #include "console.hpp"
+
+#include "ecs/gameObject.h"
 
 #include "component/meshRender.hpp"
 #include "component/meshFilter.hpp"
 #include "component/transform.hpp"
-#include "component/light.hpp"
-
 #include "component/camera.hpp"
+#include "component/light.hpp"
 
 #include "resources/resources.h"
 #include "resources/shader.h"
@@ -35,7 +35,7 @@ void RenderManager::Initialize() {
     const char *fragment = source.first.c_str();
     const char *vertex = source.second.c_str();
 
-    Console::Print(LogInfo::INFO, "Loading shader...");
+    Console::Print(LogInfo::INFO, "Render loading shader...");
 
     m_shader = grr::gShader::Create(&fragment, &vertex);
     if (!m_shader) {
@@ -86,7 +86,7 @@ void RenderManager::Initialize() {
 
 void RenderManager::Process() {
     auto& models = MeshRender::GetGameObjectFromRender();
-    if (models.empty() && !m_shader) {
+    if (models.empty() || !m_shader || !m_shader->isValid()) {
         return;
     }
 
@@ -117,7 +117,7 @@ void RenderManager::Process() {
 }
 
 void RenderManager::Renderer() {
-    if (!m_shader || s_objects.empty() || !m_shader || !m_shader->isValid()) {
+    if (!m_shader || s_objects.empty() || !m_shader->isValid()) {
         return;
     }
 
@@ -159,7 +159,7 @@ void RenderManager::Renderer() {
 
 void RenderManager::Shutdown() {
     if (m_shader) {
-        m_shader->destroy();
+        delete m_shader;
     }
 
     s_objects.clear();

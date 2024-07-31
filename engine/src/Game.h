@@ -7,31 +7,33 @@
 
 #include "guizmo/ImGuizmo.h"
 
+#include <gr-render/gTexture.h>
+
 class Game {
 public:
-    Game();
+    static void Initialize();
 
-    void dropFile(const std::filesystem::path &path);
+    static void DropFile(const std::filesystem::path &path);
 
-    void Gui();
+    static void RenderUI();
 
-    void RenderDocking();
+    static void RenderDocking();
 
-    void RenderScenesUI();
+    static void RenderScenesUI();
 
-    void ReadHierarchy(Transform* transform);
+    static void ReadHierarchy(Transform* transform);
 
-    void RenderViewportUI();
+    static void RenderViewportUI();
 
-    void RenderFilesUI();
+    static void RenderFilesUI();
 
-    void RenderConsoleUI();
+    static void RenderConsoleUI();
 
-    void RenderPropertiUI();
+    static void RenderPropertiUI();
 
-    void loadReources();
+    static void loadReources();
 
-    void ProgressLoad();
+    static void ProgressLoad();
 
     enum NavegationFlags : u8 {
         NavegationFlags_default = 1 << 1,
@@ -41,36 +43,39 @@ public:
     };
 
 private:
+    static void OnPropertyTransform(Transform* transform);
+    
+    static void OnPropertyAnimator(Animator* animator);
+
+    static void OnPropertyMeshRender(MeshRender* meshRender);
+
+    // static void OnPropertyCameraComponent(CameraComponent* cameraComponent);
+
+    static void OnPropertyLightComponent(Light *light);
+
+    // static void OnPropertyChunkController(ChunkController* chunkController);
+
+    static void TextureInfo(Texture*& texture);
+
+    static void MenuAdd();
+
     /* Seleciona um objeto no scenes(UI)*/
-    GameObject* objectselected;
+    static GameObject *s_objectSelected;
     
     /* Textura do play button */
-    Texture* texturePlayGame;
+    static grr::gTexture *s_texturePlayGame;
 
-    ImGuiIO* m_io;
+    static ImGuiIO* s_io;
 
-    bool bScriptReloaded;
-    bool bMenuAdd;
+    static bool bScriptReloaded;
 
-    ImVec4 FPSColor;
+    static bool bMenuAdd;
 
-    ImGuizmo::OPERATION m_guizmoOperation;
+    static ImVec4 FPSColor;
 
-    ImGuizmo::MODE m_guizmoManipulate;
+    static ImGuizmo::OPERATION m_guizmoOperation;
 
-    void OnPropertyTransform(Transform* transform);
-    
-    void OnPropertyAnimator(Animator* animator);
+    static ImGuizmo::MODE m_guizmoManipulate;
 
-    void OnPropertyMeshRender(MeshRender* meshRender);
-
-    // void OnPropertyCameraComponent(CameraComponent* cameraComponent);
-
-    void OnPropertyLightComponent(Light *light);
-
-    // void OnPropertyChunkController(ChunkController* chunkController);
-
-    void TextureInfo(Texture*& texture);
-
-    void MenuAdd();
+    static u32 s_maxProgress;
 };

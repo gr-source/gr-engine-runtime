@@ -7,16 +7,15 @@
 #include "settings.h"
 #include "renderer.h"
 #include "console.hpp"
-#include "gameObject.h"
 #include "renderManager.h"
 #include "editorController.h"
 
+#include "core/filmbox/filmbox.hpp"
 #include "core/scene.hpp"
 
 #include "framebuffer/shadowbuffer.h"
 #include "framebuffer/screenbuffer.h"
 #include "framebuffer/imguibuffer.h"
-#include "framebuffer/thumbnails.h"
 
 #include "resources/resources.h"
 
@@ -29,17 +28,13 @@
 #include "guizmo/ImGuizmo.h"
 
 #include "ui/ImGuiRender.h"
+#include "ui/View.h"
 
 #include "filesystem/filesystem.h"
 
 #include "animation/skeleton.h"
 
-#include "ui/View.h"
-
 #include "scriptManager/scriptManager.hpp"
-
-
-#include "core/filmbox/filmbox.hpp"
 
 #include <filesystem>
 #include <sstream>
@@ -64,8 +59,7 @@ const std::string getfilesize(std::size_t sz) {
     return oss.str();
 }
 
-#if !IS_GAME
-enum class IconType : int {
+enum IconType {
     ICON_FOLDER       = 0,
     ICON_FILE         = 1,
     ICON_BACK_FILE    = 2,
@@ -83,28 +77,42 @@ enum class IconType : int {
 	ICON_EDIT         = 14
 };
 
-std::unordered_map<IconType, Texture*> iconsUI;
-#endif
+std::unordered_map<IconType, grr::gTexture *> iconsUI;
 
 std::vector<std::unique_ptr<Filmbox>> m_filmboxList;
 
-Game::Game() : bScriptReloaded(false), bMenuAdd(false), objectselected(nullptr), FPSColor(255, 255, 255, 255) {
-    #if !IS_GAME
-    m_io = nullptr;
-    m_guizmoOperation = ImGuizmo::TRANSLATE;
-    m_guizmoManipulate = ImGuizmo::WORLD;
+/* Seleciona um objeto no scenes(UI)*/
+GameObject *Game::s_objectSelected = nullptr;
 
-    m_io = &ImGui::GetIO();
+/* Textura do play button */
+grr::gTexture *Game::s_texturePlayGame = nullptr;
+
+ImGuiIO* Game::s_io = nullptr;
+
+bool Game::bScriptReloaded = false;
+
+bool Game::bMenuAdd = false;
+
+ImVec4 Game::FPSColor = {255, 255, 255, 255};
+
+ImGuizmo::OPERATION Game::m_guizmoOperation = ImGuizmo::TRANSLATE;
+
+ImGuizmo::MODE Game::m_guizmoManipulate = ImGuizmo::WORLD;
+
+u32 Game::s_maxProgress = 0;
+
+void Game::Initialize() {
+    s_io = &ImGui::GetIO();
 
     loadReources();
 
     Settings::IsGameRunning = false;
-    #endif
 }
 
 #include "core/binary/gHeader.hpp"
 
 void WriteNode(const FbxNode &node) {
+    /*
     const std::string path = Filesystem::getpublic(Filesystem::eModel).string() + "/" + node.getName() + ".3d";
 
     Console::Print(LogInfo::INFO, path + " Writing...");
@@ -125,8 +133,10 @@ void WriteNode(const FbxNode &node) {
     gMeshHeader meshHeader{meshes.size()};
     
     for (const auto &mesh : meshes) {
+
     }
     os.close();
+    */
 }
 
 void ReadNode(const FbxNode &node) {
@@ -144,7 +154,7 @@ void PostProcess(const FbxScene *scene) {
     }
 }
 
-void Game::dropFile(const std::filesystem::path &path) {
+void Game::DropFile(const std::filesystem::path &path) {
     if (path.extension() != ".fbx") {
         return;
     }
@@ -154,7 +164,7 @@ void Game::dropFile(const std::filesystem::path &path) {
     filmbox->setPostProcess(PostProcess);
 }
 
-void Game::Gui() {
+void Game::RenderUI() {
     if (Resources::m_processCount != 0) {
         ProgressLoad();
         return;
@@ -176,11 +186,10 @@ void Game::RenderDocking() {
     ImGui::SetNextWindowPos(viewport->WorkPos);
     ImGui::SetNextWindowSize(viewport->WorkSize);
     ImGui::SetNextWindowViewport(viewport->ID);
-    ImGuiIO& io = ImGui::GetIO();
 
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
     ImGui::Begin("GR - GameEngine 3D", nullptr, ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoNavFocus | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoTitleBar);
-    if (io.ConfigFlags & ImGuiConfigFlags_DockingEnable) {
+    if (s_io->ConfigFlags & ImGuiConfigFlags_DockingEnable) {
         ImGui::DockSpace(ImGui::GetID("##RenderDocking"), ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_PassthruCentralNode);
     }
     ImGui::End();
@@ -201,7 +210,7 @@ void Game::RenderScenesUI() {
         ImGui::TreePop();
     }
 
-    if (ImGui::IsKeyReleased(ImGuiKey_A) && m_io->KeyCtrl) {
+    if (ImGui::IsKeyReleased(ImGuiKey_A) && s_io->KeyCtrl) {
         bMenuAdd = !bMenuAdd;
     }
     
@@ -218,7 +227,7 @@ void Game::ReadHierarchy(Transform *transform) {
     auto gameObject = transform->entity->getGameObject();
     // Transform* root = transform->getRoot();
 
-    if (objectselected == gameObject) {
+    if (s_objectSelected == gameObject) {
         flags |= ImGuiTreeNodeFlags_Selected;
     } else {
         flags &= ~ImGuiTreeNodeFlags_Selected;
@@ -230,7 +239,7 @@ void Game::ReadHierarchy(Transform *transform) {
 
     const bool isOpen = ImGui::TreeNodeEx(gameObject->getName().c_str(), flags);
     if (ImGui::IsItemClicked(ImGuiMouseButton_Middle)) {
-        objectselected = gameObject;
+        s_objectSelected = gameObject;
     }
 
     if (isOpen) {
@@ -260,8 +269,9 @@ void Game::RenderViewportUI() {
         Settings::ViewportSize = {static_cast<int>(curSize.x), static_cast<int>(curSize.y)};
 
         auto camera = Camera::Main();
-        if (camera)
+        if (camera) {
             camera->setAspectRatio(curSize.x / curSize.y);
+        }
 
         m_screenBuffer.resize({curSize.x, curSize.y});
         
@@ -271,18 +281,17 @@ void Game::RenderViewportUI() {
 
     ImGui::Image(reinterpret_cast<ImTextureID>(m_imguibuffer.gettexture()), ImGui::GetContentRegionAvail(), ImVec2(0, 1), ImVec2(1, 0));
 
-    if (objectselected != nullptr) {
-        ImGuiIO& io = ImGui::GetIO();
-        if (io.KeyCtrl && ImGui::IsKeyReleased(ImGuiKey_T)) {
+    if (s_objectSelected != nullptr) {
+        if (s_io->KeyCtrl && ImGui::IsKeyReleased(ImGuiKey_T)) {
             m_guizmoOperation = ImGuizmo::TRANSLATE;
         }
-        if (io.KeyCtrl && ImGui::IsKeyReleased(ImGuiKey_R)) {
+        if (s_io->KeyCtrl && ImGui::IsKeyReleased(ImGuiKey_R)) {
             m_guizmoOperation = ImGuizmo::ROTATE;
         }
-        if (io.KeyCtrl && ImGui::IsKeyReleased(ImGuiKey_S)) {
+        if (s_io->KeyCtrl && ImGui::IsKeyReleased(ImGuiKey_S)) {
             m_guizmoOperation = ImGuizmo::SCALE;
         }
-        if (io.KeyCtrl && ImGui::IsKeyReleased(ImGuiKey_Space)) {
+        if (s_io->KeyCtrl && ImGui::IsKeyReleased(ImGuiKey_Space)) {
             if (m_guizmoManipulate == ImGuizmo::WORLD) {
                 m_guizmoManipulate = ImGuizmo::LOCAL;
             } else if (m_guizmoManipulate == ImGuizmo::LOCAL) {
@@ -290,7 +299,7 @@ void Game::RenderViewportUI() {
             }
         }
         
-        Transform& transform = objectselected->getTransform();
+        Transform& transform = s_objectSelected->getTransform();
 
         Matrix4x4 model = transform.getglobalmatrix();
 
@@ -319,19 +328,19 @@ void Game::RenderViewportUI() {
 
     ImGui::SetCursorPos(ImVec2(ImGui::GetContentRegionAvail().x / 2 - wSize.x, 32));
 
-    if (ImGui::ImageButton(reinterpret_cast<ImTextureID>(texturePlayGame->getID()), ImVec2(16, 16))) {
+    if (ImGui::ImageButton(reinterpret_cast<ImTextureID>(s_texturePlayGame->getID()), ImVec2(16, 16))) {
         Settings::IsGameRunning =! Settings::IsGameRunning;
 
         if (Settings::IsGameRunning) {
-            texturePlayGame = iconsUI[IconType::ICON_STOP_GAME];
+            s_texturePlayGame = iconsUI[IconType::ICON_STOP_GAME];
 
             ScriptManager::Shutdown();
 
             RenderManager::Shutdown();
 
-            objectselected = nullptr;
+            s_objectSelected = nullptr;
         } else {
-            texturePlayGame = iconsUI[IconType::ICON_PLAY_GAME];
+            s_texturePlayGame = iconsUI[IconType::ICON_PLAY_GAME];
 
             ScriptManager::Initialzie();
 
@@ -348,19 +357,33 @@ void Game::RenderFilesUI() {
     static std::filesystem::path root = Filesystem::getpublic(Filesystem::eResource).string();
     ImGui::Columns(5, "#Collums1", false);
 
-    if (ImGui::Button("Back") && root.has_parent_path()) {
+    grr::gTexture *gtCurrentTexture = iconsUI[ICON_BACK_FILE];
+
+    if (ImGui::ImageButton(reinterpret_cast<ImTextureID>(gtCurrentTexture->getID()), ImVec2(32, 32), ImVec2(0, 1), ImVec2(1, 0)) && root.has_parent_path()) {
         root = root.parent_path();
     }
-    for (auto file : std::filesystem::directory_iterator(root)) {
+
+    for (auto& file : std::filesystem::directory_iterator(root)) {
         ImGui::NextColumn();
 
+        auto &path = file.path();
+
+        ImGui::PushID(path.filename().c_str());
+
+        gtCurrentTexture = iconsUI[ICON_FILE];
         if (file.is_directory()) {
-            if (ImGui::Button(file.path().filename().c_str())) {
-                root = file.path();
-            }
-            continue;
+            gtCurrentTexture = iconsUI[ICON_FOLDER];
         }
-        ImGui::Text("%s", file.path().filename().c_str());
+
+        if (ImGui::ImageButton(reinterpret_cast<ImTextureID>(gtCurrentTexture->getID()), ImVec2(32, 32), ImVec2(0, 1), ImVec2(1, 0))) {
+            if (file.is_directory()) {
+                root = path;
+            }
+        }
+
+        ImGui::Text("%s", path.filename().c_str());
+
+        ImGui::PopID();
     }
     ImGui::Columns(1);
 }
@@ -427,19 +450,17 @@ void Game::RenderConsoleUI() {
 }
 
 void Game::RenderPropertiUI() {
-    static ImGuiIO& io = ImGui::GetIO();
-
     ImGui::Begin("Propriedades", nullptr, ImGuiWindowFlags_NoResize);
 
     if (ImGui::BeginTabBar("##propertimenubar")) {
         if (ImGui::BeginTabItem("GameObject", nullptr)) {
 
-            if (objectselected != nullptr) {
+            if (s_objectSelected != nullptr) {
                 ImGui::Image(reinterpret_cast<ImTextureID>(iconsUI[IconType::ICON_GAMEOBJECT]->getID()), ImVec2(16, 16));
 
                 ImGui::SameLine();
 
-                ImGui::Text("[ %s - %s ]", objectselected->getName().c_str(), objectselected->getTag().c_str());
+                ImGui::Text("[ %s - %s ]", s_objectSelected->getName().c_str(), s_objectSelected->getTag().c_str());
 
                 /*
                 auto entity = objectselected->getEntity();
@@ -461,9 +482,9 @@ void Game::RenderPropertiUI() {
                 }
                 */
 
-                objectselected->RenderProperty<Transform>(&Game::OnPropertyTransform, this);
-                objectselected->RenderProperty<MeshRender>(&Game::OnPropertyMeshRender, this);
-                objectselected->RenderProperty<Light>(&Game::OnPropertyLightComponent, this);
+                s_objectSelected->RenderProperty<Transform>(&Game::OnPropertyTransform);
+                s_objectSelected->RenderProperty<MeshRender>(&Game::OnPropertyMeshRender);
+                s_objectSelected->RenderProperty<Light>(&Game::OnPropertyLightComponent);
                 /*
                 objectselected->RenderProperty<CameraComponent>(&Game::OnPropertyCameraComponent, this);
                 */
@@ -479,6 +500,7 @@ void Game::RenderPropertiUI() {
         ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
         if (ImGui::BeginTabItem("Estatística", nullptr)) {
             ImGui::SeparatorText("Scripts");
+            
             if (ScriptManager::GetEntityCount)
                 ImGui::Text("Entidades: %ld", ScriptManager::GetEntityCount());
             ImGui::Text("Memoria: %s", getfilesize(Memory::totalMemoryUsage).c_str());
@@ -486,12 +508,11 @@ void Game::RenderPropertiUI() {
             ImGui::SeparatorText("Cena");
             ImGui::Text("Vertices: %d | %s", gameStatics.vertices, getfilesize(gameStatics.vertices * sizeof(Vertex3D)).c_str());
             ImGui::Text("Indice: %d | %s", gameStatics.indices, getfilesize(gameStatics.indices * sizeof(u32)).c_str());
-            // ImGui::Text("Eventos: %d", EventManager::getcount());
             ImGui::Text("Triangulos: %.2f", (gameStatics.indices / 3.0f));
 
             ImGui::SeparatorText("Resources");
-            ImGui::Text("Textures: %d", Resources::gettexturecount());
-            ImGui::Text("Shaders: %d", Resources::getshadercount());
+            ImGui::Text("Textures: %ld", Resources::GetTextureCount());
+            ImGui::Text("Shaders: %ld", Resources::GetShaderCount());
 
             ImGui::SeparatorText("Threads");
             ImGui::Text("Update:  %fms  | FPS: %.2f",  gameStatics.updateMs,  (1.0f / gameStatics.updateMs));
@@ -854,31 +875,29 @@ void Game::MenuAdd() {
 }
 
 void Game::loadReources() {
-    iconsUI.emplace(IconType::ICON_FILE,        Resources::Load<Texture>(Filesystem::getpublic(Filesystem::eIcon).string() + "/icons8-file-30.png"));
-    iconsUI.emplace(IconType::ICON_FOLDER,      Resources::Load<Texture>(Filesystem::getpublic(Filesystem::eIcon).string() + "/icons8-folder-50.png"));
-    iconsUI.emplace(IconType::ICON_BACK_FILE,   Resources::Load<Texture>(Filesystem::getpublic(Filesystem::eIcon).string() + "/icons8-go-back-50.png"));
-    iconsUI.emplace(IconType::ICON_GAMEOBJECT,  Resources::Load<Texture>(Filesystem::getpublic(Filesystem::eIcon).string() + "/icons8-3d-object-50.png"));
-    iconsUI.emplace(IconType::ICON_PENCIL,      Resources::Load<Texture>(Filesystem::getpublic(Filesystem::eIcon).string() + "/icons8-lápis-30.png"));
-    iconsUI.emplace(IconType::ICON_LIGHT,       Resources::Load<Texture>(Filesystem::getpublic(Filesystem::eIcon).string() + "/icons8-lâmpada-globular-64.png"));
-    iconsUI.emplace(IconType::ICON_TEXTURE,     Resources::Load<Texture>(Filesystem::getpublic(Filesystem::eIcon).string() + "/icons8-textura-de-renderização-32.png"));
-    iconsUI.emplace(IconType::ICON_PNG,         Resources::Load<Texture>(Filesystem::getpublic(Filesystem::eIcon).string() + "/icons8-png-24.png"));
-    iconsUI.emplace(IconType::ICON_PLAY_GAME,   Resources::Load<Texture>(Filesystem::getpublic(Filesystem::eIcon).string() + "/icons8-reproduzir-30.png"));
-    iconsUI.emplace(IconType::ICON_STOP_GAME,   Resources::Load<Texture>(Filesystem::getpublic(Filesystem::eIcon).string() + "/icons8-parar-50.png"));
-    iconsUI.emplace(IconType::ICON_BIN,         Resources::Load<Texture>(Filesystem::getpublic(Filesystem::eIcon).string() + "/icons8-resíduos-50.png"));
-    iconsUI.emplace(IconType::ICON_IMPORT,      Resources::Load<Texture>(Filesystem::getpublic(Filesystem::eIcon).string() + "/icons8-importar-50.png"));
-    iconsUI.emplace(IconType::ICON_ASCENDENTE,  Resources::Load<Texture>(Filesystem::getpublic(Filesystem::eIcon).string() + "/icons8-ordenar-para-a-direita-50.png"));
-    iconsUI.emplace(IconType::ICON_DESCENDENTE, Resources::Load<Texture>(Filesystem::getpublic(Filesystem::eIcon).string() + "/icons8-ordem-descendente-50.png"));
-    iconsUI.emplace(IconType::ICON_EDIT,        Resources::Load<Texture>(Filesystem::getpublic(Filesystem::eIcon).string() + "/icons8-editar-24.png"));
+    iconsUI.emplace(IconType::ICON_FILE,        Resources::LoadTextureL(Filesystem::getpublic(Filesystem::eIcon).string() + "/icons8-file-30.png"));
+    iconsUI.emplace(IconType::ICON_FOLDER,      Resources::LoadTextureL(Filesystem::getpublic(Filesystem::eIcon).string() + "/icons8-folder-50.png"));
+    iconsUI.emplace(IconType::ICON_BACK_FILE,   Resources::LoadTextureL(Filesystem::getpublic(Filesystem::eIcon).string() + "/icons8-go-back-50.png"));
+    iconsUI.emplace(IconType::ICON_GAMEOBJECT,  Resources::LoadTextureL(Filesystem::getpublic(Filesystem::eIcon).string() + "/icons8-3d-object-50.png"));
+    iconsUI.emplace(IconType::ICON_PENCIL,      Resources::LoadTextureL(Filesystem::getpublic(Filesystem::eIcon).string() + "/icons8-lápis-30.png"));
+    iconsUI.emplace(IconType::ICON_LIGHT,       Resources::LoadTextureL(Filesystem::getpublic(Filesystem::eIcon).string() + "/icons8-lâmpada-globular-64.png"));
+    iconsUI.emplace(IconType::ICON_TEXTURE,     Resources::LoadTextureL(Filesystem::getpublic(Filesystem::eIcon).string() + "/icons8-textura-de-renderização-32.png"));
+    iconsUI.emplace(IconType::ICON_PNG,         Resources::LoadTextureL(Filesystem::getpublic(Filesystem::eIcon).string() + "/icons8-png-24.png"));
+    iconsUI.emplace(IconType::ICON_PLAY_GAME,   Resources::LoadTextureL(Filesystem::getpublic(Filesystem::eIcon).string() + "/icons8-reproduzir-30.png"));
+    iconsUI.emplace(IconType::ICON_STOP_GAME,   Resources::LoadTextureL(Filesystem::getpublic(Filesystem::eIcon).string() + "/icons8-parar-50.png"));
+    iconsUI.emplace(IconType::ICON_BIN,         Resources::LoadTextureL(Filesystem::getpublic(Filesystem::eIcon).string() + "/icons8-resíduos-50.png"));
+    iconsUI.emplace(IconType::ICON_IMPORT,      Resources::LoadTextureL(Filesystem::getpublic(Filesystem::eIcon).string() + "/icons8-importar-50.png"));
+    iconsUI.emplace(IconType::ICON_ASCENDENTE,  Resources::LoadTextureL(Filesystem::getpublic(Filesystem::eIcon).string() + "/icons8-ordenar-para-a-direita-50.png"));
+    iconsUI.emplace(IconType::ICON_DESCENDENTE, Resources::LoadTextureL(Filesystem::getpublic(Filesystem::eIcon).string() + "/icons8-ordem-descendente-50.png"));
+    iconsUI.emplace(IconType::ICON_EDIT,        Resources::LoadTextureL(Filesystem::getpublic(Filesystem::eIcon).string() + "/icons8-editar-24.png"));
 
-    texturePlayGame = iconsUI[IconType::ICON_PLAY_GAME];
+    s_texturePlayGame = iconsUI[IconType::ICON_PLAY_GAME];
 }
 
 void Game::ProgressLoad() {
-    ImGuiIO& io = ImGui::GetIO();
-
     const ImVec2 windowSize = {300, 200};
 
-    ImVec2 displaySize = io.DisplaySize;
+    ImVec2 displaySize = s_io->DisplaySize;
     displaySize.x = (displaySize.x / 2.0f) - windowSize.x / 2.0f;
     displaySize.y = (displaySize.y / 2.0f) - windowSize.y / 2.0f;
 
@@ -887,18 +906,21 @@ void Game::ProgressLoad() {
     ImGui::Begin("GameRender...", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove| ImGuiWindowFlags_NoScrollWithMouse);
     ImGui::Text("Carregando UI");
 
-    static u32 maxProgress = Resources::m_processCount;
-    u32 current = Resources::m_processCount;
-    if (current > maxProgress) {
-        maxProgress = current;
+    if (!s_maxProgress) {
+        s_maxProgress = Resources::m_processCount;
     }
 
-    ImGui::ProgressBar(1.0f - (float)current / maxProgress, ImVec2(windowSize.x, 16));
+    u32 current = Resources::m_processCount;
+    if (current > s_maxProgress) {
+        s_maxProgress = current;
+    }
 
-    ImGui::Text("%d/%d", current, maxProgress);
+    ImGui::ProgressBar(1.0f - (float)current / s_maxProgress, ImVec2(windowSize.x, 16));
+
+    ImGui::Text("%d/%d", current, s_maxProgress);
 
     if (current <= 1) {
-        maxProgress = 0;
+        s_maxProgress = 0;
     }
     ImGui::End();
 }

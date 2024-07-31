@@ -12,7 +12,6 @@
 #include "framebuffer/skyboxbuffer.h"
 #include "framebuffer/shadowbuffer.h"
 #include "framebuffer/imguibuffer.h"
-#include "framebuffer/gBuffer.h"
 
 #include "resources/resources.h"
 
@@ -40,6 +39,14 @@
 Imguibuffer* pImguibuffer = nullptr;
 
 ScreenBuffer* pScreenBuffer = nullptr;
+
+Skybox* Engine::m_skybox = nullptr;
+
+std::unique_ptr<ScreenRender> pScreenRender = nullptr;
+
+Shadowbuffer* m_shadowbuffer = nullptr;
+
+std::thread Engine::m_thread[2];
 
 void Engine::GRWindowResize(u32 width, u32 height) {
     Screen::SetResolution(width, height);
@@ -97,46 +104,36 @@ void Engine::GRCursorScrool(float xoffset, float yoffset) {
 }
 
 void Engine::GRDropFunc(const char *path) {
-    m_game->dropFile(path);
+    Game::DropFile(path);
 }
-
-std::unique_ptr<Game> Engine::m_game = nullptr;
-
-Skybox* Engine::m_skybox = nullptr;
-
-std::unique_ptr<ScreenRender> pScreenRender = nullptr;
-
-std::unique_ptr<ImGuiRender> pImGuiRender = nullptr;
-
-Shadowbuffer* m_shadowbuffer = nullptr;
-
-GBuffer* m_gbuffer = nullptr;
-
-std::thread Engine::m_thread[2];
 
 void Engine::OnInit() {
     Settings::IsEngineRunning = true;
 
     Memory::Initialize();
 
-    pImGuiRender = std::make_unique<ImGuiRender>("#version 330 core");
+    ImGuiRender::Initialize("#version 330 core");
 
+    // Buffer de renderização.
     pScreenBuffer = &ScreenBuffer::getInstance();
     pImguibuffer = &Imguibuffer::getInstance();
 
+    // Renderizaraçãod da screen paar pos processamento e UI.
     pScreenRender = std::make_unique<ScreenRender>();
 
+    // Shadow provavelmente vou remove-lo
     m_shadowbuffer = &Shadowbuffer::getInstance();
 
+    // Skybox provavelmente vou remove-lo
     m_skybox = &Skybox::getInstance();
-
-    m_game = std::make_unique<Game>();
 
     SetupEnable();
 
     DebugDraw::initialize();
 
     ScriptManager::Initialzie();
+
+    Game::Initialize();
 
     RenderManager::Initialize();
 
@@ -192,6 +189,8 @@ void Engine::OnLoader() {
 }
 
 void Engine::OnDestroy() {
+    ImGuiRender::Shutdown();
+    
     ScriptManager::Shutdown();
 
     if (m_thread[0].joinable()) {
@@ -329,9 +328,9 @@ void Engine::UIFramebuffer() {
     grr::gRender::SetRenderState(grr::GR_BACKGROUND_COLOR, (void*)&Color::black);
     grr::gRender::SetRenderState(grr::GR_BACKGROUND, grr::GR_COLOR_BUFFER);
 
-    pImGuiRender->Begin();
-    m_game->Gui();
-    pImGuiRender->End();
+    ImGuiRender::Begin();
+    Game::RenderUI();
+    ImGuiRender::End();
 }
 #endif
 
@@ -341,7 +340,7 @@ void Engine::SetupEnable() {
     grr::gRender::SetRenderState(grr::GR_CULL_FACE, grr::GR_TRUE);
     grr::gRender::SetRenderState(grr::GR_CULL, grr::GR_BACK);
 
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    grr::gRender::SetRenderState(grr::GR_BLEND, grr::GR_TRUE);
+    grr::gRender::SetRenderState(grr::GR_SRC_ALPHA, grr::GR_ONE_MINUS_SRC_ALPHA);
 }
 

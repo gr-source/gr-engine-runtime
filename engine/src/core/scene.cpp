@@ -1,4 +1,4 @@
 #include "scene.hpp"
 
-std::vector<GameObject *> &(*Scene::GetGameObject)();
+std::list<GameObject *> &(*Scene::GetGameObject)() = nullptr;
 

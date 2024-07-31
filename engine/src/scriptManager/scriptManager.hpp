@@ -1,8 +1,8 @@
 #pragma once
 
-#include "../component/default.hpp"
+#include "../ecs/gameObject.h"
 
-#include "../gameObject.h"
+#include "../component/default.hpp"
 
 #include "../console.hpp"
 

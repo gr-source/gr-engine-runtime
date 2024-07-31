@@ -1,11 +1,11 @@
 #pragma once
 
-#include "../gameObject.h"
+#include "../ecs/gameObject.h"
 
-#include <vector>
+#include <list>
 
 class Scene {
 public:
-    static std::vector<GameObject *> &(*GetGameObject)();
+    static std::list<GameObject *> &(*GetGameObject)();
 };
 

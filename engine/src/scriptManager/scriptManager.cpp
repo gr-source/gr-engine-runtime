@@ -144,7 +144,8 @@ void ScriptManager::RegisterApi() {
 
     // AssetManager
     REGISTER_FUNC("LoadTexture", Resources::LoadTextureL);
+    REGISTER_FUNC("LoadShader", Resources::LoadShaderL);
 
     //Scene
-    REGISTER_API_FROM_NAME("GetSceneGameObject", std::vector<GameObject *> &, void, Scene::GetGameObject);
+    REGISTER_API_FROM_NAME("GetSceneGameObject", std::list<GameObject *> &, void, Scene::GetGameObject);
 }

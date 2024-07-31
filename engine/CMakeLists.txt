@@ -9,12 +9,14 @@ set(guizmo_hdr
 )
 
 set(ecs_src
+    src/ecs/gameObject.cpp
     src/ecs/entity.cpp
 )
 
 set(ecs_hdr
-    src/ecs/entity.h
+    src/ecs/gameObject.h
     src/ecs/component.h
+    src/ecs/entity.h
 )
 
 set(octree_src
@@ -82,7 +84,6 @@ set(engine_src
     src/console.cpp
     src/renderer.cpp
     src/settings.cpp
-    src/gameObject.cpp
     src/screenRender.cpp
     src/eventManager.cpp
     src/renderManager.cpp
@@ -95,8 +96,6 @@ set(engine_src
     src/component/meshRender.cpp
     src/component/meshFilter.cpp
 
-    src/framebuffer/gBuffer.cpp
-    src/framebuffer/thumbnails.cpp
     src/framebuffer/imguibuffer.cpp
     src/framebuffer/screenbuffer.cpp
     src/framebuffer/shadowbuffer.cpp
@@ -152,47 +151,44 @@ set(engine_hdr
     src/console.hpp
     src/renderer.h
     src/settings.h
-    src/gameObject.h
     src/screenRender.h
     src/eventManager.h
     src/renderManager.h
     src/bufferManager.h
     src/editorController.h
-
+    
     src/component/light.hpp
     src/component/camera.hpp
     src/component/default.hpp
     src/component/transform.hpp
     src/component/meshRender.hpp
     src/component/meshFilter.hpp
-
-    src/framebuffer/gBuffer.h
-    src/framebuffer/thumbnails.h
+    
     src/framebuffer/imguibuffer.h
     src/framebuffer/screenbuffer.h
     src/framebuffer/shadowbuffer.h
     src/framebuffer/skyboxbuffer.h
     src/framebuffer/internal/framebuffer.h
     src/framebuffer/internal/renderbuffer.h
-
+    
     src/resources/shader.h
     src/resources/cubemap.h
     src/resources/texture.h
     src/resources/resources.h
-
+    
     src/animation/bone.h
     src/animation/keyframe.h
     src/animation/skeleton.h
     src/animation/animation.h
     src/animation/animationClip.h
-
+    
     src/geometry/material.h
     src/geometry/vertex3D.h
     src/geometry/model.h
     src/geometry/mesh.h
-
+    
     ${ecs_hdr}
-
+    
     src/ui/View.h
     src/ui/ImGuiRender.h
 

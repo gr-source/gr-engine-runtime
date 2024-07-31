@@ -2,7 +2,7 @@
 
 #include <imgui.h>
 
-bool View::TextureInputUI(const ImColor& color) {
+const bool View::TextureInputUI(const ImColor& color) {
     ImDrawList* drawList = ImGui::GetWindowDrawList();
     ImVec2 size = ImGui::GetItemRectSize();
 

@@ -53,8 +53,6 @@ protected:
     
     static void SetupEnable();
 
-    static std::unique_ptr<Game> m_game;
-
     static Skybox* m_skybox;
     
     static std::thread m_thread[2];

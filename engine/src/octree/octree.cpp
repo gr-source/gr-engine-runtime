@@ -1,9 +1,10 @@
 #include "octree.h"
 
+#include "../ecs/gameObject.h"
+
 #include "../component/meshRender.hpp"
 #include "../component/transform.hpp"
 
-#include "../gameObject.h"
 #include "../renderer.h"
 
 Octree::Octree(const Vector3 &position, const Vector3& scale) : m_position(position), m_scale(scale), m_subdivid(false) {

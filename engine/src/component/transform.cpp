@@ -1,7 +1,5 @@
 #include "transform.hpp"
 
-#include "../gameObject.h"
-
 #include "../ui/View.h"
 
 #include "../timer.h"

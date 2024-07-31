@@ -6,7 +6,6 @@
 
 #include <GLFW/glfw3.h>
 
-
 #define SCREEN_WIDTH 768
 #define SCREEN_HEIGHT 512
 
@@ -17,7 +16,6 @@ std::unordered_map<int, u32> m_keyMap = {
     {GLFW_KEY_A, KEY_A},
     {GLFW_KEY_D, KEY_D}
 };
-
 
 typedef GLFWwindow* Window;
 

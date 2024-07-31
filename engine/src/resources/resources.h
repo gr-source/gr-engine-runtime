@@ -11,7 +11,7 @@
 #include <list>
 #include <map>
 
-#include <gr-render/gTexture.h>
+#include <gr-render/gRender.h>
 
 #include "texture.h"
 #include "shader.h"
@@ -49,6 +49,8 @@ public:
 
     static grr::gTexture *LoadTextureL(const std::string &path);
 
+    static grr::gShader *LoadShaderL(const std::string &path);
+
     static u32 getTextureType(int ch);
 
     static GLenum getTextureTypeSRGB(int ch);
@@ -63,6 +65,10 @@ public:
 
     static const char* gettextureformatname(u32 format);
 
+    static const grm::size GetTextureCount();
+
+    static const grm::size GetShaderCount();
+
 private:
     /***************** Texture *****************/
     static std::unordered_map<std::string, std::unique_ptr<Texture>> m_textures;
@@ -74,9 +80,14 @@ private:
     static std::list<ProcessLoader<Shader>> m_shaderLoader;
     static std::mutex m_shaderMutex;
 
+    /***************** Shader *****************/
+    static std::unordered_map<std::string, std::unique_ptr<grr::gShader>> s_shaderList;
+    static std::list<std::tuple<std::string, grr::gShader *>> s_shaderFromLoader;
+    static std::mutex s_shaderMutex;
+
     /***************** Texture *****************/
-    static std::unordered_map<std::string, std::unique_ptr<grr::gTexture>> s_listTexture;
-    static std::list<std::tuple<std::string, grr::gTexture *>> s_listFromLoader;
+    static std::unordered_map<std::string, std::unique_ptr<grr::gTexture>> s_textureList;
+    static std::list<std::tuple<std::string, grr::gTexture *>> s_textureFromLoader;
     static std::mutex s_textureMutex;
 
     static void setup_texture(ProcessLoader<Texture>& process, const u32 width, const u32 height, const int channel, stbi_uc*& pixels);
@@ -90,6 +101,10 @@ private:
     static void SetupTexture(grr::gTexture *texture, int width, int height, int ch, void *pixels);
 
     static void LoadTextureF();
+
+    static void SetupShader(grr::gShader *shader, const std::string &frag, const std::string &vert);
+
+    static void LoadShaderF();
 };
 
 template <typename... Args>

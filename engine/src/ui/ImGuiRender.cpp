@@ -2,13 +2,11 @@
 
 #include <GLFW/glfw3.h>
 
-ImGuiRender::ImGuiRender() : io(nullptr) {}
+ImGuiIO *ImGuiRender::s_io = nullptr;
 
-ImGuiRender::ImGuiRender(const char* openglVersion) {
+void ImGuiRender::Initialize(const char* openglVersion) {
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
-
-    io = &ImGui::GetIO();
 
     ImGui::StyleColorsDark();
     PushStyle(ImGui::GetStyle());
@@ -16,9 +14,15 @@ ImGuiRender::ImGuiRender(const char* openglVersion) {
     ImGui_ImplGlfw_InitForOpenGL(glfwGetCurrentContext(), true);
     ImGui_ImplOpenGL3_Init(openglVersion);
 
-    io->ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+    s_io = &ImGui::GetIO();
+    s_io->ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+    s_io->Fonts->AddFontFromFileTTF("/usr/share/fonts/truetype/ubuntu/Ubuntu-R.ttf", 16.5f);
+}
 
-    io->Fonts->AddFontFromFileTTF("/usr/share/fonts/truetype/ubuntu/Ubuntu-R.ttf", 16.5f);
+void ImGuiRender::Shutdown() {
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
 }
 
 void ImGuiRender::PushStyle(ImGuiStyle& dst) {
@@ -81,8 +85,8 @@ void ImGuiRender::PushStyle(ImGuiStyle& dst) {
     colors[ImGuiCol_ModalWindowDimBg]       = ImVec4(0.80f, 0.80f, 0.80f, 0.35f);
 }
 
-void ImGuiRender::addFont(const char* path) {
-    io->Fonts->AddFontFromFileTTF(path, 16.5f);
+void ImGuiRender::AddFont(const char* path) {
+    s_io->Fonts->AddFontFromFileTTF(path, 16.5f);
 }
 
 void ImGuiRender::Begin() {
@@ -96,9 +100,7 @@ void ImGuiRender::End() {
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
 
-ImGuiRender::~ImGuiRender() {
-    ImGui_ImplOpenGL3_Shutdown();
-    ImGui_ImplGlfw_Shutdown();
-    ImGui::DestroyContext();
-}
+
+
+
 
