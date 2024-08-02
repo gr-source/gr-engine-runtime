@@ -85,12 +85,16 @@ void RenderManager::Initialize() {
 }
 
 void RenderManager::Process() {
-    auto& models = MeshRender::GetGameObjectFromRender();
-    if (models.empty() || !m_shader || !m_shader->isValid()) {
+    s_objects.clear();
+
+    if (!ScriptManager::GetGameObjectsFromRender) {
         return;
     }
 
-    s_objects.clear();
+    auto& models = ScriptManager::GetGameObjectsFromRender();
+    if (models.empty() || !m_shader || !m_shader->isValid()) {
+        return;
+    }
 
     iDrawCount = models.size();
 
@@ -168,12 +172,14 @@ void RenderManager::Shutdown() {
 }
 
 void RenderManager::SetupLight() {
-    auto& lights = Light::GetListLight();
+    if (!ScriptManager::GetListLight) {
+        return;
+    }
+    auto& lights = ScriptManager::GetListLight();
 
     grr::gShader::SetUniform("m_lightcount", (int)lights.size());
 
     if (lights.empty()) return;
-
 
     for (auto i=0;i<lights.size();i++) {
         const auto& light = lights[i];

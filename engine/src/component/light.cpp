@@ -2,14 +2,7 @@
 
 #include "transform.hpp"
 
-#include "../scriptManager/scriptManager.hpp"
-
-std::vector<Light *> &Light::GetListLight() {
-    return ScriptManager::GetListLight();
-}
-
-const Vector3 &Light::getposition() const
-{
+const Vector3 &Light::getposition() const {
     return m_transform->position;
 }
 

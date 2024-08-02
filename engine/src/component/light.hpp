@@ -12,8 +12,6 @@ public:
         eSpot      = 3,
     };
 
-    static std::vector<Light *> &GetListLight();
-
     const Vector3& getposition() const;
 
     const Vector3 getforward() const;

@@ -22,6 +22,7 @@
 #include "component/meshFilter.hpp"
 #include "component/meshRender.hpp"
 #include "component/transform.hpp"
+#include "component/animator.hpp"
 #include "component/camera.hpp"
 #include "component/light.hpp"
 
@@ -222,14 +223,12 @@ void Game::RenderScenesUI() {
 }
 
 void Game::ReadHierarchy(Transform *transform) {
-    ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanFullWidth;
+    ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_Selected | ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanFullWidth;
 
     auto gameObject = transform->entity->getGameObject();
-    // Transform* root = transform->getRoot();
+    auto name = gameObject->getName();
 
-    if (s_objectSelected == gameObject) {
-        flags |= ImGuiTreeNodeFlags_Selected;
-    } else {
+    if (s_objectSelected != gameObject) {
         flags &= ~ImGuiTreeNodeFlags_Selected;
     }
 
@@ -237,9 +236,15 @@ void Game::ReadHierarchy(Transform *transform) {
         flags &= ~ImGuiTreeNodeFlags_Leaf;
     }
 
-    const bool isOpen = ImGui::TreeNodeEx(gameObject->getName().c_str(), flags);
+    const bool isOpen = ImGui::TreeNodeEx(name.c_str(), flags);
     if (ImGui::IsItemClicked(ImGuiMouseButton_Middle)) {
         s_objectSelected = gameObject;
+    }
+
+    if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceNoDisableHover | ImGuiDragDropFlags_SourceNoHoldToOpenOthers)) {
+        ImGui::Text("Moving \"%s\"", name.c_str());
+        ImGui::SetDragDropPayload("DND_DEMO_NAME", gameObject, sizeof(GameObject));
+        ImGui::EndDragDropSource();
     }
 
     if (isOpen) {
@@ -453,46 +458,41 @@ void Game::RenderPropertiUI() {
     ImGui::Begin("Propriedades", nullptr, ImGuiWindowFlags_NoResize);
 
     if (ImGui::BeginTabBar("##propertimenubar")) {
-        if (ImGui::BeginTabItem("GameObject", nullptr)) {
+        if (s_objectSelected && ImGui::BeginTabItem("GameObject", nullptr)) {
+            ImGui::Image(reinterpret_cast<ImTextureID>(iconsUI[IconType::ICON_GAMEOBJECT]->getID()), ImVec2(16, 16));
 
-            if (s_objectSelected != nullptr) {
-                ImGui::Image(reinterpret_cast<ImTextureID>(iconsUI[IconType::ICON_GAMEOBJECT]->getID()), ImVec2(16, 16));
+            ImGui::SameLine();
+
+            ImGui::Text("[ %s - %s ]", s_objectSelected->getName().c_str(), s_objectSelected->getTag().c_str());
+
+            /*
+            auto entity = objectselected->getEntity();
+
+            for (auto&& [name, componenet] : entity->getComponents()) {
+                ImGui::PushID(name.c_str());
+                auto isOpen = ImGui::TreeNode(name.c_str());
+
+                if (isOpen) {
+                    ImGui::TreePop();
+                }
 
                 ImGui::SameLine();
 
-                ImGui::Text("[ %s - %s ]", s_objectSelected->getName().c_str(), s_objectSelected->getTag().c_str());
-
-                /*
-                auto entity = objectselected->getEntity();
-
-                for (auto&& [name, componenet] : entity->getComponents()) {
-                    ImGui::PushID(name.c_str());
-                    auto isOpen = ImGui::TreeNode(name.c_str());
-
-                    if (isOpen) {
-                        ImGui::TreePop();
-                    }
-
-                    ImGui::SameLine();
-
-                    if (ImGui::Button("X")) {
-                        EventManager::addEvent(&Entity::RemoveComponent, entity, name);
-                    }
-                    ImGui::PopID();
+                if (ImGui::Button("X")) {
+                    EventManager::addEvent(&Entity::RemoveComponent, entity, name);
                 }
-                */
-
-                s_objectSelected->RenderProperty<Transform>(&Game::OnPropertyTransform);
-                s_objectSelected->RenderProperty<MeshRender>(&Game::OnPropertyMeshRender);
-                s_objectSelected->RenderProperty<Light>(&Game::OnPropertyLightComponent);
-                /*
-                objectselected->RenderProperty<CameraComponent>(&Game::OnPropertyCameraComponent, this);
-                */
-                /*
-                objectselected->RenderProperty<Animator>(&Game::OnPropertyAnimator, this);
-                objectselected->RenderProperty<ChunkController>(&Game::OnPropertyChunkController, this);
-                */
+                ImGui::PopID();
             }
+            */
+
+            s_objectSelected->RenderProperty<Transform>(&Game::OnPropertyTransform);
+            s_objectSelected->RenderProperty<MeshRender>(&Game::OnPropertyMeshRender);
+            s_objectSelected->RenderProperty<Light>(&Game::OnPropertyLightComponent);
+            s_objectSelected->RenderProperty<Animator>(&Game::OnPropertyAnimator);
+            /*
+            objectselected->RenderProperty<CameraComponent>(&Game::OnPropertyCameraComponent, this);
+            objectselected->RenderProperty<ChunkController>(&Game::OnPropertyChunkController, this);
+            */
 
             ImGui::EndTabItem();
         }
@@ -522,7 +522,8 @@ void Game::RenderPropertiUI() {
 
             ImGui::SeparatorText("Renderização");
             // ImGui::Text("Cameras: %ld",   Camera::Get.size());
-            ImGui::Text("Luzes: %ld",     Light::GetListLight().size());
+            if (ScriptManager::GetListLight)
+                ImGui::Text("Luzes: %ld",     ScriptManager::GetListLight().size());
             ImGui::Text("Draw Render: %d/%d", RenderManager::iDrawCount, RenderManager::iDrawRender);
             
             ImGui::EndTabItem();
@@ -583,8 +584,29 @@ void ReadSkeleton(const Bone* bone) {
 
 void Game::OnPropertyAnimator(Animator *animator) {
     if (ImGui::TreeNode("Animator")) {
+        auto &armature = animator->m_armature;
+
+        if (armature) {
+            ImGui::Text("Armature: %s", armature->getName().c_str());
+        } else {
+            ImGui::Text("Draging");
+        }
+
+        if (ImGui::BeginDragDropTarget()) {
+            ImGuiDragDropFlags target_flags = 0;
+            target_flags |= ImGuiDragDropFlags_AcceptBeforeDelivery;    // Don't wait until the delivery (release mouse button on a target) to do something
+            // target_flags |= ImGuiDragDropFlags_AcceptNoDrawDefaultRect; // Don't display the yellow rectangle
+            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("DND_DEMO_NAME", target_flags)) {
+                armature = (GameObject*)payload->Data;
+            }
+            ImGui::EndDragDropTarget();
+        }
+
+        // if (armature) {
+        // } else {
+
+        // }
         /*
-        ImGui::Text("Esqueleto:");
 
         ReadSkeleton(animator->m_skeleton.getroot());
 
@@ -593,8 +615,8 @@ void Game::OnPropertyAnimator(Animator *animator) {
         for (auto& anim : animator->m_animations) {
             ImGui::Text("%s", anim.getname().c_str());
         }
-        ImGui::TreePop();
         */
+        ImGui::TreePop();
     }
 }
 
