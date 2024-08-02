@@ -63,11 +63,25 @@ set(filmbox_hdr
     src/core/filmbox/filmbox.hpp
 )
 
+set(animation_src
+    src/core/animation/animation.cpp
+    src/core/animation/keyframe.cpp
+    src/core/animation/bone.cpp
+)
+
+
+set(animation_hdr
+    src/core/animation/animation.cpp
+    src/core/animation/keyframe.cpp
+    src/core/animation/bone.cpp
+)
+
 set(engine_src
     ${core_src}
     ${guizmo_src}
     ${octree_src}
     ${filmbox_src}
+    ${animation_src}
     ${simplexNoise_src}
     ${scriptManager_cpp}
 
@@ -108,12 +122,6 @@ set(engine_src
     src/resources/texture.cpp
     src/resources/resources.cpp
     
-    src/animation/bone.cpp
-    src/animation/keyframe.cpp
-    src/animation/skeleton.cpp
-    src/animation/animation.cpp
-    src/animation/animationClip.cpp
-
     src/geometry/material.cpp
     src/geometry/vertex3D.cpp
     src/geometry/model.cpp
@@ -137,6 +145,7 @@ set(engine_hdr
     ${guizmo_hdr}
     ${octree_hdr}
     ${filmbox_hdr}
+    ${animation_hdr}
     ${scriptManager_hdr}
 
     src/log.h
@@ -163,7 +172,7 @@ set(engine_hdr
     src/component/transform.hpp
     src/component/meshRender.hpp
     src/component/meshFilter.hpp
-    
+
     src/framebuffer/imguibuffer.h
     src/framebuffer/screenbuffer.h
     src/framebuffer/shadowbuffer.h
@@ -175,12 +184,6 @@ set(engine_hdr
     src/resources/cubemap.h
     src/resources/texture.h
     src/resources/resources.h
-    
-    src/animation/bone.h
-    src/animation/keyframe.h
-    src/animation/skeleton.h
-    src/animation/animation.h
-    src/animation/animationClip.h
     
     src/geometry/material.h
     src/geometry/vertex3D.h

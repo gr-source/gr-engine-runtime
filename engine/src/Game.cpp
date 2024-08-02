@@ -33,8 +33,6 @@
 
 #include "filesystem/filesystem.h"
 
-#include "animation/skeleton.h"
-
 #include "scriptManager/scriptManager.hpp"
 
 #include <filesystem>
@@ -243,7 +241,7 @@ void Game::ReadHierarchy(Transform *transform) {
 
     if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceNoDisableHover | ImGuiDragDropFlags_SourceNoHoldToOpenOthers)) {
         ImGui::Text("Moving \"%s\"", name.c_str());
-        ImGui::SetDragDropPayload("DND_DEMO_NAME", gameObject, sizeof(GameObject));
+        ImGui::SetDragDropPayload("DND_DEMO_NAME", name.c_str(), name.size());
         ImGui::EndDragDropSource();
     }
 
@@ -561,27 +559,6 @@ void Game::OnPropertyTransform(Transform* transform) {
     }
 }
 
-void ReadSkeleton(const Bone* bone) {
-    if (!bone) return;
-
-    ImGui::PushID(bone->getname().c_str());
-
-    ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanFullWidth;
-    if (!bone->haschildren()) {
-        flags |= ImGuiTreeNodeFlags_Leaf;
-    }
-
-    const bool isOpen = ImGui::TreeNodeEx(bone->getname().c_str(), flags);
-    
-    if (isOpen) {
-        for (const auto& child : bone->getchildren()) {
-            ReadSkeleton(&child);
-        }
-        ImGui::TreePop();
-    }
-    ImGui::PopID();
-}
-
 void Game::OnPropertyAnimator(Animator *animator) {
     if (ImGui::TreeNode("Animator")) {
         auto &armature = animator->m_armature;
@@ -594,10 +571,15 @@ void Game::OnPropertyAnimator(Animator *animator) {
 
         if (ImGui::BeginDragDropTarget()) {
             ImGuiDragDropFlags target_flags = 0;
-            target_flags |= ImGuiDragDropFlags_AcceptBeforeDelivery;    // Don't wait until the delivery (release mouse button on a target) to do something
-            // target_flags |= ImGuiDragDropFlags_AcceptNoDrawDefaultRect; // Don't display the yellow rectangle
+            target_flags |= ImGuiDragDropFlags_AcceptBeforeDelivery;
+            target_flags |= ImGuiDragDropFlags_SourceAllowNullID;
+
             if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("DND_DEMO_NAME", target_flags)) {
-                armature = (GameObject*)payload->Data;
+                std::string name((char*)payload->Data, payload->DataSize);
+                if (!name.empty()) {
+                    armature = GameObject::Find(name);
+                }
+                // armature = (GameObject*)payload->Data;
             }
             ImGui::EndDragDropTarget();
         }

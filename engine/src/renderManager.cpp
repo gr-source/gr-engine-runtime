@@ -7,6 +7,7 @@
 #include "component/meshRender.hpp"
 #include "component/meshFilter.hpp"
 #include "component/transform.hpp"
+#include "component/animator.hpp"
 #include "component/camera.hpp"
 #include "component/light.hpp"
 
@@ -54,6 +55,7 @@ void RenderManager::Initialize() {
     grr::gShader::Register("projection");
     grr::gShader::Register("view");
     grr::gShader::Register("model");
+    grr::gShader::Register("u_boneMatrices");
 
     // FragmentShader
     grr::gShader::Register("m_eye");
@@ -143,6 +145,14 @@ void RenderManager::Renderer() {
         auto& transform = gameObject->getComponent<Transform>();
 
         auto& meshrender = gameObject->getComponent<MeshRender>();
+
+        if (gameObject->hasComponent<Animator>()) {
+            auto &animator = gameObject->getComponent<Animator>();
+
+            auto &metrices = animator.m_finalBoneMatrices;
+
+            grr::gShader::SetUniform<Matrix4x4>("u_boneMatrices", metrices.size(), metrices.data());
+        }
 
         SetupMaterial(meshrender.getMaterials());
 

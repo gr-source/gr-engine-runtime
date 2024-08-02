@@ -8,6 +8,8 @@
 
 class GameObject {
 public:
+    static GameObject *Find(const std::string &name);
+
     const std::string &getName();
 
     const std::string &getTag();
@@ -16,6 +18,9 @@ public:
 
     template <typename T>
     T& getComponent();
+
+    template <typename T>
+    const bool hasComponent() const;
 
     template <typename T, typename... Args>
     void RenderProperty(Args&&... args);
@@ -29,13 +34,16 @@ private:
 
     Entity* m_entity;
 
-protected:
-    static std::vector<std::unique_ptr<GameObject>> s_objects;
 };
 
 template <typename T>
 inline T& GameObject::getComponent() {
     return m_entity->getComponent<T>();
+}
+
+template <typename T>
+inline const bool GameObject::hasComponent() const {
+    return m_entity->hasComponent<T>();
 }
 
 template <typename T, typename... Args>
