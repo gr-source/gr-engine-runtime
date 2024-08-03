@@ -1,12 +1,16 @@
 #pragma once
 
-#include "../ecs/entity.h"
+#include "../ecs/gameObject.h"
 
 #include "../core/animation/animation.hpp"
 #include "../core/animation/bone.hpp"
 
+#include "default.hpp"
+
 class Animator : public Component {
 public:
+    void UpdateAnim();
+
     std::vector<Matrix4x4> m_finalBoneMatrices;
 
 private:
@@ -19,6 +23,10 @@ private:
     Animation *m_animation;
 
     float m_currentTime;
+
+    void hiearchy(Transform *transform, const Matrix4x4 &parentTransform);
+
+    Bone *findBone(const std::string &name);
 
     friend class Game;
 };

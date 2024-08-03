@@ -10,6 +10,7 @@ set(guizmo_hdr
 
 set(ecs_src
     src/ecs/gameObject.cpp
+    src/ecs/component.cpp
     src/ecs/entity.cpp
 )
 
@@ -71,6 +72,7 @@ set(animation_src
 
 
 set(animation_hdr
+    src/core/animation/boneWeight.cpp
     src/core/animation/animation.cpp
     src/core/animation/keyframe.cpp
     src/core/animation/bone.cpp
@@ -106,6 +108,7 @@ set(engine_src
 
     src/component/light.cpp
     src/component/camera.cpp
+    src/component/animator.cpp
     src/component/transform.cpp
     src/component/meshRender.cpp
     src/component/meshFilter.cpp

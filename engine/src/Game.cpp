@@ -560,6 +560,8 @@ void Game::OnPropertyTransform(Transform* transform) {
 }
 
 void Game::OnPropertyAnimator(Animator *animator) {
+    auto &m_current = animator->m_animation;
+
     if (ImGui::TreeNode("Animator")) {
         auto &armature = animator->m_armature;
 
@@ -584,20 +586,17 @@ void Game::OnPropertyAnimator(Animator *animator) {
             ImGui::EndDragDropTarget();
         }
 
-        // if (armature) {
-        // } else {
+        auto &animations = animator->m_animations;
+        for (int i=0;i<animations.size();++i) {
+            auto &anim = animations[i];
 
-        // }
-        /*
+            auto name = anim.getName();
 
-        ReadSkeleton(animator->m_skeleton.getroot());
-
-        ImGui::Text("Animations:");
-
-        for (auto& anim : animator->m_animations) {
-            ImGui::Text("%s", anim.getname().c_str());
+            ImGui::Selectable(name.c_str(), m_current == &anim);
+            if (ImGui::IsItemClicked()) {
+                m_current = &anim;
+            }
         }
-        */
         ImGui::TreePop();
     }
 }

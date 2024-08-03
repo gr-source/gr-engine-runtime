@@ -323,11 +323,11 @@ void Resources::SetupTexture(grr::gTexture *texture, int width, int height, int 
 void Resources::LoadTextureF() {
     std::unique_lock<std::mutex> lock(s_textureMutex);
     while (!s_textureFromLoader.empty()) {
-        auto tuple = s_textureFromLoader.front();
+        auto [path, texture] = s_textureFromLoader.front();
         lock.unlock();
 
-        auto path = std::get<std::string>(tuple);
-        auto texture = std::get<grr::gTexture *>(tuple);
+        // auto path = std::get<std::string>(tuple);
+        // auto texture = std::get<grr::gTexture *>(tuple);
 
         int width, height, ch;
         auto pixels = stbi_load(path.c_str(), &width, &height, &ch, 0);
@@ -362,16 +362,13 @@ void Resources::SetupShader(grr::gShader *shader, const std::string &frag, const
 void Resources::LoadShaderF() {
     std::unique_lock<std::mutex> lock(s_shaderMutex);
     while (!s_shaderFromLoader.empty()) {
-        auto tuple = s_shaderFromLoader.front();
+        auto [path, shader] = s_shaderFromLoader.front();
         lock.unlock();
 
         // Processing shader
-        auto path = std::get<std::string>(tuple);
-        auto shader = std::get<grr::gShader *>(tuple);
 
         std::string frag = path + ".frag";
         std::string vert = path + ".vert";
-
 
         // Loading Fragment shader
         Console::Print(LogInfo::WARNING, "Loading FragmentShader: " + frag + " - " + vert);

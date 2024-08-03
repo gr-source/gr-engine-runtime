@@ -5,3 +5,12 @@ Bone::Bone(const std::string & name, const Vector3 & position, const Vector3 & s
 const std::string &Bone::getName() const {
     return m_name;
 }
+
+const Matrix4x4 Bone::getLocalMatrix() const {
+    return Math::translate<Matrix4x4>(m_position) * Math::rotate<Matrix4x4>(m_rotation) * Math::scale<Matrix4x4>(m_scale);
+}
+
+const grm::u32 Bone::getBoneIndex() const {
+    return m_boneIndex;
+}
+

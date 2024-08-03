@@ -2,6 +2,7 @@
 
 #include <gr-math/gmath.h>
 
+class GameObject;
 class Entity;
 
 class Component {
@@ -13,6 +14,8 @@ public:
     virtual void Update() {}
 
     virtual ~Component() {}
+
+    GameObject *getGameObject();
 
     Entity* entity;
 };

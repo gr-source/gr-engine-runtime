@@ -6,6 +6,8 @@
 
 #include "vertex3D.h"
 
+#include "../core/animation/boneWeight.hpp"
+
 class Mesh {
 public:
     Mesh(const std::string &name = "default");
@@ -24,6 +26,8 @@ private:
     std::vector<Vertex3D> m_vertices;
 
     std::vector<int> m_indices;
+
+    std::vector<BoneWeight> m_boneWeight;
 
     std::string m_name;
 };

@@ -20,36 +20,36 @@ class Keyframe {
 public:
     Keyframe(const std::string &name);
 
-    template <typename ...Args>
-    Key<Vector3> &addPosition(Args &&...args);
+    const std::string &getName() const;
 
-    template <typename ...Args>
-    Key<Vector3> &addScale(Args &&...args);
+    const Matrix4x4 getLocalMatrix(float time) const;
 
-    template <typename ...Args>
-    Key<Quaternion> &addRotation(Args &&...args);
+    const Vector3 getInterpolateScaling(float time) const;
+
+    const Quaternion getInterpolateRotation(float time) const;
+
+    const Vector3 getInterpolatePosition(float time) const;
+
+    const float getScaleFactor(float last, float next, float time) const;
 
 private:
     std::string m_name;
 
-    std::vector<Key<Vector3>> m_position;
+    std::vector<Key<Vector3>> m_keyPosition;
 
-    std::vector<Key<Vector3>> m_scale;
+    std::vector<Key<Vector3>> m_keyScale;
 
-    std::vector<Key<Quaternion>> m_rotation;
+    std::vector<Key<Quaternion>> m_keyRotation;
+
+    template <typename T>
+    const std::uint32_t getIndexFromTime(float time, const std::vector<Key<T>>& keys) const;
 };
 
-template <typename... Args>
-inline Key<Vector3> &Keyframe::addPosition(Args &&...args) {
-    return m_position.emplace_back(std::forward<Args>(args)...);
-}
-
-template <typename... Args>
-inline Key<Vector3> &Keyframe::addScale(Args &&...args) {
-    return m_scale.emplace_back(std::forward<Args>(args)...);
-}
-
-template <typename... Args>
-inline Key<Quaternion> &Keyframe::addRotation(Args &&...args) {
-    return m_rotation.emplace_back(std::forward<Args>(args)...);
+template <typename T>
+inline const std::uint32_t Keyframe::getIndexFromTime(float time, const std::vector<Key<T>>& keys) const {
+    for (auto i=0;i<keys.size() - 1;i++) {
+        if (time < keys[i + 1].time)
+            return i;
+    }
+    return 0;
 }

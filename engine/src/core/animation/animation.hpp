@@ -14,6 +14,8 @@ public:
 
     template <typename ...Args>
     Keyframe &addkeyframe(Args &&... args);
+
+    Keyframe *findKeyframe(const std::string &name);
     
 private:
     std::string m_name;

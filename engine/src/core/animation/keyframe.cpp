@@ -2,6 +2,58 @@
 
 Keyframe::Keyframe(const std::string & name) : m_name(name) {}
 
+const std::string &Keyframe::getName() const {
+    return m_name;
+}
+
+const Matrix4x4 Keyframe::getLocalMatrix(float time) const {
+    return Math::translate<Matrix4x4>(getInterpolatePosition(time)) * Math::rotate<Matrix4x4>(getInterpolateRotation(time)) * Math::scale<Matrix4x4>(getInterpolateScaling(time));
+}
+
+const Vector3 Keyframe::getInterpolateScaling(float time) const {
+    if (1 == m_keyScale.size())
+        return m_keyScale[0].value;
+
+    auto p0Index = getIndexFromTime<Vector3>(time, m_keyScale);
+    auto p1Index = p0Index + 1;
+
+    float scaleFactor = getScaleFactor(m_keyScale[p0Index].time, m_keyScale[p1Index].time, time);
+
+    const Vector3 finalScale = Math::mix(m_keyScale[p0Index].value, m_keyScale[p1Index].value, scaleFactor);
+
+    return finalScale;
+}
+
+const Quaternion Keyframe::getInterpolateRotation(float time) const {
+    if (1 == m_keyRotation.size()) {
+        return m_keyRotation[0].value;
+    }
+
+    int p0Index = getIndexFromTime<Quaternion>(time, m_keyRotation);
+    int p1Index = p0Index + 1;
+
+    float scaleFactor = getScaleFactor(m_keyRotation[p0Index].time, m_keyRotation[p1Index].time, time);
+    
+    return Math::slerp(m_keyRotation[p0Index].value, m_keyRotation[p1Index].value, scaleFactor);
+}
+
+const Vector3 Keyframe::getInterpolatePosition(float time) const {
+    if (1 == m_keyPosition.size())
+        return m_keyPosition[0].value;
+
+    int p0Index = getIndexFromTime<Vector3>(time, m_keyPosition);
+    int p1Index = p0Index + 1;
+
+    float scaleFactor = getScaleFactor(m_keyPosition[p0Index].time, m_keyPosition[p1Index].time, time);
+    
+    const Vector3 finalPosition = Math::mix(m_keyPosition[p0Index].value, m_keyPosition[p1Index].value, scaleFactor);
+
+    return finalPosition;
+}
+
+const float Keyframe::getScaleFactor(float last, float next, float time) const {
+    return ((time - last) / (next - last));
+}
 
 
 

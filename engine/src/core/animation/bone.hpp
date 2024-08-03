@@ -8,6 +8,11 @@ public:
     Bone(const std::string &name, const Vector3 &position, const Vector3 &scale, const Quaternion &rotation);
 
     const std::string &getName() const;
+
+    const Matrix4x4 getLocalMatrix() const;
+
+    const grm::u32 getBoneIndex() const;
+    
 private:
     std::string m_name;
 
@@ -16,5 +21,7 @@ private:
     Vector3 m_scale;
 
     Quaternion m_rotation;
+
+    grm::u32 m_boneIndex;
 };
 

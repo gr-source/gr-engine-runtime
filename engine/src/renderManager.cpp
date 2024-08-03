@@ -52,10 +52,11 @@ void RenderManager::Initialize() {
     m_shader->bind();
 
     // VertexShader
-    grr::gShader::Register("projection");
-    grr::gShader::Register("view");
-    grr::gShader::Register("model");
+    grr::gShader::Register("u_projection");
+    grr::gShader::Register("u_view");
+    grr::gShader::Register("u_model");
     grr::gShader::Register("u_boneMatrices");
+    grr::gShader::Register("u_animatior");
 
     // FragmentShader
     grr::gShader::Register("m_eye");
@@ -116,6 +117,9 @@ void RenderManager::Process() {
             continue;
         }
 
+        if (gameObject->hasComponent<Animator>()) {
+            gameObject->getComponent<Animator>().UpdateAnim();
+        }
         s_objects.push_back(gameObject);
     }
 
@@ -131,8 +135,8 @@ void RenderManager::Renderer() {
 
     m_shader->bind();
 
-    grr::gShader::SetUniform("projection", 1, camera->getPerspesctive());
-    grr::gShader::SetUniform("view", 1, camera->getViewmatrix());
+    grr::gShader::SetUniform("u_projection", 1, camera->getPerspesctive());
+    grr::gShader::SetUniform("u_view", 1, camera->getViewmatrix());
     grr::gShader::SetUniform("m_eye", 1, camera->getPosition());
 
     SetupLight();
@@ -146,17 +150,20 @@ void RenderManager::Renderer() {
 
         auto& meshrender = gameObject->getComponent<MeshRender>();
 
-        if (gameObject->hasComponent<Animator>()) {
+        auto hasAnimation = gameObject->hasComponent<Animator>();
+
+        if (hasAnimation) {
             auto &animator = gameObject->getComponent<Animator>();
 
             auto &metrices = animator.m_finalBoneMatrices;
 
             grr::gShader::SetUniform<Matrix4x4>("u_boneMatrices", metrices.size(), metrices.data());
         }
+        grr::gShader::SetUniform("u_animatior", static_cast<int>(hasAnimation));
 
         SetupMaterial(meshrender.getMaterials());
 
-        grr::gShader::SetUniform("model", 1, transform.getglobalmatrix());
+        grr::gShader::SetUniform("u_model", 1, transform.getglobalmatrix());
 
         meshrender.draw();
     }
