@@ -7,7 +7,7 @@ const std::string &Bone::getName() const {
 }
 
 const Matrix4x4 Bone::getLocalMatrix() const {
-    return Math::translate<Matrix4x4>(m_position) * Math::rotate<Matrix4x4>(m_rotation) * Math::scale<Matrix4x4>(m_scale);
+    return Math::translate<Matrix4x4>(m_position) * Math::rotate<Matrix4x4>(Math::normalize(m_rotation)) * Math::scale<Matrix4x4>(m_scale);
 }
 
 const grm::u32 Bone::getBoneIndex() const {

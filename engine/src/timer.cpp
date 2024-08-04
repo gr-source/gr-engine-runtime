@@ -4,7 +4,7 @@
 float Time::deltaTime = 0.0f;
 int Time::FPS = 0;
 
-Time::Time(float maxFPS) : a(std::chrono::system_clock::now()), b(std::chrono::system_clock::now()), m_targetFrameTime(1000.0 / static_cast<double>(maxFPS)), elapsedTime(0.0f), fpsCount(0), fps(0) {}
+Time::Time(float maxFPS) : a(std::chrono::system_clock::now()), b(std::chrono::system_clock::now()), m_targetFrameTime(1000.0 / static_cast<double>(maxFPS)), elapsedTime(0.0f), frameCount(0), fps(0) {}
 
 float Time::SleepTick() {
     a = std::chrono::system_clock::now();
@@ -19,26 +19,26 @@ float Time::SleepTick() {
     std::chrono::duration<double, std::milli> sleep_time = b - a;
     float dt = static_cast<float>((work_time.count() + sleep_time.count()) / 1e3f);
 
-    ++fpsCount;
+    ++frameCount;
     elapsedTime += dt;
     if (elapsedTime >= 1.0000) {
-        fps = fpsCount;
-        fpsCount = 0;
+        fps = frameCount / elapsedTime;
+        frameCount = 0;
         elapsedTime = 0.0f;
     }
     return dt;
 }
 
-float Time::start() {
-    a = std::chrono::system_clock::now();
-    std::chrono::duration<double, std::milli> sleep_time = a - b;
-    return static_cast<float>(sleep_time.count() / 1e3f);
+void Time::start() {
+    start_time = std::chrono::system_clock::now();
 }
 
-void Time::end() {
-    b = std::chrono::system_clock::now();
+const float Time::end() {
+    end_time = std::chrono::system_clock::now();
+    std::chrono::duration<double, std::milli> duration = end_time - start_time;
+    return static_cast<float>(duration.count() / 1000.0);
 }
 
-const int &Time::getFPS() const {
+const int Time::getFPS() const {
     return fps;
 }

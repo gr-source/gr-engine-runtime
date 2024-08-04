@@ -39,6 +39,8 @@
 #include <sstream>
 #include <iomanip>
 
+#define IMGUI_PAYLOAD_GAMEOBJECT "##payload_game_object"
+
 const std::string getfilesize(std::size_t sz) {
     float kb = sz / 1024.0f;
     float mb = kb / 1024.0f;
@@ -199,6 +201,25 @@ void Game::RenderScenesUI() {
     ImGui::Begin("Cenario", nullptr, ImGuiWindowFlags_NoResize);
     ImGui::SetNextItemOpen(true, ImGuiCond_Appearing);
     if (ImGui::TreeNodeEx("default", ImGuiTreeNodeFlags_SpanFullWidth)) {
+        if (ImGui::BeginDragDropTarget()) {
+            ImGuiDragDropFlags target_flags = 0;
+            // target_flags |= ImGuiDragDropFlags_AcceptBeforeDelivery;
+            // target_flags |= ImGuiDragDropFlags_SourceAllowNullID;
+
+            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(IMGUI_PAYLOAD_GAMEOBJECT, target_flags)) {
+                std::string name((char*)payload->Data, payload->DataSize);
+                if (!name.empty()) {
+                    auto target = GameObject::Find(name);
+
+                    auto &ts = target->getTransform();
+                    ts.setParent(nullptr);
+                    
+                    Scene::Add(target);
+                }
+            }
+            ImGui::EndDragDropTarget();
+        }
+        
         if (Scene::GetGameObject) {
             for (auto& gameObject : Scene::GetGameObject()) {
                 auto& transform = gameObject->getTransform();
@@ -206,6 +227,7 @@ void Game::RenderScenesUI() {
                 ReadHierarchy(&transform);
             }
         }
+        
         ImGui::TreePop();
     }
 
@@ -223,7 +245,7 @@ void Game::RenderScenesUI() {
 void Game::ReadHierarchy(Transform *transform) {
     ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_Selected | ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanFullWidth;
 
-    auto gameObject = transform->entity->getGameObject();
+    auto gameObject = transform->getGameObject();
     auto name = gameObject->getName();
 
     if (s_objectSelected != gameObject) {
@@ -235,14 +257,34 @@ void Game::ReadHierarchy(Transform *transform) {
     }
 
     const bool isOpen = ImGui::TreeNodeEx(name.c_str(), flags);
+
     if (ImGui::IsItemClicked(ImGuiMouseButton_Middle)) {
         s_objectSelected = gameObject;
     }
 
     if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceNoDisableHover | ImGuiDragDropFlags_SourceNoHoldToOpenOthers)) {
         ImGui::Text("Moving \"%s\"", name.c_str());
-        ImGui::SetDragDropPayload("DND_DEMO_NAME", name.c_str(), name.size());
+        ImGui::SetDragDropPayload(IMGUI_PAYLOAD_GAMEOBJECT, name.data(), name.size());
         ImGui::EndDragDropSource();
+    }
+
+    if (ImGui::BeginDragDropTarget()) {
+        ImGuiDragDropFlags target_flags = 0;
+        // target_flags |= ImGuiDragDropFlags_AcceptBeforeDelivery;
+        // target_flags |= ImGuiDragDropFlags_SourceAllowNullID;
+
+        if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(IMGUI_PAYLOAD_GAMEOBJECT, target_flags)) {
+            std::string name((char*)payload->Data, payload->DataSize);
+            if (!name.empty()) {
+                auto target = GameObject::Find(name);
+
+                auto &ts = target->getTransform();
+                ts.setParent(transform);
+                
+                Scene::Remove(target);
+            }
+        }
+        ImGui::EndDragDropTarget();
     }
 
     if (isOpen) {
@@ -315,20 +357,6 @@ void Game::RenderViewportUI() {
 
     const ImVec2 wSize =  ImGui::GetCursorPos();
 
-    if (Time::FPS > 50) {
-        FPSColor = {0, 255, 0, 255};
-    } else if (Time::FPS > 25) {
-        FPSColor = {255, 255, 0, 255};
-    } else if (Time::FPS > 0) {
-        FPSColor = {255, 0, 0, 255};
-    }
-
-    std::string fps = "FPS: " + std::to_string(Time::FPS);
-
-    ImGui::SetCursorPos(ImVec2(curSize.x - ImGui::CalcTextSize(fps.c_str()).x, ImGui::CalcTextSize(fps.c_str()).y * 2.5f));
-
-    ImGui::TextColored(FPSColor, "%s", fps.c_str());
-
     ImGui::SetCursorPos(ImVec2(ImGui::GetContentRegionAvail().x / 2 - wSize.x, 32));
 
     if (ImGui::ImageButton(reinterpret_cast<ImTextureID>(s_texturePlayGame->getID()), ImVec2(16, 16))) {
@@ -352,6 +380,38 @@ void Game::RenderViewportUI() {
             bScriptReloaded = true;
         }
     }
+
+    if (Time::FPS > 50) {
+        FPSColor = {0, 255, 0, 255};
+    } else if (Time::FPS > 25) {
+        FPSColor = {255, 255, 0, 255};
+    } else if (Time::FPS > 0) {
+        FPSColor = {255, 0, 0, 255};
+    }
+
+    std::string fps = "FPS: " + std::to_string(Time::FPS);
+
+    auto curtorPos = ImVec2(curSize.x - ImGui::CalcTextSize(fps.c_str()).x, ImGui::CalcTextSize(fps.c_str()).y * 2.5f);
+
+    ImGui::SetCursorPos(curtorPos);
+
+    ImGui::TextColored(FPSColor, "%s", fps.c_str());
+
+    ImGui::SetCursorPos({5.0f, 35.0f});
+
+    ImGui::PushStyleColor(ImGuiCol_Text, {0.0f, 0.0f, 1.0f, 1.0f});
+
+    ImGui::BeginGroup();
+    if (ImGui::RadioButton("Local", m_guizmoManipulate == ImGuizmo::LOCAL)) {
+        m_guizmoManipulate = ImGuizmo::LOCAL;
+    }
+    ImGui::SameLine();
+    if (ImGui::RadioButton("World", m_guizmoManipulate == ImGuizmo::WORLD)) {
+        m_guizmoManipulate = ImGuizmo::WORLD;
+    }
+    ImGui::EndGroup();
+
+    ImGui::PopStyleColor();
 
     ImGui::End();
 }
@@ -576,26 +636,30 @@ void Game::OnPropertyAnimator(Animator *animator) {
             target_flags |= ImGuiDragDropFlags_AcceptBeforeDelivery;
             target_flags |= ImGuiDragDropFlags_SourceAllowNullID;
 
-            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("DND_DEMO_NAME", target_flags)) {
+            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(IMGUI_PAYLOAD_GAMEOBJECT, target_flags)) {
                 std::string name((char*)payload->Data, payload->DataSize);
                 if (!name.empty()) {
                     armature = GameObject::Find(name);
                 }
-                // armature = (GameObject*)payload->Data;
             }
             ImGui::EndDragDropTarget();
         }
 
-        auto &animations = animator->m_animations;
-        for (int i=0;i<animations.size();++i) {
-            auto &anim = animations[i];
+        auto isOpen = ImGui::TreeNode("Animations");
 
-            auto name = anim.getName();
+        if (isOpen) {
+            auto &animations = animator->m_animations;
+            for (int i=0;i<animations.size();++i) {
+                auto &anim = animations[i];
 
-            ImGui::Selectable(name.c_str(), m_current == &anim);
-            if (ImGui::IsItemClicked()) {
-                m_current = &anim;
+                auto name = anim.getName();
+
+                ImGui::Selectable(name.c_str(), m_current == &anim);
+                if (ImGui::IsItemClicked()) {
+                    m_current = &anim;
+                }
             }
+            ImGui::TreePop();
         }
         ImGui::TreePop();
     }

@@ -11,9 +11,6 @@ public:
 
     Vector3 position;
 
-    Transform* parent;
-
-    Transform* root;
 
     Transform();
 
@@ -29,13 +26,11 @@ public:
 
     const Matrix4x4 getLocalMatrix() const;
 
-    bool hasParent() const;
+    const bool hasParent() const;
 
     void setParent(Transform* transform);
 
-    Transform* getRoot();
-
-    void setRoot(Transform* transform);
+    void addChildren(Transform *transform);
 
     std::vector<Transform *> &getChildren();
 
@@ -43,6 +38,8 @@ public:
 
 private:
     std::vector<Transform *> m_children;
+
+    Transform* m_parent;
 };
 
 

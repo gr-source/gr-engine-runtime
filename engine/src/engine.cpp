@@ -151,6 +151,7 @@ void Engine::OnUpdate() {
     }
 }
 
+Time tickRender;
 void Engine::OnRender() {
     EventManager::ProcessEvent();
 
@@ -158,11 +159,14 @@ void Engine::OnRender() {
         ScriptManager::EventUpdate();
     }
 
+    tickRender.start();
+
     MainFramebuffer();
 
-    #if !IS_GAME
+    gameStatics.renderMs = tickRender.end();
+
     UIFramebuffer();
-    #endif
+
 }
 
 void Engine::OnPhysics() {
@@ -254,16 +258,14 @@ void Engine::HandleEvent(EngineEvent event, const void* data) {
     }
 }
 
-Time tickRender;
 void Engine::MainFramebuffer() {
-    gameStatics.renderMs = tickRender.start();
-
     auto camera = Camera::Main();
     if (camera) {
         // Preparação para renderização.
         RenderManager::Process();
 
-        /* Preparação do shadow
+        /*
+        // Preparação do shadow
         m_shadowbuffer->bind();
         GRender(GRENDERERDEPTH);
         GEnableDepthTest();
@@ -289,11 +291,7 @@ void Engine::MainFramebuffer() {
         pScreenBuffer->unbind();
     }
 
-    #if !IS_GAME
     pImguibuffer->bind();
-    #else
-    GSetViewport(Screen::width, Screen::height);
-    #endif
 
     // renderização da cena 2d e utilização do pos processamento;
     grr::gRender::SetRenderState(grr::GR_BACKGROUND, grr::GR_COLOR_BUFFER);
@@ -302,11 +300,7 @@ void Engine::MainFramebuffer() {
 
     pScreenRender->render(pScreenBuffer->GetTexture());
 
-    #if !IS_GAME
     pImguibuffer->unbind();
-    #endif
-    
-    tickRender.end();
 }
 
 void Engine::RenderScene() {

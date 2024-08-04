@@ -14,17 +14,20 @@ public:
 
     float SleepTick();
 
-    float start();
+    void start();
 
-    void end();
+    const float end();
 
-    const int& getFPS() const;
+    const int getFPS() const;
 
 protected:
     std::chrono::system_clock::time_point a;
     std::chrono::system_clock::time_point b;
     double m_targetFrameTime;
     float elapsedTime;
-    int fpsCount;
+    int frameCount;
     int fps;
+
+    std::chrono::system_clock::time_point start_time;
+    std::chrono::system_clock::time_point end_time;
 };

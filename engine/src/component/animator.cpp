@@ -18,13 +18,14 @@ void Animator::UpdateAnim() {
     }
 
     m_currentTime = std::fmod(m_currentTime, m_animation->getDuration());
-    m_currentTime += m_animation->getTick() * Time::deltaTime;
 
     auto &parent = m_armature->getTransform();
-    hiearchy(&parent, Matrix4x4::identityMatrix);
+    hierarchy(&parent, Matrix4x4::identityMatrix);
+    
+    m_currentTime += m_animation->getTick() * Time::deltaTime;
 }
 
-void Animator::hiearchy(Transform *transform, const Matrix4x4 &parentTransform) {
+void Animator::hierarchy(Transform *transform, const Matrix4x4 &parentTransform) {
     auto gameObject = transform->getGameObject();
 
     Matrix4x4 result = parentTransform;
@@ -39,14 +40,14 @@ void Animator::hiearchy(Transform *transform, const Matrix4x4 &parentTransform) 
     auto bone = findBone(name);
 
     if (keyframe && bone) {
+        Matrix4x4 offset = bone->getLocalMatrix();
         result *= keyframe->getLocalMatrix(m_currentTime);
 
-        Matrix4x4 offset = bone->getLocalMatrix();
         m_finalBoneMatrices[bone->getBoneIndex()] = result * offset;
     }
 
     for (const auto &child : transform->getChildren()) {
-        hiearchy(child, result);
+        hierarchy(child, result);
     }
 }
 

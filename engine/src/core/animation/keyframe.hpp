@@ -42,13 +42,13 @@ private:
     std::vector<Key<Quaternion>> m_keyRotation;
 
     template <typename T>
-    const std::uint32_t getIndexFromTime(float time, const std::vector<Key<T>>& keys) const;
+    const grm::u32 getIndexFromTime(float time, const std::vector<Key<T>>& keys) const;
 };
 
 template <typename T>
-inline const std::uint32_t Keyframe::getIndexFromTime(float time, const std::vector<Key<T>>& keys) const {
+inline const grm::u32 Keyframe::getIndexFromTime(float time, const std::vector<Key<T>>& keys) const {
     for (auto i=0;i<keys.size() - 1;i++) {
-        if (time < keys[i + 1].time)
+        if (time <= keys[i + 1].time)
             return i;
     }
     return 0;

@@ -24,7 +24,7 @@ private:
 
     float m_currentTime;
 
-    void hiearchy(Transform *transform, const Matrix4x4 &parentTransform);
+    void hierarchy(Transform *transform, const Matrix4x4 &parentTransform);
 
     Bone *findBone(const std::string &name);
 

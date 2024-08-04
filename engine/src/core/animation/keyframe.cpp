@@ -34,7 +34,7 @@ const Quaternion Keyframe::getInterpolateRotation(float time) const {
 
     float scaleFactor = getScaleFactor(m_keyRotation[p0Index].time, m_keyRotation[p1Index].time, time);
     
-    return Math::slerp(m_keyRotation[p0Index].value, m_keyRotation[p1Index].value, scaleFactor);
+    return Math::normalize(Math::slerp(m_keyRotation[p1Index].value, m_keyRotation[p0Index].value, scaleFactor));
 }
 
 const Vector3 Keyframe::getInterpolatePosition(float time) const {
@@ -52,6 +52,8 @@ const Vector3 Keyframe::getInterpolatePosition(float time) const {
 }
 
 const float Keyframe::getScaleFactor(float last, float next, float time) const {
+    if (next == last)
+        return 0.0f;
     return ((time - last) / (next - last));
 }
 

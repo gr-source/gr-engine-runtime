@@ -13,11 +13,6 @@ struct Line {
     Line(const Vector3& position, const Color& color) : position(position), color(color) {}
 };
 
-struct SpriteRender {
-    Texture* m_sprite;
-    Matrix4x4 model;
-};
-
 class DebugDraw {
 public:
 	static void initialize();
@@ -25,8 +20,6 @@ public:
     static void addLine(const Vector3& start, const Vector3& end, const Color& color);
 
     static void addPoint(const Vector3& position, const Color& color);
-
-    static void addSprite(const Vector3& position, Texture*& sprite);
 
     static const bool isvalid();
 
@@ -37,10 +30,6 @@ public:
     static const bool hasPoints();
 
     static void drawPoints();
-
-    static const bool hassprites();
-
-    static void drawsprites();
 
     static void bind();
 
@@ -55,17 +44,11 @@ protected:
 
 	static std::unique_ptr<BufferManager> m_spritebuffer;
 
-    static std::vector<SpriteRender> m_sprites;
-
     static std::vector<Line> m_lines;
     
     static std::vector<Line> m_points;
 
-    static Shader* m_spriteRender;
-
 	static Shader* m_shader;
-
-    static void SetupSpriteRender(Shader* shader);
 
     static void SetupShaderPrimitive(Shader* shader);
 

@@ -4,37 +4,37 @@
 
 #include "../timer.h"
 
-Transform::Transform() : position(Vector3::zero), scale(Vector3::one), rotation(Quaternion::identity), parent(nullptr), root(nullptr) {}
+Transform::Transform() : position(Vector3::zero), scale(Vector3::one), rotation(Quaternion::identity), m_parent(nullptr) {}
 
 const Vector3 Transform::getright() const {
-    if (parent)
-        return Math::normalize((parent->rotation * rotation) * Vector3::right);
+    if (m_parent)
+        return Math::normalize((m_parent->rotation * rotation) * Vector3::right);
     return rotation * Vector3::right;
 }
 
 const Vector3 Transform::getup() const {
-    if (parent)
-        return Math::normalize((parent->rotation * rotation) * Vector3::up);
+    if (m_parent)
+        return Math::normalize((m_parent->rotation * rotation) * Vector3::up);
     return rotation * Vector3::up;
 }
 
 const Vector3 Transform::getforward() const {
-    if (parent)
-        return Math::normalize((parent->rotation * rotation) * Vector3::forward);
+    if (m_parent)
+        return Math::normalize((m_parent->rotation * rotation) * Vector3::forward);
     return rotation * Vector3::forward;
 }
 
 const Vector3 Transform::getPosition() const {
-    if (parent) {
-        return parent->getPosition() - position;
+    if (m_parent) {
+        return Vector3(m_parent->getglobalmatrix() * Vector4(position, 1.0f));
     }
     return position;
 }
 
 const Matrix4x4 Transform::getglobalmatrix() const {
     Matrix4x4 localMatrix = Math::translate<Matrix4x4>(position) * Math::rotate<Matrix4x4>(rotation) * Math::scale<Matrix4x4>(scale);
-    if (parent)
-        return parent->getglobalmatrix() * localMatrix;
+    if (m_parent)
+        return m_parent->getglobalmatrix() * localMatrix;
     return localMatrix;
 }
 
@@ -42,20 +42,25 @@ const Matrix4x4 Transform::getLocalMatrix() const {
     return Math::translate<Matrix4x4>(position) * Math::rotate<Matrix4x4>(rotation) * Math::scale<Matrix4x4>(scale);
 }
 
-bool Transform::hasParent() const {
-    return parent != nullptr;
+const bool Transform::hasParent() const {
+    return m_parent != nullptr;
 }
 
 void Transform::setParent(Transform *transform) {
-    parent = transform;
+    if (m_parent) {
+        m_parent->m_children.erase(std::remove(m_parent->m_children.begin(), m_parent->m_children.end(), this), m_parent->m_children.end());
+    }
+    if (transform)
+        transform->addChildren(this);
+    m_parent = transform;
 }
 
-Transform *Transform::getRoot() {
-    return root;
-}
-
-void Transform::setRoot(Transform *transform) {
-    root = transform;
+void Transform::addChildren(Transform *transform) {
+    auto it = std::find(m_children.begin(), m_children.end(), transform);
+    if (it != m_children.end()) {
+        return;
+    }
+    m_children.push_back(transform);
 }
 
 std::vector<Transform *> &Transform::getChildren() {
