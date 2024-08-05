@@ -32,6 +32,7 @@
 #include "ui/View.h"
 
 #include "filesystem/filesystem.h"
+#include "filesystem/stream.h"
 
 #include "scriptManager/scriptManager.hpp"
 
@@ -113,31 +114,19 @@ void Game::Initialize() {
 #include "core/binary/gHeader.hpp"
 
 void WriteNode(const FbxNode &node) {
-    /*
-    const std::string path = Filesystem::getpublic(Filesystem::eModel).string() + "/" + node.getName() + ".3d";
+    Console::Print(LogInfo::INFO, "Writing model...");
 
-    Console::Print(LogInfo::INFO, path + " Writing...");
+    Stream::open(Filesystem::GetFile("/model" + node.getName()), std::ios_base::out | std::ios_base::binary);
 
-    std::string name = node.getName();
+    // Write name
+    // auto name = node.getName();
+    // auto nameLen = name.size();
+    // auto nameData = name.data();
 
-    // Binary - Header
-    gHeader header{{'G', 'R', 'M', 'D'}, 10};
-    std::strcpy(header.name, name.c_str());
+    // Stream::write<std::size_t>(&nameLen, 1);
+    // Stream::write(nameData, nameLen);
 
-    auto meshes = node.getMeshes();
-
-    std::ofstream os(path, std::ios_base::binary);
-    // File header
-    os.write(reinterpret_cast<const char *>(&header), sizeof(gHeader));
-
-    // Mesh header
-    gMeshHeader meshHeader{meshes.size()};
-    
-    for (const auto &mesh : meshes) {
-
-    }
-    os.close();
-    */
+    // Stream::close();
 }
 
 void ReadNode(const FbxNode &node) {
@@ -163,6 +152,7 @@ void Game::DropFile(const std::filesystem::path &path) {
 
     auto& filmbox = m_filmboxList.emplace_back(std::make_unique<Filmbox>(path.string()));
     filmbox->setPostProcess(PostProcess);
+    filmbox->load();
 }
 
 void Game::RenderUI() {
@@ -231,7 +221,7 @@ void Game::RenderScenesUI() {
         ImGui::TreePop();
     }
 
-    if (ImGui::IsKeyReleased(ImGuiKey_A) && s_io->KeyCtrl) {
+    if (s_io->KeyCtrl && ImGui::IsKeyReleased(ImGuiKey_A)) {
         bMenuAdd = !bMenuAdd;
     }
     
@@ -324,7 +314,7 @@ void Game::RenderViewportUI() {
         bScriptReloaded = false;
     }
 
-    ImGui::Image(reinterpret_cast<ImTextureID>(m_imguibuffer.gettexture()), ImGui::GetContentRegionAvail(), ImVec2(0, 1), ImVec2(1, 0));
+    ImGui::Image(reinterpret_cast<ImTextureID>(m_imguibuffer.gettexture()), curSize, ImVec2(0, 1), ImVec2(1, 0));
 
     if (s_objectSelected != nullptr) {
         if (s_io->KeyCtrl && ImGui::IsKeyReleased(ImGuiKey_T)) {
@@ -357,29 +347,7 @@ void Game::RenderViewportUI() {
 
     const ImVec2 wSize =  ImGui::GetCursorPos();
 
-    ImGui::SetCursorPos(ImVec2(ImGui::GetContentRegionAvail().x / 2 - wSize.x, 32));
-
-    if (ImGui::ImageButton(reinterpret_cast<ImTextureID>(s_texturePlayGame->getID()), ImVec2(16, 16))) {
-        Settings::IsGameRunning =! Settings::IsGameRunning;
-
-        if (Settings::IsGameRunning) {
-            s_texturePlayGame = iconsUI[IconType::ICON_STOP_GAME];
-
-            ScriptManager::Shutdown();
-
-            RenderManager::Shutdown();
-
-            s_objectSelected = nullptr;
-        } else {
-            s_texturePlayGame = iconsUI[IconType::ICON_PLAY_GAME];
-
-            ScriptManager::Initialzie();
-
-            RenderManager::Initialize();
-
-            bScriptReloaded = true;
-        }
-    }
+    ImGui::SetCursorPos(ImVec2(curSize.x / 2 - wSize.x, 32));
 
     if (Time::FPS > 50) {
         FPSColor = {0, 255, 0, 255};
@@ -389,13 +357,18 @@ void Game::RenderViewportUI() {
         FPSColor = {255, 0, 0, 255};
     }
 
-    std::string fps = "FPS: " + std::to_string(Time::FPS);
+    // Fps Draw
+    {
+        std::string fps = "FPS: " + std::to_string(Time::FPS);
 
-    auto curtorPos = ImVec2(curSize.x - ImGui::CalcTextSize(fps.c_str()).x, ImGui::CalcTextSize(fps.c_str()).y * 2.5f);
+        auto textSize = ImGui::CalcTextSize(fps.c_str());
 
-    ImGui::SetCursorPos(curtorPos);
+        auto curtorPos = ImVec2(curSize.x - textSize.x, textSize.y * 2.5f);
 
-    ImGui::TextColored(FPSColor, "%s", fps.c_str());
+        ImGui::SetCursorPos(curtorPos);
+
+        ImGui::TextColored(FPSColor, "%s", fps.c_str());
+    }
 
     ImGui::SetCursorPos({5.0f, 35.0f});
 
@@ -417,7 +390,7 @@ void Game::RenderViewportUI() {
 }
 
 void Game::RenderFilesUI() {
-    static std::filesystem::path root = Filesystem::getpublic(Filesystem::eResource).string();
+    static std::filesystem::path root = Filesystem::GetFile("");
     ImGui::Columns(5, "#Collums1", false);
 
     grr::gTexture *gtCurrentTexture = iconsUI[ICON_BACK_FILE];
@@ -942,21 +915,21 @@ void Game::MenuAdd() {
 }
 
 void Game::loadReources() {
-    iconsUI.emplace(IconType::ICON_FILE,        Resources::LoadTextureL(Filesystem::getpublic(Filesystem::eIcon).string() + "/icons8-file-30.png"));
-    iconsUI.emplace(IconType::ICON_FOLDER,      Resources::LoadTextureL(Filesystem::getpublic(Filesystem::eIcon).string() + "/icons8-folder-50.png"));
-    iconsUI.emplace(IconType::ICON_BACK_FILE,   Resources::LoadTextureL(Filesystem::getpublic(Filesystem::eIcon).string() + "/icons8-go-back-50.png"));
-    iconsUI.emplace(IconType::ICON_GAMEOBJECT,  Resources::LoadTextureL(Filesystem::getpublic(Filesystem::eIcon).string() + "/icons8-3d-object-50.png"));
-    iconsUI.emplace(IconType::ICON_PENCIL,      Resources::LoadTextureL(Filesystem::getpublic(Filesystem::eIcon).string() + "/icons8-lápis-30.png"));
-    iconsUI.emplace(IconType::ICON_LIGHT,       Resources::LoadTextureL(Filesystem::getpublic(Filesystem::eIcon).string() + "/icons8-lâmpada-globular-64.png"));
-    iconsUI.emplace(IconType::ICON_TEXTURE,     Resources::LoadTextureL(Filesystem::getpublic(Filesystem::eIcon).string() + "/icons8-textura-de-renderização-32.png"));
-    iconsUI.emplace(IconType::ICON_PNG,         Resources::LoadTextureL(Filesystem::getpublic(Filesystem::eIcon).string() + "/icons8-png-24.png"));
-    iconsUI.emplace(IconType::ICON_PLAY_GAME,   Resources::LoadTextureL(Filesystem::getpublic(Filesystem::eIcon).string() + "/icons8-reproduzir-30.png"));
-    iconsUI.emplace(IconType::ICON_STOP_GAME,   Resources::LoadTextureL(Filesystem::getpublic(Filesystem::eIcon).string() + "/icons8-parar-50.png"));
-    iconsUI.emplace(IconType::ICON_BIN,         Resources::LoadTextureL(Filesystem::getpublic(Filesystem::eIcon).string() + "/icons8-resíduos-50.png"));
-    iconsUI.emplace(IconType::ICON_IMPORT,      Resources::LoadTextureL(Filesystem::getpublic(Filesystem::eIcon).string() + "/icons8-importar-50.png"));
-    iconsUI.emplace(IconType::ICON_ASCENDENTE,  Resources::LoadTextureL(Filesystem::getpublic(Filesystem::eIcon).string() + "/icons8-ordenar-para-a-direita-50.png"));
-    iconsUI.emplace(IconType::ICON_DESCENDENTE, Resources::LoadTextureL(Filesystem::getpublic(Filesystem::eIcon).string() + "/icons8-ordem-descendente-50.png"));
-    iconsUI.emplace(IconType::ICON_EDIT,        Resources::LoadTextureL(Filesystem::getpublic(Filesystem::eIcon).string() + "/icons8-editar-24.png"));
+    iconsUI.emplace(IconType::ICON_FILE,        Resources::LoadTextureL(Filesystem::GetFile("/icon") + "/icons8-file-30.png"));
+    iconsUI.emplace(IconType::ICON_FOLDER,      Resources::LoadTextureL(Filesystem::GetFile("/icon") + "/icons8-folder-50.png"));
+    iconsUI.emplace(IconType::ICON_BACK_FILE,   Resources::LoadTextureL(Filesystem::GetFile("/icon") + "/icons8-go-back-50.png"));
+    iconsUI.emplace(IconType::ICON_GAMEOBJECT,  Resources::LoadTextureL(Filesystem::GetFile("/icon") + "/icons8-3d-object-50.png"));
+    iconsUI.emplace(IconType::ICON_PENCIL,      Resources::LoadTextureL(Filesystem::GetFile("/icon") + "/icons8-lápis-30.png"));
+    iconsUI.emplace(IconType::ICON_LIGHT,       Resources::LoadTextureL(Filesystem::GetFile("/icon") + "/icons8-lâmpada-globular-64.png"));
+    iconsUI.emplace(IconType::ICON_TEXTURE,     Resources::LoadTextureL(Filesystem::GetFile("/icon") + "/icons8-textura-de-renderização-32.png"));
+    iconsUI.emplace(IconType::ICON_PNG,         Resources::LoadTextureL(Filesystem::GetFile("/icon") + "/icons8-png-24.png"));
+    iconsUI.emplace(IconType::ICON_PLAY_GAME,   Resources::LoadTextureL(Filesystem::GetFile("/icon") + "/icons8-reproduzir-30.png"));
+    iconsUI.emplace(IconType::ICON_STOP_GAME,   Resources::LoadTextureL(Filesystem::GetFile("/icon") + "/icons8-parar-50.png"));
+    iconsUI.emplace(IconType::ICON_BIN,         Resources::LoadTextureL(Filesystem::GetFile("/icon") + "/icons8-resíduos-50.png"));
+    iconsUI.emplace(IconType::ICON_IMPORT,      Resources::LoadTextureL(Filesystem::GetFile("/icon") + "/icons8-importar-50.png"));
+    iconsUI.emplace(IconType::ICON_ASCENDENTE,  Resources::LoadTextureL(Filesystem::GetFile("/icon") + "/icons8-ordenar-para-a-direita-50.png"));
+    iconsUI.emplace(IconType::ICON_DESCENDENTE, Resources::LoadTextureL(Filesystem::GetFile("/icon") + "/icons8-ordem-descendente-50.png"));
+    iconsUI.emplace(IconType::ICON_EDIT,        Resources::LoadTextureL(Filesystem::GetFile("/icon") + "/icons8-editar-24.png"));
 
     s_texturePlayGame = iconsUI[IconType::ICON_PLAY_GAME];
 }

@@ -47,18 +47,24 @@ set(core_hdr
 )
 
 set(filmbox_src
+    src/core/filmbox/fbxAnimation.cpp
     src/core/filmbox/fbxMaterial.cpp
+    src/core/filmbox/fbxChannel.cpp
     src/core/filmbox/fbxVertex.cpp
     src/core/filmbox/fbxScene.cpp
+    src/core/filmbox/fbxBone.cpp
     src/core/filmbox/fbxMesh.cpp
     src/core/filmbox/fbxNode.cpp
     src/core/filmbox/filmbox.cpp
 )
 
 set(filmbox_hdr
+    src/core/filmbox/fbxAnimation.hpp
     src/core/filmbox/fbxMaterial.hpp
+    src/core/filmbox/fbxChannel.hpp
     src/core/filmbox/fbxVertex.hpp
     src/core/filmbox/fbxScene.hpp
+    src/core/filmbox/fbxBone.hpp
     src/core/filmbox/fbxMesh.hpp
     src/core/filmbox/fbxNode.hpp
     src/core/filmbox/filmbox.hpp

@@ -16,7 +16,7 @@ public:
 	
 	template <typename T>
 	static void write(const T* data, std::streamsize count);
-	
+
 	static void seekg(std::streampos position);
 
 	static std::istream& getline(std::string& line);

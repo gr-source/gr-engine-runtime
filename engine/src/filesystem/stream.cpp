@@ -7,7 +7,7 @@ void Stream::open(const std::string& path, std::ios_base::openmode mode) {
 }
 
 void Stream::seekg(std::streampos position) {
-	stream.seekg(position);
+    stream.seekg(position);
 }
 
 std::istream& Stream::getline(std::string &line) {

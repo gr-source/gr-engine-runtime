@@ -3,35 +3,19 @@
 #include "../log.h"
 
 #include <filesystem>
-#include <dirent.h>
 
-Filesystem::path Filesystem::getpublic(u8 type) {
-    switch (type) {
-        case eResource:
-            return {"assets"};
-        case eIcon:
-            return {"assets/icon"};
-        case eShader:
-            return {"assets/shader"};
-        case eScene:
-            return {"assets/scenes"};
-        case eModel:
-            return {"assets/model"};
-        default:
-            throw std::runtime_error(Log::red + "[ Filesystem::getpublic ] - invalid type." + Log::none);
-    }
-    return {};
-}
-
-std::string Filesystem::getfilecontent(const std::string &path) {
+const std::string Filesystem::GetFileContent(const std::string &path) {
     std::ifstream is(path);
-    if (!is.is_open()) return "";
+    if (!is.is_open())
+        return "";
+        
     std::string content((std::istreambuf_iterator<char>(is)), std::istreambuf_iterator<char>());
+
     is.close();
     return content;
 }
 
-const bool Filesystem::exists(const std::string &path) {
+const bool Filesystem::Exists(const std::string &path) {
     return std::filesystem::exists(path);
 }
 
@@ -41,6 +25,10 @@ const std::vector<Filesystem::path> Filesystem::getDirectoryEntry(const std::str
         entry.push_back({it.path().parent_path().string(), it.path().string(), it.path().filename()});
     }*/
     return entry;
+}
+
+const std::string Filesystem::GetFile(const std::string &path) {
+    return "./assets" + path;
 }
 
 Filesystem::path::path() {

@@ -36,12 +36,12 @@ std::mutex Resources::s_textureMutex;
 
 template <>
 Shader* Resources::Load<Shader>(const std::string& path, const std::function<void(Shader*)>& callback) {
-    if (!Filesystem::exists(path + ".frag")) {
+    if (!Filesystem::Exists(path + ".frag")) {
         Log::error() << "[ Shader ] fragment shader file not found (" << path << ".frag)" << Log::end;
         return nullptr;
     }
 
-    if (!Filesystem::exists(path + ".vert")) {
+    if (!Filesystem::Exists(path + ".vert")) {
         Log::error() << "[ Shader ] vertex shader file not found (" << path << ".vert)" << Log::end;
         return nullptr;
     }
@@ -65,7 +65,7 @@ Shader* Resources::Load<Shader>(const std::string& path, const std::function<voi
 
 template <>
 Texture* Resources::Load<Texture>(const std::string& path, const std::function<void(Texture*)>& callback) {
-    if (!Filesystem::exists(path)) {
+    if (!Filesystem::Exists(path)) {
         Log::error() << "[ Texture ] file not found (" << path << ")" << Log::end;
         return nullptr;
     }
@@ -117,12 +117,12 @@ grr::gTexture *Resources::LoadTextureL(const std::string &path) {
 }
 
 grr::gShader *Resources::LoadShaderL(const std::string &path) {
-    if (!Filesystem::exists(path + ".frag")) {
+    if (!Filesystem::Exists(path + ".frag")) {
         Console::Print(LogInfo::ERROR, "File do not found: " + path + ".frag");
         return nullptr;
     }
 
-    if (!Filesystem::exists(path + ".vert")) {
+    if (!Filesystem::Exists(path + ".vert")) {
         Console::Print(LogInfo::ERROR, "File do not found: " + path + ".vert");
         return nullptr;
     }
@@ -267,7 +267,7 @@ void Resources::LoadShader() {
         auto& process = m_shaderLoader.front();
         lock.unlock();
 
-        std::string fcontent = Filesystem::getfilecontent(process.data->getpath() + ".frag");
+        std::string fcontent = Filesystem::GetFileContent(process.data->getpath() + ".frag");
         if (fcontent.empty()) {
             lock.lock();
             m_shaderLoader.pop_front();
@@ -275,7 +275,7 @@ void Resources::LoadShader() {
         }
 
         /* load vertex shader string */
-        std::string vcontent = Filesystem::getfilecontent(process.data->getpath() + ".vert");
+        std::string vcontent = Filesystem::GetFileContent(process.data->getpath() + ".vert");
         if (vcontent.empty()) {
             lock.lock();
             m_shaderLoader.pop_front();
@@ -283,7 +283,7 @@ void Resources::LoadShader() {
         }
 
         /* load geometry shader string */
-        const std::string gcontent = Filesystem::getfilecontent(process.data->getpath() + ".geo");
+        const std::string gcontent = Filesystem::GetFileContent(process.data->getpath() + ".geo");
         if (gcontent.empty()) {
             Log::warning() << "[ Shader ] geometry shader file do not open" << Log::end;
         }
@@ -373,7 +373,7 @@ void Resources::LoadShaderF() {
         // Loading Fragment shader
         Console::Print(LogInfo::WARNING, "Loading FragmentShader: " + frag + " - " + vert);
 
-        auto fragSource = Filesystem::getfilecontent(frag);
+        auto fragSource = Filesystem::GetFileContent(frag);
         if (fragSource.empty()) {
             Console::Print(LogInfo::ERROR, "Falied to load: " + frag);
             delete shader;
@@ -386,7 +386,7 @@ void Resources::LoadShaderF() {
         // Loading vertex shader
 
         Console::Print(LogInfo::WARNING, "Loading VertexShader: " + vert);
-        auto vertSource = Filesystem::getfilecontent(vert);
+        auto vertSource = Filesystem::GetFileContent(vert);
         if (vertSource.empty()) {
             Console::Print(LogInfo::ERROR, "Falied to load: " + vert);
             delete shader;

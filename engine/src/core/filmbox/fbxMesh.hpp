@@ -1,17 +1,21 @@
 #pragma once
 
 #include "fbxMaterial.hpp"
-#include "fbxVertex.cpp"
+#include "fbxVertex.hpp"
+#include "fbxBone.hpp"
 
 #include <vector>
-#include <string>
 
 class FbxMesh {
 public:
     FbxMesh(const std::string &name = "default");
+
+    const std::string &getName() const;
     
     template <typename ...Args>
     FbxVertex &addVertice(Args &&...args);
+
+    FbxVertex &getVertice(int idx);
 
     const std::vector<FbxVertex> &getVertices() const;
 
@@ -19,19 +23,25 @@ public:
 
     const std::vector<int> &getIndices() const;
 
-    template <typename ...Args>
-    FbxMaterial &addMaterial(Args &&...args);
+    grm::size addMaterial(int idx);
 
-    const std::vector<FbxMaterial> &getMaterials() const;
+    const std::vector<int> &getMaterials() const;
+
+    template <typename ...Args>
+    FbxBone &addBone(Args &&...args);
+
+    const std::vector<FbxBone> &getBones() const;
     
 private:
     std::string m_name;
+
+    std::vector<int> m_materials;
 
     std::vector<FbxVertex> m_vertices;
 
     std::vector<int> m_indices;
 
-    std::vector<FbxMaterial> m_materials;
+    std::vector<FbxBone> m_bones;
 };
 
 template <typename... Args>
@@ -40,6 +50,6 @@ inline FbxVertex &FbxMesh::addVertice(Args &&...args) {
 }
 
 template <typename... Args>
-inline FbxMaterial &FbxMesh::addMaterial(Args &&...args) {
-    return m_materials.emplace_back(std::forward<Args>(args)...);
+inline FbxBone &FbxMesh::addBone(Args &&...args) {
+    return m_bones.emplace_back(std::forward<Args>(args)...);
 }

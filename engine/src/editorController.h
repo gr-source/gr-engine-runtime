@@ -27,6 +27,7 @@ private:
     static Vector2 start;
 
     static void OnCameraUpdate();
-
 };
+
+
 

@@ -19,7 +19,7 @@ Shader* DebugDraw::m_shader = nullptr;
 bool DebugDraw::bDebugMode = false;
 
 void DebugDraw::initialize() {
-    m_shader = Resources::Load<Shader>(Filesystem::getpublic(Filesystem::eShader).string() + "/ShaderPrimitive", DebugDraw::SetupShaderPrimitive);
+    m_shader = Resources::Load<Shader>(Filesystem::GetFile("/shader") + "/ShaderPrimitive", DebugDraw::SetupShaderPrimitive);
 
     m_primitivebuffer = std::make_unique<BufferManager>(BufferManager::eDYNAMIC);
 

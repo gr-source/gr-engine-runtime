@@ -166,7 +166,6 @@ void Engine::OnRender() {
     gameStatics.renderMs = tickRender.end();
 
     UIFramebuffer();
-
 }
 
 void Engine::OnPhysics() {
@@ -294,6 +293,7 @@ void Engine::MainFramebuffer() {
     pImguibuffer->bind();
 
     // renderização da cena 2d e utilização do pos processamento;
+    grr::gRender::SetRenderState(grr::GR_BACKGROUND_COLOR, (void*)&Color::white);
     grr::gRender::SetRenderState(grr::GR_BACKGROUND, grr::GR_COLOR_BUFFER);
     grr::gRender::SetRenderState(grr::GR_DEPTH, grr::GR_FALSE);
     grr::gRender::SetRenderState(grr::GR_FRAMEBUFFER_SRGB, grr::GR_FALSE);
@@ -313,7 +313,6 @@ void Engine::RenderScene() {
     grr::gRender::SetRenderState(grr::GR_DEPTH_FUNC, grr::GR_DEPTH_LESS);
 }
 
-#if !IS_GAME
 void Engine::UIFramebuffer() {
     Vector2 scale(Screen::width, Screen::height);
     
@@ -326,7 +325,6 @@ void Engine::UIFramebuffer() {
     Game::RenderUI();
     ImGuiRender::End();
 }
-#endif
 
 void Engine::SetupEnable() {
     grr::gRender::SetRenderState(grr::GR_MULTISAMPLE, grr::GR_TRUE);

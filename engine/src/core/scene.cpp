@@ -15,5 +15,9 @@ void Scene::Add(GameObject *target) {
         return;
     }
     auto &list = Scene::GetGameObject();
+    auto it = std::find(list.begin(), list.end(), target);
+    if (it != list.end()) {
+        return;
+    }
     list.push_back(target);
 }

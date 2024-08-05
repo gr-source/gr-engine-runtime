@@ -1,8 +1,8 @@
 #include "filmbox.hpp"
 
-#include "../../filesystem/filesystem.h"
-#include "../../eventManager.h"
 #include "../../console.hpp"
+#include "../../eventManager.h"
+#include "../../filesystem/filesystem.h"
 
 #include <assimp/postprocess.h>
 #include <assimp/Importer.hpp>
@@ -11,16 +11,24 @@
 
 #define NORM(n) n > 6.0f ? n / 1e2f : n
 
-Filmbox::Filmbox(const std::string &path) : m_thread(std::make_unique<Thread>()) {
-    m_thread->run(&Filmbox::doInBackground, this, path);
+Filmbox::Filmbox(const std::string &path) : m_path(path), m_thread(std::make_unique<Thread>()) {}
+
+Filmbox::~Filmbox() {
+    if (m_thread) {
+        m_thread->stop();
+    }
 }
 
 void Filmbox::setPostProcess(std::function<void(const FbxScene *)> func) {
     m_funcPost = func;
 }
 
+void Filmbox::load() {
+    m_thread->run(&Filmbox::doInBackground, this, m_path);
+}
+
 void Filmbox::doInBackground(const std::string &path) {
-    if (!Filesystem::exists(path)) {
+    if (!Filesystem::Exists(path)) {
         return Console::Print(LogInfo::ERROR, "falied to opennable .fbx: " + path);
     }
     Assimp::Importer importer;
@@ -37,7 +45,9 @@ void Filmbox::doInBackground(const std::string &path) {
 
     importer.FreeScene();
 
-    EventManager::addEvent(m_funcPost, m_fbxScene.get());
+    if (m_funcPost) {
+        EventManager::addEvent(m_funcPost, m_fbxScene.get());
+    }
 }
 
 void Filmbox::sceneLoader(const aiScene *scene) {
@@ -51,6 +61,11 @@ void Filmbox::sceneLoader(const aiScene *scene) {
         loadMesh(scene);
     }
 
+    if (scene->HasAnimations()) {
+        Console::Print(LogInfo::WARNING, "Loading Animations...");
+        loadAnimation(scene);
+    }
+
     Console::Print(LogInfo::WARNING, "Loading Node...");
 
     auto mRootNode = scene->mRootNode;
@@ -61,9 +76,50 @@ void Filmbox::sceneLoader(const aiScene *scene) {
     }
 }
 
+void Filmbox::loadAnimation(const aiScene *scene) {
+    for (auto i=0;i<scene->mNumAnimations;i++) {
+        auto mAnimation = scene->mAnimations[i];
+
+        auto name = mAnimation->mName;
+        auto duration = mAnimation->mDuration;
+        auto tick = mAnimation->mTicksPerSecond;
+
+        auto &animation = m_fbxScene->addAnimation(name.C_Str(), duration, tick);
+
+        for (auto j=0;j<mAnimation->mNumChannels;j++) {
+            auto mChannel = mAnimation->mChannels[j];
+
+            auto cName = mChannel->mNodeName;
+
+            auto &channel = animation.addChannel(cName.C_Str());
+
+            addKeys(mChannel, channel);
+        }
+    }
+}
+
+void Filmbox::addKeys(aiNodeAnim *mNodeAnim, FbxChannel &channel) {
+    for (auto i=0;i<mNodeAnim->mNumPositionKeys;++i) {
+        auto key = mNodeAnim->mPositionKeys[i];
+        channel.addPosition(static_cast<float>(key.mTime), Vector3(key.mValue.x, key.mValue.y, key.mValue.z));
+    }
+
+    for (auto i=0;i<mNodeAnim->mNumScalingKeys;++i) {
+        auto key = mNodeAnim->mScalingKeys[i];
+        channel.addScale(static_cast<float>(key.mTime), Vector3(key.mValue.x, key.mValue.y, key.mValue.z));
+    }
+
+    for (auto i=0;i<mNodeAnim->mNumRotationKeys;++i) {
+        auto key = mNodeAnim->mRotationKeys[i];
+        channel.addRotation(static_cast<float>(key.mTime), Quaternion(key.mValue.w, key.mValue.x, key.mValue.y, key.mValue.z));
+    }
+}
+
 void Filmbox::loadMaterial(const aiScene *scene) {
     for (auto i=0;i<scene->mNumMaterials;++i) {
         auto vMaterial = scene->mMaterials[i];
+
+        // vMaterial->GetTextureCount()
 
         auto name = vMaterial->GetName();
 
@@ -84,9 +140,11 @@ void Filmbox::loadMaterial(const aiScene *scene) {
         if (vMaterial->Get(AI_MATKEY_SHININESS, value) == AI_SUCCESS) {
             material.roughness = NORM(value);
         }
-
-        vMaterial->Clear();
     }
+}
+
+void Filmbox::processTexture(aiMaterial *iMaterial, FbxMaterial &material) {
+    // iMaterial->GetTextureCount(aiTextureType)
 }
 
 void Filmbox::loadMesh(const aiScene *scene) {
@@ -104,38 +162,72 @@ void Filmbox::processMesh(aiMesh *mMesh) {
     auto bHasNormal = mMesh->HasNormals();
     auto bHasTexCoord = mMesh->HasTextureCoords(0);
 
-    mesh.addMaterial(m_fbxScene->getMaterial(mMesh->mMaterialIndex));
+    auto id = mesh.addMaterial(mMesh->mMaterialIndex);
 
-    int mIdx = mesh.getMaterials().size() - 1;
-    
     for (auto i=0;i<mMesh->mNumVertices;++i) {
-        auto& vertice = mesh.addVertice(Vector3::zero, Vector3::zero, Vector2::zero, mIdx);
+        auto& vertice = mesh.addVertice(Vector3::zero, Vector3::zero, Vector2::zero, id);
 
         if (bHasPosition) {
-            auto mVertice = mMesh->mVertices[i];
+            auto &mVertice = mMesh->mVertices[i];
 
             vertice.position = {mVertice.x, mVertice.y, mVertice.z};
         }
 
         if (bHasNormal) {
-            auto mNormal = mMesh->mNormals[i];
+            auto &mNormal = mMesh->mNormals[i];
 
             vertice.normal = {mNormal.x, mNormal.y, mNormal.z};
         }
 
         if (bHasTexCoord) {
-            auto mTexCoord = mMesh->mTextureCoords[0][i];
+            auto &mTexCoord = mMesh->mTextureCoords[0][i];
 
             vertice.texCoord = {mTexCoord.x, mTexCoord.y};
         }
     }
 
     for (auto i=0;i<mMesh->mNumFaces;++i) {
-        auto mFace = mMesh->mFaces[i];
+        auto &mFace = mMesh->mFaces[i];
+
+        if (mFace.mNumIndices >= 3) {
+            continue;
+        }
 
         mesh.addIndice(mFace.mIndices[0]);
         mesh.addIndice(mFace.mIndices[1]);
         mesh.addIndice(mFace.mIndices[2]);
+    }
+
+    if (mMesh->HasBones()) {
+        for (auto i=0;i<mMesh->mNumBones;++i) {
+            auto mBone = mMesh->mBones[i];
+
+            auto name = mBone->mName;
+
+            aiVector3D scale;
+            aiQuaternion rotation;
+            aiVector3D position;
+            mBone->mOffsetMatrix.Decompose(scale, rotation, position);
+
+            auto& fBone = mesh.addBone(name.C_Str(), i);
+            fBone.setScale({scale.x, scale.y, scale.z});
+            fBone.setPosition({position.x, position.y, position.z});
+            fBone.setRotation({rotation.w, rotation.x, rotation.y, rotation.z});
+
+            for (auto j=0;j<mBone->mNumWeights;++j) {
+                auto weight = mBone->mWeights[j];
+
+                auto& vertice = mesh.getVertice(weight.mVertexId);
+                for (auto k=0;k<4;++k) {
+                    if (vertice.boneIndex[k] != -1 || weight.mWeight <= 0.0f) {
+                        continue;
+                    }
+                    vertice.weight[k] = static_cast<float>(weight.mWeight);
+                    vertice.boneIndex[k] = i;
+                    break;
+                }
+            }
+        }
     }
 }
 
@@ -149,17 +241,15 @@ void Filmbox::processNode(aiNode *mNode, FbxNode& node) {
     aiQuaternion rotation;
     mNode->mTransformation.Decompose(scale, rotation, position);
 
-    NORMALIZE(scale)
-    NORMALIZE(position)
+    // NORMALIZE(scale)
+    // NORMALIZE(position)
 
     newNode.setPosition({position.x, position.y, position.z});
     newNode.setScale({scale.x, scale.y, scale.z});
     newNode.setRotation({rotation.w, rotation.x, rotation.y, rotation.z});
 
     for (auto i=0;i<mNode->mNumMeshes;++i) {
-        auto index = mNode->mMeshes[i];
-
-        newNode.addMesh(m_fbxScene->getMesh(index));
+        newNode.addMesh(mNode->mMeshes[i]);
     }
 
     for (auto i=0;i<mNode->mNumChildren;++i) {
@@ -168,3 +258,8 @@ void Filmbox::processNode(aiNode *mNode, FbxNode& node) {
         processNode(child, newNode);
     }
 }
+
+
+
+
+

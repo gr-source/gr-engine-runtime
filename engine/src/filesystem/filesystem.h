@@ -30,15 +30,13 @@ public:
         const bool operator!=(const Filesystem::path& lhs);
     };
 
-    static Filesystem::path getpublic(u8 type);
+    static const std::string GetFileContent(const std::string& path);
 
-    static std::string getfilecontent(const std::string& path);
-
-    static const bool exists(const std::string& path);
+    static const bool Exists(const std::string& path);
 
     static const std::vector<Filesystem::path> getDirectoryEntry(const std::string& path);
 
-    // static Filesystem::path path(const std::string);
+    static const std::string GetFile(const std::string &path);
 };
 
 
