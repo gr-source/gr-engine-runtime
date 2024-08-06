@@ -110,7 +110,7 @@ void RenderManager::Process() {
 
     iDrawCount = models.size();
 
-    auto camera = Camera::Main();
+    auto camera = Camera::Current();
 
     s_frustum.CalculateFrustum(camera->getPerspesctive() * camera->getViewmatrix());
 
@@ -140,7 +140,7 @@ void RenderManager::Renderer() {
         return;
     }
 
-    auto camera = Camera::Main();
+    auto camera = Camera::Current();
 
     m_shader->bind();
 
@@ -229,7 +229,7 @@ void RenderManager::SetupMaterial(std::unordered_map<int, Material> &materials) 
             if (!texture || !texture->isValid()) {
                 continue;
             }
-            texture->bind(idx[i]);
+            grr::gTexture::Bind(texture, idx[i]);
             idxEn[i] = 1;
         }
 

@@ -1,8 +1,10 @@
 #include "scriptManager.hpp"
 
+#include "../component/camera.hpp"
+
 #include "../resources/resources.h"
 #include "../ecs/entity.h"
-    #include "../core/scene.hpp"
+#include "../core/scene.hpp"
 
 #include "../memory.h"
 
@@ -97,6 +99,7 @@ void ScriptManager::Shutdown() {
     // [ Componenet - Camera ]
     UNREGISTER_API(MainCamera);
     UNREGISTER_API(CurrentCamera);
+    UNREGISTER_API(Camera::GetCameras);
 
     UNREGISTER_API(EventUpdate);
 
@@ -138,6 +141,8 @@ void ScriptManager::RegisterApi() {
     // [ Componenet - Camera ]
     REGISTER_API(Camera*, void, MainCamera);
     REGISTER_API(Camera*, void, CurrentCamera);
+    REGISTER_API_FROM_NAME("GetAllCamera", std::vector<Camera *> &, void, Camera::GetCameras);
+    REGISTER_API_FROM_NAME("SetEnableCamera", void, Camera *, Camera::SetEnable);
 
     // Event
     REGISTER_API(void, void, EventUpdate);

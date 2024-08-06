@@ -40,7 +40,7 @@ public:
     T& getComponent();
     
     template <typename T>
-    const bool hasComponent();
+    const bool hasComponent() const;
 
     GameObject *getGameObject();
 
@@ -60,11 +60,8 @@ inline T &Entity::getComponent() {
 }
 
 template <typename T>
-inline const bool Entity::hasComponent() {
+inline const bool Entity::hasComponent() const {
     auto it = components.find(typeid(T).name());
-    if (it != components.end()) {
-        return true;
-    }
-    return false;
+    return it != components.end();
 }
 

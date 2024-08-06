@@ -31,7 +31,7 @@ void Imguibuffer::resize(const Vector2 &size) {
     m_width = size.x;
     m_height = size.y;
 
-    m_texture->resize(m_width, m_height, Texture::eRGB, Texture::eRGB, Texture::eBILINEAR, Texture::eBYTE, false);
+    m_texture->resize(m_width, m_height, Texture::eSRBG, Texture::eRGB, Texture::eBILINEAR, Texture::eBYTE, false);
     m_texture->apply();
 }
 

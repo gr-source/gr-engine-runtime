@@ -1,4 +1,3 @@
-#include <settings.h>
 #include <engine.h>
 #include <input.h>
 
@@ -45,7 +44,7 @@ void OnPreLoad() {
 }
 
 void GLFWwindowclosefunCallback(GLFWwindow* window) {
-    Settings::IsEngineRunning = false;
+    Engine::HandleEvent(Engine::GR_DESTROY, nullptr);
 }
 
 void GLFWframebuffersizefunCallback(GLFWwindow* window, int width, int height) {
@@ -132,7 +131,7 @@ int OnApplicationInit() {
 
     Engine::HandleEvent(Engine::GR_MAINLOOP, &func);
 
-    Engine::HandleEvent(Engine::GR_DESTROY, nullptr);
+    // Engine::HandleEvent(Engine::GR_DESTROY, nullptr);
 
     OnDestroy();
     return 0;

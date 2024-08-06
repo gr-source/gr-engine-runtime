@@ -21,12 +21,12 @@ void EditorController::Initialize() {
 
 void EditorController::Update() {
     static ImGuiIO& io = ImGui::GetIO();
+    auto camera = Camera::Main();
 
-    if (!io.MouseDrawCursor || Settings::IsGameRunning) {
+    if (camera != Camera::Current() || !io.MouseDrawCursor || Settings::IsGameRunning) {
         return;
     }
 
-    auto camera = Camera::Main();
 
     float velocity = movementSpeed * Time::deltaTime;
 

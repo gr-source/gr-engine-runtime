@@ -266,7 +266,7 @@ void Engine::HandleEvent(EngineEvent event, const void* data) {
 }
 
 void Engine::MainFramebuffer() {
-    auto camera = Camera::Main();
+    auto camera = Camera::Current();
     if (!camera) {
         return;
     }

@@ -305,7 +305,7 @@ void Game::RenderViewportUI() {
     if (lastSize.x != curSize.x || lastSize.y != curSize.y && curSize.x > 5.0f && curSize.y > 5.0f || bScriptReloaded) {
         Settings::ViewportSize = {static_cast<int>(curSize.x), static_cast<int>(curSize.y)};
 
-        auto camera = Camera::Main();
+        auto camera = Camera::Current();
         if (camera) {
             camera->setAspectRatio(curSize.x / curSize.y);
         }
@@ -340,7 +340,7 @@ void Game::RenderViewportUI() {
 
         Matrix4x4 model = transform.getglobalmatrix();
 
-        auto camera = Camera::Main();
+        auto camera = Camera::Current();
 
         if (ImGuizmo::Manipulate(camera->getViewmatrix().data, camera->getPerspesctive().data, m_guizmoOperation, m_guizmoManipulate, model.data)) {
             model.decompose(transform.scale, transform.rotation, transform.position);
@@ -586,6 +586,21 @@ void Game::RenderPropertiUI() {
         if (ImGui::BeginTabItem("Configuraçoes")) {
             ImGui::Checkbox("Wireframe", &RenderManager::bWireFrame);
             ImGui::Checkbox("Debug Mode", &DebugDraw::bDebugMode);
+
+            ImGui::Text("Camera: ");
+            if (Camera::GetCameras) {
+                for (auto &camera : Camera::GetCameras()) {
+                    auto gameObject = camera->getGameObject();
+
+                    auto name = gameObject->getName();
+
+                    ImGui::PushID(name.c_str());
+                    if (ImGui::Button(name.c_str())) {
+                        Camera::SetEnable(camera);
+                    }
+                    ImGui::PopID();
+                }
+            }
             ImGui::EndTabItem();
         }
         ImGui::EndTabBar();
@@ -611,6 +626,11 @@ void Game::OnPropertyTransform(Transform* transform) {
             transform->rotation = Math::normalize(Math::euler({Math::rad(euler.x), Math::rad(euler.y), Math::rad(euler.z)}));
         }
 
+        if (ImGui::Button("Save")) {
+            std::ofstream is("/home/grsource/Documentos/scn.ct", std::ios_base::ate | std::ios_base::app);
+            is << transform->position << " " << euler << std::endl; 
+            is.close();
+        }
         ImGui::TreePop();
     }
 }
@@ -1003,4 +1023,3 @@ void Game::ProgressLoad() {
     }
     ImGui::End();
 }
-

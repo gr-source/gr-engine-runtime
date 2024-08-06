@@ -90,7 +90,7 @@ void Skybox::render() {
             m_backgroundShader->setUniform("environmentMap", 0);
         }
 
-        auto camera = Camera::Main();
+        auto camera = Camera::Current();
 
         m_backgroundShader->setUniform("projection", camera->getPerspesctive());
         m_backgroundShader->setUniform("view", camera->getViewmatrix());

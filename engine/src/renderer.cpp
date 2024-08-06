@@ -59,7 +59,7 @@ const bool DebugDraw::hasLines() {
 }
 
 void DebugDraw::bind() {
-    auto camera = Camera::Main();
+    auto camera = Camera::Current();
 
     m_shader->bind();
 

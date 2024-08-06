@@ -4,6 +4,10 @@
 
 #include "../scriptManager/scriptManager.hpp"
 
+std::vector<Camera *> &(*Camera::GetCameras)();
+
+void (*Camera::SetEnable)(Camera *camera);
+
 Camera *Camera::Main() {
     if (!ScriptManager::MainCamera) {
         return nullptr;
@@ -12,6 +16,9 @@ Camera *Camera::Main() {
 }
 
 Camera *Camera::Current() {
+    if (!ScriptManager::CurrentCamera) {
+        return nullptr;
+    }
     return ScriptManager::CurrentCamera();
 }
 

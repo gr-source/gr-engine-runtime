@@ -6,6 +6,10 @@
 
 class Camera : public Component {
 public:
+    static std::vector<Camera *> &(*GetCameras)();
+
+    static void (*SetEnable)(Camera *camera);
+
     static Camera *Main();
 
     static Camera *Current();
@@ -29,8 +33,4 @@ private:
     float m_aspect;
     float m_farPlane;
     float m_nearPlane;
-
-    static std::vector<Camera*> s_camera;
-
-    static Camera *s_current;
 };

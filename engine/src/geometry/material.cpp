@@ -26,6 +26,6 @@ const float Material::getAmbientOcclusion() const {
     return m_ao;
 }
 
-grr::gTexture *Material::getTexture(int idx) {
+const grr::gTexture *Material::getTexture(int idx) const {
     return m_texture[idx];
 }

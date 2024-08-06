@@ -50,6 +50,7 @@ void Transform::setParent(Transform *transform) {
     if (m_parent) {
         m_parent->m_children.erase(std::remove(m_parent->m_children.begin(), m_parent->m_children.end(), this), m_parent->m_children.end());
     }
+    
     if (transform)
         transform->addChildren(this);
     m_parent = transform;
@@ -70,3 +71,9 @@ std::vector<Transform *> &Transform::getChildren() {
 const bool Transform::hasChildren() const {
     return !m_children.empty();
 }
+
+
+
+
+
+
