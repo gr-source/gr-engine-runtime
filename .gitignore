@@ -2,3 +2,4 @@ build/
 bullet3/build/
 .vscode/
 lib/
+bin/assets/model/

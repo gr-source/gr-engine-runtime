@@ -6,6 +6,8 @@
 
 #include "resources/resources.h"
 
+#include "console.hpp"
+
 void EnableShader(Shader* shader) {
     shader->RegisterUniform("screenTexture", 1, Shader::eINT);
 }
@@ -32,12 +34,18 @@ ScreenRender::ScreenRender() : m_shader(Resources::Load<Shader>(Filesystem::GetF
     bufferManager->unbind();
 }
 
-void ScreenRender::render(Texture* texture) {
-    if (!texture->isvalid() || !m_shader->isvalid()) return;
+void ScreenRender::render(grr::gTexture *texture) {
+    if (!texture || !texture->isValid()) {
+        return Console::Print(LogInfo::ERROR, "Texture do not is valid.");
+    }
+
+    if (!m_shader || !m_shader->isvalid()) {
+        return Console::Print(LogInfo::ERROR, "Shader do not is valid.");
+    }
 
     m_shader->bind();
 
-    texture->bind();
+    grr::gTexture::Bind(texture, 0);
     m_shader->setUniform("screenTexture", 0);
 
     bufferManager->bind(BufferManager::eVAO);
@@ -47,6 +55,7 @@ void ScreenRender::render(Texture* texture) {
     m_shader->unbind();
     
     bufferManager->unbind();
-    texture->unbind();
+    grr::gTexture::Unbind();
+    // texture->unbind();
 }
 

@@ -9,7 +9,12 @@ uniform sampler2D screenTexture;
 void main() {
     vec3 color = texture(screenTexture, TexCoords).rgb;
 
-    color = vec3(1.0) - exp(color * 1.5);
+    // HDR
+    color = vec3(1.0) - exp(color * 1.3);
 
-    FragColor = vec4(pow(color, vec3(1.0 / 2.2)), 1.0);
+    // Gama Correction
+    color = pow(color, vec3(1.0 / 2.2));
+
+    // OutPut Color
+    FragColor = vec4(color, 1.0);
 }

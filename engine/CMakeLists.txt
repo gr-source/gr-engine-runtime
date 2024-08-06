@@ -110,6 +110,7 @@ set(engine_src
     src/eventManager.cpp
     src/renderManager.cpp
     src/bufferManager.cpp
+    src/postProcessing.cpp
     src/editorController.cpp
 
     src/component/light.cpp
@@ -173,6 +174,7 @@ set(engine_hdr
     src/eventManager.h
     src/renderManager.h
     src/bufferManager.h
+    src/postProcessing.hpp
     src/editorController.h
     
     src/component/light.hpp

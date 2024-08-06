@@ -1,7 +1,9 @@
 #include "engine.h"
+
 #include "input.h"
 #include "screen.h"
 #include "editorController.h"
+#include "postProcessing.hpp"
 
 #include "component/meshRender.hpp"
 #include "component/camera.hpp"
@@ -37,8 +39,6 @@
 #include <gr-render/gRender.h>
 
 Imguibuffer* pImguibuffer = nullptr;
-
-ScreenBuffer* pScreenBuffer = nullptr;
 
 Skybox* Engine::m_skybox = nullptr;
 
@@ -114,8 +114,10 @@ void Engine::OnInit() {
 
     ImGuiRender::Initialize("#version 330 core");
 
+    PostProcessing::Initialize();
+
     // Buffer de renderização.
-    pScreenBuffer = &ScreenBuffer::getInstance();
+    // pScreenBuffer = &ScreenBuffer::getInstance();
     pImguibuffer = &Imguibuffer::getInstance();
 
     // Renderizaraçãod da screen paar pos processamento e UI.
@@ -259,46 +261,34 @@ void Engine::HandleEvent(EngineEvent event, const void* data) {
 
 void Engine::MainFramebuffer() {
     auto camera = Camera::Main();
-    if (camera) {
-        // Preparação para renderização.
-        RenderManager::Process();
-
-        /*
-        // Preparação do shadow
-        m_shadowbuffer->bind();
-        GRender(GRENDERERDEPTH);
-        GEnableDepthTest();
-        GCullFaceFront();
-
-        BatchingManager::OnRenderShadow();
-
-        m_shadowbuffer->unbind();
-        */
-
-        // aplicação do anti-alising mass4.
-        pScreenBuffer->bind();
-
-        grr::gRender::SetRenderState(grr::GR_BACKGROUND, grr::GR_DEPTH_BUFFER | grr::GR_COLOR_BUFFER);
-        grr::gRender::SetRenderState(grr::GR_DEPTH, grr::GR_TRUE);
-        grr::gRender::SetRenderState(grr::GR_FRAMEBUFFER_SRGB, grr::GR_TRUE);
-
-        RenderScene();
-
-        // trocara para o frame buffer do pos processamento.
-        pScreenBuffer->swap();
-
-        pScreenBuffer->unbind();
+    if (!camera) {
+        return;
     }
+    // Seleção de modelos para renderizar
+    RenderManager::Process();
 
+    // Pos processamento
+    PostProcessing::Bind();
+
+    grr::gRender::SetRenderState(grr::GR_BACKGROUND, grr::GR_DEPTH_BUFFER | grr::GR_COLOR_BUFFER);
+    grr::gRender::SetRenderState(grr::GR_DEPTH, grr::GR_TRUE);
+    grr::gRender::SetRenderState(grr::GR_FRAMEBUFFER_SRGB, grr::GR_TRUE);
+
+    RenderScene();
+
+    // Fim do posprocessamento
+    PostProcessing::Unbind();
+
+    // Capitura de posprocessamento para o imgui
     pImguibuffer->bind();
 
     // renderização da cena 2d e utilização do pos processamento;
-    grr::gRender::SetRenderState(grr::GR_BACKGROUND_COLOR, (void*)&Color::white);
+    grr::gRender::SetRenderState(grr::GR_BACKGROUND_COLOR, (void*)&Color::blue);
     grr::gRender::SetRenderState(grr::GR_BACKGROUND, grr::GR_COLOR_BUFFER);
     grr::gRender::SetRenderState(grr::GR_DEPTH, grr::GR_FALSE);
     grr::gRender::SetRenderState(grr::GR_FRAMEBUFFER_SRGB, grr::GR_FALSE);
 
-    pScreenRender->render(pScreenBuffer->GetTexture());
+    pScreenRender->render(PostProcessing::GetTextureColor());
 
     pImguibuffer->unbind();
 }
@@ -314,7 +304,7 @@ void Engine::RenderScene() {
 }
 
 void Engine::UIFramebuffer() {
-    Vector2 scale(Screen::width, Screen::height);
+    iVector2 scale(Screen::width, Screen::height);
     
     grr::gRender::SetRenderState(grr::GR_VIEWPORT, (void*)&scale);
 
@@ -335,4 +325,10 @@ void Engine::SetupEnable() {
     grr::gRender::SetRenderState(grr::GR_BLEND, grr::GR_TRUE);
     grr::gRender::SetRenderState(grr::GR_SRC_ALPHA, grr::GR_ONE_MINUS_SRC_ALPHA);
 }
+
+
+
+
+
+
 

@@ -9,6 +9,7 @@
 #include "console.hpp"
 #include "renderManager.h"
 #include "editorController.h"
+#include "postProcessing.hpp"
 
 #include "core/filmbox/filmbox.hpp"
 #include "core/scene.hpp"
@@ -287,7 +288,7 @@ void Game::ReadHierarchy(Transform *transform) {
 
 void Game::RenderViewportUI() {
     static Imguibuffer& m_imguibuffer = Imguibuffer::getInstance();
-    static ScreenBuffer& m_screenBuffer = ScreenBuffer::getInstance();
+    // static ScreenBuffer& m_screenBuffer = ScreenBuffer::getInstance();
 
     ImGui::Begin("Viewport", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
 
@@ -308,7 +309,7 @@ void Game::RenderViewportUI() {
             camera->setAspectRatio(curSize.x / curSize.y);
         }
 
-        m_screenBuffer.resize({curSize.x, curSize.y});
+        PostProcessing::Resize({(int)curSize.x, (int)curSize.y});
         
         lastSize = curSize;
         bScriptReloaded = false;
@@ -347,7 +348,32 @@ void Game::RenderViewportUI() {
 
     const ImVec2 wSize =  ImGui::GetCursorPos();
 
-    ImGui::SetCursorPos(ImVec2(curSize.x / 2 - wSize.x, 32));
+    // Play button
+    {
+        ImGui::SetCursorPos(ImVec2(curSize.x / 2 - wSize.x, 32));
+
+        if (ImGui::ImageButton(reinterpret_cast<ImTextureID>(s_texturePlayGame->getID()), ImVec2(16, 16))) {
+            Settings::IsGameRunning =! Settings::IsGameRunning;
+
+            if (Settings::IsGameRunning) {
+                s_texturePlayGame = iconsUI[IconType::ICON_STOP_GAME];
+
+                ScriptManager::Shutdown();
+
+                RenderManager::Shutdown();
+
+                s_objectSelected = nullptr;
+            } else {
+                s_texturePlayGame = iconsUI[IconType::ICON_PLAY_GAME];
+
+                ScriptManager::Initialzie();
+
+                RenderManager::Initialize();
+
+                bScriptReloaded = true;
+            }
+        }
+    }
 
     if (Time::FPS > 50) {
         FPSColor = {0, 255, 0, 255};

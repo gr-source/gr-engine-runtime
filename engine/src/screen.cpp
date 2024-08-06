@@ -1,13 +1,13 @@
 #include "screen.h"
 
-float Screen::width = 0.0f;
-float Screen::height = 0.0f;
+int Screen::width = 0.0f;
+int Screen::height = 0.0f;
 
-void Screen::SetResolution(float w, float h) {
+void Screen::SetResolution(int w, int h) {
     width = w;
     height = h;
 }
 
-const Vector2 Screen::GetResolution() {
+const iVector2 Screen::GetResolution() {
     return {Screen::width, Screen::height};
 }
