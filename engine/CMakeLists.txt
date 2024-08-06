@@ -170,7 +170,7 @@ set(engine_hdr
     src/console.hpp
     src/renderer.h
     src/settings.h
-    src/screenRender.h
+    src/screenRender.hpp
     src/eventManager.h
     src/renderManager.h
     src/bufferManager.h

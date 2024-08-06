@@ -23,7 +23,7 @@
 
 #include "renderManager.h"
 #include "eventManager.h"
-#include "screenRender.h"
+#include "screenRender.hpp"
 #include "settings.h"
 #include "renderer.h"
 #include "skybox.h"
@@ -135,6 +135,8 @@ void Engine::OnInit() {
 
     ScriptManager::Initialzie();
 
+    ScreenRender::Initialize();
+
     Game::Initialize();
 
     RenderManager::Initialize();
@@ -194,9 +196,13 @@ void Engine::OnLoader() {
 }
 
 void Engine::OnDestroy() {
+    Settings::IsEngineRunning = false;
+    
     ImGuiRender::Shutdown();
     
     ScriptManager::Shutdown();
+
+    ScreenRender::Shutdown();
 
     if (m_thread[0].joinable()) {
         m_thread[0].join();
@@ -288,7 +294,9 @@ void Engine::MainFramebuffer() {
     grr::gRender::SetRenderState(grr::GR_DEPTH, grr::GR_FALSE);
     grr::gRender::SetRenderState(grr::GR_FRAMEBUFFER_SRGB, grr::GR_FALSE);
 
-    pScreenRender->render(PostProcessing::GetTextureColor());
+    ScreenRender::Render(PostProcessing::GetTextureColor());
+
+    // pScreenRender->render(PostProcessing::GetTextureColor());
 
     pImguibuffer->unbind();
 }

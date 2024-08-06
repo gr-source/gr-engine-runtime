@@ -78,4 +78,8 @@ private:
     static ImGuizmo::MODE m_guizmoManipulate;
 
     static u32 s_maxProgress;
+
+    static void PlayGame();
+
+    static void StopGame();
 };

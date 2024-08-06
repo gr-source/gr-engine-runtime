@@ -31,15 +31,24 @@ int RenderManager::iDrawCount = 0;
 int RenderManager::iDrawRender = 0;
 
 void RenderManager::Initialize() {
-    auto source = ScriptManager::GetShader()[0];
+    if (!ScriptManager::GetShader) {
+        return;
+    }
+    auto shaders = ScriptManager::GetShader();
+    auto it = shaders.find(0);
+    if (it == shaders.end()) {
+        return Console::Print(LogInfo::ERROR, "Falied to find model shader 'id=0'");
+    }
 
-    const char *fragment = source.first.c_str();
-    const char *vertex = source.second.c_str();
+    auto &&[frag, vert] = (*it).second;
 
-    Console::Print(LogInfo::INFO, "Render loading shader...");
+    const char *fragment = frag.c_str();
+    const char *vertex = vert.c_str();
+
+    Console::Print(LogInfo::INFO, "Model loading shader...");
 
     m_shader = grr::gShader::Create(&fragment, &vertex);
-    if (!m_shader) {
+    if (!m_shader || !m_shader->isValid()) {
         std::stringstream iss(grr::gError::GetError());
 
         std::string line;

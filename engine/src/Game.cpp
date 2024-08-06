@@ -7,6 +7,7 @@
 #include "settings.h"
 #include "renderer.h"
 #include "console.hpp"
+#include "screenRender.hpp"
 #include "renderManager.h"
 #include "editorController.h"
 #include "postProcessing.hpp"
@@ -358,17 +359,13 @@ void Game::RenderViewportUI() {
             if (Settings::IsGameRunning) {
                 s_texturePlayGame = iconsUI[IconType::ICON_STOP_GAME];
 
-                ScriptManager::Shutdown();
-
-                RenderManager::Shutdown();
+                StopGame();
 
                 s_objectSelected = nullptr;
             } else {
                 s_texturePlayGame = iconsUI[IconType::ICON_PLAY_GAME];
 
-                ScriptManager::Initialzie();
-
-                RenderManager::Initialize();
+                PlayGame();
 
                 bScriptReloaded = true;
             }
@@ -938,6 +935,22 @@ void Game::MenuAdd() {
         bMenuAdd = false;
     }
     ImGui::End();
+}
+
+void Game::PlayGame() {
+    ScriptManager::Initialzie();
+
+    RenderManager::Initialize();
+
+    ScreenRender::Initialize();
+}
+
+void Game::StopGame() {
+    ScriptManager::Shutdown();
+
+    RenderManager::Shutdown();
+
+    ScreenRender::Shutdown();
 }
 
 void Game::loadReources() {
