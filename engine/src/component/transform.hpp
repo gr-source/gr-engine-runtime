@@ -11,7 +11,6 @@ public:
 
     Vector3 position;
 
-
     Transform();
 
     const Vector3 getright() const;
@@ -22,13 +21,15 @@ public:
 
     const Vector3 getPosition() const;
 
-    const Matrix4x4 getglobalmatrix() const;
+    const Matrix4x4 getGlobalMatrix() const;
 
     const Matrix4x4 getLocalMatrix() const;
 
     const bool hasParent() const;
 
     void setParent(Transform* transform);
+
+    Transform *getParent();
 
     void addChildren(Transform *transform);
 

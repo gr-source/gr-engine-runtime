@@ -26,15 +26,15 @@ const Vector3 Transform::getforward() const {
 
 const Vector3 Transform::getPosition() const {
     if (m_parent) {
-        return Vector3(m_parent->getglobalmatrix() * Vector4(position, 1.0f));
+        return Vector3(m_parent->getGlobalMatrix() * Vector4(position, 1.0f));
     }
     return position;
 }
 
-const Matrix4x4 Transform::getglobalmatrix() const {
+const Matrix4x4 Transform::getGlobalMatrix() const {
     Matrix4x4 localMatrix = Math::translate<Matrix4x4>(position) * Math::rotate<Matrix4x4>(rotation) * Math::scale<Matrix4x4>(scale);
     if (m_parent)
-        return m_parent->getglobalmatrix() * localMatrix;
+        return localMatrix * m_parent->getGlobalMatrix();
     return localMatrix;
 }
 
@@ -54,6 +54,10 @@ void Transform::setParent(Transform *transform) {
     if (transform)
         transform->addChildren(this);
     m_parent = transform;
+}
+
+Transform *Transform::getParent() {
+    return m_parent;
 }
 
 void Transform::addChildren(Transform *transform) {

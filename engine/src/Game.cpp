@@ -250,7 +250,7 @@ void Game::ReadHierarchy(Transform *transform) {
 
     const bool isOpen = ImGui::TreeNodeEx(name.c_str(), flags);
 
-    if (ImGui::IsItemClicked(ImGuiMouseButton_Middle)) {
+    if (ImGui::IsItemClicked(ImGuiMouseButton_Left)) {
         s_objectSelected = gameObject;
     }
 
@@ -289,7 +289,6 @@ void Game::ReadHierarchy(Transform *transform) {
 
 void Game::RenderViewportUI() {
     static Imguibuffer& m_imguibuffer = Imguibuffer::getInstance();
-    // static ScreenBuffer& m_screenBuffer = ScreenBuffer::getInstance();
 
     ImGui::Begin("Viewport", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
 
@@ -303,20 +302,24 @@ void Game::RenderViewportUI() {
     ImVec2 curSize = ImGui::GetContentRegionAvail();
 
     if (lastSize.x != curSize.x || lastSize.y != curSize.y && curSize.x > 5.0f && curSize.y > 5.0f || bScriptReloaded) {
-        Settings::ViewportSize = {static_cast<int>(curSize.x), static_cast<int>(curSize.y)};
+        auto &viewport = Settings::ViewportSize = {static_cast<int>(curSize.x), static_cast<int>(curSize.y)};
 
         auto camera = Camera::Current();
         if (camera) {
-            camera->setAspectRatio(curSize.x / curSize.y);
+            camera->setAspectRatio(static_cast<float>(viewport.x) / static_cast<float>(viewport.y));
         }
 
-        PostProcessing::Resize({(int)curSize.x, (int)curSize.y});
+        PostProcessing::Resize(viewport);
         
         lastSize = curSize;
         bScriptReloaded = false;
     }
 
     ImGui::Image(reinterpret_cast<ImTextureID>(m_imguibuffer.gettexture()), curSize, ImVec2(0, 1), ImVec2(1, 0));
+
+    // ImGui::SetCursorPos({curSize.x / 2.0f, curSize.y / 2.0f});
+// 
+    // ImGui::Text("X");
 
     if (s_objectSelected != nullptr) {
         if (s_io->KeyCtrl && ImGui::IsKeyReleased(ImGuiKey_T)) {
@@ -338,7 +341,7 @@ void Game::RenderViewportUI() {
         
         Transform& transform = s_objectSelected->getTransform();
 
-        Matrix4x4 model = transform.getglobalmatrix();
+        Matrix4x4 model = transform.getGlobalMatrix();
 
         auto camera = Camera::Current();
 
@@ -589,6 +592,8 @@ void Game::RenderPropertiUI() {
 
             ImGui::Text("Camera: ");
             if (Camera::GetCameras) {
+                const auto &viewport = Settings::ViewportSize;
+
                 for (auto &camera : Camera::GetCameras()) {
                     auto gameObject = camera->getGameObject();
 
@@ -596,6 +601,8 @@ void Game::RenderPropertiUI() {
 
                     ImGui::PushID(name.c_str());
                     if (ImGui::Button(name.c_str())) {
+                        camera->setAspectRatio(static_cast<float>(viewport.x) / static_cast<float>(viewport.y));
+
                         Camera::SetEnable(camera);
                     }
                     ImGui::PopID();

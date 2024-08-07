@@ -119,7 +119,7 @@ void RenderManager::Process() {
 
         auto& meshFilter = gameObject->getComponent<MeshFilter>();
 
-        auto& model = transform.getglobalmatrix();
+        auto& model = transform.getGlobalMatrix();
         auto& boundbox = meshFilter.getBoundbox();
 
         if (!s_frustum.IsCubeInFrustumOOBB(boundbox.min, boundbox.max, model)) {
@@ -172,7 +172,7 @@ void RenderManager::Renderer() {
 
         SetupMaterial(meshrender.getMaterials());
 
-        grr::gShader::SetUniform("u_model", 1, transform.getglobalmatrix());
+        grr::gShader::SetUniform("u_model", 1, transform.getGlobalMatrix());
 
         meshrender.draw();
     }

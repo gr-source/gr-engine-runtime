@@ -59,8 +59,6 @@ void PostProcessing::Resize(const iVector2 &size) {
 
     m_viewport = size;
 
-    grr::gRender::SetRenderState(grr::GR_VIEWPORT, (void *)&m_viewport);
-
     grr::gTexture::Bind(m_texture, 0); // SRG or RGB ???
     grr::gTexture::PushTexture(m_texture, m_viewport.x, m_viewport.y, grr::TextureFormat_SRGB, nullptr);
     grr::gTexture::Unbind();
