@@ -1,8 +1,10 @@
 #include "filmbox.hpp"
 
-#include "../../console.hpp"
-#include "../../eventManager.h"
 #include "../../filesystem/filesystem.h"
+#include "../../resources/resources.h"
+
+#include "../../eventManager.h"
+#include "../../console.hpp"
 
 #include <assimp/postprocess.h>
 #include <assimp/Importer.hpp>
@@ -19,12 +21,16 @@ Filmbox::~Filmbox() {
     }
 }
 
-void Filmbox::setPostProcess(std::function<void(const FbxScene *)> func) {
+void Filmbox::setPostProcess(std::function<void(const FbxScene *, Filmbox *)> func) {
     m_funcPost = func;
 }
 
 void Filmbox::load() {
     m_thread->run(&Filmbox::doInBackground, this, m_path);
+}
+
+const bool Filmbox::isValid() const {
+    return Filesystem::Exists(m_path);
 }
 
 void Filmbox::doInBackground(const std::string &path) {
@@ -46,7 +52,7 @@ void Filmbox::doInBackground(const std::string &path) {
     importer.FreeScene();
 
     if (m_funcPost) {
-        EventManager::addEvent(m_funcPost, m_fbxScene.get());
+        EventManager::addEvent(m_funcPost, m_fbxScene.get(), this);
     }
 }
 
@@ -124,6 +130,8 @@ void Filmbox::loadMaterial(const aiScene *scene) {
         auto name = vMaterial->GetName();
 
         auto& material = m_fbxScene->addMaterial(name.C_Str());
+        processTexture(vMaterial, material);
+
         material.ao = 1.0f;
         
         aiColor3D diffuse;
@@ -144,7 +152,15 @@ void Filmbox::loadMaterial(const aiScene *scene) {
 }
 
 void Filmbox::processTexture(aiMaterial *iMaterial, FbxMaterial &material) {
-    // iMaterial->GetTextureCount(aiTextureType)
+    auto count = iMaterial->GetTextureCount(aiTextureType_DIFFUSE);
+    for (auto i=0;i<count;++i) {
+        aiString path;
+        if (iMaterial->GetTexture(aiTextureType_DIFFUSE, i, &path) != AI_SUCCESS) {
+            continue;
+        }
+
+        material.setTexture(i, Resources::LoadTextureL(path.C_Str()));
+    }
 }
 
 void Filmbox::loadMesh(const aiScene *scene) {
@@ -241,7 +257,7 @@ void Filmbox::processNode(aiNode *mNode, FbxNode& node) {
     aiQuaternion rotation;
     mNode->mTransformation.Decompose(scale, rotation, position);
 
-    // NORMALIZE(scale)
+    NORMALIZE(scale)
     // NORMALIZE(position)
 
     newNode.setPosition({position.x, position.y, position.z});

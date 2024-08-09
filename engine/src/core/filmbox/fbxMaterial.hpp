@@ -1,8 +1,10 @@
 #pragma once
 
-#include <string>
-
+#include <gr-render/gRender.h>
 #include <gr-math/gmath.h>
+
+#include <string>
+#include <vector>
 
 class FbxMaterial {
 public:
@@ -18,8 +20,14 @@ public:
 
     const std::string &getName() const;
 
+    void setTexture(int idx, grr::gTexture *texture);
+
+    const grr::gTexture *getTexture(int idx) const;
+
 private:
     std::string m_name;
+
+    std::vector<grr::gTexture *> m_textures;
 };
 
 

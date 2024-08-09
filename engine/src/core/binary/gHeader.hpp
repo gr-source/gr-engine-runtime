@@ -1,31 +1,37 @@
 #pragma once
 
 #include <gr-math/gmath.h>
+
 #include <cstdint>
+#include <cstring>
 
 struct gHeader {
     char signature[4];
-    uint32_t version;
-    char name[256];
-};
-
-struct gMeshHeader {
-    uint32_t count;
+    float version;
 };
 
 struct gVertex {
     Vector3 position;
     Vector3 normal;
     Vector2 texCoord;
-    int mIdx;
 };
 
 struct gMesh {
-    uint32_t m_verticeCount;
-    gVertex *m_vertices;
+    char m_name[256];
 
-    uint32_t m_indiceCount;
-    uint32_t *m_indices;
+    gVertex *m_vertices;
+    grm::u32 m_verticeCount;
+
+    grm::u32 *m_indices;
+    grm::u32 m_indicesCount;
+};
+
+struct gModel {
+    char m_name[256];
+
+    Vector3 m_scale;
+    Quaternion m_rotation;
+    Vector3 m_position;
 };
 
 

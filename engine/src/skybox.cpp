@@ -74,9 +74,7 @@ Skybox::Skybox() : play(false), currentTime(0.0f), distance(400.0f), m_backgroun
     bufferManager->attribPointer(0, 3, sizeof(Vector3));
     bufferManager->unbind();
 
-    // TextureArgs args {Texture::eSRBG8, Texture::eRGB, Texture::eBYTE, Texture::eBILINEAR, false};
-
-    m_texture = Resources::LoadTexture<void(Skybox::*)(Texture*texture), Skybox*>("/home/grsource/Downloads/industrial_sunset_puresky_1k.hdr", &Skybox::SetupBackgroundTexture, this);
+    m_texture = Resources::LoadTexture<void(Skybox::*)(Texture*texture), Skybox*>("assets/texture/skybox/industrial_sunset_puresky_1k.hdr", &Skybox::SetupBackgroundTexture, this);
 }
 
 void Skybox::update() {}

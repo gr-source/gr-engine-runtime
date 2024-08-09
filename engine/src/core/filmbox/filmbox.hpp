@@ -3,18 +3,22 @@
 #include "fbxScene.hpp"
 
 #include <assimp/cimport.h>
-#include <assimp/scene.h>
 
 #include "../thread.hpp"
+
+#include <assimp/scene.h>
 
 class Filmbox {
 public:
     Filmbox(const std::string &path);
     ~Filmbox();
 
-    void setPostProcess(std::function<void(const FbxScene *)> func);
+    void setPostProcess(std::function<void(const FbxScene *, Filmbox *)> func);
 
     void load();
+
+    const bool isValid() const;
+    
 private:
     void doInBackground(const std::string &path);
 
@@ -34,7 +38,7 @@ private:
 
     void processNode(aiNode *mNode, FbxNode& node);
 
-    std::function<void(const FbxScene *)> m_funcPost;
+    std::function<void(const FbxScene *, Filmbox *)> m_funcPost;
 
     std::unique_ptr<FbxScene> m_fbxScene;
 

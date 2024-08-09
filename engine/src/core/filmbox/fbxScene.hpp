@@ -34,6 +34,8 @@ public:
 
     const FbxNode& getRootNode() const;
 
+    const FbxNode *findNode(const std::string &name) const;
+
     const std::string &getName() const;
     
 private:
@@ -46,6 +48,8 @@ private:
     std::vector<FbxMesh> m_meshes;
 
     FbxNode m_rootNode;
+
+    const FbxNode *readNode(const FbxNode& node, const std::string &name) const;
 
     friend class Filmbox;
 };

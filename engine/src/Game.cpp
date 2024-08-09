@@ -113,37 +113,111 @@ void Game::Initialize() {
     Settings::IsGameRunning = false;
 }
 
+// ===================================== WARNING =========================================================
 #include "core/binary/gHeader.hpp"
 
-void WriteNode(const FbxNode &node) {
+
+void WriteNode(const FbxScene *scene, const FbxNode &node) {
     Console::Print(LogInfo::INFO, "Writing model...");
 
-    Stream::open(Filesystem::GetFile("/model" + node.getName()), std::ios_base::out | std::ios_base::binary);
+    auto path = Filesystem::GetFile("/model/" + node.getName() + ".gmd");
 
-    // Write name
-    // auto name = node.getName();
-    // auto nameLen = name.size();
-    // auto nameData = name.data();
-
-    // Stream::write<std::size_t>(&nameLen, 1);
-    // Stream::write(nameData, nameLen);
-
-    // Stream::close();
-}
-
-void ReadNode(const FbxNode &node) {
-    WriteNode(node);
-
-    for (const auto& child : node.getChildren()) {
-        ReadNode(child);
+    std::ofstream os(path, std::ios_base::binary);
+    if (!os) {
+        std::cerr << "Failed to open file for writing." << std::endl;
+        return;
     }
+
+    gHeader pHeader;
+    pHeader.signature[0] = 'g';
+    pHeader.signature[1] = 'r';
+    pHeader.signature[2] = 'm';
+    pHeader.signature[3] = 'd';
+    pHeader.version = 1.0f;
+
+    if (!os.write(reinterpret_cast<const char *>(&pHeader), sizeof(gHeader))) {
+        std::cerr << "Failed to write header to file." << std::endl;
+        return;
+    }
+
+    gModel pModel;
+    std::strcpy(pModel.m_name, node.getName().c_str());
+
+    pModel.m_scale = node.getScale();
+    pModel.m_rotation = node.getRotation();
+    pModel.m_position = node.getPosition();
+
+    if (!os.write(reinterpret_cast<const char *>(&pModel), sizeof(gModel))) {
+        return;
+    }
+
+    auto &meshIndex = node.getMeshes();
+
+    // escreve a quantidade de mesh
+    grm::u32 meshCount = static_cast<grm::u32>(meshIndex.size());
+    if (!os.write(reinterpret_cast<const char *>(&meshCount), sizeof(grm::u32))) {
+        std::cerr << "Failed to write mesh count to file." << std::endl;
+        return;
+    }
+
+    // alloca as meshes na memória em forma de pilha (fácil acesso)
+    std::vector<gMesh> meshes(meshCount);
+
+    for (grm::u32 i = 0; i < meshCount; ++i) {
+        auto &fbxMesh = scene->getMesh(meshIndex[i]);
+
+        auto &vertices = fbxMesh.getVertices();
+        auto &indices = fbxMesh.getIndices();
+
+        auto &pMesh = meshes[i];
+        std::strcpy(pMesh.m_name, fbxMesh.getName().c_str());
+        
+        pMesh.m_verticeCount = static_cast<grm::u32>(vertices.size());
+        pMesh.m_vertices = new gVertex[pMesh.m_verticeCount];
+        for (auto i=0;i<pMesh.m_verticeCount;++i) {
+            auto &pVertice = pMesh.m_vertices[i];
+
+            auto &fbxVertice = vertices[i];
+
+            pVertice.position = fbxVertice.position;
+            pVertice.normal = fbxVertice.normal;
+            pVertice.texCoord = fbxVertice.texCoord;
+        }
+
+        pMesh.m_indicesCount = static_cast<grm::u32>(indices.size());
+        pMesh.m_indices = new grm::u32[pMesh.m_indicesCount];
+        for (int i=0;i<pMesh.m_indicesCount;++i) {
+            pMesh.m_indices[i] = indices[i];
+        }
+    }
+
+    // Escrever os dados das meshes no arquivo
+    for (const auto &mesh : meshes) {
+        if (!os.write(reinterpret_cast<const char *>(mesh.m_name), sizeof(char) * 256) ||
+            !os.write(reinterpret_cast<const char *>(&mesh.m_verticeCount), sizeof(grm::u32)) ||
+            !os.write(reinterpret_cast<const char *>(mesh.m_vertices), mesh.m_verticeCount * sizeof(gVertex)) ||
+            !os.write(reinterpret_cast<const char *>(&mesh.m_indicesCount), sizeof(grm::u32)) ||
+            !os.write(reinterpret_cast<const char *>(mesh.m_indices), mesh.m_indicesCount * sizeof(grm::u32))) {
+            std::cerr << "Failed to write mesh data to file." << std::endl;
+            return;
+        }
+    }
+
+    // Liberar a memória alocada
+    for (auto &mesh : meshes) {
+        delete[] mesh.m_vertices;
+        delete[] mesh.m_indices;
+    }
+
+    os.close();
 }
 
-void PostProcess(const FbxScene *scene) {
+void PostProcess(const FbxScene *scene, Filmbox *filmbox) {
     auto& fRootNode = scene->getRootNode();
     for (const auto& node : fRootNode.getChildren()) {
-        ReadNode(node);
+        WriteNode(scene, node);
     }
+    delete filmbox;
 }
 
 void Game::DropFile(const std::filesystem::path &path) {
@@ -152,10 +226,13 @@ void Game::DropFile(const std::filesystem::path &path) {
     }
     Console::Print(LogInfo::INFO, "Loading fbx: " + path.extension().string());
 
-    auto& filmbox = m_filmboxList.emplace_back(std::make_unique<Filmbox>(path.string()));
+    auto *filmbox = new Filmbox(path.string());
     filmbox->setPostProcess(PostProcess);
     filmbox->load();
 }
+
+// ===================================== END =========================================================
+
 
 void Game::RenderUI() {
     if (Resources::m_processCount != 0) {
