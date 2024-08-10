@@ -9,6 +9,8 @@
 
 class Animator : public Component {
 public:
+    Animator();
+    
     void UpdateAnim();
 
     std::vector<Matrix4x4> m_finalBoneMatrices;

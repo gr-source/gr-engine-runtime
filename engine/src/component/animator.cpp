@@ -4,6 +4,8 @@
 
 #include "../timer.h"
 
+Animator::Animator() : m_finalBoneMatrices(100, Matrix4x4::identityMatrix) {}
+
 void Animator::UpdateAnim() {
     if (!m_armature) {
         return;
