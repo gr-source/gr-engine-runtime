@@ -52,7 +52,7 @@ void Filmbox::doInBackground(const std::string &path) {
     importer.FreeScene();
 
     if (m_funcPost) {
-        EventManager::addEvent(m_funcPost, m_fbxScene.get(), this);
+        EventManager::AddEvent(m_funcPost, m_fbxScene.get(), this);
     }
 }
 
@@ -159,7 +159,7 @@ void Filmbox::processTexture(aiMaterial *iMaterial, FbxMaterial &material) {
             continue;
         }
 
-        material.setTexture(i, Resources::LoadTextureL(path.C_Str()));
+        material.addTexture(TextureType_Albedo, path.C_Str());
     }
 }
 

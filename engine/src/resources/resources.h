@@ -98,7 +98,7 @@ private:
 
     static void LoadShader();
 
-    static void SetupTexture(grr::gTexture *texture, int width, int height, int ch, void *pixels);
+    static void SetupTexture(grr::gTexture *texture, int width, int height, int ch, void *pixels, std::string path);
 
     static void LoadTextureF();
 

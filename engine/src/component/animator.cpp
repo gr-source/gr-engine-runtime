@@ -44,6 +44,8 @@ void Animator::hierarchy(Transform *transform, const Matrix4x4 &parentTransform)
         result *= keyframe->getLocalMatrix(m_currentTime);
 
         m_finalBoneMatrices[bone->getBoneIndex()] = result * offset;
+
+        m_finalBoneMatrices[bone->getBoneIndex()].decompose(transform->scale, transform->rotation, transform->position);
     }
 
     for (const auto &child : transform->getChildren()) {

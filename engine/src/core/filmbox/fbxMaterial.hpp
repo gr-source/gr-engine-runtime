@@ -6,9 +6,15 @@
 #include <string>
 #include <vector>
 
+enum TextureType {
+    TextureType_Albedo
+};
+
 class FbxMaterial {
 public:
     FbxMaterial(const std::string &name = "default");
+
+    const Color &getColor() const;
 
     Color albedo;
 
@@ -20,15 +26,18 @@ public:
 
     const std::string &getName() const;
 
-    void setTexture(int idx, grr::gTexture *texture);
+    template <typename ...Args>
+    void addTexture(Args &&...args);
 
-    const grr::gTexture *getTexture(int idx) const;
+    const std::unordered_map<TextureType, const std::string> &getTextures() const;
 
 private:
     std::string m_name;
 
-    std::vector<grr::gTexture *> m_textures;
+    std::unordered_map<TextureType, const std::string> m_textures;
 };
 
-
-
+template <typename... Args>
+inline void FbxMaterial::addTexture(Args &&...args) {
+    m_textures.emplace(std::forward<Args>(args)...);
+}

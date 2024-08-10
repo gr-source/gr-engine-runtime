@@ -116,30 +116,8 @@ void Game::Initialize() {
 // ===================================== WARNING =========================================================
 #include "core/binary/gHeader.hpp"
 
-
-void WriteNode(const FbxScene *scene, const FbxNode &node) {
-    Console::Print(LogInfo::INFO, "Writing model...");
-
-    auto path = Filesystem::GetFile("/model/" + node.getName() + ".gmd");
-
-    std::ofstream os(path, std::ios_base::binary);
-    if (!os) {
-        std::cerr << "Failed to open file for writing." << std::endl;
-        return;
-    }
-
-    gHeader pHeader;
-    pHeader.signature[0] = 'g';
-    pHeader.signature[1] = 'r';
-    pHeader.signature[2] = 'm';
-    pHeader.signature[3] = 'd';
-    pHeader.version = 1.0f;
-
-    if (!os.write(reinterpret_cast<const char *>(&pHeader), sizeof(gHeader))) {
-        std::cerr << "Failed to write header to file." << std::endl;
-        return;
-    }
-
+void WriteNode(std::ofstream &os, const FbxScene *scene, const FbxNode &node) {
+    // Escreve os dados do modelo
     gModel pModel;
     std::strcpy(pModel.m_name, node.getName().c_str());
 
@@ -162,9 +140,36 @@ void WriteNode(const FbxScene *scene, const FbxNode &node) {
 
     // alloca as meshes na memória em forma de pilha (fácil acesso)
     std::vector<gMesh> meshes(meshCount);
+    std::vector<gMaterial> pMateials;
 
     for (grm::u32 i = 0; i < meshCount; ++i) {
         auto &fbxMesh = scene->getMesh(meshIndex[i]);
+
+        for (const auto &mIdx : fbxMesh.getMaterials()) {
+            auto& fbxMaterial = scene->getMaterial(mIdx);
+
+            auto& m = pMateials.emplace_back();
+            std::strcpy(m.m_name, fbxMaterial.getName().c_str());
+            
+            m.m_color = fbxMaterial.getColor();
+            m.m_roughness = fbxMaterial.roughness;
+            m.m_metallic = fbxMaterial.metallic;
+            m.m_ambientOcclusion = fbxMaterial.ao;
+
+            auto &textures = fbxMaterial.getTextures();
+
+            m.m_textureCount = textures.size();
+            m.m_textures = new gTexture[m.m_textureCount];
+
+            // os.write(reinterpret_cast<const char *>(&tSize), sizeof(grm::u32));
+            int id = 0;
+            for (auto &&[type, path] : textures) {
+                auto &pTexture = m.m_textures[id];
+                pTexture.m_type = gTextureType_albedo;
+                std::strcpy(pTexture.m_path, path.c_str());
+                id++;
+            }
+        }
 
         auto &vertices = fbxMesh.getVertices();
         auto &indices = fbxMesh.getIndices();
@@ -175,13 +180,10 @@ void WriteNode(const FbxScene *scene, const FbxNode &node) {
         pMesh.m_verticeCount = static_cast<grm::u32>(vertices.size());
         pMesh.m_vertices = new gVertex[pMesh.m_verticeCount];
         for (auto i=0;i<pMesh.m_verticeCount;++i) {
-            auto &pVertice = pMesh.m_vertices[i];
-
-            auto &fbxVertice = vertices[i];
-
-            pVertice.position = fbxVertice.position;
-            pVertice.normal = fbxVertice.normal;
-            pVertice.texCoord = fbxVertice.texCoord;
+            pMesh.m_vertices[i].position = vertices[i].position;
+            pMesh.m_vertices[i].normal   = vertices[i].normal;
+            pMesh.m_vertices[i].texCoord = vertices[i].texCoord;
+            pMesh.m_vertices[i].mIdx = vertices[i].index;
         }
 
         pMesh.m_indicesCount = static_cast<grm::u32>(indices.size());
@@ -203,11 +205,66 @@ void WriteNode(const FbxScene *scene, const FbxNode &node) {
         }
     }
 
+    grm::u32 mSize = pMateials.size();
+    if (!os.write(reinterpret_cast<const char *>(&mSize), sizeof(u32))) {
+        std::cout << "Falied to wite mateials." << std::endl;
+        return;
+    }
+
+    for (auto &material : pMateials) {
+        os.write(reinterpret_cast<const char *>(material.m_name), 256 * sizeof(char));
+        os.write(reinterpret_cast<const char *>(&material.m_color), sizeof(Color));
+        os.write(reinterpret_cast<const char *>(&material.m_roughness), sizeof(float));
+        os.write(reinterpret_cast<const char *>(&material.m_metallic), sizeof(float));
+        os.write(reinterpret_cast<const char *>(&material.m_ambientOcclusion), sizeof(float));
+
+        os.write(reinterpret_cast<const char *>(&material.m_textureCount), sizeof(grm::u32));
+        os.write(reinterpret_cast<const char *>(material.m_textures), material.m_textureCount * sizeof(gTexture));
+
+        delete[] material.m_textures;
+    }
+
     // Liberar a memória alocada
     for (auto &mesh : meshes) {
         delete[] mesh.m_vertices;
         delete[] mesh.m_indices;
     }
+
+    auto &children = node.getChildren();
+
+    grm::u32 nSize = children.size();
+    os.write(reinterpret_cast<const char *>(&nSize), sizeof(grm::u32));
+
+    // escreve os filhos
+    for (const auto &child : children) {
+        WriteNode(os, scene, child);
+    }
+}
+
+void WriteHeader(const FbxScene *scene, const FbxNode &node) {
+    Console::Print(LogInfo::INFO, "Writing model...");
+
+    auto path = Filesystem::GetFile("/model/" + node.getName() + ".gmd");
+
+    std::ofstream os(path, std::ios_base::binary);
+    if (!os) {
+        std::cerr << "Failed to open file for writing." << std::endl;
+        return;
+    }
+
+    gHeader pHeader;
+    pHeader.signature[0] = 'g';
+    pHeader.signature[1] = 'r';
+    pHeader.signature[2] = 'm';
+    pHeader.signature[3] = 'd';
+    pHeader.version = 1.0f;
+
+    if (!os.write(reinterpret_cast<const char *>(&pHeader), sizeof(gHeader))) {
+        std::cerr << "Failed to write header to file." << std::endl;
+        return;
+    }
+
+    WriteNode(os, scene, node);
 
     os.close();
 }
@@ -215,7 +272,7 @@ void WriteNode(const FbxScene *scene, const FbxNode &node) {
 void PostProcess(const FbxScene *scene, Filmbox *filmbox) {
     auto& fRootNode = scene->getRootNode();
     for (const auto& node : fRootNode.getChildren()) {
-        WriteNode(scene, node);
+        WriteHeader(scene, node);
     }
     delete filmbox;
 }
@@ -232,7 +289,6 @@ void Game::DropFile(const std::filesystem::path &path) {
 }
 
 // ===================================== END =========================================================
-
 
 void Game::RenderUI() {
     if (Resources::m_processCount != 0) {
@@ -327,7 +383,7 @@ void Game::ReadHierarchy(Transform *transform) {
 
     const bool isOpen = ImGui::TreeNodeEx(name.c_str(), flags);
 
-    if (ImGui::IsItemClicked(ImGuiMouseButton_Left)) {
+    if (ImGui::IsItemClicked(ImGuiMouseButton_Middle)) {
         s_objectSelected = gameObject;
     }
 
@@ -592,6 +648,7 @@ void Game::RenderPropertiUI() {
     ImGui::Begin("Propriedades", nullptr, ImGuiWindowFlags_NoResize);
 
     if (ImGui::BeginTabBar("##propertimenubar")) {
+        ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
         if (s_objectSelected && ImGui::BeginTabItem("GameObject", nullptr)) {
             ImGui::Image(reinterpret_cast<ImTextureID>(iconsUI[IconType::ICON_GAMEOBJECT]->getID()), ImVec2(16, 16));
 
@@ -710,11 +767,6 @@ void Game::OnPropertyTransform(Transform* transform) {
             transform->rotation = Math::normalize(Math::euler({Math::rad(euler.x), Math::rad(euler.y), Math::rad(euler.z)}));
         }
 
-        if (ImGui::Button("Save")) {
-            std::ofstream is("/home/grsource/Documentos/scn.ct", std::ios_base::ate | std::ios_base::app);
-            is << transform->position << " " << euler << std::endl; 
-            is.close();
-        }
         ImGui::TreePop();
     }
 }

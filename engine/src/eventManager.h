@@ -11,7 +11,7 @@ class EventManager {
 public:
     
     template <typename ...Args>
-    static void addEvent(Args&&... args);
+    static void AddEvent(Args &&...args);
 
     static void ProcessEvent();
 
@@ -22,10 +22,8 @@ protected:
 };
 
 template <typename... Args>
-inline void EventManager::addEvent(Args&&... args) {
-    {
-        std::lock_guard<std::mutex> lock(m_mutex);
-        m_events.emplace_back(std::bind(std::forward<Args>(args)...));
-    }
+inline void EventManager::AddEvent(Args&&... args) {
+    std::lock_guard<std::mutex> lock(m_mutex);
+    m_events.emplace_back(std::bind(std::forward<Args>(args)...));
 }
 

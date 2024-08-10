@@ -103,6 +103,16 @@ grr::gTexture *Resources::LoadTextureL(const std::string &path) {
         return (*it).second.get();
     }
 
+    {
+        std::lock_guard<std::mutex> lock(s_textureMutex);
+        auto it = std::find_if(s_textureFromLoader.begin(), s_textureFromLoader.end(), [path](const auto &pair) {
+            return std::get<std::string>(pair) == path;
+        });
+        if (it != s_textureFromLoader.end()) {
+            return std::get<grr::gTexture *>((*it));
+        }
+    }
+
     auto m_texture = new grr::gTexture();
     if (!m_texture) {
         Console::Print(LogInfo::ERROR, "[ Resources::LoadTexture ] Falied to create texture.");
@@ -217,7 +227,7 @@ void Resources::LoadTexture() {
             continue;
         }
 
-        EventManager::addEvent(setup_texture, process, width, height, channel, pixels);
+        EventManager::AddEvent(setup_texture, process, width, height, channel, pixels);
         lock.lock();
         m_textureLoader.pop_front();
     }
@@ -288,14 +298,14 @@ void Resources::LoadShader() {
             Log::warning() << "[ Shader ] geometry shader file do not open" << Log::end;
         }
 
-        EventManager::addEvent(setup_shader, process, fcontent, vcontent, gcontent);
+        EventManager::AddEvent(setup_shader, process, fcontent, vcontent, gcontent);
         lock.lock();
         m_shaderLoader.pop_front();
     }
 }
 
-void Resources::SetupTexture(grr::gTexture *texture, int width, int height, int ch, void *pixels) {
-    Console::Print(LogInfo::INFO, "Texture loading success.");
+void Resources::SetupTexture(grr::gTexture *texture, int width, int height, int ch, void *pixels, std::string path) {
+    s_textureList.emplace(path, std::unique_ptr<grr::gTexture>(texture));
 
     grr::TextureFormat format;
 
@@ -318,6 +328,8 @@ void Resources::SetupTexture(grr::gTexture *texture, int width, int height, int 
     grr::gTexture::PushTexture(texture, width, height, format, pixels);
 
     stbi_image_free(pixels);
+
+    Console::Print(LogInfo::INFO, "Texture loaded: " + path);
 }
 
 void Resources::LoadTextureF() {
@@ -325,9 +337,6 @@ void Resources::LoadTextureF() {
     while (!s_textureFromLoader.empty()) {
         auto [path, texture] = s_textureFromLoader.front();
         lock.unlock();
-
-        // auto path = std::get<std::string>(tuple);
-        // auto texture = std::get<grr::gTexture *>(tuple);
 
         int width, height, ch;
         auto pixels = stbi_load(path.c_str(), &width, &height, &ch, 0);
@@ -341,9 +350,7 @@ void Resources::LoadTextureF() {
             continue;
         }
 
-        s_textureList.emplace(path, std::unique_ptr<grr::gTexture>(texture));
-
-        EventManager::addEvent(Resources::SetupTexture, texture, width, height, ch, (void *)pixels);
+        EventManager::AddEvent(Resources::SetupTexture, texture, width, height, ch, (void *)pixels, path);
 
         lock.lock();
         s_textureFromLoader.pop_front();
@@ -399,7 +406,7 @@ void Resources::LoadShaderF() {
         // Setup Shader
         s_shaderList.emplace(path, std::unique_ptr<grr::gShader>(shader));
 
-        EventManager::addEvent(Resources::SetupShader, shader, fragSource, vertSource);
+        EventManager::AddEvent(Resources::SetupShader, shader, fragSource, vertSource);
 
         lock.lock();
         s_shaderFromLoader.pop_front();
