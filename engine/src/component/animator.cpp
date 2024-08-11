@@ -2,6 +2,7 @@
 
 #include "transform.hpp"
 
+#include "../renderer.h"
 #include "../timer.h"
 
 Animator::Animator() : m_finalBoneMatrices(100, Matrix4x4::identityMatrix) {}
@@ -23,7 +24,7 @@ void Animator::UpdateAnim() {
 
     auto &parent = m_armature->getTransform();
     hierarchy(&parent, Matrix4x4::identityMatrix);
-    
+
     m_currentTime += m_animation->getTick() * Time::deltaTime;
 }
 
@@ -43,6 +44,7 @@ void Animator::hierarchy(Transform *transform, const Matrix4x4 &parentTransform)
 
     if (keyframe && bone) {
         Matrix4x4 offset = bone->getLocalMatrix();
+
         result *= keyframe->getLocalMatrix(m_currentTime);
 
         m_finalBoneMatrices[bone->getBoneIndex()] = result * offset;

@@ -6,7 +6,7 @@
 class Stream {
 public:
 	
-	static void open(const std::string& path, std::ios_base::openmode mode);
+	static const bool open(const std::string& path, std::ios_base::openmode mode);
 	
 	template <typename T>
 	static std::istream& read(T* data, std::streamsize count);

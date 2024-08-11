@@ -107,17 +107,17 @@ void Filmbox::loadAnimation(const aiScene *scene) {
 void Filmbox::addKeys(aiNodeAnim *mNodeAnim, FbxChannel &channel) {
     for (auto i=0;i<mNodeAnim->mNumPositionKeys;++i) {
         auto key = mNodeAnim->mPositionKeys[i];
-        channel.addPosition(static_cast<float>(key.mTime), Vector3(key.mValue.x, key.mValue.y, key.mValue.z));
+        channel.addKeyPosition(static_cast<float>(key.mTime), Vector3(key.mValue.x, key.mValue.y, key.mValue.z));
     }
 
     for (auto i=0;i<mNodeAnim->mNumScalingKeys;++i) {
         auto key = mNodeAnim->mScalingKeys[i];
-        channel.addScale(static_cast<float>(key.mTime), Vector3(key.mValue.x, key.mValue.y, key.mValue.z));
+        channel.addKeyScale(static_cast<float>(key.mTime), Vector3(key.mValue.x, key.mValue.y, key.mValue.z));
     }
 
     for (auto i=0;i<mNodeAnim->mNumRotationKeys;++i) {
         auto key = mNodeAnim->mRotationKeys[i];
-        channel.addRotation(static_cast<float>(key.mTime), Quaternion(key.mValue.w, key.mValue.x, key.mValue.y, key.mValue.z));
+        channel.addKeyRotation(static_cast<float>(key.mTime), Quaternion(key.mValue.w, key.mValue.x, key.mValue.y, key.mValue.z));
     }
 }
 

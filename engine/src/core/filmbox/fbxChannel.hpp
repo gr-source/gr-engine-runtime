@@ -24,19 +24,19 @@ public:
     const std::string &getName() const;
 
     template <typename ...Args>
-    FbxKey<Vector3> &addPosition(Args &&... args);
+    FbxKey<Vector3> &addKeyPosition(Args &&... args);
 
-    const std::vector<FbxKey<Vector3>> getPosition() const;
-
-    template <typename ...Args>
-    FbxKey<Vector3> &addScale(Args &&... args);
-
-    const std::vector<FbxKey<Vector3>> getScale() const;
+    const std::vector<FbxKey<Vector3>> getKeysPosition() const;
 
     template <typename ...Args>
-    FbxKey<Quaternion> &addRotation(Args &&... args);
+    FbxKey<Vector3> &addKeyScale(Args &&... args);
 
-    const std::vector<FbxKey<Quaternion>> getRotation() const;
+    const std::vector<FbxKey<Vector3>> getKeysScale() const;
+
+    template <typename ...Args>
+    FbxKey<Quaternion> &addKeyRotation(Args &&... args);
+
+    const std::vector<FbxKey<Quaternion>> getKeysRotation() const;
 
 private:
     std::string m_name;
@@ -49,16 +49,16 @@ private:
 };
 
 template <typename... Args>
-inline FbxKey<Vector3> &FbxChannel::addPosition(Args &&...args) {
+inline FbxKey<Vector3> &FbxChannel::addKeyPosition(Args &&...args) {
     return m_position.emplace_back(std::forward<Args>(args)...);
 }
 
 template <typename... Args>
-inline FbxKey<Vector3> &FbxChannel::addScale(Args &&...args) {
+inline FbxKey<Vector3> &FbxChannel::addKeyScale(Args &&...args) {
     return m_scale.emplace_back(std::forward<Args>(args)...);
 }
 
 template <typename... Args>
-inline FbxKey<Quaternion> &FbxChannel::addRotation(Args &&...args) {
+inline FbxKey<Quaternion> &FbxChannel::addKeyRotation(Args &&...args) {
     return m_rotation.emplace_back(std::forward<Args>(args)...);
 }

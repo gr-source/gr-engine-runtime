@@ -49,8 +49,6 @@ public:
 private:
     std::unordered_map<std::string, std::shared_ptr<Component>> components;
 
-    std::bitset<MAX_COMPONENT> sequence;
-
     GameObject *gameObject;
 };
 

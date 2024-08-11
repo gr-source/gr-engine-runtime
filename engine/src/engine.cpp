@@ -117,7 +117,6 @@ void Engine::OnInit() {
     PostProcessing::Initialize();
 
     // Buffer de renderização.
-    // pScreenBuffer = &ScreenBuffer::getInstance();
     pImguibuffer = &Imguibuffer::getInstance();
 
     // Renderizaraçãod da screen paar pos processamento e UI.
@@ -173,6 +172,7 @@ void Engine::OnRender() {
 }
 
 void Engine::OnPhysics() {
+    /*
     PhysicsScene&  pPhysicsScene  = PhysicsScene::getInstance();
     Time timer(60.0f);
 
@@ -182,6 +182,7 @@ void Engine::OnPhysics() {
         if (Settings::IsGameRunning)
             pPhysicsScene.Simulate(gameStatics.physicsMs);
     } while (Settings::IsEngineRunning);
+    */
 }
 
 void Engine::OnLoader() {
@@ -296,19 +297,18 @@ void Engine::MainFramebuffer() {
 
     ScreenRender::Render(PostProcessing::GetTextureColor());
 
-    // pScreenRender->render(PostProcessing::GetTextureColor());
-
     pImguibuffer->unbind();
 }
 
 void Engine::RenderScene() {
+    grr::gRender::SetRenderState(grr::GR_DEPTH_FUNC, grr::GR_DEPTH_LESS);
     RenderManager::Renderer();
 
+    grr::gRender::SetRenderState(grr::GR_DEPTH_FUNC, grr::GR_DEPTH_ALWAYS);
     DebugDraw::Renderer();
 
     grr::gRender::SetRenderState(grr::GR_DEPTH_FUNC, grr::GR_DEPTH_LEQUAL);
     m_skybox->render();
-    grr::gRender::SetRenderState(grr::GR_DEPTH_FUNC, grr::GR_DEPTH_LESS);
 }
 
 void Engine::UIFramebuffer() {

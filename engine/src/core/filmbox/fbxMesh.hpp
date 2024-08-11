@@ -31,6 +31,8 @@ public:
     FbxBone &addBone(Args &&...args);
 
     const std::vector<FbxBone> &getBones() const;
+
+    const bool hasBone() const;
     
 private:
     std::string m_name;

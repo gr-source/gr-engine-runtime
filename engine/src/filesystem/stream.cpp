@@ -2,8 +2,9 @@
 
 std::fstream Stream::stream;
 
-void Stream::open(const std::string& path, std::ios_base::openmode mode) {
+const bool Stream::open(const std::string& path, std::ios_base::openmode mode) {
 	stream.open(path, mode);
+	return stream.is_open();
 }
 
 void Stream::seekg(std::streampos position) {

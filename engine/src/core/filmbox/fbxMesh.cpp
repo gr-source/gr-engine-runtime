@@ -34,3 +34,7 @@ const std::vector<int> &FbxMesh::getMaterials() const {
 const std::vector<FbxBone> &FbxMesh::getBones() const {
     return m_bones;
 }
+
+const bool FbxMesh::hasBone() const {
+    return !m_bones.empty();
+}

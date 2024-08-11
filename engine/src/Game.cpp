@@ -161,7 +161,6 @@ void WriteNode(std::ofstream &os, const FbxScene *scene, const FbxNode &node) {
             m.m_textureCount = textures.size();
             m.m_textures = new gTexture[m.m_textureCount];
 
-            // os.write(reinterpret_cast<const char *>(&tSize), sizeof(grm::u32));
             int id = 0;
             for (auto &&[type, path] : textures) {
                 auto &pTexture = m.m_textures[id];
@@ -176,20 +175,50 @@ void WriteNode(std::ofstream &os, const FbxScene *scene, const FbxNode &node) {
 
         auto &pMesh = meshes[i];
         std::strcpy(pMesh.m_name, fbxMesh.getName().c_str());
+
+        pMesh.m_hasBone = fbxMesh.hasBone();
         
         pMesh.m_verticeCount = static_cast<grm::u32>(vertices.size());
         pMesh.m_vertices = new gVertex[pMesh.m_verticeCount];
-        for (auto i=0;i<pMesh.m_verticeCount;++i) {
-            pMesh.m_vertices[i].position = vertices[i].position;
-            pMesh.m_vertices[i].normal   = vertices[i].normal;
-            pMesh.m_vertices[i].texCoord = vertices[i].texCoord;
-            pMesh.m_vertices[i].mIdx = vertices[i].index;
+        for (auto j=0;j<pMesh.m_verticeCount;++j) {
+            pMesh.m_vertices[j].position = vertices[j].position;
+            pMesh.m_vertices[j].normal   = vertices[j].normal;
+            pMesh.m_vertices[j].texCoord = vertices[j].texCoord;
+            pMesh.m_vertices[j].mIdx     = vertices[j].index;
+
+            for (auto k=0;k<4;++k) {
+                pMesh.m_vertices[j].weight[k]    = vertices[j].weight[k];
+                pMesh.m_vertices[j].boneIndex[k] = vertices[j].boneIndex[k];
+            }
         }
 
         pMesh.m_indicesCount = static_cast<grm::u32>(indices.size());
         pMesh.m_indices = new grm::u32[pMesh.m_indicesCount];
-        for (int i=0;i<pMesh.m_indicesCount;++i) {
-            pMesh.m_indices[i] = indices[i];
+        for (int j=0;j<pMesh.m_indicesCount;++j) {
+            pMesh.m_indices[j] = indices[j];
+        }
+        
+        if (!pMesh.m_hasBone) {
+            continue;
+        }
+
+        auto &bones = fbxMesh.getBones();
+
+        pMesh.m_boneCount = bones.size();
+        pMesh.m_bones = new gBone[pMesh.m_boneCount];
+
+        for (auto j=0;j<pMesh.m_boneCount;++j) {
+            auto &fbxBone = bones[j];
+
+            auto &name = fbxBone.getName();
+
+            auto &pBone = pMesh.m_bones[j];
+            std::strcpy(pBone.m_name, name.c_str());
+            pBone.m_id = fbxBone.m_id;
+            
+            pBone.m_scale = fbxBone.getScale();
+            pBone.m_rotation = fbxBone.getRotation();
+            pBone.m_position = fbxBone.getPosition();
         }
     }
 
@@ -199,7 +228,10 @@ void WriteNode(std::ofstream &os, const FbxScene *scene, const FbxNode &node) {
             !os.write(reinterpret_cast<const char *>(&mesh.m_verticeCount), sizeof(grm::u32)) ||
             !os.write(reinterpret_cast<const char *>(mesh.m_vertices), mesh.m_verticeCount * sizeof(gVertex)) ||
             !os.write(reinterpret_cast<const char *>(&mesh.m_indicesCount), sizeof(grm::u32)) ||
-            !os.write(reinterpret_cast<const char *>(mesh.m_indices), mesh.m_indicesCount * sizeof(grm::u32))) {
+            !os.write(reinterpret_cast<const char *>(mesh.m_indices), mesh.m_indicesCount * sizeof(grm::u32)) ||
+            !os.write(reinterpret_cast<const char *>(&mesh.m_boneCount), sizeof(grm::u32)) ||
+            !os.write(reinterpret_cast<const char *>(mesh.m_bones), mesh.m_boneCount * sizeof(gBone))
+            ) {
             std::cerr << "Failed to write mesh data to file." << std::endl;
             return;
         }
@@ -228,6 +260,10 @@ void WriteNode(std::ofstream &os, const FbxScene *scene, const FbxNode &node) {
     for (auto &mesh : meshes) {
         delete[] mesh.m_vertices;
         delete[] mesh.m_indices;
+
+        if (mesh.m_hasBone) {
+            delete[] mesh.m_bones;
+        }
     }
 
     auto &children = node.getChildren();
@@ -241,24 +277,121 @@ void WriteNode(std::ofstream &os, const FbxScene *scene, const FbxNode &node) {
     }
 }
 
+void WriteAnimation(const FbxScene *fbxScene) {
+    auto &animations = fbxScene->getAnimations();
+
+    gHeader pHeader{{'g', 'r', 'a', 'n'}, 1.0f};
+
+    for (auto &animation : animations) {
+        auto name = animation.getName();
+
+        if (!Stream::open(Filesystem::GetFile("/animation/" + name + ".anm"), std::ios_base::out | std::ios_base::binary)) {
+            continue;
+        }
+        Stream::write<gHeader>(&pHeader, 1);
+
+        gAnimationHeader pAnimationHeader;
+        std::strcpy(pAnimationHeader.m_name, name.c_str());
+        pAnimationHeader.m_tick = animation.getTick();
+        pAnimationHeader.m_duration = animation.getDuration();
+
+        Stream::write<gAnimationHeader>(&pAnimationHeader, 1);
+
+        auto &channels = animation.getChannels();
+
+        grm::size sChannel = channels.size();
+        gChannel *pChannels = new gChannel[sChannel];
+
+        for (auto i=0;i<sChannel;++i) {
+            auto &channel = channels[i];
+
+            auto &name = channel.getName();
+            auto &keysScale = channel.getKeysScale();
+            auto &keysRotation = channel.getKeysRotation();
+            auto &keysPosition = channel.getKeysPosition();
+
+            auto &pChannel = pChannels[i];
+            std::strcpy(pChannel.m_name, name.c_str());
+
+            // gen key scale
+            pChannel.m_keyScaleCount = keysScale.size();
+            pChannel.m_keyScale = new gKeyScale[pChannel.m_keyScaleCount];
+            for (auto i=0;i<pChannel.m_keyScaleCount;++i) {
+                pChannel.m_keyScale[i].time = keysScale[i].time;
+                pChannel.m_keyScale[i].value = keysScale[i].value;
+            }
+
+            //gen key rotation
+            pChannel.m_keyRotationCount = keysRotation.size();
+            pChannel.m_keyRotation = new gKeyRotation[pChannel.m_keyRotationCount];
+            for (auto i=0;i<pChannel.m_keyRotationCount;++i) {
+                pChannel.m_keyRotation[i].time = keysRotation[i].time;
+                pChannel.m_keyRotation[i].value = keysRotation[i].value;
+            }
+
+            // gen key position
+            pChannel.m_keyPositionCount = keysPosition.size();
+            pChannel.m_keyPosition = new gKeyPosition[pChannel.m_keyPositionCount];
+            for (auto i=0;i<pChannel.m_keyPositionCount;++i) {
+                pChannel.m_keyPosition[i].time = keysPosition[i].time;
+                pChannel.m_keyPosition[i].value = keysPosition[i].value;
+            }
+        }
+        
+        Stream::write<grm::size>(&sChannel, 1);
+        for (auto i=0;i<sChannel;++i) {
+            auto &pChannel = pChannels[i];
+
+            // ame
+            Stream::write<char>(pChannel.m_name, 256);
+
+            // gen key scale
+            Stream::write<grm::size>(&pChannel.m_keyScaleCount, 1);
+            Stream::write<gKeyScale>(pChannel.m_keyScale, pChannel.m_keyScaleCount);
+
+            //gen key rotation
+            Stream::write<grm::size>(&pChannel.m_keyRotationCount, 1);
+            Stream::write<gKeyRotation>(pChannel.m_keyRotation, pChannel.m_keyRotationCount);
+
+            // gen key position
+            Stream::write<grm::size>(&pChannel.m_keyPositionCount, 1);
+            Stream::write<gKeyPosition>(pChannel.m_keyPosition, pChannel.m_keyPositionCount);
+        }
+        
+        // ========================= CLEAN =========================
+        for (auto i=0;i<sChannel;++i) {
+            auto &pChannel = pChannels[i];
+
+            // delete keys scale
+            delete[] pChannel.m_keyScale;
+
+            // delete keys rotation
+            delete[] pChannel.m_keyRotation;
+
+            // delete keys position
+            delete[] pChannel.m_keyPosition;
+        }
+        
+        delete[] pChannels;
+
+        Stream::close();
+    }
+}
+
 void WriteHeader(const FbxScene *scene, const FbxNode &node) {
     Console::Print(LogInfo::INFO, "Writing model...");
+
+    WriteAnimation(scene);
 
     auto path = Filesystem::GetFile("/model/" + node.getName() + ".gmd");
 
     std::ofstream os(path, std::ios_base::binary);
-    if (!os) {
+    if (!os.is_open()) {
         std::cerr << "Failed to open file for writing." << std::endl;
         return;
     }
 
-    gHeader pHeader;
-    pHeader.signature[0] = 'g';
-    pHeader.signature[1] = 'r';
-    pHeader.signature[2] = 'm';
-    pHeader.signature[3] = 'd';
-    pHeader.version = 1.0f;
-
+    gHeader pHeader {{'g', 'r', 'm', 'd'}, 1.0f};
     if (!os.write(reinterpret_cast<const char *>(&pHeader), sizeof(gHeader))) {
         std::cerr << "Failed to write header to file." << std::endl;
         return;
@@ -289,7 +422,6 @@ void Game::DropFile(const std::filesystem::path &path) {
 }
 
 // ===================================== END =========================================================
-
 void Game::RenderUI() {
     if (Resources::m_processCount != 0) {
         ProgressLoad();
@@ -633,8 +765,9 @@ void Game::RenderConsoleUI() {
 
             ImGui::TextColored(color, "%s", type.c_str());
             ImGui::SameLine();
-            ImGui::Text("%s", log.message.c_str());
+            ImGui::LabelText("##LabelTex001", "%s", log.message.c_str());
         }
+
         if (Console::bChanged) {
             ImGui::SetScrollHereY(1.0f);
             Console::bChanged = false;
@@ -648,8 +781,9 @@ void Game::RenderPropertiUI() {
     ImGui::Begin("Propriedades", nullptr, ImGuiWindowFlags_NoResize);
 
     if (ImGui::BeginTabBar("##propertimenubar")) {
-        ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
-        if (s_objectSelected && ImGui::BeginTabItem("GameObject", nullptr)) {
+        if (s_objectSelected) {
+            ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
+            if (ImGui::BeginTabItem("GameObject", nullptr)) {
             ImGui::Image(reinterpret_cast<ImTextureID>(iconsUI[IconType::ICON_GAMEOBJECT]->getID()), ImVec2(16, 16));
 
             ImGui::SameLine();
@@ -687,8 +821,7 @@ void Game::RenderPropertiUI() {
 
             ImGui::EndTabItem();
         }
-        
-        ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
+        }
         if (ImGui::BeginTabItem("Estatística", nullptr)) {
             ImGui::SeparatorText("Scripts");
             
@@ -1110,21 +1243,21 @@ void Game::StopGame() {
 }
 
 void Game::loadReources() {
-    iconsUI.emplace(IconType::ICON_FILE,        Resources::LoadTextureL(Filesystem::GetFile("/icon") + "/icons8-file-30.png"));
-    iconsUI.emplace(IconType::ICON_FOLDER,      Resources::LoadTextureL(Filesystem::GetFile("/icon") + "/icons8-folder-50.png"));
-    iconsUI.emplace(IconType::ICON_BACK_FILE,   Resources::LoadTextureL(Filesystem::GetFile("/icon") + "/icons8-go-back-50.png"));
-    iconsUI.emplace(IconType::ICON_GAMEOBJECT,  Resources::LoadTextureL(Filesystem::GetFile("/icon") + "/icons8-3d-object-50.png"));
-    iconsUI.emplace(IconType::ICON_PENCIL,      Resources::LoadTextureL(Filesystem::GetFile("/icon") + "/icons8-lápis-30.png"));
-    iconsUI.emplace(IconType::ICON_LIGHT,       Resources::LoadTextureL(Filesystem::GetFile("/icon") + "/icons8-lâmpada-globular-64.png"));
-    iconsUI.emplace(IconType::ICON_TEXTURE,     Resources::LoadTextureL(Filesystem::GetFile("/icon") + "/icons8-textura-de-renderização-32.png"));
-    iconsUI.emplace(IconType::ICON_PNG,         Resources::LoadTextureL(Filesystem::GetFile("/icon") + "/icons8-png-24.png"));
-    iconsUI.emplace(IconType::ICON_PLAY_GAME,   Resources::LoadTextureL(Filesystem::GetFile("/icon") + "/icons8-reproduzir-30.png"));
-    iconsUI.emplace(IconType::ICON_STOP_GAME,   Resources::LoadTextureL(Filesystem::GetFile("/icon") + "/icons8-parar-50.png"));
-    iconsUI.emplace(IconType::ICON_BIN,         Resources::LoadTextureL(Filesystem::GetFile("/icon") + "/icons8-resíduos-50.png"));
-    iconsUI.emplace(IconType::ICON_IMPORT,      Resources::LoadTextureL(Filesystem::GetFile("/icon") + "/icons8-importar-50.png"));
-    iconsUI.emplace(IconType::ICON_ASCENDENTE,  Resources::LoadTextureL(Filesystem::GetFile("/icon") + "/icons8-ordenar-para-a-direita-50.png"));
-    iconsUI.emplace(IconType::ICON_DESCENDENTE, Resources::LoadTextureL(Filesystem::GetFile("/icon") + "/icons8-ordem-descendente-50.png"));
-    iconsUI.emplace(IconType::ICON_EDIT,        Resources::LoadTextureL(Filesystem::GetFile("/icon") + "/icons8-editar-24.png"));
+    iconsUI.emplace(IconType::ICON_FILE,        Resources::LoadTextureL(Filesystem::GetFile("/icon/icons8-file-30.png")));
+    iconsUI.emplace(IconType::ICON_FOLDER,      Resources::LoadTextureL(Filesystem::GetFile("/icon/icons8-folder-50.png")));
+    iconsUI.emplace(IconType::ICON_BACK_FILE,   Resources::LoadTextureL(Filesystem::GetFile("/icon/icons8-go-back-50.png")));
+    iconsUI.emplace(IconType::ICON_GAMEOBJECT,  Resources::LoadTextureL(Filesystem::GetFile("/icon/icons8-3d-object-50.png")));
+    iconsUI.emplace(IconType::ICON_PENCIL,      Resources::LoadTextureL(Filesystem::GetFile("/icon/icons8-lápis-30.png")));
+    iconsUI.emplace(IconType::ICON_LIGHT,       Resources::LoadTextureL(Filesystem::GetFile("/icon/icons8-lâmpada-globular-64.png")));
+    iconsUI.emplace(IconType::ICON_TEXTURE,     Resources::LoadTextureL(Filesystem::GetFile("/icon/icons8-textura-de-renderização-32.png")));
+    iconsUI.emplace(IconType::ICON_PNG,         Resources::LoadTextureL(Filesystem::GetFile("/icon/icons8-png-24.png")));
+    iconsUI.emplace(IconType::ICON_PLAY_GAME,   Resources::LoadTextureL(Filesystem::GetFile("/icon/icons8-reproduzir-30.png")));
+    iconsUI.emplace(IconType::ICON_STOP_GAME,   Resources::LoadTextureL(Filesystem::GetFile("/icon/icons8-parar-50.png")));
+    iconsUI.emplace(IconType::ICON_BIN,         Resources::LoadTextureL(Filesystem::GetFile("/icon/icons8-resíduos-50.png")));
+    iconsUI.emplace(IconType::ICON_IMPORT,      Resources::LoadTextureL(Filesystem::GetFile("/icon/icons8-importar-50.png")));
+    iconsUI.emplace(IconType::ICON_ASCENDENTE,  Resources::LoadTextureL(Filesystem::GetFile("/icon/icons8-ordenar-para-a-direita-50.png")));
+    iconsUI.emplace(IconType::ICON_DESCENDENTE, Resources::LoadTextureL(Filesystem::GetFile("/icon/icons8-ordem-descendente-50.png")));
+    iconsUI.emplace(IconType::ICON_EDIT,        Resources::LoadTextureL(Filesystem::GetFile("/icon/icons8-editar-24.png")));
 
     s_texturePlayGame = iconsUI[IconType::ICON_PLAY_GAME];
 }

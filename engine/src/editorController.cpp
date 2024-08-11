@@ -28,8 +28,6 @@ void EditorController::Update() {
     }
 
 
-    float velocity = movementSpeed * Time::deltaTime;
-
     Vector3 diretion;
 
     if (Input::IsKeyPress(Input::KEY_W)) {
@@ -52,7 +50,7 @@ void EditorController::Update() {
     }
 
     if (diretion != Vector3::zero) {
-        camera->getTransform()->position += Math::normalize(diretion) * velocity;
+        camera->getTransform()->position += Math::normalize(diretion) * movementSpeed * Time::deltaTime;
     }
 
     updateCursor();
@@ -82,7 +80,7 @@ void EditorController::OnCameraUpdate() {
 void EditorController::processMouse(const Vector2& direction) {
     elapsed += direction * mouseSensitivity * Time::deltaTime;
 
-    elapsed.y = std::max(std::min(elapsed.y, 89.0f), -89.0f);
+    elapsed.y = std::clamp(elapsed.y, -89.0f, 89.0f);
     elapsed.x = std::fmod(elapsed.x, 360.0f);
 
     OnCameraUpdate();
