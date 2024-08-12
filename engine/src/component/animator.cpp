@@ -13,7 +13,7 @@ void Animator::UpdateAnim() {
     }
 
     if (!m_animation && !m_animations.empty()) {
-        m_animation = &m_animations[0];
+        m_animation = m_animations[0].get();
     }
 
     if (!m_animation) {
@@ -36,7 +36,7 @@ void Animator::hierarchy(Transform *transform, const Matrix4x4 &parentTransform)
     if (!gameObject) {
         return;
     }
-    
+
     auto name = gameObject->getName();
 
     auto keyframe = m_animation->findKeyframe(name);
@@ -48,8 +48,6 @@ void Animator::hierarchy(Transform *transform, const Matrix4x4 &parentTransform)
         result *= keyframe->getLocalMatrix(m_currentTime);
 
         m_finalBoneMatrices[bone->getBoneIndex()] = result * offset;
-
-        m_finalBoneMatrices[bone->getBoneIndex()].decompose(transform->scale, transform->rotation, transform->position);
     }
 
     for (const auto &child : transform->getChildren()) {

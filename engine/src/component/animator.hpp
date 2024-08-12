@@ -20,7 +20,7 @@ private:
 
     std::vector<Bone> m_bones;
 
-    std::vector<Animation> m_animations;
+    std::vector<std::unique_ptr<Animation>> m_animations;
 
     Animation *m_animation;
 

@@ -204,7 +204,7 @@ void WriteNode(std::ofstream &os, const FbxScene *scene, const FbxNode &node) {
 
         auto &bones = fbxMesh.getBones();
 
-        pMesh.m_boneCount = bones.size();
+        pMesh.m_boneCount = static_cast<grm::u32>(bones.size());
         pMesh.m_bones = new gBone[pMesh.m_boneCount];
 
         for (auto j=0;j<pMesh.m_boneCount;++j) {
@@ -225,6 +225,7 @@ void WriteNode(std::ofstream &os, const FbxScene *scene, const FbxNode &node) {
     // Escrever os dados das meshes no arquivo
     for (const auto &mesh : meshes) {
         if (!os.write(reinterpret_cast<const char *>(mesh.m_name), sizeof(char) * 256) ||
+            !os.write(reinterpret_cast<const char *>(&mesh.m_hasBone), sizeof(bool)) ||
             !os.write(reinterpret_cast<const char *>(&mesh.m_verticeCount), sizeof(grm::u32)) ||
             !os.write(reinterpret_cast<const char *>(mesh.m_vertices), mesh.m_verticeCount * sizeof(gVertex)) ||
             !os.write(reinterpret_cast<const char *>(&mesh.m_indicesCount), sizeof(grm::u32)) ||
@@ -937,12 +938,12 @@ void Game::OnPropertyAnimator(Animator *animator) {
             for (int i=0;i<animations.size();++i) {
                 auto &anim = animations[i];
 
-                auto name = anim.getName();
+                auto name = anim->getName();
 
-                ImGui::Selectable(name.c_str(), m_current == &anim);
+                ImGui::Selectable(name.c_str(), m_current == anim.get());
                 if (ImGui::IsItemClicked()) {
-                    m_current = &anim;
-                }
+                    m_current = anim.get();
+                }   
             }
             ImGui::TreePop();
         }
