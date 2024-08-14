@@ -23,7 +23,7 @@ public:
 
     static std::vector<GameObject*> &(*GetGameObjectsFromRender)();
 
-    static std::vector<std::unique_ptr<GameObject>> &(*GetAllGameObject)();
+    static std::list<std::unique_ptr<GameObject>> &(*GetAllGameObject)();
 
     // [ Entity ]
     static std::size_t (*GetEntityCount)();
@@ -37,6 +37,8 @@ public:
 
     // Event;
     static void (*EventUpdate)();
+
+    static GameObject *(*LoadGameObject)(const std::string &);
 
 private:
     static void RegisterApi();

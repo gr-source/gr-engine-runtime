@@ -37,7 +37,7 @@ void (*ScriptManager::SetDeltaTime)(float);
 
 std::unordered_map<int, std::pair<const std::string, const std::string>> (*ScriptManager::GetShader)();
 
-std::vector<std::unique_ptr<GameObject>> &(*ScriptManager::GetAllGameObject)();
+std::list<std::unique_ptr<GameObject>> &(*ScriptManager::GetAllGameObject)();
 
 // [ Entity ]
 std::size_t (*ScriptManager::GetEntityCount)();
@@ -54,6 +54,8 @@ Camera *(*ScriptManager::CurrentCamera)();
 
 // Event
 void (*ScriptManager::EventUpdate)();
+
+GameObject *(*ScriptManager::LoadGameObject)(const std::string &);
 
 void ScriptManager::Initialzie() {
     Console::Print(LogInfo::INFO, "Loading script...");
@@ -105,6 +107,8 @@ void ScriptManager::Shutdown() {
 
     // Scene
     UNREGISTER_API(Scene::GetGameObject);
+
+    UNREGISTER_API(LoadGameObject);
     
     if (!s_handle) {
         return;
@@ -129,7 +133,7 @@ void ScriptManager::RegisterApi() {
 
     // [ Component - MeshRender ]
     REGISTER_API(std::vector<GameObject*>&, void, GetGameObjectsFromRender);
-    REGISTER_API(std::vector<std::unique_ptr<GameObject>>&, void, GetAllGameObject);
+    REGISTER_API(std::list<std::unique_ptr<GameObject>>&, void, GetAllGameObject);
 
     // [ Entity ]
     REGISTER_API(std::size_t, void, GetEntityCount);
@@ -151,6 +155,10 @@ void ScriptManager::RegisterApi() {
     REGISTER_FUNC("LoadTexture", Resources::LoadTextureL);
     REGISTER_FUNC("LoadShader", Resources::LoadShaderL);
 
+    REGISTER_API(GameObject *, const std::string &, LoadGameObject);
+
     //Scene
     REGISTER_API_FROM_NAME("GetSceneGameObject", std::list<GameObject *> &, void, Scene::GetGameObject);
+
+    REGISTER_API_FROM_NAME("DeleteSceneGameObject", void, GameObject *, Scene::Delete);
 }

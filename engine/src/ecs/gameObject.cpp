@@ -21,6 +21,10 @@ const std::string &GameObject::getName() {
     return m_name;
 }
 
+void GameObject::setName(const std::string &name) {
+    m_name = name;
+}
+
 const std::string &GameObject::getTag() {
     return m_tag;
 }

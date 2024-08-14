@@ -58,6 +58,8 @@ private:
 
     static void RenderScenesUI();
 
+    static void PopupRenameGameObject();
+
     static void ReadHierarchy(Transform* transform);
 
     static void RenderViewportUI();

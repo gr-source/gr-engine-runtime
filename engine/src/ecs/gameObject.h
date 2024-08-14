@@ -12,6 +12,8 @@ public:
 
     const std::string &getName();
 
+    void setName(const std::string &name);
+
     const std::string &getTag();
 
     Transform &getTransform();

@@ -7,6 +7,7 @@
 #include "settings.h"
 #include "renderer.h"
 #include "console.hpp"
+#include "eventManager.h"
 #include "screenRender.hpp"
 #include "renderManager.h"
 #include "editorController.h"
@@ -44,6 +45,7 @@
 #include <iomanip>
 
 #define IMGUI_PAYLOAD_GAMEOBJECT "##payload_game_object"
+#define IMGUI_PAYLOAD_FILE "##payload_file"
 
 const std::string getfilesize(std::size_t sz) {
     float kb = sz / 1024.0f;
@@ -521,10 +523,38 @@ void Game::RenderScenesUI() {
         bMenuAdd = !bMenuAdd;
     }
     
+    if (ImGui::IsKeyReleased(ImGuiKey_Delete) && s_objectSelected) {
+        EventManager::AddEvent(Scene::Delete, s_objectSelected);
+        s_objectSelected = nullptr;
+    }
+    
+    if (ImGui::IsKeyReleased(ImGuiKey_F2) && ImGui::IsWindowFocused()) {
+        ImGui::OpenPopup("##popup_rename_gameobject");
+    }
+
+    PopupRenameGameObject();
+
     ImGui::End();
 
     if (bMenuAdd) {
         MenuAdd();
+    }
+}
+
+void Game::PopupRenameGameObject() {
+    if (ImGui::BeginPopup("##popup_rename_gameobject")) {
+        ImGui::Text("Input new name");
+
+        if (!ImGui::IsAnyItemActive() && !ImGui::IsMouseClicked(0))
+            ImGui::SetKeyboardFocusHere(0);
+
+        char name[256] = {0};
+        if (ImGui::InputText("##InputName", name, 256, ImGuiInputTextFlags_EnterReturnsTrue)) {
+            s_objectSelected->setName(name);
+
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::EndPopup();
     }
 }
 
@@ -611,6 +641,20 @@ void Game::RenderViewportUI() {
     }
 
     ImGui::Image(reinterpret_cast<ImTextureID>(m_imguibuffer.gettexture()), curSize, ImVec2(0, 1), ImVec2(1, 0));
+
+    if (ImGui::BeginDragDropTarget() && ScriptManager::LoadGameObject) {
+        ImGuiDragDropFlags target_flags = 0;
+        // target_flags |= ImGuiDragDropFlags_AcceptBeforeDelivery;
+        // target_flags |= ImGuiDragDropFlags_SourceAllowNullID;
+
+        if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(IMGUI_PAYLOAD_FILE, target_flags)) {
+            std::string path((char*)payload->Data, payload->DataSize);
+            if (!path.empty()) {
+                s_objectSelected = ScriptManager::LoadGameObject(path);
+            }
+        }
+        ImGui::EndDragDropTarget();
+    }
 
     // ImGui::SetCursorPos({curSize.x / 2.0f, curSize.y / 2.0f});
 // 
@@ -802,21 +846,15 @@ void Game::RenderFilesUI() {
         }
 
         if (ImGui::ImageButton(reinterpret_cast<ImTextureID>(gtCurrentTexture->getID()), ImVec2(32, 32), ImVec2(0, 1), ImVec2(1, 0), -1, {0.0f, 0.0f, 0.0f, 0.0f}, tintColor) && !s_io->KeyShift) {
-            // if (s_io->KeyShift) {
-                
-            // } else {
-                if (file.is_directory()) {
-                    m_currentFile = path;
-                }
-            // }
+            if (file.is_directory()) {
+                m_currentFile = path;
+            }
         }
+        
 
+        // para adicionar os arquivos a lista @fLisDirSelected
         if (bFileDoubleClick && ImGui::IsItemHovered() && it == fLisDirSelected.end() || bSelelectAll) {
-            // if (it != fLisDirSelected.end()) {
-            //     fLisDirSelected.erase(it);
-            // } else {
-                fLisDirSelected.emplace(path, false);
-            // }
+            fLisDirSelected.emplace(path, false);
         }
 
         // Click com dois dedos touchpad
@@ -826,6 +864,14 @@ void Game::RenderFilesUI() {
             }
             fLisDirSelected.emplace(path, false);
             bOpenPopupInfoDir = true;
+        }
+
+        if (!file.is_directory() && ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceNoDisableHover | ImGuiDragDropFlags_SourceNoHoldToOpenOthers)) {
+            auto str = path.string();
+
+            ImGui::Text("Moving \"%s\"", str.c_str());
+            ImGui::SetDragDropPayload(IMGUI_PAYLOAD_FILE, str.data(), str.size());
+            ImGui::EndDragDropSource();
         }
 
         ImGui::Text("%s", name.c_str());
@@ -1038,11 +1084,16 @@ void Game::RenderPropertiUI() {
             ImGui::EndTabItem();
         }
         }
+        
         if (ImGui::BeginTabItem("Estatística", nullptr)) {
             ImGui::SeparatorText("Scripts");
             
             if (ScriptManager::GetEntityCount)
                 ImGui::Text("Entidades: %ld", ScriptManager::GetEntityCount());
+
+            if (ScriptManager::GetAllGameObject)
+                ImGui::Text("GameObject: %ld", ScriptManager::GetAllGameObject().size());
+
             ImGui::Text("Memoria: %s", getfilesize(Memory::totalMemoryUsage).c_str());
 
             ImGui::SeparatorText("Cena");
