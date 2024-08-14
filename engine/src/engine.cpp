@@ -33,7 +33,6 @@
 #include "scriptManager/scriptManager.hpp"
 #include "memory.h"
 
-#include <linux/input-event-codes.h>
 #include <filesystem>
 
 #include <gr-render/gRender.h>
@@ -79,16 +78,7 @@ void Engine::MainLoop(std::function<void()> func) {
 }
 
 void Engine::GRKeyboardDown(u32 key) {
-    switch (key) {
-    case KEY_ESC: {
-        ImGuiIO& io = ImGui::GetIO();
-
-        io.MouseDrawCursor = !io.MouseDrawCursor;
-        break;
-    }
-    default:
-        break;
-    }
+    Game::KeyBoardUp(key);
 }
 
 void Engine::GRKeyboardUp(u32 key) {}

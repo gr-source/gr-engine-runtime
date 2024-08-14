@@ -5,8 +5,8 @@
 
 #include <GLFW/glfw3.h>
 
-#define SCREEN_WIDTH 768
-#define SCREEN_HEIGHT 512
+#define SCREEN_WIDTH 800
+#define SCREEN_HEIGHT 600
 
 std::unordered_map<int, u32> m_keyMap = {
     {GLFW_KEY_ESCAPE, KEY_ESC},

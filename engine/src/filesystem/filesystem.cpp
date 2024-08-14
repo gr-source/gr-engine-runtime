@@ -31,7 +31,17 @@ const std::string Filesystem::GetFile(const std::string &path) {
     return "./assets" + path;
 }
 
-Filesystem::path::path() {
+const bool Filesystem::CreateDirectory(const std::string &path) {
+    return std::filesystem::create_directories(path);
+}
+
+void Filesystem::Delete(const std::string &path) {
+    for (auto entry : std::filesystem::directory_iterator(path)) {
+        Delete(entry.path());
+    }
+    if (std::filesystem::exists(path)) {
+        std::filesystem::remove(path);
+    }
 }
 
 Filesystem::path::path(const std::string &path) : m_path(path) {}

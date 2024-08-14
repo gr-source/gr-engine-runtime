@@ -38,6 +38,7 @@
 
 #include "scriptManager/scriptManager.hpp"
 
+#include <linux/input-event-codes.h>
 #include <filesystem>
 #include <sstream>
 #include <iomanip>
@@ -93,6 +94,10 @@ grr::gTexture *Game::s_texturePlayGame = nullptr;
 
 ImGuiIO* Game::s_io = nullptr;
 
+bool Game::bViewPortFocused = false;
+
+bool Game::bOpenPopupInfoDir = false;
+
 bool Game::bScriptReloaded = false;
 
 bool Game::bMenuAdd = false;
@@ -105,12 +110,18 @@ ImGuizmo::MODE Game::m_guizmoManipulate = ImGuizmo::WORLD;
 
 u32 Game::s_maxProgress = 0;
 
+std::filesystem::path Game::m_currentFile;
+
+std::filesystem::path Game::fDirSelected;
+
 void Game::Initialize() {
     s_io = &ImGui::GetIO();
 
     loadReources();
 
     Settings::IsGameRunning = false;
+
+    m_currentFile = Filesystem::GetFile("");
 }
 
 // ===================================== WARNING =========================================================
@@ -422,6 +433,15 @@ void Game::DropFile(const std::filesystem::path &path) {
     filmbox->load();
 }
 
+void Game::KeyBoardUp(grm::u32 key) {
+    if (!(bViewPortFocused && key == KEY_ESC)) {
+        return;
+    }
+
+    if (s_io)
+        s_io->MouseDrawCursor = !s_io->MouseDrawCursor;
+}
+
 // ===================================== END =========================================================
 void Game::RenderUI() {
     if (Resources::m_processCount != 0) {
@@ -516,7 +536,7 @@ void Game::ReadHierarchy(Transform *transform) {
 
     const bool isOpen = ImGui::TreeNodeEx(name.c_str(), flags);
 
-    if (ImGui::IsItemClicked(ImGuiMouseButton_Middle)) {
+    if (ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
         s_objectSelected = gameObject;
     }
 
@@ -557,6 +577,7 @@ void Game::RenderViewportUI() {
     static Imguibuffer& m_imguibuffer = Imguibuffer::getInstance();
 
     ImGui::Begin("Viewport", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+    bViewPortFocused = ImGui::IsWindowFocused();
 
     ImGuizmo::SetDrawlist();
 
@@ -682,16 +703,15 @@ void Game::RenderViewportUI() {
 }
 
 void Game::RenderFilesUI() {
-    static std::filesystem::path root = Filesystem::GetFile("");
     ImGui::Columns(5, "#Collums1", false);
 
     grr::gTexture *gtCurrentTexture = iconsUI[ICON_BACK_FILE];
 
-    if (ImGui::ImageButton(reinterpret_cast<ImTextureID>(gtCurrentTexture->getID()), ImVec2(32, 32), ImVec2(0, 1), ImVec2(1, 0)) && root.has_parent_path()) {
-        root = root.parent_path();
+    if (ImGui::ImageButton(reinterpret_cast<ImTextureID>(gtCurrentTexture->getID()), ImVec2(32, 32), ImVec2(0, 1), ImVec2(1, 0)) && m_currentFile.has_parent_path()) {
+        m_currentFile = m_currentFile.parent_path();
     }
 
-    for (auto& file : std::filesystem::directory_iterator(root)) {
+    for (auto& file : std::filesystem::directory_iterator(m_currentFile)) {
         ImGui::NextColumn();
 
         auto &path = file.path();
@@ -705,8 +725,13 @@ void Game::RenderFilesUI() {
 
         if (ImGui::ImageButton(reinterpret_cast<ImTextureID>(gtCurrentTexture->getID()), ImVec2(32, 32), ImVec2(0, 1), ImVec2(1, 0))) {
             if (file.is_directory()) {
-                root = path;
+                m_currentFile = path;
             }
+        }
+
+        if (ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
+            fDirSelected = path;
+            bOpenPopupInfoDir = true;
         }
 
         ImGui::Text("%s", path.filename().c_str());
@@ -714,6 +739,91 @@ void Game::RenderFilesUI() {
         ImGui::PopID();
     }
     ImGui::Columns(1);
+    
+    if (!bOpenPopupInfoDir && ImGui::IsMouseClicked(ImGuiMouseButton_Right) && ImGui::IsWindowHovered()) {
+        ImGui::OpenPopup("##popup_file_manager");
+    }
+
+    if (bOpenPopupInfoDir) {
+        ImGui::OpenPopup("##popup_dir_manager");
+        bOpenPopupInfoDir = false;
+    }
+
+    PopupDirmanager();
+
+    PopupFileManager();
+
+    PopupCreateDirectory();
+}
+
+void Game::PopupDirmanager() {
+    auto &directory = fDirSelected;
+
+    if (ImGui::BeginPopup("##popup_dir_manager")) {
+        ImGui::Text("Dir: %s", directory.filename().string().c_str());
+
+        auto idx = 0;
+
+        const char *item_list[2] {"Delete"};
+
+        if (ImGui::ListBox("##DirManager", &idx, item_list, 1)) {
+            switch (idx) {
+            case 0:
+                Filesystem::Delete(directory);
+                break;
+            default:
+                break;
+            }
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::EndPopup();
+    }
+}
+
+void Game::PopupFileManager() {
+    static bool isOpenPopup = false;
+    if (ImGui::BeginPopup("##popup_file_manager")) {
+        ImGui::Text("FileManager");
+
+        auto idx = 0;
+
+        const char *item_list[2] {"Create New Directory"};
+
+        if (ImGui::ListBox("##FileManager", &idx, item_list, 1)) {
+            switch (idx) {
+            case 0:
+                isOpenPopup = true;
+                break;
+            default:
+                break;
+            }
+            ImGui::CloseCurrentPopup();
+        }
+
+        ImGui::EndPopup();
+    }
+
+    if (isOpenPopup) {
+        ImGui::OpenPopup("##popup_create_new_dir");
+
+        isOpenPopup = false;
+    }
+}
+
+void Game::PopupCreateDirectory() {
+    if (ImGui::BeginPopup("##popup_create_new_dir")) {
+        ImGui::Text("Input directory name:");
+        if (!ImGui::IsAnyItemActive() && !ImGui::IsMouseClicked(0))
+            ImGui::SetKeyboardFocusHere(0);
+
+        char name[256] = {0};
+        if (ImGui::InputText("##InputDirectoryName", name, 256, ImGuiInputTextFlags_EnterReturnsTrue)) {
+            Filesystem::CreateDirectory(m_currentFile.string() + "/" + std::string(name));
+            ImGui::CloseCurrentPopup();
+        }
+
+        ImGui::EndPopup();
+    }
 }
 
 void Game::RenderConsoleUI() {
