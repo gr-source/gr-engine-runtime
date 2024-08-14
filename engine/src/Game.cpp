@@ -79,7 +79,9 @@ enum IconType {
 	ICON_IMPORT       = 11,
 	ICON_ASCENDENTE   = 12,
 	ICON_DESCENDENTE  = 13,
-	ICON_EDIT         = 14
+	ICON_EDIT         = 14,
+	ICON_ANIMATION    = 15,
+	ICON_SHADER       = 16,
 };
 
 std::unordered_map<IconType, grr::gTexture *> iconsUI;
@@ -93,6 +95,12 @@ GameObject *Game::s_objectSelected = nullptr;
 grr::gTexture *Game::s_texturePlayGame = nullptr;
 
 ImGuiIO* Game::s_io = nullptr;
+
+bool Game::bFileDoubleClick = false;
+
+bool Game::bCutAllFile = false;
+
+bool Game::bCopyAllFile = false;
 
 bool Game::bViewPortFocused = false;
 
@@ -110,9 +118,9 @@ ImGuizmo::MODE Game::m_guizmoManipulate = ImGuizmo::WORLD;
 
 u32 Game::s_maxProgress = 0;
 
-std::filesystem::path Game::m_currentFile;
+std::unordered_map<std::filesystem::path, bool> Game::fLisDirSelected;
 
-std::filesystem::path Game::fDirSelected;
+std::filesystem::path Game::m_currentFile;
 
 void Game::Initialize() {
     s_io = &ImGui::GetIO();
@@ -509,7 +517,7 @@ void Game::RenderScenesUI() {
         ImGui::TreePop();
     }
 
-    if (s_io->KeyCtrl && ImGui::IsKeyReleased(ImGuiKey_A)) {
+    if (s_io->KeyCtrl && ImGui::IsKeyReleased(ImGuiKey_A) && ImGui::IsWindowFocused()) {
         bMenuAdd = !bMenuAdd;
     }
     
@@ -702,6 +710,8 @@ void Game::RenderViewportUI() {
     ImGui::End();
 }
 
+bool bPopupOpen = false;
+
 void Game::RenderFilesUI() {
     ImGui::Columns(5, "#Collums1", false);
 
@@ -709,6 +719,43 @@ void Game::RenderFilesUI() {
 
     if (ImGui::ImageButton(reinterpret_cast<ImTextureID>(gtCurrentTexture->getID()), ImVec2(32, 32), ImVec2(0, 1), ImVec2(1, 0)) && m_currentFile.has_parent_path()) {
         m_currentFile = m_currentFile.parent_path();
+
+        if (!bCutAllFile && !bCopyAllFile) {
+            fLisDirSelected.clear();
+        }
+    }
+
+    bool bSelelectAll = false;
+
+    if (s_io->KeyCtrl && ImGui::IsKeyDown(ImGuiKey_A) && ImGui::IsWindowFocused()) {
+        bSelelectAll = true;
+        fLisDirSelected.clear();
+    }
+
+    if (s_io->KeyCtrl && ImGui::IsKeyDown(ImGuiKey_X) && ImGui::IsWindowFocused()) {
+        for (auto &&[path, bCut] : fLisDirSelected) {
+            bCut = true;
+        }
+        bCutAllFile = true;
+        bCopyAllFile = false;
+    }
+
+    if (s_io->KeyCtrl && ImGui::IsKeyDown(ImGuiKey_C) && ImGui::IsWindowFocused()) {
+        for (auto &&[path, bCut] : fLisDirSelected) {
+            bCut = true;
+        }
+        bCutAllFile = false;
+        bCopyAllFile = true;
+    }
+
+    if (s_io->KeyCtrl && ImGui::IsKeyDown(ImGuiKey_V) && ImGui::IsWindowFocused()) {
+        for (auto &&[path, bCut] : fLisDirSelected) {
+            if (bCopyAllFile)
+                Filesystem::Copy(path, m_currentFile);
+            else if (bCutAllFile)
+                Filesystem::Move(path, m_currentFile);
+        }
+        fLisDirSelected.clear();
     }
 
     for (auto& file : std::filesystem::directory_iterator(m_currentFile)) {
@@ -716,40 +763,89 @@ void Game::RenderFilesUI() {
 
         auto &path = file.path();
 
-        ImGui::PushID(path.filename().c_str());
+        auto extension = path.extension().string();
+        auto name = path.filename().string();
+
+        ImVec4 tintColor(1.0f, 1.0f, 1.0f, 1.0f);
+
+        ImGui::PushID(name.c_str());
 
         gtCurrentTexture = iconsUI[ICON_FILE];
         if (file.is_directory()) {
             gtCurrentTexture = iconsUI[ICON_FOLDER];
-        }
-
-        if (ImGui::ImageButton(reinterpret_cast<ImTextureID>(gtCurrentTexture->getID()), ImVec2(32, 32), ImVec2(0, 1), ImVec2(1, 0))) {
-            if (file.is_directory()) {
-                m_currentFile = path;
+        } else {
+            if (extension == ".gmd") {
+                gtCurrentTexture = iconsUI[ICON_GAMEOBJECT];
+            }
+            if (extension == ".anm") {
+                gtCurrentTexture = iconsUI[ICON_ANIMATION];
+            }
+            if (extension == ".frag" || extension == ".vert") {
+                gtCurrentTexture = iconsUI[ICON_SHADER];
             }
         }
 
+        auto it = fLisDirSelected.find(path);
+        if (it != fLisDirSelected.end()) {
+            tintColor = {0.5f, 0.0f, 0.8f, 1.0f};
+
+            if ((*it).second)
+                tintColor = {0.5f, 0.5f, 0.5f, 1.0f};
+        }
+
+        if (s_io->KeyShift) {
+            if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
+                bFileDoubleClick = true;
+            }
+        } else {
+            bFileDoubleClick = false;
+        }
+
+        if (ImGui::ImageButton(reinterpret_cast<ImTextureID>(gtCurrentTexture->getID()), ImVec2(32, 32), ImVec2(0, 1), ImVec2(1, 0), -1, {0.0f, 0.0f, 0.0f, 0.0f}, tintColor) && !s_io->KeyShift) {
+            // if (s_io->KeyShift) {
+                
+            // } else {
+                if (file.is_directory()) {
+                    m_currentFile = path;
+                }
+            // }
+        }
+
+        if (bFileDoubleClick && ImGui::IsItemHovered() && it == fLisDirSelected.end() || bSelelectAll) {
+            // if (it != fLisDirSelected.end()) {
+            //     fLisDirSelected.erase(it);
+            // } else {
+                fLisDirSelected.emplace(path, false);
+            // }
+        }
+
+        // Click com dois dedos touchpad
         if (ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
-            fDirSelected = path;
+            if (!fLisDirSelected.empty()) {
+                fLisDirSelected.clear();
+            }
+            fLisDirSelected.emplace(path, false);
             bOpenPopupInfoDir = true;
         }
 
-        ImGui::Text("%s", path.filename().c_str());
+        ImGui::Text("%s", name.c_str());
 
         ImGui::PopID();
     }
     ImGui::Columns(1);
     
-    if (!bOpenPopupInfoDir && ImGui::IsMouseClicked(ImGuiMouseButton_Right) && ImGui::IsWindowHovered()) {
+    if (!bOpenPopupInfoDir && fLisDirSelected.empty() && ImGui::IsMouseClicked(ImGuiMouseButton_Right) && ImGui::IsWindowHovered()) {
         ImGui::OpenPopup("##popup_file_manager");
     }
 
-    if (bOpenPopupInfoDir) {
+    if (bOpenPopupInfoDir || !fLisDirSelected.empty() && ImGui::IsMouseClicked(ImGuiMouseButton_Right) && ImGui::IsWindowHovered()) {
+        bPopupOpen = true;
         ImGui::OpenPopup("##popup_dir_manager");
         bOpenPopupInfoDir = false;
     }
 
-    PopupDirmanager();
+    if (bPopupOpen)
+        PopupDirmanager();
 
     PopupFileManager();
 
@@ -757,10 +853,10 @@ void Game::RenderFilesUI() {
 }
 
 void Game::PopupDirmanager() {
-    auto &directory = fDirSelected;
-
-    if (ImGui::BeginPopup("##popup_dir_manager")) {
-        ImGui::Text("Dir: %s", directory.filename().string().c_str());
+    if (ImGui::BeginPopupModal("##popup_dir_manager", &bPopupOpen)) {
+        for (auto &&[path, isSeleceted] : fLisDirSelected) {
+            ImGui::Text("Dir: %s", path.filename().string().c_str());
+        }
 
         auto idx = 0;
 
@@ -769,15 +865,24 @@ void Game::PopupDirmanager() {
         if (ImGui::ListBox("##DirManager", &idx, item_list, 1)) {
             switch (idx) {
             case 0:
-                Filesystem::Delete(directory);
+                for (auto &&[path, isSeleceted] : fLisDirSelected) {
+                    Filesystem::Delete(path);
+                }
                 break;
             default:
                 break;
             }
+            fLisDirSelected.clear();
             ImGui::CloseCurrentPopup();
         }
         ImGui::EndPopup();
     }
+
+    if (!bPopupOpen) {
+        fLisDirSelected.clear();
+    }
+
+    // ImGui::
 }
 
 void Game::PopupFileManager() {
@@ -1369,6 +1474,8 @@ void Game::loadReources() {
     iconsUI.emplace(IconType::ICON_ASCENDENTE,  Resources::LoadTextureL(Filesystem::GetFile("/icon/icons8-ordenar-para-a-direita-50.png")));
     iconsUI.emplace(IconType::ICON_DESCENDENTE, Resources::LoadTextureL(Filesystem::GetFile("/icon/icons8-ordem-descendente-50.png")));
     iconsUI.emplace(IconType::ICON_EDIT,        Resources::LoadTextureL(Filesystem::GetFile("/icon/icons8-editar-24.png")));
+    iconsUI.emplace(IconType::ICON_ANIMATION,   Resources::LoadTextureL(Filesystem::GetFile("/icon/motion-graphics.png")));
+    iconsUI.emplace(IconType::ICON_SHADER,      Resources::LoadTextureL(Filesystem::GetFile("/icon/shade.png")));
 
     s_texturePlayGame = iconsUI[IconType::ICON_PLAY_GAME];
 }

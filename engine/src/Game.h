@@ -28,6 +28,12 @@ private:
 
     static ImGuiIO* s_io;
 
+    static bool bFileDoubleClick;
+
+    static bool bCutAllFile;
+
+    static bool bCopyAllFile;
+
     static bool bViewPortFocused;
 
     static bool bOpenPopupInfoDir;
@@ -44,9 +50,9 @@ private:
 
     static u32 s_maxProgress;
 
-    static std::filesystem::path m_currentFile;
+    static std::unordered_map<std::filesystem::path, bool> fLisDirSelected;
 
-    static std::filesystem::path fDirSelected;
+    static std::filesystem::path m_currentFile;
 
     static void RenderDocking();
 

@@ -36,11 +36,32 @@ const bool Filesystem::CreateDirectory(const std::string &path) {
 }
 
 void Filesystem::Delete(const std::string &path) {
-    for (auto entry : std::filesystem::directory_iterator(path)) {
-        Delete(entry.path());
-    }
     if (std::filesystem::exists(path)) {
-        std::filesystem::remove(path);
+        std::filesystem::remove_all(path);
+    }
+}
+
+void Filesystem::Move(const std::string &from, const std::string &to) {
+    Copy(from, to);
+    Delete(from);
+}
+
+void Filesystem::Copy(const std::string &from, const std::string &to) {
+    if (!std::filesystem::is_directory(from)) {
+        auto next = to + "/" + std::filesystem::path(from).filename().string();
+        if (std::filesystem::exists(next) && !std::filesystem::is_directory(next)) {
+            return;
+        }
+        return std::filesystem::copy(from, to);
+    }
+    auto newRoot = to + "/" + std::filesystem::path(from).filename().string();
+
+    CreateDirectory(newRoot);
+
+    for (auto entry : std::filesystem::directory_iterator(from)) {
+        auto name = entry.path().filename().string();
+
+        Copy(entry.path(), newRoot);
     }
 }
 

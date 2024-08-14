@@ -41,6 +41,10 @@ public:
     static const bool CreateDirectory(const std::string &path);
 
     static void Delete(const std::string &path);
+
+    static void Move(const std::string &from, const std::string &to);
+
+    static void Copy(const std::string &from, const std::string &to);
 };
 
 
