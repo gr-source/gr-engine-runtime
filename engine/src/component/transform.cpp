@@ -4,42 +4,70 @@
 
 #include "../timer.h"
 
-Transform::Transform() : position(Vector3::zero), scale(Vector3::one), rotation(Quaternion::identity), m_parent(nullptr) {}
+Transform::Transform() : m_scale(Vector3::one), m_rotation(Quaternion::identity), m_position(Vector3::zero), m_parent(nullptr) {}
 
-const Vector3 Transform::getright() const {
-    if (m_parent)
-        return Math::normalize((m_parent->rotation * rotation) * Vector3::right);
-    return rotation * Vector3::right;
+void Transform::setLocalScale(const Vector3 &value) {
+    m_scale = value;
 }
 
-const Vector3 Transform::getup() const {
-    if (m_parent)
-        return Math::normalize((m_parent->rotation * rotation) * Vector3::up);
-    return rotation * Vector3::up;
+const Vector3 Transform::getLocalScale() const {
+    return m_scale;
 }
 
-const Vector3 Transform::getforward() const {
-    if (m_parent)
-        return Math::normalize((m_parent->rotation * rotation) * Vector3::forward);
-    return rotation * Vector3::forward;
+void Transform::setLocalRotation(const Quaternion &value) {
+    m_rotation = value;
+}
+
+const Quaternion Transform::getLocalRotation() const {
+    return m_rotation;
+}
+
+void Transform::setLocalPosition(const Vector3 &value) {
+    m_position = value;
+}
+
+void Transform::addLocalPosition(const Vector3 &value) {
+    m_position += value;
+}
+
+const Vector3 &Transform::getLocalPosition() const {
+    return m_position;
 }
 
 const Vector3 Transform::getPosition() const {
     if (m_parent) {
-        return Vector3(m_parent->getGlobalMatrix() * Vector4(position, 1.0f));
+        return Vector3(m_parent->getGlobalMatrix() * Vector4(m_position, 1.0f));
     }
-    return position;
+    return m_position;
+}
+
+const Vector3 Transform::getright() const {
+    if (m_parent)
+        return (m_parent->m_rotation * m_rotation) * Vector3::right;
+    return m_rotation * Vector3::right;
+}
+
+const Vector3 Transform::getup() const {
+    if (m_parent)
+        return (m_parent->m_rotation * m_rotation) * Vector3::up;
+    return m_rotation * Vector3::up;
+}
+
+const Vector3 Transform::getforward() const {
+    if (m_parent)
+        return (m_parent->m_rotation * m_rotation) * Vector3::forward;
+    return m_rotation * Vector3::forward;
 }
 
 const Matrix4x4 Transform::getGlobalMatrix() const {
-    Matrix4x4 localMatrix = Math::translate<Matrix4x4>(position) * Math::rotate<Matrix4x4>(rotation) * Math::scale<Matrix4x4>(scale);
+    Matrix4x4 localMatrix = getLocalMatrix();
     if (m_parent)
         return m_parent->getGlobalMatrix() * localMatrix;
     return localMatrix;
 }
 
 const Matrix4x4 Transform::getLocalMatrix() const {
-    return Math::translate<Matrix4x4>(position) * Math::rotate<Matrix4x4>(rotation) * Math::scale<Matrix4x4>(scale);
+    return Math::translate<Matrix4x4>(m_position) * Math::rotate<Matrix4x4>(m_rotation) * Math::scale<Matrix4x4>(m_scale);
 }
 
 const bool Transform::hasParent() const {

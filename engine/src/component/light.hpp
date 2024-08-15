@@ -12,7 +12,7 @@ public:
         eSpot      = 3,
     };
 
-    const Vector3& getposition() const;
+    const Vector3 getposition() const;
 
     const Vector3 getforward() const;
 

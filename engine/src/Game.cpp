@@ -574,7 +574,7 @@ void Game::ReadHierarchy(Transform *transform) {
 
     const bool isOpen = ImGui::TreeNodeEx(name.c_str(), flags);
 
-    if (ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
+    if (ImGui::IsItemClicked(ImGuiMouseButton_Left)) {
         s_objectSelected = gameObject;
     }
 
@@ -594,10 +594,12 @@ void Game::ReadHierarchy(Transform *transform) {
             if (!name.empty()) {
                 auto target = GameObject::Find(name);
 
-                auto &ts = target->getTransform();
-                ts.setParent(transform);
+                auto ts = &target->getTransform();
+                if (ts != transform->getParent()) {
+                    ts->setParent(transform);
                 
-                Scene::Remove(target);
+                    EventManager::AddEvent(&Scene::Remove, target);
+                }
             }
         }
         ImGui::EndDragDropTarget();
@@ -649,7 +651,7 @@ void Game::RenderViewportUI() {
 
         if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(IMGUI_PAYLOAD_FILE, target_flags)) {
             std::string path((char*)payload->Data, payload->DataSize);
-            if (!path.empty()) {
+            if (!path.empty() && std::filesystem::path(path).filename().extension() == ".gmd") {
                 s_objectSelected = ScriptManager::LoadGameObject(path);
             }
         }
@@ -685,7 +687,7 @@ void Game::RenderViewportUI() {
         auto camera = Camera::Current();
 
         if (ImGuizmo::Manipulate(camera->getViewmatrix().data, camera->getPerspesctive().data, m_guizmoOperation, m_guizmoManipulate, model.data)) {
-            model.decompose(transform.scale, transform.rotation, transform.position);
+            // model.decompose(transform.scale, transform.rotation, transform.position);
         }
     }
 
@@ -1154,17 +1156,23 @@ void Game::OnPropertyTransform(Transform* transform) {
     if (ImGui::TreeNode("Transform")) {
         const char* text[] {"X", "Y", "Z"};
 
+        auto position = transform->getLocalPosition();
         ImGui::Text("Posição:");
-        ImGui::DragFloatEx("##Posicao", text, transform->position.data, 1.0f, 0.0f, 0.0f, "%.3f");
+        if (ImGui::DragFloatEx("##Posicao", text, position.data, 1.0f, 0.0f, 0.0f, "%.3f")) {
+            transform->setLocalPosition(position);
+        }
 
+        auto scale = transform->getLocalScale();
         ImGui::Text("Escala:");
-        ImGui::DragFloatEx("##Escala", text, transform->scale.data, 1.0f, 1.0f, 0.0f, "%.3f");
+        if (ImGui::DragFloatEx("##Escala", text, scale.data, 1.0f, 1.0f, 0.0f, "%.3f")) {
+            transform->setLocalScale(scale);
+        }
 
-        Vector3 euler = transform->rotation.eulerAngles();
+        Vector3 euler = Math::eulerAngles(transform->getLocalRotation());
 
         ImGui::Text("Rotação:");
         if (ImGui::DragFloatEx("##Rotacao", text, euler.data, 1.0f, -360.0f, 360.0f)) {
-            transform->rotation = Math::normalize(Math::euler({Math::rad(euler.x), Math::rad(euler.y), Math::rad(euler.z)}));
+            transform->setLocalRotation(Math::normalize(Math::euler({Math::rad(euler.x), Math::rad(euler.y), Math::rad(euler.z)})));
         }
 
         ImGui::TreePop();
@@ -1198,6 +1206,20 @@ void Game::OnPropertyAnimator(Animator *animator) {
         }
 
         auto isOpen = ImGui::TreeNode("Animations");
+
+        if (ImGui::BeginDragDropTarget() && ScriptManager::LoadGameObject) {
+            ImGuiDragDropFlags target_flags = 0;
+            // target_flags |= ImGuiDragDropFlags_AcceptBeforeDelivery;
+            // target_flags |= ImGuiDragDropFlags_SourceAllowNullID;
+
+            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(IMGUI_PAYLOAD_FILE, target_flags)) {
+                std::string path((char*)payload->Data, payload->DataSize);
+                if (!path.empty() && std::filesystem::path(path).filename().extension() == ".anm") {
+                    animator->insert(ScriptManager::LoadAnimation(path));
+                }
+            }
+            ImGui::EndDragDropTarget();
+        }
 
         if (isOpen) {
             auto &animations = animator->m_animations;

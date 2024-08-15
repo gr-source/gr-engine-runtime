@@ -2,8 +2,8 @@
 
 #include "transform.hpp"
 
-const Vector3 &Light::getposition() const {
-    return m_transform->position;
+const Vector3 Light::getposition() const {
+    return m_transform->getPosition();
 }
 
 const Vector3 Light::getforward() const {

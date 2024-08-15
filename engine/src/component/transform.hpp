@@ -5,21 +5,29 @@
 
 class Transform : public Component {
 public:
-    Vector3 scale;
-
-    Quaternion rotation;
-
-    Vector3 position;
-
     Transform();
+
+    void setLocalScale(const Vector3 &value);
+
+    const Vector3 getLocalScale() const;
+
+    void setLocalRotation(const Quaternion &value);
+
+    const Quaternion getLocalRotation() const;
+
+    void setLocalPosition(const Vector3 &value);
+
+    void addLocalPosition(const Vector3 &value);
+
+    const Vector3 getPosition() const;
+
+    const Vector3 &getLocalPosition() const;
 
     const Vector3 getright() const;
 
     const Vector3 getup() const;
 
     const Vector3 getforward() const;
-
-    const Vector3 getPosition() const;
 
     const Matrix4x4 getGlobalMatrix() const;
 
@@ -38,6 +46,12 @@ public:
     const bool hasChildren() const;
 
 private:
+    Vector3 m_scale;
+
+    Quaternion m_rotation;
+
+    Vector3 m_position;
+
     std::vector<Transform *> m_children;
 
     Transform* m_parent;

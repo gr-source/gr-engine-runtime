@@ -13,6 +13,8 @@ public:
     
     void UpdateAnim();
 
+    void insert(std::unique_ptr<Animation> animation);
+
     std::vector<Matrix4x4> m_finalBoneMatrices;
 
 private:

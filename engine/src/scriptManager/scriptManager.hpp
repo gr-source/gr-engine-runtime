@@ -38,6 +38,8 @@ public:
     // Event;
     static void (*EventUpdate)();
 
+    static std::unique_ptr<Animation> (*LoadAnimation)(const std::string &);
+    
     static GameObject *(*LoadGameObject)(const std::string &);
 
 private:

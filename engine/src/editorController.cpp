@@ -27,20 +27,22 @@ void EditorController::Update() {
         return;
     }
 
+    auto transform = camera->getTransform();
+
 
     Vector3 diretion;
 
     if (Input::IsKeyPress(Input::KEY_W)) {
-        diretion += camera->getTransform()->getforward();
+        diretion += transform->getforward();
     }
     if (Input::IsKeyPress(Input::KEY_S)) {
-        diretion -= camera->getTransform()->getforward();
+        diretion -= transform->getforward();
     }
     if (Input::IsKeyPress(Input::KEY_A)) {
-        diretion += camera->getTransform()->getright();
+        diretion += transform->getright();
     }
     if (Input::IsKeyPress(Input::KEY_D)) {
-        diretion -= camera->getTransform()->getright();
+        diretion -= transform->getright();
     }
     if (Input::IsKeyPress(Input::KEY_UP)) {
         diretion.y += 1.0f;
@@ -50,7 +52,7 @@ void EditorController::Update() {
     }
 
     if (diretion != Vector3::zero) {
-        camera->getTransform()->position += Math::normalize(diretion) * movementSpeed * Time::deltaTime;
+        transform->addLocalPosition(Math::normalize(diretion) * movementSpeed * Time::deltaTime);
     }
 
     updateCursor();
@@ -74,7 +76,7 @@ void EditorController::OnCameraUpdate() {
     auto camera = Camera::Main();
 
     auto m_transform = camera->getTransform();
-    m_transform->rotation = Math::normalize(Math::euler({Math::rad(elapsed.y), Math::rad(-elapsed.x), 0.0f}));
+    m_transform->setLocalRotation(Math::normalize(Math::euler({Math::rad(elapsed.y), Math::rad(-elapsed.x), 0.0f})));
 }
 
 void EditorController::processMouse(const Vector2& direction) {

@@ -1,7 +1,5 @@
 #include "View.h"
 
-#include <imgui.h>
-
 const bool View::TextureInputUI(const ImColor& color) {
     ImDrawList* drawList = ImGui::GetWindowDrawList();
     ImVec2 size = ImGui::GetItemRectSize();
@@ -22,5 +20,9 @@ const bool View::PopupChangeColor(const std::string& name, Color& color) {
         ImGui::EndPopup();
         return isOpen;
     }
+    return false;
+}
+
+const bool View::DragScalarEx(const char* id, const char* label[], ImGuiDataType data_type, void* p_data, int components, float v_speed, const void* p_min, const void* p_max, const char* format, ImGuiSliderFlags flags) {
     return false;
 }

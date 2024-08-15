@@ -55,6 +55,8 @@ Camera *(*ScriptManager::CurrentCamera)();
 // Event
 void (*ScriptManager::EventUpdate)();
 
+std::unique_ptr<Animation> (*ScriptManager::LoadAnimation)(const std::string &);
+
 GameObject *(*ScriptManager::LoadGameObject)(const std::string &);
 
 void ScriptManager::Initialzie() {
@@ -109,6 +111,8 @@ void ScriptManager::Shutdown() {
     UNREGISTER_API(Scene::GetGameObject);
 
     UNREGISTER_API(LoadGameObject);
+
+    UNREGISTER_API(LoadAnimation);
     
     if (!s_handle) {
         return;
@@ -156,6 +160,8 @@ void ScriptManager::RegisterApi() {
     REGISTER_FUNC("LoadShader", Resources::LoadShaderL);
 
     REGISTER_API(GameObject *, const std::string &, LoadGameObject);
+
+    REGISTER_API(std::unique_ptr<Animation>, const std::string &, LoadAnimation);
 
     //Scene
     REGISTER_API_FROM_NAME("GetSceneGameObject", std::list<GameObject *> &, void, Scene::GetGameObject);

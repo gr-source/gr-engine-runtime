@@ -28,6 +28,10 @@ void Animator::UpdateAnim() {
     m_currentTime += m_animation->getTick() * Time::deltaTime;
 }
 
+void Animator::insert(std::unique_ptr<Animation> animation) {
+    m_animations.push_back(std::move(animation));
+}
+
 void Animator::hierarchy(Transform *transform, const Matrix4x4 &parentTransform) {
     auto gameObject = transform->getGameObject();
 
