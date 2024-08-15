@@ -110,7 +110,7 @@ bool Game::bOpenPopupInfoDir = false;
 
 bool Game::bScriptReloaded = false;
 
-bool Game::bMenuAdd = false;
+bool Game::bOpenPopupOptionGameObject = false;
 
 ImVec4 Game::FPSColor = {255, 255, 255, 255};
 
@@ -518,10 +518,6 @@ void Game::RenderScenesUI() {
         
         ImGui::TreePop();
     }
-
-    if (s_io->KeyCtrl && ImGui::IsKeyReleased(ImGuiKey_A) && ImGui::IsWindowFocused()) {
-        bMenuAdd = !bMenuAdd;
-    }
     
     if (ImGui::IsKeyReleased(ImGuiKey_Delete) && s_objectSelected) {
         EventManager::AddEvent(Scene::Delete, s_objectSelected);
@@ -532,30 +528,22 @@ void Game::RenderScenesUI() {
         ImGui::OpenPopup("##popup_rename_gameobject");
     }
 
+    if (!bOpenPopupOptionGameObject && ImGui::IsWindowHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
+        ImGui::OpenPopup("##popup_menu_add");
+    }
+
+    if (bOpenPopupOptionGameObject) {
+        ImGui::OpenPopup("##popup_options_gameobject");
+        bOpenPopupOptionGameObject = false;
+    }
+
     PopupRenameGameObject();
 
+    PopupOptionsGameObject();
+
+    PopupMenuAdd();
+
     ImGui::End();
-
-    if (bMenuAdd) {
-        MenuAdd();
-    }
-}
-
-void Game::PopupRenameGameObject() {
-    if (ImGui::BeginPopup("##popup_rename_gameobject")) {
-        ImGui::Text("Input new name");
-
-        if (!ImGui::IsAnyItemActive() && !ImGui::IsMouseClicked(0))
-            ImGui::SetKeyboardFocusHere(0);
-
-        char name[256] = {0};
-        if (ImGui::InputText("##InputName", name, 256, ImGuiInputTextFlags_EnterReturnsTrue)) {
-            s_objectSelected->setName(name);
-
-            ImGui::CloseCurrentPopup();
-        }
-        ImGui::EndPopup();
-    }
 }
 
 void Game::ReadHierarchy(Transform *transform) {
@@ -574,8 +562,20 @@ void Game::ReadHierarchy(Transform *transform) {
 
     const bool isOpen = ImGui::TreeNodeEx(name.c_str(), flags);
 
-    if (ImGui::IsItemClicked(ImGuiMouseButton_Left)) {
+    static int CountClick = 0;
+
+    if (ImGui::IsItemClicked(ImGuiMouseButton_Left) && s_objectSelected == gameObject) {
+        ++CountClick;
+    }
+
+    if (ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
         s_objectSelected = gameObject;
+        bOpenPopupOptionGameObject = true;
+    }
+
+    if (CountClick >= 2) {
+        s_objectSelected = gameObject;
+        CountClick = 0;
     }
 
     if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceNoDisableHover | ImGuiDragDropFlags_SourceNoHoldToOpenOthers)) {
@@ -613,6 +613,57 @@ void Game::ReadHierarchy(Transform *transform) {
     }
 }
 
+void Game::PopupMenuAdd() {
+    if (ImGui::BeginPopup("##popup_menu_add")) {
+        ImGui::Text("Add Object");
+
+        const char* item_name[1]{"Empty GameObject"};
+
+        auto id = 0;
+        if (ImGui::ListBox("##ListBoxOptionsGame", &id, item_name, 1)) {
+            if (id == 0 && Scene::Create) {
+                s_objectSelected = Scene::Create("Empty");
+            }
+            ImGui::CloseCurrentPopup();
+        }
+
+        ImGui::EndPopup();
+    }
+}
+
+void Game::PopupOptionsGameObject() {
+    if (ImGui::BeginPopup("##popup_options_gameobject")) {
+        const char* item_name[1]{"Delete"};
+
+        auto id = 0;
+        if (ImGui::ListBox("##ListBoxOptionsGame", &id, item_name, 1)) {
+            if (id == 0 && s_objectSelected) {
+                EventManager::AddEvent(Scene::Delete, s_objectSelected);
+                s_objectSelected = nullptr;
+            }
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::EndPopup();
+    }
+}
+
+void Game::PopupRenameGameObject() {
+    if (ImGui::BeginPopup("##popup_rename_gameobject")) {
+        ImGui::Text("Input new name");
+
+        if (!ImGui::IsAnyItemActive() && !ImGui::IsMouseClicked(0))
+            ImGui::SetKeyboardFocusHere(0);
+
+        char name[256] = {0};
+        if (ImGui::InputText("##InputName", name, 256, ImGuiInputTextFlags_EnterReturnsTrue)) {
+            s_objectSelected->setName(name);
+
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::EndPopup();
+    }
+}
+
 void Game::RenderViewportUI() {
     static Imguibuffer& m_imguibuffer = Imguibuffer::getInstance();
 
@@ -630,6 +681,10 @@ void Game::RenderViewportUI() {
 
     if (lastSize.x != curSize.x || lastSize.y != curSize.y && curSize.x > 5.0f && curSize.y > 5.0f || bScriptReloaded) {
         auto &viewport = Settings::ViewportSize = {static_cast<int>(curSize.x), static_cast<int>(curSize.y)};
+
+        if (ScriptManager::SetScreenSize) {
+            ScriptManager::SetScreenSize(Settings::ViewportSize);
+        }
 
         auto camera = Camera::Current();
         if (camera) {
@@ -1484,39 +1539,12 @@ void Game::TextureInfo(Texture *&texture) {
     }
 }
 
-void Game::MenuAdd() {
-    ImGui::SetNextWindowPos(ImGui::GetMousePos(), ImGuiCond_Appearing);
-    ImGui::SetNextWindowSize(ImVec2(200, 300), ImGuiCond_Appearing);
-    ImGui::Begin("##Game::MenuAdd", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
-    if (ImGui::TreeNode("Luzes")) {
-        if (ImGui::Button("Direct")) {
-            // objectselected = SceneManager::add("(Light) Direction");
-            //objectselected->addComponent<LightComponent>(LightComponent::eDirection);
-
-            bMenuAdd = false;
-        }
-        if (ImGui::Button("Point")) {
-            // objectselected = SceneManager::add("(Light) Point");
-            //objectselected->addComponent<LightComponent>(LightComponent::ePoint);
-
-            bMenuAdd = false;
-        }
-        if (ImGui::Button("Spot")) {
-            // objectselected = SceneManager::add("(Light) Spot");
-            //objectselected->addComponent<LightComponent>(LightComponent::eSpot);
-
-            bMenuAdd = false;
-        }
-        ImGui::TreePop();
-    }
-    if (!ImGui::IsWindowFocused()) {
-        bMenuAdd = false;
-    }
-    ImGui::End();
-}
-
 void Game::PlayGame() {
     ScriptManager::Initialzie();
+
+    if (ScriptManager::SetScreenSize) {
+        ScriptManager::SetScreenSize(Settings::ViewportSize);
+    }
 
     RenderManager::Initialize();
 

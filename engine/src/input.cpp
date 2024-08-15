@@ -9,7 +9,7 @@
 
 void* Input::m_instance = nullptr;
 
-int get_key_to_glfw(Input::Key key) {
+int get_key_to_glfw(grm::u32 key) {
     switch (key) {
     case Input::KEY_W:
         return GLFW_KEY_W;
@@ -58,7 +58,7 @@ const bool Input::IsKeyUp(Key key) {
     return 0;
 }
 
-const bool Input::IsKeyPress(Key key) {
+const bool Input::IsKeyPress(grm::u32 key) {
     return GET_INSTANCE_PRESS(get_key_to_glfw(key));
 }
 
@@ -66,7 +66,7 @@ const bool Input::IsMouseUp(Key button) {
     return glfwGetMouseButton((GLFWwindow*)m_instance, get_key_to_glfw(button)) == GLFW_PRESS;
 }
 
-const bool Input::IsMousePress(Key button) {
+const bool Input::IsMousePress(grm::u32 button) {
     return 0;
 }
 

@@ -6,12 +6,15 @@
 
 class Scene {
 public:
-    static void Remove(GameObject *target);
+    static std::list<GameObject *> &(*GetGameObject)();
 
     static void (*Delete)(GameObject *target);
+    
+    static GameObject *(*Create)(const std::string &);
+
+    static void Remove(GameObject *target);
 
     static void Add(GameObject *target);
     
-    static std::list<GameObject *> &(*GetGameObject)();
 };
 

@@ -42,6 +42,8 @@ public:
     
     static GameObject *(*LoadGameObject)(const std::string &);
 
+    static void (*SetScreenSize)(const iVector2 &);
+
 private:
     static void RegisterApi();
 

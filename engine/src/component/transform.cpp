@@ -22,6 +22,12 @@ const Quaternion Transform::getLocalRotation() const {
     return m_rotation;
 }
 
+const Quaternion Transform::getRotation() const {
+    if (m_parent)
+        return (m_parent->m_rotation * m_rotation);
+    return m_rotation;
+}
+
 void Transform::setLocalPosition(const Vector3 &value) {
     m_position = value;
 }
@@ -42,21 +48,15 @@ const Vector3 Transform::getPosition() const {
 }
 
 const Vector3 Transform::getright() const {
-    if (m_parent)
-        return (m_parent->m_rotation * m_rotation) * Vector3::right;
-    return m_rotation * Vector3::right;
+    return getRotation() * Vector3::right;
 }
 
 const Vector3 Transform::getup() const {
-    if (m_parent)
-        return (m_parent->m_rotation * m_rotation) * Vector3::up;
-    return m_rotation * Vector3::up;
+    return getRotation() * Vector3::up;
 }
 
 const Vector3 Transform::getforward() const {
-    if (m_parent)
-        return (m_parent->m_rotation * m_rotation) * Vector3::forward;
-    return m_rotation * Vector3::forward;
+    return getRotation() * Vector3::forward;
 }
 
 const Matrix4x4 Transform::getGlobalMatrix() const {

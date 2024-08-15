@@ -6,6 +6,8 @@ std::list<GameObject *> &(*Scene::GetGameObject)() = nullptr;
 
 void (*Scene::Delete)(GameObject *target);
 
+GameObject *(*Scene::Create)(const std::string &);
+
 void Scene::Remove(GameObject *target) {
     if (!Scene::GetGameObject) {
         return;

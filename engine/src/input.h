@@ -31,11 +31,11 @@ public:
 
     static const bool IsKeyUp(Key key);
 
-    static const bool IsKeyPress(Key key);
+    static const bool IsKeyPress(grm::u32 key);
 
     static const bool IsMouseUp(Key button);
 
-    static const bool IsMousePress(Key button);
+    static const bool IsMousePress(grm::u32 button);
 
     static void SetCursorPos(const Vector2& position);
 

@@ -2,6 +2,8 @@
 
 #include "../component/camera.hpp"
 
+#include "../input.h"
+
 #include "../resources/resources.h"
 #include "../ecs/entity.h"
 #include "../core/scene.hpp"
@@ -59,6 +61,9 @@ std::unique_ptr<Animation> (*ScriptManager::LoadAnimation)(const std::string &);
 
 GameObject *(*ScriptManager::LoadGameObject)(const std::string &);
 
+// Screen
+void (*ScriptManager::SetScreenSize)(const iVector2 &);
+
 void ScriptManager::Initialzie() {
     Console::Print(LogInfo::INFO, "Loading script...");
 
@@ -113,6 +118,8 @@ void ScriptManager::Shutdown() {
     UNREGISTER_API(LoadGameObject);
 
     UNREGISTER_API(LoadAnimation);
+
+    UNREGISTER_API(SetScreenSize);
     
     if (!s_handle) {
         return;
@@ -167,4 +174,15 @@ void ScriptManager::RegisterApi() {
     REGISTER_API_FROM_NAME("GetSceneGameObject", std::list<GameObject *> &, void, Scene::GetGameObject);
 
     REGISTER_API_FROM_NAME("DeleteSceneGameObject", void, GameObject *, Scene::Delete);
+
+    REGISTER_API_FROM_NAME("SceneCreateGameObject", GameObject *, const std::string &, Scene::Create);
+
+    // Input
+    REGISTER_FUNC("InputIsKeyPress", Input::IsKeyPress);
+    REGISTER_FUNC("InputSetCursourPos", Input::SetCursorPos);
+    REGISTER_FUNC("InputGetCursorPos", Input::GetCursorPos);
+    REGISTER_FUNC("InputIsMousePress", Input::IsMousePress);
+
+    // Screen
+    REGISTER_API(void, const iVector2 &, SetScreenSize);
 }

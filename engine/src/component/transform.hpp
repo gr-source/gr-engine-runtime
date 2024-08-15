@@ -15,6 +15,8 @@ public:
 
     const Quaternion getLocalRotation() const;
 
+    const Quaternion getRotation() const;
+
     void setLocalPosition(const Vector3 &value);
 
     void addLocalPosition(const Vector3 &value);

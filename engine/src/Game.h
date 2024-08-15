@@ -40,7 +40,7 @@ private:
 
     static bool bScriptReloaded;
 
-    static bool bMenuAdd;
+    static bool bOpenPopupOptionGameObject;
 
     static ImVec4 FPSColor;
 
@@ -58,9 +58,13 @@ private:
 
     static void RenderScenesUI();
 
-    static void PopupRenameGameObject();
-
     static void ReadHierarchy(Transform* transform);
+
+    static void PopupMenuAdd();
+
+    static void PopupOptionsGameObject();
+
+    static void PopupRenameGameObject();
 
     static void RenderViewportUI();
 
@@ -104,6 +108,4 @@ private:
     // static void OnPropertyChunkController(ChunkController* chunkController);
 
     static void TextureInfo(Texture*& texture);
-
-    static void MenuAdd();
 };
