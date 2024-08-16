@@ -19,6 +19,8 @@ int get_key_to_glfw(grm::u32 key) {
         return GLFW_KEY_S;
     case Input::KEY_D:
         return GLFW_KEY_D;
+    case Input::KEY_SPACE:
+        return GLFW_KEY_SPACE;
     case Input::KEY_UP:
         return GLFW_KEY_UP;
     case Input::KEY_DOWN:
