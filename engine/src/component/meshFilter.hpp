@@ -9,6 +9,8 @@ class MeshFilter : public Component {
 public:
     Mesh &getMesh();
 
+    void processBoundbox();
+
     Boundbox &getBoundbox();
 private:
     Mesh m_mesh;

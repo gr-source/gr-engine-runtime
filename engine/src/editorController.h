@@ -16,17 +16,16 @@ public:
 
     static void updateCursor();
 private:
-    static void processMouse(const Vector2& direction);
+
+    static Camera *m_mainCamera;
 
     static Vector2 lastMousePos;
-
-    static GameObject* m_mainCamera;
 
     static Vector2 elapsed;
 
     static Vector2 start;
 
-    static void OnCameraUpdate();
+    static void ProcessMouse(const Vector2 &delta);
 };
 
 

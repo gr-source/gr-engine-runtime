@@ -36,6 +36,8 @@ public:
 
     static const std::vector<Filesystem::path> getDirectoryEntry(const std::string& path);
 
+    static const std::string GetFileName(const std::string &path);
+
     static const std::string GetFile(const std::string &path);
 
     static const bool CreateDirectory(const std::string &path);

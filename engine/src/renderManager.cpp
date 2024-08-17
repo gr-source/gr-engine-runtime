@@ -2,7 +2,7 @@
 
 #include "console.hpp"
 
-#include "ecs/gameObject.h"
+#include "ecs/ecs.hpp"
 
 #include "component/meshRender.hpp"
 #include "component/meshFilter.hpp"
@@ -98,39 +98,17 @@ void RenderManager::Initialize() {
 
 void RenderManager::Process() {
     s_objects.clear();
+    iDrawCount = 0;
 
-    if (!ScriptManager::GetGameObjectsFromRender) {
+    if (!m_shader || !m_shader->isValid()) {
         return;
     }
-
-    auto& models = ScriptManager::GetGameObjectsFromRender();
-    if (models.empty() || !m_shader || !m_shader->isValid()) {
-        return;
-    }
-
-    iDrawCount = models.size();
 
     auto camera = Camera::Current();
 
     s_frustum.CalculateFrustum(camera->getPerspesctive() * camera->getViewmatrix());
 
-    for (const auto& gameObject : models) {
-        auto& transform = gameObject->getTransform();
-
-        auto& meshFilter = gameObject->getComponent<MeshFilter>();
-
-        auto& model = transform.getGlobalMatrix();
-        auto& boundbox = meshFilter.getBoundbox();
-
-        if (!s_frustum.IsCubeInFrustumOOBB(boundbox.min, boundbox.max, model)) {
-            continue;
-        }
-
-        if (gameObject->hasComponent<Animator>()) {
-            gameObject->getComponent<Animator>().UpdateAnim();
-        }
-        s_objects.push_back(gameObject);
-    }
+    Ecs::for_each<MeshRender>(&RenderManager::Filter);
 
     iDrawRender = s_objects.size();
 }
@@ -195,6 +173,26 @@ void RenderManager::Shutdown() {
     s_objects.clear();
 
     m_shader = nullptr;
+}
+
+void RenderManager::Filter(GameObject *gameObject, MeshRender *meshRender) {
+    auto& transform = gameObject->getTransform();
+
+    auto& meshFilter = gameObject->getComponent<MeshFilter>();
+
+    auto& model = transform.getGlobalMatrix();
+    auto& boundbox = meshFilter.getBoundbox();
+
+    ++iDrawCount;
+
+    if (!s_frustum.IsCubeInFrustumOOBB(boundbox.min, boundbox.max, model)) {
+        return;
+    }
+
+    if (gameObject->hasComponent<Animator>()) {
+        gameObject->getComponent<Animator>().UpdateAnim();
+    }
+    s_objects.push_back(gameObject);
 }
 
 void RenderManager::SetupLight() {

@@ -5,6 +5,16 @@
 
 #include "../filesystem/filesystem.h"
 
+#include "../core/binary/gHeader.hpp"
+
+#include "../core/scene.hpp"
+
+#include "../ecs/gameObject.h"
+
+#include "../component/meshFilter.hpp"
+#include "../component/meshRender.hpp"
+#include "../component/animator.hpp"
+
 #include "../eventManager.h"
 #include "../console.hpp"
 #include "../settings.h"
@@ -13,16 +23,6 @@
 #include <future>
 
 u32 Resources::m_processCount = 0;
-
-/***************** Texture *****************/
-std::unordered_map<std::string, std::unique_ptr<Texture>> Resources::m_textures;
-std::list<ProcessLoader<Texture>> Resources::m_textureLoader;
-std::mutex Resources::m_textureMutex;
-
-/***************** SHADER *****************/
-std::unordered_map<std::string, std::unique_ptr<Shader>> Resources::m_shaders;
-std::list<ProcessLoader<Shader>> Resources::m_shaderLoader;
-std::mutex Resources::m_shaderMutex;
 
 /***************** Shader *****************/
 std::unordered_map<std::string, std::unique_ptr<grr::gShader>> Resources::s_shaderList;
@@ -34,64 +34,12 @@ std::unordered_map<std::string, std::unique_ptr<grr::gTexture>> Resources::s_tex
 std::list<std::tuple<std::string, grr::gTexture *>> Resources::s_textureFromLoader;
 std::mutex Resources::s_textureMutex;
 
-template <>
-Shader* Resources::Load<Shader>(const std::string& path, const std::function<void(Shader*)>& callback) {
-    if (!Filesystem::Exists(path + ".frag")) {
-        Log::error() << "[ Shader ] fragment shader file not found (" << path << ".frag)" << Log::end;
-        return nullptr;
-    }
-
-    if (!Filesystem::Exists(path + ".vert")) {
-        Log::error() << "[ Shader ] vertex shader file not found (" << path << ".vert)" << Log::end;
-        return nullptr;
-    }
-
-    auto it = m_shaders.find(Filesystem::path(path).filename());
-    if (it != m_shaders.end()) {
-        return (*it).second.get();
-    }
-
-    Shader* m_shader = new Shader(path);
-
-    ++m_processCount;
-    
-    {
-        std::lock_guard<std::mutex> lock(m_shaderMutex);
-        m_shaderLoader.emplace_back(m_shader, callback);
-    }
-
-    return m_shader;
-}
-
-template <>
-Texture* Resources::Load<Texture>(const std::string& path, const std::function<void(Texture*)>& callback) {
-    if (!Filesystem::Exists(path)) {
-        Log::error() << "[ Texture ] file not found (" << path << ")" << Log::end;
-        return nullptr;
-    }
-
-    auto it = m_textures.find(Filesystem::path(path).filename());
-    if (it != m_textures.end()) {
-        return (*it).second.get();
-    }
-
-    Texture* m_texture = new Texture(path);
-
-    ++m_processCount;
-
-    {
-        std::lock_guard<std::mutex> lock(m_textureMutex);
-        m_textureLoader.emplace_back(m_texture, callback);
-    }
-
-    return m_texture;
-}
-
 void Resources::Initialize() {
     stbi_set_flip_vertically_on_load(true);
 }
 
-grr::gTexture *Resources::LoadTextureL(const std::string &path) {
+/***************** TEXTURE ****************/
+grr::gTexture *Resources::LoadTexture(const std::string &path) {
     if (!std::filesystem::exists(path)) { 
         Console::Print(LogInfo::ERROR, "[ Resources::LoadTexture ] Falied to load texture: " + path);
         return nullptr;
@@ -126,7 +74,8 @@ grr::gTexture *Resources::LoadTextureL(const std::string &path) {
     return m_texture;
 }
 
-grr::gShader *Resources::LoadShaderL(const std::string &path) {
+/***************** SHADER ****************/
+grr::gShader *Resources::LoadShader(const std::string &path) {
     if (!Filesystem::Exists(path + ".frag")) {
         Console::Print(LogInfo::ERROR, "File do not found: " + path + ".frag");
         return nullptr;
@@ -155,155 +104,229 @@ grr::gShader *Resources::LoadShaderL(const std::string &path) {
     return shader;
 }
 
-u32 Resources::getTextureType(int ch) {
-    switch (ch) {
-    case 1:
-        return Texture::eRED;
-    case 2:
-        return Texture::eRG;
-    case 3:
-        return Texture::eRGB;
-    case 4:
-        return Texture::eRGBA;
-    default:
-        assert(false && "[ Resources::getTextureType ] typo invalido");
-        break;
+std::string FindNewName(std::string name, int id = 0) {
+    if (GameObject::Find(name)) {
+        name += std::to_string(id);
+        return FindNewName(name, id++);
     }
+    return name;
 }
 
-GLenum Resources::getTextureTypeSRGB(int ch) {
-    switch (ch) {
-    case 1:
-    case 2:
-    case 3:
-        return GL_SRGB;
-    case 4:
-        return GL_SRGB_ALPHA;
-    default:
-        return GL_SRGB;
+GameObject *ReadChildren(std::istream &is) {
+    gModel pModel;
+    if (!(is.read(reinterpret_cast<char *>(&pModel), sizeof(gModel)))) {
+        return nullptr;
     }
-}
 
-/***************** TEXTURE LOAD ****************/
-void Resources::setup_texture(ProcessLoader<Texture>& process, const u32 width, const u32 height, const int channel, stbi_uc*& pixels) {
-    u32 internalFormat = (process.data->m_internalformat != Texture::eNONE ? process.data->m_internalformat : Resources::getTextureTypeSRGB(channel));
-    u32 format = (process.data->m_format != Texture::eNONE ? process.data->m_format : Resources::getTextureType(channel));
-    u32 type = (process.data->m_type != Texture::eNONE ? process.data->m_type : Texture::eBYTE);
-
-    process.data->resize(width, height, internalFormat, format, Texture::eTRILINEAR, type, true);
-    process.data->apply(pixels);
-
-    stbi_image_free(pixels);
-    pixels = nullptr;
-
-    m_textures.emplace(Filesystem::path(process.data->getpath()).filename(), std::unique_ptr<Texture>(process.data));
-
-    --m_processCount;
-
-    if (process.callback != nullptr) {
-        process.callback(process.data);
+    grm::u32 meshCount;
+    if (!is.read(reinterpret_cast<char *>(&meshCount), sizeof(grm::u32))) {
+        Console::log(LogInfo::ERROR, "Failed to read mesh count to file.");
+        return nullptr;
     }
-}
 
-void Resources::LoadTexture() {
-    std::unique_lock<std::mutex> lock(m_textureMutex);
-    while (!m_textureLoader.empty()) {
-        auto& process = m_textureLoader.front();
-        lock.unlock();
+    std::vector<gMesh> meshes(meshCount);
 
-        int width = 0, height = 0, channel = 0;
-        stbi_uc* pixels = stbi_load(process.data->getpath().c_str(), &width, &height, &channel, 0);
-
-        if (!pixels) {
-            Log::error() << "[Texture] pixels not loaded" << Log::end;
-
-            delete process.data;
-            process.data = nullptr;
-
-            stbi_image_free(pixels);
-
-            lock.lock();
-            m_textureLoader.pop_front();
+    for (auto &mesh : meshes) {
+        // read name
+        if (!is.read(reinterpret_cast<char *>(mesh.m_name), sizeof(char) * 256)) {
             continue;
         }
 
-        EventManager::AddEvent(setup_texture, process, width, height, channel, pixels);
-        lock.lock();
-        m_textureLoader.pop_front();
-    }
-}
+        // bone
+        if (!is.read(reinterpret_cast<char *>(&mesh.m_hasBone), sizeof(bool))) {
+            continue;
+        }
 
-/***************** SHADER LOAD ****************/
-void Resources::setup_shader(ProcessLoader<Shader>& process, const std::string& fcontent, const std::string& vcontent, const std::string& gcontent) {
-    if (!fcontent.empty()) {
-        const char* str = fcontent.c_str();
-        process.data->loadsource(&str, 1, Shader::eFRAGMENT);
-    } else {
-        Log::error() << "[ Resources::setup_shader ] Fatal error f" << Log::end;
+        // read vertices
+        if (!is.read(reinterpret_cast<char *>(&mesh.m_verticeCount), sizeof(grm::u32))) {
+            continue;
+        }
 
-        delete process.data;
-        process.data = nullptr;
-        return;
-    }
+        mesh.m_vertices = new gVertex[mesh.m_verticeCount];
+        if (!is.read(reinterpret_cast<char *>(mesh.m_vertices), mesh.m_verticeCount * sizeof(gVertex))) {
+            continue;
+        }
 
-    if (!vcontent.empty()) {
-        const char* str = vcontent.c_str();
-        process.data->loadsource(&str, 1, Shader::eVERTEX);
-    } else {
-        Log::error() << "[ Resources::setup_shader ] Fatal error v" << Log::end;
+        // read indices
+        if (!is.read(reinterpret_cast<char *>(&mesh.m_indicesCount), sizeof(grm::u32))) {
+            continue;
+        }
 
-        delete process.data;
-        process.data = nullptr;
-        return;
-    }
-
-    if (!gcontent.empty()) {
-        const char* str = gcontent.c_str();
-        process.data->loadsource(&str, 1, Shader::eGEOMETRY);
-    }
-
-    m_shaders.emplace(Filesystem::path(process.data->getpath()).filename(), std::unique_ptr<Shader>(process.data));
-
-    --m_processCount;
+        mesh.m_indices = new grm::u32[mesh.m_indicesCount];
+        if (!is.read(reinterpret_cast<char *>(mesh.m_indices), mesh.m_indicesCount * sizeof(grm::u32))) {
+            continue;
+        }
     
-    if (process.callback != nullptr) {
-        process.callback(process.data);
-    }
-}
+        // bad alloc
+        // if (!mesh.m_hasBone) {
+        //     continue;
+        // }
 
-void Resources::LoadShader() {
-    std::unique_lock<std::mutex> lock(m_shaderMutex);
-    while (!m_shaderLoader.empty()) {
-        auto& process = m_shaderLoader.front();
-        lock.unlock();
-
-        std::string fcontent = Filesystem::GetFileContent(process.data->getpath() + ".frag");
-        if (fcontent.empty()) {
-            lock.lock();
-            m_shaderLoader.pop_front();
+        // read bones
+        if (!is.read(reinterpret_cast<char *>(&mesh.m_boneCount), sizeof(grm::u32))) {
             continue;
         }
 
-        /* load vertex shader string */
-        std::string vcontent = Filesystem::GetFileContent(process.data->getpath() + ".vert");
-        if (vcontent.empty()) {
-            lock.lock();
-            m_shaderLoader.pop_front();
+        mesh.m_bones = new gBone[mesh.m_boneCount];
+        if (!is.read(reinterpret_cast<char *>(mesh.m_bones), mesh.m_boneCount * sizeof(gBone))) {
             continue;
         }
-
-        /* load geometry shader string */
-        const std::string gcontent = Filesystem::GetFileContent(process.data->getpath() + ".geo");
-        if (gcontent.empty()) {
-            Log::warning() << "[ Shader ] geometry shader file do not open" << Log::end;
-        }
-
-        EventManager::AddEvent(setup_shader, process, fcontent, vcontent, gcontent);
-        lock.lock();
-        m_shaderLoader.pop_front();
     }
+
+    // Cria um game object 
+    auto gameObject = &GameObject::Create(pModel.m_name, "tag");
+
+    // transformaçoes 
+    auto &transform = gameObject->getTransform();
+
+    transform.setLocalScale(pModel.m_scale);
+    transform.setLocalRotation(pModel.m_rotation);
+    transform.setLocalPosition(pModel.m_position);
+
+    Animator *m_animator = nullptr;
+
+    // adiciona o mesh componenet
+    if (!meshes.empty()) {
+        auto &meshFilter = gameObject->addComponent<MeshFilter>();
+        auto &mesh = meshFilter.getMesh();
+
+        grm::u32 verticeCount = 0;
+        for (auto &pMesh : meshes) {
+            for (int i=0;i<pMesh.m_verticeCount;i++) {
+                auto &vertice = pMesh.m_vertices[i];
+
+                mesh.addVertex(vertice.position, vertice.normal, vertice.texCoord, vertice.mIdx);
+
+                if (!pMesh.m_hasBone) {
+                    continue;
+                }
+                
+                auto& boneWeight = mesh.addBoneWeight();
+
+                float norm = vertice.weight[0] + vertice.weight[1] + vertice.weight[2] + vertice.weight[3];
+
+                for (auto k=0;k<4;++k) {
+                    boneWeight.insert<int>(k, vertice.boneIndex[k]);
+                    boneWeight.insert<float>(k, norm > 0.0f ? vertice.weight[k] / norm : vertice.weight[k]);
+                }
+            }
+
+            for (int i=0;i<pMesh.m_indicesCount;i++) {
+                mesh.addIndice(verticeCount + pMesh.m_indices[i]);
+            }
+            verticeCount += pMesh.m_verticeCount;
+
+            delete[] pMesh.m_vertices;
+            delete[] pMesh.m_indices;
+
+            if (!pMesh.m_hasBone) {
+                continue;
+            }
+
+            if (!m_animator) {
+                m_animator = &gameObject->addComponent<Animator>();
+            }
+
+            for (auto i=0;i<pMesh.m_boneCount;++i) {
+                auto &pBone = pMesh.m_bones[i];
+
+                m_animator->addBone(pBone.m_name, pBone.m_position, pBone.m_scale, pBone.m_rotation, pBone.m_id);
+            }
+
+            delete[] pMesh.m_bones;
+        }
+    }
+
+    grm::u32 mSize;
+    if (!is.read(reinterpret_cast<char *>(&mSize), sizeof(grm::u32))) {
+        return nullptr;
+    }
+
+    if (mSize >= 1) {
+        std::vector<gMaterial> m_materials(mSize);
+        for (auto &material : m_materials) {
+        is.read(reinterpret_cast<char *>(material.m_name), 256 * sizeof(char));
+        is.read(reinterpret_cast<char *>(&material.m_color), sizeof(Color));
+        is.read(reinterpret_cast<char *>(&material.m_roughness), sizeof(float));
+        is.read(reinterpret_cast<char *>(&material.m_metallic), sizeof(float));
+        is.read(reinterpret_cast<char *>(&material.m_ambientOcclusion), sizeof(float));
+
+        is.read(reinterpret_cast<char *>(&material.m_textureCount), sizeof(grm::u32));
+
+        material.m_textures = new gTexture[material.m_textureCount];
+        is.read(reinterpret_cast<char *>(material.m_textures), material.m_textureCount * sizeof(gTexture));
+
+        for (int i=0;i<material.m_textureCount;++i) {
+            auto &texture = material.m_textures[i];
+        }
+    }
+        
+        // builda a mesh
+        auto &meshRender = gameObject->addComponent<MeshRender>();
+        for (auto i=0;i<m_materials.size();++i) {
+            auto& material = m_materials[i];
+
+            auto &m = meshRender.addMaterial(i, {material.m_name, {material.m_color.r, material.m_color.g, material.m_color.b, material.m_color.a}});
+
+            for (int i=0;i<material.m_textureCount;++i) { 
+                auto& texture = material.m_textures[i];
+
+                m.setTexture(i, Resources::LoadTexture(texture.m_path));
+            }
+
+            delete[] material.m_textures;
+        }
+        meshRender.build();
+    }
+
+    grm::u32 nSize;
+    is.read(reinterpret_cast<char *>(&nSize), sizeof(grm::u32));
+
+    for (int i=0;i<nSize;++i) {
+        GameObject *child = ReadChildren(is);
+        child->getTransform().setParent(&transform);
+    }
+    return gameObject;
 }
 
+GameObject *Resources::LoadGameObject(const std::string &path) {
+    Console::log(LogInfo::INFO, "Reading model...");
+
+    std::ifstream is(path, std::ios_base::binary);
+    if (!is.is_open()) {
+        Console::log(LogInfo::ERROR, "falied to open file: " + path);
+        return nullptr;
+    }
+
+    gHeader pHeader;
+    if (!is.read(reinterpret_cast<char *>(&pHeader), sizeof(gHeader))) {
+        Console::log(LogInfo::ERROR, "Failed to read header to file.");
+        return nullptr;
+    }
+
+    if (std::string(pHeader.signature) != "grmd") {
+        Console::log(LogInfo::ERROR, "Model invalid: " + path);
+        return nullptr;
+    }
+
+    auto name = Filesystem::GetFileName(path) + "(root)";
+    name = FindNewName(name);
+
+    auto gameObject = Scene::Create(name);
+    auto &transform = gameObject->getTransform();
+
+    // ler as informaçoes do modelo
+    auto child = ReadChildren(is);
+    child->getTransform().setParent(&transform);
+
+    // fecha o fluxo de arquivo
+    is.close();
+
+    // retorna um gameobject valido
+    return gameObject;
+}
+
+/***************** Texture Process ****************/
 void Resources::SetupTexture(grr::gTexture *texture, int width, int height, int ch, void *pixels, std::string path) {
     s_textureList.emplace(path, std::unique_ptr<grr::gTexture>(texture));
 
@@ -332,7 +355,7 @@ void Resources::SetupTexture(grr::gTexture *texture, int width, int height, int 
     Console::Print(LogInfo::INFO, "Texture loaded: " + path);
 }
 
-void Resources::LoadTextureF() {
+void Resources::ProcessTexture() {
     std::unique_lock<std::mutex> lock(s_textureMutex);
     while (!s_textureFromLoader.empty()) {
         auto [path, texture] = s_textureFromLoader.front();
@@ -357,6 +380,7 @@ void Resources::LoadTextureF() {
     }
 }
 
+/***************** Shader Process ****************/
 void Resources::SetupShader(grr::gShader *shader, const std::string &frag, const std::string &vert) {
     Console::Print(LogInfo::INFO, "Shader loadedd sucessfull.");
 
@@ -366,7 +390,7 @@ void Resources::SetupShader(grr::gShader *shader, const std::string &frag, const
     grr::gShader::Create(shader, &fShader, &vShader);
 }
 
-void Resources::LoadShaderF() {
+void Resources::ProcessShader() {
     std::unique_lock<std::mutex> lock(s_shaderMutex);
     while (!s_shaderFromLoader.empty()) {
         auto [path, shader] = s_shaderFromLoader.front();
@@ -414,53 +438,9 @@ void Resources::LoadShaderF() {
 }
 
 void Resources::OnThread() {
-    LoadShader();
+    ProcessShader();
 
-    LoadTexture();
-
-    // Script Loader
-    LoadShaderF();
-
-    LoadTextureF();
-}
-
-const u32 Resources::gettexturecount() {
-    return m_textures.size();
-}
-
-const u32 Resources::getshadercount() {
-    return m_shaders.size();
-}
-
-const char *Resources::gettextureformatname(u32 format) {
-    switch (format) {
-    case Texture::eRG:
-        return "RG";
-    case Texture::eRED:
-        return "RED";
-    case Texture::eRGB:
-        return "RGB";
-    case Texture::eRGB16F:
-        return "RGB16";
-    case Texture::eRGB32F:
-        return "RGB32";
-    case Texture::eRGBA:
-        return "RGBA";
-    case Texture::eRGBA16F:
-        return "RGBA16";
-    case Texture::eRGBA32F:
-        return "RGBA32";
-    case Texture::eSRBG:
-        return "eSRGB";
-    case Texture::eSRBG8:
-        return "eSRGB8";
-    case Texture::eSRBG8_APHA8:
-        return "eSRGB8 ALPHA8";
-    case Texture::eSRBG_APHA:
-        return "eSRGB ALPHA";
-    default:
-        return "<ERROR>";
-    }
+    ProcessTexture();
 }
 
 const grm::size Resources::GetTextureCount() {

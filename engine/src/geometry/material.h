@@ -20,6 +20,8 @@ public:
 
     const float getAmbientOcclusion() const;
 
+    void setTexture(int idx, const grr::gTexture *texture);
+
     const grr::gTexture *getTexture(int idx) const;
 
 private:

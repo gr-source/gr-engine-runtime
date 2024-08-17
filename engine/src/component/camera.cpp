@@ -22,10 +22,12 @@ Camera *Camera::Current() {
     return ScriptManager::CurrentCamera();
 }
 
-Camera::Camera() : m_transform(nullptr), m_fov(45.0f), m_farPlane(1000.0f), m_nearPlane(0.1f) { }
+Camera::Camera() : m_transform(nullptr), m_fov(45.0f), m_farPlane(1000.0f), m_nearPlane(0.1f) {
+    updateMatrix();
+}
 
 const Matrix4x4 Camera::getPerspesctive() const {
-    return Math::perspective(Math::rad(m_fov), m_aspect, m_farPlane, m_nearPlane);
+    return m_projection;
 }
 
 const Matrix4x4 Camera::getViewmatrix() const {
@@ -45,4 +47,12 @@ void Camera::setAspectRatio(float aspect) {
         return;
     }
     m_aspect = aspect;
+
+    updateMatrix();
+}
+
+void Camera::updateMatrix() {
+    std::cout << m_fov << " " << m_aspect << " " << m_nearPlane << " " << m_farPlane << std::endl;
+    
+    m_projection = Math::perspective(Math::rad(m_fov), m_aspect, m_farPlane, m_nearPlane);
 }

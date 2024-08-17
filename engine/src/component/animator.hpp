@@ -17,6 +17,9 @@ public:
 
     std::vector<Matrix4x4> m_finalBoneMatrices;
 
+    template <typename ...Args>
+    Bone &addBone(Args &&...args);
+
 private:
     GameObject *m_armature;
 
@@ -34,3 +37,10 @@ private:
 
     friend class Game;
 };
+
+template <typename... Args>
+inline Bone &Animator::addBone(Args &&...args) {
+    return m_bones.emplace_back(std::forward<Args>(args)...);
+}
+
+

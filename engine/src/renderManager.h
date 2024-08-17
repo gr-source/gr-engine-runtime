@@ -32,6 +32,8 @@ public:
     static grr::gShader *m_shader;
 
     static Frustum s_frustum;
+
+    static void Filter(GameObject *gameObject, MeshRender *meshRender);
     
     static void SetupLight();
 

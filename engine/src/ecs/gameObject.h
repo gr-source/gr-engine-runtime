@@ -10,6 +10,8 @@ class GameObject {
 public:
     static GameObject *Find(const std::string &name);
 
+    static GameObject &(*Create)(const std::string &name, const std::string &tag);
+
     const std::string &getName();
 
     void setName(const std::string &name);
@@ -17,6 +19,9 @@ public:
     const std::string &getTag();
 
     Transform &getTransform();
+
+    template <typename T, typename ...Args>
+    T &addComponent(Args &&...args);
 
     template <typename T>
     T& getComponent();
@@ -35,11 +40,15 @@ private:
     std::string m_tag;
 
     Entity* m_entity;
-
 };
 
+template <typename T, typename... Args>
+inline T &GameObject::addComponent(Args &&...args) {
+    return m_entity->addComponent<T>(std::forward<Args>(args)...);
+}
+
 template <typename T>
-inline T& GameObject::getComponent() {
+inline T &GameObject::getComponent() {
     return m_entity->getComponent<T>();
 }
 

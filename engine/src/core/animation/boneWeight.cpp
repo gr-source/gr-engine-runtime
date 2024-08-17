@@ -8,11 +8,11 @@ BoneWeight::BoneWeight() {
 }
 
 template <>
-inline void BoneWeight::insert(int idx, float value) {
+void BoneWeight::insert(int idx, float value) {
     m_weight[idx] = value;
 }
 
 template <>
-inline void BoneWeight::insert(int idx, int value) {
+void BoneWeight::insert(int idx, int value) {
     m_index[idx] = value;
 }

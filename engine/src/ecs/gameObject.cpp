@@ -1,6 +1,10 @@
 #include "gameObject.h"
 
+#include "entity.h"
+
 #include "../scriptManager/scriptManager.hpp"
+
+#include "../component/transform.hpp"
 
 GameObject *GameObject::Find(const std::string &name) {
     if (!ScriptManager::GetAllGameObject) {
@@ -16,6 +20,8 @@ GameObject *GameObject::Find(const std::string &name) {
     }
     return nullptr;
 }
+
+GameObject &(*GameObject::Create)(const std::string &name, const std::string &tag);
 
 const std::string &GameObject::getName() {
     return m_name;

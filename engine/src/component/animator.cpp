@@ -5,7 +5,7 @@
 #include "../renderer.h"
 #include "../timer.h"
 
-Animator::Animator() : m_finalBoneMatrices(100, Matrix4x4::identityMatrix) {}
+Animator::Animator() : m_armature(nullptr), m_animation(nullptr), m_currentTime(0.0f), m_finalBoneMatrices(100, Matrix4x4::identityMatrix) {}
 
 void Animator::UpdateAnim() {
     if (!m_armature) {

@@ -22,6 +22,14 @@ public:
     void addIndice(int t0);
 
     std::vector<int> &getIndices();
+
+    const bool hasIndices() const;
+
+    template <typename ...Args>
+    BoneWeight &addBoneWeight(Args &&...args);
+
+    const std::vector<BoneWeight> &getBoneWeight() const;
+
 private:
     std::vector<Vertex3D> m_vertices;
 
@@ -36,3 +44,10 @@ template <typename ...Args>
 inline Vertex3D& Mesh::addVertex(Args&& ...args) {
     return m_vertices.emplace_back(std::forward<Args>(args)...);
 }
+
+template <typename... Args>
+inline BoneWeight &Mesh::addBoneWeight(Args &&...args) {
+    return m_boneWeight.emplace_back(std::forward<Args>(args)...);
+}
+
+

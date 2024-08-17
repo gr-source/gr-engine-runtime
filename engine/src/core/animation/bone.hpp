@@ -5,7 +5,7 @@
 
 class Bone {
 public:
-    Bone(const std::string &name, const Vector3 &position, const Vector3 &scale, const Quaternion &rotation);
+    Bone(const std::string &name, const Vector3 &position, const Vector3 &scale, const Quaternion &rotation, grm::u32 id);
 
     const std::string &getName() const;
 

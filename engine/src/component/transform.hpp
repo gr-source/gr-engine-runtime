@@ -59,6 +59,14 @@ private:
     std::vector<Transform *> m_children;
 
     Transform* m_parent;
+
+    Matrix4x4 m_localMatrix;
+
+    Matrix4x4 m_globalMatrix;
+
+    void updateLocalMatrix();
+
+    void updateGlobalMatrix();
 };
 
 

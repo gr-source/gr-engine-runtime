@@ -29,8 +29,15 @@ public:
 private:
     Transform *m_transform;
 
-    float m_fov;
-    float m_aspect;
-    float m_farPlane;
+    Matrix4x4 m_projection;
+
     float m_nearPlane;
+    
+    float m_farPlane;
+    
+    float m_aspect;
+
+    float m_fov;
+
+    void updateMatrix();
 };

@@ -1,13 +1,15 @@
 #include "transform.hpp"
 
-#include "../ui/View.h"
+#include "../ecs/gameObject.h"
 
 #include "../timer.h"
 
-Transform::Transform() : m_scale(Vector3::one), m_rotation(Quaternion::identity), m_position(Vector3::zero), m_parent(nullptr) {}
+Transform::Transform() : m_scale(Vector3::one), m_rotation(Quaternion::identity), m_position(Vector3::zero), m_parent(nullptr), m_localMatrix(Matrix4x4::identityMatrix), m_globalMatrix(Matrix4x4::identityMatrix) {}
 
 void Transform::setLocalScale(const Vector3 &value) {
     m_scale = value;
+
+    updateLocalMatrix();
 }
 
 const Vector3 Transform::getLocalScale() const {
@@ -16,6 +18,8 @@ const Vector3 Transform::getLocalScale() const {
 
 void Transform::setLocalRotation(const Quaternion &value) {
     m_rotation = value;
+
+    updateLocalMatrix();
 }
 
 const Quaternion Transform::getLocalRotation() const {
@@ -30,10 +34,14 @@ const Quaternion Transform::getRotation() const {
 
 void Transform::setLocalPosition(const Vector3 &value) {
     m_position = value;
+
+    updateLocalMatrix();
 }
 
 void Transform::addLocalPosition(const Vector3 &value) {
     m_position += value;
+
+    updateLocalMatrix();
 }
 
 const Vector3 &Transform::getLocalPosition() const {
@@ -60,14 +68,11 @@ const Vector3 Transform::getforward() const {
 }
 
 const Matrix4x4 Transform::getGlobalMatrix() const {
-    Matrix4x4 localMatrix = getLocalMatrix();
-    if (m_parent)
-        return m_parent->getGlobalMatrix() * localMatrix;
-    return localMatrix;
+    return m_globalMatrix;
 }
 
 const Matrix4x4 Transform::getLocalMatrix() const {
-    return Math::translate<Matrix4x4>(m_position) * Math::rotate<Matrix4x4>(m_rotation) * Math::scale<Matrix4x4>(m_scale);
+    return m_localMatrix;
 }
 
 const bool Transform::hasParent() const {
@@ -82,6 +87,8 @@ void Transform::setParent(Transform *transform) {
     if (transform)
         transform->addChildren(this);
     m_parent = transform;
+
+    updateLocalMatrix();
 }
 
 Transform *Transform::getParent() {
@@ -104,8 +111,20 @@ const bool Transform::hasChildren() const {
     return !m_children.empty();
 }
 
+void Transform::updateLocalMatrix() {
+    m_localMatrix = Math::translate<Matrix4x4>(m_position) * Math::rotate<Matrix4x4>(m_rotation) * Math::scale<Matrix4x4>(m_scale);
 
+    updateGlobalMatrix();
+}
 
+void Transform::updateGlobalMatrix() {
+    m_globalMatrix = getLocalMatrix();
 
+    if (m_parent) {
+        m_globalMatrix = m_parent->getGlobalMatrix() * m_globalMatrix;
+    }
 
-
+    for (auto & child : m_children) {
+        child->updateLocalMatrix();
+    }
+}

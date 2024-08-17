@@ -25,9 +25,11 @@ private:
 
     grm::u32 m_vbo;
 
-    Shader* m_backgroundShader;
+    grr::gShader *m_shader;
+
+    // Shader* m_backgroundShader;
     
-    Shader* m_skyboxShader;
+    // Shader* m_skyboxShader;
 
     float distance;
 
@@ -41,6 +43,8 @@ private:
     std::array<Matrix4x4, 6> captureViews;
 
     std::unique_ptr<Skyboxbuffer> m_skyboxbuffer;
+
+    void loadShader();
 
     void createVertexArray();
 

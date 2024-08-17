@@ -27,6 +27,11 @@ const std::vector<Filesystem::path> Filesystem::getDirectoryEntry(const std::str
     return entry;
 }
 
+const std::string Filesystem::GetFileName(const std::string &path) {
+    auto fileName = std::filesystem::path(path).filename();
+    return fileName.replace_extension().string();
+}
+
 const std::string Filesystem::GetFile(const std::string &path) {
     return "./assets" + path;
 }

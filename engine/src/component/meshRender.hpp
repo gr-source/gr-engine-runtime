@@ -12,6 +12,11 @@ public:
     std::unordered_map<int, Material> &getMaterials();
 
     void draw();
+
+    Material &addMaterial(int idx, const Material& material);
+
+    void build();
+    
 private:
     std::unordered_map<int, Material> m_materials;
 

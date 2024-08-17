@@ -61,7 +61,7 @@ void Engine::MainLoop(std::function<void()> func) {
     m_thread[0] = std::thread(OnLoader);
     m_thread[1] = std::thread(OnPhysics);
 
-    Time timer(60.0f);
+    Time timer(10000.0f);
     while (Settings::IsEngineRunning) {
         Time::deltaTime = gameStatics.updateMs = timer.SleepTick();
         Time::FPS = timer.getFPS();
@@ -115,7 +115,7 @@ void Engine::OnInit() {
     m_shadowbuffer = &Shadowbuffer::getInstance();
 
     // Skybox provavelmente vou remove-lo
-    m_skybox = &Skybox::getInstance();
+    // m_skybox = &Skybox::getInstance();
 
     SetupEnable();
 
@@ -135,9 +135,6 @@ void Engine::OnInit() {
 void Engine::OnUpdate() {
     EditorController::Update();
 
-    if (ScriptManager::Update) {
-        ScriptManager::Update();
-    }
     if (Entity::Update) {
         Entity::Update();
     }
@@ -306,8 +303,8 @@ void Engine::RenderScene() {
     grr::gRender::SetRenderState(grr::GR_DEPTH_FUNC, grr::GR_DEPTH_ALWAYS);
     DebugDraw::Renderer();
 
-    grr::gRender::SetRenderState(grr::GR_DEPTH_FUNC, grr::GR_DEPTH_LEQUAL);
-    m_skybox->render();
+    // grr::gRender::SetRenderState(grr::GR_DEPTH_FUNC, grr::GR_DEPTH_LEQUAL);
+    // m_skybox->render();
 }
 
 void Engine::UIFramebuffer() {

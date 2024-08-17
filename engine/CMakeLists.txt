@@ -12,12 +12,14 @@ set(ecs_src
     src/ecs/gameObject.cpp
     src/ecs/component.cpp
     src/ecs/entity.cpp
+    src/ecs/ecs.cpp
 )
 
 set(ecs_hdr
     src/ecs/gameObject.h
     src/ecs/component.h
     src/ecs/entity.h
+    src/ecs/ecs.hpp
 )
 
 set(octree_src
@@ -129,6 +131,7 @@ set(engine_src
     src/resources/texture.cpp
     src/resources/resources.cpp
     
+    src/geometry/boundbox.cpp
     src/geometry/material.cpp
     src/geometry/vertex3D.cpp
     src/geometry/model.cpp
@@ -190,6 +193,7 @@ set(engine_hdr
     src/resources/texture.h
     src/resources/resources.h
     
+    src/geometry/boundbox.h
     src/geometry/material.h
     src/geometry/vertex3D.h
     src/geometry/model.h

@@ -20,8 +20,10 @@ void SetupBackgroundShader(Shader* shader) {
     shader->RegisterUniform("environmentMap", 1, Shader::eINT);
 }
 
-Skybox::Skybox() : play(false), currentTime(0.0f), distance(400.0f), m_backgroundShader(Resources::Load<Shader>(Filesystem::GetFile("/shader") + "/Background", SetupBackgroundShader)), m_skyboxbuffer(std::make_unique<Skyboxbuffer>(512, 512)), m_skyboxShader(nullptr), m_vertexArray(nullptr), m_vbo(0), m_ebo(0) {
-     captureProjection = Math::perspective(Math::rad(90.0f), 1.0f, 0.1f, 10.0f);
+Skybox::Skybox() : play(false), currentTime(0.0f), distance(400.0f), m_skyboxbuffer(std::make_unique<Skyboxbuffer>(512, 512)), m_vertexArray(nullptr), m_vbo(0), m_ebo(0) {
+    loadShader();
+
+    captureProjection = Math::perspective(Math::rad(90.0f), 1.0f, 0.1f, 10.0f);
      
      captureViews = {
         Math::lookAt(Vector3(0.0f, 0.0f, 0.0f), Vector3( 1.0f,  0.0f,  0.0f), Vector3(0.0f, -1.0f,  0.0f)),
@@ -35,12 +37,14 @@ Skybox::Skybox() : play(false), currentTime(0.0f), distance(400.0f), m_backgroun
     // vertex array
     createVertexArray();
 
-    m_texture = Resources::LoadTexture<void(Skybox::*)(Texture*texture), Skybox*>("assets/texture/skybox/industrial_sunset_puresky_1k.hdr", &Skybox::SetupBackgroundTexture, this);
+    // m_texture = Resources::LoadTexture<void(Skybox::*)(Texture*texture), Skybox*>("assets/texture/skybox/industrial_sunset_puresky_1k.hdr", &Skybox::SetupBackgroundTexture, this);
 }
 
 void Skybox::update() {}
 
 void Skybox::render() {
+    assert(m_shader || m_shader->isValid() && "Invalid shader");
+    /*
     if (m_backgroundShader->isvalid()) {
         m_backgroundShader->bind();
 
@@ -63,14 +67,24 @@ void Skybox::render() {
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+    */
 }
 
 Cubemap *Skybox::getIrradiance() {
     return m_skyboxbuffer->getIrradiance();
 }
 
-void Skybox::createVertexArray() {
+void Skybox::loadShader() {
+    auto frag = Filesystem::GetFileContent(Filesystem::GetFile("/shader/Background.frag"));
+    auto vert = Filesystem::GetFileContent(Filesystem::GetFile("/shader/Background.vert"));
 
+    auto fContent = frag.c_str();
+    auto vContent = vert.c_str();
+
+    m_shader = grr::gShader::Create(&fContent, &vContent);
+}
+
+void Skybox::createVertexArray() {
     std::vector<Vector3> vertices = {
         { 1.0f,  1.0f, -1.0f},
         { 1.0f, -1.0f, -1.0f},
@@ -124,7 +138,7 @@ void Skybox::createVertexArray() {
 }
 
 void Skybox::SetupBackgroundTexture(Texture *texture) {
-    m_skyboxShader = Resources::LoadShader(Filesystem::GetFile("/shader") + "/Skybox", &Skybox::setupSkybox, this);
+    // m_skyboxShader = Resources::LoadShader(Filesystem::GetFile("/shader") + "/Skybox", &Skybox::setupSkybox, this);
 }
 
 void Skybox::setupSkybox(Shader* shader) {
@@ -136,7 +150,7 @@ void Skybox::setupSkybox(Shader* shader) {
         m_skyboxbuffer->addSkyColor(Cubemap::ePOSITIVE_X + i, Framebuffer::eCOLOR_ATTACHMENT0);
     }, m_texture);
 
-    m_skyboxShader = Resources::LoadShader(Filesystem::GetFile("/shader") + "/Irradiance", &Skybox::setupIrradiance, this);
+    // m_skyboxShader = Resources::LoadShader(Filesystem::GetFile("/shader") + "/Irradiance", &Skybox::setupIrradiance, this);
 }
 
 void Skybox::setupIrradiance(Shader *shader) {
@@ -150,6 +164,7 @@ void Skybox::setupIrradiance(Shader *shader) {
 }
 
 void Skybox::GenerateMap(std::function<void(u32)> func, Texture* texture) {
+    /*
     m_skyboxShader->bind();
 
     texture->bind();
@@ -171,4 +186,5 @@ void Skybox::GenerateMap(std::function<void(u32)> func, Texture* texture) {
     }
     m_skyboxbuffer->unbind();
     texture->unbind();
+    */
 }

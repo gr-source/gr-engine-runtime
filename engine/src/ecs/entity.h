@@ -36,6 +36,9 @@ class Entity {
 public:
     static void (*Update)();
 
+    template <typename T, typename... Args>
+    T &addComponent(Args &&...args);
+
     template <typename T>
     T& getComponent();
     
@@ -51,6 +54,22 @@ private:
 
     GameObject *gameObject;
 };
+
+template <typename T, typename... Args>
+inline T &Entity::addComponent(Args &&...args) {
+    if (hasComponent<T>()) {
+        return getComponent<T>();
+    }
+    auto name = typeid(T).name();
+
+    auto &&[iterator, added] = components.emplace(name, std::make_shared<T>(std::forward<Args>(args)...));
+
+    auto& component = (*iterator).second;
+    component->entity = this;
+    component->Init();
+
+    return *dynamic_cast<T*>(component.get());
+}
 
 template <typename T>
 inline T &Entity::getComponent() {

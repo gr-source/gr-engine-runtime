@@ -9,8 +9,10 @@
 #include "input.h"
 #include "timer.h"
 
+Camera *EditorController::m_mainCamera = nullptr;
+
 float EditorController::movementSpeed = 30.0f;
-float EditorController::mouseSensitivity = 10.0f;
+float EditorController::mouseSensitivity = 0.1f;
 
 Vector2 EditorController::lastMousePos = {0.0f, 0.0f};
 Vector2 EditorController::elapsed = {0.0f, 0.0f};
@@ -21,14 +23,13 @@ void EditorController::Initialize() {
 
 void EditorController::Update() {
     static ImGuiIO& io = ImGui::GetIO();
-    auto camera = Camera::Main();
+    m_mainCamera = Camera::Main();
 
-    if (camera != Camera::Current() || !io.MouseDrawCursor || Settings::IsGameRunning) {
+    if (m_mainCamera != Camera::Current() || !io.MouseDrawCursor || Settings::IsGameRunning) {
         return;
     }
 
-    auto transform = camera->getTransform();
-
+    auto transform = m_mainCamera->getTransform();
 
     Vector3 diretion;
 
@@ -62,7 +63,7 @@ void EditorController::updateCursor() {
     const Vector2 delta = Input::GetCursorPos() - lastMousePos;
 
     // if (Math::magnitude(delta) > 1.0f)
-        processMouse(delta);
+        ProcessMouse(delta);
 
     auto center = Settings::ViewportSize / 2;
     lastMousePos = {static_cast<float>(center.x), static_cast<float>(center.y)};
@@ -72,19 +73,18 @@ void EditorController::updateCursor() {
     }
 }
 
-void EditorController::OnCameraUpdate() {
-    auto camera = Camera::Main();
-
-    auto m_transform = camera->getTransform();
-    m_transform->setLocalRotation(Math::normalize(Math::euler({Math::rad(elapsed.y), Math::rad(-elapsed.x), 0.0f})));
-}
-
-void EditorController::processMouse(const Vector2& direction) {
-    elapsed += direction * mouseSensitivity * Time::deltaTime;
+void EditorController::ProcessMouse(const Vector2 &delta) {
+    elapsed += delta * mouseSensitivity;
 
     elapsed.y = std::clamp(elapsed.y, -89.0f, 89.0f);
     elapsed.x = std::fmod(elapsed.x, 360.0f);
 
-    OnCameraUpdate();
+    auto m_transform = m_mainCamera->getTransform();
+
+    auto rotation = Math::euler({Math::rad(elapsed.y), Math::rad(-elapsed.x), 0.0f});
+
+    rotation = Math::slerp(m_transform->getLocalRotation(), rotation, 25.0f * Time::deltaTime);
+
+    m_transform->setLocalRotation(Math::normalize(rotation));
 }
 

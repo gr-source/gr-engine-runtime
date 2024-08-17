@@ -25,6 +25,12 @@
         std::cout << "Falied to register function: " << #f << std::endl; \
     } \
 
+#define REGISTER_API_FROM_NAME_N(n, r, f, ...) \
+    f = (r(*)(__VA_ARGS__))dlsym(ScriptManager::s_handle, n); \
+    if (!f) { \
+        std::cout << "Falied to register function: " << #f << std::endl; \
+    } \
+
 #define REGISTER_FUNC(symbol, hookFunc) Memory::Hook(dlsym(ScriptManager::s_handle, symbol), (void *)&hookFunc)
 
 #define UNREGISTER_API(func) func = nullptr
@@ -58,8 +64,6 @@ Camera *(*ScriptManager::CurrentCamera)();
 void (*ScriptManager::EventUpdate)();
 
 std::unique_ptr<Animation> (*ScriptManager::LoadAnimation)(const std::string &);
-
-GameObject *(*ScriptManager::LoadGameObject)(const std::string &);
 
 // Screen
 void (*ScriptManager::SetScreenSize)(const iVector2 &);
@@ -115,11 +119,12 @@ void ScriptManager::Shutdown() {
     // Scene
     UNREGISTER_API(Scene::GetGameObject);
 
-    UNREGISTER_API(LoadGameObject);
-
     UNREGISTER_API(LoadAnimation);
 
     UNREGISTER_API(SetScreenSize);
+
+    // GameObject
+    UNREGISTER_API(GameObject::Create);
     
     if (!s_handle) {
         return;
@@ -163,10 +168,11 @@ void ScriptManager::RegisterApi() {
     REGISTER_API(void, void, EventUpdate);
 
     // AssetManager
-    REGISTER_FUNC("LoadTexture", Resources::LoadTextureL);
-    REGISTER_FUNC("LoadShader", Resources::LoadShaderL);
+    REGISTER_FUNC("LoadTexture", Resources::LoadTexture);
+    REGISTER_FUNC("LoadShader", Resources::LoadShader);
+    REGISTER_FUNC("LoadGameObject", Resources::LoadGameObject);
 
-    REGISTER_API(GameObject *, const std::string &, LoadGameObject);
+    // REGISTER_API(GameObject *, const std::string &, LoadGameObject);
 
     REGISTER_API(std::unique_ptr<Animation>, const std::string &, LoadAnimation);
 
@@ -185,4 +191,7 @@ void ScriptManager::RegisterApi() {
 
     // Screen
     REGISTER_API(void, const iVector2 &, SetScreenSize);
+
+    // gameobject
+    REGISTER_API_FROM_NAME_N("GameObjectCreate", GameObject &, GameObject::Create, const std::string &, const std::string &);
 }
