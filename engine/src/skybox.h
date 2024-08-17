@@ -2,9 +2,9 @@
 
 #include "framebuffer/skyboxbuffer.h"
 
-#include "bufferManager.h"
-
 #include "common.h"
+
+#include <gr-render/gRender.h>
 
 class Skybox {
 public:
@@ -19,9 +19,16 @@ public:
 
     Cubemap* getIrradiance();
 private:
-    std::unique_ptr<BufferManager> bufferManager;
+    grr::gVertexArray *m_vertexArray;
+
+    grm::u32 m_ebo;
+
+    grm::u32 m_vbo;
+
     Shader* m_backgroundShader;
+    
     Shader* m_skyboxShader;
+
     float distance;
 
     Texture* m_texture;
@@ -35,9 +42,9 @@ private:
 
     std::unique_ptr<Skyboxbuffer> m_skyboxbuffer;
 
-    void SetupBackgroundTexture(Texture* texture);
+    void createVertexArray();
 
-    void prepareShader();
+    void SetupBackgroundTexture(Texture* texture);
 
     void setupSkybox(Shader* shader);
 

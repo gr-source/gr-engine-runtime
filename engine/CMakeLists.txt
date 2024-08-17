@@ -109,7 +109,6 @@ set(engine_src
     src/screenRender.cpp
     src/eventManager.cpp
     src/renderManager.cpp
-    src/bufferManager.cpp
     src/postProcessing.cpp
     src/editorController.cpp
 
@@ -120,8 +119,6 @@ set(engine_src
     src/component/meshRender.cpp
     src/component/meshFilter.cpp
 
-    src/framebuffer/imguibuffer.cpp
-    src/framebuffer/screenbuffer.cpp
     src/framebuffer/shadowbuffer.cpp
     src/framebuffer/skyboxbuffer.cpp
     src/framebuffer/internal/framebuffer.cpp
@@ -173,7 +170,6 @@ set(engine_hdr
     src/screenRender.hpp
     src/eventManager.h
     src/renderManager.h
-    src/bufferManager.h
     src/postProcessing.hpp
     src/editorController.h
     
@@ -184,8 +180,6 @@ set(engine_hdr
     src/component/meshRender.hpp
     src/component/meshFilter.hpp
 
-    src/framebuffer/imguibuffer.h
-    src/framebuffer/screenbuffer.h
     src/framebuffer/shadowbuffer.h
     src/framebuffer/skyboxbuffer.h
     src/framebuffer/internal/framebuffer.h

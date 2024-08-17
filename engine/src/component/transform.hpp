@@ -3,6 +3,8 @@
 #include "../ecs/entity.h"
 #include "../Global.h"
 
+#include <list>
+
 class Transform : public Component {
 public:
     Transform();

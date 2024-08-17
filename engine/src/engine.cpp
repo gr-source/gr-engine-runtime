@@ -10,10 +10,8 @@
 
 #include "ui/ImGuiRender.h"
 
-#include "framebuffer/screenbuffer.h"
 #include "framebuffer/skyboxbuffer.h"
 #include "framebuffer/shadowbuffer.h"
-#include "framebuffer/imguibuffer.h"
 
 #include "resources/resources.h"
 
@@ -37,7 +35,11 @@
 
 #include <gr-render/gRender.h>
 
-Imguibuffer* pImguibuffer = nullptr;
+PostProcessing *Engine::ImGuiPostProcess = nullptr;
+
+PostProcessing *Engine::MainPostProcess = nullptr;
+
+std::thread Engine::m_thread[2];
 
 Skybox* Engine::m_skybox = nullptr;
 
@@ -45,15 +47,14 @@ std::unique_ptr<ScreenRender> pScreenRender = nullptr;
 
 Shadowbuffer* m_shadowbuffer = nullptr;
 
-std::thread Engine::m_thread[2];
-
 void Engine::GRWindowResize(u32 width, u32 height) {
     Screen::SetResolution(width, height);
 
-    Vector2 size(static_cast<float>(width), static_cast<float>(height));
-    
-    if (pImguibuffer)
-        pImguibuffer->resize(size);
+    iVector2 size((int) width, (int) height);
+
+    if (ImGuiPostProcess) {
+        PostProcessing::Resize(ImGuiPostProcess, size);
+    }
 }
 
 void Engine::MainLoop(std::function<void()> func) {
@@ -98,16 +99,14 @@ void Engine::GRDropFunc(const char *path) {
 }
 
 void Engine::OnInit() {
-    Settings::IsEngineRunning = true;
-
     Memory::Initialize();
 
     ImGuiRender::Initialize("#version 330 core");
 
-    PostProcessing::Initialize();
-
     // Buffer de renderização.
-    pImguibuffer = &Imguibuffer::getInstance();
+    MainPostProcess = PostProcessing::Create({1, 1});
+
+    ImGuiPostProcess = PostProcessing::Create({1, 1});
 
     // Renderizaraçãod da screen paar pos processamento e UI.
     pScreenRender = std::make_unique<ScreenRender>();
@@ -120,7 +119,7 @@ void Engine::OnInit() {
 
     SetupEnable();
 
-    DebugDraw::initialize();
+    DebugDraw::Initialize();
 
     ScriptManager::Initialzie();
 
@@ -154,11 +153,15 @@ void Engine::OnRender() {
 
     tickRender.start();
 
-    MainFramebuffer();
+    if (MainPostProcess) {
+        MainFramebuffer();
+    }
 
     gameStatics.renderMs = tickRender.end();
 
-    UIFramebuffer();
+    if (ImGuiPostProcess) {
+        UIFramebuffer();
+    }
 }
 
 void Engine::OnPhysics() {
@@ -187,7 +190,13 @@ void Engine::OnLoader() {
 }
 
 void Engine::OnDestroy() {
-    Settings::IsEngineRunning = false;
+    if (MainPostProcess) {
+        PostProcessing::Shutdown(MainPostProcess);
+    }
+
+    if (ImGuiPostProcess) {
+        PostProcessing::Shutdown(ImGuiPostProcess);
+    }
     
     ImGuiRender::Shutdown();
     
@@ -265,7 +274,7 @@ void Engine::MainFramebuffer() {
     RenderManager::Process();
 
     // Pos processamento
-    PostProcessing::Bind();
+    PostProcessing::Bind(MainPostProcess);
 
     grr::gRender::SetRenderState(grr::GR_BACKGROUND, grr::GR_DEPTH_BUFFER | grr::GR_COLOR_BUFFER);
     grr::gRender::SetRenderState(grr::GR_DEPTH, grr::GR_TRUE);
@@ -277,7 +286,7 @@ void Engine::MainFramebuffer() {
     PostProcessing::Unbind();
 
     // Capitura de posprocessamento para o imgui
-    pImguibuffer->bind();
+    PostProcessing::Bind(ImGuiPostProcess);
 
     // renderização da cena 2d e utilização do pos processamento;
     grr::gRender::SetRenderState(grr::GR_BACKGROUND_COLOR, (void*)&Color::blue);
@@ -285,9 +294,9 @@ void Engine::MainFramebuffer() {
     grr::gRender::SetRenderState(grr::GR_DEPTH, grr::GR_FALSE);
     grr::gRender::SetRenderState(grr::GR_FRAMEBUFFER_SRGB, grr::GR_FALSE);
 
-    ScreenRender::Render(PostProcessing::GetTextureColor());
+    ScreenRender::Render(PostProcessing::GetTextureColor(MainPostProcess));
 
-    pImguibuffer->unbind();
+    PostProcessing::Unbind();
 }
 
 void Engine::RenderScene() {

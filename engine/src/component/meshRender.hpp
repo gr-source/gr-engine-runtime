@@ -17,11 +17,11 @@ private:
 
     grr::gVertexArray *m_vertexArray;
 
-    grr::u32 m_idxVBO;
+    grm::u32 m_idxVBO;
 
-    grr::u32 m_idxEBO;
+    grm::u32 m_idxEBO;
 
-    grr::u32 m_count;
+    grm::u32 m_count;
 
     bool isIndice;
 };

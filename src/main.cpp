@@ -1,5 +1,7 @@
+#include <settings.h>
 #include <engine.h>
 #include <input.h>
+
 
 #include <linux/input-event-codes.h>
 
@@ -31,6 +33,10 @@ Window CreateWindown(const char* name, int width, int height, Window share, bool
 }
 
 void OnDestroy() {
+    Settings::IsEngineRunning = false;
+
+    Engine::HandleEvent(Engine::GR_DESTROY, nullptr);
+
     glfwTerminate(); // Error?
     if (window != nullptr) {
         glfwDestroyWindow(window);
@@ -44,7 +50,7 @@ void OnPreLoad() {
 }
 
 void GLFWwindowclosefunCallback(GLFWwindow* window) {
-    Engine::HandleEvent(Engine::GR_DESTROY, nullptr);
+    Settings::IsEngineRunning = false;
 }
 
 void GLFWframebuffersizefunCallback(GLFWwindow* window, int width, int height) {
@@ -84,7 +90,6 @@ void glfwInstallCallback(Window window) {
     glfwSetWindowCloseCallback(window, GLFWwindowclosefunCallback);
 
     glfwSetFramebufferSizeCallback(window, GLFWframebuffersizefunCallback);
-    GLFWframebuffersizefunCallback(window, SCREEN_WIDTH, SCREEN_HEIGHT);
 
     glfwSetKeyCallback(window, GLFWkeyfunCallback);
 
@@ -122,7 +127,11 @@ int OnApplicationInit() {
 
     Input::m_instance = window;
 
+    Settings::IsEngineRunning = true;
+
     Engine::HandleEvent(Engine::GR_INITIALIZE, nullptr);
+
+    GLFWframebuffersizefunCallback(window, SCREEN_WIDTH, SCREEN_HEIGHT);
 
     std::function<void()> func([&]() {
         glfwSwapBuffers(window);

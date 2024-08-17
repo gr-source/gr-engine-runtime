@@ -5,7 +5,7 @@
 #include "../renderer.h"
 #include "../timer.h"
 
-Animator::Animator() : m_transitioning(false), m_currentTransitionTime(0.0f), m_finalBoneMatrices(100, Matrix4x4::identityMatrix) {}
+Animator::Animator() : m_finalBoneMatrices(100, Matrix4x4::identityMatrix) {}
 
 void Animator::UpdateAnim() {
     if (!m_armature) {
@@ -20,24 +20,12 @@ void Animator::UpdateAnim() {
         return;
     }
 
-    if (m_currentTime >= m_animation->getDuration()) {
-        m_currentTime = 0.0f;
-    }
-
-    // m_currentTime = std::fmod(m_currentTime, m_animation->getDuration());
+    m_currentTime = std::fmod(m_currentTime, m_animation->getDuration());
 
     auto &parent = m_armature->getTransform();
     hierarchy(&parent, Matrix4x4::identityMatrix);
 
     m_currentTime += m_animation->getTick() * Time::deltaTime;
-
-    if (m_transitioning) {
-        m_currentTransitionTime += Time::deltaTime;
-        if (m_currentTransitionTime >= 8.0f) {
-            m_transitioning = false;
-            m_currentTransitionTime = 8.0f;
-        }
-    }
 }
 
 void Animator::insert(std::unique_ptr<Animation> animation) {
@@ -61,24 +49,7 @@ void Animator::hierarchy(Transform *transform, const Matrix4x4 &parentTransform)
     if (keyframe && bone) {
         Matrix4x4 offset = bone->getLocalMatrix();
 
-        Matrix4x4 animMatrix = keyframe->getLocalMatrix(m_currentTime);
-
-        if (m_transitioning && m_nextAnimation) {
-            auto nextKeyframe = m_nextAnimation->findKeyframe(name);
-            if (nextKeyframe) {
-                Matrix4x4 nextAnimMatrix = nextKeyframe->getLocalMatrix(m_currentTime);
-
-                float t = m_currentTransitionTime / 8.0f;
-                animMatrix = animMatrix * (1.0f - t) + nextAnimMatrix * t;
-            }
-        }
-        else if (m_nextAnimation) {
-            // Transition has ended, switch to the next animation
-            m_animation = m_nextAnimation;
-            m_nextAnimation = nullptr;
-            m_transitioning = false;
-        }
-        result *= animMatrix;
+        result *= keyframe->getLocalMatrix(m_currentTime);
 
         m_finalBoneMatrices[bone->getBoneIndex()] = result * offset;
     }

@@ -1,6 +1,5 @@
 #include "skybox.h"
 
-#include "bufferManager.h"
 #include "timer.h"
 
 #include "resources/resources.h"
@@ -21,7 +20,7 @@ void SetupBackgroundShader(Shader* shader) {
     shader->RegisterUniform("environmentMap", 1, Shader::eINT);
 }
 
-Skybox::Skybox() : play(false), currentTime(0.0f), distance(400.0f), m_backgroundShader(Resources::Load<Shader>(Filesystem::GetFile("/shader") + "/Background", SetupBackgroundShader)), m_skyboxbuffer(std::make_unique<Skyboxbuffer>(512, 512)), m_skyboxShader(nullptr) {
+Skybox::Skybox() : play(false), currentTime(0.0f), distance(400.0f), m_backgroundShader(Resources::Load<Shader>(Filesystem::GetFile("/shader") + "/Background", SetupBackgroundShader)), m_skyboxbuffer(std::make_unique<Skyboxbuffer>(512, 512)), m_skyboxShader(nullptr), m_vertexArray(nullptr), m_vbo(0), m_ebo(0) {
      captureProjection = Math::perspective(Math::rad(90.0f), 1.0f, 0.1f, 10.0f);
      
      captureViews = {
@@ -33,46 +32,8 @@ Skybox::Skybox() : play(false), currentTime(0.0f), distance(400.0f), m_backgroun
         Math::lookAt(Vector3(0.0f, 0.0f, 0.0f), Vector3( 0.0f,  0.0f, -1.0f), Vector3(0.0f, -1.0f,  0.0f))
     };
 
-    std::vector<Vector3> vertices = {
-        { 1.0f,  1.0f, -1.0f},
-        { 1.0f, -1.0f, -1.0f},
-        { 1.0f,  1.0f,  1.0f},
-        { 1.0f, -1.0f,  1.0f},
-        {-1.0f,  1.0f, -1.0f},
-        {-1.0f, -1.0f, -1.0f},
-        {-1.0f,  1.0f,  1.0f},
-        {-1.0f, -1.0f,  1.0f}
-    };
-
-    std::vector<GLuint> indices = {
-        1, 0, 4,
-        5, 1, 4,
-        1, 3, 0,
-        3, 2, 0,
-        3, 7, 2,
-        7, 6, 2,
-        0, 2, 4,
-        2, 6, 4,
-        5, 7, 1,
-        7, 3, 1,
-        7, 5, 6,
-        5, 4, 6
-    };
-
-    count = indices.size();
-
-    bufferManager = std::make_unique<BufferManager>(BufferManager::eSTATIC, true);
-
-    bufferManager->bind(BufferManager::eVAO);
-
-    bufferManager->bind(BufferManager::eEBO);
-    bufferManager->pushElements(indices.size() * sizeof(GLuint), indices.data());
-
-    bufferManager->bind(BufferManager::eVBO);
-    bufferManager->pushBuffer(vertices.size() * sizeof(Vector3), vertices.data());
-
-    bufferManager->attribPointer(0, 3, sizeof(Vector3));
-    bufferManager->unbind();
+    // vertex array
+    createVertexArray();
 
     m_texture = Resources::LoadTexture<void(Skybox::*)(Texture*texture), Skybox*>("assets/texture/skybox/industrial_sunset_puresky_1k.hdr", &Skybox::SetupBackgroundTexture, this);
 }
@@ -93,9 +54,9 @@ void Skybox::render() {
         m_backgroundShader->setUniform("projection", camera->getPerspesctive());
         m_backgroundShader->setUniform("view", camera->getViewmatrix());
 
-        bufferManager->bind(BufferManager::eVAO);
-        bufferManager->draw(BufferManager::eTriangle, count, BufferManager::eUint);
-        bufferManager->unbind();
+        m_vertexArray->bind();
+        grr::gVertexArray::DrawElements(grr::PrimitiveType_Triangles, count, nullptr);
+        m_vertexArray->unbind();
     }
 
     m_backgroundShader->unbind();
@@ -106,6 +67,60 @@ void Skybox::render() {
 
 Cubemap *Skybox::getIrradiance() {
     return m_skyboxbuffer->getIrradiance();
+}
+
+void Skybox::createVertexArray() {
+
+    std::vector<Vector3> vertices = {
+        { 1.0f,  1.0f, -1.0f},
+        { 1.0f, -1.0f, -1.0f},
+        { 1.0f,  1.0f,  1.0f},
+        { 1.0f, -1.0f,  1.0f},
+        {-1.0f,  1.0f, -1.0f},
+        {-1.0f, -1.0f, -1.0f},
+        {-1.0f,  1.0f,  1.0f},
+        {-1.0f, -1.0f,  1.0f}
+    };
+
+    std::vector<grm::u32> indices = {
+        1, 0, 4,
+        5, 1, 4,
+        1, 3, 0,
+        3, 2, 0,
+        3, 7, 2,
+        7, 6, 2,
+        0, 2, 4,
+        2, 6, 4,
+        5, 7, 1,
+        7, 3, 1,
+        7, 5, 6,
+        5, 4, 6
+    };
+
+    count = indices.size();
+
+    m_vbo = grr::gVertexArray::CreateBuffer(grr::BufferType_VBO);
+    assert(m_vbo && "Falied to create vbo.");
+
+    m_ebo = grr::gVertexArray::CreateBuffer(grr::BufferType_EBO);
+    assert(m_vbo && "Falied to create ebo.");
+
+    m_vertexArray = grr::gVertexArray::Create();
+    assert(m_vertexArray && "Falied to create vao.");
+
+    m_vertexArray->bind();
+
+    grr::gVertexArray::Bind(m_ebo);
+    grr::gVertexArray::UpdateResize(indices.size() * sizeof(u32));
+    grr::gVertexArray::SetBufferUpdate(0, indices.size() * sizeof(u32), indices.data());
+
+    grr::gVertexArray::Bind(m_vbo);
+    grr::gVertexArray::UpdateResize(vertices.size() * sizeof(Vector3));
+    grr::gVertexArray::SetBufferUpdate(0, vertices.size() * sizeof(Vector3), vertices.data());
+
+    grr::gVertexArray::SetAttrib(0, 3, sizeof(Vector3), nullptr);
+
+    m_vertexArray->unbind();
 }
 
 void Skybox::SetupBackgroundTexture(Texture *texture) {
@@ -150,8 +165,9 @@ void Skybox::GenerateMap(std::function<void(u32)> func, Texture* texture) {
         
         GRender(GRENDERER3D);
 
-        bufferManager->bind(BufferManager::eVAO);
-        bufferManager->draw(BufferManager::eTriangle, count, BufferManager::eUint);
+        m_vertexArray->bind();
+        grr::gVertexArray::DrawElements(grr::PrimitiveType_Triangles, count, nullptr);
+        m_vertexArray->unbind();
     }
     m_skyboxbuffer->unbind();
     texture->unbind();

@@ -140,20 +140,20 @@ const bool Frustum::IsCubeInFrustumAABB(const Vector3& min, const Vector3& max) 
 
 	// Desenhar as linhas do cubo usando as coordenadas dos pontos do frustum
 	/*
-	DebugDraw::addLine(points[0], points[1], Color::blue);
-	DebugDraw::addLine(points[1], points[2], Color::blue);
-	DebugDraw::addLine(points[2], points[3], Color::blue);
-	DebugDraw::addLine(points[3], points[0], Color::blue);
+	DebugDraw::AddLine(points[0], points[1], Color::blue);
+	DebugDraw::AddLine(points[1], points[2], Color::blue);
+	DebugDraw::AddLine(points[2], points[3], Color::blue);
+	DebugDraw::AddLine(points[3], points[0], Color::blue);
 
-	DebugDraw::addLine(points[4], points[5], Color::blue);
-	DebugDraw::addLine(points[5], points[6], Color::blue);
-	DebugDraw::addLine(points[6], points[7], Color::blue);
-	DebugDraw::addLine(points[7], points[4], Color::blue);
+	DebugDraw::AddLine(points[4], points[5], Color::blue);
+	DebugDraw::AddLine(points[5], points[6], Color::blue);
+	DebugDraw::AddLine(points[6], points[7], Color::blue);
+	DebugDraw::AddLine(points[7], points[4], Color::blue);
 
-	DebugDraw::addLine(points[0], points[4], Color::blue);
-	DebugDraw::addLine(points[1], points[5], Color::blue);
-	DebugDraw::addLine(points[2], points[6], Color::blue);
-	DebugDraw::addLine(points[3], points[7], Color::blue);
+	DebugDraw::AddLine(points[0], points[4], Color::blue);
+	DebugDraw::AddLine(points[1], points[5], Color::blue);
+	DebugDraw::AddLine(points[2], points[6], Color::blue);
+	DebugDraw::AddLine(points[3], points[7], Color::blue);
 	*/
 
 	for (int i = 0; i < 6; i++ ) {
@@ -192,20 +192,20 @@ const bool Frustum::IsCubeInFrustumOOBB(const Vector3 &min, const Vector3 &max, 
     };
 
 	// Desenhar as linhas do cubo usando as coordenadas dos pontos do frustum
-	DebugDraw::addLine(points[0], points[1], Color::blue);
-	DebugDraw::addLine(points[1], points[2], Color::blue);
-	DebugDraw::addLine(points[2], points[3], Color::blue);
-	DebugDraw::addLine(points[3], points[0], Color::blue);
+	DebugDraw::AddLine(points[0], points[1], Color::blue);
+	DebugDraw::AddLine(points[1], points[2], Color::blue);
+	DebugDraw::AddLine(points[2], points[3], Color::blue);
+	DebugDraw::AddLine(points[3], points[0], Color::blue);
 
-	DebugDraw::addLine(points[4], points[5], Color::blue);
-	DebugDraw::addLine(points[5], points[6], Color::blue);
-	DebugDraw::addLine(points[6], points[7], Color::blue);
-	DebugDraw::addLine(points[7], points[4], Color::blue);
+	DebugDraw::AddLine(points[4], points[5], Color::blue);
+	DebugDraw::AddLine(points[5], points[6], Color::blue);
+	DebugDraw::AddLine(points[6], points[7], Color::blue);
+	DebugDraw::AddLine(points[7], points[4], Color::blue);
 
-	DebugDraw::addLine(points[0], points[4], Color::blue);
-	DebugDraw::addLine(points[1], points[5], Color::blue);
-	DebugDraw::addLine(points[2], points[6], Color::blue);
-	DebugDraw::addLine(points[3], points[7], Color::blue);
+	DebugDraw::AddLine(points[0], points[4], Color::blue);
+	DebugDraw::AddLine(points[1], points[5], Color::blue);
+	DebugDraw::AddLine(points[2], points[6], Color::blue);
+	DebugDraw::AddLine(points[3], points[7], Color::blue);
 
 	for (int i = 0; i < 6; i++ ) {
 		if (m_Frustum[i][A] * (points[0].x) + m_Frustum[i][B] * (points[0].y) + m_Frustum[i][C] * (points[0].z) + m_Frustum[i][D] > 0)

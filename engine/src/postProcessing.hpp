@@ -1,27 +1,30 @@
 #pragma once
 
 #include <gr-render/gRender.h>
+#include <gr-math/gmath.h>
 
 class PostProcessing {
 public:
-    static void Initialize();
+    static PostProcessing *Create(const iVector2 &size);
 
-    static void Shutdown();
+    static void Shutdown(PostProcessing *target);
 
-    static void Resize(const iVector2 &size);
-
-    static void Bind();
+    static void Bind(PostProcessing *target);
 
     static void Unbind();
 
-    static grr::gTexture *GetTextureColor();
+    static void Resize(PostProcessing *target, const iVector2 &size);
+
+    static grr::gTexture *GetTextureColor(PostProcessing *target);
 
 private:
-    static grr::gTexture *m_texture;
+    grr::gTexture *m_texture;
 
-    static grr::u32 m_rbo;
+    grm::u32 m_rbo;
 
-    static grr::u32 m_fbo;
+    grm::u32 m_fbo;
 
-    static iVector2 m_viewport;
+    iVector2 m_viewport;
+
+    PostProcessing();
 };

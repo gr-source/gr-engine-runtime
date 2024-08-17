@@ -37,6 +37,7 @@
 #include <gr-math/gmath.h>
 
 /* pasta: src */
+class PostProcessing;
 class Game;
 
 /* pasta: src/engine */

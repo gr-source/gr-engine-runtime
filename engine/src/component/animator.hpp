@@ -26,13 +26,7 @@ private:
 
     Animation *m_animation;
 
-    Animation *m_nextAnimation;
-
     float m_currentTime;
-
-    bool m_transitioning;
-
-    float m_currentTransitionTime;
 
     void hierarchy(Transform *transform, const Matrix4x4 &parentTransform);
 

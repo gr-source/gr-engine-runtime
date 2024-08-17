@@ -6,59 +6,56 @@
 
 #include "component/camera.hpp"
 
-std::unique_ptr<BufferManager> DebugDraw::m_primitivebuffer = nullptr;
-
-std::unique_ptr<BufferManager> DebugDraw::m_spritebuffer = nullptr;
-
-std::vector<Line> DebugDraw::m_lines;
+grr::gVertexArray *DebugDraw::m_primitive = nullptr;
 
 std::vector<Line> DebugDraw::m_points;
 
-Shader* DebugDraw::m_shader = nullptr;
+std::vector<Line> DebugDraw::m_lines;
+
+grr::gShader *DebugDraw::m_shader = nullptr;
 
 bool DebugDraw::bDebugMode = false;
 
-void DebugDraw::initialize() {
-    m_shader = Resources::Load<Shader>(Filesystem::GetFile("/shader") + "/ShaderPrimitive", DebugDraw::SetupShaderPrimitive);
+grm::u32 DebugDraw::m_vbo = 0;
 
-    m_primitivebuffer = std::make_unique<BufferManager>(BufferManager::eDYNAMIC);
+void DebugDraw::Initialize() {
+    auto frag = Filesystem::GetFileContent(Filesystem::GetFile("/shader/ShaderPrimitive.frag"));
+    auto vert = Filesystem::GetFileContent(Filesystem::GetFile("/shader/ShaderPrimitive.vert"));
 
-    m_primitivebuffer->bind(BufferManager::eVAO);
+    auto fSource = frag.c_str();
+    auto vSource = vert.c_str();
 
-    m_primitivebuffer->bind(BufferManager::eVBO);
-    m_primitivebuffer->attribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Line), reinterpret_cast<void*>(offsetof(Line, position)));
-    m_primitivebuffer->attribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(Line), reinterpret_cast<void*>(offsetof(Line, color)));
+    m_shader = grr::gShader::Create(&fSource, &vSource);
 
-    m_primitivebuffer->unbind();
+    m_shader->bind();
+    grr::gShader::Register("projection");
+    grr::gShader::Register("view");
+    m_shader->unbind();
+
+    // vertex
+    m_vbo = grr::gVertexArray::CreateBuffer(grr::BufferType_VBO);
+    assert(m_vbo && "Vbo invalid.");
+
+    m_primitive = grr::gVertexArray::Create();
+    assert(m_primitive && "Vao invalid.");
+
+    m_primitive->bind();
+
+    grr::gVertexArray::Bind(m_vbo);
+    grr::gVertexArray::SetAttrib(0, 3, sizeof(Line), reinterpret_cast<void*>(offsetof(Line, position)));
+    grr::gVertexArray::SetAttrib(1, 4, sizeof(Line), reinterpret_cast<void*>(offsetof(Line, color)));
+
+    m_primitive->unbind();
 }
 
-void DebugDraw::SetupShaderPrimitive(Shader *shader) {
-    shader->RegisterUniform("projection", 1, Shader::eMAT4x4);
-    shader->RegisterUniform("view", 1, Shader::eMAT4x4);
-}
-
-void DebugDraw::addLine(const Vector3& start, const Vector3& end, const Color& color) {
+void DebugDraw::AddLine(const Vector3& start, const Vector3& end, const Color& color) {
     if (!DebugDraw::bDebugMode) return;
     
     m_lines.emplace_back(start, color);
     m_lines.emplace_back(end, color);
 }
 
-void DebugDraw::addPoint(const Vector3 &position, const Color &color) {
-    if (!DebugDraw::bDebugMode) return;
-
-    m_points.emplace_back(position, color);
-}
-
-const bool DebugDraw::isvalid() {
-    return m_shader->isvalid();
-}
-
-const bool DebugDraw::hasLines() {
-    return !m_lines.empty();
-}
-
-void DebugDraw::bind() {
+void DebugDraw::Renderer() {
     auto camera = Camera::Current();
     if (!camera) {
         return;
@@ -66,52 +63,28 @@ void DebugDraw::bind() {
 
     m_shader->bind();
 
-    m_shader->setUniform("projection", camera->getPerspesctive());
-    m_shader->setUniform("view", camera->getViewmatrix());
+    grr::gShader::SetUniform("projection", 1, camera->getPerspesctive());
+    grr::gShader::SetUniform("view", 1, camera->getViewmatrix());
+
+    if (!m_lines.empty()) {
+        DebugDraw::DrawLines();
+    }
 }
 
-void DebugDraw::unbind() {
-    m_shader->unbind();
+void DebugDraw::DrawLines() {
+    m_primitive->bind();
+
+    grr::gVertexArray::Bind(m_vbo);
+    grr::gVertexArray::UpdateResize(m_lines.size() * sizeof(Line));
+    grr::gVertexArray::SetBufferUpdate(0, m_lines.size() * sizeof(Line), m_lines.data());
+
+    grr::gVertexArray::DrawArrays(grr::PrimitiveType_Lines, (grm::u32)m_lines.size());
+
+    m_primitive->unbind();
+
     m_lines.clear();
-    m_points.clear();
 }
 
-void DebugDraw::Renderer() {
-    if (!m_shader->isvalid()) return;
 
-    DebugDraw::bind();
-    if (DebugDraw::hasLines() ) {
-        DebugDraw::drawLines();
-    }
-    if (DebugDraw::hasPoints()) {
-        DebugDraw::drawPoints();
-    }
-    DebugDraw::unbind();
-}
 
-void DebugDraw::drawLines() {
-    m_primitivebuffer->bind(BufferManager::eVAO);
-
-    m_primitivebuffer->bind(BufferManager::eVBO);
-    m_primitivebuffer->pushBuffer(m_lines.size() * sizeof(Line), m_lines.data());
-
-    m_primitivebuffer->draw(BufferManager::eLine, 0, static_cast<GLsizei>(m_lines.size()));
-
-    m_primitivebuffer->unbind();
-}
-
-const bool DebugDraw::hasPoints() {
-    return !m_points.empty();
-}
-
-void DebugDraw::drawPoints() {
-    m_primitivebuffer->bind(BufferManager::eVAO);
-
-    m_primitivebuffer->bind(BufferManager::eVBO);
-    m_primitivebuffer->pushBuffer(m_points.size() * sizeof(Line), m_points.data());
-
-    m_primitivebuffer->draw(BufferManager::ePoint, 0, static_cast<GLsizei>(m_points.size()));
-
-    m_primitivebuffer->unbind();
-}
 

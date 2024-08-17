@@ -8,75 +8,82 @@
 *   RenderBuffer (Armazedar o depth)
 */
 
-grr::gTexture *PostProcessing::m_texture = nullptr;
+PostProcessing *PostProcessing::Create(const iVector2 &size) {
+    auto handle = new PostProcessing();
+    handle->m_viewport = size;
 
-grr::u32 PostProcessing::m_rbo = 0;
-
-grr::u32 PostProcessing::m_fbo = 0;
-
-iVector2 PostProcessing::m_viewport = {1, 1};
-
-void PostProcessing::Initialize() {
-    m_fbo = grr::gFramebuffer::Create();
-    if (!m_fbo) {
+    handle->m_fbo = grr::gFramebuffer::Create();
+    if (!handle->m_fbo) {
         throw std::runtime_error("Falied to create framebuffer.");
     }
 
-    m_rbo = grr::gRenderbuffer::Create();
-    if (!m_rbo) {
+    handle->m_rbo = grr::gRenderbuffer::Create();
+    if (!handle->m_rbo) {
         throw std::runtime_error("Falied to create renderbufer.");
     }
 
-    m_texture = grr::gTexture::Create(m_viewport.x, m_viewport.y, grr::TextureFormat_SRGB, nullptr);
-    if (!m_texture) {
+    handle->m_texture = grr::gTexture::Create(handle->m_viewport.x, handle->m_viewport.y, grr::gTextureFlags_None, grr::TextureFormat_SRGB, nullptr);
+    if (!handle->m_texture) {
         throw std::runtime_error("Falied to create Texture.");
     }
 
-    grr::gRenderbuffer::Bind(m_rbo);
-    grr::gRenderbuffer::SetBufferStorage(grr::RenderbufferType_Depth_Component, m_viewport.x, m_viewport.y);
+    grr::gRenderbuffer::Bind(handle->m_rbo);
+    grr::gRenderbuffer::SetBufferStorage(grr::RenderbufferType_Depth_Component, handle->m_viewport.x, handle->m_viewport.y);
     grr::gRenderbuffer::Unbind();
 
-    grr::gFramebuffer::Bind(m_fbo);
-    grr::gFramebuffer::SetTexture(grr::FramebufferType_Color_Attachiment0, m_texture->getID());
-    grr::gFramebuffer::SetRenderbuffer(grr::FramebufferType_Depth_Attachiment, m_rbo);
+    grr::gFramebuffer::Bind(handle->m_fbo);
+    grr::gFramebuffer::SetTexture(grr::FramebufferType_Color_Attachiment0, handle->m_texture->getID());
+    grr::gFramebuffer::SetRenderbuffer(grr::FramebufferType_Depth_Attachiment, handle->m_rbo);
     grr::gFramebuffer::Unbind();
+
+    return handle;
 }
 
-void PostProcessing::Shutdown() {
-    if (m_texture) {
-        delete m_texture;
+void PostProcessing::Shutdown(PostProcessing *target) {
+    if (!target) {
+        return;
     }
 
-    if (m_fbo) {
-        grr::gFramebuffer::Destroy(m_fbo);
+    if (target->m_texture) {
+        delete target->m_texture;
     }
+
+    if (target->m_fbo) {
+        grr::gFramebuffer::Destroy(target->m_fbo);
+    }
+
+    delete target;
 }
 
-void PostProcessing::Resize(const iVector2 &size) {
-    if (!m_texture) {
-        throw std::runtime_error("Texture invalid.");
-    }
+void PostProcessing::Resize(PostProcessing *target, const iVector2 &size) {
+    assert(target != nullptr || target->m_texture != nullptr);
 
-    m_viewport = size;
+    target->m_viewport = size;
 
-    grr::gTexture::Bind(m_texture, 0); // SRG or RGB ???
-    grr::gTexture::PushTexture(m_texture, m_viewport.x, m_viewport.y, grr::TextureFormat_SRGB, nullptr);
+    grr::gTexture::Bind(target->m_texture, 0); // SRG or RGB ???
+    grr::gTexture::PushTexture(target->m_texture, target->m_viewport.x, target->m_viewport.y, grr::gTextureFlags_None, grr::TextureFormat_SRGB, nullptr);
     grr::gTexture::Unbind();
 
-    grr::gRenderbuffer::Bind(m_rbo);
-    grr::gRenderbuffer::SetBufferStorage(grr::RenderbufferType_Depth_Component, m_viewport.x, m_viewport.y);
+    grr::gRenderbuffer::Bind(target->m_rbo);
+    grr::gRenderbuffer::SetBufferStorage(grr::RenderbufferType_Depth_Component, target->m_viewport.x, target->m_viewport.y);
     grr::gRenderbuffer::Unbind();
 }
 
-void PostProcessing::Bind() {
-    grr::gRender::SetRenderState(grr::GR_VIEWPORT, (void *)&m_viewport);
-    grr::gFramebuffer::Bind(m_fbo);
+void PostProcessing::Bind(PostProcessing *target) {
+    assert(target != nullptr);
+
+    grr::gRender::SetRenderState(grr::GR_VIEWPORT, (void *)&target->m_viewport);
+    grr::gFramebuffer::Bind(target->m_fbo);
 }
 
 void PostProcessing::Unbind() {
     grr::gFramebuffer::Unbind();
 }
 
-grr::gTexture *PostProcessing::GetTextureColor() {
-    return m_texture;
+grr::gTexture *PostProcessing::GetTextureColor(PostProcessing *target) {
+    assert(target != nullptr);
+    
+    return target->m_texture;
 }
+
+PostProcessing::PostProcessing() : m_texture(nullptr), m_rbo(0), m_fbo(0), m_viewport(0, 0) {}

@@ -89,10 +89,10 @@ Transform *Transform::getParent() {
 }
 
 void Transform::addChildren(Transform *transform) {
-    auto it = std::find(m_children.begin(), m_children.end(), transform);
-    if (it != m_children.end()) {
+    if (!transform || std::find(m_children.begin(), m_children.end(), transform) != m_children.end()) {
         return;
     }
+    
     m_children.push_back(transform);
 }
 

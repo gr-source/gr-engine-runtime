@@ -17,8 +17,6 @@
 #include "core/scene.hpp"
 
 #include "framebuffer/shadowbuffer.h"
-#include "framebuffer/screenbuffer.h"
-#include "framebuffer/imguibuffer.h"
 
 #include "resources/resources.h"
 
@@ -664,9 +662,9 @@ void Game::PopupRenameGameObject() {
     }
 }
 
-void Game::RenderViewportUI() {
-    static Imguibuffer& m_imguibuffer = Imguibuffer::getInstance();
+#include "engine.h"
 
+void Game::RenderViewportUI() {
     ImGui::Begin("Viewport", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
     bViewPortFocused = ImGui::IsWindowFocused();
 
@@ -691,13 +689,16 @@ void Game::RenderViewportUI() {
             camera->setAspectRatio(static_cast<float>(viewport.x) / static_cast<float>(viewport.y));
         }
 
-        PostProcessing::Resize(viewport);
+        PostProcessing::Resize(Engine::MainPostProcess, viewport);
         
         lastSize = curSize;
         bScriptReloaded = false;
     }
 
-    ImGui::Image(reinterpret_cast<ImTextureID>(m_imguibuffer.gettexture()), curSize, ImVec2(0, 1), ImVec2(1, 0));
+    auto texture = PostProcessing::GetTextureColor(Engine::ImGuiPostProcess);
+    if (texture) {
+        ImGui::Image(reinterpret_cast<ImTextureID>(texture->getID()), curSize, ImVec2(0, 1), ImVec2(1, 0));
+    }
 
     if (ImGui::BeginDragDropTarget() && ScriptManager::LoadGameObject) {
         ImGuiDragDropFlags target_flags = 0;

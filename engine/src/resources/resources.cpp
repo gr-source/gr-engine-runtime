@@ -325,7 +325,7 @@ void Resources::SetupTexture(grr::gTexture *texture, int width, int height, int 
         break;
     }
 
-    grr::gTexture::PushTexture(texture, width, height, format, pixels);
+    grr::gTexture::PushTexture(texture, width, height, grr::gTextureFlags_MipMaps, format, pixels);
 
     stbi_image_free(pixels);
 

@@ -4,7 +4,7 @@
 
 #include "common.h"
 
-#include "bufferManager.h"
+#include <gr-render/gRender.h>
 
 struct Line {
     Vector3 position;
@@ -15,41 +15,24 @@ struct Line {
 
 class DebugDraw {
 public:
-	static void initialize();
+	static void Initialize();
 
-    static void addLine(const Vector3& start, const Vector3& end, const Color& color);
-
-    static void addPoint(const Vector3& position, const Color& color);
-
-    static const bool isvalid();
-
-    static const bool hasLines();
-
-	static void drawLines();
-
-    static const bool hasPoints();
-
-    static void drawPoints();
-
-    static void bind();
-
-    static void unbind();
+    static void AddLine(const Vector3& start, const Vector3& end, const Color& color);
 
     static void Renderer();
 
     static bool bDebugMode;
 
-protected:
-	static std::unique_ptr<BufferManager> m_primitivebuffer;
+private:
+    static grr::gVertexArray *m_primitive;
 
-	static std::unique_ptr<BufferManager> m_spritebuffer;
+    static std::vector<Line> m_points;
 
     static std::vector<Line> m_lines;
     
-    static std::vector<Line> m_points;
+    static grr::gShader *m_shader;
 
-	static Shader* m_shader;
+    static grm::u32 m_vbo;
 
-    static void SetupShaderPrimitive(Shader* shader);
-
+    static void DrawLines();
 };

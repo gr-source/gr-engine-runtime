@@ -20,6 +20,10 @@ public:
 
     static void HandleEvent(EngineEvent event, const void* data);
 
+    static PostProcessing *ImGuiPostProcess;
+
+    static PostProcessing *MainPostProcess;
+
 protected:
     static void GRWindowResize(u32 width, u32 height);
 
@@ -52,9 +56,9 @@ protected:
     #endif
     
     static void SetupEnable();
-
-    static Skybox* m_skybox;
     
     static std::thread m_thread[2];
+
+    static Skybox* m_skybox;
 };
 
