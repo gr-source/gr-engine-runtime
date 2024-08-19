@@ -14,8 +14,3 @@ struct Settings {
     static iVector2 ViewportSize;
 };
 
-template <typename T, typename R>
-inline T reinterpret_vector(const R& lhs) {
-    return {lhs.x, lhs.y};
-}
-

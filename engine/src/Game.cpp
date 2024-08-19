@@ -7,23 +7,22 @@
 #include "settings.h"
 #include "renderer.h"
 #include "console.hpp"
-#include "eventManager.h"
 #include "screenRender.hpp"
 #include "renderManager.h"
 #include "editorController.h"
 #include "postProcessing.hpp"
 
 #include "core/filmbox/filmbox.hpp"
+#include "core/resources.h"
 #include "core/scene.hpp"
+#include "core/event.hpp"
 
-#include "resources/resources.h"
-
-#include "component/meshFilter.hpp"
-#include "component/meshRender.hpp"
-#include "component/transform.hpp"
-#include "component/animator.hpp"
-#include "component/camera.hpp"
-#include "component/light.hpp"
+#include "script/meshFilter.hpp"
+#include "script/meshRender.hpp"
+#include "script/transform.hpp"
+#include "script/animator.hpp"
+#include "script/camera.hpp"
+#include "script/light.hpp"
 
 #include "guizmo/ImGuizmo.h"
 
@@ -516,7 +515,7 @@ void Game::RenderScenesUI() {
     }
     
     if (ImGui::IsKeyReleased(ImGuiKey_Delete) && s_objectSelected) {
-        EventManager::AddEvent(Scene::Delete, s_objectSelected);
+        Event::Add(Scene::Delete, s_objectSelected);
         s_objectSelected = nullptr;
     }
     
@@ -533,9 +532,9 @@ void Game::RenderScenesUI() {
         bOpenPopupOptionGameObject = false;
     }
 
-    PopupRenameGameObject();
-
     PopupOptionsGameObject();
+
+    PopupRenameGameObject();
 
     PopupMenuAdd();
 
@@ -594,7 +593,7 @@ void Game::ReadHierarchy(Transform *transform) {
                 if (ts != transform->getParent()) {
                     ts->setParent(transform);
                 
-                    EventManager::AddEvent(&Scene::Remove, target);
+                    Event::Add(&Scene::Remove, target);
                 }
             }
         }
@@ -628,18 +627,25 @@ void Game::PopupMenuAdd() {
 }
 
 void Game::PopupOptionsGameObject() {
+    bool isOpenRename = false;
     if (ImGui::BeginPopup("##popup_options_gameobject")) {
-        const char* item_name[1]{"Delete"};
+        const char* item_name[2] {"Delete", "Rename"};
 
         auto id = 0;
-        if (ImGui::ListBox("##ListBoxOptionsGame", &id, item_name, 1)) {
+        if (ImGui::ListBox("##ListBoxOptionsGame", &id, item_name, 2)) {
             if (id == 0 && s_objectSelected) {
-                EventManager::AddEvent(Scene::Delete, s_objectSelected);
+                Event::Add(Scene::Delete, s_objectSelected);
                 s_objectSelected = nullptr;
+            } else if (id == 1 && s_objectSelected) {
+                isOpenRename = true;
             }
             ImGui::CloseCurrentPopup();
         }
         ImGui::EndPopup();
+    }
+
+    if (isOpenRename) {
+        ImGui::OpenPopup("##popup_rename_gameobject");
     }
 }
 
@@ -820,10 +826,9 @@ void Game::RenderViewportUI() {
 bool bPopupOpen = false;
 
 void Game::RenderFilesUI() {
-    ImGui::Columns(5, "#Collums1", false);
-
     grr::gTexture *gtCurrentTexture = iconsUI[ICON_BACK_FILE];
 
+    ImGui::BeginColumns("##colums_01", 5, ImGuiColumnsFlags_NoBorder);
     if (ImGui::ImageButton(reinterpret_cast<ImTextureID>(gtCurrentTexture->getID()), ImVec2(32, 32), ImVec2(0, 1), ImVec2(1, 0)) && m_currentFile.has_parent_path()) {
         m_currentFile = m_currentFile.parent_path();
 
@@ -864,7 +869,7 @@ void Game::RenderFilesUI() {
         }
         fLisDirSelected.clear();
     }
-
+    
     for (auto& file : std::filesystem::directory_iterator(m_currentFile)) {
         ImGui::NextColumn();
 
@@ -941,7 +946,8 @@ void Game::RenderFilesUI() {
 
         ImGui::PopID();
     }
-    ImGui::Columns(1);
+
+    ImGui::EndColumns();
     
     if (!bOpenPopupInfoDir && fLisDirSelected.empty() && ImGui::IsMouseClicked(ImGuiMouseButton_Right) && ImGui::IsWindowHovered()) {
         ImGui::OpenPopup("##popup_file_manager");
@@ -1043,7 +1049,10 @@ void Game::PopupCreateDirectory() {
 void Game::RenderConsoleUI() {
     static NavegationFlags flags = NavegationFlags_console;
 
-    ImGui::Begin("Navegador", nullptr, ImGuiWindowFlags_MenuBar);
+    auto isOpen = ImGui::Begin("Navegador", nullptr, ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_AlwaysHorizontalScrollbar | ImGuiWindowFlags_AlwaysAutoResize);
+    if (!isOpen) {
+        return;
+    }
     if (ImGui::BeginMenuBar()) {
         if (ImGui::MenuItem("Console")) {
             flags = NavegationFlags_console;
@@ -1057,14 +1066,14 @@ void Game::RenderConsoleUI() {
         ImGui::EndMenuBar();
     }
 
-    if ((flags & NavegationFlags_files) == NavegationFlags_files) {
+    if (flags & NavegationFlags_files) {
         RenderFilesUI();
     }
 
-    if ((flags & NavegationFlags_models) == NavegationFlags_models) {
+    if (flags & NavegationFlags_models) {
     }
 
-    if ((flags & NavegationFlags_console) == NavegationFlags_console) {
+    if (flags & NavegationFlags_console) {
 
         auto logs = Console::GetListLogs();
 
@@ -1340,96 +1349,6 @@ void Game::OnPropertyMeshRender(MeshRender *meshRender) {
                     */
                 }
 
-                /*
-                {
-                    ImGui::SeparatorText("Normal");
-                    if (material.texture[TexturePBR::NORMAL] != nullptr && material.texture[TexturePBR::NORMAL]->isvalid()) {
-                        ImGui::Image(reinterpret_cast<ImTextureID>(material.texture[TexturePBR::NORMAL]->getID()), ImVec2(32, 32));
-                        if (ImGui::IsItemHovered() && ImGui::IsKeyDown(ImGuiKey_X)) {
-                            material.texture[TexturePBR::NORMAL] = nullptr;
-                        }
-                    } else {
-                        View::TextureInputUI(ImColor(100, 100, 255));
-                    }
-
-                    if (ImGui::BeginDragDropTarget()) {
-                        if (const ImGuiPayload* data = ImGui::AcceptDragDropPayload(getDragDrop(DragDrop::TEXTURE), ImGuiDragDropFlags_None)) {
-                            std::string path((char*)data->Data, data->DataSize);
-                            if (!path.empty()) {
-                                material.texture[TexturePBR::NORMAL] = Resources::Load<Texture>(path);
-                            }
-                        }
-                        ImGui::EndDragDropTarget();
-                    }
-                }
-
-                {
-                    ImGui::SeparatorText("Metalica");
-                    if (material.texture[TexturePBR::METALLIC] != nullptr && material.texture[TexturePBR::METALLIC]->isvalid()) {
-                        ImGui::Image(reinterpret_cast<ImTextureID>(material.texture[TexturePBR::METALLIC]->getID()), ImVec2(32, 32));
-                        if (ImGui::IsItemHovered() && ImGui::IsKeyDown(ImGuiKey_X)) {
-                            material.texture[TexturePBR::METALLIC] = nullptr;
-                        }
-                    } else {
-                        ImGui::DragFloat("##Metalica", &material.metallic, 0.005f, 0.0f, 1.0f);
-                    }
-
-                    if (ImGui::BeginDragDropTarget()) {
-                        if (const ImGuiPayload* data = ImGui::AcceptDragDropPayload(getDragDrop(DragDrop::TEXTURE), ImGuiDragDropFlags_None)) {
-                            std::string path((char*)data->Data, data->DataSize);
-                            if (!path.empty()) {
-                                material.texture[TexturePBR::METALLIC] = Resources::Load<Texture>(path);
-                            }
-                        }
-                        ImGui::EndDragDropTarget();
-                    }
-                }
-
-                {
-                    ImGui::SeparatorText("Rugosidade");
-                    if (material.texture[TexturePBR::ROUGHNESS] != nullptr && material.texture[TexturePBR::ROUGHNESS]->isvalid()) {
-                        ImGui::Image(reinterpret_cast<ImTextureID>(material.texture[TexturePBR::ROUGHNESS]->getID()), ImVec2(32, 32));
-                        if (ImGui::IsItemHovered() && ImGui::IsKeyDown(ImGuiKey_X)) {
-                            material.texture[TexturePBR::ROUGHNESS] = nullptr;
-                        }
-                    } else {
-                        ImGui::DragFloat("##Rugosidade", &material.roughness, 0.005f, 0.0f, 1.0);
-                    }
-
-                    if (ImGui::BeginDragDropTarget()) {
-                        if (const ImGuiPayload* data = ImGui::AcceptDragDropPayload(getDragDrop(DragDrop::TEXTURE), ImGuiDragDropFlags_None)) {
-                            std::string path((char*)data->Data, data->DataSize);
-                            if (!path.empty()) {
-                                material.texture[TexturePBR::ROUGHNESS] = Resources::Load<Texture>(path);
-                            }
-                        }
-                        ImGui::EndDragDropTarget();
-                    }
-                }
-
-                {
-                    ImGui::SeparatorText("AO");
-                    if (material.texture[TexturePBR::AO] != nullptr && material.texture[TexturePBR::AO]->isvalid()) {
-                        ImGui::Image(reinterpret_cast<ImTextureID>(material.texture[TexturePBR::AO]->getID()), ImVec2(32, 32));
-                        if (ImGui::IsItemHovered() && ImGui::IsKeyDown(ImGuiKey_X)) {
-                            material.texture[TexturePBR::AO] = nullptr;
-                        }
-                    } else {
-                        ImGui::DragFloat("##AO", &material.ao, 0.005f, 0.0f, 1.0);
-                    }
-
-                    if (ImGui::BeginDragDropTarget()) {
-                        if (const ImGuiPayload* data = ImGui::AcceptDragDropPayload(getDragDrop(DragDrop::TEXTURE), ImGuiDragDropFlags_None)) {
-                            std::string path((char*)data->Data, data->DataSize);
-                            if (!path.empty()) {
-                                material.texture[TexturePBR::AO] = Resources::Load<Texture>(path);
-                            }
-                        }
-                        ImGui::EndDragDropTarget();
-                    }
-                }
-                */
-                
                 Color clr = {albedo.x, albedo.y, albedo.z, albedo.w};
                 if (View::PopupChangeColor("Albedo", clr)) {
                     material.setAlbedo({clr.r, clr.g, clr.b, clr.a});
@@ -1551,7 +1470,7 @@ void Game::TextureInfo(Texture *&texture) {
 }
 
 void Game::PlayGame() {
-    ScriptManager::Initialzie();
+    ScriptManager::Initialize();
 
     if (ScriptManager::SetScreenSize) {
         ScriptManager::SetScreenSize(Settings::ViewportSize);

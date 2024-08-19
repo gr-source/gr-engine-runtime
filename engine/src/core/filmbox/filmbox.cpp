@@ -1,10 +1,11 @@
 #include "filmbox.hpp"
 
 #include "../../filesystem/filesystem.h"
-#include "../../resources/resources.h"
+#include "core/resources.h"
 
-#include "../../eventManager.h"
-#include "../../console.hpp"
+#include "core/event.hpp"
+
+#include "console.hpp"
 
 #include <assimp/postprocess.h>
 #include <assimp/Importer.hpp>
@@ -52,7 +53,7 @@ void Filmbox::doInBackground(const std::string &path) {
     importer.FreeScene();
 
     if (m_funcPost) {
-        EventManager::AddEvent(m_funcPost, m_fbxScene.get(), this);
+        Event::Add(m_funcPost, m_fbxScene.get(), this);
     }
 }
 

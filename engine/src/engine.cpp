@@ -5,19 +5,19 @@
 #include "editorController.h"
 #include "postProcessing.hpp"
 
-#include "component/meshRender.hpp"
-#include "component/camera.hpp"
+#include "script/meshRender.hpp"
+#include "script/camera.hpp"
 
 #include "ui/ImGuiRender.h"
 
-#include "resources/resources.h"
+#include "core/resources.h"
+#include "core/event.hpp"
 
 #include "physics/physicsScene.h"
 
 #include "filesystem/stream.h"
 
 #include "renderManager.h"
-#include "eventManager.h"
 #include "screenRender.hpp"
 #include "settings.h"
 #include "renderer.h"
@@ -118,7 +118,9 @@ void Engine::OnInit() {
 
     DebugDraw::Initialize();
 
-    ScriptManager::Initialzie();
+    ScriptManager::Initialize();
+
+    Skybox::Initialize();
 
     ScreenRender::Initialize();
 
@@ -139,7 +141,7 @@ void Engine::OnUpdate() {
 
 Time tickRender;
 void Engine::OnRender() {
-    EventManager::ProcessEvent();
+    Event::ProcessEvent();
 
     if (ScriptManager::EventUpdate) {
         ScriptManager::EventUpdate();
@@ -193,6 +195,8 @@ void Engine::OnDestroy() {
     }
     
     ImGuiRender::Shutdown();
+
+    Skybox::Shutdown();
     
     ScriptManager::Shutdown();
 
@@ -300,8 +304,8 @@ void Engine::RenderScene() {
     grr::gRender::SetRenderState(grr::GR_DEPTH_FUNC, grr::GR_DEPTH_ALWAYS);
     DebugDraw::Renderer();
 
-    // grr::gRender::SetRenderState(grr::GR_DEPTH_FUNC, grr::GR_DEPTH_LEQUAL);
-    // m_skybox->render();
+    grr::gRender::SetRenderState(grr::GR_DEPTH_FUNC, grr::GR_DEPTH_LEQUAL);
+    Skybox::Renderer();
 }
 
 void Engine::UIFramebuffer() {

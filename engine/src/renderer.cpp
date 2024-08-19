@@ -2,9 +2,9 @@
 
 #include "geometry/mesh.h"
 
-#include "resources/resources.h"
+#include "core/resources.h"
 
-#include "component/camera.hpp"
+#include "script/camera.hpp"
 
 grr::gVertexArray *DebugDraw::m_primitive = nullptr;
 

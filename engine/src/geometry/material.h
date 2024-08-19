@@ -20,9 +20,9 @@ public:
 
     const float getAmbientOcclusion() const;
 
-    void setTexture(int idx, const grr::gTexture *texture);
+    void setTexture(int idx, grr::gTexture *texture);
 
-    const grr::gTexture *getTexture(int idx) const;
+    grr::gTexture *getTexture(int idx) const;
 
 private:
     std::string m_name;
@@ -35,7 +35,7 @@ private:
 
     float m_ao;
 
-    std::vector<const grr::gTexture *> m_texture;
+    std::vector<grr::gTexture *> m_texture;
 
     friend class Game;
 };

@@ -26,6 +26,8 @@ public:
 
     static GameObject *LoadGameObject(const std::string &path);
 
+    static void AddShaderLoaded(std::function<bool(grr::gShader *, const std::string &)> func);
+
     static Mesh *FindMesh(const std::string &name);
 
     template <typename ...Args>
@@ -48,6 +50,8 @@ private:
     static std::unordered_map<std::string, std::unique_ptr<grr::gShader>> s_shaderList;
     static std::list<std::tuple<std::string, grr::gShader *>> s_shaderFromLoader;
     static std::mutex s_shaderMutex;
+
+    static std::vector<std::function<bool(grr::gShader *, const std::string &)>> m_functions;
 
     /***************** Texture *****************/
     static std::unordered_map<std::string, std::unique_ptr<grr::gTexture>> s_textureList;

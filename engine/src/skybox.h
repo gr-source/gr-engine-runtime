@@ -1,5 +1,45 @@
 #pragma once
 
+#include <gr-render/gRender.h>
+
+#include <functional>
+
+class PostProcessing;
+
+class Skybox {
+public:
+    static void Initialize();
+
+    static void Shutdown();
+
+    static void Renderer();
+
+private:
+    static grr::gVertexArray *m_vertexArray;
+
+    static grr::gShader *m_irradianceShader;
+
+    static grr::gShader *m_skyShader;
+
+    static grr::gShader *m_shader;
+
+    static PostProcessing *m_postProcess;
+
+    static grm::u32 m_count;
+
+    static grm::u32 m_vbo;
+    
+    static grm::u32 m_ebo;
+
+    static void CreateCube();
+    
+    static bool SetupShader(grr::gShader *shader, const std::string &path);
+
+    static void GenerateMap(std::function<void(grm::u32)> func, grr::gTexture *texture);
+};
+
+
+
 /*
 #include "framebuffer/skyboxbuffer.h"
 

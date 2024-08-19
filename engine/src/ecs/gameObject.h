@@ -1,10 +1,8 @@
 #pragma once
 
-#include <string>
-
 #include "entity.h"
 
-#include "../component/transform.hpp"
+#include "default.hpp"
 
 class GameObject {
 public:
@@ -35,6 +33,8 @@ public:
     Entity *getEntity();
     
 private:
+    Transform *m_transform;
+
     std::string m_name;
 
     std::string m_tag;

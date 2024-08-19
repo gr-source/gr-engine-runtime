@@ -4,14 +4,14 @@
 
 #include "ecs/ecs.hpp"
 
-#include "component/meshRender.hpp"
-#include "component/meshFilter.hpp"
-#include "component/transform.hpp"
-#include "component/animator.hpp"
-#include "component/camera.hpp"
-#include "component/light.hpp"
+#include "script/meshRender.hpp"
+#include "script/meshFilter.hpp"
+#include "script/transform.hpp"
+#include "script/animator.hpp"
+#include "script/camera.hpp"
+#include "script/light.hpp"
 
-#include "resources/resources.h"
+#include "core/resources.h"
 
 #include "scriptManager/scriptManager.hpp"
 

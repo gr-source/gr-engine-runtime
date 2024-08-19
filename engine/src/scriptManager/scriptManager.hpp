@@ -2,15 +2,12 @@
 
 #include "../ecs/gameObject.h"
 
-#include "../component/default.hpp"
-
-#include "../console.hpp"
-
-#include <string>
+#include "console.hpp"
+#include "default.hpp"
 
 class ScriptManager {
 public:
-    static void Initialzie();
+    static void Initialize();
 
     static void Shutdown();
 
@@ -49,7 +46,7 @@ protected:
     static void *s_handle;
 
     // [ Main ]
-    static void (*Initialize)();
+    static void (*InitializeScript)();
     
 
     static void (*Destroy)();

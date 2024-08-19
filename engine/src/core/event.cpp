@@ -1,10 +1,10 @@
-#include "eventManager.h"
+#include "event.hpp"
 
-std::list<std::function<void()>> EventManager::m_events;
+std::list<std::function<void()>> Event::m_events;
 
-std::mutex EventManager::m_mutex;
+std::mutex Event::m_mutex;
 
-void EventManager::ProcessEvent() {
+void Event::ProcessEvent() {
     std::unique_lock<std::mutex> lock(m_mutex);
     while (!m_events.empty()) {
         auto &event = m_events.front();
@@ -17,7 +17,7 @@ void EventManager::ProcessEvent() {
     }
 }
 
-const u32 EventManager::getcount() {
+const u32 Event::getcount() {
     return 0;
 }
 

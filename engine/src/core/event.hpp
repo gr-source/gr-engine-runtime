@@ -1,5 +1,6 @@
 #pragma once
 
+#include <functional>
 #include <algorithm>
 #include <string>
 #include <mutex>
@@ -7,11 +8,11 @@
 
 #include "types.h"
 
-class EventManager {
+class Event {
 public:
     
     template <typename ...Args>
-    static void AddEvent(Args &&...args);
+    static void Add(Args &&...args);
 
     static void ProcessEvent();
 
@@ -22,7 +23,7 @@ protected:
 };
 
 template <typename... Args>
-inline void EventManager::AddEvent(Args&&... args) {
+inline void Event::Add(Args&&... args) {
     std::lock_guard<std::mutex> lock(m_mutex);
     m_events.emplace_back(std::bind(std::forward<Args>(args)...));
 }

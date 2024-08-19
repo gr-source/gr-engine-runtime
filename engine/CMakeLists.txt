@@ -39,11 +39,15 @@ set(scriptManager_hdr
 )
 
 set(core_src
+    src/core/resources.cpp
     src/core/thread.cpp
+    src/core/event.cpp
     src/core/scene.cpp
 )
 
 set(core_hdr
+    src/core/resources.h
+    src/core/event.hpp
     src/core/thread.hpp
     src/core/scene.hpp
 )
@@ -78,7 +82,6 @@ set(animation_src
     src/core/animation/bone.cpp
 )
 
-
 set(animation_hdr
     src/core/animation/boneWeight.cpp
     src/core/animation/animation.cpp
@@ -94,7 +97,7 @@ set(engine_src
     ${animation_src}
     ${simplexNoise_src}
     ${scriptManager_cpp}
-
+    
     src/log.cpp
     src/Game.cpp
     src/input.cpp
@@ -108,21 +111,17 @@ set(engine_src
     src/renderer.cpp
     src/settings.cpp
     src/screenRender.cpp
-    src/eventManager.cpp
     src/renderManager.cpp
     src/postProcessing.cpp
     src/editorController.cpp
 
-    src/component/light.cpp
-    src/component/camera.cpp
-    src/component/animator.cpp
-    src/component/transform.cpp
-    src/component/meshRender.cpp
-    src/component/meshFilter.cpp
+    src/script/meshFilter.cpp
+    src/script/meshRender.cpp
+    src/script/transform.cpp
+    src/script/animator.cpp
+    src/script/camera.cpp
+    src/script/light.cpp
 
-    src/resources/cubemap.cpp
-    src/resources/resources.cpp
-    
     src/geometry/boundbox.cpp
     src/geometry/material.cpp
     src/geometry/vertex3D.cpp
@@ -163,21 +162,16 @@ set(engine_hdr
     src/renderer.h
     src/settings.h
     src/screenRender.hpp
-    src/eventManager.h
     src/renderManager.h
     src/postProcessing.hpp
     src/editorController.h
     
-    src/component/light.hpp
-    src/component/camera.hpp
-    src/component/default.hpp
-    src/component/transform.hpp
-    src/component/meshRender.hpp
-    src/component/meshFilter.hpp
+    src/script/meshRender.hpp
+    src/script/meshFilter.hpp
+    src/script/transform.hpp
+    src/script/camera.hpp
+    src/script/light.hpp
 
-    src/resources/cubemap.h
-    src/resources/resources.h
-    
     src/geometry/boundbox.h
     src/geometry/material.h
     src/geometry/vertex3D.h
@@ -197,9 +191,9 @@ set(engine_hdr
     src/physics/physicsScene.h
 )
 
-add_library(engine STATIC ${engine_src} ${engine_hdr})
+add_library(${PROJECT_NAME} STATIC ${engine_src} ${engine_hdr})
 
-target_include_directories(engine PRIVATE
-    $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>
+target_include_directories(${PROJECT_NAME} PRIVATE
+    $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/${PROJECT_NAME}/src>
 )
 

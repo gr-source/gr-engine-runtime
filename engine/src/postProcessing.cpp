@@ -31,9 +31,14 @@ PostProcessing *PostProcessing::Create(const iVector2 &size) {
     grr::gRenderbuffer::SetBufferStorage(grr::RenderbufferType_Depth_Component, handle->m_viewport.x, handle->m_viewport.y);
     grr::gRenderbuffer::Unbind();
 
+    // Set framebuffer
     grr::gFramebuffer::Bind(handle->m_fbo);
-    grr::gFramebuffer::SetTexture(grr::FramebufferType_Color_Attachiment0, handle->m_texture->getID());
-    grr::gFramebuffer::SetRenderbuffer(grr::FramebufferType_Depth_Attachiment, handle->m_rbo);
+
+    grr::gTexture::Bind(handle->m_texture, 0);
+    grr::gFramebuffer::SetTexture(grr::gFramebufferFlags_Color_Attachiment0);
+
+    grr::gRenderbuffer::Bind(handle->m_rbo);
+    grr::gFramebuffer::SetRenderbuffer(grr::gFramebufferFlags_Depth_Attachiment);
     grr::gFramebuffer::Unbind();
 
     return handle;
@@ -55,7 +60,7 @@ void PostProcessing::Shutdown(PostProcessing *target) {
     delete target;
 }
 
-void PostProcessing::Resize(PostProcessing *target, const iVector2 &size) {
+void PostProcessing::Resize(PostProcessing *target, const iVector2 &size) { 
     assert(target != nullptr || target->m_texture != nullptr);
 
     target->m_viewport = size;

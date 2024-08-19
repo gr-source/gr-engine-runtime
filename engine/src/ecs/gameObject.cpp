@@ -4,8 +4,6 @@
 
 #include "../scriptManager/scriptManager.hpp"
 
-#include "../component/transform.hpp"
-
 GameObject *GameObject::Find(const std::string &name) {
     if (!ScriptManager::GetAllGameObject) {
         return nullptr;
@@ -36,7 +34,7 @@ const std::string &GameObject::getTag() {
 }
 
 Transform &GameObject::getTransform() {
-    return m_entity->getComponent<Transform>();
+    return *m_transform;
 }
 
 Entity *GameObject::getEntity() {

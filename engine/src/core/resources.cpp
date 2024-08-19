@@ -11,13 +11,15 @@
 
 #include "../ecs/gameObject.h"
 
-#include "../component/meshFilter.hpp"
-#include "../component/meshRender.hpp"
-#include "../component/animator.hpp"
+#include "script/meshFilter.hpp"
+#include "script/meshRender.hpp"
+#include "script/transform.hpp"
+#include "script/animator.hpp"
 
-#include "../eventManager.h"
-#include "../console.hpp"
-#include "../settings.h"
+#include "console.hpp"
+#include "settings.h"
+
+#include "event.hpp"
 
 #include <filesystem>
 #include <future>
@@ -28,6 +30,8 @@ u32 Resources::m_processCount = 0;
 std::unordered_map<std::string, std::unique_ptr<grr::gShader>> Resources::s_shaderList;
 std::list<std::tuple<std::string, grr::gShader *>> Resources::s_shaderFromLoader;
 std::mutex Resources::s_shaderMutex;
+
+std::vector<std::function<bool(grr::gShader *, const std::string &)>> Resources::m_functions;
 
 /***************** Texture *****************/
 std::unordered_map<std::string, std::unique_ptr<grr::gTexture>> Resources::s_textureList;
@@ -99,6 +103,8 @@ grr::gShader *Resources::LoadShader(const std::string &path) {
         Console::log(LogInfo::ERROR, "Falied to create shader.");
         return nullptr;
     }
+
+    Console::log(LogInfo::INFO, "Processing Shader: "+ path);
 
     {
         std::lock_guard<std::mutex> lock(s_shaderMutex);
@@ -342,6 +348,10 @@ GameObject *Resources::LoadGameObject(const std::string &path) {
     return gameObject;
 }
 
+void Resources::AddShaderLoaded(std::function<bool(grr::gShader *, const std::string &)> func) {
+    m_functions.push_back(func);
+}
+
 Mesh *Resources::FindMesh(const std::string &name) {
     auto it = s_meshList.find(name);
     if (it == s_meshList.end()) {
@@ -372,7 +382,7 @@ void Resources::SetupTexture(grr::gTexture *texture, int width, int height, int 
         break;
     }
 
-    grr::gTexture::UpdateTexture(texture, width, height, grr::gTextureFlags_MipMaps, format, pixels);
+    grr::gTexture::UpdateTexture(texture, width, height, grr::gTextureFlags_MipMaps | grr::gTextureFlags_Filter_Bilinear, format, pixels);
 
     stbi_image_free(pixels);
 
@@ -397,7 +407,7 @@ void Resources::ProcessTexture() {
             continue;
         }
 
-        EventManager::AddEvent(Resources::SetupTexture, texture, width, height, ch, (void *)pixels, path);
+        Event::Add(Resources::SetupTexture, texture, width, height, ch, (void *)pixels, path);
 
         lock.lock();
         s_textureFromLoader.pop_front();
@@ -406,12 +416,20 @@ void Resources::ProcessTexture() {
 
 /***************** Shader Process ****************/
 void Resources::SetupShader(grr::gShader *shader, const std::string &frag, const std::string &vert, std::string path) {
-    Console::log(LogInfo::INFO, "Shader loadedd sucessfull.");
+    Console::log(LogInfo::WARNING, "Shader loadedd sucessfull.");
 
     const char *fShader = frag.c_str();
     const char *vShader = vert.c_str();
 
     grr::gShader::Create(shader, &fShader, &vShader);
+
+    m_functions.erase(std::remove_if(m_functions.begin(), m_functions.end(), [&shader, &path](auto &func) {
+        return func(shader, path);
+    }), m_functions.end());
+
+    // for (auto &func : m_functions) {
+    //     func(shader);
+    // }
 
     s_shaderList.emplace(path, std::unique_ptr<grr::gShader>(shader));
 }
@@ -453,7 +471,7 @@ void Resources::ProcessShader() {
             continue;
         }
 
-        EventManager::AddEvent(Resources::SetupShader, shader, fragSource, vertSource, path);
+        Event::Add(Resources::SetupShader, shader, fragSource, vertSource, path);
 
         lock.lock();
         s_shaderFromLoader.pop_front();

@@ -2,8 +2,8 @@
 
 #include "../ecs/gameObject.h"
 
-#include "../component/meshRender.hpp"
-#include "../component/transform.hpp"
+#include "script/meshRender.hpp"
+#include "script/transform.hpp"
 
 #include "../renderer.h"
 

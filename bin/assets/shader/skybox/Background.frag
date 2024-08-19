@@ -5,10 +5,10 @@ const float PI = 3.14159265359;
 out vec4 FragColor;
 in vec3 WorldPos;
 
-uniform samplerCube environmentMap;
+uniform samplerCube u_texture;
 
 void main() {
-    vec3 envColor = texture(environmentMap, WorldPos).rgb;
+    vec3 envColor = texture(u_texture, WorldPos).rgb;
     
     // HDR tonemap and gamma correct
     envColor = envColor / (envColor + vec3(1.0));

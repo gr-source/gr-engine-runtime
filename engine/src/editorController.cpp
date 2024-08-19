@@ -1,7 +1,7 @@
 #include "editorController.h"
 
-#include "component/transform.hpp"
-#include "component/camera.hpp"
+#include "script/transform.hpp"
+#include "script/camera.hpp"
 
 #include "ui/ImGuiRender.h"
 
@@ -62,7 +62,7 @@ void EditorController::Update() {
 void EditorController::updateCursor() {
     const Vector2 delta = Input::GetCursorPos() - lastMousePos;
 
-    if (Math::magnitude(delta) > 0.005f)
+    // if (Math::magnitude(delta) > 0.005f)
         ProcessMouse(delta);
 
     auto center = Settings::ViewportSize / 2;
