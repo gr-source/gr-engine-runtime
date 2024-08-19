@@ -1,5 +1,6 @@
 #include "cubemap.h"
 
+/*
 Cubemap::Cubemap(u32 width, u32 height, u32 internalFormat, u32 format, u32 filter, u32 type, bool m_hasMipmap) : Texture(width, height, internalFormat, format, filter, type, m_hasMipmap) {
     GL_CHECK(glGenTextures(1, &m_texture));
 
@@ -45,3 +46,8 @@ void Cubemap::apply(u32 target, void* pixels) {
 
     glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
 }
+*/
+
+
+
+

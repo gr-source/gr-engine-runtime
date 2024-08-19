@@ -12,13 +12,14 @@
 #include "component/light.hpp"
 
 #include "resources/resources.h"
-#include "resources/shader.h"
 
 #include "scriptManager/scriptManager.hpp"
 
 #include "filesystem/filesystem.h"
 
-std::vector<GameObject*> RenderManager::s_objects;
+#include <cstring>
+
+std::vector<GameObject *> RenderManager::s_objects;
 
 grr::gShader *RenderManager::m_shader = nullptr;
 
@@ -37,7 +38,7 @@ void RenderManager::Initialize() {
     auto shaders = ScriptManager::GetShader();
     auto it = shaders.find(0);
     if (it == shaders.end()) {
-        return Console::Print(LogInfo::ERROR, "Falied to find model shader 'id=0'");
+        return Console::log(LogInfo::ERROR, "Falied to find model shader 'id=0'");
     }
 
     auto &&[frag, vert] = (*it).second;
@@ -45,7 +46,7 @@ void RenderManager::Initialize() {
     const char *fragment = frag.c_str();
     const char *vertex = vert.c_str();
 
-    Console::Print(LogInfo::INFO, "Model loading shader...");
+    Console::log(LogInfo::INFO, "Model loading shader...");
 
     m_shader = grr::gShader::Create(&fragment, &vertex);
     if (!m_shader || !m_shader->isValid()) {
@@ -53,7 +54,7 @@ void RenderManager::Initialize() {
 
         std::string line;
         while (std::getline(iss, line)) {
-            Console::Print(LogInfo::ERROR, line);
+            Console::log(LogInfo::ERROR, line);
         }
         grr::gError::Clean();
         return;
@@ -93,7 +94,7 @@ void RenderManager::Initialize() {
 
     m_shader->unbind();
 
-    Console::Print(LogInfo::INFO, "Shader loaded successfully.");
+    Console::log(LogInfo::INFO, "Shader loaded successfully.");
 }
 
 void RenderManager::Process() {
@@ -129,7 +130,7 @@ void RenderManager::Renderer() {
     SetupLight();
 
     if (bWireFrame) {
-        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     }
 
     for (auto& gameObject : s_objects) {
@@ -149,19 +150,18 @@ void RenderManager::Renderer() {
         grr::gShader::SetUniform("u_animatior", static_cast<int>(hasAnimation));
 
         SetupMaterial(meshrender.getMaterials());
-
+        
         grr::gShader::SetUniform("u_model", 1, transform.getGlobalMatrix());
 
         meshrender.draw();
     }
 
     for (int i=0;i<10;i++) {
-        glActiveTexture(GL_TEXTURE0 + i);
-        glBindTexture(GL_TEXTURE_2D, 0);
+        grr::gTexture::Bind(nullptr, i);
     }
 
     if (bWireFrame) {
-        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        // glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     }
 }
 
@@ -218,9 +218,11 @@ void RenderManager::SetupLight() {
 }
 
 void RenderManager::SetupMaterial(std::unordered_map<int, Material> &materials) {
+    int idx[10]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+    int idxEn[10]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+
     for (auto&& [index, material] : materials) {
-        int idx[10]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
-        int idxEn[10]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+        std::memset(idxEn, 10, 0);
 
         for (auto i=0;i<10;++i) {
             auto texture = material.getTexture(i);

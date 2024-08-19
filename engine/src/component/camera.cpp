@@ -52,7 +52,5 @@ void Camera::setAspectRatio(float aspect) {
 }
 
 void Camera::updateMatrix() {
-    std::cout << m_fov << " " << m_aspect << " " << m_nearPlane << " " << m_farPlane << std::endl;
-    
     m_projection = Math::perspective(Math::rad(m_fov), m_aspect, m_farPlane, m_nearPlane);
 }

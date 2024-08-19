@@ -3,6 +3,7 @@
 #include "../filesystem/filesystem.h"
 
 #include <condition_variable>
+#include <unordered_set>
 #include <functional>
 #include <memory>
 #include <string>
@@ -13,26 +14,7 @@
 
 #include <gr-render/gRender.h>
 
-#include "texture.h"
-#include "shader.h"
-
-#include "../core/stb/stb_image.h"
-
-template <typename T>
-struct ProcessLoader {
-    T* data;
-    std::function<void(T*)> callback;
-
-    ProcessLoader(T* _data, std::function<void(T*)> _callback) : data(_data), callback(_callback) {}
-};
-
-struct TextureArgs {
-    u32 internalFormat;
-    u32 format;
-    u32 type;
-    u32 filter;
-    bool hasMipmap;
-};
+#include "../geometry/mesh.h"
 
 class Resources {
 public:
@@ -44,6 +26,13 @@ public:
 
     static GameObject *LoadGameObject(const std::string &path);
 
+    static Mesh *FindMesh(const std::string &name);
+
+    template <typename ...Args>
+    static Mesh *AddMesh(Args &&...args);
+
+    static void DeleteMesh(Mesh *target);
+
     static void OnThread();
 
     static u32 m_processCount;
@@ -51,6 +40,8 @@ public:
     static const grm::size GetTextureCount();
 
     static const grm::size GetShaderCount();
+    
+    static const grm::size GetMeshCount();
 
 private:
     /***************** Shader *****************/
@@ -63,13 +54,20 @@ private:
     static std::list<std::tuple<std::string, grr::gTexture *>> s_textureFromLoader;
     static std::mutex s_textureMutex;
 
+    /***************** Mesh *****************/
+    static std::unordered_map<std::string, std::unique_ptr<Mesh>> s_meshList;
+
     static void SetupTexture(grr::gTexture *texture, int width, int height, int ch, void *pixels, std::string path);
 
     static void ProcessTexture();
 
-    static void SetupShader(grr::gShader *shader, const std::string &frag, const std::string &vert);
+    static void SetupShader(grr::gShader *shader, const std::string &frag, const std::string &vert, std::string path);
 
     static void ProcessShader();
 };
 
-
+template <typename... Args>
+inline Mesh *Resources::AddMesh(Args &&...args) {
+    auto &&[pair, added] = s_meshList.emplace(std::forward<Args>(args)...);
+    return &(*(*pair).second);
+}

@@ -7,13 +7,17 @@
 
 class MeshFilter : public Component {
 public:
-    Mesh &getMesh();
+    MeshFilter();
+
+    void setMesh(Mesh *mesh);
+
+    Mesh *getMesh();
 
     void processBoundbox();
 
     Boundbox &getBoundbox();
 private:
-    Mesh m_mesh;
+    Mesh *m_sharedMesh;
 
     Boundbox m_boundbox;
 };

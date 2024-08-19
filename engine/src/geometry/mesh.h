@@ -12,6 +12,10 @@ class Mesh {
 public:
     Mesh(const std::string &name = "default");
 
+    void setName(const std::string &name);
+
+    const std::string &getName() const;
+
     template <typename ...Args>
     Vertex3D& addVertex(Args &&...args);
 

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "texture.h"
-
+// #include "texture.h"
+/*
 class Cubemap : public Texture {
 public:
     enum : u32 {
@@ -18,3 +18,4 @@ public:
     void apply(u32 target, void* pixels);
 };
 
+*/

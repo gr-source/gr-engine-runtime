@@ -2,6 +2,14 @@
 
 Mesh::Mesh(const std::string &name) : m_name(name) {}
 
+void Mesh::setName(const std::string &name) {
+    m_name = name;
+}
+
+const std::string &Mesh::getName() const {
+    return m_name;
+}
+
 std::vector<Vertex3D> &Mesh::getVertices() {
     return m_vertices;
 }

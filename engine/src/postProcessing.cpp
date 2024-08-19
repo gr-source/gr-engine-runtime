@@ -61,7 +61,7 @@ void PostProcessing::Resize(PostProcessing *target, const iVector2 &size) {
     target->m_viewport = size;
 
     grr::gTexture::Bind(target->m_texture, 0); // SRG or RGB ???
-    grr::gTexture::PushTexture(target->m_texture, target->m_viewport.x, target->m_viewport.y, grr::gTextureFlags_None, grr::TextureFormat_SRGB, nullptr);
+    grr::gTexture::UpdateTexture(target->m_texture, target->m_viewport.x, target->m_viewport.y, grr::gTextureFlags_None, grr::TextureFormat_SRGB, nullptr);
     grr::gTexture::Unbind();
 
     grr::gRenderbuffer::Bind(target->m_rbo);

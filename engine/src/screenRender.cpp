@@ -19,14 +19,14 @@ void ScreenRender::Initialize() {
     auto shaders = ScriptManager::GetShader();
     auto it = shaders.find(1);
     if (it == shaders.end()) {
-        return Console::Print(LogInfo::ERROR, "Falied to find postprocess shader 'id=1'");
+        return Console::log(LogInfo::ERROR, "Falied to find postprocess shader 'id=1'");
     }
     auto &&[frag, vert] = (*it).second;
 
     auto dataF = frag.c_str();
     auto dataV = vert.c_str();
 
-    Console::Print(LogInfo::INFO, "Postprocess loading shader...");
+    Console::log(LogInfo::INFO, "Postprocess loading shader...");
 
     m_shader = grr::gShader::Create(&dataF, &dataV);
     if (!m_shader || !m_shader->isValid()) {
@@ -34,7 +34,7 @@ void ScreenRender::Initialize() {
 
         std::string line;
         while (std::getline(iss, line)) {
-            Console::Print(LogInfo::ERROR, line);
+            Console::log(LogInfo::ERROR, line);
         }
         grr::gError::Clean();
         return;
@@ -62,11 +62,11 @@ void ScreenRender::Shutdown() {
 
 void ScreenRender::Render(grr::gTexture *texture) {
     if (!texture || !texture->isValid()) {
-        return Console::Print(LogInfo::ERROR, "[ ScreenRender ] Texture do not is valid.");
+        return Console::log(LogInfo::ERROR, "[ ScreenRender ] Texture do not is valid.");
     }
 
     if (!m_shader || !m_shader->isValid()) {
-        return Console::Print(LogInfo::ERROR, "[ ScreenRender ] Shader do not is valid.");
+        return Console::log(LogInfo::ERROR, "[ ScreenRender ] Shader do not is valid.");
     }
 
     m_shader->bind();
@@ -98,12 +98,12 @@ void ScreenRender::CreateMesh() {
 
     m_vbo = grr::gVertexArray::CreateBuffer(grr::BufferType_VBO);
     if (!m_vbo) {
-        return Console::Print(LogInfo::ERROR, "[ ScreenRender ] Falied to create vbo.");
+        return Console::log(LogInfo::ERROR, "[ ScreenRender ] Falied to create vbo.");
     }
 
     m_vertexArray = grr::gVertexArray::Create();
     if (!m_vertexArray) {
-        return Console::Print(LogInfo::ERROR, "[ ScreenRender ] Falied to create vao.");
+        return Console::log(LogInfo::ERROR, "[ ScreenRender ] Falied to create vao.");
     }
 
     m_vertexArray->bind();

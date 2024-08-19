@@ -16,8 +16,6 @@
 #include "core/filmbox/filmbox.hpp"
 #include "core/scene.hpp"
 
-#include "framebuffer/shadowbuffer.h"
-
 #include "resources/resources.h"
 
 #include "component/meshFilter.hpp"
@@ -399,7 +397,7 @@ void WriteAnimation(const FbxScene *fbxScene) {
 }
 
 void WriteHeader(const FbxScene *scene, const FbxNode &node) {
-    Console::Print(LogInfo::INFO, "Writing model...");
+    Console::log(LogInfo::INFO, "Writing model...");
 
     WriteAnimation(scene);
 
@@ -434,7 +432,7 @@ void Game::DropFile(const std::filesystem::path &path) {
     if (path.extension() != ".fbx") {
         return;
     }
-    Console::Print(LogInfo::INFO, "Loading fbx: " + path.extension().string());
+    Console::log(LogInfo::INFO, "Loading fbx: " + path.extension().string());
 
     auto *filmbox = new Filmbox(path.string());
     filmbox->setPostProcess(PostProcess);
@@ -484,7 +482,7 @@ void Game::RenderDocking() {
 }
 
 void Game::RenderScenesUI() {
-    ImGui::Begin("Cenario", nullptr, ImGuiWindowFlags_NoResize);
+    ImGui::Begin("Cenario", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
     ImGui::SetNextItemOpen(true, ImGuiCond_Appearing);
     if (ImGui::TreeNodeEx("default", ImGuiTreeNodeFlags_SpanFullWidth)) {
         if (ImGui::BeginDragDropTarget()) {
@@ -738,12 +736,19 @@ void Game::RenderViewportUI() {
         
         Transform& transform = s_objectSelected->getTransform();
 
-        Matrix4x4 model = transform.getGlobalMatrix();
+        Matrix4x4 model = transform.getLocalMatrix();
 
         auto camera = Camera::Current();
 
         if (ImGuizmo::Manipulate(camera->getViewmatrix().data, camera->getPerspesctive().data, m_guizmoOperation, m_guizmoManipulate, model.data)) {
-            // model.decompose(transform.scale, transform.rotation, transform.position);
+            Vector3 s;
+            Quaternion r;
+            Vector3 t;
+            model.decompose(s, r, t);
+
+            transform.setLocalScale(s);
+            transform.setLocalRotation(r);
+            transform.setLocalPosition(t);
         }
     }
 
@@ -1038,7 +1043,7 @@ void Game::PopupCreateDirectory() {
 void Game::RenderConsoleUI() {
     static NavegationFlags flags = NavegationFlags_console;
 
-    ImGui::Begin("Navegador", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_MenuBar);
+    ImGui::Begin("Navegador", nullptr, ImGuiWindowFlags_MenuBar);
     if (ImGui::BeginMenuBar()) {
         if (ImGui::MenuItem("Console")) {
             flags = NavegationFlags_console;
@@ -1060,6 +1065,7 @@ void Game::RenderConsoleUI() {
     }
 
     if ((flags & NavegationFlags_console) == NavegationFlags_console) {
+
         auto logs = Console::GetListLogs();
 
         for (const auto& log : logs) {
@@ -1098,7 +1104,7 @@ void Game::RenderConsoleUI() {
 }
 
 void Game::RenderPropertiUI() {
-    auto isOpen = ImGui::Begin("Propriedades", nullptr, ImGuiWindowFlags_NoResize);
+    auto isOpen = ImGui::Begin("Propriedades", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
     if (!isOpen) {
         return;
     }
@@ -1162,9 +1168,10 @@ void Game::RenderPropertiUI() {
             ImGui::Text("Indice: %d | %s", gameStatics.indices, getfilesize(gameStatics.indices * sizeof(u32)).c_str());
             ImGui::Text("Triangulos: %.2f", (gameStatics.indices / 3.0f));
 
-            ImGui::SeparatorText("Resources");
+            ImGui::SeparatorText("AssetsManager");
             ImGui::Text("Textures: %ld", Resources::GetTextureCount());
             ImGui::Text("Shaders: %ld", Resources::GetShaderCount());
+            ImGui::Text("Mesh: %ld", Resources::GetMeshCount());
 
             ImGui::SeparatorText("Threads");
             ImGui::Text("Update:  %fms  | FPS: %.2f",  gameStatics.updateMs,  (1.0f / gameStatics.updateMs));
@@ -1518,17 +1525,17 @@ void Game::TextureInfo(Texture *&texture) {
 
     const float width = ImGui::GetWindowWidth();
 
-    ImGui::SetCursorPosX((width / 2) - (textureSize.x / 2));
-    ImGui::Image(reinterpret_cast<ImTextureID>(texture->getID()), textureSize);
+    // ImGui::SetCursorPosX((width / 2) - (textureSize.x / 2));
+    // ImGui::Image(reinterpret_cast<ImTextureID>(texture->getID()), textureSize);
 
-    ImGui::Spacing();
+    // ImGui::Spacing();
 
-    ImGui::SeparatorText("Path");
-    ImGui::Text("%s", texture->getpath().c_str());
+    // ImGui::SeparatorText("Path");
+    // ImGui::Text("%s", texture->getpath().c_str());
 
-    ImGui::SeparatorText("Dimensões");
-    ImGui::Text("Width: %d", texture->getwidth());
-    ImGui::Text("Height: %d", texture->getheight());
+    // ImGui::SeparatorText("Dimensões");
+    // ImGui::Text("Width: %d", texture->getwidth());
+    // ImGui::Text("Height: %d", texture->getheight());
 
     ImGui::SeparatorText("Configurações");
     // ImGui::Text("Espaço de cor: %s", Resources::gettextureformatname(texture->getinternalformat()));

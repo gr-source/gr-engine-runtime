@@ -95,7 +95,6 @@ set(engine_src
     ${simplexNoise_src}
     ${scriptManager_cpp}
 
-    src/gl.cpp
     src/log.cpp
     src/Game.cpp
     src/input.cpp
@@ -121,14 +120,7 @@ set(engine_src
     src/component/meshRender.cpp
     src/component/meshFilter.cpp
 
-    src/framebuffer/shadowbuffer.cpp
-    src/framebuffer/skyboxbuffer.cpp
-    src/framebuffer/internal/framebuffer.cpp
-    src/framebuffer/internal/renderbuffer.cpp
-    
-    src/resources/shader.cpp
     src/resources/cubemap.cpp
-    src/resources/texture.cpp
     src/resources/resources.cpp
     
     src/geometry/boundbox.cpp
@@ -183,14 +175,7 @@ set(engine_hdr
     src/component/meshRender.hpp
     src/component/meshFilter.hpp
 
-    src/framebuffer/shadowbuffer.h
-    src/framebuffer/skyboxbuffer.h
-    src/framebuffer/internal/framebuffer.h
-    src/framebuffer/internal/renderbuffer.h
-    
-    src/resources/shader.h
     src/resources/cubemap.h
-    src/resources/texture.h
     src/resources/resources.h
     
     src/geometry/boundbox.h
@@ -214,7 +199,7 @@ set(engine_hdr
 
 add_library(engine STATIC ${engine_src} ${engine_hdr})
 
-# target_include_directories(engine PRIVATE
-#     $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>
-# )
+target_include_directories(engine PRIVATE
+    $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>
+)
 

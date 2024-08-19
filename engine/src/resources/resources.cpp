@@ -34,6 +34,9 @@ std::unordered_map<std::string, std::unique_ptr<grr::gTexture>> Resources::s_tex
 std::list<std::tuple<std::string, grr::gTexture *>> Resources::s_textureFromLoader;
 std::mutex Resources::s_textureMutex;
 
+/***************** Mesh *****************/
+std::unordered_map<std::string, std::unique_ptr<Mesh>> Resources::s_meshList;
+
 void Resources::Initialize() {
     stbi_set_flip_vertically_on_load(true);
 }
@@ -41,14 +44,14 @@ void Resources::Initialize() {
 /***************** TEXTURE ****************/
 grr::gTexture *Resources::LoadTexture(const std::string &path) {
     if (!std::filesystem::exists(path)) { 
-        Console::Print(LogInfo::ERROR, "[ Resources::LoadTexture ] Falied to load texture: " + path);
+        Console::log(LogInfo::ERROR, "[ Resources::LoadTexture ] Falied to load texture: " + path);
         return nullptr;
     }
 
     auto it = s_textureList.find(path);
     if (it != s_textureList.end()) {
-        Console::Print(LogInfo::WARNING, "The texture has already been loaded.");
-        return (*it).second.get();
+        Console::log(LogInfo::WARNING, "The texture has already been loaded.");
+        return &(*(*it).second);
     }
 
     {
@@ -63,7 +66,7 @@ grr::gTexture *Resources::LoadTexture(const std::string &path) {
 
     auto m_texture = new grr::gTexture();
     if (!m_texture) {
-        Console::Print(LogInfo::ERROR, "[ Resources::LoadTexture ] Falied to create texture.");
+        Console::log(LogInfo::ERROR, "[ Resources::LoadTexture ] Falied to create texture.");
         return nullptr;
     }
     
@@ -77,12 +80,12 @@ grr::gTexture *Resources::LoadTexture(const std::string &path) {
 /***************** SHADER ****************/
 grr::gShader *Resources::LoadShader(const std::string &path) {
     if (!Filesystem::Exists(path + ".frag")) {
-        Console::Print(LogInfo::ERROR, "File do not found: " + path + ".frag");
+        Console::log(LogInfo::ERROR, "File do not found: " + path + ".frag");
         return nullptr;
     }
 
     if (!Filesystem::Exists(path + ".vert")) {
-        Console::Print(LogInfo::ERROR, "File do not found: " + path + ".vert");
+        Console::log(LogInfo::ERROR, "File do not found: " + path + ".vert");
         return nullptr;
     }
 
@@ -93,7 +96,7 @@ grr::gShader *Resources::LoadShader(const std::string &path) {
 
     grr::gShader *shader = new grr::gShader();
     if (!shader) {
-        Console::Print(LogInfo::ERROR, "Falied to create shader.");
+        Console::log(LogInfo::ERROR, "Falied to create shader.");
         return nullptr;
     }
 
@@ -188,10 +191,14 @@ GameObject *ReadChildren(std::istream &is) {
     // adiciona o mesh componenet
     if (!meshes.empty()) {
         auto &meshFilter = gameObject->addComponent<MeshFilter>();
-        auto &mesh = meshFilter.getMesh();
+        Mesh mesh; //meshFilter.getMesh();
+
+        std::string meshName;
 
         grm::u32 verticeCount = 0;
         for (auto &pMesh : meshes) {
+            meshName += pMesh.m_name;
+
             for (int i=0;i<pMesh.m_verticeCount;i++) {
                 auto &vertice = pMesh.m_vertices[i];
 
@@ -234,6 +241,15 @@ GameObject *ReadChildren(std::istream &is) {
             }
 
             delete[] pMesh.m_bones;
+        }
+
+        auto m_mesh = Resources::FindMesh(meshName);
+        if (m_mesh) {
+            meshFilter.setMesh(m_mesh);
+        } else {
+            mesh.setName(meshName);
+
+            meshFilter.setMesh(Resources::AddMesh(meshName, std::make_unique<Mesh>(mesh)));
         }
     }
 
@@ -326,6 +342,14 @@ GameObject *Resources::LoadGameObject(const std::string &path) {
     return gameObject;
 }
 
+Mesh *Resources::FindMesh(const std::string &name) {
+    auto it = s_meshList.find(name);
+    if (it == s_meshList.end()) {
+        return nullptr;
+    }
+    return &(*(*it).second);
+}
+
 /***************** Texture Process ****************/
 void Resources::SetupTexture(grr::gTexture *texture, int width, int height, int ch, void *pixels, std::string path) {
     s_textureList.emplace(path, std::unique_ptr<grr::gTexture>(texture));
@@ -348,11 +372,11 @@ void Resources::SetupTexture(grr::gTexture *texture, int width, int height, int 
         break;
     }
 
-    grr::gTexture::PushTexture(texture, width, height, grr::gTextureFlags_MipMaps, format, pixels);
+    grr::gTexture::UpdateTexture(texture, width, height, grr::gTextureFlags_MipMaps, format, pixels);
 
     stbi_image_free(pixels);
 
-    Console::Print(LogInfo::INFO, "Texture loaded: " + path);
+    Console::log(LogInfo::INFO, "Texture loaded: " + path);
 }
 
 void Resources::ProcessTexture() {
@@ -364,7 +388,7 @@ void Resources::ProcessTexture() {
         int width, height, ch;
         auto pixels = stbi_load(path.c_str(), &width, &height, &ch, 0);
         if (!pixels) {
-            Console::Print(LogInfo::ERROR, "Failed to load texture: " + path);
+            Console::log(LogInfo::ERROR, "Failed to load texture: " + path);
 
             delete texture;
 
@@ -381,13 +405,15 @@ void Resources::ProcessTexture() {
 }
 
 /***************** Shader Process ****************/
-void Resources::SetupShader(grr::gShader *shader, const std::string &frag, const std::string &vert) {
-    Console::Print(LogInfo::INFO, "Shader loadedd sucessfull.");
+void Resources::SetupShader(grr::gShader *shader, const std::string &frag, const std::string &vert, std::string path) {
+    Console::log(LogInfo::INFO, "Shader loadedd sucessfull.");
 
     const char *fShader = frag.c_str();
     const char *vShader = vert.c_str();
 
     grr::gShader::Create(shader, &fShader, &vShader);
+
+    s_shaderList.emplace(path, std::unique_ptr<grr::gShader>(shader));
 }
 
 void Resources::ProcessShader() {
@@ -402,11 +428,11 @@ void Resources::ProcessShader() {
         std::string vert = path + ".vert";
 
         // Loading Fragment shader
-        Console::Print(LogInfo::WARNING, "Loading FragmentShader: " + frag + " - " + vert);
+        Console::log(LogInfo::WARNING, "Loading FragmentShader: " + frag + " - " + vert);
 
         auto fragSource = Filesystem::GetFileContent(frag);
         if (fragSource.empty()) {
-            Console::Print(LogInfo::ERROR, "Falied to load: " + frag);
+            Console::log(LogInfo::ERROR, "Falied to load: " + frag);
             delete shader;
 
             lock.lock();
@@ -416,10 +442,10 @@ void Resources::ProcessShader() {
 
         // Loading vertex shader
 
-        Console::Print(LogInfo::WARNING, "Loading VertexShader: " + vert);
+        Console::log(LogInfo::WARNING, "Loading VertexShader: " + vert);
         auto vertSource = Filesystem::GetFileContent(vert);
         if (vertSource.empty()) {
-            Console::Print(LogInfo::ERROR, "Falied to load: " + vert);
+            Console::log(LogInfo::ERROR, "Falied to load: " + vert);
             delete shader;
 
             lock.lock();
@@ -427,14 +453,22 @@ void Resources::ProcessShader() {
             continue;
         }
 
-        // Setup Shader
-        s_shaderList.emplace(path, std::unique_ptr<grr::gShader>(shader));
-
-        EventManager::AddEvent(Resources::SetupShader, shader, fragSource, vertSource);
+        EventManager::AddEvent(Resources::SetupShader, shader, fragSource, vertSource, path);
 
         lock.lock();
         s_shaderFromLoader.pop_front();
     }
+}
+
+void Resources::DeleteMesh(Mesh *target) {
+    if (!target) {
+        return;
+    }
+    auto it = s_meshList.find(target->getName());
+    if (it == s_meshList.end()) {
+        return;
+    }
+    s_meshList.erase(it);
 }
 
 void Resources::OnThread() {
@@ -449,4 +483,8 @@ const grm::size Resources::GetTextureCount() {
 
 const grm::size Resources::GetShaderCount() {
     return s_shaderList.size();
+}
+
+const grm::size Resources::GetMeshCount() {
+    return s_meshList.size();
 }

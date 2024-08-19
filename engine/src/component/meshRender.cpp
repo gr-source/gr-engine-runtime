@@ -26,7 +26,10 @@ void MeshRender::build() {
     auto& meshFilter = entity->getComponent<MeshFilter>();
     meshFilter.processBoundbox();
 
-    auto& mesh = meshFilter.getMesh();
+    auto mesh = meshFilter.getMesh();
+    if (!mesh) {
+        throw std::runtime_error("Invalid mesh: ");
+    }
 
     if (!m_vertexArray) {
         m_vertexArray = grr::gVertexArray::Create();
@@ -36,21 +39,21 @@ void MeshRender::build() {
         m_idxVBO = grr::gVertexArray::CreateBuffer(grr::BufferType_VBO);
     }
     
-    if (!m_idxEBO && mesh.hasIndices()) {
+    if (!m_idxEBO && mesh->hasIndices()) {
         isIndice = true;
         m_idxEBO = grr::gVertexArray::CreateBuffer(grr::BufferType_EBO);
     }
 
-    auto vertexCount = mesh.getVertices().size();
-    auto vertexData = mesh.getVertices().data();
+    auto vertexCount = mesh->getVertices().size();
+    auto vertexData = mesh->getVertices().data();
 
     m_count = vertexCount;
 
     m_vertexArray->bind();
 
     if (isIndice) {
-        auto indiceCount = mesh.getIndices().size();
-        auto indiceData = mesh.getIndices().data();
+        auto indiceCount = mesh->getIndices().size();
+        auto indiceData = mesh->getIndices().data();
 
         m_count = indiceCount;
 
@@ -61,7 +64,7 @@ void MeshRender::build() {
 
     grr::gVertexArray::Bind(m_idxVBO);
     if (entity->hasComponent<Animator>()) {
-        auto& boneweight = mesh.getBoneWeight();
+        auto& boneweight = mesh->getBoneWeight();
 
         grr::gVertexArray::UpdateResize(vertexCount * sizeof(Vertex3D) + boneweight.size() * sizeof(BoneWeight));
         grr::gVertexArray::SetBufferUpdate(0, vertexCount * sizeof(Vertex3D), vertexData);

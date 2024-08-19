@@ -19,16 +19,13 @@ struct LogInfo {
 
 class Console {
 public:
-    static void Print(LogInfo::LogType type, const std::string &msg);
-
-    template <typename T, typename ...Args>
-    static void log(LogInfo::LogType type, T params, Args &&... args);
-
-    static void log(LogInfo::LogType type);
+    static void log(LogInfo::LogType type, const std::string &msg);
 
     static std::list<LogInfo> GetListLogs();
 
     static bool bChanged;
+
+    static std::ostream print;
     
 private:
     static std::list<LogInfo> s_logs;
@@ -36,12 +33,5 @@ private:
     static std::mutex m_mutex;
 
     static int s_maxLog;
-
-    static std::ostringstream oss;
 };
 
-template <typename T, typename... Args>
-inline void Console::log(LogInfo::LogType type, T params, Args &&...args) {
-    oss << params << " ";
-    log(type, std::forward<Args>(args)...);
-}

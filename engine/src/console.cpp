@@ -8,9 +8,7 @@ int Console::s_maxLog = 500;
 
 std::mutex Console::m_mutex;
 
-std::ostringstream Console::oss;
-
-void Console::Print(LogInfo::LogType type, const std::string &msg) {
+void Console::log(LogInfo::LogType type, const std::string &msg) {
     std::lock_guard<std::mutex> lock(m_mutex);
     s_logs.push_back({type, msg});
 
@@ -18,13 +16,6 @@ void Console::Print(LogInfo::LogType type, const std::string &msg) {
         s_logs.pop_front();
     }
     Console::bChanged = true;
-}
-
-void Console::log(LogInfo::LogType type) {
-    oss << std::endl;
-
-    Console::Print(type, oss.str());
-    oss.clear();
 }
 
 std::list<LogInfo> Console::GetListLogs() {

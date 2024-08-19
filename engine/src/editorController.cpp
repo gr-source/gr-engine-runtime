@@ -52,7 +52,7 @@ void EditorController::Update() {
         diretion.y -= 1.0f;
     }
 
-    if (diretion != Vector3::zero) {
+    if (Math::magnitude(diretion) > 0.0f) {
         transform->addLocalPosition(Math::normalize(diretion) * movementSpeed * Time::deltaTime);
     }
 
@@ -62,7 +62,7 @@ void EditorController::Update() {
 void EditorController::updateCursor() {
     const Vector2 delta = Input::GetCursorPos() - lastMousePos;
 
-    // if (Math::magnitude(delta) > 1.0f)
+    if (Math::magnitude(delta) > 0.005f)
         ProcessMouse(delta);
 
     auto center = Settings::ViewportSize / 2;

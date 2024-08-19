@@ -1,5 +1,6 @@
 #pragma once
 
+/*
 #include "framebuffer/skyboxbuffer.h"
 
 #include "common.h"
@@ -56,3 +57,4 @@ private:
 
     void GenerateMap(std::function<void(u32)> func, Texture* texture);
 };
+*/

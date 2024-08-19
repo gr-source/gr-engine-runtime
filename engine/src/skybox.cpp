@@ -1,5 +1,6 @@
 #include "skybox.h"
 
+/*
 #include "timer.h"
 
 #include "resources/resources.h"
@@ -67,7 +68,6 @@ void Skybox::render() {
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
-    */
 }
 
 Cubemap *Skybox::getIrradiance() {
@@ -164,7 +164,6 @@ void Skybox::setupIrradiance(Shader *shader) {
 }
 
 void Skybox::GenerateMap(std::function<void(u32)> func, Texture* texture) {
-    /*
     m_skyboxShader->bind();
 
     texture->bind();
@@ -186,5 +185,5 @@ void Skybox::GenerateMap(std::function<void(u32)> func, Texture* texture) {
     }
     m_skyboxbuffer->unbind();
     texture->unbind();
-    */
 }
+*/

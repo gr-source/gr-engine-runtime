@@ -122,7 +122,7 @@ int OnApplicationInit() {
 
     glfwSetWindowPos(window, 0, 0);
 
-    if (glewInit() != GLEW_OK) {
+    if (!grr::gRender::Initialize()) {
         OnDestroy();
         return printf("GLEW do not created");
     }

@@ -10,9 +10,6 @@
 
 #include "ui/ImGuiRender.h"
 
-#include "framebuffer/skyboxbuffer.h"
-#include "framebuffer/shadowbuffer.h"
-
 #include "resources/resources.h"
 
 #include "physics/physicsScene.h"
@@ -112,7 +109,7 @@ void Engine::OnInit() {
     pScreenRender = std::make_unique<ScreenRender>();
 
     // Shadow provavelmente vou remove-lo
-    m_shadowbuffer = &Shadowbuffer::getInstance();
+    // m_shadowbuffer = &Shadowbuffer::getInstance();
 
     // Skybox provavelmente vou remove-lo
     // m_skybox = &Skybox::getInstance();

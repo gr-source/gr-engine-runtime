@@ -29,7 +29,19 @@ private:
 
     Animation *m_animation;
 
+    Animation *m_nextAnimation;
+
     float m_currentTime;
+
+    void blendAnimation(Animation *after, Animation * befor, float blendFactor);
+
+    void CalculateBlendedBoneTransform(
+        Transform *transform,
+    Animation* pAnimationBase,
+    Animation* pAnimationLayer,
+    const float currentTimeBase, const float currentTimeLayered,
+    const Matrix4x4& parentTransform,
+    const float blendFactor);
 
     void hierarchy(Transform *transform, const Matrix4x4 &parentTransform);
 

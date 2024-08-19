@@ -35,7 +35,7 @@ const bool Filmbox::isValid() const {
 
 void Filmbox::doInBackground(const std::string &path) {
     if (!Filesystem::Exists(path)) {
-        return Console::Print(LogInfo::ERROR, "falied to opennable .fbx: " + path);
+        return Console::log(LogInfo::ERROR, "falied to opennable .fbx: " + path);
     }
     Assimp::Importer importer;
 
@@ -58,21 +58,21 @@ void Filmbox::doInBackground(const std::string &path) {
 
 void Filmbox::sceneLoader(const aiScene *scene) {
     if (scene->HasMaterials()) {
-        Console::Print(LogInfo::WARNING, "Loading material...");
+        Console::log(LogInfo::WARNING, "Loading material...");
         loadMaterial(scene);
     }
 
     if (scene->HasMeshes()) {
-        Console::Print(LogInfo::WARNING, "Loading Mesh...");
+        Console::log(LogInfo::WARNING, "Loading Mesh...");
         loadMesh(scene);
     }
 
     if (scene->HasAnimations()) {
-        Console::Print(LogInfo::WARNING, "Loading Animations...");
+        Console::log(LogInfo::WARNING, "Loading Animations...");
         loadAnimation(scene);
     }
 
-    Console::Print(LogInfo::WARNING, "Loading Node...");
+    Console::log(LogInfo::WARNING, "Loading Node...");
 
     auto mRootNode = scene->mRootNode;
     auto& fRootNode = m_fbxScene->m_rootNode;

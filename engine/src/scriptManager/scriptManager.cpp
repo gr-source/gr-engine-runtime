@@ -69,24 +69,24 @@ std::unique_ptr<Animation> (*ScriptManager::LoadAnimation)(const std::string &);
 void (*ScriptManager::SetScreenSize)(const iVector2 &);
 
 void ScriptManager::Initialzie() {
-    Console::Print(LogInfo::INFO, "Loading script...");
+    Console::log(LogInfo::INFO, "Loading script...");
 
     s_handle = dlopen("/home/grsource/Documentos/AppProjects/gr-component/lib/libgr-component.so", RTLD_LAZY);
     if (!s_handle) {
-        Console::Print(LogInfo::ERROR, "Falied to load Script.");
+        Console::log(LogInfo::ERROR, "Falied to load Script.");
         return;
     }
 
     RegisterApi();
 
     if (Initialize) {
-        Console::Print(LogInfo::INFO, "Script initialized.");
+        Console::log(LogInfo::INFO, "Script initialized.");
         Initialize();
     }
 }
 
 void ScriptManager::Shutdown() {
-    Console::Print(LogInfo::INFO, "Script destoyed.");
+    Console::log(LogInfo::INFO, "Script destoyed.");
 
     if (Destroy) {
         Destroy();
@@ -137,7 +137,7 @@ void ScriptManager::Shutdown() {
 
 void ScriptManager::RegisterApi() {
     // Functions
-    REGISTER_FUNC("ConsolePrint", Console::Print);
+    REGISTER_FUNC("Consolelog", Console::log);
 
     // [ Main ]
     REGISTER_API(void, void, Initialize);
