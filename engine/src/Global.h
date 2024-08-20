@@ -26,8 +26,6 @@
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
 
-#include "log.h"
-
 #include "core/exception/Exception.h"
 
 #include "types.h"
@@ -79,9 +77,6 @@ class Scene;
 /* pasta: src/engine/core/wavefront*/
 class Wavefront;
 class Object;
-
-class FbxScene;
-class FbxNode;
 
 /* Framebuffer */
 class Renderbuffer;

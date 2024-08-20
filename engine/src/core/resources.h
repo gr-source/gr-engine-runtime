@@ -14,7 +14,10 @@
 
 #include <gr-render/gRender.h>
 
+#include "core/animation/animation.hpp"
 #include "../geometry/mesh.h"
+
+class FbxAnimation;
 
 class Resources {
 public:
@@ -25,6 +28,8 @@ public:
     static grr::gShader *LoadShader(const std::string &path);
 
     static GameObject *LoadGameObject(const std::string &path);
+
+    static Animation *LoadAnimation(const std::string &path);
 
     static void AddShaderLoaded(std::function<bool(grr::gShader *, const std::string &)> func);
 
@@ -58,6 +63,11 @@ private:
     static std::list<std::tuple<std::string, grr::gTexture *>> s_textureFromLoader;
     static std::mutex s_textureMutex;
 
+    /***************** Animation *****************/
+    static std::unordered_map<std::string, std::unique_ptr<Animation>> s_animationList;
+    static std::list<std::tuple<std::string, Animation *>> s_animationFromLoader;
+    static std::mutex s_animatioMutex;
+
     /***************** Mesh *****************/
     static std::unordered_map<std::string, std::unique_ptr<Mesh>> s_meshList;
 
@@ -68,6 +78,12 @@ private:
     static void SetupShader(grr::gShader *shader, const std::string &frag, const std::string &vert, std::string path);
 
     static void ProcessShader();
+
+    static void SetupAnimation(const std::string &path, FbxAnimation *temp, Animation *target);
+
+    static void doAnimationInBackground(const std::string &path, Animation *target);
+
+    static void ProcessAnimation();
 };
 
 template <typename... Args>

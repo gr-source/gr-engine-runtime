@@ -98,7 +98,6 @@ set(engine_src
     ${simplexNoise_src}
     ${scriptManager_cpp}
     
-    src/log.cpp
     src/Game.cpp
     src/input.cpp
     src/timer.cpp
@@ -149,7 +148,6 @@ set(engine_hdr
     ${animation_hdr}
     ${scriptManager_hdr}
 
-    src/log.h
     src/timer.h
     src/Game.h
     src/input.h

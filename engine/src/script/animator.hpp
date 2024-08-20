@@ -13,7 +13,7 @@ public:
     
     void UpdateAnim();
 
-    void insert(std::unique_ptr<Animation> animation);
+    void insert(Animation *animation);
 
     std::vector<Matrix4x4> m_finalBoneMatrices;
 
@@ -23,22 +23,24 @@ public:
 private:
     GameObject *m_armature;
 
-    std::vector<Bone> m_bones;
+    std::unordered_map<std::string, Bone> m_bones;
 
-    std::vector<std::unique_ptr<Animation>> m_animations;
+    std::unordered_map<std::string, Animation *> m_animations;
 
     Animation *m_animation;
 
     Animation *m_nextAnimation;
 
     float m_currentTime;
+    
+    float m_currentNextTime;
 
-    void blendAnimation(Animation *after, Animation * befor, float blendFactor);
+    bool m_waitForEnd;
+
+    void blendAnimation(Transform *skeleton, float blendFactor);
 
     void CalculateBlendedBoneTransform(
         Transform *transform,
-    Animation* pAnimationBase,
-    Animation* pAnimationLayer,
     const float currentTimeBase, const float currentTimeLayered,
     const Matrix4x4& parentTransform,
     const float blendFactor);
@@ -50,9 +52,11 @@ private:
     friend class Game;
 };
 
-template <typename... Args>
+template <typename ...Args>
 inline Bone &Animator::addBone(Args &&...args) {
-    return m_bones.emplace_back(std::forward<Args>(args)...);
+    auto &&[it, added] = m_bones.emplace(std::forward<Args>(args)...);
+
+    return (*it).second;
 }
 
 

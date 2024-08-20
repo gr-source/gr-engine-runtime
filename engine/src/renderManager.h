@@ -1,17 +1,16 @@
 #pragma once
 
-#include "common.h"
-
 #include "culling/frustum.h"
 
 #include <gr-render/gRender.h>
-#include <gr-render/gShader.h>
 
 #include "geometry/material.h"
 
+#include "default.hpp"
+#include "common.h"
+
 class RenderManager {
 public:
-    
     static void Initialize();
 
     static void Process();
@@ -31,9 +30,11 @@ public:
 
     static grr::gShader *m_shader;
 
+    static Camera *m_camera;
+
     static Frustum s_frustum;
 
-    static void Filter(GameObject *gameObject, MeshRender *meshRender);
+    static void Filter(GameObject *gameObject);
     
     static void SetupLight();
 

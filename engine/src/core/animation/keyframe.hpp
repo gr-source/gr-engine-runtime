@@ -30,7 +30,16 @@ public:
 
     const Vector3 getInterpolatePosition(float time) const;
 
-    const float getScaleFactor(float last, float next, float time) const;
+    float getScaleFactor(float last, float next, float time) const;
+
+    template <typename ...Args>
+    Key<Vector3> &addKeyPosition(Args &&...args);
+
+    template <typename ...Args>
+    Key<Vector3> &addKeyScale(Args &&...args);
+
+    template <typename ...Args>
+    Key<Quaternion> &addKeyRotation(Args &&...args);
 
 private:
     std::string m_name;
@@ -53,3 +62,24 @@ inline const grm::u32 Keyframe::getIndexFromTime(float time, const std::vector<K
     }
     return 0;
 }
+
+template <typename... Args>
+inline Key<Vector3> &Keyframe::addKeyPosition(Args &&...args) {
+    return m_keyPosition.emplace_back(std::forward<Args>(args)...);
+}
+
+template <typename... Args>
+inline Key<Vector3> &Keyframe::addKeyScale(Args &&...args) {
+    return m_keyScale.emplace_back(std::forward<Args>(args)...);
+}
+
+template <typename... Args>
+inline Key<Quaternion> &Keyframe::addKeyRotation(Args &&...args) {
+    return m_keyRotation.emplace_back(std::forward<Args>(args)...);
+}
+
+
+
+
+
+

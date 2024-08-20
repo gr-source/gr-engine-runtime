@@ -4,8 +4,35 @@
 
 #include "../geometry/mesh.h"
 
+std::vector<GameObject *> MeshRender::s_objects;
+
+MeshRender::MeshRender() : m_vertexArray(nullptr), m_idxVBO(0), m_idxEBO(0), m_count(0), isIndice(false) {}
+
+MeshRender::~MeshRender() {
+    if (m_vertexArray) {
+        m_vertexArray->destroy();
+    }
+
+    if (m_idxEBO) {
+        grr::gVertexArray::DeleteBuffer(m_idxEBO);
+    }
+
+    if (m_idxVBO) {
+        grr::gVertexArray::DeleteBuffer(m_idxVBO);
+    }
+
+    auto it = std::find(s_objects.begin(), s_objects.end(), entity->getGameObject());
+    if (it != s_objects.end()) {
+        s_objects.erase(it);
+    }
+}
+
 std::unordered_map<int, Material> &MeshRender::getMaterials() {
     return m_materials;
+}
+
+void MeshRender::Init() {
+    s_objects.push_back(entity->getGameObject());
 }
 
 void MeshRender::draw() {

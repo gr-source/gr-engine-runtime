@@ -5,32 +5,55 @@
 #include "../renderer.h"
 #include "../timer.h"
 
-Animator::Animator() : m_armature(nullptr), m_animation(nullptr), m_nextAnimation(nullptr),  m_currentTime(0.0f), m_finalBoneMatrices(100, Matrix4x4::identityMatrix) {}
+Animator::Animator() : m_armature(nullptr), m_animation(nullptr), m_nextAnimation(nullptr),  m_currentTime(0.0f), m_currentNextTime(0.0f), m_finalBoneMatrices(100, Matrix4x4::identityMatrix) {}
 
 void Animator::UpdateAnim() {
     if (!m_armature) {
         return;
     }
 
-    if (!m_animation && !m_animations.empty()) {
-        m_animation = m_animations[0].get();
+    auto &parent = m_armature->getTransform();
+
+    /*
+    if (m_animation != nullptr && m_nextAnimation != nullptr) {
+        return blendAnimation(&parent, 0.5f);
+    }
+    */
+
+    if (m_animation == nullptr && m_nextAnimation != nullptr) {
+        m_animation = m_nextAnimation;
+        m_nextAnimation = nullptr;
     }
 
-    if (!m_animation || !m_nextAnimation) {
+    if (m_animation == nullptr) {
         return;
     }
 
-    // m_currentTime = std::fmod(m_currentTime, m_animation->getDuration());
+    m_currentTime += m_animation->getTick() * Time::deltaTime;
 
-    // auto &parent = m_armature->getTransform();
-    blendAnimation(m_animation, m_nextAnimation, 0.8f);
-    // hierarchy(&parent, Matrix4x4::identityMatrix);
+    if (m_currentTime >= m_animation->getDuration()) {
+        // if (m_nextAnimation) {
+        //     m_animation = m_nextAnimation;
+        //     m_nextAnimation = nullptr;
+        // } else {
+            m_animation = nullptr;
+        // }
 
-    // m_currentTime += m_animation->getTick() * Time::deltaTime;
+        m_currentTime = 0;
+    }
+
+    if (m_animation)
+        hierarchy(&parent, Matrix4x4::identityMatrix);
 }
 
-void Animator::insert(std::unique_ptr<Animation> animation) {
-    m_animations.push_back(std::move(animation));
+void Animator::insert(Animation *animation) {
+    if (!animation) {
+        return;
+    }
+
+    if (m_animations.find(animation->getName()) == m_animations.end()) {
+        m_animations.emplace(animation->getName(), animation);
+    }
 }
 
 Quaternion getRotationFromMatrix(const Matrix4x4 &m) {
@@ -44,8 +67,6 @@ Quaternion getRotationFromMatrix(const Matrix4x4 &m) {
 
 void Animator::CalculateBlendedBoneTransform(
     Transform *transform,
-    Animation* after,
-    Animation* befor,
     const float currentTimeBase, const float currentTimeLayered,
     const Matrix4x4& parentTransform,
     const float blendFactor) {
@@ -57,8 +78,8 @@ void Animator::CalculateBlendedBoneTransform(
         const std::string& name = gameObject->getName();
 
         auto bone = findBone(name);
-        auto afterKeyframe = after->findKeyframe(name);
-        auto beforKeyframe = befor->findKeyframe(name);
+        auto afterKeyframe = m_animation->findKeyframe(name);
+        auto beforKeyframe = m_nextAnimation->findKeyframe(name);
 
         if (bone && afterKeyframe && beforKeyframe) {
             Matrix4x4 offset = bone->getLocalMatrix();
@@ -79,40 +100,30 @@ void Animator::CalculateBlendedBoneTransform(
             blendedMat.m32 = (1.0f - blendFactor) * nodeTransform.m32 + layeredNodeTransform.m32 * blendFactor;
             blendedMat.m33 = (1.0f - blendFactor) * nodeTransform.m33 + layeredNodeTransform.m33 * blendFactor;
 
-            // glm::mat4 globalTransformation = parentTransform * blendedMat;
-
             result *= blendedMat;
-
-
-            // result *= keyframe->getLocalMatrix(m_currentTime);
 
             m_finalBoneMatrices[bone->getBoneIndex()] = result * offset;
         }
 
         for (const auto &child : transform->getChildren()) {
-        CalculateBlendedBoneTransform(child, after, befor, currentTimeBase, currentTimeLayered, result, blendFactor);
-
-            // hierarchy(child, result);
+            CalculateBlendedBoneTransform(child, currentTimeBase, currentTimeLayered, result, blendFactor);
         }
 }
 
-void Animator::blendAnimation(Animation *after, Animation *befor, float blendFactor) {
-    auto diff = after->getDuration() / befor->getDuration();
-    auto animSpeedMultiplierUp = (1.0f - blendFactor) * 1.0f + diff * blendFactor;
+void Animator::blendAnimation(Transform *skeleton, float blendFactor) {
+    auto diff = m_animation->getDuration() / m_nextAnimation->getDuration();
+    auto animSpeedMultiplierUp = Math::lerp(1.0f, diff, blendFactor);
 
-    diff = befor->getDuration() / after->getDuration();
-    auto animSpeedMultiplierDown = (1.0f - blendFactor) * diff + 1.0f * blendFactor;
+    diff = m_nextAnimation->getDuration() / m_animation->getDuration();
+    auto animSpeedMultiplierDown = Math::lerp(1.0f, diff, blendFactor);
 
-    static float currentTimeBase = 0.0f;
-    currentTimeBase += after->getTick() * Time::deltaTime * animSpeedMultiplierUp;
-    currentTimeBase = fmod(currentTimeBase, after->getDuration());
+    m_currentTime += m_animation->getTick() * Time::deltaTime * animSpeedMultiplierUp;
+    m_currentTime = std::fmod(m_currentTime, m_animation->getDuration());
 
-    static float currentTimeLayered = 0.0f;
-    currentTimeLayered += befor->getTick() * Time::deltaTime * animSpeedMultiplierDown;
-    currentTimeLayered = fmod(currentTimeLayered, befor->getDuration());
+    m_currentNextTime += m_nextAnimation->getTick() * Time::deltaTime * animSpeedMultiplierDown;
+    m_currentNextTime = std::fmod(m_currentNextTime, m_nextAnimation->getDuration());
 
-    auto &parent = m_armature->getTransform();
-    CalculateBlendedBoneTransform(&parent, after, befor, currentTimeBase, currentTimeLayered, Matrix4x4::identityMatrix, blendFactor);
+    CalculateBlendedBoneTransform(skeleton, m_currentTime, m_currentNextTime, Matrix4x4::identityMatrix, blendFactor);
 }
 
 void Animator::hierarchy(Transform *transform, const Matrix4x4 &parentTransform) {
@@ -143,14 +154,63 @@ void Animator::hierarchy(Transform *transform, const Matrix4x4 &parentTransform)
 }
 
 Bone *Animator::findBone(const std::string &name) {
-    auto it = std::find_if(m_bones.begin(), m_bones.end(), [&name](const auto& bone) {
-        return bone.getName() == name;
-    });
+    auto it = m_bones.find(name);
     if (it != m_bones.end()) {
-        return &(*it);
+        return &(*it).second;
     }
     return nullptr;
 }
 
 
 
+/*
+    * Stop play animation of do not existis next animation:
+    m_currentTime += m_animation->getTick() * Time::deltaTime;
+
+    if (m_currentTime >= m_animation->getDuration()) {
+        if (m_nextAnimation) {
+            m_animation = m_nextAnimation;
+            m_nextAnimation = nullptr;
+        } else {
+            m_animation = nullptr;
+        }
+
+        m_currentTime = 0;
+    }
+
+    if (m_animation)
+        hierarchy(&parent, Matrix4x4::identityMatrix);
+        
+    * Playing next animation from waiting for end m_animation time
+
+    m_currentTime += m_animation->getTick() * Time::deltaTime;
+
+    if (m_currentTime >= m_animation->getDuration()) {
+        if (m_nextAnimation) {
+            m_animation = m_nextAnimation;
+            m_nextAnimation = nullptr;
+        }
+
+        m_currentTime = 0;
+    }
+
+    if (m_animation)
+        hierarchy(&parent, Matrix4x4::identityMatrix);
+
+    * Playing of stop end animation
+
+    if (m_animation == nullptr) {
+        return;
+    }
+
+    m_currentTime += m_animation->getTick() * Time::deltaTime;
+
+    if (m_currentTime >= m_animation->getDuration()) {
+        m_animation = nullptr;
+        m_currentTime = 0;
+    }
+
+    if (m_animation)
+        hierarchy(&parent, Matrix4x4::identityMatrix);
+}
+*/

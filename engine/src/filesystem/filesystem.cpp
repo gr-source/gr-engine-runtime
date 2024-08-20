@@ -1,8 +1,7 @@
 #include "filesystem.h"
 
-#include "../log.h"
-
 #include <filesystem>
+#include <fstream>
 
 const std::string Filesystem::GetFileContent(const std::string &path) {
     std::ifstream is(path);

@@ -126,6 +126,7 @@ void ScriptManager::Shutdown() {
 
     // GameObject
     UNREGISTER_API(GameObject::Create);
+    UNREGISTER_API(GameObject::Find);
     
     if (!s_handle) {
         return;
@@ -196,4 +197,7 @@ void ScriptManager::RegisterApi() {
 
     // gameobject
     REGISTER_API_FROM_NAME_N("GameObjectCreate", GameObject &, GameObject::Create, const std::string &, const std::string &);
+    REGISTER_API_FROM_NAME_N("GameObjectFind", GameObject *, GameObject::Find, const std::string &);
 }
+
+

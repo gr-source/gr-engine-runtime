@@ -1255,7 +1255,7 @@ void Game::OnPropertyTransform(Transform* transform) {
 }
 
 void Game::OnPropertyAnimator(Animator *animator) {
-    auto &m_current = animator->m_animation;
+    auto &m_current = !animator->m_animation ? animator->m_animation : animator->m_nextAnimation;
 
     if (ImGui::TreeNode("Animator")) {
         auto &armature = animator->m_armature;
@@ -1282,7 +1282,7 @@ void Game::OnPropertyAnimator(Animator *animator) {
 
         auto isOpen = ImGui::TreeNode("Animations");
 
-        if (ImGui::BeginDragDropTarget() && ScriptManager::LoadAnimation) {
+        if (ImGui::BeginDragDropTarget()) {
             ImGuiDragDropFlags target_flags = 0;
             // target_flags |= ImGuiDragDropFlags_AcceptBeforeDelivery;
             // target_flags |= ImGuiDragDropFlags_SourceAllowNullID;
@@ -1290,7 +1290,7 @@ void Game::OnPropertyAnimator(Animator *animator) {
             if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(IMGUI_PAYLOAD_FILE, target_flags)) {
                 std::string path((char*)payload->Data, payload->DataSize);
                 if (!path.empty() && std::filesystem::path(path).filename().extension() == ".anm") {
-                    animator->insert(ScriptManager::LoadAnimation(path));
+                    animator->insert(Resources::LoadAnimation(path));
                 }
             }
             ImGui::EndDragDropTarget();
@@ -1298,15 +1298,11 @@ void Game::OnPropertyAnimator(Animator *animator) {
 
         if (isOpen) {
             auto &animations = animator->m_animations;
-            for (int i=0;i<animations.size();++i) {
-                auto &anim = animations[i];
-
-                auto name = anim->getName();
-
-                ImGui::Selectable(name.c_str(), m_current == anim.get());
+            for (auto &&[name, animation] : animations) {
+                ImGui::Selectable(name.c_str(), m_current == animation);
                 if (ImGui::IsItemClicked()) {
-                    m_current = anim.get();
-                }   
+                    m_current = animation;
+                }
             }
             ImGui::TreePop();
         }

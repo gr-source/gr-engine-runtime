@@ -53,6 +53,8 @@ private:
     std::unordered_map<std::string, std::shared_ptr<Component>> components;
 
     GameObject *gameObject;
+
+    grm::u32 m_entityID;
 };
 
 template <typename T, typename... Args>

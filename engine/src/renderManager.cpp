@@ -31,6 +31,8 @@ int RenderManager::iDrawCount = 0;
 
 int RenderManager::iDrawRender = 0;
 
+Camera *RenderManager::m_camera = nullptr;
+
 void RenderManager::Initialize() {
     if (!ScriptManager::GetShader) {
         return;
@@ -105,11 +107,11 @@ void RenderManager::Process() {
         return;
     }
 
-    auto camera = Camera::Current();
+    m_camera = Camera::Current();
 
-    s_frustum.CalculateFrustum(camera->getPerspesctive() * camera->getViewmatrix());
+    s_frustum.CalculateFrustum(m_camera->getPerspesctive() * m_camera->getViewmatrix());
 
-    Ecs::for_each<MeshRender>(&RenderManager::Filter);
+    std::for_each(MeshRender::s_objects.begin(), MeshRender::s_objects.end(), &RenderManager::Filter);
 
     iDrawRender = s_objects.size();
 }
@@ -119,13 +121,11 @@ void RenderManager::Renderer() {
         return;
     }
 
-    auto camera = Camera::Current();
-
     m_shader->bind();
 
-    grr::gShader::SetUniform("u_projection", 1, camera->getPerspesctive());
-    grr::gShader::SetUniform("u_view", 1, camera->getViewmatrix());
-    grr::gShader::SetUniform("m_eye", 1, camera->getPosition());
+    grr::gShader::SetUniform("u_projection", 1, m_camera->getPerspesctive());
+    grr::gShader::SetUniform("u_view", 1, m_camera->getViewmatrix());
+    grr::gShader::SetUniform("m_eye", 1, m_camera->getPosition());
 
     SetupLight();
 
@@ -175,7 +175,7 @@ void RenderManager::Shutdown() {
     m_shader = nullptr;
 }
 
-void RenderManager::Filter(GameObject *gameObject, MeshRender *meshRender) {
+void RenderManager::Filter(GameObject *gameObject) {
     auto& transform = gameObject->getTransform();
 
     auto& meshFilter = gameObject->getComponent<MeshFilter>();

@@ -1,6 +1,6 @@
 #include "keyframe.hpp"
 
-Keyframe::Keyframe(const std::string & name) : m_name(name) {}
+Keyframe::Keyframe(const std::string &name) : m_name(name) {}
 
 const std::string &Keyframe::getName() const {
     return m_name;
@@ -51,7 +51,7 @@ const Vector3 Keyframe::getInterpolatePosition(float time) const {
     return finalPosition;
 }
 
-const float Keyframe::getScaleFactor(float last, float next, float time) const {
+float Keyframe::getScaleFactor(float last, float next, float time) const {
     if (next == last)
         return 0.0f;
     return ((time - last) / (next - last));

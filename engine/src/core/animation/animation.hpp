@@ -2,20 +2,28 @@
 
 #include "keyframe.hpp"
 
+#include <unordered_map>
+
 class Animation {
 public:
-    Animation(const std::string &name, float duration, float tick);
+    Animation(const std::string &name = "default", float duration = 0.0f, float tick = 0.0f);
 
-    const std::string &getName() const;
+    void setName(const std::string &name);
 
-    const float getDuration() const;
+    std::string getName() const;
 
-    const float getTick() const;
+    void setDuration(float duration);
+
+    float getDuration() const;
+
+    void setTick(float tick);
+
+    float getTick() const;
+
+    Keyframe *findKeyframe(const std::string &name);
 
     template <typename ...Args>
     Keyframe &addkeyframe(Args &&... args);
-
-    Keyframe *findKeyframe(const std::string &name);
     
 private:
     std::string m_name;
@@ -24,10 +32,14 @@ private:
 
     float m_tick;
 
-    std::vector<Keyframe> m_keyframes;
+    std::unordered_map<std::string, Keyframe> m_keyframes;
 };
 
-template <typename... Args>
+template <typename ...Args>
 inline Keyframe &Animation::addkeyframe(Args &&...args) {
-    return m_keyframes.emplace_back(std::forward<Args>(args)...);
+    auto &&[it, added] = m_keyframes.emplace(std::forward<Args>(args)...);
+
+    return (*it).second;
 }
+
+

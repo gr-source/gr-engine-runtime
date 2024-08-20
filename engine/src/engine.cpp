@@ -244,9 +244,8 @@ void Engine::HandleEvent(EngineEvent event, const void* data) {
     }
     case GR_MAINLOOP: {
         auto func = *static_cast<const std::function<void()>*>(data);
-        if (!func) {
-            throw std::runtime_error(Log::red + "Faliure initiaçize function loop." + Log::none);
-        }
+        assert(func);
+        
         MainLoop(func);
         break;
     }

@@ -7,8 +7,14 @@
 #include <gr-render/gVertexArray.h>
 #include <gr-render/gRender.h>
 
+
 class MeshRender : public Component {
 public:
+    MeshRender();
+    ~MeshRender();
+
+    void Init() override;
+
     std::unordered_map<int, Material> &getMaterials();
 
     void draw();
@@ -16,6 +22,8 @@ public:
     Material &addMaterial(int idx, const Material& material);
 
     void build();
+
+    static std::vector<GameObject *> s_objects;
     
 private:
     std::unordered_map<int, Material> m_materials;

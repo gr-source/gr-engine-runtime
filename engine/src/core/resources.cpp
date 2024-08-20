@@ -3,11 +3,13 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "../core/stb/stb_image.h"
 
-#include "../filesystem/filesystem.h"
+#include "filesystem/filesystem.h"
+#include "filesystem/stream.h"
 
-#include "../core/binary/gHeader.hpp"
+#include "core/animation/animation.hpp"
+#include "core/binary/gHeader.hpp"
 
-#include "../core/scene.hpp"
+#include "core/scene.hpp"
 
 #include "../ecs/gameObject.h"
 
@@ -37,6 +39,11 @@ std::vector<std::function<bool(grr::gShader *, const std::string &)>> Resources:
 std::unordered_map<std::string, std::unique_ptr<grr::gTexture>> Resources::s_textureList;
 std::list<std::tuple<std::string, grr::gTexture *>> Resources::s_textureFromLoader;
 std::mutex Resources::s_textureMutex;
+
+/***************** Animation *****************/
+std::unordered_map<std::string, std::unique_ptr<Animation>> Resources::s_animationList;
+std::list<std::tuple<std::string, Animation *>> Resources::s_animationFromLoader;
+std::mutex Resources::s_animatioMutex;
 
 /***************** Mesh *****************/
 std::unordered_map<std::string, std::unique_ptr<Mesh>> Resources::s_meshList;
@@ -243,7 +250,7 @@ GameObject *ReadChildren(std::istream &is) {
             for (auto i=0;i<pMesh.m_boneCount;++i) {
                 auto &pBone = pMesh.m_bones[i];
 
-                m_animator->addBone(pBone.m_name, pBone.m_position, pBone.m_scale, pBone.m_rotation, pBone.m_id);
+                m_animator->addBone(pBone.m_name, Bone{pBone.m_name, pBone.m_position, pBone.m_scale, pBone.m_rotation, pBone.m_id});
             }
 
             delete[] pMesh.m_bones;
@@ -285,6 +292,8 @@ GameObject *ReadChildren(std::istream &is) {
         
         // builda a mesh
         auto &meshRender = gameObject->addComponent<MeshRender>();
+        meshRender.Init();
+        
         for (auto i=0;i<m_materials.size();++i) {
             auto& material = m_materials[i];
 
@@ -348,6 +357,34 @@ GameObject *Resources::LoadGameObject(const std::string &path) {
     return gameObject;
 }
 
+Animation *Resources::LoadAnimation(const std::string &path) {
+    if (!Filesystem::Exists(path)) {
+        Console::log(LogInfo::ERROR, "Falied to open animation: " + path);
+        return nullptr;
+    }
+    auto it = s_animationList.find(path);
+    if (it != s_animationList.end()) {
+        return &(*(*it).second);
+    }
+
+    {
+        std::lock_guard<std::mutex> lock(s_animatioMutex);
+        auto it = std::find_if(s_animationFromLoader.begin(), s_animationFromLoader.end(), [&path](auto &tuple) {
+            return std::get<std::string>(tuple) == path;
+        });
+        if (it != s_animationFromLoader.end()) {
+            return std::get<Animation *>((*it));
+        }
+    }
+
+    auto animation = new Animation();
+    {
+        std::lock_guard<std::mutex> lock(s_animatioMutex);
+        s_animationFromLoader.emplace_back(path, animation);
+    }
+    return animation;
+}
+
 void Resources::AddShaderLoaded(std::function<bool(grr::gShader *, const std::string &)> func) {
     m_functions.push_back(func);
 }
@@ -358,6 +395,17 @@ Mesh *Resources::FindMesh(const std::string &name) {
         return nullptr;
     }
     return &(*(*it).second);
+}
+
+void Resources::DeleteMesh(Mesh *target) {
+    if (!target) {
+        return;
+    }
+    auto it = s_meshList.find(target->getName());
+    if (it == s_meshList.end()) {
+        return;
+    }
+    s_meshList.erase(it);
 }
 
 /***************** Texture Process ****************/
@@ -478,21 +526,134 @@ void Resources::ProcessShader() {
     }
 }
 
-void Resources::DeleteMesh(Mesh *target) {
-    if (!target) {
+#include "filmbox/fbxScene.hpp"
+
+void Resources::SetupAnimation(const std::string &path, FbxAnimation *temp, Animation *animation) {
+    animation->setName(temp->getName());
+    animation->setDuration(temp->getDuration());
+    animation->setTick(temp->getTick());
+
+    for (const auto &channel : temp->getChannels()) {
+        auto &keyframe = animation->addkeyframe(channel.getName(), channel.getName());
+
+        for (auto &keyScale : channel.getKeysScale()) {
+            keyframe.addKeyScale(keyScale.time, keyScale.value);
+        }
+
+        for (auto &keyRotation : channel.getKeysRotation()) {
+            keyframe.addKeyRotation(keyRotation.time, keyRotation.value);
+        }
+
+        for (auto &keyPosition : channel.getKeysPosition()) {
+            keyframe.addKeyPosition(keyPosition.time, keyPosition.value);
+        }
+    }
+
+    s_animationList.emplace(path, std::unique_ptr<Animation>(animation));
+    
+    delete temp;
+}
+
+void Resources::doAnimationInBackground(const std::string &path, Animation *target) {
+    if (!Stream::open(path, std::ios_base::in | std::ios_base::binary)) {
+        Console::log(LogInfo::ERROR, "Falied to open animation: " + path);
         return;
     }
-    auto it = s_meshList.find(target->getName());
-    if (it == s_meshList.end()) {
-        return;
+
+    gHeader pHeader;
+    Stream::read<gHeader>(&pHeader, 1);
+
+    gAnimationHeader pAnimationHeader;
+    Stream::read<gAnimationHeader>(&pAnimationHeader, 1);
+
+    auto fbxAnimation = new FbxAnimation(pAnimationHeader.m_name, pAnimationHeader.m_duration, pAnimationHeader.m_tick);
+
+    grm::size sChannel;
+    Stream::read<grm::size>(&sChannel, 1);
+
+    std::vector<gChannel> pChannels(sChannel);
+
+    for (auto i=0;i<sChannel;++i) {
+        auto &pChannel = pChannels[i];
+
+        Stream::read<char>(pChannel.m_name, 256);
+
+        // gen key scale
+        Stream::read<grm::size>(&pChannel.m_keyScaleCount, 1);
+        pChannel.m_keyScale = new gKeyScale[pChannel.m_keyScaleCount];
+        Stream::read<gKeyScale>(pChannel.m_keyScale, pChannel.m_keyScaleCount);
+
+        //gen key rotation
+        Stream::read<grm::size>(&pChannel.m_keyRotationCount, 1);
+        pChannel.m_keyRotation = new gKeyRotation[pChannel.m_keyRotationCount];
+        Stream::read<gKeyRotation>(pChannel.m_keyRotation, pChannel.m_keyRotationCount);
+
+        // gen key position
+        Stream::read<grm::size>(&pChannel.m_keyPositionCount, 1);
+        pChannel.m_keyPosition = new gKeyPosition[pChannel.m_keyPositionCount];
+        Stream::read<gKeyPosition>(pChannel.m_keyPosition, pChannel.m_keyPositionCount);
     }
-    s_meshList.erase(it);
+
+    for (auto &channel : pChannels) {
+        auto &keyframe = fbxAnimation->addChannel(channel.m_name);
+
+        for (auto i=0;i<channel.m_keyScaleCount;++i) {
+            auto &keyScale = channel.m_keyScale[i];
+
+            keyframe.addKeyScale(keyScale.time, keyScale.value);
+        }
+
+        for (auto i=0;i<channel.m_keyRotationCount;++i) {
+            auto &keyRotation = channel.m_keyRotation[i];
+
+            keyframe.addKeyRotation(keyRotation.time, keyRotation.value);
+        }
+
+        for (auto i=0;i<channel.m_keyPositionCount;++i) {
+            auto &keyPosition = channel.m_keyPosition[i];
+
+            keyframe.addKeyPosition(keyPosition.time, keyPosition.value);
+        }
+    }
+
+    // releaser memory
+    for (auto i=0;i<sChannel;++i) {
+        auto &pChannel = pChannels[i];
+
+        // gen key scale
+        delete[] pChannel.m_keyScale;
+
+        //gen key rotation
+        delete[] pChannel.m_keyRotation;
+
+        // gen key position
+        delete[] pChannel.m_keyPosition;
+    }
+
+    Stream::close();
+
+    Event::Add(&Resources::SetupAnimation, path, fbxAnimation, target);
+}
+
+void Resources::ProcessAnimation() {
+    std::unique_lock<std::mutex> lock(s_animatioMutex);
+    while (!s_animationFromLoader.empty()) {
+        auto &&[path, animation] = s_animationFromLoader.front();
+        lock.unlock();
+
+        doAnimationInBackground(path, animation);
+
+        lock.lock();
+        s_animationFromLoader.pop_front();
+    }
 }
 
 void Resources::OnThread() {
     ProcessShader();
 
     ProcessTexture();
+
+    ProcessAnimation();
 }
 
 const grm::size Resources::GetTextureCount() {

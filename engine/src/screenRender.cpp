@@ -87,13 +87,13 @@ void ScreenRender::CreateMesh() {
     }
 
     std::vector<Vertex2D> vertices = {
-        {Vector2(-1.0f,  1.0f), Vector2(0.0f, 1.0f)},
-        {Vector2(-1.0f, -1.0f), Vector2(0.0f, 0.0f)},
-        {Vector2( 1.0f, -1.0f), Vector2(1.0f, 0.0f)},
+        {{-1.0f,  1.0f}, {0.0f, 1.0f}},
+        {{-1.0f, -1.0f}, {0.0f, 0.0f}},
+        {{ 1.0f, -1.0f}, {1.0f, 0.0f}},
 
-        {Vector2(-1.0f,  1.0f), Vector2(0.0f, 1.0f)},
-        {Vector2( 1.0f, -1.0f), Vector2(1.0f, 0.0f)},
-        {Vector2( 1.0f,  1.0f), Vector2(1.0f, 1.0f)}
+        {{-1.0f,  1.0f}, {0.0f, 1.0f}},
+        {{ 1.0f, -1.0f}, {1.0f, 0.0f}},
+        {{ 1.0f,  1.0f}, {1.0f, 1.0f}}
     };
 
     m_vbo = grr::gVertexArray::CreateBuffer(grr::BufferType_VBO);
