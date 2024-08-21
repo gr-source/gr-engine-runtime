@@ -10,7 +10,7 @@ public:
     Model(const std::string& name = "unnamed");
 
 private:
-    std::unordered_map<u32, Material> m_materials;
+    std::unordered_map<grm::u32, Material> m_materials;
 
     std::string m_name;
 

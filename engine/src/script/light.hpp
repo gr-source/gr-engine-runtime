@@ -6,7 +6,7 @@
 
 class Light : public Component {
 public:
-    enum : u8 {
+    enum : grm::u8 {
         eDirection = 1,
         ePoint     = 2,
         eSpot      = 3,

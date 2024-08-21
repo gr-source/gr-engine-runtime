@@ -5,8 +5,6 @@
 #include <vector>
 #include <memory>
 
-#include "types.h"
-
 class ObjectManager;
 class GameObject;
 class Skybox;

@@ -26,7 +26,7 @@
 #include <filesystem>
 #include <future>
 
-u32 Resources::m_processCount = 0;
+grm::u32 Resources::m_processCount = 0;
 
 /***************** Shader *****************/
 std::unordered_map<std::string, std::unique_ptr<grr::gShader>> Resources::s_shaderList;

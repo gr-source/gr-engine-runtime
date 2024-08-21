@@ -1,10 +1,12 @@
 #include "memory.h"
 
-#include <cassert>
 
 #include <sys/mman.h>
+
+#include <iostream>
 #include <unistd.h>
 #include <string.h>
+#include <cassert>
 #include <fcntl.h>
 
 #define ALIGN16(x) (((x) + 0xF) & ~0xF)

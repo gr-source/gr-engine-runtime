@@ -4,9 +4,11 @@
 
 #include "../common.h"
 
+#include <gr-math/gmath.h>
+
 class Filesystem {
 public:
-    enum : u8 {
+    enum : grm::u8 {
         eResource   = 1 << 0,
         eIcon       = 1 << 1,
         eShader     = 1 << 2,

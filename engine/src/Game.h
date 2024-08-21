@@ -48,7 +48,7 @@ private:
 
     static ImGuizmo::MODE m_guizmoManipulate;
 
-    static u32 s_maxProgress;
+    static grm::u32 s_maxProgress;
 
     static std::unordered_map<std::filesystem::path, bool> fLisDirSelected;
 
@@ -84,7 +84,7 @@ private:
 
     static void ProgressLoad();
 
-    enum NavegationFlags : u8 {
+    enum NavegationFlags : grm::u8 {
         NavegationFlags_default = 1 << 1,
         NavegationFlags_console = 1 << 2,
         NavegationFlags_files   = 1 << 3,

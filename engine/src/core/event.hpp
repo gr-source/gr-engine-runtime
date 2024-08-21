@@ -6,7 +6,7 @@
 #include <mutex>
 #include <list>
 
-#include "types.h"
+#include <gr-math/gmath.h>
 
 class Event {
 public:
@@ -16,7 +16,7 @@ public:
 
     static void ProcessEvent();
 
-    static const u32 getcount();
+    static const grm::u32 getcount();
 protected:
     static std::list<std::function<void()>> m_events;
     static std::mutex m_mutex;

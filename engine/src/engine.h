@@ -25,12 +25,12 @@ public:
     static PostProcessing *MainPostProcess;
 
 protected:
-    static void GRWindowResize(u32 width, u32 height);
+    static void GRWindowResize(grm::u32 width, grm::u32 height);
 
     static void MainLoop(std::function<void()> func);
 
-    static void GRKeyboardDown(u32 key);
-    static void GRKeyboardUp(u32 key);
+    static void GRKeyboardDown(grm::u32 key);
+    static void GRKeyboardUp(grm::u32 key);
     static void GRCursorPos(float xpos, float ypos);
     static void GRCursorScrool(float xoffset, float yoffset);
     static void GRDropFunc(const char* path);

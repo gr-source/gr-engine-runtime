@@ -28,8 +28,6 @@
 
 #include "core/exception/Exception.h"
 
-#include "types.h"
-
 #include <gr-math/gmath.h>
 
 /* pasta: src */
@@ -124,8 +122,8 @@ FileType getFileType(const std::string& extension);
 const char* getFileTypeName(const FileType& type);
 
 struct GameStatics {
-	u32 vertices;
-	u32 indices;
+	grm::u32 vertices;
+	grm::u32 indices;
 
 	float updateMs;
 	float renderMs;

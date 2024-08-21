@@ -8,12 +8,12 @@
 #include "../renderer.h"
 
 Octree::Octree(const Vector3 &position, const Vector3& scale) : m_position(position), m_scale(scale), m_subdivid(false) {
-    for (u32 i=0;i<MAX_OCTREE_CHILD;i++) {
+    for (grm::u32 i=0;i<MAX_OCTREE_CHILD;i++) {
         m_childrent[i] = nullptr;
     }
 }
 
-void Octree::insert(const Vector3 &position, GameObject* gameobject, u32 depth) {
+void Octree::insert(const Vector3 &position, GameObject* gameobject, grm::u32 depth) {
     if (!contais(position) || depth > MAX_OCTREE_DEPTH) {
         return;
     }

@@ -44,7 +44,7 @@ std::unique_ptr<ScreenRender> pScreenRender = nullptr;
 
 Shadowbuffer* m_shadowbuffer = nullptr;
 
-void Engine::GRWindowResize(u32 width, u32 height) {
+void Engine::GRWindowResize(grm::u32 width, grm::u32 height) {
     Screen::SetResolution(width, height);
 
     iVector2 size((int) width, (int) height);
@@ -75,11 +75,11 @@ void Engine::MainLoop(std::function<void()> func) {
     }
 }
 
-void Engine::GRKeyboardDown(u32 key) {
+void Engine::GRKeyboardDown(grm::u32 key) {
     Game::KeyBoardUp(key);
 }
 
-void Engine::GRKeyboardUp(u32 key) {}
+void Engine::GRKeyboardUp(grm::u32 key) {}
 
 void Engine::GRCursorPos(float xpos, float ypos) {}
 
@@ -219,17 +219,17 @@ void Engine::HandleEvent(EngineEvent event, const void* data) {
         break;
     }
     case GR_RESIZE: {
-        const u32* scale = static_cast<const u32*>(data);
+        const grm::u32* scale = static_cast<const grm::u32*>(data);
 
         GRWindowResize(scale[0], scale[1]);
         break;
     }
     case GR_KEYBOARD_DOWN: {
-        GRKeyboardDown(*static_cast<const u32*>(data));
+        GRKeyboardDown(*static_cast<const grm::u32*>(data));
         break;
     }
     case GR_KEYBOARD_UP: {
-        GRKeyboardUp(*static_cast<const u32*>(data));
+        GRKeyboardUp(*static_cast<const grm::u32*>(data));
         break;
     }
     case GR_CURSOR_POS: {

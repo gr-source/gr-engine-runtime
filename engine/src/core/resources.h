@@ -42,7 +42,7 @@ public:
 
     static void OnThread();
 
-    static u32 m_processCount;
+    static grm::u32 m_processCount;
 
     static const grm::size GetTextureCount();
 

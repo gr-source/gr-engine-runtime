@@ -113,7 +113,7 @@ ImGuizmo::OPERATION Game::m_guizmoOperation = ImGuizmo::TRANSLATE;
 
 ImGuizmo::MODE Game::m_guizmoManipulate = ImGuizmo::WORLD;
 
-u32 Game::s_maxProgress = 0;
+grm::u32 Game::s_maxProgress = 0;
 
 std::unordered_map<std::filesystem::path, bool> Game::fLisDirSelected;
 
@@ -255,7 +255,7 @@ void WriteNode(std::ofstream &os, const FbxScene *scene, const FbxNode &node) {
     }
 
     grm::u32 mSize = pMateials.size();
-    if (!os.write(reinterpret_cast<const char *>(&mSize), sizeof(u32))) {
+    if (!os.write(reinterpret_cast<const char *>(&mSize), sizeof(grm::u32))) {
         std::cout << "Falied to wite mateials." << std::endl;
         return;
     }
@@ -1174,7 +1174,7 @@ void Game::RenderPropertiUI() {
 
             ImGui::SeparatorText("Cena");
             ImGui::Text("Vertices: %d | %s", gameStatics.vertices, getfilesize(gameStatics.vertices * sizeof(Vertex3D)).c_str());
-            ImGui::Text("Indice: %d | %s", gameStatics.indices, getfilesize(gameStatics.indices * sizeof(u32)).c_str());
+            ImGui::Text("Indice: %d | %s", gameStatics.indices, getfilesize(gameStatics.indices * sizeof(grm::u32)).c_str());
             ImGui::Text("Triangulos: %.2f", (gameStatics.indices / 3.0f));
 
             ImGui::SeparatorText("AssetsManager");
@@ -1523,7 +1523,7 @@ void Game::ProgressLoad() {
         s_maxProgress = Resources::m_processCount;
     }
 
-    u32 current = Resources::m_processCount;
+    grm::u32 current = Resources::m_processCount;
     if (current > s_maxProgress) {
         s_maxProgress = current;
     }

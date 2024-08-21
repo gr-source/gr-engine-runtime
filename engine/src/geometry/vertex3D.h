@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../types.h"
+#include <gr-math/gmath.h>
 
 struct Vertex3D {
     Vector3 position;

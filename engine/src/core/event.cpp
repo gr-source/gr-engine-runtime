@@ -17,7 +17,7 @@ void Event::ProcessEvent() {
     }
 }
 
-const u32 Event::getcount() {
+const grm::u32 Event::getcount() {
     return 0;
 }
 

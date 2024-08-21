@@ -6,11 +6,9 @@
 
 #include <gr-math/gmath.h>
 
-#include "types.h"
-
 class Input {
 public:
-    enum Key : u32 {
+    enum Key : grm::u32 {
         NONE = 1 << 0,
         KEY_W = 1 << 1,
         KEY_A = 1 << 2,

@@ -34,7 +34,7 @@ public:
 
     static Frustum s_frustum;
 
-    static void Filter(GameObject *gameObject);
+    static void Filter(GameObject *gameObject, MeshRender *meshRender);
     
     static void SetupLight();
 

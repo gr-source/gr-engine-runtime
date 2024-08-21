@@ -111,7 +111,9 @@ void RenderManager::Process() {
 
     s_frustum.CalculateFrustum(m_camera->getPerspesctive() * m_camera->getViewmatrix());
 
-    std::for_each(MeshRender::s_objects.begin(), MeshRender::s_objects.end(), &RenderManager::Filter);
+    // std::for_each(MeshRender::s_objects.begin(), MeshRender::s_objects.end(), &RenderManager::Filter);
+
+    Ecs::for_each<MeshRender>(RenderManager::Filter);
 
     iDrawRender = s_objects.size();
 }
@@ -175,7 +177,7 @@ void RenderManager::Shutdown() {
     m_shader = nullptr;
 }
 
-void RenderManager::Filter(GameObject *gameObject) {
+void RenderManager::Filter(GameObject *gameObject, MeshRender *meshRender) {
     auto& transform = gameObject->getTransform();
 
     auto& meshFilter = gameObject->getComponent<MeshFilter>();

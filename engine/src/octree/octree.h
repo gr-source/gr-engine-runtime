@@ -16,7 +16,7 @@ class Octree {
 public:
     Octree(const Vector3& position, const Vector3& scale);
 
-    void insert(const Vector3& position, GameObject* gameobject, u32 depth = 0);
+    void insert(const Vector3& position, GameObject* gameobject, grm::u32 depth = 0);
 
     const bool contais(const Vector3& position) const;
 

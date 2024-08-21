@@ -10,7 +10,7 @@
 #define SCREEN_WIDTH 800
 #define SCREEN_HEIGHT 600
 
-std::unordered_map<int, u32> m_keyMap = {
+std::unordered_map<int, grm::u32> m_keyMap = {
     {GLFW_KEY_ESCAPE, KEY_ESC},
     {GLFW_KEY_W, KEY_W},
     {GLFW_KEY_S, KEY_S},
@@ -54,7 +54,7 @@ void GLFWwindowclosefunCallback(GLFWwindow* window) {
 }
 
 void GLFWframebuffersizefunCallback(GLFWwindow* window, int width, int height) {
-    const u32 scale[2]{static_cast<const u32>(width), static_cast<const u32>(height)};
+    const grm::u32 scale[2]{static_cast<const grm::u32>(width), static_cast<const grm::u32>(height)};
     Engine::HandleEvent(Engine::GR_RESIZE, scale);
 }
 
