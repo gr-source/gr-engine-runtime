@@ -17,13 +17,19 @@ public:
 
     std::unordered_map<int, Material> &getMaterials();
 
-    void draw();
+    // void draw();
 
     Material &addMaterial(int idx, const Material& material);
 
     void build();
 
+    static void Draw();
+
+    // static void Rebuild();
+
     static std::vector<GameObject *> s_objects;
+
+    static bool is;
     
 private:
     std::unordered_map<int, Material> m_materials;

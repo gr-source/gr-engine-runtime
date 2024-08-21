@@ -192,7 +192,7 @@ GameObject *ReadChildren(std::istream &is) {
     // Cria um game object 
     auto gameObject = &GameObject::Create(pModel.m_name, "tag");
 
-    // transformaçoes 
+    // transformaçoes
     auto &transform = gameObject->getTransform();
 
     transform.setLocalScale(pModel.m_scale);

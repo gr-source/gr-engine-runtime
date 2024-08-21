@@ -16,6 +16,7 @@ public:
     void processBoundbox();
 
     Boundbox &getBoundbox();
+    
 private:
     Mesh *m_sharedMesh;
 

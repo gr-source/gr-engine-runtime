@@ -113,13 +113,13 @@ void RenderManager::Process() {
 
     // std::for_each(MeshRender::s_objects.begin(), MeshRender::s_objects.end(), &RenderManager::Filter);
 
-    Ecs::for_each<MeshRender>(RenderManager::Filter);
+    // Ecs::for_each<MeshRender>(RenderManager::Filter);
 
     iDrawRender = s_objects.size();
 }
 
 void RenderManager::Renderer() {
-    if (!m_shader || s_objects.empty() || !m_shader->isValid()) {
+    if (!m_shader || !m_shader->isValid()) {
         return;
     }
 
@@ -135,28 +135,33 @@ void RenderManager::Renderer() {
         // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     }
 
+    grr::gShader::SetUniform("u_animatior", static_cast<int>(false));
+    grr::gShader::SetUniform("u_model", 1, Matrix4x4::identityMatrix);
+
+    MeshRender::Draw();
+/*
     for (auto& gameObject : s_objects) {
         auto& transform = gameObject->getComponent<Transform>();
 
-        auto& meshrender = gameObject->getComponent<MeshRender>();
+        auto& meshRender = gameObject->getComponent<MeshRender>();
 
-        auto hasAnimation = gameObject->hasComponent<Animator>();
-
-        if (hasAnimation) {
+        if (gameObject->hasComponent<Animator>()) {
             auto &animator = gameObject->getComponent<Animator>();
 
             auto &metrices = animator.m_finalBoneMatrices;
 
             grr::gShader::SetUniform<Matrix4x4>("u_boneMatrices", metrices.size(), metrices.data());
-        }
-        grr::gShader::SetUniform("u_animatior", static_cast<int>(hasAnimation));
 
-        SetupMaterial(meshrender.getMaterials());
+            grr::gShader::SetUniform("u_animatior", static_cast<int>(true));
+        }
+
+        SetupMaterial(meshRender.getMaterials());
         
         grr::gShader::SetUniform("u_model", 1, transform.getGlobalMatrix());
 
-        meshrender.draw();
+        meshRender.draw();
     }
+*/
 
     for (int i=0;i<10;i++) {
         grr::gTexture::Bind(nullptr, i);

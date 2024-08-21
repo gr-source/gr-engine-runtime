@@ -121,10 +121,10 @@ set(engine_src
     src/script/camera.cpp
     src/script/light.cpp
 
+    src/geometry/batching.cpp
     src/geometry/boundbox.cpp
     src/geometry/material.cpp
     src/geometry/vertex3D.cpp
-    src/geometry/model.cpp
     src/geometry/mesh.cpp
     
     ${ecs_src}
@@ -170,10 +170,10 @@ set(engine_hdr
     src/script/camera.hpp
     src/script/light.hpp
 
+    src/geometry/batching.hpp
     src/geometry/boundbox.h
     src/geometry/material.h
     src/geometry/vertex3D.h
-    src/geometry/model.h
     src/geometry/mesh.h
     
     ${ecs_hdr}

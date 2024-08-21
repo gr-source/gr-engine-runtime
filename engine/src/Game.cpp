@@ -1353,7 +1353,7 @@ void Game::OnPropertyMeshRender(MeshRender *meshRender) {
                 ImGui::TreePop();
             }
         }
-        
+
         ImGui::TreePop();
     }
 }
