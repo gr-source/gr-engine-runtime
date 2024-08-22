@@ -720,6 +720,10 @@ void Game::RenderViewportUI() {
             std::string path((char*)payload->Data, payload->DataSize);
             if (!path.empty() && std::filesystem::path(path).filename().extension() == ".gmd") {
                 s_objectSelected = Resources::LoadGameObject(path);
+
+                Event::Add([] {
+                    Batching::bRebuild = true;
+                });
             }
         }
         ImGui::EndDragDropTarget();
@@ -1107,7 +1111,7 @@ void Game::RenderConsoleUI() {
 
             ImGui::TextColored(color, "%s", type.c_str());
             ImGui::SameLine();
-            ImGui::LabelText("##LabelTex001", "%s", log.message.c_str());
+            ImGui::Text("%s", log.message.c_str());
         }
 
         if (Console::bChanged) {

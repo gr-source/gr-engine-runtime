@@ -23,7 +23,7 @@
 
 std::vector<GameObject *> RenderManager::s_objects;
 
-grr::gShader *RenderManager::m_shader = nullptr;
+grr::gShader *RenderManager::m_shader[2] = {nullptr, nullptr};
 
 Frustum RenderManager::s_frustum;
 
@@ -31,74 +31,26 @@ bool RenderManager::bWireFrame = false;
 
 Camera *RenderManager::m_camera = nullptr;
 
+bool RenderManager::bRender = false;
+
 void RenderManager::Initialize() {
-    if (!ScriptManager::GetShader) {
+    if (!ScriptManager::GetShaders) {
         return;
     }
-    auto shaders = ScriptManager::GetShader();
-    auto it = shaders.find(0);
-    if (it == shaders.end()) {
-        return Console::log(LogInfo::ERROR, "Falied to find model shader 'id=0'");
-    }
 
-    auto &&[frag, vert] = (*it).second;
+    auto shaders = ScriptManager::GetShaders();
 
-    const char *fragment = frag.c_str();
-    const char *vertex = vert.c_str();
+    Resources::AddShaderLoaded(RenderManager::SetupShader);
 
-    Console::log(LogInfo::INFO, "Model loading shader...");
+    m_shader[ShaderType_Dynamic] = shaders[ShaderType_Dynamic];
+    m_shader[ShaderType_Dynamic_Anim] = shaders[ShaderType_Dynamic_Anim];
 
-    m_shader = grr::gShader::Create(&fragment, &vertex);
-    if (!m_shader || !m_shader->isValid()) {
-        std::stringstream iss(grr::gError::GetError());
-
-        std::string line;
-        while (std::getline(iss, line)) {
-            Console::log(LogInfo::ERROR, line);
-        }
-        grr::gError::Clean();
-        return;
-    }
-    m_shader->bind();
-
-    // VertexShader
-    grr::gShader::Register("u_projection");
-    grr::gShader::Register("u_view");
-    grr::gShader::Register("u_model");
-    grr::gShader::Register("u_boneMatrices");
-    grr::gShader::Register("u_animatior");
-
-    // FragmentShader
-    grr::gShader::Register("m_eye");
-    grr::gShader::Register("m_lightcount");
-
-    grr::gShader::Register("m_texture");
-    grr::gShader::Register("m_activate");
     
-    for (auto i=0;i<10;i++) {
-        // Textures
-        // grr::gShader::Register("m_texture[" + std::to_string(i) + "]");
-        
-        // Material
-        grr::gShader::Register("m_material[" + std::to_string(i) + "].albedo");
-        grr::gShader::Register("m_material[" + std::to_string(i) + "].params");
-
-        // Light
-        grr::gShader::Register("m_light[" + std::to_string(i) + "].position");
-        grr::gShader::Register("m_light[" + std::to_string(i) + "].color");
-        grr::gShader::Register("m_light[" + std::to_string(i) + "].attenuation");
-        grr::gShader::Register("m_light[" + std::to_string(i) + "].direction");
-        grr::gShader::Register("m_light[" + std::to_string(i) + "].params");
-        grr::gShader::Register("m_light[" + std::to_string(i) + "].vp");
-    }
-
-    m_shader->unbind();
-
-    Console::log(LogInfo::INFO, "Shader loaded successfully.");
+    return;
 }
 
 void RenderManager::Process() {
-    if (!m_shader || !m_shader->isValid()) {
+    if (!bRender) {
         return;
     }
 
@@ -108,11 +60,11 @@ void RenderManager::Process() {
 }
 
 void RenderManager::Renderer() {
-    if (!m_shader || !m_shader->isValid()) {
+    if (!bRender) {
         return;
     }
 
-    m_shader->bind();
+    grr::gShader::Bind(m_shader[ShaderType_Dynamic_Anim]);
 
     grr::gShader::SetUniform("u_projection", 1, m_camera->getPerspesctive());
     grr::gShader::SetUniform("u_view", 1, m_camera->getViewmatrix());
@@ -139,31 +91,7 @@ void RenderManager::Renderer() {
 }
 
 void RenderManager::Shutdown() {
-    if (m_shader) {
-        delete m_shader;
-    }
-
     s_objects.clear();
-
-    m_shader = nullptr;
-}
-
-void RenderManager::Filter(GameObject *gameObject, MeshRender *meshRender) {
-    auto& transform = gameObject->getTransform();
-
-    auto& meshFilter = gameObject->getComponent<MeshFilter>();
-
-    auto& model = transform.getGlobalMatrix();
-    auto& boundbox = meshFilter.getBoundbox();
-
-    if (!s_frustum.IsCubeInFrustumOOBB(boundbox.min, boundbox.max, model)) {
-        return;
-    }
-
-    if (gameObject->hasComponent<Animator>()) {
-        gameObject->getComponent<Animator>().UpdateAnim();
-    }
-    s_objects.push_back(gameObject);
 }
 
 void RenderManager::SetupLight() {
@@ -211,4 +139,49 @@ void RenderManager::SetupMaterial(std::unordered_map<int, Material> &materials) 
         grr::gShader::SetUniform("m_material[" + std::to_string(index) + "].params", Vector3(material.getRoughness(), material.getMetallic(), material.getAmbientOcclusion()));
     }
 }
+
+bool RenderManager::SetupShader(grr::gShader *shader, const std::string &path) {
+    if (m_shader[ShaderType_Dynamic_Anim] != shader) {
+        return false;
+    }
+
+    grr::gShader::Bind(m_shader[ShaderType_Dynamic_Anim]);
+
+    grr::gShader::Register("u_projection");
+    grr::gShader::Register("u_view");
+    grr::gShader::Register("u_model");
+    grr::gShader::Register("u_boneMatrices");
+    grr::gShader::Register("u_animatior");
+
+    // FragmentShader
+    grr::gShader::Register("m_eye");
+    grr::gShader::Register("m_lightcount");
+
+    grr::gShader::Register("m_texture");
+    grr::gShader::Register("m_activate");
+    
+    for (auto i=0;i<10;i++) {
+        // Material
+        grr::gShader::Register("m_material[" + std::to_string(i) + "].albedo");
+        grr::gShader::Register("m_material[" + std::to_string(i) + "].params");
+
+        // Light
+        grr::gShader::Register("m_light[" + std::to_string(i) + "].position");
+        grr::gShader::Register("m_light[" + std::to_string(i) + "].color");
+        grr::gShader::Register("m_light[" + std::to_string(i) + "].attenuation");
+        grr::gShader::Register("m_light[" + std::to_string(i) + "].direction");
+        grr::gShader::Register("m_light[" + std::to_string(i) + "].params");
+        grr::gShader::Register("m_light[" + std::to_string(i) + "].vp");
+    }
+
+    grr::gShader::Unbind();
+
+    Console::log(LogInfo::INFO, "Shader loaded successfully.");
+
+    bRender = true;
+
+    return true;
+}
+
+
 

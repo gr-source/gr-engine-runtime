@@ -40,10 +40,10 @@ void ScreenRender::Initialize() {
         return;
     }
 
-    m_shader->bind();
+    grr::gShader::Bind(m_shader);
 
     grr::gShader::Register("u_texture");
-    m_shader->unbind();
+    grr::gShader::Unbind();
 
     CreateMesh();
 }
@@ -69,7 +69,7 @@ void ScreenRender::Render(grr::gTexture *texture) {
         return Console::log(LogInfo::ERROR, "[ ScreenRender ] Shader do not is valid.");
     }
 
-    m_shader->bind();
+    grr::gShader::Bind(m_shader);
 
     grr::gTexture::Bind(texture, 0);
     grr::gShader::SetUniform("u_texture", 0);
@@ -78,7 +78,7 @@ void ScreenRender::Render(grr::gTexture *texture) {
     m_vertexArray->DrawArrays(grr::PrimitiveType_Triangles, 6);
 
     grr::gTexture::Unbind();
-    m_shader->unbind();
+    grr::gShader::Unbind();
 }
 
 void ScreenRender::CreateMesh() {

@@ -209,11 +209,19 @@ grm::u32 Skybox::m_ebo = 0;
 void Skybox::Initialize() {
     CreateCube();
 
-    m_irradianceShader = Resources::LoadShader(Filesystem::GetFile("/shader/skybox/Irradiance"));
+    m_irradianceShader = Resources::LoadShader(
+        Filesystem::GetFile("/shader/skybox/Irradiance.frag"),
+        Filesystem::GetFile("/shader/skybox/Irradiance.vert")
+    );
 
-    m_skyShader = Resources::LoadShader(Filesystem::GetFile("/shader/skybox/Skybox"));
+    m_skyShader = Resources::LoadShader(
+        Filesystem::GetFile("/shader/skybox/Skybox.frag"),
+        Filesystem::GetFile("/shader/skybox/Skybox.vert"));
 
-    m_shader = Resources::LoadShader(Filesystem::GetFile("/shader/skybox/Background"));
+    m_shader = Resources::LoadShader(
+        Filesystem::GetFile("/shader/skybox/Background.frag"),
+        Filesystem::GetFile("/shader/skybox/Background.vert")
+    );
 
     Resources::AddShaderLoaded(&Skybox::SetupShader);
 }
@@ -290,7 +298,7 @@ void Skybox::CreateCube() {
 
 bool Skybox::SetupShader(grr::gShader *shader, const std::string &path) {
     if (shader == m_shader || shader == m_irradianceShader || shader == m_skyShader) {
-        shader->bind();
+        grr::gShader::Bind(shader);
         grr::gShader::Register("projection");
         grr::gShader::Register("u_texture");
         grr::gShader::Register("view");

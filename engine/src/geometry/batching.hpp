@@ -9,6 +9,7 @@
 class Batching {
 public:
     Batching(std::unordered_map<int, Material> &materials);
+    ~Batching();
 
     void insert(Transform *transform, Mesh *mesh);
 
@@ -21,6 +22,8 @@ public:
     static void Renderer();
 
     static Batching *Find(const std::string &name);
+
+    static void Delete(const std::string &name);
 
     template <typename ...Args>
     static Batching &Add(Args &&...args);

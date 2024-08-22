@@ -30,7 +30,7 @@ grm::u32 Resources::m_processCount = 0;
 
 /***************** Shader *****************/
 std::unordered_map<std::string, std::unique_ptr<grr::gShader>> Resources::s_shaderList;
-std::list<std::tuple<std::string, grr::gShader *>> Resources::s_shaderFromLoader;
+std::list<std::tuple<std::tuple<std::string, std::string>, grr::gShader *>> Resources::s_shaderFromLoader;
 std::mutex Resources::s_shaderMutex;
 
 std::vector<std::function<bool(grr::gShader *, const std::string &)>> Resources::m_functions;
@@ -95,33 +95,44 @@ grr::gTexture *Resources::LoadTexture(const std::string &path) {
 }
 
 /***************** SHADER ****************/
-grr::gShader *Resources::LoadShader(const std::string &path) {
-    if (!Filesystem::Exists(path + ".frag")) {
-        Console::log(LogInfo::ERROR, "File do not found: " + path + ".frag");
+grr::gShader *Resources::LoadShader(const std::string &frag, const std::string &vert) {
+    if (!Filesystem::Exists(frag)) {
+        Console::log(LogInfo::ERROR, "File do not found: " + frag);
         return nullptr;
     }
 
-    if (!Filesystem::Exists(path + ".vert")) {
-        Console::log(LogInfo::ERROR, "File do not found: " + path + ".vert");
+    if (!Filesystem::Exists(vert)) {
+        Console::log(LogInfo::ERROR, "File do not found: " + vert);
         return nullptr;
     }
 
-    auto it = s_shaderList.find(path);
+    auto name = frag + vert;
+
+    auto it = s_shaderList.find(name);
     if (it != s_shaderList.end()) {
-        return (*it).second.get();
+        return &(*(*it).second);
     }
-
-    grr::gShader *shader = new grr::gShader();
-    if (!shader) {
-        Console::log(LogInfo::ERROR, "Falied to create shader.");
-        return nullptr;
-    }
-
-    Console::log(LogInfo::INFO, "Processing Shader: "+ path);
 
     {
         std::lock_guard<std::mutex> lock(s_shaderMutex);
-        s_shaderFromLoader.emplace_back(path, shader);
+        auto it = std::find_if(s_shaderFromLoader.begin(), s_shaderFromLoader.end(), [&name](auto &tuple) {
+            auto &&[frag, vert] = std::get<std::tuple<std::string, std::string>>(tuple);
+
+            return (frag + vert) == name;
+        });
+
+        if (it != s_shaderFromLoader.end()) {
+            return std::get<grr::gShader *>((*it));
+        }
+    }
+
+    grr::gShader *shader = new grr::gShader();
+
+    Console::log(LogInfo::INFO, "Processing Shader: "+ frag + " " + vert);
+
+    {
+        std::lock_guard<std::mutex> lock(s_shaderMutex);
+        s_shaderFromLoader.emplace_back(std::make_tuple(frag, vert), shader);
     }
     return shader;
 }
@@ -254,35 +265,54 @@ void Resources::ProcessTexture() {
 }
 
 /***************** Shader Process ****************/
-void Resources::SetupShader(grr::gShader *shader, const std::string &frag, const std::string &vert, std::string path) {
+void Resources::SetupShader(grr::gShader *shader, const std::string &frag, const std::string &vert, const std::string &path) {
     Console::log(LogInfo::WARNING, "Shader loadedd sucessfull.");
 
     const char *fShader = frag.c_str();
     const char *vShader = vert.c_str();
 
-    grr::gShader::Create(shader, &fShader, &vShader);
+    grr::gShader::Bind(shader);
+    grr::gShader::SetupShader(&fShader, &vShader);
+    grr::gShader::Unbind();
+
+    if (CheckShaderError(shader)) {
+        delete shader;
+        return;
+    }
 
     m_functions.erase(std::remove_if(m_functions.begin(), m_functions.end(), [&shader, &path](auto &func) {
         return func(shader, path);
     }), m_functions.end());
 
-    // for (auto &func : m_functions) {
-    //     func(shader);
-    // }
+        s_shaderList.emplace(path, std::unique_ptr<grr::gShader>(shader));
+}
 
-    s_shaderList.emplace(path, std::unique_ptr<grr::gShader>(shader));
+bool Resources::CheckShaderError(grr::gShader *shader) {
+    if (shader->isValid()) {
+        return false;
+    }
+
+    std::stringstream iss(grr::gError::GetError());
+
+    std::string line;
+    while (std::getline(iss, line)) {
+        Console::log(LogInfo::ERROR, line);
+    }
+    grr::gError::Clean();
+
+    return true;
 }
 
 void Resources::ProcessShader() {
     std::unique_lock<std::mutex> lock(s_shaderMutex);
     while (!s_shaderFromLoader.empty()) {
-        auto [path, shader] = s_shaderFromLoader.front();
+        auto &&[tuple, shader] = s_shaderFromLoader.front();
+
+        auto &&[frag, vert] = tuple;
+
         lock.unlock();
 
         // Processing shader
-
-        std::string frag = path + ".frag";
-        std::string vert = path + ".vert";
 
         // Loading Fragment shader
         Console::log(LogInfo::WARNING, "Loading FragmentShader: " + frag + " - " + vert);
@@ -298,7 +328,6 @@ void Resources::ProcessShader() {
         }
 
         // Loading vertex shader
-
         Console::log(LogInfo::WARNING, "Loading VertexShader: " + vert);
         auto vertSource = Filesystem::GetFileContent(vert);
         if (vertSource.empty()) {
@@ -310,7 +339,7 @@ void Resources::ProcessShader() {
             continue;
         }
 
-        Event::Add(Resources::SetupShader, shader, fragSource, vertSource, path);
+        Event::Add(Resources::SetupShader, shader, fragSource, vertSource, frag + vert);
 
         lock.lock();
         s_shaderFromLoader.pop_front();

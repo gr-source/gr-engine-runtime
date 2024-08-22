@@ -46,6 +46,8 @@ void (*ScriptManager::SetDeltaTime)(float);
 
 std::unordered_map<int, std::pair<const std::string, const std::string>> (*ScriptManager::GetShader)();
 
+std::unordered_map<int, grr::gShader *> (*ScriptManager::GetShaders)();
+
 std::list<std::unique_ptr<GameObject>> &(*ScriptManager::GetAllGameObject)();
 
 // [ Entity ]
@@ -145,13 +147,16 @@ void ScriptManager::RegisterApi() {
     REGISTER_API(void, float, SetDeltaTime);
 
     GetShader = (std::unordered_map<int, std::pair<const std::string, const std::string>>(*)(void))dlsym(ScriptManager::s_handle, "GetShader");
+    GetShaders = (std::unordered_map<int, grr::gShader *>(*)(void))dlsym(ScriptManager::s_handle, "GetShaders");
+
+    // REGISTER_API_FROM_NAME_N("GetShaders", std::unordered_map<int, grr::gShader *>, GetShaders, void);
 
     // [ Component - MeshRender ]
     REGISTER_API(std::list<std::unique_ptr<GameObject>>&, void, GetAllGameObject);
 
     // [ Entity ]
     REGISTER_API(std::size_t, void, GetEntityCount);
-    REGISTER_API_FROM_NAME("EntityProcess", void, void, Entity::Update);
+    REGISTER_API_FROM_NAME("EntityUpdate", void, void, Entity::Update);
 
     // Light
     REGISTER_API(std::vector<Light *> &, void, GetListLight);
@@ -170,7 +175,8 @@ void ScriptManager::RegisterApi() {
     REGISTER_FUNC("LoadShader", Resources::LoadShader);
     REGISTER_FUNC("LoadGameObject", Resources::LoadGameObject);
 
-    // REGISTER_API(GameObject *, const std::string &, LoadGameObject);
+    // auto ptr = &Resources::Load<grr::gShader, const std::string &, const std::string &>;
+
 
     REGISTER_API(std::unique_ptr<Animation>, const std::string &, LoadAnimation);
 

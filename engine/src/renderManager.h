@@ -24,16 +24,22 @@ public:
     static Frustum s_frustum;
 
 public:
+    enum ShaderType : int {
+        ShaderType_Dynamic = 0,
+        ShaderType_Dynamic_Anim = 1,
+    };
+
     static std::vector<GameObject*> s_objects;
 
-    static grr::gShader *m_shader;
+    static grr::gShader *m_shader[2];
 
     static Camera *m_camera;
 
+    static bool bRender;
 
-    static void Filter(GameObject *gameObject, MeshRender *meshRender);
-    
     static void SetupLight();
 
     static void SetupMaterial(std::unordered_map<int, Material> &materials);
+
+    static bool SetupShader(grr::gShader *shader, const std::string &path);
 };

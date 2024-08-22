@@ -27,12 +27,12 @@ void DebugDraw::Initialize() {
 
     m_shader = grr::gShader::Create(&fSource, &vSource);
 
-    m_shader->bind();
+    grr::gShader::Bind(m_shader);
     
     grr::gShader::Register("projection");
     grr::gShader::Register("view");
     
-    m_shader->unbind();
+    grr::gShader::Unbind();
 
     // vertex
     m_vbo = grr::gVertexArray::CreateBuffer(grr::BufferType_VBO);
@@ -63,7 +63,7 @@ void DebugDraw::Renderer() {
         return;
     }
 
-    m_shader->bind();
+    grr::gShader::Bind(m_shader);
 
     grr::gShader::SetUniform("projection", 1, camera->getPerspesctive());
     grr::gShader::SetUniform("view", 1, camera->getViewmatrix());

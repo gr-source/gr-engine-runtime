@@ -16,6 +16,20 @@ std::unordered_map<std::string, Batching> Batching::m_batched;
 
 Batching::Batching(std::unordered_map<int, Material> &materials) : m_materials(materials), m_vertexArray(nullptr), m_count(0), m_VBO(0), m_EBO(0), bHasIndice(false) {}
 
+Batching::~Batching() {
+    if (m_vertexArray) {
+        m_vertexArray->destroy();
+    }
+
+    if (m_VBO) {
+        grr::gVertexArray::DeleteBuffer(m_VBO);
+    }
+
+    if (m_EBO) {
+        grr::gVertexArray::DeleteBuffer(m_EBO);
+    }
+}
+
 void Batching::insert(Transform *transform, Mesh *mesh) {
     m_meshes.emplace_back(transform, mesh);
 }
@@ -40,7 +54,12 @@ void Batching::rebuild() {
     grm::size verticeCount = 0;
     for (auto &&[transform, mesh] : m_meshes) {
         for (auto &vertice : mesh->getVertices()) {
-            m_mesh.addVertex(Vector3(transform->getGlobalMatrix() * Vector4(vertice.position, 1.0f)), vertice.normal, vertice.texCoord, vertice.mIdx);
+            m_mesh.addVertex(
+                Vector3(transform->getGlobalMatrix() * Vector4(vertice.position, 1.0f)),
+                vertice.normal,
+                vertice.texCoord,
+                vertice.mIdx
+            );
         }
 
         for (auto &indice : mesh->getIndices()) {
@@ -75,6 +94,14 @@ Batching *Batching::Find(const std::string &name) {
         return nullptr;
     }
     return &(it->second);
+}
+
+void Batching::Delete(const std::string &name) {
+    auto it = m_batched.find(name);
+    if (it == m_batched.end()) {
+        return;
+    }
+    m_batched.erase(it);
 }
 
 void Batching::compile(Mesh *mesh) {

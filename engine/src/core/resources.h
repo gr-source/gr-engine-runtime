@@ -24,10 +24,10 @@ class FbxAnimation;
 class Resources {
 public:
     static void Initialize();
-    
+
     static grr::gTexture *LoadTexture(const std::string &path);
 
-    static grr::gShader *LoadShader(const std::string &path);
+    static grr::gShader *LoadShader(const std::string &frag, const std::string &vert);
 
     static GameObject *LoadGameObject(const std::string &path);
 
@@ -55,7 +55,7 @@ public:
 private:
     /***************** Shader *****************/
     static std::unordered_map<std::string, std::unique_ptr<grr::gShader>> s_shaderList;
-    static std::list<std::tuple<std::string, grr::gShader *>> s_shaderFromLoader;
+    static std::list<std::tuple<std::tuple<std::string, std::string>, grr::gShader *>> s_shaderFromLoader;
     static std::mutex s_shaderMutex;
 
     static std::vector<std::function<bool(grr::gShader *, const std::string &)>> m_functions;
@@ -78,11 +78,16 @@ private:
     /***************** Mesh *****************/
     static std::unordered_map<std::string, std::unique_ptr<Mesh>> s_meshList;
 
+    static std::unordered_map<std::string, grm::size> m_nameCount;
+
+
     static void SetupTexture(grr::gTexture *texture, int width, int height, int ch, void *pixels, std::string path);
 
     static void ProcessTexture();
 
-    static void SetupShader(grr::gShader *shader, const std::string &frag, const std::string &vert, std::string path);
+    static void SetupShader(grr::gShader *shader, const std::string &frag, const std::string &vert, const std::string &path);
+    
+    static bool CheckShaderError(grr::gShader *shader);
 
     static void ProcessShader();
 
@@ -100,7 +105,6 @@ private:
 
     static void ReadChildren(Transform *transform);
 
-    static std::unordered_map<std::string, grm::size> m_nameCount;
 };
 
 template <typename... Args>

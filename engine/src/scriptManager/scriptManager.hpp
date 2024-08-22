@@ -5,6 +5,8 @@
 #include "console.hpp"
 #include "default.hpp"
 
+#include <gr-render/gShader.h>
+
 class ScriptManager {
 public:
     static void Initialize();
@@ -13,6 +15,8 @@ public:
 
     // Main
     static std::unordered_map<int, std::pair<const std::string, const std::string>> (*GetShader)();
+
+    static std::unordered_map<int, grr::gShader *> (*GetShaders)();
 
     // [ Componenet - Camera ]
     static Camera *(*MainCamera)();
