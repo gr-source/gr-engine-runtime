@@ -15,7 +15,9 @@
 #include <gr-render/gRender.h>
 
 #include "core/animation/animation.hpp"
-#include "../geometry/mesh.h"
+#include "core/binary/gHeader.hpp"
+
+#include "geometry/mesh.h"
 
 class FbxAnimation;
 
@@ -68,6 +70,11 @@ private:
     static std::list<std::tuple<std::string, Animation *>> s_animationFromLoader;
     static std::mutex s_animatioMutex;
 
+
+    /***************** GameObject *****************/
+    static std::list<std::tuple<std::string, Transform *>> s_gameObjectFromLoader;
+    static std::mutex s_gameObjectMutex;
+
     /***************** Mesh *****************/
     static std::unordered_map<std::string, std::unique_ptr<Mesh>> s_meshList;
 
@@ -84,6 +91,16 @@ private:
     static void doAnimationInBackground(const std::string &path, Animation *target);
 
     static void ProcessAnimation();
+
+    static void SetupGameObject(GameObject *gameObject, gModel &model, Mesh *mesh, std::vector<gMaterial> &materials, Transform *parent);
+
+    static void doInBackgroundGameObject(const std::string &path, Transform *target);
+
+    static void ProcessBinary();
+
+    static void ReadChildren(Transform *transform);
+
+    static std::unordered_map<std::string, grm::size> m_nameCount;
 };
 
 template <typename... Args>

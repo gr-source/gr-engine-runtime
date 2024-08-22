@@ -54,9 +54,6 @@ std::size_t (*ScriptManager::GetEntityCount)();
 // LIght
 std::vector<Light *> &(*ScriptManager::GetListLight)();
 
-// [ Component - MeshRender ]
-std::vector<GameObject*> &(*ScriptManager::GetGameObjectsFromRender)(); 
-
 // [ Componenet - Camera ]
 Camera *(*ScriptManager::MainCamera)();
 Camera *(*ScriptManager::CurrentCamera)();
@@ -100,7 +97,6 @@ void ScriptManager::Shutdown() {
     UNREGISTER_API(SetDeltaTime);
 
     // [ Component - MeshRender ]
-    UNREGISTER_API(GetGameObjectsFromRender);
     UNREGISTER_API(GetAllGameObject);
 
     // [ Entity ]
@@ -151,7 +147,6 @@ void ScriptManager::RegisterApi() {
     GetShader = (std::unordered_map<int, std::pair<const std::string, const std::string>>(*)(void))dlsym(ScriptManager::s_handle, "GetShader");
 
     // [ Component - MeshRender ]
-    REGISTER_API(std::vector<GameObject*>&, void, GetGameObjectsFromRender);
     REGISTER_API(std::list<std::unique_ptr<GameObject>>&, void, GetAllGameObject);
 
     // [ Entity ]

@@ -16,12 +16,23 @@ public:
 
     void rebuild();
 
+    static bool bRebuild;
+
+    static void Renderer();
+
+    static Batching *Find(const std::string &name);
+
+    template <typename ...Args>
+    static Batching &Add(Args &&...args);
+
 private:
+    static std::unordered_map<std::string, Batching> m_batched;
+
     std::unordered_map<int, Material> m_materials;
 
-    grr::gVertexArray *m_vertexArray;
-
     std::vector<std::tuple<Transform *, Mesh *>> m_meshes;
+
+    grr::gVertexArray *m_vertexArray;
 
     grm::u32 m_count;
 
@@ -31,12 +42,14 @@ private:
 
     bool bHasIndice;
 
-
     void compile(Mesh *mesh);
 
     void setupMaterial();
 };
 
+template <typename... Args>
+inline Batching &Batching::Add(Args &&...args) {
+    auto &&[it, added] = m_batched.emplace(std::forward<Args>(args)...);
 
-
-
+    return it->second;
+}

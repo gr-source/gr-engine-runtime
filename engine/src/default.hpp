@@ -15,4 +15,10 @@ class Camera;
 class Light;
 
 class Animation;
+class Batching;
 class Mesh;
+
+
+
+
+

@@ -20,10 +20,8 @@ public:
     static void Shutdown();
 
     static bool bWireFrame;
-
-    static int iDrawCount;
-
-    static int iDrawRender;
+    
+    static Frustum s_frustum;
 
 public:
     static std::vector<GameObject*> s_objects;
@@ -32,7 +30,6 @@ public:
 
     static Camera *m_camera;
 
-    static Frustum s_frustum;
 
     static void Filter(GameObject *gameObject, MeshRender *meshRender);
     

@@ -1,18 +1,21 @@
 #include "Game.h"
 
-#include "timer.h"
+#include "postProcessing.hpp"
+#include "editorController.h"
+#include "renderManager.h"
+#include "screenRender.hpp"
+#include "console.hpp"
+#include "renderer.h"
+#include "settings.h"
 #include "screen.h"
+#include "engine.h"
 #include "memory.h"
 #include "skybox.h"
-#include "settings.h"
-#include "renderer.h"
-#include "console.hpp"
-#include "screenRender.hpp"
-#include "renderManager.h"
-#include "editorController.h"
-#include "postProcessing.hpp"
+#include "timer.h"
 
 #include "core/filmbox/filmbox.hpp"
+
+#include "core/statistics.hpp"
 #include "core/resources.h"
 #include "core/scene.hpp"
 #include "core/event.hpp"
@@ -33,6 +36,8 @@
 #include "filesystem/stream.h"
 
 #include "scriptManager/scriptManager.hpp"
+
+#include "geometry/batching.hpp"
 
 #include <linux/input-event-codes.h>
 #include <filesystem>
@@ -513,6 +518,10 @@ void Game::RenderScenesUI() {
         
         ImGui::TreePop();
     }
+
+    if (ImGui::Button("Rebuild")) {
+        Batching::bRebuild = true;
+    }
     
     if (ImGui::IsKeyReleased(ImGuiKey_Delete) && s_objectSelected) {
         Event::Add(Scene::Delete, s_objectSelected);
@@ -665,8 +674,6 @@ void Game::PopupRenameGameObject() {
         ImGui::EndPopup();
     }
 }
-
-#include "engine.h"
 
 void Game::RenderViewportUI() {
     ImGui::Begin("Viewport", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
@@ -1128,26 +1135,6 @@ void Game::RenderPropertiUI() {
 
             ImGui::Text("[ %s - %s ]", s_objectSelected->getName().c_str(), s_objectSelected->getTag().c_str());
 
-            /*
-            auto entity = objectselected->getEntity();
-
-            for (auto&& [name, componenet] : entity->getComponents()) {
-                ImGui::PushID(name.c_str());
-                auto isOpen = ImGui::TreeNode(name.c_str());
-
-                if (isOpen) {
-                    ImGui::TreePop();
-                }
-
-                ImGui::SameLine();
-
-                if (ImGui::Button("X")) {
-                    EventManager::addEvent(&Entity::RemoveComponent, entity, name);
-                }
-                ImGui::PopID();
-            }
-            */
-
             s_objectSelected->RenderProperty<Transform>(&Game::OnPropertyTransform);
             s_objectSelected->RenderProperty<MeshRender>(&Game::OnPropertyMeshRender);
             s_objectSelected->RenderProperty<Light>(&Game::OnPropertyLightComponent);
@@ -1192,7 +1179,7 @@ void Game::RenderPropertiUI() {
             // ImGui::Text("Cameras: %ld",   Camera::Get.size());
             if (ScriptManager::GetListLight)
                 ImGui::Text("Luzes: %ld",     ScriptManager::GetListLight().size());
-            ImGui::Text("Draw Render: %d/%d", RenderManager::iDrawCount, RenderManager::iDrawRender);
+            ImGui::Text("Draw Render: %d/%ld", 0, Statistics::m_drawCallCount);
             
             ImGui::EndTabItem();
         }
@@ -1415,18 +1402,6 @@ void Game::OnPropertyLightComponent(Light *light) {
         ImGui::TreePop();
     }
 }
-
-/*
-void Game::OnPropertyChunkController(ChunkController *chunkController) {
-    if (ImGui::TreeNode("ChunkController")) {
-        if (ImGui::Button("Generate")) {
-            chunkController->BuildMesh();
-        }
-        
-        ImGui::TreePop();
-    }
-}
-*/
 
 void Game::TextureInfo(Texture *&texture) {
     bool IsOpen = true;

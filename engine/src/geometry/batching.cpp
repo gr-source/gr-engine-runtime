@@ -4,17 +4,26 @@
 
 #include "script/transform.hpp"
 
+#include "core/statistics.hpp"
+
+#include "renderManager.h"
+
 #include <cstring>
+
+bool Batching::bRebuild = false;
+
+std::unordered_map<std::string, Batching> Batching::m_batched;
 
 Batching::Batching(std::unordered_map<int, Material> &materials) : m_materials(materials), m_vertexArray(nullptr), m_count(0), m_VBO(0), m_EBO(0), bHasIndice(false) {}
 
 void Batching::insert(Transform *transform, Mesh *mesh) {
     m_meshes.emplace_back(transform, mesh);
-
-    rebuild();
 }
 
 void Batching::draw() {
+    if (!m_vertexArray) {
+        return;
+    }
     setupMaterial();
 
     m_vertexArray->bind();
@@ -41,6 +50,31 @@ void Batching::rebuild() {
     }
 
     compile(&m_mesh);
+}
+
+void Batching::Renderer() {
+    if (bRebuild) {
+        for (auto &&[name, batch] : m_batched) {
+            batch.rebuild();
+        }
+        bRebuild = false;
+    }
+
+    Statistics::m_drawCallCount = 0; 
+        
+    for (auto &&[name, batch] : m_batched) {
+        batch.draw();
+
+        Statistics::m_drawCallCount++;
+    }
+}
+
+Batching *Batching::Find(const std::string &name) {
+    auto it = m_batched.find(name);
+    if (it == m_batched.end()) {
+        return nullptr;
+    }
+    return &(it->second);
 }
 
 void Batching::compile(Mesh *mesh) {

@@ -7,42 +7,22 @@
 #include <gr-render/gVertexArray.h>
 #include <gr-render/gRender.h>
 
+#include "default.hpp"
 
 class MeshRender : public Component {
 public:
     MeshRender();
-    ~MeshRender();
-
-    void Init() override;
 
     std::unordered_map<int, Material> &getMaterials();
-
-    // void draw();
 
     Material &addMaterial(int idx, const Material& material);
 
     void build();
 
-    static void Draw();
-
-    // static void Rebuild();
-
-    static std::vector<GameObject *> s_objects;
-
-    static bool is;
-    
 private:
     std::unordered_map<int, Material> m_materials;
 
-    grr::gVertexArray *m_vertexArray;
-
-    grm::u32 m_idxVBO;
-
-    grm::u32 m_idxEBO;
-
-    grm::u32 m_count;
-
-    bool isIndice;
+    Batching *m_batched;
 };
 
 

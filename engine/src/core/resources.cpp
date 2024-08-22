@@ -7,7 +7,6 @@
 #include "filesystem/stream.h"
 
 #include "core/animation/animation.hpp"
-#include "core/binary/gHeader.hpp"
 
 #include "core/scene.hpp"
 
@@ -24,6 +23,7 @@
 #include "event.hpp"
 
 #include <filesystem>
+#include <cassert>
 #include <future>
 
 grm::u32 Resources::m_processCount = 0;
@@ -45,8 +45,14 @@ std::unordered_map<std::string, std::unique_ptr<Animation>> Resources::s_animati
 std::list<std::tuple<std::string, Animation *>> Resources::s_animationFromLoader;
 std::mutex Resources::s_animatioMutex;
 
+/***************** GameObject *****************/
+std::list<std::tuple<std::string, Transform *>> Resources::s_gameObjectFromLoader;
+std::mutex Resources::s_gameObjectMutex;
+
 /***************** Mesh *****************/
 std::unordered_map<std::string, std::unique_ptr<Mesh>> Resources::s_meshList;
+
+std::unordered_map<std::string, grm::size> Resources::m_nameCount;
 
 void Resources::Initialize() {
     stbi_set_flip_vertically_on_load(true);
@@ -120,240 +126,25 @@ grr::gShader *Resources::LoadShader(const std::string &path) {
     return shader;
 }
 
-std::string FindNewName(std::string name, int id = 0) {
-    if (GameObject::Find(name)) {
-        name += std::to_string(id);
-        return FindNewName(name, id++);
-    }
-    return name;
-}
-
-GameObject *ReadChildren(std::istream &is) {
-    gModel pModel;
-    if (!(is.read(reinterpret_cast<char *>(&pModel), sizeof(gModel)))) {
-        return nullptr;
-    }
-
-    grm::u32 meshCount;
-    if (!is.read(reinterpret_cast<char *>(&meshCount), sizeof(grm::u32))) {
-        Console::log(LogInfo::ERROR, "Failed to read mesh count to file.");
-        return nullptr;
-    }
-
-    std::vector<gMesh> meshes(meshCount);
-
-    for (auto &mesh : meshes) {
-        // read name
-        if (!is.read(reinterpret_cast<char *>(mesh.m_name), sizeof(char) * 256)) {
-            continue;
-        }
-
-        // bone
-        if (!is.read(reinterpret_cast<char *>(&mesh.m_hasBone), sizeof(bool))) {
-            continue;
-        }
-
-        // read vertices
-        if (!is.read(reinterpret_cast<char *>(&mesh.m_verticeCount), sizeof(grm::u32))) {
-            continue;
-        }
-
-        mesh.m_vertices = new gVertex[mesh.m_verticeCount];
-        if (!is.read(reinterpret_cast<char *>(mesh.m_vertices), mesh.m_verticeCount * sizeof(gVertex))) {
-            continue;
-        }
-
-        // read indices
-        if (!is.read(reinterpret_cast<char *>(&mesh.m_indicesCount), sizeof(grm::u32))) {
-            continue;
-        }
-
-        mesh.m_indices = new grm::u32[mesh.m_indicesCount];
-        if (!is.read(reinterpret_cast<char *>(mesh.m_indices), mesh.m_indicesCount * sizeof(grm::u32))) {
-            continue;
-        }
-    
-        // bad alloc
-        // if (!mesh.m_hasBone) {
-        //     continue;
-        // }
-
-        // read bones
-        if (!is.read(reinterpret_cast<char *>(&mesh.m_boneCount), sizeof(grm::u32))) {
-            continue;
-        }
-
-        mesh.m_bones = new gBone[mesh.m_boneCount];
-        if (!is.read(reinterpret_cast<char *>(mesh.m_bones), mesh.m_boneCount * sizeof(gBone))) {
-            continue;
-        }
-    }
-
-    // Cria um game object 
-    auto gameObject = &GameObject::Create(pModel.m_name, "tag");
-
-    // transformaçoes
-    auto &transform = gameObject->getTransform();
-
-    transform.setLocalScale(pModel.m_scale);
-    transform.setLocalRotation(pModel.m_rotation);
-    transform.setLocalPosition(pModel.m_position);
-
-    Animator *m_animator = nullptr;
-
-    // adiciona o mesh componenet
-    if (!meshes.empty()) {
-        auto &meshFilter = gameObject->addComponent<MeshFilter>();
-        Mesh mesh; //meshFilter.getMesh();
-
-        std::string meshName;
-
-        grm::u32 verticeCount = 0;
-        for (auto &pMesh : meshes) {
-            meshName += pMesh.m_name;
-
-            for (int i=0;i<pMesh.m_verticeCount;i++) {
-                auto &vertice = pMesh.m_vertices[i];
-
-                mesh.addVertex(vertice.position, vertice.normal, vertice.texCoord, vertice.mIdx);
-
-                if (!pMesh.m_hasBone) {
-                    continue;
-                }
-                
-                auto& boneWeight = mesh.addBoneWeight();
-
-                float norm = vertice.weight[0] + vertice.weight[1] + vertice.weight[2] + vertice.weight[3];
-
-                for (auto k=0;k<4;++k) {
-                    boneWeight.insert<int>(k, vertice.boneIndex[k]);
-                    boneWeight.insert<float>(k, norm > 0.0f ? vertice.weight[k] / norm : vertice.weight[k]);
-                }
-            }
-
-            for (int i=0;i<pMesh.m_indicesCount;i++) {
-                mesh.addIndice(verticeCount + pMesh.m_indices[i]);
-            }
-            verticeCount += pMesh.m_verticeCount;
-
-            delete[] pMesh.m_vertices;
-            delete[] pMesh.m_indices;
-
-            if (!pMesh.m_hasBone) {
-                continue;
-            }
-
-            if (!m_animator) {
-                m_animator = &gameObject->addComponent<Animator>();
-            }
-
-            for (auto i=0;i<pMesh.m_boneCount;++i) {
-                auto &pBone = pMesh.m_bones[i];
-
-                m_animator->addBone(pBone.m_name, Bone{pBone.m_name, pBone.m_position, pBone.m_scale, pBone.m_rotation, pBone.m_id});
-            }
-
-            delete[] pMesh.m_bones;
-        }
-
-        auto m_mesh = Resources::FindMesh(meshName);
-        if (m_mesh) {
-            meshFilter.setMesh(m_mesh);
-        } else {
-            mesh.setName(meshName);
-
-            meshFilter.setMesh(Resources::AddMesh(meshName, std::make_unique<Mesh>(mesh)));
-        }
-    }
-
-    grm::u32 mSize;
-    if (!is.read(reinterpret_cast<char *>(&mSize), sizeof(grm::u32))) {
-        return nullptr;
-    }
-
-    if (mSize >= 1) {
-        std::vector<gMaterial> m_materials(mSize);
-        for (auto &material : m_materials) {
-        is.read(reinterpret_cast<char *>(material.m_name), 256 * sizeof(char));
-        is.read(reinterpret_cast<char *>(&material.m_color), sizeof(Color));
-        is.read(reinterpret_cast<char *>(&material.m_roughness), sizeof(float));
-        is.read(reinterpret_cast<char *>(&material.m_metallic), sizeof(float));
-        is.read(reinterpret_cast<char *>(&material.m_ambientOcclusion), sizeof(float));
-
-        is.read(reinterpret_cast<char *>(&material.m_textureCount), sizeof(grm::u32));
-
-        material.m_textures = new gTexture[material.m_textureCount];
-        is.read(reinterpret_cast<char *>(material.m_textures), material.m_textureCount * sizeof(gTexture));
-
-        for (int i=0;i<material.m_textureCount;++i) {
-            auto &texture = material.m_textures[i];
-        }
-    }
-        
-        // builda a mesh
-        auto &meshRender = gameObject->addComponent<MeshRender>();
-        meshRender.Init();
-        
-        for (auto i=0;i<m_materials.size();++i) {
-            auto& material = m_materials[i];
-
-            auto &m = meshRender.addMaterial(i, {material.m_name, {material.m_color.r, material.m_color.g, material.m_color.b, material.m_color.a}});
-
-            for (int i=0;i<material.m_textureCount;++i) { 
-                auto& texture = material.m_textures[i];
-
-                m.setTexture(i, Resources::LoadTexture(texture.m_path));
-            }
-
-            delete[] material.m_textures;
-        }
-        meshRender.build();
-    }
-
-    grm::u32 nSize;
-    is.read(reinterpret_cast<char *>(&nSize), sizeof(grm::u32));
-
-    for (int i=0;i<nSize;++i) {
-        GameObject *child = ReadChildren(is);
-        child->getTransform().setParent(&transform);
-    }
-    return gameObject;
-}
-
 GameObject *Resources::LoadGameObject(const std::string &path) {
     Console::log(LogInfo::INFO, "Reading model...");
 
-    std::ifstream is(path, std::ios_base::binary);
-    if (!is.is_open()) {
-        Console::log(LogInfo::ERROR, "falied to open file: " + path);
-        return nullptr;
-    }
+    auto name = Filesystem::GetFileName(path);
 
-    gHeader pHeader;
-    if (!is.read(reinterpret_cast<char *>(&pHeader), sizeof(gHeader))) {
-        Console::log(LogInfo::ERROR, "Failed to read header to file.");
-        return nullptr;
+    auto it = m_nameCount.find(name);
+    if (it == m_nameCount.end()) {
+        m_nameCount.emplace(name, 0);
     }
-
-    if (std::string(pHeader.signature) != "grmd") {
-        Console::log(LogInfo::ERROR, "Model invalid: " + path);
-        return nullptr;
-    }
-
-    auto name = Filesystem::GetFileName(path) + "(root)";
-    name = FindNewName(name);
+    name += std::to_string(m_nameCount[name]++);
 
     auto gameObject = Scene::Create(name);
     auto &transform = gameObject->getTransform();
 
-    // ler as informaçoes do modelo
-    auto child = ReadChildren(is);
-    child->getTransform().setParent(&transform);
+    {
+        std::lock_guard<std::mutex> lock(s_gameObjectMutex);
+        s_gameObjectFromLoader.emplace_back(path, &transform);
+    }
 
-    // fecha o fluxo de arquivo
-    is.close();
-
-    // retorna um gameobject valido
     return gameObject;
 }
 
@@ -648,12 +439,250 @@ void Resources::ProcessAnimation() {
     }
 }
 
+void Resources::SetupGameObject(GameObject *gameObject, gModel &model, Mesh *mesh, std::vector<gMaterial> &materials, Transform *parent) {
+    // transformaçoes
+    auto &transform = gameObject->getTransform();
+
+    transform.setLocalScale(model.m_scale);
+    transform.setLocalRotation(model.m_rotation);
+    transform.setLocalPosition(model.m_position);
+
+    if (parent)
+        transform.setParent(parent);
+
+    if (!mesh) {
+        return;
+    }
+
+    auto &meshFilter = gameObject->addComponent<MeshFilter>();
+    meshFilter.setMesh(mesh);
+
+    auto &meshRender = gameObject->addComponent<MeshRender>();
+    meshRender.Init();
+
+    for (auto i=0;i<materials.size();++i) {
+        auto& material = materials[i];
+
+        auto &m = meshRender.addMaterial(i, {material.m_name, {material.m_color.r, material.m_color.g, material.m_color.b, material.m_color.a}});
+
+        for (int i=0;i<material.m_textureCount;++i) { 
+            auto& texture = material.m_textures[i];
+
+            m.setTexture(i, Resources::LoadTexture(texture.m_path));
+        }
+
+        delete[] material.m_textures;
+    }
+    meshRender.build();
+}
+
+void Resources::doInBackgroundGameObject(const std::string &path, Transform *target) {
+    if (!Stream::open(path, std::ios_base::in | std::ios_base::binary)) {
+        return Console::log(LogInfo::ERROR, "Failed to load model. " + path);
+    }
+
+    gHeader pHeader;
+    if (!Stream::read(&pHeader, 1)) {
+        return Console::log(LogInfo::ERROR, "Failed to read header to file.");
+    }
+
+    if (std::string(pHeader.signature) != "grmd") {
+        return Console::log(LogInfo::ERROR, "Model invalid: " + path);
+    }
+
+    ReadChildren(target);
+
+    Stream::close();
+}
+
+void Resources::ProcessBinary() {
+    std::unique_lock<std::mutex> lock(s_gameObjectMutex);
+    while (!s_gameObjectFromLoader.empty()) {
+        auto &&[path, transform] = s_gameObjectFromLoader.front();
+        lock.unlock();
+
+        doInBackgroundGameObject(path, transform);
+
+        lock.lock();
+        s_gameObjectFromLoader.pop_front();
+    }
+}
+
 void Resources::OnThread() {
     ProcessShader();
 
     ProcessTexture();
 
     ProcessAnimation();
+
+    ProcessBinary();
+}
+
+void Resources::ReadChildren(Transform *parent) {
+    gModel pModel;
+    if (!Stream::read(&pModel, 1)) {
+        return;
+    }
+
+    grm::u32 meshCount;
+    if (!Stream::read(&meshCount, 1)) {
+        Console::log(LogInfo::ERROR, "Failed to read mesh count to file.");
+        return;
+    }
+
+    std::vector<gMesh> meshes(meshCount);
+
+    for (auto &mesh : meshes) {
+        // read name
+        if (!Stream::read<char>(mesh.m_name, 256)) {
+            continue;
+        }
+
+        // bone
+        if (!Stream::read<bool>(&mesh.m_hasBone, 1)) {
+            continue;
+        }
+
+        // read vertices
+        if (!Stream::read(&mesh.m_verticeCount, 1)) {
+            continue;
+        }
+
+        mesh.m_vertices = new gVertex[mesh.m_verticeCount];
+        if (!Stream::read(mesh.m_vertices, mesh.m_verticeCount)) {
+            continue;
+        }
+
+        // read indices
+        if (!Stream::read(&mesh.m_indicesCount, 1)) {
+            continue;
+        }
+
+        mesh.m_indices = new grm::u32[mesh.m_indicesCount];
+        if (!Stream::read(mesh.m_indices, mesh.m_indicesCount)) {
+            continue;
+        }
+    
+        // bad alloc
+        // if (!mesh.m_hasBone) {
+        //     continue;
+        // }
+
+        // read bones
+        if (!Stream::read(&mesh.m_boneCount, 1)) {
+            continue;
+        }
+
+        mesh.m_bones = new gBone[mesh.m_boneCount];
+        if (!Stream::read(mesh.m_bones, mesh.m_boneCount)) {
+            continue;
+        }
+    }
+
+    Animator *m_animator = nullptr;
+    Mesh *m_mesh = nullptr;
+
+    // adiciona o mesh componenet
+    if (!meshes.empty()) {
+        // auto &meshFilter = gameObject->addComponent<MeshFilter>();
+        Mesh mesh; //meshFilter.getMesh();
+
+        std::string meshName;
+
+        grm::u32 verticeCount = 0;
+        for (auto &pMesh : meshes) {
+            meshName += pMesh.m_name;
+
+            for (int i=0;i<pMesh.m_verticeCount;i++) {
+                auto &vertice = pMesh.m_vertices[i];
+
+                mesh.addVertex(vertice.position, vertice.normal, vertice.texCoord, vertice.mIdx);
+
+                if (!pMesh.m_hasBone) {
+                    continue;
+                }
+                
+                auto& boneWeight = mesh.addBoneWeight();
+
+                float norm = vertice.weight[0] + vertice.weight[1] + vertice.weight[2] + vertice.weight[3];
+
+                for (auto k=0;k<4;++k) {
+                    boneWeight.insert<int>(k, vertice.boneIndex[k]);
+                    boneWeight.insert<float>(k, norm > 0.0f ? vertice.weight[k] / norm : vertice.weight[k]);
+                }
+            }
+
+            for (int i=0;i<pMesh.m_indicesCount;i++) {
+                mesh.addIndice(verticeCount + pMesh.m_indices[i]);
+            }
+            verticeCount += pMesh.m_verticeCount;
+
+            delete[] pMesh.m_vertices;
+            delete[] pMesh.m_indices;
+
+            if (!pMesh.m_hasBone) {
+                continue;
+            }
+
+            if (!m_animator) {
+                // m_animator = &gameObject->addComponent<Animator>();
+            }
+
+            for (auto i=0;i<pMesh.m_boneCount;++i) {
+                auto &pBone = pMesh.m_bones[i];
+
+                m_animator->addBone(pBone.m_name, Bone{pBone.m_name, pBone.m_position, pBone.m_scale, pBone.m_rotation, pBone.m_id});
+            }
+
+            delete[] pMesh.m_bones;
+        }
+
+        m_mesh = Resources::FindMesh(meshName);
+        if (!m_mesh) {
+            mesh.setName(meshName);
+
+            m_mesh = Resources::AddMesh(meshName, std::make_unique<Mesh>(mesh));
+        }
+    }
+
+    grm::u32 mSize;
+    if (!Stream::read(&mSize, 1)) {
+        return;
+    }
+
+    std::vector<gMaterial> m_materials;
+    if (mSize >= 1) {
+        m_materials.resize(mSize);
+        for (auto &material : m_materials) {
+            Stream::read(material.m_name, 256);
+            Stream::read(&material.m_color, 1);
+            Stream::read(&material.m_roughness, 1);
+            Stream::read(&material.m_metallic, 1);
+            Stream::read(&material.m_ambientOcclusion, 1);
+
+            Stream::read(&material.m_textureCount, 1);
+
+            material.m_textures = new gTexture[material.m_textureCount];
+            Stream::read(material.m_textures, material.m_textureCount);
+
+            for (int i=0;i<material.m_textureCount;++i) {
+                auto &texture = material.m_textures[i];
+            }
+        }
+    }
+
+    grm::u32 nSize;
+    Stream::read(&nSize, 1);
+
+    auto gameObject = &GameObject::Create(pModel.m_name, "tag");
+
+    // setup gameobject
+    Event::Add(&Resources::SetupGameObject, gameObject, pModel, m_mesh, m_materials, parent);
+
+    for (int i=0;i<nSize;++i) {
+        ReadChildren(&gameObject->getTransform());
+        // child->getTransform().setParent(&transform);
+    }
 }
 
 const grm::size Resources::GetTextureCount() {
@@ -667,3 +696,7 @@ const grm::size Resources::GetShaderCount() {
 const grm::size Resources::GetMeshCount() {
     return s_meshList.size();
 }
+
+
+
+

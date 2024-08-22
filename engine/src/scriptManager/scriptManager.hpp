@@ -18,8 +18,6 @@ public:
     static Camera *(*MainCamera)();
     static Camera *(*CurrentCamera)();
 
-    static std::vector<GameObject*> &(*GetGameObjectsFromRender)();
-
     static std::list<std::unique_ptr<GameObject>> &(*GetAllGameObject)();
 
     // [ Entity ]

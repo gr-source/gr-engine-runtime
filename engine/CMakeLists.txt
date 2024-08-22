@@ -39,6 +39,7 @@ set(scriptManager_hdr
 )
 
 set(core_src
+    src/core/statistics.cpp
     src/core/resources.cpp
     src/core/thread.cpp
     src/core/event.cpp
@@ -46,6 +47,7 @@ set(core_src
 )
 
 set(core_hdr
+    src/core/statistics.hpp
     src/core/resources.h
     src/core/event.hpp
     src/core/thread.hpp

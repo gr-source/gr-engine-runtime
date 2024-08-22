@@ -17,6 +17,8 @@
 
 #include "filesystem/filesystem.h"
 
+#include "geometry/batching.hpp"
+
 #include <cstring>
 
 std::vector<GameObject *> RenderManager::s_objects;
@@ -26,10 +28,6 @@ grr::gShader *RenderManager::m_shader = nullptr;
 Frustum RenderManager::s_frustum;
 
 bool RenderManager::bWireFrame = false;
-
-int RenderManager::iDrawCount = 0;
-
-int RenderManager::iDrawRender = 0;
 
 Camera *RenderManager::m_camera = nullptr;
 
@@ -100,9 +98,6 @@ void RenderManager::Initialize() {
 }
 
 void RenderManager::Process() {
-    s_objects.clear();
-    iDrawCount = 0;
-
     if (!m_shader || !m_shader->isValid()) {
         return;
     }
@@ -110,12 +105,6 @@ void RenderManager::Process() {
     m_camera = Camera::Current();
 
     s_frustum.CalculateFrustum(m_camera->getPerspesctive() * m_camera->getViewmatrix());
-
-    // std::for_each(MeshRender::s_objects.begin(), MeshRender::s_objects.end(), &RenderManager::Filter);
-
-    // Ecs::for_each<MeshRender>(RenderManager::Filter);
-
-    iDrawRender = s_objects.size();
 }
 
 void RenderManager::Renderer() {
@@ -138,30 +127,7 @@ void RenderManager::Renderer() {
     grr::gShader::SetUniform("u_animatior", static_cast<int>(false));
     grr::gShader::SetUniform("u_model", 1, Matrix4x4::identityMatrix);
 
-    MeshRender::Draw();
-/*
-    for (auto& gameObject : s_objects) {
-        auto& transform = gameObject->getComponent<Transform>();
-
-        auto& meshRender = gameObject->getComponent<MeshRender>();
-
-        if (gameObject->hasComponent<Animator>()) {
-            auto &animator = gameObject->getComponent<Animator>();
-
-            auto &metrices = animator.m_finalBoneMatrices;
-
-            grr::gShader::SetUniform<Matrix4x4>("u_boneMatrices", metrices.size(), metrices.data());
-
-            grr::gShader::SetUniform("u_animatior", static_cast<int>(true));
-        }
-
-        SetupMaterial(meshRender.getMaterials());
-        
-        grr::gShader::SetUniform("u_model", 1, transform.getGlobalMatrix());
-
-        meshRender.draw();
-    }
-*/
+    Batching::Renderer();
 
     for (int i=0;i<10;i++) {
         grr::gTexture::Bind(nullptr, i);
@@ -189,8 +155,6 @@ void RenderManager::Filter(GameObject *gameObject, MeshRender *meshRender) {
 
     auto& model = transform.getGlobalMatrix();
     auto& boundbox = meshFilter.getBoundbox();
-
-    ++iDrawCount;
 
     if (!s_frustum.IsCubeInFrustumOOBB(boundbox.min, boundbox.max, model)) {
         return;

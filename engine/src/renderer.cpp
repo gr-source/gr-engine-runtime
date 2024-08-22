@@ -28,8 +28,10 @@ void DebugDraw::Initialize() {
     m_shader = grr::gShader::Create(&fSource, &vSource);
 
     m_shader->bind();
+    
     grr::gShader::Register("projection");
     grr::gShader::Register("view");
+    
     m_shader->unbind();
 
     // vertex
