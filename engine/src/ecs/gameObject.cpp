@@ -4,9 +4,9 @@
 
 #include "../scriptManager/scriptManager.hpp"
 
-GameObject *(*GameObject::Find)(const std::string &name);
-
 GameObject &(*GameObject::Create)(const std::string &name, const std::string &tag);
+
+GameObject *(*GameObject::Find)(const std::string &name);
 
 const std::string &GameObject::getName() {
     return m_name;
@@ -18,6 +18,14 @@ void GameObject::setName(const std::string &name) {
 
 const std::string &GameObject::getTag() {
     return m_tag;
+}
+
+void GameObject::setActive(bool value) {
+    m_bActive = value;
+}
+
+bool GameObject::isActive() const {
+    return m_bActive;
 }
 
 Transform &GameObject::getTransform() {

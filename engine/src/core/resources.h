@@ -78,9 +78,6 @@ private:
     /***************** Mesh *****************/
     static std::unordered_map<std::string, std::unique_ptr<Mesh>> s_meshList;
 
-    static std::unordered_map<std::string, grm::size> m_nameCount;
-
-
     static void SetupTexture(grr::gTexture *texture, int width, int height, int ch, void *pixels, std::string path);
 
     static void ProcessTexture();

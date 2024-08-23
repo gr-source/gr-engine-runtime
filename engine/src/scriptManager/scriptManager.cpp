@@ -48,8 +48,6 @@ std::unordered_map<int, std::pair<const std::string, const std::string>> (*Scrip
 
 std::unordered_map<int, grr::gShader *> (*ScriptManager::GetShaders)();
 
-std::list<std::unique_ptr<GameObject>> &(*ScriptManager::GetAllGameObject)();
-
 // [ Entity ]
 std::size_t (*ScriptManager::GetEntityCount)();
 
@@ -98,9 +96,6 @@ void ScriptManager::Shutdown() {
     UNREGISTER_API(Destroy);
     UNREGISTER_API(SetDeltaTime);
 
-    // [ Component - MeshRender ]
-    UNREGISTER_API(GetAllGameObject);
-
     // [ Entity ]
     UNREGISTER_API(GetEntityCount);
     UNREGISTER_API(Entity::Update);
@@ -123,6 +118,7 @@ void ScriptManager::Shutdown() {
     UNREGISTER_API(SetScreenSize);
 
     // GameObject
+    // UNREGISTER_API(GameObject::GetMutex);
     UNREGISTER_API(GameObject::Create);
     UNREGISTER_API(GameObject::Find);
     
@@ -150,9 +146,6 @@ void ScriptManager::RegisterApi() {
     GetShaders = (std::unordered_map<int, grr::gShader *>(*)(void))dlsym(ScriptManager::s_handle, "GetShaders");
 
     // REGISTER_API_FROM_NAME_N("GetShaders", std::unordered_map<int, grr::gShader *>, GetShaders, void);
-
-    // [ Component - MeshRender ]
-    REGISTER_API(std::list<std::unique_ptr<GameObject>>&, void, GetAllGameObject);
 
     // [ Entity ]
     REGISTER_API(std::size_t, void, GetEntityCount);
@@ -199,6 +192,7 @@ void ScriptManager::RegisterApi() {
     // gameobject
     REGISTER_API_FROM_NAME_N("GameObjectCreate", GameObject &, GameObject::Create, const std::string &, const std::string &);
     REGISTER_API_FROM_NAME_N("GameObjectFind", GameObject *, GameObject::Find, const std::string &);
+    // REGISTER_API_FROM_NAME_N("GetGameObjectMutex", std::mutex&, GameObject::GetMutex, void);
 }
 
 

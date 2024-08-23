@@ -59,9 +59,6 @@ private:
 
 template <typename T, typename... Args>
 inline T &Entity::addComponent(Args &&...args) {
-    if (hasComponent<T>()) {
-        return getComponent<T>();
-    }
     auto name = typeid(T).name();
 
     auto &&[iterator, added] = components.emplace(name, std::make_shared<T>(std::forward<Args>(args)...));

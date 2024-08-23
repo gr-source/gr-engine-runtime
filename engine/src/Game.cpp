@@ -519,7 +519,7 @@ void Game::RenderScenesUI() {
         ImGui::TreePop();
     }
 
-    if (ImGui::Button("Rebuild")) {
+    if (ImGui::Button("ReloadScript")) {
         Batching::bRebuild = true;
     }
     
@@ -568,7 +568,7 @@ void Game::ReadHierarchy(Transform *transform) {
 
     static int CountClick = 0;
 
-    if (ImGui::IsItemClicked(ImGuiMouseButton_Left) && s_objectSelected == gameObject) {
+    if (ImGui::IsItemClicked(ImGuiMouseButton_Left) && s_objectSelected != gameObject) {
         ++CountClick;
     }
 
@@ -1158,8 +1158,8 @@ void Game::RenderPropertiUI() {
             if (ScriptManager::GetEntityCount)
                 ImGui::Text("Entidades: %ld", ScriptManager::GetEntityCount());
 
-            if (ScriptManager::GetAllGameObject)
-                ImGui::Text("GameObject: %ld", ScriptManager::GetAllGameObject().size());
+            // if (ScriptManager::GetAllGameObject)
+            //     ImGui::Text("GameObject: %ld", ScriptManager::GetAllGameObject().size());
 
             ImGui::Text("Memoria: %s", getfilesize(Memory::totalMemoryUsage).c_str());
 

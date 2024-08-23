@@ -1,20 +1,25 @@
 #pragma once
 
+#include "default.hpp"
+
 #include "entity.h"
 
-#include "default.hpp"
 
 class GameObject {
 public:
-    static GameObject *(*Find)(const std::string &name);
-
     static GameObject &(*Create)(const std::string &name, const std::string &tag);
+
+    static GameObject *(*Find)(const std::string &name);
 
     const std::string &getName();
 
     void setName(const std::string &name);
 
     const std::string &getTag();
+
+    void setActive(bool value);
+    
+    bool isActive() const;
 
     Transform &getTransform();
 
@@ -25,7 +30,7 @@ public:
     T& getComponent();
 
     template <typename T>
-    const bool hasComponent() const;
+    bool hasComponent() const;
 
     template <typename T, typename... Args>
     void RenderProperty(Args&&... args);
@@ -40,6 +45,8 @@ private:
     std::string m_tag;
 
     Entity* m_entity;
+
+    bool m_bActive;
 };
 
 template <typename T, typename... Args>
@@ -53,7 +60,7 @@ inline T &GameObject::getComponent() {
 }
 
 template <typename T>
-inline const bool GameObject::hasComponent() const {
+inline bool GameObject::hasComponent() const {
     return m_entity->hasComponent<T>();
 }
 

@@ -52,8 +52,6 @@ std::mutex Resources::s_gameObjectMutex;
 /***************** Mesh *****************/
 std::unordered_map<std::string, std::unique_ptr<Mesh>> Resources::s_meshList;
 
-std::unordered_map<std::string, grm::size> Resources::m_nameCount;
-
 void Resources::Initialize() {
     stbi_set_flip_vertically_on_load(true);
 }
@@ -141,12 +139,6 @@ GameObject *Resources::LoadGameObject(const std::string &path) {
     Console::log(LogInfo::INFO, "Reading model...");
 
     auto name = Filesystem::GetFileName(path);
-
-    auto it = m_nameCount.find(name);
-    if (it == m_nameCount.end()) {
-        m_nameCount.emplace(name, 0);
-    }
-    name += std::to_string(m_nameCount[name]++);
 
     auto gameObject = Scene::Create(name);
     auto &transform = gameObject->getTransform();
@@ -703,14 +695,16 @@ void Resources::ReadChildren(Transform *parent) {
     grm::u32 nSize;
     Stream::read(&nSize, 1);
 
+    std::unique_lock<std::mutex> lock(s_gameObjectMutex);
     auto gameObject = &GameObject::Create(pModel.m_name, "tag");
+    auto transform = &gameObject->getTransform();
+    lock.unlock();
 
     // setup gameobject
     Event::Add(&Resources::SetupGameObject, gameObject, pModel, m_mesh, m_materials, parent);
 
     for (int i=0;i<nSize;++i) {
-        ReadChildren(&gameObject->getTransform());
-        // child->getTransform().setParent(&transform);
+        ReadChildren(transform);
     }
 }
 

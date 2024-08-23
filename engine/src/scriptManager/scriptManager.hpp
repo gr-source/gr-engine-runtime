@@ -22,8 +22,6 @@ public:
     static Camera *(*MainCamera)();
     static Camera *(*CurrentCamera)();
 
-    static std::list<std::unique_ptr<GameObject>> &(*GetAllGameObject)();
-
     // [ Entity ]
     static std::size_t (*GetEntityCount)();
 

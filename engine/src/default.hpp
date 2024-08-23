@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <vector>
 #include <array>
+#include <mutex>
 #include <list>
 
 class GameObject;
