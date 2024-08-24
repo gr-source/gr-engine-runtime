@@ -10,11 +10,15 @@
 
 #include <cstring>
 
+#include "core/event.hpp"
+
 bool Batching::bRebuild = false;
 
 std::unordered_map<std::string, Batching> Batching::m_batched;
 
-Batching::Batching(std::unordered_map<int, Material> &materials) : m_materials(materials), m_vertexArray(nullptr), m_count(0), m_VBO(0), m_EBO(0), bHasIndice(false) {}
+Batching::Batching(std::unordered_map<int, Material> &materials, Mesh *mesh) : m_mesh(mesh), m_materials(materials), m_vertexArray(nullptr), m_indiceCount(0), m_primCount(0), m_VBO(0), m_EBO(0), m_PBO(0), bHasIndice(false), isCompiled(false) {
+    // compileMesh(mesh);
+}
 
 Batching::~Batching() {
     if (m_vertexArray) {
@@ -30,58 +34,46 @@ Batching::~Batching() {
     }
 }
 
-void Batching::insert(Transform *transform, Mesh *mesh) {
-    m_meshes.emplace_back(transform, mesh);
+void Batching::insert(Transform *transform) {
+    m_models.emplace_back(transform);
+}
+
+void Batching::remove(Transform *transform) {
+    m_models.erase(std::remove(m_models.begin(), m_models.end(), transform), m_models.end());
 }
 
 void Batching::draw() {
-    if (!m_vertexArray) {
+    if (!m_vertexArray || !m_vertexArray->isValid()) {
         return;
     }
     setupMaterial();
 
     m_vertexArray->bind();
 
-    if (bHasIndice) {
-        return grr::gVertexArray::DrawElements(grr::PrimitiveType_Triangles, m_count, nullptr);
+    if (bHasIndice && m_primCount) {
+        grr::gVertexArray::DrawElementsInstanced(grr::PrimitiveType_Triangles, m_indiceCount, nullptr, m_primCount);
+    } else if (bHasIndice) {
+        return grr::gVertexArray::DrawElements(grr::PrimitiveType_Triangles, m_indiceCount, nullptr);
+    } else if (m_primCount) {
+        return grr::gVertexArray::DrawArraysInstanced(grr::PrimitiveType_Triangles, m_indiceCount, m_primCount);
     }
-    return grr::gVertexArray::DrawArrays(grr::PrimitiveType_Triangles, m_count);
+    return grr::gVertexArray::DrawArrays(grr::PrimitiveType_Triangles, m_indiceCount);
 }
 
 void Batching::rebuild() {
-    Mesh m_mesh;
-
-    grm::size verticeCount = 0;
-    for (auto &&[transform, mesh] : m_meshes) {
-        for (auto &vertice : mesh->getVertices()) {
-            m_mesh.addVertex(
-                Vector3(transform->getGlobalMatrix() * Vector4(vertice.position, 1.0f)),
-                vertice.normal,
-                vertice.texCoord,
-                vertice.mIdx
-            );
-        }
-
-        for (auto &indice : mesh->getIndices()) {
-            m_mesh.addIndice(verticeCount + indice);
-        }
-        verticeCount += mesh->getVertices().size();
-    }
-
-    compile(&m_mesh);
+    compile();
 }
 
 void Batching::Renderer() {
-    if (bRebuild) {
-        for (auto &&[name, batch] : m_batched) {
-            batch.rebuild();
-        }
-        bRebuild = false;
-    }
+    Statistics::m_drawCallCount = 0;
 
-    Statistics::m_drawCallCount = 0; 
     
     for (auto &&[name, batch] : m_batched) {
+        // if (!batch.isCompiled) {
+        //     continue;
+        // }
+        batch.compile();
+
         batch.draw();
 
         Statistics::m_drawCallCount++;
@@ -104,8 +96,8 @@ void Batching::Delete(const std::string &name) {
     m_batched.erase(it);
 }
 
-void Batching::compile(Mesh *mesh) {
-    assert(mesh);
+void Batching::compileMesh(Mesh *mesh) {
+    bHasIndice = mesh->hasIndices();
 
     if (!m_vertexArray) {
         m_vertexArray = grr::gVertexArray::Create();
@@ -114,24 +106,27 @@ void Batching::compile(Mesh *mesh) {
     if (!m_VBO) {
         m_VBO = grr::gVertexArray::CreateBuffer(grr::BufferType_VBO);
     }
+
+    if (!m_PBO) {
+        m_PBO = grr::gVertexArray::CreateBuffer(grr::BufferType_PBO);
+    }
     
-    if (!m_EBO && mesh->hasIndices()) {
-        bHasIndice = true;
+    if (!m_EBO) {
         m_EBO = grr::gVertexArray::CreateBuffer(grr::BufferType_EBO);
     }
 
     auto vertexCount = mesh->getVertices().size();
-    auto vertexData = mesh->getVertices().data();
+    auto vertexData  = mesh->getVertices().data();
 
-    m_count = vertexCount;
+    m_indiceCount = vertexCount;
 
     m_vertexArray->bind();
 
     if (bHasIndice) {
         auto indiceCount = mesh->getIndices().size();
-        auto indiceData = mesh->getIndices().data();
+        auto indiceData  = mesh->getIndices().data();
 
-        m_count = indiceCount;
+        m_indiceCount = indiceCount;
 
         grr::gVertexArray::Bind(m_EBO);
         grr::gVertexArray::UpdateResize(indiceCount * sizeof(grm::u32));
@@ -139,31 +134,51 @@ void Batching::compile(Mesh *mesh) {
     }
 
     grr::gVertexArray::Bind(m_VBO);
-    /*
-    if (entity->hasComponent<Animator>()) {
-        auto& boneweight = mesh->getBoneWeight();
-
-        grr::gVertexArray::UpdateResize(vertexCount * sizeof(Vertex3D) + boneweight.size() * sizeof(BoneWeight));
-        grr::gVertexArray::SetBufferUpdate(0, vertexCount * sizeof(Vertex3D), vertexData);
-        grr::gVertexArray::SetBufferUpdate(vertexCount * sizeof(Vertex3D), boneweight.size() * sizeof(BoneWeight), boneweight.data());
-    } else {
-    */
     grr::gVertexArray::UpdateResize(vertexCount * sizeof(Vertex3D));
     grr::gVertexArray::SetBufferUpdate(0, vertexCount * sizeof(Vertex3D), vertexData);
-    // }
 
     grr::gVertexArray::SetAttrib(0, 3, sizeof(Vertex3D), reinterpret_cast<const void*>(offsetof(Vertex3D, position)));
     grr::gVertexArray::SetAttrib(1, 3, sizeof(Vertex3D), reinterpret_cast<const void*>(offsetof(Vertex3D, normal)));
     grr::gVertexArray::SetAttrib(2, 2, sizeof(Vertex3D), reinterpret_cast<const void*>(offsetof(Vertex3D, texCoord)));
     grr::gVertexArray::SetAttrib(3, 1, sizeof(Vertex3D), reinterpret_cast<const void*>(offsetof(Vertex3D, mIdx)));
 
-    /*
-    if (entity->hasComponent<Animator>()) {
-        grr::gVertexArray::SetAttribI(4, 4, sizeof(BoneWeight), reinterpret_cast<const void*>(vertexCount * sizeof(Vertex3D) + offsetof(BoneWeight, m_index)));
-        grr::gVertexArray::SetAttrib(5, 4, sizeof(BoneWeight), reinterpret_cast<const void*>(vertexCount * sizeof(Vertex3D) + offsetof(BoneWeight, m_weight)));
+    grr::gVertexArray::Bind(m_PBO);
+    for (int i=0;i<4;i++) {
+        grr::gVertexArray::SetAttrib(4 + i, 4, sizeof(Matrix4x4), reinterpret_cast<const void*>(i * sizeof(Vector4)));
+        grr::gVertexArray::SetAttribDivisor(4 + i, 1);
     }
-    */
+
     m_vertexArray->unbind();
+
+    isCompiled = true;
+}
+
+void Batching::compile() {
+    if (!isCompiled) {
+        compileMesh(m_mesh);
+    }
+
+    if (!m_vertexArray || !m_vertexArray->isValid() || m_models.empty()) {
+        return;
+    }
+    std::vector<Matrix4x4> models;
+
+    for (auto transform : m_models) {
+        models.push_back(transform->getGlobalMatrix());
+    }
+
+    m_vertexArray->bind();
+    grr::gVertexArray::Bind(m_PBO);
+    grr::gVertexArray::UpdateResize(models.size() * sizeof(Matrix4x4));
+    grr::gVertexArray::SetBufferUpdate(0, models.size() * sizeof(Matrix4x4), models.data());
+
+    // instancied
+    for (int i=0;i<4;i++) {
+        grr::gVertexArray::SetAttrib(4 + i, 4, sizeof(Matrix4x4), reinterpret_cast<const void*>(i * sizeof(Vector4)));
+        grr::gVertexArray::SetAttribDivisor(4 + i, 1);
+    }
+
+    m_primCount = models.size();
 }
 
 void Batching::setupMaterial() {

@@ -2,6 +2,7 @@
 
 #include <gr-math/gmath.h>
 
+#include <unordered_set>
 #include <algorithm>
 #include <vector>
 #include <array>

@@ -28,6 +28,8 @@ private:
 
     static ImGuiIO* s_io;
 
+    static grm::u8 m_currentPage;
+
     static bool bFileDoubleClick;
 
     static bool bCutAllFile;
@@ -57,6 +59,8 @@ private:
     static void RenderDocking();
 
     static void RenderScenesUI();
+
+    static void RenderPage(std::vector<GameObject *> &list, int page);
 
     static void ReadHierarchy(Transform* transform);
 

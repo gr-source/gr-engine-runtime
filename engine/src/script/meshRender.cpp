@@ -8,6 +8,13 @@
 
 MeshRender::MeshRender() : m_batched(nullptr) {}
 
+MeshRender::~MeshRender() {
+    if (!m_batched) {
+        return;
+    }
+    m_batched->remove(&entity->getComponent<Transform>());
+}
+
 std::unordered_map<int, Material> &MeshRender::getMaterials() {
     return m_materials;
 }
@@ -30,11 +37,11 @@ void MeshRender::build() {
 
     m_batched = Batching::Find(mName);
     if (m_batched) {
-        m_batched->insert(&transform, mesh);
+        m_batched->insert(&transform);
         return;
     }
 
-    m_batched = &Batching::Add(mName, m_materials);
-    m_batched->insert(&transform, mesh);
+    m_batched = &Batching::Add(mName, Batching{m_materials, mesh});
+    m_batched->insert(&transform);
 }
 

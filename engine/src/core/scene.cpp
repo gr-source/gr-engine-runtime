@@ -2,7 +2,7 @@
 
 #include "../scriptManager/scriptManager.hpp"
 
-std::list<GameObject *> &(*Scene::GetGameObject)() = nullptr;
+std::vector<GameObject *> &(*Scene::GetGameObject)() = nullptr;
 
 void (*Scene::Delete)(GameObject *target);
 
@@ -25,5 +25,5 @@ void Scene::Add(GameObject *target) {
     if (it != list.end()) {
         return;
     }
-    list.push_front(target);
+    list.emplace_back(target);
 }

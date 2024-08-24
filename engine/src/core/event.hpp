@@ -16,9 +16,11 @@ public:
 
     static void ProcessEvent();
 
-    static const grm::u32 getcount();
+    static grm::size GetCount();
+    
 protected:
     static std::list<std::function<void()>> m_events;
+    
     static std::mutex m_mutex;
 };
 
@@ -27,4 +29,6 @@ inline void Event::Add(Args&&... args) {
     std::lock_guard<std::mutex> lock(m_mutex);
     m_events.emplace_back(std::bind(std::forward<Args>(args)...));
 }
+
+
 

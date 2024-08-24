@@ -51,6 +51,7 @@ std::mutex Resources::s_gameObjectMutex;
 
 /***************** Mesh *****************/
 std::unordered_map<std::string, std::unique_ptr<Mesh>> Resources::s_meshList;
+std::mutex Resources::m_meshMutex;
 
 void Resources::Initialize() {
     stbi_set_flip_vertically_on_load(true);
@@ -142,6 +143,7 @@ GameObject *Resources::LoadGameObject(const std::string &path) {
 
     auto gameObject = Scene::Create(name);
     auto &transform = gameObject->getTransform();
+    // gameObject->setActive(true);
 
     {
         std::lock_guard<std::mutex> lock(s_gameObjectMutex);
@@ -184,22 +186,28 @@ void Resources::AddShaderLoaded(std::function<bool(grr::gShader *, const std::st
 }
 
 Mesh *Resources::FindMesh(const std::string &name) {
+    std::unique_lock<std::mutex> lock(m_meshMutex);
     auto it = s_meshList.find(name);
     if (it == s_meshList.end()) {
         return nullptr;
     }
-    return &(*(*it).second);
+    auto mesh = &(*(*it).second);
+    lock.unlock();
+    return mesh;
 }
 
 void Resources::DeleteMesh(Mesh *target) {
     if (!target) {
         return;
     }
+    
+    std::unique_lock<std::mutex> lock(m_meshMutex);
     auto it = s_meshList.find(target->getName());
     if (it == s_meshList.end()) {
         return;
     }
     s_meshList.erase(it);
+    lock.unlock();
 }
 
 /***************** Texture Process ****************/
@@ -479,7 +487,7 @@ void Resources::SetupGameObject(GameObject *gameObject, gModel &model, Mesh *mes
     meshFilter.setMesh(mesh);
 
     auto &meshRender = gameObject->addComponent<MeshRender>();
-    meshRender.Init();
+    // meshRender.Init();
 
     for (auto i=0;i<materials.size();++i) {
         auto& material = materials[i];
@@ -494,6 +502,7 @@ void Resources::SetupGameObject(GameObject *gameObject, gModel &model, Mesh *mes
 
         delete[] material.m_textures;
     }
+
     meshRender.build();
 }
 
@@ -537,6 +546,18 @@ void Resources::OnThread() {
     ProcessAnimation();
 
     ProcessBinary();
+}
+
+void WaitWrite(std::condition_variable &cv, std::mutex &mt, gModel &model, Transform *&transform, GameObject *&gameObject) {
+    auto object = &GameObject::Create(model.m_name, "tag");
+    auto tt = &object->getTransform();
+
+    {
+        std::lock_guard<std::mutex> lock(mt);
+        transform = tt;
+        gameObject = object;
+    }
+    cv.notify_one();
 }
 
 void Resources::ReadChildren(Transform *parent) {
@@ -605,7 +626,6 @@ void Resources::ReadChildren(Transform *parent) {
 
     // adiciona o mesh componenet
     if (!meshes.empty()) {
-        // auto &meshFilter = gameObject->addComponent<MeshFilter>();
         Mesh mesh; //meshFilter.getMesh();
 
         std::string meshName;
@@ -658,11 +678,14 @@ void Resources::ReadChildren(Transform *parent) {
             delete[] pMesh.m_bones;
         }
 
+        {
+            std::lock_guard<std::mutex> lock(s_gameObjectMutex);
         m_mesh = Resources::FindMesh(meshName);
         if (!m_mesh) {
             mesh.setName(meshName);
 
             m_mesh = Resources::AddMesh(meshName, std::make_unique<Mesh>(mesh));
+        }
         }
     }
 
@@ -695,10 +718,16 @@ void Resources::ReadChildren(Transform *parent) {
     grm::u32 nSize;
     Stream::read(&nSize, 1);
 
+    std::condition_variable cond;
+    Transform *transform = nullptr;
+    GameObject *gameObject = nullptr;
+
+    Event::Add(WaitWrite, std::ref(cond), std::ref(s_gameObjectMutex), std::ref(pModel), std::ref(transform), std::ref(gameObject));
+
     std::unique_lock<std::mutex> lock(s_gameObjectMutex);
-    auto gameObject = &GameObject::Create(pModel.m_name, "tag");
-    auto transform = &gameObject->getTransform();
-    lock.unlock();
+    cond.wait(lock, [&transform, &gameObject]{
+        return transform && gameObject;
+    });
 
     // setup gameobject
     Event::Add(&Resources::SetupGameObject, gameObject, pModel, m_mesh, m_materials, parent);
@@ -717,7 +746,12 @@ const grm::size Resources::GetShaderCount() {
 }
 
 const grm::size Resources::GetMeshCount() {
-    return s_meshList.size();
+    auto count = 0;
+    {
+        std::lock_guard<std::mutex> lock(m_meshMutex);
+        count = s_meshList.size();
+    }
+    return count;
 }
 
 

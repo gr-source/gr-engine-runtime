@@ -36,6 +36,9 @@
 
 #define UNREGISTER_API(func) func = nullptr
 
+#define REGISTER_FIELD(n, f, ...) \
+    f = ((__VA_ARGS__ *)dlsym(ScriptManager::s_handle, n))
+
 void* ScriptManager::s_handle = nullptr;
 
 // [ Main ]
@@ -174,7 +177,7 @@ void ScriptManager::RegisterApi() {
     REGISTER_API(std::unique_ptr<Animation>, const std::string &, LoadAnimation);
 
     //Scene
-    REGISTER_API_FROM_NAME("GetSceneGameObject", std::list<GameObject *> &, void, Scene::GetGameObject);
+    REGISTER_API_FROM_NAME("GetSceneGameObject", std::vector<GameObject *> &, void, Scene::GetGameObject);
 
     REGISTER_API_FROM_NAME("DeleteSceneGameObject", void, GameObject *, Scene::Delete);
 
@@ -192,7 +195,6 @@ void ScriptManager::RegisterApi() {
     // gameobject
     REGISTER_API_FROM_NAME_N("GameObjectCreate", GameObject &, GameObject::Create, const std::string &, const std::string &);
     REGISTER_API_FROM_NAME_N("GameObjectFind", GameObject *, GameObject::Find, const std::string &);
-    // REGISTER_API_FROM_NAME_N("GetGameObjectMutex", std::mutex&, GameObject::GetMutex, void);
 }
 
 

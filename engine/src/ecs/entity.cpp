@@ -11,5 +11,5 @@ GameObject *Entity::getGameObject() {
 }
 
 std::unordered_map<std::string, std::shared_ptr<Component>> &Entity::getComponents() {
-    return components;
+    return m_componentPtr;
 }

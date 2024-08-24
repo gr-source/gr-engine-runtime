@@ -77,6 +77,7 @@ private:
 
     /***************** Mesh *****************/
     static std::unordered_map<std::string, std::unique_ptr<Mesh>> s_meshList;
+    static std::mutex m_meshMutex;
 
     static void SetupTexture(grr::gTexture *texture, int width, int height, int ch, void *pixels, std::string path);
 
@@ -106,6 +107,9 @@ private:
 
 template <typename... Args>
 inline Mesh *Resources::AddMesh(Args &&...args) {
+    std::unique_lock<std::mutex> lock(m_meshMutex);
     auto &&[pair, added] = s_meshList.emplace(std::forward<Args>(args)...);
-    return &(*(*pair).second);
+    auto mesh = &(*(*pair).second);
+    lock.unlock();
+    return mesh;
 }

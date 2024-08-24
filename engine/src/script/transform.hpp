@@ -33,9 +33,9 @@ public:
 
     const Vector3 getforward() const;
 
-    const Matrix4x4 getGlobalMatrix() const;
+    const Matrix4x4 &getGlobalMatrix() const;
 
-    const Matrix4x4 getLocalMatrix() const;
+    const Matrix4x4 &getLocalMatrix() const;
 
     const bool hasParent() const;
 

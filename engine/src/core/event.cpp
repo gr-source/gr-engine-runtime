@@ -17,7 +17,12 @@ void Event::ProcessEvent() {
     }
 }
 
-const grm::u32 Event::getcount() {
-    return 0;
+grm::size Event::GetCount() {
+    grm::size count = 0;
+    {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        count = m_events.size();
+    }
+    return count;
 }
 

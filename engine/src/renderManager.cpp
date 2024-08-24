@@ -23,7 +23,7 @@
 
 std::vector<GameObject *> RenderManager::s_objects;
 
-grr::gShader *RenderManager::m_shader[2] = {nullptr, nullptr};
+grr::gShader *RenderManager::m_shader[3] = {nullptr, nullptr, nullptr};
 
 Frustum RenderManager::s_frustum;
 
@@ -44,8 +44,8 @@ void RenderManager::Initialize() {
 
     m_shader[ShaderType_Dynamic] = shaders[ShaderType_Dynamic];
     m_shader[ShaderType_Dynamic_Anim] = shaders[ShaderType_Dynamic_Anim];
+    m_shader[ShaderType_Dynamic_Multi_Model] = shaders[ShaderType_Dynamic_Multi_Model];
 
-    
     return;
 }
 
@@ -64,7 +64,7 @@ void RenderManager::Renderer() {
         return;
     }
 
-    grr::gShader::Bind(m_shader[ShaderType_Dynamic_Anim]);
+    grr::gShader::Bind(m_shader[ShaderType_Dynamic_Multi_Model]);
 
     grr::gShader::SetUniform("u_projection", 1, m_camera->getPerspesctive());
     grr::gShader::SetUniform("u_view", 1, m_camera->getViewmatrix());
@@ -76,8 +76,8 @@ void RenderManager::Renderer() {
         // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     }
 
-    grr::gShader::SetUniform("u_animatior", static_cast<int>(false));
-    grr::gShader::SetUniform("u_model", 1, Matrix4x4::identityMatrix);
+    // grr::gShader::SetUniform("u_animatior", static_cast<int>(false));
+    // grr::gShader::SetUniform("u_model", 1, Matrix4x4::identityMatrix);
 
     Batching::Renderer();
 
@@ -141,11 +141,11 @@ void RenderManager::SetupMaterial(std::unordered_map<int, Material> &materials) 
 }
 
 bool RenderManager::SetupShader(grr::gShader *shader, const std::string &path) {
-    if (m_shader[ShaderType_Dynamic_Anim] != shader) {
+    if (m_shader[ShaderType_Dynamic_Multi_Model] != shader) {
         return false;
     }
 
-    grr::gShader::Bind(m_shader[ShaderType_Dynamic_Anim]);
+    grr::gShader::Bind(m_shader[ShaderType_Dynamic_Multi_Model]);
 
     grr::gShader::Register("u_projection");
     grr::gShader::Register("u_view");

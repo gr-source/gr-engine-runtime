@@ -6,7 +6,7 @@
 
 class Scene {
 public:
-    static std::list<GameObject *> &(*GetGameObject)();
+    static std::vector<GameObject *> &(*GetGameObject)();
 
     static void (*Delete)(GameObject *target);
     

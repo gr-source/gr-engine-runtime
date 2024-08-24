@@ -8,10 +8,12 @@
 
 class Batching {
 public:
-    Batching(std::unordered_map<int, Material> &materials);
+    Batching(std::unordered_map<int, Material> &materials, Mesh *mesh);
     ~Batching();
 
-    void insert(Transform *transform, Mesh *mesh);
+    void insert(Transform *transform);
+
+    void remove(Transform *transform);
 
     void draw();
 
@@ -33,19 +35,29 @@ private:
 
     std::unordered_map<int, Material> m_materials;
 
-    std::vector<std::tuple<Transform *, Mesh *>> m_meshes;
+    std::vector<Transform *> m_models;
 
     grr::gVertexArray *m_vertexArray;
 
-    grm::u32 m_count;
+    Mesh *m_mesh;
+
+    grm::u32 m_indiceCount;
+
+    grm::u32 m_primCount;
 
     grm::u32 m_VBO;
 
     grm::u32 m_EBO;
 
+    grm::u32 m_PBO;
+
     bool bHasIndice;
 
-    void compile(Mesh *mesh);
+    bool isCompiled;
+
+    void compileMesh(Mesh *mesh);
+
+    void compile();
 
     void setupMaterial();
 };

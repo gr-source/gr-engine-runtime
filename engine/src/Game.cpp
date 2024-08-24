@@ -47,6 +47,8 @@
 #define IMGUI_PAYLOAD_GAMEOBJECT "##payload_game_object"
 #define IMGUI_PAYLOAD_FILE "##payload_file"
 
+#define ITEMS_PER_PAGE 20
+
 const std::string getfilesize(std::size_t sz) {
     float kb = sz / 1024.0f;
     float mb = kb / 1024.0f;
@@ -119,6 +121,8 @@ ImGuizmo::OPERATION Game::m_guizmoOperation = ImGuizmo::TRANSLATE;
 ImGuizmo::MODE Game::m_guizmoManipulate = ImGuizmo::WORLD;
 
 grm::u32 Game::s_maxProgress = 0;
+
+grm::u8 Game::m_currentPage = 0;
 
 std::unordered_map<std::filesystem::path, bool> Game::fLisDirSelected;
 
@@ -509,11 +513,27 @@ void Game::RenderScenesUI() {
         }
         
         if (Scene::GetGameObject) {
-            for (auto& gameObject : Scene::GetGameObject()) {
-                auto& transform = gameObject->getTransform();
+            auto &list = Scene::GetGameObject();
 
-                ReadHierarchy(&transform);
+            if (ImGui::Button("Before")) {
+                if (m_currentPage > 0) {
+                    --m_currentPage;
+                }
             }
+            
+            RenderPage(list, m_currentPage);
+            
+            if (ImGui::Button("Next")) {
+                if (m_currentPage < list.size() - 1) {
+                    ++m_currentPage;
+                }
+            }
+
+            // for (auto& gameObject : Scene::GetGameObject()) {
+            //     auto& transform = gameObject->getTransform();
+
+            //     ReadHierarchy(&transform);
+            // }
         }
         
         ImGui::TreePop();
@@ -548,6 +568,17 @@ void Game::RenderScenesUI() {
     PopupMenuAdd();
 
     ImGui::End();
+}
+
+void Game::RenderPage(std::vector<GameObject *> &list, int page) {
+    int start = page * ITEMS_PER_PAGE;
+    int end = std::min(start + ITEMS_PER_PAGE, static_cast<int>(list.size()));
+
+    for (int i = start; i < end; ++i) {
+        auto& transform = list[i]->getTransform();
+
+        ReadHierarchy(&transform);
+    }
 }
 
 void Game::ReadHierarchy(Transform *transform) {
@@ -1168,6 +1199,7 @@ void Game::RenderPropertiUI() {
             ImGui::Text("Textures: %ld", Resources::GetTextureCount());
             ImGui::Text("Shaders: %ld", Resources::GetShaderCount());
             ImGui::Text("Mesh: %ld", Resources::GetMeshCount());
+            ImGui::Text("Event: %ld", Event::GetCount());
 
             ImGui::SeparatorText("Threads");
             ImGui::Text("Update:  %fms  | FPS: %.2f",  gameStatics.updateMs,  TimeLast::FPS);

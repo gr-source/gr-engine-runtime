@@ -67,11 +67,11 @@ const Vector3 Transform::getforward() const {
     return getRotation() * Vector3::forward;
 }
 
-const Matrix4x4 Transform::getGlobalMatrix() const {
+const Matrix4x4 &Transform::getGlobalMatrix() const {
     return m_globalMatrix;
 }
 
-const Matrix4x4 Transform::getLocalMatrix() const {
+const Matrix4x4 &Transform::getLocalMatrix() const {
     return m_localMatrix;
 }
 

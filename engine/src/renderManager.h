@@ -27,11 +27,12 @@ public:
     enum ShaderType : int {
         ShaderType_Dynamic = 0,
         ShaderType_Dynamic_Anim = 1,
+        ShaderType_Dynamic_Multi_Model = 2,
     };
 
     static std::vector<GameObject*> s_objects;
 
-    static grr::gShader *m_shader[2];
+    static grr::gShader *m_shader[3];
 
     static Camera *m_camera;
 
