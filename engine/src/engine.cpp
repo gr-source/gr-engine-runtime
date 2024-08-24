@@ -1,9 +1,9 @@
 #include "engine.h"
 
-#include "input.h"
-#include "screen.h"
 #include "editorController.h"
 #include "postProcessing.hpp"
+#include "screen.h"
+#include "input.h"
 
 #include "script/meshRender.hpp"
 #include "script/camera.hpp"
@@ -12,6 +12,7 @@
 
 #include "core/resources.h"
 #include "core/event.hpp"
+#include "core/time.hpp"
 
 #include "physics/physicsScene.h"
 
@@ -58,18 +59,23 @@ void Engine::MainLoop(std::function<void()> func) {
     m_thread[0] = std::thread(OnLoader);
     m_thread[1] = std::thread(OnPhysics);
 
-    Time timer(10000.0f);
+    // TimeLast timer(20.0f);
+    Time time;
     while (Settings::IsEngineRunning) {
-        Time::deltaTime = gameStatics.updateMs = timer.SleepTick();
-        Time::FPS = timer.getFPS();
+        TimeLast::deltaTime = gameStatics.updateMs = time.start();
+        TimeLast::FPS = time.getFPS();
 
         if (ScriptManager::SetDeltaTime) {
-            ScriptManager::SetDeltaTime(Time::deltaTime);
+            ScriptManager::SetDeltaTime(TimeLast::deltaTime);
         }
 
         Engine::OnUpdate();
 
         Engine::OnRender();
+
+        // timer.SleepTick();
+
+        time.end();
 
         func();
     }
@@ -147,13 +153,14 @@ void Engine::OnRender() {
         ScriptManager::EventUpdate();
     }
 
-    tickRender.start();
+    gameStatics.renderMs = tickRender.start();
+    TimeLast::RenderFPS = tickRender.getFPS();
 
     if (MainPostProcess) {
         MainFramebuffer();
     }
 
-    gameStatics.renderMs = tickRender.end();
+    tickRender.end();
 
     if (ImGuiPostProcess) {
         UIFramebuffer();
@@ -177,7 +184,7 @@ void Engine::OnPhysics() {
 void Engine::OnLoader() {
     Resources::Initialize();
     
-    Time timer(5.0f);
+    TimeLast timer(5.0f);
     
     do {
         timer.SleepTick();

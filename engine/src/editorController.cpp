@@ -53,7 +53,7 @@ void EditorController::Update() {
     }
 
     if (Math::magnitude(diretion) > 0.0f) {
-        transform->addLocalPosition(Math::normalize(diretion) * movementSpeed * Time::deltaTime);
+        transform->addLocalPosition(Math::normalize(diretion) * movementSpeed * TimeLast::deltaTime);
     }
 
     updateCursor();
@@ -83,7 +83,7 @@ void EditorController::ProcessMouse(const Vector2 &delta) {
 
     auto rotation = Math::euler({Math::rad(elapsed.y), Math::rad(-elapsed.x), 0.0f});
 
-    rotation = Math::slerp(m_transform->getLocalRotation(), rotation, 25.0f * Time::deltaTime);
+    rotation = Math::slerp(m_transform->getLocalRotation(), rotation, 25.0f * TimeLast::deltaTime);
 
     m_transform->setLocalRotation(Math::normalize(rotation));
 }

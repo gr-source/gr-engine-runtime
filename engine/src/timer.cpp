@@ -1,12 +1,14 @@
 #include "timer.h"
 #include "Global.h"
 
-float Time::deltaTime = 0.0f;
-int Time::FPS = 0;
+float TimeLast::deltaTime = 0.0f;
+float TimeLast::FPS = 0;
 
-Time::Time(float maxFPS) : a(std::chrono::system_clock::now()), b(std::chrono::system_clock::now()), m_targetFrameTime(1000.0 / static_cast<double>(maxFPS)), elapsedTime(0.0f), frameCount(0), fps(0) {}
+float TimeLast::RenderFPS = 0;
 
-float Time::SleepTick() {
+TimeLast::TimeLast(float maxFPS) : a(std::chrono::system_clock::now()), b(std::chrono::system_clock::now()), m_targetFrameTime(1000.0f / maxFPS), elapsedTime(0.0f), frameCount(0), fps(0) {}
+
+float TimeLast::SleepTick() {
     a = std::chrono::system_clock::now();
     std::chrono::duration<double, std::milli> work_time = a - b;
 
@@ -15,6 +17,7 @@ float Time::SleepTick() {
         auto delta_ms_duration = std::chrono::duration_cast<std::chrono::milliseconds>(delta_ms);
         std::this_thread::sleep_for(std::chrono::milliseconds(delta_ms_duration.count()));
     }
+    
     b = std::chrono::system_clock::now();
     std::chrono::duration<double, std::milli> sleep_time = b - a;
     float dt = static_cast<float>((work_time.count() + sleep_time.count()) / 1e3f);
@@ -29,16 +32,16 @@ float Time::SleepTick() {
     return dt;
 }
 
-void Time::start() {
+void TimeLast::start() {
     start_time = std::chrono::system_clock::now();
 }
 
-const float Time::end() {
+float TimeLast::end() {
     end_time = std::chrono::system_clock::now();
-    std::chrono::duration<double, std::milli> duration = end_time - start_time;
-    return static_cast<float>(duration.count() / 1000.0);
+    auto duration = std::chrono::duration<float>(end_time - start_time);
+    return duration.count();
 }
 
-const int Time::getFPS() const {
+const int TimeLast::getFPS() const {
     return fps;
 }

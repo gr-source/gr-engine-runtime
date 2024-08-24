@@ -4,26 +4,29 @@
 
 #include <time.h>
 
-class Time {
+class TimeLast {
 public:
     static float deltaTime;
 
-    static int FPS;
+    static float FPS;
 
-    Time(float maxFPS = 60.0f);
+    static float RenderFPS;
+
+    TimeLast(float maxFPS = 60.0f);
 
     float SleepTick();
 
     void start();
 
-    const float end();
+    float end();
 
     const int getFPS() const;
 
 protected:
     std::chrono::system_clock::time_point a;
     std::chrono::system_clock::time_point b;
-    double m_targetFrameTime;
+
+    float m_targetFrameTime;
     float elapsedTime;
     int frameCount;
     int fps;

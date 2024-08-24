@@ -22,4 +22,4 @@ set(imgui_hdr
     src/imgui.h
 )
 
-add_library(imgui STATIC ${imgui_src} ${imgui_hdr})
+add_library(${PROJECT_NAME} STATIC ${imgui_src} ${imgui_hdr})

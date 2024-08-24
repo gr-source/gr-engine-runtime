@@ -44,6 +44,7 @@ set(core_src
     src/core/thread.cpp
     src/core/event.cpp
     src/core/scene.cpp
+    src/core/time.cpp
 )
 
 set(core_hdr
@@ -52,6 +53,7 @@ set(core_hdr
     src/core/event.hpp
     src/core/thread.hpp
     src/core/scene.hpp
+    src/core/time.hpp
 )
 
 set(filmbox_src

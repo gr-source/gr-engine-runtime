@@ -720,10 +720,6 @@ void Game::RenderViewportUI() {
             std::string path((char*)payload->Data, payload->DataSize);
             if (!path.empty() && std::filesystem::path(path).filename().extension() == ".gmd") {
                 s_objectSelected = Resources::LoadGameObject(path);
-
-                Event::Add([] {
-                    Batching::bRebuild = true;
-                });
             }
         }
         ImGui::EndDragDropTarget();
@@ -794,17 +790,17 @@ void Game::RenderViewportUI() {
         }
     }
 
-    if (Time::FPS > 50) {
+    if (TimeLast::FPS > 50) {
         FPSColor = {0, 255, 0, 255};
-    } else if (Time::FPS > 25) {
+    } else if (TimeLast::FPS > 25) {
         FPSColor = {255, 255, 0, 255};
-    } else if (Time::FPS > 0) {
+    } else if (TimeLast::FPS > 0) {
         FPSColor = {255, 0, 0, 255};
     }
 
     // Fps Draw
     {
-        std::string fps = "FPS: " + std::to_string(Time::FPS);
+        std::string fps = "FPS: 000.00f";
 
         auto textSize = ImGui::CalcTextSize(fps.c_str());
 
@@ -812,7 +808,7 @@ void Game::RenderViewportUI() {
 
         ImGui::SetCursorPos(curtorPos);
 
-        ImGui::TextColored(FPSColor, "%s", fps.c_str());
+        ImGui::TextColored(FPSColor, "FPS: %.2f", TimeLast::FPS);
     }
 
     ImGui::SetCursorPos({5.0f, 35.0f});
@@ -1174,8 +1170,8 @@ void Game::RenderPropertiUI() {
             ImGui::Text("Mesh: %ld", Resources::GetMeshCount());
 
             ImGui::SeparatorText("Threads");
-            ImGui::Text("Update:  %fms  | FPS: %.2f",  gameStatics.updateMs,  (1.0f / gameStatics.updateMs));
-            ImGui::Text("Render:  %fms  | FPS: %.2f",  gameStatics.renderMs,  (1.0f / (Time::deltaTime - gameStatics.renderMs)));
+            ImGui::Text("Update:  %fms  | FPS: %.2f",  gameStatics.updateMs,  TimeLast::FPS);
+            ImGui::Text("Render:  %fms  | FPS: %.2f",  gameStatics.renderMs,  TimeLast::RenderFPS);
             ImGui::Text("Physics: %fms  | FPS: %.2f",  gameStatics.physicsMs, (1.0f / gameStatics.physicsMs));
             ImGui::Text("Script:  %fms  | FPS: %.2f",  gameStatics.scriptMS,  (1.0f / gameStatics.scriptMS));
 

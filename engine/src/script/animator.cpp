@@ -29,7 +29,7 @@ void Animator::UpdateAnim() {
         return;
     }
 
-    m_currentTime += m_animation->getTick() * Time::deltaTime;
+    m_currentTime += m_animation->getTick() * TimeLast::deltaTime;
 
     if (m_currentTime >= m_animation->getDuration()) {
         // if (m_nextAnimation) {
@@ -117,10 +117,10 @@ void Animator::blendAnimation(Transform *skeleton, float blendFactor) {
     diff = m_nextAnimation->getDuration() / m_animation->getDuration();
     auto animSpeedMultiplierDown = Math::lerp(1.0f, diff, blendFactor);
 
-    m_currentTime += m_animation->getTick() * Time::deltaTime * animSpeedMultiplierUp;
+    m_currentTime += m_animation->getTick() * TimeLast::deltaTime * animSpeedMultiplierUp;
     m_currentTime = std::fmod(m_currentTime, m_animation->getDuration());
 
-    m_currentNextTime += m_nextAnimation->getTick() * Time::deltaTime * animSpeedMultiplierDown;
+    m_currentNextTime += m_nextAnimation->getTick() * TimeLast::deltaTime * animSpeedMultiplierDown;
     m_currentNextTime = std::fmod(m_currentNextTime, m_nextAnimation->getDuration());
 
     CalculateBlendedBoneTransform(skeleton, m_currentTime, m_currentNextTime, Matrix4x4::identityMatrix, blendFactor);

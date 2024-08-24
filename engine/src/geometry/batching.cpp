@@ -80,7 +80,7 @@ void Batching::Renderer() {
     }
 
     Statistics::m_drawCallCount = 0; 
-        
+    
     for (auto &&[name, batch] : m_batched) {
         batch.draw();
 
