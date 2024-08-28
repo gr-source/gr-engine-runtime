@@ -778,9 +778,9 @@ void Game::RenderViewportUI() {
             }
         }
         
-        Transform& transform = s_objectSelected->getTransform();
+        auto& transform = s_objectSelected->getTransform();
 
-        Matrix4x4 model = transform.getLocalMatrix();
+        auto model = transform.getGlobalMatrix();
 
         auto camera = Camera::Current();
 

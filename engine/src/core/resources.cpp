@@ -21,7 +21,6 @@
 #include "settings.h"
 
 #include "event.hpp"
-#include "timer.h"
 
 #include <filesystem>
 #include <cassert>
@@ -51,9 +50,7 @@ std::list<std::tuple<std::string, Transform *>> Resources::s_gameObjectFromLoade
 std::mutex Resources::s_gameObjectMutex;
 
 /***************** Mesh *****************/
-std::unordered_map<std::string, grm::size> Resources::s_meshMapID;
-std::unordered_map<std::string, Mesh *> Resources::s_meshMapName;
-std::vector<std::unique_ptr<Mesh>> Resources::s_meshList;
+std::unordered_map<std::string, std::unique_ptr<Mesh>> Resources::s_meshList;
 std::mutex Resources::m_meshMutex;
 
 std::thread Resources::m_thread;
@@ -156,6 +153,7 @@ GameObject *Resources::LoadGameObject(const std::string &path) {
 
     auto gameObject = Scene::Create(name);
     auto &transform = gameObject->getTransform();
+    // gameObject->setActive(true);
 
     {
         std::lock_guard<std::mutex> lock(s_gameObjectMutex);
@@ -198,21 +196,14 @@ void Resources::AddShaderLoaded(std::function<bool(grr::gShader *, const std::st
 }
 
 Mesh *Resources::FindMesh(const std::string &name) {
-    auto it = s_meshMapName.find(name);
-    if (it == s_meshMapName.end()) {
+    std::unique_lock<std::mutex> lock(m_meshMutex);
+    auto it = s_meshList.find(name);
+    if (it == s_meshList.end()) {
         return nullptr;
     }
-    return it->second;
-}
-
-Mesh *Resources::AddMesh(const std::string &name, std::unique_ptr<Mesh> mesh) {
-    s_meshMapID.emplace(name, s_meshList.size());
-
-    auto meshPtr = &(*s_meshList.emplace_back(std::move(mesh)));
-
-    s_meshMapName.emplace(name, meshPtr);
-
-    return meshPtr;
+    auto mesh = &(*(*it).second);
+    lock.unlock();
+    return mesh;
 }
 
 void Resources::DeleteMesh(Mesh *target) {
@@ -220,13 +211,13 @@ void Resources::DeleteMesh(Mesh *target) {
         return;
     }
     
-    // std::unique_lock<std::mutex> lock(m_meshMutex);
-    // auto it = s_meshList.find(target->getName());
-    // if (it == s_meshList.end()) {
-    //     return;
-    // }
-    // s_meshList.erase(it);
-    // lock.unlock();
+    std::unique_lock<std::mutex> lock(m_meshMutex);
+    auto it = s_meshList.find(target->getName());
+    if (it == s_meshList.end()) {
+        return;
+    }
+    s_meshList.erase(it);
+    lock.unlock();
 }
 
 /***************** Texture Process ****************/
@@ -365,6 +356,8 @@ void Resources::ProcessShader() {
     }
 }
 
+#include "filmbox/fbxScene.hpp"
+
 void Resources::SetupAnimation(const std::string &path, FbxAnimation *temp, Animation *animation) {
     animation->setName(temp->getName());
     animation->setDuration(temp->getDuration());
@@ -485,15 +478,108 @@ void Resources::ProcessAnimation() {
     }
 }
 
-void Resources::ReadNode(FbxNode &parent) {
+std::condition_variable cond;
+// std::mutex m_lock;
+
+void Resources::SetupGameObject(Transform *&out, gModel &model, Mesh *mesh, std::vector<gMaterial> &materials, Transform *parent) {
+    // transformaçoes
+    auto gameObject = &GameObject::Create(model.m_name, "unttaged");
+
+    auto &transform = gameObject->getTransform();
+
+    transform.setLocalScale(model.m_scale);
+    transform.setLocalRotation(model.m_rotation);
+    transform.setLocalPosition(model.m_position);
+
+    if (parent)
+        transform.setParent(parent);
+
+    if (mesh) {
+        auto &meshFilter = gameObject->addComponent<MeshFilter>();
+        meshFilter.setMesh(mesh);
+
+        auto &meshRender = gameObject->addComponent<MeshRender>();
+        // meshRender.Init();
+
+        for (auto i=0;i<materials.size();++i) {
+            auto& material = materials[i];
+
+            auto &m = meshRender.addMaterial(i, {material.m_name, {material.m_color.r, material.m_color.g, material.m_color.b, material.m_color.a}});
+
+            for (int i=0;i<material.m_textureCount;++i) { 
+                auto& texture = material.m_textures[i];
+
+                m.setTexture(i, Resources::LoadTexture(texture.m_path));
+            }
+
+            delete[] material.m_textures;
+        }
+
+        meshRender.build();
+
+    }
+
+    {
+        std::lock_guard<std::mutex> lock(s_gameObjectMutex);
+        out = &transform;
+    }
+    cond.notify_one();
+}
+
+void Resources::doInBackgroundGameObject(const std::string &path, Transform *target) {
+    if (!Stream::open(path, std::ios_base::in | std::ios_base::binary)) {
+        return Console::log(LogInfo::ERROR, "Failed to load model. " + path);
+    }
+
+    gHeader pHeader;
+    if (!Stream::read(&pHeader, 1)) {
+        return Console::log(LogInfo::ERROR, "Failed to read header to file.");
+    }
+
+    if (std::string(pHeader.signature) != "grmd") {
+        return Console::log(LogInfo::ERROR, "Model invalid: " + path);
+    }
+
+    ReadChildren(target);
+
+    Stream::close();
+}
+
+void Resources::ProcessBinary() {
+    std::unique_lock<std::mutex> lock(s_gameObjectMutex);
+    while (!s_gameObjectFromLoader.empty()) {
+        auto &&[path, transform] = s_gameObjectFromLoader.front();
+        lock.unlock();
+
+        doInBackgroundGameObject(path, transform);
+
+        lock.lock();
+        s_gameObjectFromLoader.pop_front();
+    }
+}
+
+void Resources::OnThread() {
+    while (Settings::IsEngineRunning()) {
+        ProcessShader();
+
+        ProcessTexture();
+    
+        ProcessAnimation();
+    
+        ProcessBinary();
+    }
+}
+
+void Resources::ReadChildren(Transform *parent) {
     gModel pModel;
     if (!Stream::read(&pModel, 1)) {
-        return Console::log(LogInfo::ERROR, "Falied to read model");
+        return;
     }
 
     grm::u32 meshCount;
     if (!Stream::read(&meshCount, 1)) {
-        return Console::log(LogInfo::ERROR, "Failed to read mesh count to file.");
+        Console::log(LogInfo::ERROR, "Failed to read mesh count to file.");
+        return;
     }
 
     std::vector<gMesh> meshes(meshCount);
@@ -609,7 +695,7 @@ void Resources::ReadNode(FbxNode &parent) {
             m_mesh = Resources::AddMesh(meshName, std::make_unique<Mesh>(mesh));
         }
     }
-    
+
     grm::u32 mSize;
     if (!Stream::read(&mSize, 1)) {
         return;
@@ -639,97 +725,22 @@ void Resources::ReadNode(FbxNode &parent) {
     grm::u32 nSize;
     Stream::read(&nSize, 1);
 
-    auto &node = parent.addNode(pModel.m_name, &parent);
-    node.setScale(pModel.m_scale);
-    node.setRotation(pModel.m_rotation);
-    node.setPosition(pModel.m_position);
+    Transform *transform = nullptr;
 
-    node.addMesh(s_meshMapID[m_mesh->getName()]);
+    Event::Add(&Resources::SetupGameObject, std::ref(transform), pModel, m_mesh, m_materials, parent);
+
+    std::unique_lock<std::mutex> lock(s_gameObjectMutex);
+    cond.wait(lock, [&transform] {
+        return transform;
+    });
+    lock.unlock();
 
     for (int i=0;i<nSize;++i) {
-        ReadNode(node);
-    }
-}
-
-void Resources::SetupHierarchi(const FbxNode &node, Transform *parent) {
-    auto& gameObject = GameObject::Create(node.getName(), "unttaged");
-
-    auto &transform = gameObject.getTransform();
-    transform.setParent(parent);
-
-    transform.setLocalScale(node.getScale());
-    transform.setLocalRotation(node.getRotation());
-    transform.setLocalPosition(node.getPosition());
-
-    if (node.hasMeshe()) {
-        auto& meshFilter = gameObject.addComponent<MeshFilter>();
-        for (auto &meshID : node.getMeshes()) {
-            auto &mesh = s_meshList[meshID];
-
-            meshFilter.setMesh(&(*mesh));
-        }
-
-        auto &meshRender = gameObject.addComponent<MeshRender>();
-
-        meshRender.addMaterial(0, Material{"Def"});
-
-        meshRender.build();
-    }
-
-    for (auto &child : node.getChildren()) {
-        SetupHierarchi(child, &transform);
-    }
-}
-
-void Resources::doInBackgroundGameObject(const std::string &path, Transform *target) {
-    if (!Stream::open(path, std::ios_base::in | std::ios_base::binary)) {
-        return Console::log(LogInfo::ERROR, "Falied open binary: " + path);
+        ReadChildren(transform);
     }
     
-    gHeader pHeader;
-    if (!Stream::read(&pHeader, 1)) {
-        return Console::log(LogInfo::ERROR, "Failed to read header to file.");
-    }
-
-    FbxNode root;
-
-    ReadNode(root);
-
-    Stream::close();
-
-    for (auto &child : root.getChildren()) {
-        Event::Add(&Resources::SetupHierarchi, child, target);
-        // PrintHierarchi(child, target);
-    }
-}
-
-void Resources::ProcessGameObject() {
-    std::unique_lock<std::mutex> lock(s_gameObjectMutex);
-    while (!s_gameObjectFromLoader.empty()) {
-        auto &&[path, transform] = s_gameObjectFromLoader.front();
-        lock.unlock();
-
-        doInBackgroundGameObject(path, transform);
-
-        lock.lock();
-        s_gameObjectFromLoader.pop_front();
-    }
-}
-
-void Resources::OnThread() {
-    TimeLast timer(5.0f);
-    
-    while (Settings::IsEngineRunning()) {
-        timer.SleepTick();
-        
-        ProcessShader();
-
-        ProcessTexture();
-
-        ProcessAnimation();
-
-        ProcessGameObject();
-    }
+    // lock.lock();
+    transform = nullptr;
 }
 
 const grm::size Resources::GetTextureCount() {
@@ -748,7 +759,6 @@ const grm::size Resources::GetMeshCount() {
     }
     return count;
 }
-
 
 
 

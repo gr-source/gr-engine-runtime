@@ -1,12 +1,12 @@
 #pragma once
 
-#include <mutex>
+#include <atomic>
 
 #include <gr-math/gmath.h>
 
 class Settings {
 public:
-    static bool IsEngineRunning();
+    static const std::atomic<bool> &IsEngineRunning();
 
     static void StartPlayEngine();
 
@@ -21,8 +21,6 @@ public:
     static iVector2 ViewportSize;
 
 private:
-    static std::mutex m_mutex;
-
-    static bool m_bEngineRunning;
+    static std::atomic<bool> m_bEngineRunning;
 };
 
