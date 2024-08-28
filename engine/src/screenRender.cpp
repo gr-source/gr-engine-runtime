@@ -54,7 +54,7 @@ void ScreenRender::Shutdown() {
     }
     m_shader = nullptr;
 
-    if (m_vertexArray && !Settings::IsEngineRunning) {
+    if (m_vertexArray && !Settings::IsEngineRunning()) {
         m_vertexArray->destroy();
         m_vertexArray = nullptr;
     }
@@ -109,7 +109,7 @@ void ScreenRender::CreateMesh() {
     m_vertexArray->bind();
 
     grr::gVertexArray::Bind(m_vbo);
-    grr::gVertexArray::UpdateResize(vertices.size() * sizeof(Vertex2D));
+    grr::gVertexArray::UpdateResizeBuffer(vertices.size() * sizeof(Vertex2D), grr::gBufferFlags_Static);
     grr::gVertexArray::SetBufferUpdate(0, vertices.size() * sizeof(Vertex2D), vertices.data());
 
     grr::gVertexArray::SetAttrib(0, 2, sizeof(Vertex2D), reinterpret_cast<const void *>(offsetof(Vertex2D, position)));

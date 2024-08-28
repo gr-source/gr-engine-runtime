@@ -28,10 +28,10 @@ public:
     static void Delete(const std::string &name);
 
     template <typename ...Args>
-    static Batching &Add(Args &&...args);
+    static Batching &Add(const std::string &key, Args &&...args);
 
 private:
-    static std::unordered_map<std::string, Batching> m_batched;
+    static std::unordered_map<std::string, std::unique_ptr<Batching>> m_batched;
 
     std::unordered_map<int, Material> m_materials;
 
@@ -63,8 +63,8 @@ private:
 };
 
 template <typename... Args>
-inline Batching &Batching::Add(Args &&...args) {
-    auto &&[it, added] = m_batched.emplace(std::forward<Args>(args)...);
+inline Batching &Batching::Add(const std::string &key, Args &&...args) {
+    auto &&[it, added] = m_batched.emplace(key, std::make_unique<Batching>(std::forward<Args>(args)...));
 
-    return it->second;
+    return (*it->second);
 }

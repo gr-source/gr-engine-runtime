@@ -5,6 +5,7 @@
 #include <condition_variable>
 #include <unordered_set>
 #include <functional>
+#include <thread>
 #include <memory>
 #include <string>
 #include <vector>
@@ -19,11 +20,16 @@
 
 #include "geometry/mesh.h"
 
+#include "filmbox/fbxScene.hpp"
+
+
 class FbxAnimation;
 
 class Resources {
 public:
     static void Initialize();
+
+    static void Shutdown();
 
     static grr::gTexture *LoadTexture(const std::string &path);
 
@@ -37,8 +43,7 @@ public:
 
     static Mesh *FindMesh(const std::string &name);
 
-    template <typename ...Args>
-    static Mesh *AddMesh(Args &&...args);
+    static Mesh *AddMesh(const std::string &name, std::unique_ptr<Mesh> mesh);
 
     static void DeleteMesh(Mesh *target);
 
@@ -76,8 +81,12 @@ private:
     static std::mutex s_gameObjectMutex;
 
     /***************** Mesh *****************/
-    static std::unordered_map<std::string, std::unique_ptr<Mesh>> s_meshList;
+    static std::unordered_map<std::string, grm::size> s_meshMapID;
+    static std::unordered_map<std::string, Mesh *> s_meshMapName;
+    static std::vector<std::unique_ptr<Mesh>> s_meshList;
     static std::mutex m_meshMutex;
+
+    static std::thread m_thread;
 
     static void SetupTexture(grr::gTexture *texture, int width, int height, int ch, void *pixels, std::string path);
 
@@ -95,21 +104,25 @@ private:
 
     static void ProcessAnimation();
 
-    static void SetupGameObject(GameObject *gameObject, gModel &model, Mesh *mesh, std::vector<gMaterial> &materials, Transform *parent);
+    // static void SetupGameObject(gModel &model, Mesh *mesh, std::vector<gMaterial> &materials, Transform *&out, Transform *parent);
+
+    static void ReadNode(FbxNode &parent);
+
+    static void SetupHierarchi(const FbxNode &node, Transform *parent);
 
     static void doInBackgroundGameObject(const std::string &path, Transform *target);
 
-    static void ProcessBinary();
+    static void ProcessGameObject();
 
-    static void ReadChildren(Transform *transform);
+    // static void ReadChildren(Transform *transform);
 
 };
 
-template <typename... Args>
-inline Mesh *Resources::AddMesh(Args &&...args) {
-    std::unique_lock<std::mutex> lock(m_meshMutex);
-    auto &&[pair, added] = s_meshList.emplace(std::forward<Args>(args)...);
-    auto mesh = &(*(*pair).second);
-    lock.unlock();
-    return mesh;
-}
+// template <typename... Args>
+// inline Mesh *Resources::AddMesh(Args &&...args) {
+//     // std::unique_lock<std::mutex> lock(m_meshMutex);
+//     auto &&[pair, added] = s_meshList.emplace(std::forward<Args>(args)...);
+//     auto mesh = &(*(*pair).second);
+//     // lock.unlock();
+//     return mesh;
+// }

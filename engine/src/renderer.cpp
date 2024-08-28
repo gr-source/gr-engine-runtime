@@ -77,7 +77,7 @@ void DebugDraw::DrawLines() {
     m_primitive->bind();
 
     grr::gVertexArray::Bind(m_vbo);
-    grr::gVertexArray::UpdateResize(m_lines.size() * sizeof(Line));
+    grr::gVertexArray::UpdateResizeBuffer(m_lines.size() * sizeof(Line), grr::gBufferFlags_Dynamic);
     grr::gVertexArray::SetBufferUpdate(0, m_lines.size() * sizeof(Line), m_lines.data());
 
     grr::gVertexArray::DrawArrays(grr::PrimitiveType_Lines, (grm::u32)m_lines.size());

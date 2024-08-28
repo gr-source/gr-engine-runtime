@@ -1,9 +1,16 @@
 #pragma once
 
+#include <mutex>
+
 #include <gr-math/gmath.h>
 
-struct Settings {
-    static bool IsEngineRunning;
+class Settings {
+public:
+    static bool IsEngineRunning();
+
+    static void StartPlayEngine();
+
+    static void StopPlayEngine();
 
     static bool IsGameRunning;
 
@@ -12,5 +19,10 @@ struct Settings {
     static Vector2 IconSize;
 
     static iVector2 ViewportSize;
+
+private:
+    static std::mutex m_mutex;
+
+    static bool m_bEngineRunning;
 };
 

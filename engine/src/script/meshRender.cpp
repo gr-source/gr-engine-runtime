@@ -41,7 +41,7 @@ void MeshRender::build() {
         return;
     }
 
-    m_batched = &Batching::Add(mName, Batching{m_materials, mesh});
+    m_batched = &Batching::Add(mName, m_materials, mesh);
     m_batched->insert(&transform);
 }
 

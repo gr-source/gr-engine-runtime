@@ -284,11 +284,11 @@ void Skybox::CreateCube() {
     m_vertexArray->bind();
 
     grr::gVertexArray::Bind(m_ebo);
-    grr::gVertexArray::UpdateResize(indices.size() * sizeof(grm::u32));
+    grr::gVertexArray::UpdateResizeBuffer(indices.size() * sizeof(grm::u32), grr::gBufferFlags_Static);
     grr::gVertexArray::SetBufferUpdate(0, indices.size() * sizeof(grm::u32), indices.data());
 
     grr::gVertexArray::Bind(m_vbo);
-    grr::gVertexArray::UpdateResize(vertices.size() * sizeof(Vector3));
+    grr::gVertexArray::UpdateResizeBuffer(vertices.size() * sizeof(Vector3), grr::gBufferFlags_Static);
     grr::gVertexArray::SetBufferUpdate(0, vertices.size() * sizeof(Vector3), vertices.data());
 
     grr::gVertexArray::SetAttrib(0, 3, sizeof(Vector3), nullptr);

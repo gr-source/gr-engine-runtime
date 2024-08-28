@@ -14,10 +14,10 @@
 
 bool Batching::bRebuild = false;
 
-std::unordered_map<std::string, Batching> Batching::m_batched;
+std::unordered_map<std::string, std::unique_ptr<Batching>> Batching::m_batched;
 
 Batching::Batching(std::unordered_map<int, Material> &materials, Mesh *mesh) : m_mesh(mesh), m_materials(materials), m_vertexArray(nullptr), m_indiceCount(0), m_primCount(0), m_VBO(0), m_EBO(0), m_PBO(0), bHasIndice(false), isCompiled(false) {
-    // compileMesh(mesh);
+    compileMesh(mesh);
 }
 
 Batching::~Batching() {
@@ -31,6 +31,10 @@ Batching::~Batching() {
 
     if (m_EBO) {
         grr::gVertexArray::DeleteBuffer(m_EBO);
+    }
+
+    if (m_PBO) {
+        grr::gVertexArray::DeleteBuffer(m_PBO);
     }
 }
 
@@ -69,12 +73,9 @@ void Batching::Renderer() {
 
     
     for (auto &&[name, batch] : m_batched) {
-        // if (!batch.isCompiled) {
-        //     continue;
-        // }
-        batch.compile();
+        batch->compile();
 
-        batch.draw();
+        batch->draw();
 
         Statistics::m_drawCallCount++;
     }
@@ -85,7 +86,7 @@ Batching *Batching::Find(const std::string &name) {
     if (it == m_batched.end()) {
         return nullptr;
     }
-    return &(it->second);
+    return &(*it->second);
 }
 
 void Batching::Delete(const std::string &name) {
@@ -129,12 +130,12 @@ void Batching::compileMesh(Mesh *mesh) {
         m_indiceCount = indiceCount;
 
         grr::gVertexArray::Bind(m_EBO);
-        grr::gVertexArray::UpdateResize(indiceCount * sizeof(grm::u32));
+        grr::gVertexArray::UpdateResizeBuffer(indiceCount * sizeof(grm::u32), grr::gBufferFlags_Static);
         grr::gVertexArray::SetBufferUpdate(0, indiceCount * sizeof(grm::u32), indiceData);
     }
 
     grr::gVertexArray::Bind(m_VBO);
-    grr::gVertexArray::UpdateResize(vertexCount * sizeof(Vertex3D));
+    grr::gVertexArray::UpdateResizeBuffer(vertexCount * sizeof(Vertex3D), grr::gBufferFlags_Static);
     grr::gVertexArray::SetBufferUpdate(0, vertexCount * sizeof(Vertex3D), vertexData);
 
     grr::gVertexArray::SetAttrib(0, 3, sizeof(Vertex3D), reinterpret_cast<const void*>(offsetof(Vertex3D, position)));
@@ -149,15 +150,9 @@ void Batching::compileMesh(Mesh *mesh) {
     }
 
     m_vertexArray->unbind();
-
-    isCompiled = true;
 }
 
 void Batching::compile() {
-    if (!isCompiled) {
-        compileMesh(m_mesh);
-    }
-
     if (!m_vertexArray || !m_vertexArray->isValid() || m_models.empty()) {
         return;
     }
@@ -169,14 +164,8 @@ void Batching::compile() {
 
     m_vertexArray->bind();
     grr::gVertexArray::Bind(m_PBO);
-    grr::gVertexArray::UpdateResize(models.size() * sizeof(Matrix4x4));
+    grr::gVertexArray::UpdateResizeBuffer(models.size() * sizeof(Matrix4x4), grr::gBufferFlags_Dynamic);
     grr::gVertexArray::SetBufferUpdate(0, models.size() * sizeof(Matrix4x4), models.data());
-
-    // instancied
-    for (int i=0;i<4;i++) {
-        grr::gVertexArray::SetAttrib(4 + i, 4, sizeof(Matrix4x4), reinterpret_cast<const void*>(i * sizeof(Vector4)));
-        grr::gVertexArray::SetAttribDivisor(4 + i, 1);
-    }
 
     m_primCount = models.size();
 }

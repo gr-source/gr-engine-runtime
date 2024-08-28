@@ -10,6 +10,7 @@
 
 #include "ui/ImGuiRender.h"
 
+#include "core/threadPool.hpp"
 #include "core/resources.h"
 #include "core/event.hpp"
 #include "core/time.hpp"
@@ -56,12 +57,10 @@ void Engine::GRWindowResize(grm::u32 width, grm::u32 height) {
 }
 
 void Engine::MainLoop(std::function<void()> func) {
-    m_thread[0] = std::thread(OnLoader);
-    m_thread[1] = std::thread(OnPhysics);
 
     // TimeLast timer(20.0f);
     Time time;
-    while (Settings::IsEngineRunning) {
+    while (Settings::IsEngineRunning()) {
         TimeLast::deltaTime = gameStatics.updateMs = time.start();
         TimeLast::FPS = time.getFPS();
 
@@ -105,6 +104,8 @@ void Engine::OnInit() {
     Memory::Initialize();
 
     ImGuiRender::Initialize("#version 330 core");
+
+    Resources::Initialize();
 
     // Buffer de renderização.
     MainPostProcess = PostProcessing::Create({1, 1});
@@ -181,17 +182,6 @@ void Engine::OnPhysics() {
     */
 }
 
-void Engine::OnLoader() {
-    Resources::Initialize();
-    
-    TimeLast timer(5.0f);
-    
-    do {
-        timer.SleepTick();
-        Resources::OnThread();
-    } while (Settings::IsEngineRunning);
-}
-
 void Engine::OnDestroy() {
     if (MainPostProcess) {
         PostProcessing::Shutdown(MainPostProcess);
@@ -208,6 +198,8 @@ void Engine::OnDestroy() {
     ScriptManager::Shutdown();
 
     ScreenRender::Shutdown();
+
+    Resources::Shutdown();
 
     if (m_thread[0].joinable()) {
         m_thread[0].join();

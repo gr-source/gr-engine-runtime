@@ -33,7 +33,7 @@ Window CreateWindown(const char* name, int width, int height, Window share, bool
 }
 
 void OnDestroy() {
-    Settings::IsEngineRunning = false;
+    Settings::StopPlayEngine();
 
     Engine::HandleEvent(Engine::GR_DESTROY, nullptr);
 
@@ -50,7 +50,7 @@ void OnPreLoad() {
 }
 
 void GLFWwindowclosefunCallback(GLFWwindow* window) {
-    Settings::IsEngineRunning = false;
+    Settings::StopPlayEngine();
 }
 
 void GLFWframebuffersizefunCallback(GLFWwindow* window, int width, int height) {
@@ -129,7 +129,7 @@ int OnApplicationInit() {
 
     Input::m_instance = window;
 
-    Settings::IsEngineRunning = true;
+    Settings::StartPlayEngine();
 
     Engine::HandleEvent(Engine::GR_INITIALIZE, nullptr);
 
