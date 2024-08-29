@@ -15,7 +15,7 @@ public:
 	static T read(std::streamsize count);
 	
 	template <typename T>
-	static void write(const T* data, std::streamsize count);
+	static std::ostream &write(const T* data, std::streamsize count);
 
 	static void seekg(std::streampos position);
 
@@ -41,8 +41,8 @@ inline T Stream::read(std::streamsize count) {
 }
 	
 template <typename T>
-inline void Stream::write(const T* data, std::streamsize count) {
-	stream.write(reinterpret_cast<const char*>(data), sizeof(T) * count);
+inline std::ostream &Stream::write(const T* data, std::streamsize count) {
+	return stream.write(reinterpret_cast<const char*>(data), sizeof(T) * count);
 }
 
 

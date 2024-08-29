@@ -192,13 +192,18 @@ void Skybox::GenerateMap(std::function<void(u32)> func, Texture* texture) {
 
 #include "core/resources.h"
 
+#include "cubeFramebuffer.hpp"
+
 grr::gVertexArray *Skybox::m_vertexArray = nullptr;
 
 grr::gShader *Skybox::m_irradianceShader = nullptr;
 
+CubeFramebuffer *Skybox::m_cubeColor = nullptr;
+
 grr::gShader *Skybox::m_skyShader = nullptr;
 
 grr::gShader *Skybox::m_shader = nullptr;
+
 
 grm::u32 Skybox::m_count = 0;
 
@@ -207,6 +212,8 @@ grm::u32 Skybox::m_vbo = 0;
 grm::u32 Skybox::m_ebo = 0;
 
 void Skybox::Initialize() {
+    // m_cubeColor = CubeFramebuffer::Create({512, 512});
+
     CreateCube();
 
     m_irradianceShader = Resources::LoadShader(
@@ -223,7 +230,7 @@ void Skybox::Initialize() {
         Filesystem::GetFile("/shader/skybox/Background.vert")
     );
 
-    Resources::AddShaderLoaded(&Skybox::SetupShader);
+    // Resources::AddShaderLoaded(&Skybox::SetupShader);
 }
 
 void Skybox::Shutdown() {
@@ -304,9 +311,23 @@ bool Skybox::SetupShader(grr::gShader *shader, const std::string &path) {
         grr::gShader::Register("view");
 
         if (shader == m_skyShader) {
-            // GenerateMap([&](u32 i) {
-            //     m_skyboxbuffer->addSkyColor(Cubemap::ePOSITIVE_X + i, Framebuffer::eCOLOR_ATTACHMENT0);
-            // }, m_texture);
+            grr::gShader::Bind(m_skyShader);
+            GenerateMap([](grm::u32 i) {
+                if (i == 0) {
+                    m_cubeColor->SetTexture(grr::gFramebufferFlags_Cube_Map_Positive_X);
+                } else if (i == 1) {
+                    m_cubeColor->SetTexture(grr::gFramebufferFlags_Cube_Map_Negative_X);
+                } else if (i == 2) {
+                    m_cubeColor->SetTexture(grr::gFramebufferFlags_Cube_Map_Positive_Y);
+                } else if (i == 3) {
+                    m_cubeColor->SetTexture(grr::gFramebufferFlags_Cube_Map_Negative_Y);
+                } else if (i == 4) {
+                    m_cubeColor->SetTexture(grr::gFramebufferFlags_Cube_Map_Positive_Z);
+                } else if (i == 5) {
+                    m_cubeColor->SetTexture(grr::gFramebufferFlags_Cube_Map_Negative_Z);
+                }
+            }, nullptr);
+            grr::gShader::Unbind();
         }
 
         auto isdelete = m_shader->isValid() && m_skyShader->isValid() && m_irradianceShader->isValid();
@@ -319,8 +340,9 @@ bool Skybox::SetupShader(grr::gShader *shader, const std::string &path) {
 
 void Skybox::GenerateMap(std::function<void(grm::u32)> func, grr::gTexture *texture) {
     auto projection = Math::perspective(Math::rad(90.0f), 1.0f, 0.1f, 10.0f);
-    
-    grr::gTexture::Bind(texture, 0);
+
+    if (texture)
+        grr::gTexture::Bind(texture, 0);
     grr::gShader::SetUniform("u_texture", 0);
 
     grr::gShader::SetUniform("projection", 1, projection);

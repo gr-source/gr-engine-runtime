@@ -7,7 +7,7 @@
 
 #include <GLFW/glfw3.h>
 
-#define SCREEN_WIDTH 800
+#define SCREEN_WIDTH 1024
 #define SCREEN_HEIGHT 600
 
 std::unordered_map<int, grm::u32> m_keyMap = {

@@ -39,6 +39,8 @@ public:
     template <typename T, typename... Args>
     T &addComponent(Args &&...args);
 
+    Component *addComponent(const std::string &name);
+
     template <typename T>
     T& getComponent();
     
@@ -57,6 +59,8 @@ private:
     GameObject *gameObject;
 
     grm::u32 m_entityID;
+
+    Component *addComponentInternal(const std::string &name);
 };
 
 template <typename T, typename... Args>
@@ -84,4 +88,3 @@ inline const bool Entity::hasComponent() const {
     auto it = m_componentPtr.find(typeid(T).name());
     return it != m_componentPtr.end();
 }
-

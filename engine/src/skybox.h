@@ -4,7 +4,7 @@
 
 #include <functional>
 
-class PostProcessing;
+class CubeFramebuffer;
 
 class Skybox {
 public:
@@ -23,7 +23,7 @@ private:
 
     static grr::gShader *m_shader;
 
-    static PostProcessing *m_postProcess;
+    static CubeFramebuffer *m_cubeColor;
 
     static grm::u32 m_count;
 

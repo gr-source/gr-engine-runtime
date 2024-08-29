@@ -6,15 +6,30 @@
 
 class Scene {
 public:
-    static std::vector<GameObject *> &(*GetGameObject)();
+    static void CreateScrene(const std::string &name);
 
-    static void (*Delete)(GameObject *target);
+    static void LoadScene(const std::string &name);
+
+    static void SetSceneName(const std::string &name);
+
+    static const std::string &GetSceneName();
+
+    static GameObject &CreateGameObject(const std::string &name, const std::string &tag = "untagged");
+
+    static std::vector<GameObject *> &GetGameObjects();
+
+    static void Add(GameObject *gameObject);
     
-    static GameObject *(*Create)(const std::string &);
+    static void Remove(GameObject *gameObject);
 
-    static void Remove(GameObject *target);
+    static void Clear();
 
-    static void Add(GameObject *target);
-    
+    static void Save();
+
+private:
+    static std::vector<GameObject *> s_objects;
+
+    static std::string m_name;
+
+    static void WriteScene();
 };
-

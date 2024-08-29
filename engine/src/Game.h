@@ -84,6 +84,10 @@ private:
 
     static void RenderPropertiUI();
 
+    static void RenderGameObjectPropertiUI();
+
+    static void PopupAddComponent();
+
     static void loadReources();
 
     static void ProgressLoad();

@@ -12,11 +12,9 @@
 
 #include "core/event.hpp"
 
-bool Batching::bRebuild = false;
-
 std::unordered_map<std::string, std::unique_ptr<Batching>> Batching::m_batched;
 
-Batching::Batching(std::unordered_map<int, Material> &materials, Mesh *mesh) : m_mesh(mesh), m_materials(materials), m_vertexArray(nullptr), m_indiceCount(0), m_primCount(0), m_VBO(0), m_EBO(0), m_PBO(0), bHasIndice(false), isCompiled(false) {
+Batching::Batching(const std::string &name, std::unordered_map<int, Material> &materials, Mesh *mesh) : m_name(name), m_materials(materials), m_vertexArray(nullptr), m_indiceCount(0), m_primCount(0), m_VBO(0), m_EBO(0), m_PBO(0), bHasIndice(false), isCompiled(false) {
     compileMesh(mesh);
 }
 
@@ -44,6 +42,14 @@ void Batching::insert(Transform *transform) {
 
 void Batching::remove(Transform *transform) {
     m_models.erase(std::remove(m_models.begin(), m_models.end(), transform), m_models.end());
+
+    if (m_models.empty()) {
+        auto it = m_batched.find(m_name);
+        if (it == m_batched.end()) {
+            return;
+        }
+        m_batched.erase(it);
+    }
 }
 
 void Batching::draw() {
@@ -66,35 +72,6 @@ void Batching::draw() {
 
 void Batching::rebuild() {
     compile();
-}
-
-void Batching::Renderer() {
-    Statistics::m_drawCallCount = 0;
-
-    
-    for (auto &&[name, batch] : m_batched) {
-        batch->compile();
-
-        batch->draw();
-
-        Statistics::m_drawCallCount++;
-    }
-}
-
-Batching *Batching::Find(const std::string &name) {
-    auto it = m_batched.find(name);
-    if (it == m_batched.end()) {
-        return nullptr;
-    }
-    return &(*it->second);
-}
-
-void Batching::Delete(const std::string &name) {
-    auto it = m_batched.find(name);
-    if (it == m_batched.end()) {
-        return;
-    }
-    m_batched.erase(it);
 }
 
 void Batching::compileMesh(Mesh *mesh) {
@@ -192,4 +169,33 @@ void Batching::setupMaterial() {
         grr::gShader::SetUniform("m_material[" + std::to_string(index) + "].albedo", material.getAlbedo());
         grr::gShader::SetUniform("m_material[" + std::to_string(index) + "].params", Vector3(material.getRoughness(), material.getMetallic(), material.getAmbientOcclusion()));
     }
+}
+
+void Batching::Renderer() {
+    Statistics::m_drawCallCount = 0;
+
+    
+    for (auto &&[name, batch] : m_batched) {
+        batch->compile();
+
+        batch->draw();
+
+        Statistics::m_drawCallCount++;
+    }
+}
+
+Batching *Batching::Find(const std::string &name) {
+    auto it = m_batched.find(name);
+    if (it == m_batched.end()) {
+        return nullptr;
+    }
+    return &(*it->second);
+}
+
+void Batching::Delete(const std::string &name) {
+    auto it = m_batched.find(name);
+    if (it == m_batched.end()) {
+        return;
+    }
+    m_batched.erase(it);
 }

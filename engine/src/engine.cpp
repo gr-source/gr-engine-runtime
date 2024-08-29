@@ -38,12 +38,6 @@ PostProcessing *Engine::ImGuiPostProcess = nullptr;
 
 PostProcessing *Engine::MainPostProcess = nullptr;
 
-std::thread Engine::m_thread[2];
-
-Skybox* Engine::m_skybox = nullptr;
-
-std::unique_ptr<ScreenRender> pScreenRender = nullptr;
-
 Shadowbuffer* m_shadowbuffer = nullptr;
 
 void Engine::GRWindowResize(grm::u32 width, grm::u32 height) {
@@ -57,8 +51,6 @@ void Engine::GRWindowResize(grm::u32 width, grm::u32 height) {
 }
 
 void Engine::MainLoop(std::function<void()> func) {
-
-    // TimeLast timer(20.0f);
     Time time;
     while (Settings::IsEngineRunning()) {
         TimeLast::deltaTime = gameStatics.updateMs = time.start();
@@ -111,9 +103,6 @@ void Engine::OnInit() {
     MainPostProcess = PostProcessing::Create({1, 1});
 
     ImGuiPostProcess = PostProcessing::Create({1, 1});
-
-    // Renderizaraçãod da screen paar pos processamento e UI.
-    pScreenRender = std::make_unique<ScreenRender>();
 
     // Shadow provavelmente vou remove-lo
     // m_shadowbuffer = &Shadowbuffer::getInstance();
@@ -200,13 +189,6 @@ void Engine::OnDestroy() {
     ScreenRender::Shutdown();
 
     Resources::Shutdown();
-
-    if (m_thread[0].joinable()) {
-        m_thread[0].join();
-    }
-    if (m_thread[1].joinable()) {
-        m_thread[1].join();
-    }
     
     Memory::Shutdown();
 }

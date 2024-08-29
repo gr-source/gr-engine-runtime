@@ -5,6 +5,8 @@
 #include "console.hpp"
 #include "default.hpp"
 
+#include "core/ecs/componentPool.hpp"
+
 #include <gr-render/gShader.h>
 
 class ScriptManager {
@@ -39,6 +41,11 @@ public:
     
     static void (*SetScreenSize)(const iVector2 &);
 
+    // Component Pool
+    static std::unordered_map<std::string, std::unique_ptr<Pool>> &(*GetComponentPool)();
+
+    static void *(*CreateComponentWithName)(const std::string &name);
+    
 private:
     static void RegisterApi();
 

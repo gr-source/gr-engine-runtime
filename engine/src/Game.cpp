@@ -136,6 +136,8 @@ void Game::Initialize() {
     Settings::IsGameRunning = false;
 
     m_currentFile = Filesystem::GetFile("");
+
+    Scene::LoadScene("MainScene");
 }
 
 // ===================================== WARNING =========================================================
@@ -472,6 +474,10 @@ void Game::RenderUI() {
     RenderConsoleUI();
 
     RenderPropertiUI();
+
+    if (s_io->KeyCtrl && ImGui::IsKeyReleased(ImGuiKey_S)) {
+        Scene::Save();
+    }
 }
 
 void Game::RenderDocking() {
@@ -490,9 +496,15 @@ void Game::RenderDocking() {
 }
 
 void Game::RenderScenesUI() {
-    ImGui::Begin("Cenario", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
+    auto isOpen = ImGui::Begin("Cenario", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
+    if (!isOpen) {
+        return;
+    }
+
+    auto name = Scene::GetSceneName();
+
     ImGui::SetNextItemOpen(true, ImGuiCond_Appearing);
-    if (ImGui::TreeNodeEx("default", ImGuiTreeNodeFlags_SpanFullWidth)) {
+    if (ImGui::TreeNodeEx(name.c_str(), ImGuiTreeNodeFlags_SpanFullWidth)) {
         if (ImGui::BeginDragDropTarget()) {
             ImGuiDragDropFlags target_flags = 0;
             // target_flags |= ImGuiDragDropFlags_AcceptBeforeDelivery;
@@ -512,39 +524,26 @@ void Game::RenderScenesUI() {
             ImGui::EndDragDropTarget();
         }
         
-        if (Scene::GetGameObject) {
-            auto &list = Scene::GetGameObject();
+        // Render objects with scene
+        {
+            auto &list = Scene::GetGameObjects();
 
-            if (ImGui::Button("Before")) {
-                if (m_currentPage > 0) {
-                    --m_currentPage;
-                }
+            if (m_currentPage > 0 && ImGui::Button("Before")) {
+                --m_currentPage;
             }
             
             RenderPage(list, m_currentPage);
             
-            if (ImGui::Button("Next")) {
-                if (m_currentPage < list.size() - 1) {
-                    ++m_currentPage;
-                }
+            if (list.size() >= m_currentPage && ImGui::Button("Next")) {
+                ++m_currentPage;
             }
-
-            // for (auto& gameObject : Scene::GetGameObject()) {
-            //     auto& transform = gameObject->getTransform();
-
-            //     ReadHierarchy(&transform);
-            // }
         }
         
         ImGui::TreePop();
     }
 
-    if (ImGui::Button("ReloadScript")) {
-        Batching::bRebuild = true;
-    }
-    
     if (ImGui::IsKeyReleased(ImGuiKey_Delete) && s_objectSelected) {
-        Event::Add(Scene::Delete, s_objectSelected);
+        // Event::Add(Scene::Delete, s_objectSelected);
         s_objectSelected = nullptr;
     }
     
@@ -628,12 +627,15 @@ void Game::ReadHierarchy(Transform *transform) {
             std::string name((char*)payload->Data, payload->DataSize);
             if (!name.empty()) {
                 auto target = GameObject::Find(name);
-
-                auto ts = &target->getTransform();
-                if (ts != transform->getParent()) {
-                    ts->setParent(transform);
-                
-                    Event::Add(&Scene::Remove, target);
+                if (!target) {
+                    Console::log(LogInfo::ERROR, "GameObject do not found: " + name);
+                } else {
+                    auto ts = &target->getTransform();
+                    if (ts != transform->getParent()) {
+                        ts->setParent(transform);
+                    
+                        Event::Add(&Scene::Remove, target);
+                    }
                 }
             }
         }
@@ -656,8 +658,8 @@ void Game::PopupMenuAdd() {
 
         auto id = 0;
         if (ImGui::ListBox("##ListBoxOptionsGame", &id, item_name, 1)) {
-            if (id == 0 && Scene::Create) {
-                s_objectSelected = Scene::Create("Empty");
+            if (id == 0) {
+                s_objectSelected = &Scene::CreateGameObject("Empty");
             }
             ImGui::CloseCurrentPopup();
         }
@@ -674,7 +676,7 @@ void Game::PopupOptionsGameObject() {
         auto id = 0;
         if (ImGui::ListBox("##ListBoxOptionsGame", &id, item_name, 2)) {
             if (id == 0 && s_objectSelected) {
-                Event::Add(Scene::Delete, s_objectSelected);
+                // Event::Add(Scene::Delete, s_objectSelected);
                 s_objectSelected = nullptr;
             } else if (id == 1 && s_objectSelected) {
                 isOpenRename = true;
@@ -698,7 +700,8 @@ void Game::PopupRenameGameObject() {
 
         char name[256] = {0};
         if (ImGui::InputText("##InputName", name, 256, ImGuiInputTextFlags_EnterReturnsTrue)) {
-            s_objectSelected->setName(name);
+            GameObject::Rename(s_objectSelected, name);
+            // s_objectSelected->setName(name);
 
             ImGui::CloseCurrentPopup();
         }
@@ -1157,27 +1160,7 @@ void Game::RenderPropertiUI() {
     }
 
     if (ImGui::BeginTabBar("##propertimenubar")) {
-        if (s_objectSelected) {
-            ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
-            if (ImGui::BeginTabItem("GameObject", nullptr)) {
-            ImGui::Image(reinterpret_cast<ImTextureID>(iconsUI[IconType::ICON_GAMEOBJECT]->getID()), ImVec2(16, 16));
-
-            ImGui::SameLine();
-
-            ImGui::Text("[ %s - %s ]", s_objectSelected->getName().c_str(), s_objectSelected->getTag().c_str());
-
-            s_objectSelected->RenderProperty<Transform>(&Game::OnPropertyTransform);
-            s_objectSelected->RenderProperty<MeshRender>(&Game::OnPropertyMeshRender);
-            s_objectSelected->RenderProperty<Light>(&Game::OnPropertyLightComponent);
-            s_objectSelected->RenderProperty<Animator>(&Game::OnPropertyAnimator);
-            /*
-            objectselected->RenderProperty<CameraComponent>(&Game::OnPropertyCameraComponent, this);
-            objectselected->RenderProperty<ChunkController>(&Game::OnPropertyChunkController, this);
-            */
-
-            ImGui::EndTabItem();
-        }
-        }
+        RenderGameObjectPropertiUI();
         
         if (ImGui::BeginTabItem("Estatística", nullptr)) {
             ImGui::SeparatorText("Scripts");
@@ -1243,6 +1226,56 @@ void Game::RenderPropertiUI() {
         ImGui::EndTabBar();
     }
     ImGui::End();
+}
+
+void Game::RenderGameObjectPropertiUI() {
+    auto isOpenPopup = false;
+    if (s_objectSelected) {
+        ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
+        if (ImGui::BeginTabItem("GameObject", nullptr)) {
+            ImGui::Image(reinterpret_cast<ImTextureID>(iconsUI[IconType::ICON_GAMEOBJECT]->getID()), ImVec2(16, 16));
+
+            ImGui::SameLine();
+
+            ImGui::Text("[ %s - %s ]", s_objectSelected->getName().c_str(), s_objectSelected->getTag().c_str());
+
+            s_objectSelected->RenderProperty<Transform>(&Game::OnPropertyTransform);
+
+            if (ImGui::SmallButton("AddComponent")) {
+                isOpenPopup = true;
+            }
+            // s_objectSelected->RenderProperty<MeshRender>(&Game::OnPropertyMeshRender);
+            // s_objectSelected->RenderProperty<Light>(&Game::OnPropertyLightComponent);
+            // s_objectSelected->RenderProperty<Animator>(&Game::OnPropertyAnimator);
+
+            ImGui::EndTabItem();
+        }
+    }
+
+    if (isOpenPopup) {
+        ImGui::OpenPopup("##popup_add_component");
+    }
+    PopupAddComponent();
+}
+
+void Game::PopupAddComponent() {
+    if (!ScriptManager::GetComponentPool && !ScriptManager::CreateComponentWithName && !s_objectSelected) {
+        return;
+    }
+    if (ImGui::BeginPopup("##popup_add_component")) {
+        auto &componentPool = ScriptManager::GetComponentPool();
+
+        for (auto &&[name, pool] : componentPool) {
+            if (ImGui::SmallButton(name.c_str())) {
+                s_objectSelected->getEntity()->addComponent(name);
+                std::cout << "Added: " << name << std::endl;
+
+                ImGui::CloseCurrentPopup();
+            }
+        }
+        
+        ImGui::EndPopup();
+    }
 }
 
 /* ********** Propriedades ********** */
@@ -1377,33 +1410,6 @@ void Game::OnPropertyMeshRender(MeshRender *meshRender) {
     }
 }
 
-/*
-void Game::OnPropertyCameraComponent(CameraComponent *cameraComponent) {
-    static int itemID = 0;
-
-    if (ImGui::TreeNode("CameraComponent")) {
-        ImGui::Text("Fov:");
-        ImGui::DragFloat("##CameraComponentFov", &cameraComponent->m_fov, 1.0f, 1.0f, 179.0f);
-
-        ImGui::Text("FarPlane:");
-        ImGui::DragFloat("##CameraComponentFarPlane", &cameraComponent->m_farPlane);
-
-        ImGui::Text("NearPlane:");
-        ImGui::DragFloat("##CameraComponentNearPlane", &cameraComponent->m_nearPlane);
-
-        ImGui::Text("Projeção:");
-        ImGui::Combo("##projection", &itemID, "Perspectiva\0Ortografia\0");
-        if (itemID == 0) {
-            cameraComponent->m_projection = CameraComponent::ePerspective;
-        } else if (itemID == 1) {
-            cameraComponent->m_projection = CameraComponent::erthographic;
-        }
-        
-        ImGui::TreePop();
-    }
-}
-*/
-
 void Game::OnPropertyLightComponent(Light *light) {
     if (ImGui::TreeNode("Light")) {
         ImGui::Text("Constante:");
@@ -1485,6 +1491,8 @@ void Game::PlayGame() {
 }
 
 void Game::StopGame() {
+    Scene::Clear();
+
     ScriptManager::Shutdown();
 
     RenderManager::Shutdown();

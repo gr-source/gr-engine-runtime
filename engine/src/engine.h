@@ -43,8 +43,6 @@ protected:
 
     static void OnPhysics();
 
-    static void OnLoader();
-
     static void OnDestroy();
 
     static void RenderScene();
@@ -56,9 +54,5 @@ protected:
     #endif
     
     static void SetupEnable();
-    
-    static std::thread m_thread[2];
-
-    static Skybox* m_skybox;
 };
 

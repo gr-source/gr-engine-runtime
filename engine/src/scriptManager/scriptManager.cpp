@@ -39,6 +39,9 @@
 #define REGISTER_FIELD(n, f, ...) \
     f = ((__VA_ARGS__ *)dlsym(ScriptManager::s_handle, n))
 
+// #define REGISTER_FIELD(n, f, ) \
+    // f = ((__VA_ARGS__ *)dlsym(ScriptManager::s_handle, n))
+
 void* ScriptManager::s_handle = nullptr;
 
 // [ Main ]
@@ -68,6 +71,11 @@ std::unique_ptr<Animation> (*ScriptManager::LoadAnimation)(const std::string &);
 
 // Screen
 void (*ScriptManager::SetScreenSize)(const iVector2 &);
+
+// ComponentPool
+std::unordered_map<std::string, std::unique_ptr<Pool>> &(*ScriptManager::GetComponentPool)();
+
+void *(*ScriptManager::CreateComponentWithName)(const std::string &name);
 
 void ScriptManager::Initialize() {
     Console::log(LogInfo::INFO, "Loading script...");
@@ -114,7 +122,7 @@ void ScriptManager::Shutdown() {
     UNREGISTER_API(EventUpdate);
 
     // Scene
-    UNREGISTER_API(Scene::GetGameObject);
+    // UNREGISTER_API(Scene::GetGameObject);
 
     UNREGISTER_API(LoadAnimation);
 
@@ -177,11 +185,11 @@ void ScriptManager::RegisterApi() {
     REGISTER_API(std::unique_ptr<Animation>, const std::string &, LoadAnimation);
 
     //Scene
-    REGISTER_API_FROM_NAME("GetSceneGameObject", std::vector<GameObject *> &, void, Scene::GetGameObject);
+    // REGISTER_API_FROM_NAME("GetSceneGameObject", std::vector<GameObject *> &, void, Scene::GetGameObject);
 
-    REGISTER_API_FROM_NAME("DeleteSceneGameObject", void, GameObject *, Scene::Delete);
+    // REGISTER_API_FROM_NAME("DeleteSceneGameObject", void, GameObject *, Scene::Delete);
 
-    REGISTER_API_FROM_NAME("SceneCreateGameObject", GameObject *, const std::string &, Scene::Create);
+    // REGISTER_API_FROM_NAME("SceneCreateGameObject", GameObject *, const std::string &, Scene::Create);
 
     // Input
     REGISTER_FUNC("InputIsKeyPress", Input::IsKeyPress);
@@ -195,6 +203,14 @@ void ScriptManager::RegisterApi() {
     // gameobject
     REGISTER_API_FROM_NAME_N("GameObjectCreate", GameObject &, GameObject::Create, const std::string &, const std::string &);
     REGISTER_API_FROM_NAME_N("GameObjectFind", GameObject *, GameObject::Find, const std::string &);
+        
+    REGISTER_API_FROM_NAME_N("_ZN10GameObject6RenameEPS_RKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE", void, GameObject::Rename, GameObject *, const std::string &);
+    REGISTER_FUNC("_ZN5Scene16CreateGameObjectERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEES7_", Scene::CreateGameObject);
+
+    // Component Pool
+    GetComponentPool = (std::unordered_map<std::string, std::unique_ptr<Pool>> &(*)(void))dlsym(ScriptManager::s_handle, "GetComponentPool");
+
+    REGISTER_API_FROM_NAME_N("CreateComponentWithName", void *, ScriptManager::CreateComponentWithName, const std::string &);
 }
 
 

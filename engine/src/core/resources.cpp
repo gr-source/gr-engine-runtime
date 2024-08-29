@@ -151,16 +151,15 @@ GameObject *Resources::LoadGameObject(const std::string &path) {
 
     auto name = Filesystem::GetFileName(path);
 
-    auto gameObject = Scene::Create(name);
-    auto &transform = gameObject->getTransform();
-    // gameObject->setActive(true);
+    auto &gameObject = Scene::CreateGameObject(name);
+    auto &transform = gameObject.getTransform();
 
     {
         std::lock_guard<std::mutex> lock(s_gameObjectMutex);
         s_gameObjectFromLoader.emplace_back(path, &transform);
     }
 
-    return gameObject;
+    return &gameObject;
 }
 
 Animation *Resources::LoadAnimation(const std::string &path) {

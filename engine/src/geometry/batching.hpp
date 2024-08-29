@@ -8,7 +8,7 @@
 
 class Batching {
 public:
-    Batching(std::unordered_map<int, Material> &materials, Mesh *mesh);
+    Batching(const std::string &name, std::unordered_map<int, Material> &materials, Mesh *mesh);
     ~Batching();
 
     void insert(Transform *transform);
@@ -18,8 +18,6 @@ public:
     void draw();
 
     void rebuild();
-
-    static bool bRebuild;
 
     static void Renderer();
 
@@ -39,11 +37,11 @@ private:
 
     grr::gVertexArray *m_vertexArray;
 
-    Mesh *m_mesh;
-
     grm::u32 m_indiceCount;
 
     grm::u32 m_primCount;
+
+    std::string m_name;
 
     grm::u32 m_VBO;
 
@@ -64,7 +62,7 @@ private:
 
 template <typename... Args>
 inline Batching &Batching::Add(const std::string &key, Args &&...args) {
-    auto &&[it, added] = m_batched.emplace(key, std::make_unique<Batching>(std::forward<Args>(args)...));
+    auto &&[it, added] = m_batched.emplace(key, std::make_unique<Batching>(key, std::forward<Args>(args)...));
 
     return (*it->second);
 }

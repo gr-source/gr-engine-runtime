@@ -11,6 +11,8 @@ public:
 
     static GameObject *(*Find)(const std::string &name);
 
+    static void (*Rename)(GameObject *gameObject, const std::string &name);
+
     const std::string &getName();
 
     void setName(const std::string &name);

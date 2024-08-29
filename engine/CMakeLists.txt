@@ -118,6 +118,7 @@ set(engine_src
     src/screenRender.cpp
     src/renderManager.cpp
     src/postProcessing.cpp
+    src/cubeFramebuffer.cpp
     src/editorController.cpp
 
     src/script/meshFilter.cpp
@@ -169,6 +170,7 @@ set(engine_hdr
     src/renderManager.h
     src/postProcessing.hpp
     src/editorController.h
+    src/cubeFramebuffer.hpp
     
     src/script/meshRender.hpp
     src/script/meshFilter.hpp
