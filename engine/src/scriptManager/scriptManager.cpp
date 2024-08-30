@@ -2,13 +2,14 @@
 
 #include "script/camera.hpp"
 
-#include "../input.h"
+#include "geometry/batching.hpp"
 
 #include "core/resources.h"
 #include "core/scene.hpp"
 
 #include "../ecs/entity.h"
 
+#include "../input.h"
 #include "../memory.h"
 
 #include <iostream>
@@ -214,6 +215,9 @@ void ScriptManager::RegisterApi() {
     GetComponentPool = (std::unordered_map<std::string, std::unique_ptr<Pool>> &(*)(void))dlsym(ScriptManager::s_handle, "GetComponentPool");
 
     REGISTER_API_FROM_NAME_N("CreateComponentWithName", void *, ScriptManager::CreateComponentWithName, const std::string &);
+
+    // Batching
+    REGISTER_FUNC("_ZN8Batching6removeEP9Transform", Batching::remove);
 }
 
 
