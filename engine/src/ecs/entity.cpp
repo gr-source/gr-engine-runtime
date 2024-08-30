@@ -14,20 +14,14 @@ std::unordered_map<std::string, std::shared_ptr<Component>> &Entity::getComponen
     return m_componentPtr;
 }
 
-Component *Entity::addComponent(const std::string &name) {
-    auto ptr = addComponentInternal(name);
-
-    auto &&[iterator, added] = m_componentPtr.emplace(name, std::shared_ptr<Component>(ptr));
-
-    auto& component = (*iterator).second;
+Component *Entity::addInternalComponent(const std::string &name) {
+    auto component = static_cast<Component *>(ScriptManager::CreateComponentWithName(name));
     component->entity = this;
     component->Init();
 
-    m_components.push_back(&(*component));
+    m_componentPtr.emplace(name, std::shared_ptr<Component>(component));
 
-    return ptr;
-}
+    m_components.push_back(component);
 
-Component *Entity::addComponentInternal(const std::string &name) {
-    return static_cast<Component *>(ScriptManager::CreateComponentWithName(name));
+    return component;
 }

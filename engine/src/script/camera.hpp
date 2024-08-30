@@ -14,8 +14,6 @@ public:
 
     static Camera *Current();
 
-    Camera();
-
     const Matrix4x4 getPerspesctive() const;
 
     const Matrix4x4 getViewmatrix() const;

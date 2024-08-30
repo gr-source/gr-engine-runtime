@@ -7,8 +7,6 @@
 
 class Transform : public Component {
 public:
-    Transform();
-
     void setLocalScale(const Vector3 &value);
 
     const Vector3 getLocalScale() const;

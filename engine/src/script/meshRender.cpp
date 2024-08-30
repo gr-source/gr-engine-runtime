@@ -6,15 +6,6 @@
 #include "../geometry/batching.hpp"
 #include "../geometry/mesh.h"
 
-MeshRender::MeshRender() : m_batched(nullptr) {}
-
-MeshRender::~MeshRender() {
-    if (!m_batched) {
-        return;
-    }
-    m_batched->remove(&entity->getComponent<Transform>());
-}
-
 std::unordered_map<int, Material> &MeshRender::getMaterials() {
     return m_materials;
 }

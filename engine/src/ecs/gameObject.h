@@ -25,8 +25,8 @@ public:
 
     Transform &getTransform();
 
-    template <typename T, typename ...Args>
-    T &addComponent(Args &&...args);
+    template <typename T>
+    T &addComponent();
 
     template <typename T>
     T& getComponent();
@@ -51,9 +51,9 @@ private:
     bool m_bActive;
 };
 
-template <typename T, typename... Args>
-inline T &GameObject::addComponent(Args &&...args) {
-    return m_entity->addComponent<T>(std::forward<Args>(args)...);
+template <typename T>
+inline T &GameObject::addComponent() {
+    return m_entity->addComponent<T>();
 }
 
 template <typename T>

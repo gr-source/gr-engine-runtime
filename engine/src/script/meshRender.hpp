@@ -11,9 +11,6 @@
 
 class MeshRender : public Component {
 public:
-    MeshRender();
-    ~MeshRender();
-
     std::unordered_map<int, Material> &getMaterials();
 
     Material &addMaterial(int idx, const Material& material);

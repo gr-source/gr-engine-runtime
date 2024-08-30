@@ -1230,26 +1230,37 @@ void Game::RenderPropertiUI() {
 
 void Game::RenderGameObjectPropertiUI() {
     auto isOpenPopup = false;
-    if (s_objectSelected) {
-        ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
-        if (ImGui::BeginTabItem("GameObject", nullptr)) {
-            ImGui::Image(reinterpret_cast<ImTextureID>(iconsUI[IconType::ICON_GAMEOBJECT]->getID()), ImVec2(16, 16));
+    if (!s_objectSelected) {
+        return;
+    }
 
-            ImGui::SameLine();
+    ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
+    if (ImGui::BeginTabItem("GameObject", nullptr)) {
+        ImGui::Image(reinterpret_cast<ImTextureID>(iconsUI[IconType::ICON_GAMEOBJECT]->getID()), ImVec2(16, 16));
 
-            ImGui::Text("[ %s - %s ]", s_objectSelected->getName().c_str(), s_objectSelected->getTag().c_str());
+        ImGui::SameLine();
 
-            s_objectSelected->RenderProperty<Transform>(&Game::OnPropertyTransform);
+        ImGui::Text("[ %s - %s ]", s_objectSelected->getName().c_str(), s_objectSelected->getTag().c_str());
 
-            if (ImGui::SmallButton("AddComponent")) {
-                isOpenPopup = true;
+        for (auto &&[name, ptr] : s_objectSelected->getEntity()->getComponents()) {
+            auto isOpen = ImGui::TreeNode(name.c_str());
+            
+            if (isOpen) {
+                ImGui::TreePop();
             }
-            // s_objectSelected->RenderProperty<MeshRender>(&Game::OnPropertyMeshRender);
-            // s_objectSelected->RenderProperty<Light>(&Game::OnPropertyLightComponent);
-            // s_objectSelected->RenderProperty<Animator>(&Game::OnPropertyAnimator);
-
-            ImGui::EndTabItem();
         }
+
+        // s_objectSelected->RenderProperty<Transform>(&Game::OnPropertyTransform);
+
+        if (ImGui::SmallButton("AddComponent")) {
+            isOpenPopup = true;
+        }
+
+        // s_objectSelected->RenderProperty<MeshRender>(&Game::OnPropertyMeshRender);
+        // s_objectSelected->RenderProperty<Light>(&Game::OnPropertyLightComponent);
+        // s_objectSelected->RenderProperty<Animator>(&Game::OnPropertyAnimator);
+
+        ImGui::EndTabItem();
     }
 
     if (isOpenPopup) {
@@ -1267,8 +1278,7 @@ void Game::PopupAddComponent() {
 
         for (auto &&[name, pool] : componentPool) {
             if (ImGui::SmallButton(name.c_str())) {
-                s_objectSelected->getEntity()->addComponent(name);
-                std::cout << "Added: " << name << std::endl;
+                s_objectSelected->getEntity()->addInternalComponent(name);
 
                 ImGui::CloseCurrentPopup();
             }

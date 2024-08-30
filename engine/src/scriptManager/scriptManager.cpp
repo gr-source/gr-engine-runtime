@@ -132,6 +132,9 @@ void ScriptManager::Shutdown() {
     // UNREGISTER_API(GameObject::GetMutex);
     UNREGISTER_API(GameObject::Create);
     UNREGISTER_API(GameObject::Find);
+
+    // Component Manager
+    UNREGISTER_API(CreateComponentWithName);
     
     if (!s_handle) {
         return;

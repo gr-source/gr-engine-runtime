@@ -43,6 +43,7 @@ set(core_src
     src/core/threadPool.cpp
     src/core/resources.cpp
     src/core/thread.cpp
+    src/core/string.cpp
     src/core/event.cpp
     src/core/scene.cpp
     src/core/time.cpp
@@ -54,6 +55,7 @@ set(core_hdr
     src/core/resources.h
     src/core/event.hpp
     src/core/thread.hpp
+    src/core/string.hpp
     src/core/scene.hpp
     src/core/time.hpp
 )

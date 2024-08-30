@@ -4,8 +4,6 @@
 
 #include "../timer.h"
 
-Transform::Transform() : m_scale(Vector3::one), m_rotation(Quaternion::identity), m_position(Vector3::zero), m_parent(nullptr), m_localMatrix(Matrix4x4::identityMatrix), m_globalMatrix(Matrix4x4::identityMatrix) {}
-
 void Transform::setLocalScale(const Vector3 &value) {
     m_scale = value;
 

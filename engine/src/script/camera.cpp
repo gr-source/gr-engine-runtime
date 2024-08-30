@@ -22,10 +22,6 @@ Camera *Camera::Current() {
     return ScriptManager::CurrentCamera();
 }
 
-Camera::Camera() : m_transform(nullptr), m_fov(45.0f), m_farPlane(1000.0f), m_nearPlane(0.1f) {
-    updateMatrix();
-}
-
 const Matrix4x4 Camera::getPerspesctive() const {
     return m_projection;
 }

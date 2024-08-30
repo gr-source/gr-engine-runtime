@@ -36,10 +36,8 @@ class Entity {
 public:
     static void (*Update)();
 
-    template <typename T, typename... Args>
-    T &addComponent(Args &&...args);
-
-    Component *addComponent(const std::string &name);
+    template <typename T>
+    T &addComponent();
 
     template <typename T>
     T& getComponent();
@@ -47,6 +45,8 @@ public:
     template <typename T>
     const bool hasComponent() const;
 
+    Component *addInternalComponent(const std::string &name);
+    
     GameObject *getGameObject();
 
     std::unordered_map<std::string, std::shared_ptr<Component>> &getComponents();
@@ -60,31 +60,22 @@ private:
 
     grm::u32 m_entityID;
 
-    Component *addComponentInternal(const std::string &name);
 };
 
-template <typename T, typename... Args>
-inline T &Entity::addComponent(Args &&...args) {
-    auto name = typeid(T).name();
+#include "core/string.hpp"
 
-    auto &&[iterator, added] = m_componentPtr.emplace(name, std::make_shared<T>(std::forward<Args>(args)...));
-
-    auto& component = (*iterator).second;
-    component->entity = this;
-    component->Init();
-
-    m_components.push_back(&(*component));
-
-    return *dynamic_cast<T *>(&(*component));
+template <typename T>
+inline T &Entity::addComponent() {
+    return *dynamic_cast<T *>(addInternalComponent(String::RemoveNumber(typeid(T).name())));
 }
 
 template <typename T>
 inline T &Entity::getComponent() {
-    return *dynamic_cast<T*>(m_componentPtr[typeid(T).name()].get());
+    return *dynamic_cast<T*>(&(*m_componentPtr[String::RemoveNumber(typeid(T).name())]));
 }
 
 template <typename T>
 inline const bool Entity::hasComponent() const {
-    auto it = m_componentPtr.find(typeid(T).name());
+    auto it = m_componentPtr.find(String::RemoveNumber(typeid(T).name()));
     return it != m_componentPtr.end();
 }
