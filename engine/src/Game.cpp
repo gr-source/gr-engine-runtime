@@ -1230,9 +1230,11 @@ void Game::RenderPropertiUI() {
 
 void Game::RenderGameObjectPropertiUI() {
     auto isOpenPopup = false;
-    if (!s_objectSelected) {
+    if (!s_objectSelected || !ScriptManager::GetComponentPool) {
         return;
     }
+
+    auto &componentPool = ScriptManager::GetComponentPool();
 
     ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
     if (ImGui::BeginTabItem("GameObject", nullptr)) {
@@ -1246,19 +1248,44 @@ void Game::RenderGameObjectPropertiUI() {
             auto isOpen = ImGui::TreeNode(name.c_str());
             
             if (isOpen) {
+                auto it = componentPool.find(name);
+                if (it == componentPool.end()) {
+                    Console::log(LogInfo::ERROR, "Invalid component: " + name);
+                    ImGui::TreePop();
+                    continue;
+                }
+                auto &fields = it->second->getFields();
+
+                for (auto &field : fields) {
+                    auto name = field.getName();
+                    auto type = field.getType();
+
+                    if (type == "float") {
+                        auto data = Field::GetFieldData<float>(&(*ptr), field);
+
+                        ImGui::DragFloat(name.c_str(), data);
+                    } else if (type == "int") {
+                        auto data = Field::GetFieldData<int>(&(*ptr), field);
+
+                        ImGui::DragInt(name.c_str(), data);
+                    } else if (type == "bool") {
+                        auto data = Field::GetFieldData<bool>(&(*ptr), field);
+
+                        ImGui::Checkbox(name.c_str(), data);
+                    } else if (type == "Vector3") {
+                        auto data = Field::GetFieldData<Vector3>(&(*ptr), field);
+
+                        ImGui::DragFloat3(name.c_str(), (float *)data);
+                    }
+                }
+
                 ImGui::TreePop();
             }
         }
 
-        // s_objectSelected->RenderProperty<Transform>(&Game::OnPropertyTransform);
-
         if (ImGui::SmallButton("AddComponent")) {
             isOpenPopup = true;
         }
-
-        // s_objectSelected->RenderProperty<MeshRender>(&Game::OnPropertyMeshRender);
-        // s_objectSelected->RenderProperty<Light>(&Game::OnPropertyLightComponent);
-        // s_objectSelected->RenderProperty<Animator>(&Game::OnPropertyAnimator);
 
         ImGui::EndTabItem();
     }

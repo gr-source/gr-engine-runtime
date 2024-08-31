@@ -195,7 +195,7 @@ void ScriptManager::RegisterApi() {
     REGISTER_FUNC("InputIsKeyPress", Input::IsKeyPress);
     REGISTER_FUNC("InputSetCursourPos", Input::SetCursorPos);
     REGISTER_FUNC("InputGetCursorPos", Input::GetCursorPos);
-    REGISTER_FUNC("InputIsMousePress", Input::IsMousePress);
+    // REGISTER_FUNC("InputIsMousePress", Input::IsMousePress);
 
     // Screen
     REGISTER_API(void, const iVector2 &, SetScreenSize);

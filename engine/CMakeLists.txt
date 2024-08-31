@@ -97,11 +97,20 @@ set(animation_hdr
     src/core/animation/bone.cpp
 )
 
+set(core_ecs_src
+    src/core/ecs/componentPool.cpp
+)
+
+set(core_ecs_hdr
+src/core/ecs/componentPool.hpp
+)
+
 set(engine_src
     ${core_src}
     ${guizmo_src}
     ${octree_src}
     ${filmbox_src}
+    ${core_ecs_src}
     ${animation_src}
     ${simplexNoise_src}
     ${scriptManager_cpp}
@@ -154,6 +163,7 @@ set(engine_hdr
     ${guizmo_hdr}
     ${octree_hdr}
     ${filmbox_hdr}
+    ${core_ecs_hdr}
     ${animation_hdr}
     ${scriptManager_hdr}
 
