@@ -52,31 +52,31 @@ std::string Input::getKeyName(Key key) {
     #undef GET_ENUM_NAME
 }
 
-const bool Input::IsKeyDown(Key key) {
+bool Input::IsKeyDown(Key key) {
     return 0;
 }
 
-const bool Input::IsKeyUp(Key key) {
+bool Input::IsKeyUp(Key key) {
     return 0;
 }
 
-const bool Input::IsKeyPress(grm::u32 key) {
+bool Input::IsKeyPress(grm::u32 key) {
     return GET_INSTANCE_PRESS(get_key_to_glfw(key));
 }
 
-const bool Input::IsMouseUp(Key button) {
+bool Input::IsMouseUp(Key button) {
     return glfwGetMouseButton((GLFWwindow*)m_instance, get_key_to_glfw(button)) == GLFW_PRESS;
 }
 
-const bool Input::IsMousePress(grm::u32 button) {
-    return 0;
+bool Input::IsMousePress(grm::u32 button) {
+    return false;
 }
 
 void Input::SetCursorPos(const Vector2& position) {
     SET_INSTANCE_MOUSE_POS(position);
 }
 
-const Vector2 Input::GetCursorPos() {
+Vector2 Input::GetCursorPos() {
     GET_INSTANCE_MOUSE_POS();
 }
 

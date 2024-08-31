@@ -25,19 +25,19 @@ public:
 
     static std::string getKeyName(Key key);
 
-    static const bool IsKeyDown(Key key);
+    static bool IsKeyDown(Key key);
 
-    static const bool IsKeyUp(Key key);
+    static bool IsKeyUp(Key key);
 
-    static const bool IsKeyPress(grm::u32 key);
+    static bool IsKeyPress(grm::u32 key);
 
-    static const bool IsMouseUp(Key button);
+    static bool IsMouseUp(Key button);
 
-    static const bool IsMousePress(grm::u32 button);
+    static bool IsMousePress(grm::u32 button);
 
     static void SetCursorPos(const Vector2& position);
 
-    static const Vector2 GetCursorPos();
+    static Vector2 GetCursorPos();
 
     static void SetInstance(void* instance);
 

@@ -1503,11 +1503,11 @@ void Game::PlayGame() {
 void Game::StopGame() {
     Scene::Clear();
 
-    ScriptManager::Shutdown();
-
     RenderManager::Shutdown();
 
     ScreenRender::Shutdown();
+
+    ScriptManager::Shutdown();
 }
 
 void Game::loadReources() {

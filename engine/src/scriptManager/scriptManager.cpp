@@ -134,14 +134,20 @@ void ScriptManager::Shutdown() {
     UNREGISTER_API(GameObject::Create);
     UNREGISTER_API(GameObject::Find);
 
-    // Component Manager
-    UNREGISTER_API(CreateComponentWithName);
-    
+    UNREGISTER_API(GameObject::Rename);
+
+    // Component Pool
+    UNREGISTER_API(GetComponentPool);
+
+    UNREGISTER_API(ScriptManager::CreateComponentWithName);
+
     if (!s_handle) {
         return;
     }
 
-    dlclose(s_handle);
+    if (dlclose(s_handle) != 0) {
+        Console::log(LogInfo::ERROR, "Failed to flush script data: " + std::string(dlerror()));
+    }
 
     s_handle = nullptr;
 }
@@ -183,17 +189,7 @@ void ScriptManager::RegisterApi() {
     REGISTER_FUNC("LoadShader", Resources::LoadShader);
     REGISTER_FUNC("LoadGameObject", Resources::LoadGameObject);
 
-    // auto ptr = &Resources::Load<grr::gShader, const std::string &, const std::string &>;
-
-
     REGISTER_API(std::unique_ptr<Animation>, const std::string &, LoadAnimation);
-
-    //Scene
-    // REGISTER_API_FROM_NAME("GetSceneGameObject", std::vector<GameObject *> &, void, Scene::GetGameObject);
-
-    // REGISTER_API_FROM_NAME("DeleteSceneGameObject", void, GameObject *, Scene::Delete);
-
-    // REGISTER_API_FROM_NAME("SceneCreateGameObject", GameObject *, const std::string &, Scene::Create);
 
     // Input
     REGISTER_FUNC("InputIsKeyPress", Input::IsKeyPress);
