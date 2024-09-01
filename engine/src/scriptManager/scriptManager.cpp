@@ -1,5 +1,6 @@
 #include "scriptManager.hpp"
 
+#include "script/meshRender.hpp"
 #include "script/camera.hpp"
 
 #include "geometry/batching.hpp"
@@ -104,9 +105,13 @@ void ScriptManager::Shutdown() {
 
     // [ Main ]
     UNREGISTER_API(InitializeScript);
+
     UNREGISTER_API(Update);
     UNREGISTER_API(Destroy);
     UNREGISTER_API(SetDeltaTime);
+
+    UNREGISTER_API(GetShader);
+    UNREGISTER_API(GetShaders);
 
     // [ Entity ]
     UNREGISTER_API(GetEntityCount);
@@ -119,21 +124,21 @@ void ScriptManager::Shutdown() {
     UNREGISTER_API(MainCamera);
     UNREGISTER_API(CurrentCamera);
     UNREGISTER_API(Camera::GetCameras);
+    UNREGISTER_API(Camera::SetEnable);
 
+    // Event
     UNREGISTER_API(EventUpdate);
 
-    // Scene
-    // UNREGISTER_API(Scene::GetGameObject);
-
+    // AssetManager
     UNREGISTER_API(LoadAnimation);
 
+    // Screen
     UNREGISTER_API(SetScreenSize);
 
-    // GameObject
-    // UNREGISTER_API(GameObject::GetMutex);
+    // gameobject
     UNREGISTER_API(GameObject::Create);
     UNREGISTER_API(GameObject::Find);
-
+    UNREGISTER_API(GameObject::Destroy);
     UNREGISTER_API(GameObject::Rename);
 
     // Component Pool
@@ -205,8 +210,8 @@ void ScriptManager::RegisterApi() {
     REGISTER_API_FROM_NAME_N("GameObjectCreate", GameObject &, GameObject::Create, const std::string &, const std::string &);
     REGISTER_API_FROM_NAME_N("GameObjectFind", GameObject *, GameObject::Find, const std::string &);
     REGISTER_API_FROM_NAME_N("_ZN10GameObject7DestroyEPS_", void, GameObject::Destroy, GameObject *);
-        
     REGISTER_API_FROM_NAME_N("_ZN10GameObject6RenameEPS_RKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE", void, GameObject::Rename, GameObject *, const std::string &);
+    REGISTER_API_FROM_NAME_N("_ZN10GameObject18GetGameObjectCountEv", grm::size, GameObject::GetGameObjectCount, void);
 
     // Scene
     REGISTER_FUNC("_ZN5Scene16CreateGameObjectERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEES7_", Scene::CreateGameObject);
@@ -219,6 +224,9 @@ void ScriptManager::RegisterApi() {
 
     // Batching
     REGISTER_FUNC("_ZN8Batching6removeEP9Transform", Batching::remove);
+
+    // Script
+    REGISTER_FUNC("_ZN10MeshRender5buildEv", MeshRender::build);
 }
 
 

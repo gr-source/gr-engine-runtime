@@ -64,8 +64,6 @@ void Engine::MainLoop(std::function<void()> func) {
 
         Engine::OnRender();
 
-        // timer.SleepTick();
-
         time.end();
 
         func();
@@ -106,9 +104,6 @@ void Engine::OnInit() {
 
     // Shadow provavelmente vou remove-lo
     // m_shadowbuffer = &Shadowbuffer::getInstance();
-
-    // Skybox provavelmente vou remove-lo
-    // m_skybox = &Skybox::getInstance();
 
     SetupEnable();
 

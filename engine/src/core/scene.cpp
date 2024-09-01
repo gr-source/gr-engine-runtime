@@ -7,6 +7,8 @@
 
 #include "core/binary/gHeader.hpp"
 
+#include "console.hpp"
+
 std::vector<GameObject *> Scene::s_objects;
 
 std::string Scene::m_name = "default";
@@ -69,7 +71,9 @@ void Scene::Remove(GameObject *gameObject) {
 }
 
 void Scene::Delete(GameObject *gameObject) {
-    std::cout << "Deleting: " << gameObject->getName() << std::endl;
+    if (!gameObject) {
+        return Console::log(LogInfo::ERROR, "Failed to delete game object.");
+    }
     
     Scene::Remove(gameObject);
 

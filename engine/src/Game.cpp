@@ -844,7 +844,7 @@ void Game::RenderViewportUI() {
         ImGui::TextColored(FPSColor, "FPS: %.2f", TimeLast::FPS);
     }
 
-    ImGui::SetCursorPos({5.0f, 35.0f});
+    ImGui::SetCursorPos({8.0f, 35.0f});
 
     ImGui::PushStyleColor(ImGuiCol_Text, {0.0f, 0.0f, 1.0f, 1.0f});
 
@@ -1167,8 +1167,8 @@ void Game::RenderPropertiUI() {
             if (ScriptManager::GetEntityCount)
                 ImGui::Text("Entidades: %ld", ScriptManager::GetEntityCount());
 
-            // if (ScriptManager::GetAllGameObject)
-            //     ImGui::Text("GameObject: %ld", ScriptManager::GetAllGameObject().size());
+            if (GameObject::GetGameObjectCount)
+                ImGui::Text("GameObject: %ld", GameObject::GetGameObjectCount());
 
             ImGui::Text("Memoria: %s", getfilesize(Memory::totalMemoryUsage).c_str());
 

@@ -15,6 +15,8 @@ public:
 
     static void (*Rename)(GameObject *gameObject, const std::string &name);
 
+    static grm::size (*GetGameObjectCount)();
+
     const std::string &getName();
 
     void setName(const std::string &name);

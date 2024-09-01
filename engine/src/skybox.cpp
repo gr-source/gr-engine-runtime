@@ -51,10 +51,10 @@ void Skybox::Shutdown() {
 }
 
 void Skybox::Renderer() {
-    if (!m_shader || !m_shader->isValid()) {
+    auto camera = Camera::Current();
+    if (!camera || !m_shader || !m_shader->isValid()) {
         return;
     }
-    auto camera = Camera::Main();
 
     grr::gShader::Bind(m_shader);
 

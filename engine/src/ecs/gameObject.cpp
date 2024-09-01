@@ -12,6 +12,8 @@ GameObject *(*GameObject::Find)(const std::string &name);
 
 void (*GameObject::Rename)(GameObject *gameObject, const std::string &name);
 
+grm::size (*GameObject::GetGameObjectCount)() = nullptr;
+
 const std::string &GameObject::getName() {
     return m_name;
 }

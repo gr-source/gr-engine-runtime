@@ -25,7 +25,7 @@ void EditorController::Update() {
     static ImGuiIO& io = ImGui::GetIO();
     m_mainCamera = Camera::Main();
 
-    if (m_mainCamera != Camera::Current() || !io.MouseDrawCursor || Settings::IsGameRunning) {
+    if (!m_mainCamera || m_mainCamera != Camera::Current() || !io.MouseDrawCursor || Settings::IsGameRunning) {
         return;
     }
 

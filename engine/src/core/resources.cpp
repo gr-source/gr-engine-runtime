@@ -502,7 +502,6 @@ void Resources::SetupGameObject(Transform *&out, gModel &model, Mesh *mesh, std:
         meshFilter.setMesh(mesh);
 
         auto &meshRender = gameObject->addComponent<MeshRender>();
-        // meshRender.Init();
 
         for (auto i=0;i<materials.size();++i) {
             auto& material = materials[i];
@@ -519,8 +518,11 @@ void Resources::SetupGameObject(Transform *&out, gModel &model, Mesh *mesh, std:
         }
 
         meshRender.build();
-
     }
+
+    m_functions.erase(std::remove_if(m_functions.begin(), m_functions.end(), [&gameObject, &model](auto &func) {
+        return func(gameObject, model.m_name);
+    }), m_functions.end());
 
     {
         std::lock_guard<std::mutex> lock(s_gameObjectMutex);
@@ -546,12 +548,6 @@ void Resources::doInBackgroundGameObject(const std::string &path, Transform *tar
     ReadChildren(target);
 
     Stream::close();
-
-    Event::Add([&target] {
-        m_functions.erase(std::remove_if(m_functions.begin(), m_functions.end(), [&target](auto &func) {
-            return func(target->getGameObject(), "path");
-        }), m_functions.end());
-    });
 }
 
 void Resources::ProcessBinary() {
