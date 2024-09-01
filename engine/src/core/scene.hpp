@@ -22,6 +22,8 @@ public:
     
     static void Remove(GameObject *gameObject);
 
+    static void Delete(GameObject *gameObject);
+
     static void Clear();
 
     static void Save();

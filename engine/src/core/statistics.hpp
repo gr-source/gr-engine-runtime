@@ -4,9 +4,13 @@
 
 class Statistics {
 public:
+    static grm::size m_drawRenderCount;
+
     static grm::size m_drawCallCount;
 
-    void a();
+    static grm::size m_totalRender;
+
+
 private:
 };
 

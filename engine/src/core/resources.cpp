@@ -483,7 +483,6 @@ void Resources::ProcessAnimation() {
 }
 
 std::condition_variable cond;
-// std::mutex m_lock;
 
 void Resources::SetupGameObject(Transform *&out, gModel &model, Mesh *mesh, std::vector<gMaterial> &materials, Transform *parent) {
     // transformaçoes
@@ -547,6 +546,12 @@ void Resources::doInBackgroundGameObject(const std::string &path, Transform *tar
     ReadChildren(target);
 
     Stream::close();
+
+    Event::Add([&target] {
+        m_functions.erase(std::remove_if(m_functions.begin(), m_functions.end(), [&target](auto &func) {
+            return func(target->getGameObject(), "path");
+        }), m_functions.end());
+    });
 }
 
 void Resources::ProcessBinary() {
@@ -562,8 +567,13 @@ void Resources::ProcessBinary() {
     }
 }
 
+#include "timer.h"
+
 void Resources::OnThread() {
+    TimeLast last(5.0f);
     while (Settings::IsEngineRunning()) {
+        last.SleepTick();
+
         ProcessShader();
 
         ProcessTexture();

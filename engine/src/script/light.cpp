@@ -2,11 +2,11 @@
 
 #include "transform.hpp"
 
-const Vector3 Light::getposition() const {
+Vector3 Light::getposition() const {
     return m_transform->getPosition();
 }
 
-const Vector3 Light::getforward() const {
+Vector3 Light::getForward() const {
     return m_transform->getforward();
 }
 
@@ -18,7 +18,11 @@ void Light::setcolor(const Color &color) {
     m_color = color;
 }
 
-const int &Light::gettype() const {
+void Light::setType(int value) {
+    m_type = value;
+}
+
+int Light::getType() const {
     return m_type;
 }
 

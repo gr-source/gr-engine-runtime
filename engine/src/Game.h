@@ -115,9 +115,7 @@ private:
 
     // static void OnPropertyCameraComponent(CameraComponent* cameraComponent);
 
-    static void OnPropertyLightComponent(Light *light);
-
-    // static void OnPropertyChunkController(ChunkController* chunkController);
+    static void OnPropertyLight(Light *light);
 
     static void TextureInfo(Texture*& texture);
 };

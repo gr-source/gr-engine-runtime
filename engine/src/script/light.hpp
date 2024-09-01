@@ -6,21 +6,23 @@
 
 class Light : public Component {
 public:
-    enum : grm::u8 {
-        eDirection = 1,
-        ePoint     = 2,
-        eSpot      = 3,
+    enum LightType : int {
+        eDirection = 0,
+        ePoint     = 1,
+        eSpot      = 2,
     };
 
-    const Vector3 getposition() const;
+    Vector3 getposition() const;
 
-    const Vector3 getforward() const;
+    Vector3 getForward() const;
 
     const Color& getcolor() const;
 
     void setcolor(const Color& color);
 
-    const int& gettype() const;
+    void setType(int value);
+
+    int getType() const;
 
     const float& getattenuationconstant();
 

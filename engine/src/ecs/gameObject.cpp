@@ -6,6 +6,8 @@
 
 GameObject &(*GameObject::Create)(const std::string &name, const std::string &tag);
 
+void (*GameObject::Destroy)(GameObject *gameObject);
+
 GameObject *(*GameObject::Find)(const std::string &name);
 
 void (*GameObject::Rename)(GameObject *gameObject, const std::string &name);

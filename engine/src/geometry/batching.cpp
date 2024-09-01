@@ -1,18 +1,20 @@
 #include "batching.hpp"
 
+#include "renderManager.h"
 #include "mesh.h"
+
+#include "core/statistics.hpp"
+#include "core/event.hpp"
 
 #include "script/transform.hpp"
 
-#include "core/statistics.hpp"
-
-#include "renderManager.h"
+#include "culling/frustum.h"
 
 #include <cstring>
 
-#include "core/event.hpp"
+std::unordered_map<std::string, std::unique_ptr<Batching>> Batching::m_batchedMap;
 
-std::unordered_map<std::string, std::unique_ptr<Batching>> Batching::m_batched;
+std::vector<Batching *> Batching::m_batched;
 
 Batching::Batching(const std::string &name, std::unordered_map<int, Material> &materials, Mesh *mesh) : m_name(name), m_materials(materials), m_vertexArray(nullptr), m_indiceCount(0), m_primCount(0), m_VBO(0), m_EBO(0), m_PBO(0), bHasIndice(false), isCompiled(false) {
     compileMesh(mesh);
@@ -44,11 +46,7 @@ void Batching::remove(Transform *transform) {
     m_models.erase(std::remove(m_models.begin(), m_models.end(), transform), m_models.end());
 
     if (m_models.empty()) {
-        auto it = m_batched.find(m_name);
-        if (it == m_batched.end()) {
-            return;
-        }
-        m_batched.erase(it);
+        Batching::Delete(m_name);
     }
 }
 
@@ -127,17 +125,40 @@ void Batching::compileMesh(Mesh *mesh) {
     }
 
     m_vertexArray->unbind();
+
+    // process boundbox
+    m_boundbox.min = Vector3(std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), std::numeric_limits<float>::max());
+    m_boundbox.max = Vector3(std::numeric_limits<float>::min(), std::numeric_limits<float>::min(), std::numeric_limits<float>::min());
+    
+    for (const auto& vertex : mesh->getVertices()) {
+        m_boundbox.min = Math::min(m_boundbox.min, vertex.position);
+        m_boundbox.max = Math::max(m_boundbox.max, vertex.position);
+    }
 }
 
 void Batching::compile() {
     if (!m_vertexArray || !m_vertexArray->isValid() || m_models.empty()) {
         return;
     }
+    
     std::vector<Matrix4x4> models;
 
-    for (auto transform : m_models) {
-        models.push_back(transform->getGlobalMatrix());
+    Statistics::m_totalRender += m_models.size();
+
+    for (auto &transform : m_models) {
+        auto &model = transform->getGlobalMatrix();
+
+        if (!Frustum::IsCubeInFrustumOOBB(m_boundbox.min, m_boundbox.max, model)) {
+            continue;
+        }
+        models.push_back(model);
     }
+
+    if (models.empty()) {
+        return;
+    }
+
+    Statistics::m_drawRenderCount += models.size();
 
     m_vertexArray->bind();
     grr::gVertexArray::Bind(m_PBO);
@@ -172,10 +193,11 @@ void Batching::setupMaterial() {
 }
 
 void Batching::Renderer() {
+    Statistics::m_drawRenderCount = 0;
     Statistics::m_drawCallCount = 0;
-
+    Statistics::m_totalRender = 0;
     
-    for (auto &&[name, batch] : m_batched) {
+    for (auto &batch : m_batched) {
         batch->compile();
 
         batch->draw();
@@ -185,17 +207,20 @@ void Batching::Renderer() {
 }
 
 Batching *Batching::Find(const std::string &name) {
-    auto it = m_batched.find(name);
-    if (it == m_batched.end()) {
+    auto it = m_batchedMap.find(name);
+    if (it == m_batchedMap.end()) {
         return nullptr;
     }
     return &(*it->second);
 }
 
 void Batching::Delete(const std::string &name) {
-    auto it = m_batched.find(name);
-    if (it == m_batched.end()) {
+    auto it = m_batchedMap.find(name);
+    if (it == m_batchedMap.end()) {
         return;
     }
-    m_batched.erase(it);
+
+    m_batched.erase(std::remove(m_batched.begin(), m_batched.end(), &(*it->second)), m_batched.end());
+
+    m_batchedMap.erase(it);
 }

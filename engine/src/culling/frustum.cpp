@@ -1,5 +1,7 @@
 #include "frustum.h"
 
+#include "renderer.h"
+
 enum FrustumSide {
 	RIGHT	= 0,		// The RIGHT side of the frustum
 	LEFT	= 1,		// The LEFT	 side of the frustum
@@ -26,6 +28,15 @@ void NormalizePlane(float frustum[6][4], int side) {
 	frustum[side][C] /= magnitude;
 	frustum[side][D] /= magnitude; 
 }
+
+float Frustum::m_Frustum[6][4]{
+	{0.0f, 0.0f, 0.0f, 0.0f},
+	{0.0f, 0.0f, 0.0f, 0.0f},
+	{0.0f, 0.0f, 0.0f, 0.0f},
+	{0.0f, 0.0f, 0.0f, 0.0f},
+	{0.0f, 0.0f, 0.0f, 0.0f},
+	{0.0f, 0.0f, 0.0f, 0.0f},
+};
 
 void Frustum::CalculateFrustum(const Matrix4x4& vp) {    
 	// This will extract the RIGHT side of the frustum
@@ -82,6 +93,61 @@ void Frustum::CalculateFrustum(const Matrix4x4& vp) {
 	NormalizePlane(m_Frustum, FRONT);
 }
 
+bool Frustum::IsPointInFrustum(const Vector3 &point, int planeIndex) {
+    return m_Frustum[planeIndex][A] * point.x +
+           m_Frustum[planeIndex][B] * point.y +
+           m_Frustum[planeIndex][C] * point.z +
+           m_Frustum[planeIndex][D] > 0.0f;
+}
+
+bool Frustum::IsCubeInFrustumOOBB(const Vector3 &min, const Vector3 &max, const Matrix4x4 &model) {
+    Vector3 points[8] {
+        Vector3(model * Vector4(min.x, min.y, min.z, 1.0f)),
+        Vector3(model * Vector4(max.x, min.y, min.z, 1.0f)),
+        Vector3(model * Vector4(max.x, max.y, min.z, 1.0f)),
+        Vector3(model * Vector4(min.x, max.y, min.z, 1.0f)),
+
+        Vector3(model * Vector4(min.x, min.y, max.z, 1.0f)),
+        Vector3(model * Vector4(max.x, min.y, max.z, 1.0f)),
+        Vector3(model * Vector4(max.x, max.y, max.z, 1.0f)),
+        Vector3(model * Vector4(min.x, max.y, max.z, 1.0f))
+    };
+
+    if (DebugDraw::bDebugMode) {
+        DrawCube(points);
+    }
+
+    for (int i = 0; i < 6; i++) {
+        bool allPointsOutside = true;
+        for (int j = 0; j < 8; j++) {
+            if (IsPointInFrustum(points[j], i)) {
+                allPointsOutside = false;
+                break;
+            }
+        }
+        if (allPointsOutside) return false;
+    }
+    return true;
+}
+
+void Frustum::DrawCube(Vector3 points[8]) {
+	DebugDraw::AddLine(points[0], points[1], Color::blue);
+	DebugDraw::AddLine(points[1], points[2], Color::blue);
+	DebugDraw::AddLine(points[2], points[3], Color::blue);
+	DebugDraw::AddLine(points[3], points[0], Color::blue);
+
+	DebugDraw::AddLine(points[4], points[5], Color::blue);
+	DebugDraw::AddLine(points[5], points[6], Color::blue);
+	DebugDraw::AddLine(points[6], points[7], Color::blue);
+	DebugDraw::AddLine(points[7], points[4], Color::blue);
+
+	DebugDraw::AddLine(points[0], points[4], Color::blue);
+	DebugDraw::AddLine(points[1], points[5], Color::blue);
+	DebugDraw::AddLine(points[2], points[6], Color::blue);
+	DebugDraw::AddLine(points[3], points[7], Color::blue);
+}
+
+/*
 const bool Frustum::PointInFrustum(const Vector3& point) const {
 	for (int i = 0; i < 6; i++) {
 		if (m_Frustum[i][A] * point.x + m_Frustum[i][B] * point.y + m_Frustum[i][C] * point.z + m_Frustum[i][D] <= 0) {
@@ -139,7 +205,6 @@ const bool Frustum::IsCubeInFrustumAABB(const Vector3& min, const Vector3& max) 
     };
 
 	// Desenhar as linhas do cubo usando as coordenadas dos pontos do frustum
-	/*
 	DebugDraw::AddLine(points[0], points[1], Color::blue);
 	DebugDraw::AddLine(points[1], points[2], Color::blue);
 	DebugDraw::AddLine(points[2], points[3], Color::blue);
@@ -154,7 +219,6 @@ const bool Frustum::IsCubeInFrustumAABB(const Vector3& min, const Vector3& max) 
 	DebugDraw::AddLine(points[1], points[5], Color::blue);
 	DebugDraw::AddLine(points[2], points[6], Color::blue);
 	DebugDraw::AddLine(points[3], points[7], Color::blue);
-	*/
 
 	for (int i = 0; i < 6; i++ ) {
 		if (m_Frustum[i][A] * (points[0].x) + m_Frustum[i][B] * (points[0].y) + m_Frustum[i][C] * (points[0].z) + m_Frustum[i][D] > 0)
@@ -179,33 +243,36 @@ const bool Frustum::IsCubeInFrustumAABB(const Vector3& min, const Vector3& max) 
 }
 
 const bool Frustum::IsCubeInFrustumOOBB(const Vector3 &min, const Vector3 &max, const Matrix4x4 &model) const {
-    Vector3 points[8] {
-        Vector3(model * Vector4(min.x, min.y, min.z, 1.0f)),
-        Vector3(model * Vector4(max.x, min.y, min.z, 1.0f)),
-        Vector3(model * Vector4(max.x, max.y, min.z, 1.0f)),
-        Vector3(model * Vector4(min.x, max.y, min.z, 1.0f)),
- 
-        Vector3(model * Vector4(min.x, min.y, max.z, 1.0f)),
-        Vector3(model * Vector4(max.x, min.y, max.z, 1.0f)),
-        Vector3(model * Vector4(max.x, max.y, max.z, 1.0f)),
-        Vector3(model * Vector4(min.x, max.y, max.z, 1.0f))
-    };
+	Vector3 points[8] {
+		Vector3(model * Vector4(min.x, min.y, min.z, 1.0f)),
+		Vector3(model * Vector4(max.x, min.y, min.z, 1.0f)),
+		Vector3(model * Vector4(max.x, max.y, min.z, 1.0f)),
+		Vector3(model * Vector4(min.x, max.y, min.z, 1.0f)),
 
-	// Desenhar as linhas do cubo usando as coordenadas dos pontos do frustum
-	DebugDraw::AddLine(points[0], points[1], Color::blue);
-	DebugDraw::AddLine(points[1], points[2], Color::blue);
-	DebugDraw::AddLine(points[2], points[3], Color::blue);
-	DebugDraw::AddLine(points[3], points[0], Color::blue);
+		Vector3(model * Vector4(min.x, min.y, max.z, 1.0f)),
+		Vector3(model * Vector4(max.x, min.y, max.z, 1.0f)),
+		Vector3(model * Vector4(max.x, max.y, max.z, 1.0f)),
+		Vector3(model * Vector4(min.x, max.y, max.z, 1.0f))
+	};
 
-	DebugDraw::AddLine(points[4], points[5], Color::blue);
-	DebugDraw::AddLine(points[5], points[6], Color::blue);
-	DebugDraw::AddLine(points[6], points[7], Color::blue);
-	DebugDraw::AddLine(points[7], points[4], Color::blue);
+	if (DebugDraw::bDebugMode) {
 
-	DebugDraw::AddLine(points[0], points[4], Color::blue);
-	DebugDraw::AddLine(points[1], points[5], Color::blue);
-	DebugDraw::AddLine(points[2], points[6], Color::blue);
-	DebugDraw::AddLine(points[3], points[7], Color::blue);
+		// Desenhar as linhas do cubo usando as coordenadas dos pontos do frustum
+		DebugDraw::AddLine(points[0], points[1], Color::blue);
+		DebugDraw::AddLine(points[1], points[2], Color::blue);
+		DebugDraw::AddLine(points[2], points[3], Color::blue);
+		DebugDraw::AddLine(points[3], points[0], Color::blue);
+
+		DebugDraw::AddLine(points[4], points[5], Color::blue);
+		DebugDraw::AddLine(points[5], points[6], Color::blue);
+		DebugDraw::AddLine(points[6], points[7], Color::blue);
+		DebugDraw::AddLine(points[7], points[4], Color::blue);
+
+		DebugDraw::AddLine(points[0], points[4], Color::blue);
+		DebugDraw::AddLine(points[1], points[5], Color::blue);
+		DebugDraw::AddLine(points[2], points[6], Color::blue);
+		DebugDraw::AddLine(points[3], points[7], Color::blue);
+	}
 
 	for (int i = 0; i < 6; i++ ) {
 		if (m_Frustum[i][A] * (points[0].x) + m_Frustum[i][B] * (points[0].y) + m_Frustum[i][C] * (points[0].z) + m_Frustum[i][D] > 0)
@@ -228,3 +295,4 @@ const bool Frustum::IsCubeInFrustumOOBB(const Vector3 &min, const Vector3 &max, 
 	}
 	return true;
 }
+*/

@@ -188,6 +188,7 @@ void ScriptManager::RegisterApi() {
     REGISTER_FUNC("LoadTexture", Resources::LoadTexture);
     REGISTER_FUNC("LoadShader", Resources::LoadShader);
     REGISTER_FUNC("LoadGameObject", Resources::LoadGameObject);
+    REGISTER_FUNC("_ZN13AssetsManager13AddPostLoaderESt8functionIFbPvRKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEEE", Resources::AddPostLoader);
 
     REGISTER_API(std::unique_ptr<Animation>, const std::string &, LoadAnimation);
 
@@ -203,9 +204,13 @@ void ScriptManager::RegisterApi() {
     // gameobject
     REGISTER_API_FROM_NAME_N("GameObjectCreate", GameObject &, GameObject::Create, const std::string &, const std::string &);
     REGISTER_API_FROM_NAME_N("GameObjectFind", GameObject *, GameObject::Find, const std::string &);
+    REGISTER_API_FROM_NAME_N("_ZN10GameObject7DestroyEPS_", void, GameObject::Destroy, GameObject *);
         
     REGISTER_API_FROM_NAME_N("_ZN10GameObject6RenameEPS_RKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE", void, GameObject::Rename, GameObject *, const std::string &);
+
+    // Scene
     REGISTER_FUNC("_ZN5Scene16CreateGameObjectERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEES7_", Scene::CreateGameObject);
+    REGISTER_FUNC("_ZN5Scene6DeleteEP10GameObject", Scene::Delete);
 
     // Component Pool
     GetComponentPool = (std::unordered_map<std::string, std::unique_ptr<Pool>> &(*)(void))dlsym(ScriptManager::s_handle, "GetComponentPool");

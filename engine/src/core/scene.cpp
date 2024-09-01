@@ -68,6 +68,14 @@ void Scene::Remove(GameObject *gameObject) {
     s_objects.erase(std::remove(s_objects.begin(), s_objects.end(), gameObject), s_objects.end());
 }
 
+void Scene::Delete(GameObject *gameObject) {
+    std::cout << "Deleting: " << gameObject->getName() << std::endl;
+    
+    Scene::Remove(gameObject);
+
+    GameObject::Destroy(gameObject);
+}
+
 void Scene::Clear() {
     s_objects.clear();
 }

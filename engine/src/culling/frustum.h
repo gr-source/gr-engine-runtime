@@ -6,18 +6,14 @@
 
 class Frustum {
 public:
-    void CalculateFrustum(const Matrix4x4& vp);
+    static void CalculateFrustum(const Matrix4x4& vp);
 
-    const bool PointInFrustum(const Vector3& point) const;
+    static bool IsPointInFrustum(const Vector3& point, int planeIndex);
 
-    const bool SphereInFrustum(const Vector3& point, float radius) const;
-
-    const bool IsCubeInFrustum(const Vector3* vertice) const;
-
-    const bool IsCubeInFrustumAABB(const Vector3& min, const Vector3& max) const;
-
-    const bool IsCubeInFrustumOOBB(const Vector3& min, const Vector3& max, const Matrix4x4& model) const;
+    static bool IsCubeInFrustumOOBB(const Vector3 &min, const Vector3 &max, const Matrix4x4 &model);
 
 private:
-    float m_Frustum[6][4];
+    static float m_Frustum[6][4];
+
+    static void DrawCube(Vector3 points[8]);
 };

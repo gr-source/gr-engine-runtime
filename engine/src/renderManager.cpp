@@ -19,13 +19,13 @@
 
 #include "geometry/batching.hpp"
 
+#include "culling/frustum.h"
+
 #include <cstring>
 
 std::vector<GameObject *> RenderManager::s_objects;
 
 grr::gShader *RenderManager::m_shader[3] = {nullptr, nullptr, nullptr};
-
-Frustum RenderManager::s_frustum;
 
 bool RenderManager::bWireFrame = false;
 
@@ -45,8 +45,6 @@ void RenderManager::Initialize() {
     m_shader[ShaderType_Dynamic] = shaders[ShaderType_Dynamic];
     m_shader[ShaderType_Dynamic_Anim] = shaders[ShaderType_Dynamic_Anim];
     m_shader[ShaderType_Dynamic_Multi_Model] = shaders[ShaderType_Dynamic_Multi_Model];
-
-    return;
 }
 
 void RenderManager::Process() {
@@ -56,7 +54,7 @@ void RenderManager::Process() {
 
     m_camera = Camera::Current();
 
-    s_frustum.CalculateFrustum(m_camera->getPerspesctive() * m_camera->getViewmatrix());
+    Frustum::CalculateFrustum(m_camera->getPerspesctive() * m_camera->getViewmatrix());
 }
 
 void RenderManager::Renderer() {
@@ -110,8 +108,8 @@ void RenderManager::SetupLight() {
         grr::gShader::SetUniform("m_light[" + std::to_string(i) + "].position",    light->getposition());
         grr::gShader::SetUniform("m_light[" + std::to_string(i) + "].color",       grr::gColor(light->getcolor().r, light->getcolor().g, light->getcolor().b, light->getcolor().a));
         grr::gShader::SetUniform("m_light[" + std::to_string(i) + "].attenuation", Vector3(light->getattenuationconstant(), light->getattenuationlinear(), light->getattenuationquadractc()));
-        grr::gShader::SetUniform("m_light[" + std::to_string(i) + "].direction",   light->getforward());
-        grr::gShader::SetUniform("m_light[" + std::to_string(i) + "].params",      Vector3(light->getinnecone(), light->getoutercone(), (float)light->gettype()));
+        grr::gShader::SetUniform("m_light[" + std::to_string(i) + "].direction",   light->getForward());
+        grr::gShader::SetUniform("m_light[" + std::to_string(i) + "].params",      Vector3(light->getinnecone(), light->getoutercone(), (float)light->getType()));
         // grr::gShader::SetUniform("m_light[" + std::to_string(i) + "].vp",            light->getprojectionview());
     }
 }

@@ -5,6 +5,7 @@
 #include "default.hpp"
 
 #include "material.h"
+#include "boundbox.h"
 
 class Batching {
 public:
@@ -29,7 +30,9 @@ public:
     static Batching &Add(const std::string &key, Args &&...args);
 
 private:
-    static std::unordered_map<std::string, std::unique_ptr<Batching>> m_batched;
+    static std::unordered_map<std::string, std::unique_ptr<Batching>> m_batchedMap;
+
+    static std::vector<Batching *> m_batched;
 
     std::unordered_map<int, Material> m_materials;
 
@@ -42,6 +45,8 @@ private:
     grm::u32 m_primCount;
 
     std::string m_name;
+
+    Boundbox m_boundbox;
 
     grm::u32 m_VBO;
 
@@ -62,7 +67,6 @@ private:
 
 template <typename... Args>
 inline Batching &Batching::Add(const std::string &key, Args &&...args) {
-    auto &&[it, added] = m_batched.emplace(key, std::make_unique<Batching>(key, std::forward<Args>(args)...));
-
-    return (*it->second);
+    auto &&[it, added] = m_batchedMap.emplace(key, std::make_unique<Batching>(key, std::forward<Args>(args)...));
+    return *m_batched.emplace_back(&(*it->second));
 }

@@ -1,7 +1,5 @@
 #pragma once
 
-#include "culling/frustum.h"
-
 #include <gr-render/gRender.h>
 
 #include "geometry/material.h"
@@ -21,8 +19,6 @@ public:
 
     static bool bWireFrame;
     
-    static Frustum s_frustum;
-
 public:
     enum ShaderType : int {
         ShaderType_Dynamic = 0,

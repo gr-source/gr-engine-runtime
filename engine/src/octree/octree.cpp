@@ -54,9 +54,9 @@ std::vector<GameObject*> Octree::render(const Frustum& frustum) {
     vertices[6] = m_position + Vector3( m_scale.x,  m_scale.y,  m_scale.z) / 2.0f;
     vertices[7] = m_position + Vector3(-m_scale.x,  m_scale.y,  m_scale.z) / 2.0f;
 
-    if (!frustum.IsCubeInFrustum(vertices)) {
-        return std::vector<GameObject*>();
-    }
+    // if (!frustum.IsCubeInFrustum(vertices)) {
+    //     return std::vector<GameObject*>();
+    // }
 
     std::vector<GameObject*> models;
 

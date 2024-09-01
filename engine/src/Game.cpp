@@ -543,7 +543,7 @@ void Game::RenderScenesUI() {
     }
 
     if (ImGui::IsKeyReleased(ImGuiKey_Delete) && s_objectSelected) {
-        // Event::Add(Scene::Delete, s_objectSelected);
+        Event::Add(Scene::Delete, s_objectSelected);
         s_objectSelected = nullptr;
     }
     
@@ -676,7 +676,7 @@ void Game::PopupOptionsGameObject() {
         auto id = 0;
         if (ImGui::ListBox("##ListBoxOptionsGame", &id, item_name, 2)) {
             if (id == 0 && s_objectSelected) {
-                // Event::Add(Scene::Delete, s_objectSelected);
+                Event::Add(Scene::Delete, s_objectSelected);
                 s_objectSelected = nullptr;
             } else if (id == 1 && s_objectSelected) {
                 isOpenRename = true;
@@ -701,7 +701,6 @@ void Game::PopupRenameGameObject() {
         char name[256] = {0};
         if (ImGui::InputText("##InputName", name, 256, ImGuiInputTextFlags_EnterReturnsTrue)) {
             GameObject::Rename(s_objectSelected, name);
-            // s_objectSelected->setName(name);
 
             ImGui::CloseCurrentPopup();
         }
@@ -1194,7 +1193,8 @@ void Game::RenderPropertiUI() {
             // ImGui::Text("Cameras: %ld",   Camera::Get.size());
             if (ScriptManager::GetListLight)
                 ImGui::Text("Luzes: %ld",     ScriptManager::GetListLight().size());
-            ImGui::Text("Draw Render: %d/%ld", 0, Statistics::m_drawCallCount);
+            ImGui::Text("Draw Call Count: %ld", Statistics::m_drawCallCount);
+            ImGui::Text("Draw Render: %ld/%ld", Statistics::m_totalRender, Statistics::m_drawRenderCount);
             
             ImGui::EndTabItem();
         }
@@ -1245,9 +1245,10 @@ void Game::RenderGameObjectPropertiUI() {
         ImGui::Text("[ %s - %s ]", s_objectSelected->getName().c_str(), s_objectSelected->getTag().c_str());
 
         s_objectSelected->RenderProperty<Transform>(Game::OnPropertyTransform);
+        s_objectSelected->RenderProperty<Light>(Game::OnPropertyLight);
 
         for (auto &&[name, ptr] : s_objectSelected->getEntity()->getComponents()) {
-            if (name == "Transform") {
+            if (name == "Transform" || name == "Light") {
                 continue;
             }
             auto isOpen = ImGui::TreeNode(name.c_str());
@@ -1456,8 +1457,19 @@ void Game::OnPropertyMeshRender(MeshRender *meshRender) {
     }
 }
 
-void Game::OnPropertyLightComponent(Light *light) {
+void Game::OnPropertyLight(Light *light) {
     if (ImGui::TreeNode("Light")) {
+        static int elem = Light::LightType::eDirection;
+        
+        const char* elems_names[3] = {"Directional", "Point", "Spot"};
+        
+        const char* elem_name = (elem >= 0 && elem < 3) ? elems_names[elem] : "Unknown";
+
+        ImGui::Text("Type:");
+        if (ImGui::SliderInt("##LightType", &elem, 0, 3 - 1, elem_name)) {
+            light->setType(elem);
+        }
+        
         ImGui::Text("Constante:");
         ImGui::DragFloat("##constant", &light->m_attenuationConstant, 0.005f, 0.01f, 1.0f);
 
