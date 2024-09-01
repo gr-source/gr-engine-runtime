@@ -36,7 +36,7 @@ public:
 
     static Animation *LoadAnimation(const std::string &path);
 
-    static void AddShaderLoaded(std::function<bool(grr::gShader *, const std::string &)> func);
+    static void AddPostLoader(std::function<bool(void *, const std::string &)> func);
 
     static Mesh *FindMesh(const std::string &name);
 
@@ -61,7 +61,7 @@ private:
     static std::list<std::tuple<std::tuple<std::string, std::string>, grr::gShader *>> s_shaderFromLoader;
     static std::mutex s_shaderMutex;
 
-    static std::vector<std::function<bool(grr::gShader *, const std::string &)>> m_functions;
+    static std::vector<std::function<bool(void *, const std::string &)>> m_functions;
 
     /***************** Texture *****************/
     static std::unordered_map<std::string, std::unique_ptr<grr::gTexture>> s_textureList;

@@ -594,7 +594,7 @@ void Game::ReadHierarchy(Transform *transform) {
         flags &= ~ImGuiTreeNodeFlags_Leaf;
     }
 
-    const bool isOpen = ImGui::TreeNodeEx(name.c_str(), flags);
+    auto isOpen = ImGui::TreeNodeEx(name.c_str(), flags);
 
     static int CountClick = 0;
 
@@ -1244,9 +1244,14 @@ void Game::RenderGameObjectPropertiUI() {
 
         ImGui::Text("[ %s - %s ]", s_objectSelected->getName().c_str(), s_objectSelected->getTag().c_str());
 
+        s_objectSelected->RenderProperty<Transform>(Game::OnPropertyTransform);
+
         for (auto &&[name, ptr] : s_objectSelected->getEntity()->getComponents()) {
+            if (name == "Transform") {
+                continue;
+            }
             auto isOpen = ImGui::TreeNode(name.c_str());
-            
+
             if (isOpen) {
                 auto it = componentPool.find(name);
                 if (it == componentPool.end()) {
@@ -1254,29 +1259,10 @@ void Game::RenderGameObjectPropertiUI() {
                     ImGui::TreePop();
                     continue;
                 }
-                auto &fields = it->second->getFields();
+                auto &fieldList = it->second->getFields();
 
-                for (auto &field : fields) {
-                    auto name = field.getName();
-                    auto type = field.getType();
-
-                    if (type == "float") {
-                        auto data = Field::GetFieldData<float>(&(*ptr), field);
-
-                        ImGui::DragFloat(name.c_str(), data);
-                    } else if (type == "int") {
-                        auto data = Field::GetFieldData<int>(&(*ptr), field);
-
-                        ImGui::DragInt(name.c_str(), data);
-                    } else if (type == "bool") {
-                        auto data = Field::GetFieldData<bool>(&(*ptr), field);
-
-                        ImGui::Checkbox(name.c_str(), data);
-                    } else if (type == "Vector3") {
-                        auto data = Field::GetFieldData<Vector3>(&(*ptr), field);
-
-                        ImGui::DragFloat3(name.c_str(), (float *)data);
-                    }
+                for (auto &field : fieldList) {
+                    RenderField(field, &(*ptr));
                 }
 
                 ImGui::TreePop();
@@ -1294,6 +1280,29 @@ void Game::RenderGameObjectPropertiUI() {
         ImGui::OpenPopup("##popup_add_component");
     }
     PopupAddComponent();
+}
+
+void Game::RenderField(Field &field, Component *component) {
+    auto name = field.getName();
+    auto type = field.getType();
+
+    if (type == "float") {
+        auto data = Field::GetFieldData<float>(component, field);
+
+        ImGui::DragFloat(name.c_str(), data);
+    } else if (type == "int") {
+        auto data = Field::GetFieldData<int>(component, field);
+
+        ImGui::DragInt(name.c_str(), data);
+    } else if (type == "bool") {
+        auto data = Field::GetFieldData<bool>(component, field);
+
+        ImGui::Checkbox(name.c_str(), data);
+    } else if (type == "Vector3") {
+        auto data = Field::GetFieldData<Vector3>(component, field);
+
+        ImGui::DragFloat3(name.c_str(), (float *)data);
+    }
 }
 
 void Game::PopupAddComponent() {

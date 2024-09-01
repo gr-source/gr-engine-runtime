@@ -22,10 +22,13 @@ PostProcessing *PostProcessing::Create(const iVector2 &size) {
         throw std::runtime_error("Falied to create renderbufer.");
     }
 
-    handle->m_texture = grr::gTexture::Create(handle->m_viewport.x, handle->m_viewport.y, grr::gTextureFlags_None, grr::TextureFormat_SRGB, nullptr);
+    handle->m_texture = grr::gTexture::Create();
     if (!handle->m_texture) {
         throw std::runtime_error("Falied to create Texture.");
     }
+
+    grr::gTexture::Bind(handle->m_texture);
+    grr::gTexture::UpdateTexture(handle->m_viewport.x, handle->m_viewport.y, grr::gTextureFlags_None, grr::TextureFormat_SRGB, nullptr);
 
     grr::gRenderbuffer::Bind(handle->m_rbo);
     grr::gRenderbuffer::SetBufferStorage(grr::RenderbufferType_Depth_Component, handle->m_viewport.x, handle->m_viewport.y);
@@ -65,8 +68,8 @@ void PostProcessing::Resize(PostProcessing *target, const iVector2 &size) {
 
     target->m_viewport = size;
 
-    grr::gTexture::Bind(target->m_texture, 0); // SRG or RGB ???
-    grr::gTexture::UpdateTexture(target->m_texture, target->m_viewport.x, target->m_viewport.y, grr::gTextureFlags_None, grr::TextureFormat_SRGB, nullptr);
+    grr::gTexture::Bind(target->m_texture); // SRG or RGB ???
+    grr::gTexture::UpdateTexture(target->m_viewport.x, target->m_viewport.y, grr::gTextureFlags_None, grr::TextureFormat_SRGB, nullptr);
     grr::gTexture::Unbind();
 
     grr::gRenderbuffer::Bind(target->m_rbo);

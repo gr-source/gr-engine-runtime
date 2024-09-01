@@ -72,13 +72,7 @@ class EntityManager;
 class SceneManager;
 class Scene;
 
-/* pasta: src/engine/core/wavefront*/
-class Wavefront;
-class Object;
-
-/* Framebuffer */
-class Renderbuffer;
-class Framebuffer;
+class Component;
 
 enum class FileType : int {
 	NONE = 0,

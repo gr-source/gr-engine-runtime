@@ -32,10 +32,12 @@ set(octree_hdr
 
 set(scriptManager_cpp
     src/scriptManager/scriptManager.cpp
+    src/scriptManager/scriptLoader.cpp
 )
 
 set(scriptManager_hdr
     src/scriptManager/scriptManager.hpp
+    src/scriptManager/scriptLoader.hpp
 )
 
 set(core_src

@@ -40,7 +40,7 @@ void RenderManager::Initialize() {
 
     auto shaders = ScriptManager::GetShaders();
 
-    Resources::AddShaderLoaded(RenderManager::SetupShader);
+    Resources::AddPostLoader(RenderManager::SetupShader);
 
     m_shader[ShaderType_Dynamic] = shaders[ShaderType_Dynamic];
     m_shader[ShaderType_Dynamic_Anim] = shaders[ShaderType_Dynamic_Anim];
@@ -140,7 +140,7 @@ void RenderManager::SetupMaterial(std::unordered_map<int, Material> &materials) 
     }
 }
 
-bool RenderManager::SetupShader(grr::gShader *shader, const std::string &path) {
+bool RenderManager::SetupShader(void *shader, const std::string &path) {
     if (m_shader[ShaderType_Dynamic_Multi_Model] != shader) {
         return false;
     }
@@ -149,9 +149,9 @@ bool RenderManager::SetupShader(grr::gShader *shader, const std::string &path) {
 
     grr::gShader::Register("u_projection");
     grr::gShader::Register("u_view");
-    grr::gShader::Register("u_model");
-    grr::gShader::Register("u_boneMatrices");
-    grr::gShader::Register("u_animatior");
+    // grr::gShader::Register("u_model");
+    // grr::gShader::Register("u_boneMatrices");
+    // grr::gShader::Register("u_animatior");
 
     // FragmentShader
     grr::gShader::Register("m_eye");

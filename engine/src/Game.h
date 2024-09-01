@@ -2,6 +2,8 @@
 
 #include <filesystem>
 
+#include "core/ecs/componentPool.hpp"
+
 #include "Global.h"
 #include "renderer.h"
 
@@ -85,6 +87,8 @@ private:
     static void RenderPropertiUI();
 
     static void RenderGameObjectPropertiUI();
+
+    static void RenderField(Field &field, Component *component);
 
     static void PopupAddComponent();
 

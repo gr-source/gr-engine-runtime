@@ -33,7 +33,7 @@ std::unordered_map<std::string, std::unique_ptr<grr::gShader>> Resources::s_shad
 std::list<std::tuple<std::tuple<std::string, std::string>, grr::gShader *>> Resources::s_shaderFromLoader;
 std::mutex Resources::s_shaderMutex;
 
-std::vector<std::function<bool(grr::gShader *, const std::string &)>> Resources::m_functions;
+std::vector<std::function<bool(void *, const std::string &)>> Resources::m_functions;
 
 /***************** Texture *****************/
 std::unordered_map<std::string, std::unique_ptr<grr::gTexture>> Resources::s_textureList;
@@ -90,7 +90,7 @@ grr::gTexture *Resources::LoadTexture(const std::string &path) {
         }
     }
 
-    auto m_texture = new grr::gTexture();
+    auto m_texture = grr::gTexture::Create();
     if (!m_texture) {
         Console::log(LogInfo::ERROR, "[ Resources::LoadTexture ] Falied to create texture.");
         return nullptr;
@@ -190,7 +190,7 @@ Animation *Resources::LoadAnimation(const std::string &path) {
     return animation;
 }
 
-void Resources::AddShaderLoaded(std::function<bool(grr::gShader *, const std::string &)> func) {
+void Resources::AddPostLoader(std::function<bool(void *, const std::string &)> func) {
     m_functions.push_back(func);
 }
 
@@ -241,9 +241,14 @@ void Resources::SetupTexture(grr::gTexture *texture, int width, int height, int 
         break;
     }
 
-    grr::gTexture::UpdateTexture(texture, width, height, grr::gTextureFlags_MipMaps | grr::gTextureFlags_Filter_Bilinear, format, pixels);
+    grr::gTexture::Bind(texture);
+    grr::gTexture::UpdateTexture(width, height, grr::gTextureFlags_MipMaps | grr::gTextureFlags_Filter_Bilinear, format, pixels);
 
     stbi_image_free(pixels);
+
+    m_functions.erase(std::remove_if(m_functions.begin(), m_functions.end(), [&texture, &path](auto &func) {
+        return func(texture, path);
+    }), m_functions.end());
 
     Console::log(LogInfo::INFO, "Texture loaded: " + path);
 }
@@ -293,7 +298,7 @@ void Resources::SetupShader(grr::gShader *shader, const std::string &frag, const
         return func(shader, path);
     }), m_functions.end());
 
-        s_shaderList.emplace(path, std::unique_ptr<grr::gShader>(shader));
+    s_shaderList.emplace(path, std::unique_ptr<grr::gShader>(shader));
 }
 
 bool Resources::CheckShaderError(grr::gShader *shader) {

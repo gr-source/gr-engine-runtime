@@ -16,7 +16,7 @@ void ImGuiRender::Initialize(const char* openglVersion) {
 
     s_io = &ImGui::GetIO();
     s_io->ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-    s_io->Fonts->AddFontFromFileTTF("/usr/share/fonts/truetype/ubuntu/Ubuntu-R.ttf", 16.5f);
+    s_io->Fonts->AddFontFromFileTTF("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 16.5f);
 }
 
 void ImGuiRender::Shutdown() {
@@ -83,6 +83,12 @@ void ImGuiRender::PushStyle(ImGuiStyle& dst) {
     colors[ImGuiCol_NavWindowingHighlight]  = ImVec4(1.00f, 1.00f, 1.00f, 0.70f);
     colors[ImGuiCol_NavWindowingDimBg]      = ImVec4(0.80f, 0.80f, 0.80f, 0.20f);
     colors[ImGuiCol_ModalWindowDimBg]       = ImVec4(0.80f, 0.80f, 0.80f, 0.35f);
+
+    dst.FrameRounding = 2.0f;
+    dst.GrabRounding = 2.0f;
+    dst.TabRounding = 2.0f;
+    dst.WindowTitleAlign = {0.5f, 0.5f};
+    dst.SeparatorTextAlign = {0.5f, 0.5f};
 }
 
 void ImGuiRender::AddFont(const char* path) {

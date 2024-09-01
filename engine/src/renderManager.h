@@ -42,5 +42,5 @@ public:
 
     static void SetupMaterial(std::unordered_map<int, Material> &materials);
 
-    static bool SetupShader(grr::gShader *shader, const std::string &path);
+    static bool SetupShader(void *shader, const std::string &path);
 };

@@ -25,6 +25,8 @@ private:
 
     static CubeFramebuffer *m_cubeColor;
 
+    static grr::gTexture *m_texture;
+
     static grm::u32 m_count;
 
     static grm::u32 m_vbo;
@@ -33,7 +35,9 @@ private:
 
     static void CreateCube();
     
-    static bool SetupShader(grr::gShader *shader, const std::string &path);
+    static bool SetupTexture(void *texture, const std::string &path);
+
+    static bool SetupShader(void *shader, const std::string &path);
 
     static void GenerateMap(std::function<void(grm::u32)> func, grr::gTexture *texture);
 };

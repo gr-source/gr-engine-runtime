@@ -20,13 +20,6 @@ class Transform;
 class Rigidbody;
 class Animator;
 
-class GBuffer;
-
-
 /* framebuffer */
 class Shadowbuffer;
-
-/* src */
-class bufferManager;
-class BufferManager;
 
