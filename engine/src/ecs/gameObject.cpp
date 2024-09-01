@@ -6,13 +6,15 @@
 
 GameObject &(*GameObject::Create)(const std::string &name, const std::string &tag);
 
+GameObject &(*GameObject::Instantiate)(GameObject *gameObject);
+
 void (*GameObject::Destroy)(GameObject *gameObject);
 
 GameObject *(*GameObject::Find)(const std::string &name);
 
 void (*GameObject::Rename)(GameObject *gameObject, const std::string &name);
 
-grm::size (*GameObject::GetGameObjectCount)() = nullptr;
+grm::size (*GameObject::GetGameObjectCount)();
 
 const std::string &GameObject::getName() {
     return m_name;

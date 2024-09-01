@@ -140,6 +140,8 @@ void ScriptManager::Shutdown() {
     UNREGISTER_API(GameObject::Find);
     UNREGISTER_API(GameObject::Destroy);
     UNREGISTER_API(GameObject::Rename);
+    UNREGISTER_API(GameObject::GetGameObjectCount);
+    UNREGISTER_API(GameObject::Instantiate);
 
     // Component Pool
     UNREGISTER_API(GetComponentPool);
@@ -212,6 +214,7 @@ void ScriptManager::RegisterApi() {
     REGISTER_API_FROM_NAME_N("_ZN10GameObject7DestroyEPS_", void, GameObject::Destroy, GameObject *);
     REGISTER_API_FROM_NAME_N("_ZN10GameObject6RenameEPS_RKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE", void, GameObject::Rename, GameObject *, const std::string &);
     REGISTER_API_FROM_NAME_N("_ZN10GameObject18GetGameObjectCountEv", grm::size, GameObject::GetGameObjectCount, void);
+    REGISTER_API_FROM_NAME_N("_ZN10GameObject11InstantiateEPS_", GameObject &, GameObject::Instantiate, GameObject *);
 
     // Scene
     REGISTER_FUNC("_ZN5Scene16CreateGameObjectERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEES7_", Scene::CreateGameObject);

@@ -860,6 +860,10 @@ void Game::RenderViewportUI() {
 
     ImGui::PopStyleColor();
 
+    if (ImGui::IsWindowFocused() && s_io->KeyShift && ImGui::IsKeyReleased(ImGuiKey_D) && GameObject::Instantiate) {
+        s_objectSelected = &GameObject::Instantiate(s_objectSelected);
+    }
+
     ImGui::End();
 }
 

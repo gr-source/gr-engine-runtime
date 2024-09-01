@@ -9,6 +9,8 @@ class GameObject {
 public:
     static GameObject &(*Create)(const std::string &name, const std::string &tag);
 
+    static GameObject &(*Instantiate)(GameObject *gameObject);
+
     static void (*Destroy)(GameObject *gameObject);
 
     static GameObject *(*Find)(const std::string &name);
