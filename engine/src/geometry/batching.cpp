@@ -224,3 +224,7 @@ void Batching::Delete(const std::string &name) {
 
     m_batchedMap.erase(it);
 }
+
+grm::size Batching::GetBatchedCount() {
+    return m_batched.size();
+}

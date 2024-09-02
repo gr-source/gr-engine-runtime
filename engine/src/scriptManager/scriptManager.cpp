@@ -219,6 +219,7 @@ void ScriptManager::RegisterApi() {
     // Scene
     REGISTER_FUNC("_ZN5Scene16CreateGameObjectERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEES7_", Scene::CreateGameObject);
     REGISTER_FUNC("_ZN5Scene6DeleteEP10GameObject", Scene::Delete);
+    REGISTER_FUNC("_ZN5Scene3AddEP10GameObject", Scene::Add);
 
     // Component Pool
     GetComponentPool = (std::unordered_map<std::string, std::unique_ptr<Pool>> &(*)(void))dlsym(ScriptManager::s_handle, "GetComponentPool");

@@ -860,7 +860,7 @@ void Game::RenderViewportUI() {
 
     ImGui::PopStyleColor();
 
-    if (ImGui::IsWindowFocused() && s_io->KeyShift && ImGui::IsKeyReleased(ImGuiKey_D) && GameObject::Instantiate) {
+    if (s_objectSelected && ImGui::IsWindowFocused() && s_io->KeyShift && ImGui::IsKeyReleased(ImGuiKey_D) && GameObject::Instantiate) {
         s_objectSelected = &GameObject::Instantiate(s_objectSelected);
     }
 
@@ -1166,40 +1166,7 @@ void Game::RenderPropertiUI() {
         RenderGameObjectPropertiUI();
         
         if (ImGui::BeginTabItem("Estatística", nullptr)) {
-            ImGui::SeparatorText("Scripts");
-            
-            if (ScriptManager::GetEntityCount)
-                ImGui::Text("Entidades: %ld", ScriptManager::GetEntityCount());
-
-            if (GameObject::GetGameObjectCount)
-                ImGui::Text("GameObject: %ld", GameObject::GetGameObjectCount());
-
-            ImGui::Text("Memoria: %s", getfilesize(Memory::totalMemoryUsage).c_str());
-
-            ImGui::SeparatorText("Cena");
-            ImGui::Text("Vertices: %d | %s", gameStatics.vertices, getfilesize(gameStatics.vertices * sizeof(Vertex3D)).c_str());
-            ImGui::Text("Indice: %d | %s", gameStatics.indices, getfilesize(gameStatics.indices * sizeof(grm::u32)).c_str());
-            ImGui::Text("Triangulos: %.2f", (gameStatics.indices / 3.0f));
-
-            ImGui::SeparatorText("AssetsManager");
-            ImGui::Text("Textures: %ld", Resources::GetTextureCount());
-            ImGui::Text("Shaders: %ld", Resources::GetShaderCount());
-            ImGui::Text("Mesh: %ld", Resources::GetMeshCount());
-            ImGui::Text("Event: %ld", Event::GetCount());
-
-            ImGui::SeparatorText("Threads");
-            ImGui::Text("Update:  %fms  | FPS: %.2f",  gameStatics.updateMs,  TimeLast::FPS);
-            ImGui::Text("Render:  %fms  | FPS: %.2f",  gameStatics.renderMs,  TimeLast::RenderFPS);
-            ImGui::Text("Physics: %fms  | FPS: %.2f",  gameStatics.physicsMs, (1.0f / gameStatics.physicsMs));
-            ImGui::Text("Script:  %fms  | FPS: %.2f",  gameStatics.scriptMS,  (1.0f / gameStatics.scriptMS));
-
-            ImGui::SeparatorText("Renderização");
-            // ImGui::Text("Cameras: %ld",   Camera::Get.size());
-            if (ScriptManager::GetListLight)
-                ImGui::Text("Luzes: %ld",     ScriptManager::GetListLight().size());
-            ImGui::Text("Draw Call Count: %ld", Statistics::m_drawCallCount);
-            ImGui::Text("Draw Render: %ld/%ld", Statistics::m_totalRender, Statistics::m_drawRenderCount);
-            
+            RenderStatisticsMenu();
             ImGui::EndTabItem();
         }
 
@@ -1232,6 +1199,43 @@ void Game::RenderPropertiUI() {
     ImGui::End();
 }
 
+void Game::RenderStatisticsMenu() {
+    ImGui::SeparatorText("Scripts");
+            
+    if (ScriptManager::GetEntityCount)
+        ImGui::Text("Entidades: %ld", ScriptManager::GetEntityCount());
+
+    if (GameObject::GetGameObjectCount)
+        ImGui::Text("GameObject: %ld", GameObject::GetGameObjectCount());
+
+    ImGui::Text("Memoria: %s", getfilesize(Memory::totalMemoryUsage).c_str());
+
+    ImGui::SeparatorText("Cena");
+    ImGui::Text("Vertices: %d | %s", gameStatics.vertices, getfilesize(gameStatics.vertices * sizeof(Vertex3D)).c_str());
+    ImGui::Text("Indice: %d | %s", gameStatics.indices, getfilesize(gameStatics.indices * sizeof(grm::u32)).c_str());
+    ImGui::Text("Triangulos: %.2f", (gameStatics.indices / 3.0f));
+
+    ImGui::SeparatorText("AssetsManager");
+    ImGui::Text("Textures: %ld", Resources::GetTextureCount());
+    ImGui::Text("Shaders: %ld", Resources::GetShaderCount());
+    ImGui::Text("Mesh: %ld", Resources::GetMeshCount());
+    ImGui::Text("Event: %ld", Event::GetCount());
+
+    ImGui::SeparatorText("Threads");
+    ImGui::Text("Update:  %fms  | FPS: %.2f",  gameStatics.updateMs,  TimeLast::FPS);
+    ImGui::Text("Render:  %fms  | FPS: %.2f",  gameStatics.renderMs,  TimeLast::RenderFPS);
+    ImGui::Text("Physics: %fms  | FPS: %.2f",  gameStatics.physicsMs, (1.0f / gameStatics.physicsMs));
+    ImGui::Text("Script:  %fms  | FPS: %.2f",  gameStatics.scriptMS,  (1.0f / gameStatics.scriptMS));
+
+    ImGui::SeparatorText("Renderização");
+    // ImGui::Text("Cameras: %ld",   Camera::Get.size());
+    if (ScriptManager::GetListLight)
+        ImGui::Text("Luzes: %ld",     ScriptManager::GetListLight().size());
+    ImGui::Text("Draw Call Count: %ld", Statistics::m_drawCallCount);
+    ImGui::Text("Draw Render: %ld/%ld", Statistics::m_totalRender, Statistics::m_drawRenderCount);
+    ImGui::Text("Batched: %ld", Batching::GetBatchedCount());
+}
+
 void Game::RenderGameObjectPropertiUI() {
     auto isOpenPopup = false;
     if (!s_objectSelected || !ScriptManager::GetComponentPool) {
@@ -1249,10 +1253,12 @@ void Game::RenderGameObjectPropertiUI() {
         ImGui::Text("[ %s - %s ]", s_objectSelected->getName().c_str(), s_objectSelected->getTag().c_str());
 
         s_objectSelected->RenderProperty<Transform>(Game::OnPropertyTransform);
+        s_objectSelected->RenderProperty<MeshFilter>(Game::OnPropertyMeshFilter);
+        s_objectSelected->RenderProperty<MeshRender>(Game::OnPropertyMeshRender);
         s_objectSelected->RenderProperty<Light>(Game::OnPropertyLight);
 
         for (auto &&[name, ptr] : s_objectSelected->getEntity()->getComponents()) {
-            if (name == "Transform" || name == "Light") {
+            if (name == "Transform" || name == "Light" || name == "MeshRender" || name == "MeshFilter") {
                 continue;
             }
             auto isOpen = ImGui::TreeNode(name.c_str());
@@ -1357,6 +1363,57 @@ void Game::OnPropertyTransform(Transform* transform) {
     }
 }
 
+void Game::OnPropertyMeshFilter(MeshFilter *MeshFilter) {
+}
+
+void Game::OnPropertyMeshRender(MeshRender *meshRender) {
+    if (ImGui::TreeNode("MeshRender")) {
+        for (auto &&[idx, material] : meshRender->getMaterials()) {
+            if (ImGui::TreeNode(std::string(material.getName() + "(" + std::to_string(idx) + ")").c_str())) {
+                
+                auto& albedo = material.getAlbedo();
+                {
+                    ImGui::SeparatorText("Albedo");
+                    auto texture = material.getTexture(0);
+
+                    if (texture != nullptr && texture->isValid()) {
+                        ImGui::Image(reinterpret_cast<ImTextureID>(texture->getID()), ImVec2(32, 32));
+                        if (ImGui::IsItemHovered() && ImGui::IsKeyDown(ImGuiKey_X)) {
+                            texture = nullptr;
+                        }
+                    } else {
+
+                        if (View::TextureInputUI(ImColor(albedo.x, albedo.y, albedo.z, albedo.w))) {
+                            ImGui::OpenPopup("#PopupChangeColorAlbedo");
+                        }
+                    }
+
+                    /*
+                    if (ImGui::BeginDragDropTarget()) {
+                        if (const ImGuiPayload* data = ImGui::AcceptDragDropPayload(getDragDrop(DragDrop::TEXTURE), ImGuiDragDropFlags_None)) {
+                            std::string path((char*)data->Data, data->DataSize);
+                            if (!path.empty()) {
+                                material.texture[TexturePBR::ALBEDO] = Resources::Load<Texture>(path);
+                            }
+                        }
+                        ImGui::EndDragDropTarget();
+                    }
+                    */
+                }
+
+                Color clr = {albedo.x, albedo.y, albedo.z, albedo.w};
+                if (View::PopupChangeColor("Albedo", clr)) {
+                    material.setAlbedo({clr.r, clr.g, clr.b, clr.a});
+                }
+
+                ImGui::TreePop();
+            }
+        }
+
+        ImGui::TreePop();
+    }
+}
+
 void Game::OnPropertyAnimator(Animator *animator) {
     auto &m_current = !animator->m_animation ? animator->m_animation : animator->m_nextAnimation;
 
@@ -1409,54 +1466,6 @@ void Game::OnPropertyAnimator(Animator *animator) {
             }
             ImGui::TreePop();
         }
-        ImGui::TreePop();
-    }
-}
-
-void Game::OnPropertyMeshRender(MeshRender *meshRender) {
-    if (ImGui::TreeNode("MeshRender")) {
-        for (auto&& [idx, material] : meshRender->getMaterials()) {
-            if (ImGui::TreeNode(std::string(material.getName() + "(" + std::to_string(idx) + ")").c_str())) {
-                
-                auto& albedo = material.getAlbedo();
-                {
-                    ImGui::SeparatorText("Albedo");
-                    auto texture = material.getTexture(0);
-
-                    if (texture != nullptr && texture->isValid()) {
-                        ImGui::Image(reinterpret_cast<ImTextureID>(texture->getID()), ImVec2(32, 32));
-                        if (ImGui::IsItemHovered() && ImGui::IsKeyDown(ImGuiKey_X)) {
-                            texture = nullptr;
-                        }
-                    } else {
-
-                        if (View::TextureInputUI(ImColor(albedo.x, albedo.y, albedo.z, albedo.w))) {
-                            ImGui::OpenPopup("#PopupChangeColorAlbedo");
-                        }
-                    }
-
-                    /*
-                    if (ImGui::BeginDragDropTarget()) {
-                        if (const ImGuiPayload* data = ImGui::AcceptDragDropPayload(getDragDrop(DragDrop::TEXTURE), ImGuiDragDropFlags_None)) {
-                            std::string path((char*)data->Data, data->DataSize);
-                            if (!path.empty()) {
-                                material.texture[TexturePBR::ALBEDO] = Resources::Load<Texture>(path);
-                            }
-                        }
-                        ImGui::EndDragDropTarget();
-                    }
-                    */
-                }
-
-                Color clr = {albedo.x, albedo.y, albedo.z, albedo.w};
-                if (View::PopupChangeColor("Albedo", clr)) {
-                    material.setAlbedo({clr.r, clr.g, clr.b, clr.a});
-                }
-
-                ImGui::TreePop();
-            }
-        }
-
         ImGui::TreePop();
     }
 }

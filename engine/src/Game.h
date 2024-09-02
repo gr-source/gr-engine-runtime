@@ -86,6 +86,8 @@ private:
 
     static void RenderPropertiUI();
 
+    static void RenderStatisticsMenu();
+
     static void RenderGameObjectPropertiUI();
 
     static void RenderField(Field &field, Component *component);
@@ -109,12 +111,11 @@ private:
 
     static void OnPropertyTransform(Transform* transform);
     
-    static void OnPropertyAnimator(Animator* animator);
-
+    static void OnPropertyMeshFilter(MeshFilter* MeshFilter);
+    
     static void OnPropertyMeshRender(MeshRender* meshRender);
 
-    // static void OnPropertyCameraComponent(CameraComponent* cameraComponent);
-
+    static void OnPropertyAnimator(Animator* animator);
     static void OnPropertyLight(Light *light);
 
     static void TextureInfo(Texture*& texture);

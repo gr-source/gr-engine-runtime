@@ -29,6 +29,8 @@ public:
     template <typename ...Args>
     static Batching &Add(const std::string &key, Args &&...args);
 
+    static grm::size GetBatchedCount();
+
 private:
     static std::unordered_map<std::string, std::unique_ptr<Batching>> m_batchedMap;
 
