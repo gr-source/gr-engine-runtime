@@ -30,6 +30,9 @@
 #include "scriptManager/scriptManager.hpp"
 #include "memory.h"
 
+#include "ecs/gameObject.h"
+#include "ecs/manager.hpp"
+
 #include <filesystem>
 
 #include <gr-render/gRender.h>
@@ -125,9 +128,7 @@ void Engine::OnInit() {
 void Engine::OnUpdate() {
     EditorController::Update();
 
-    if (Entity::Update) {
-        Entity::Update();
-    }
+    Manager::Update();
 }
 
 Time tickRender;
@@ -174,8 +175,10 @@ void Engine::OnDestroy() {
     if (ImGuiPostProcess) {
         PostProcessing::Shutdown(ImGuiPostProcess);
     }
-    
+
     ImGuiRender::Shutdown();
+
+    GameObject::Clear();
 
     Skybox::Shutdown();
     
@@ -239,10 +242,6 @@ void Engine::HandleEvent(EngineEvent event, const void* data) {
 }
 
 void Engine::MainFramebuffer() {
-    auto camera = Camera::Current();
-    if (!camera) {
-        return;
-    }
     // Seleção de modelos para renderizar
     RenderManager::Process();
 
@@ -262,7 +261,7 @@ void Engine::MainFramebuffer() {
     PostProcessing::Bind(ImGuiPostProcess);
 
     // renderização da cena 2d e utilização do pos processamento;
-    grr::gRender::SetRenderState(grr::GR_BACKGROUND_COLOR, (void*)&Color::blue);
+    grr::gRender::SetRenderState(grr::GR_BACKGROUND_COLOR, (void*)&Color::red);
     grr::gRender::SetRenderState(grr::GR_BACKGROUND, grr::GR_COLOR_BUFFER);
     grr::gRender::SetRenderState(grr::GR_DEPTH, grr::GR_FALSE);
     grr::gRender::SetRenderState(grr::GR_FRAMEBUFFER_SRGB, grr::GR_FALSE);

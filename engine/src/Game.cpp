@@ -39,6 +39,8 @@
 
 #include "geometry/batching.hpp"
 
+#include "ecs/manager.hpp"
+
 #include <linux/input-event-codes.h>
 #include <filesystem>
 #include <sstream>
@@ -786,7 +788,7 @@ void Game::RenderViewportUI() {
 
         auto camera = Camera::Current();
 
-        if (ImGuizmo::Manipulate(camera->getViewmatrix().data, camera->getPerspesctive().data, m_guizmoOperation, m_guizmoManipulate, model.data)) {
+        if (camera && ImGuizmo::Manipulate(camera->getViewmatrix().data, camera->getPerspesctive().data, m_guizmoOperation, m_guizmoManipulate, model.data)) {
             Vector3 s;
             Quaternion r;
             Vector3 t;
@@ -1202,11 +1204,8 @@ void Game::RenderPropertiUI() {
 void Game::RenderStatisticsMenu() {
     ImGui::SeparatorText("Scripts");
             
-    if (ScriptManager::GetEntityCount)
-        ImGui::Text("Entidades: %ld", ScriptManager::GetEntityCount());
-
-    if (GameObject::GetGameObjectCount)
-        ImGui::Text("GameObject: %ld", GameObject::GetGameObjectCount());
+    ImGui::Text("Entidades: %ld", Manager::GetEntityCount());
+    ImGui::Text("GameObject: %ld", GameObject::GetGameObjectCount());
 
     ImGui::Text("Memoria: %s", getfilesize(Memory::totalMemoryUsage).c_str());
 
@@ -1237,13 +1236,13 @@ void Game::RenderStatisticsMenu() {
 }
 
 void Game::RenderGameObjectPropertiUI() {
-    auto isOpenPopup = false;
     if (!s_objectSelected || !ScriptManager::GetComponentPool) {
         return;
     }
 
     auto &componentPool = ScriptManager::GetComponentPool();
 
+    auto isOpenPopup = false;
     ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
     if (ImGui::BeginTabItem("GameObject", nullptr)) {
         ImGui::Image(reinterpret_cast<ImTextureID>(iconsUI[IconType::ICON_GAMEOBJECT]->getID()), ImVec2(16, 16));
@@ -1317,9 +1316,10 @@ void Game::RenderField(Field &field, Component *component) {
 }
 
 void Game::PopupAddComponent() {
-    if (!ScriptManager::GetComponentPool && !ScriptManager::CreateComponentWithName && !s_objectSelected) {
+    if (!ScriptManager::GetComponentPool && !s_objectSelected) {
         return;
     }
+    
     if (ImGui::BeginPopup("##popup_add_component")) {
         auto &componentPool = ScriptManager::GetComponentPool();
 
@@ -1559,10 +1559,12 @@ void Game::PlayGame() {
     RenderManager::Initialize();
 
     ScreenRender::Initialize();
+
+    Manager::Replay();
 }
 
 void Game::StopGame() {
-    Scene::Clear();
+    Manager::Stop();
 
     RenderManager::Shutdown();
 

@@ -4,18 +4,88 @@
 
 #include "../settings.h"
 
-void (*Entity::Update)();
+#include "script/meshRender.hpp"
+#include "script/transform.hpp"
+
+#include "core/scene.hpp"
+
+void (*Entity::Update)(Entity *);
+
+void (*Entity::Init)(Entity *);
+
+Entity::Entity(GameObject *gameObject, EntityID id) : m_gameObject(gameObject), m_entityID(id) {}
 
 GameObject *Entity::getGameObject() {
-    return gameObject;
+    return m_gameObject;
 }
 
 std::unordered_map<std::string, std::shared_ptr<Component>> &Entity::getComponents() {
     return m_componentPtr;
 }
 
+#include <list>
+#include <tuple>
+
+void Entity::copy(Entity *entity) {
+    std::list<std::tuple<std::string, Component *>> m_list;
+    for (auto &&[name, ptr] : entity->m_componentPtr) {
+        m_list.emplace_front(name, &(*ptr));
+    }
+
+    for (auto &&[name, ptr] : m_list) {
+        if (name == "Transform") {
+            continue;
+        }
+
+        auto component = ScriptManager::CopyComponentWithName(name, &(*ptr));
+        component->entity = this;
+        component->Init();
+
+        m_componentPtr.emplace(name, std::shared_ptr<Component>(component));
+
+        m_components.push_back(component);
+
+        if (name == "MeshRender") {
+            auto meshRender = dynamic_cast<MeshRender *>(component);
+            meshRender->build();
+        }
+    }
+
+    auto &transform = entity->getGameObject()->getTransform();
+    auto &localTransform = getGameObject()->getTransform();
+
+    // localTransform.setLocalScale(transform.getloca());
+    localTransform.setLocalRotation(transform.getLocalRotation());
+    localTransform.setLocalPosition(transform.getLocalPosition());
+
+    if (auto parent = transform.getParent()) {
+        localTransform.setParent(parent);
+    } else {
+        Scene::Add(getGameObject());
+    }
+
+    for (auto &child : transform.getChildren()) {
+        auto objectPtr = child->getGameObject();
+        if (!objectPtr) {
+            continue;
+        }
+
+        auto &clone = GameObject::Instantiate(objectPtr);
+        auto &cTransform = clone.getTransform();
+        cTransform.setParent(&localTransform);
+    }
+}
+
+EntityID Entity::getEntityID() const {
+    return m_entityID;
+}
+
+bool Entity::isActive() const {
+    return m_gameObject->isActive();
+}
+
 Component *Entity::addInternalComponent(const std::string &name) {
-    auto component = static_cast<Component *>(ScriptManager::CreateComponentWithName(name));
+    auto component = ScriptManager::CreateComponentWithName(name);
     component->entity = this;
     component->Init();
 
@@ -25,3 +95,4 @@ Component *Entity::addInternalComponent(const std::string &name) {
 
     return component;
 }
+

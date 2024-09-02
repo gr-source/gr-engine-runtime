@@ -44,7 +44,9 @@ public:
     // Component Pool
     static std::unordered_map<std::string, std::unique_ptr<Pool>> &(*GetComponentPool)();
 
-    static void *(*CreateComponentWithName)(const std::string &name);
+    static Component *(*CreateComponentWithName)(const std::string &name);
+
+    static Component *(*CopyComponentWithName)(const std::string &name, Component *component);
     
 private:
     static void RegisterApi();

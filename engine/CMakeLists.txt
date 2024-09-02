@@ -11,6 +11,7 @@ set(guizmo_hdr
 set(ecs_src
     src/ecs/gameObject.cpp
     src/ecs/component.cpp
+    src/ecs/manager.cpp
     src/ecs/entity.cpp
     src/ecs/ecs.cpp
 )
@@ -18,6 +19,7 @@ set(ecs_src
 set(ecs_hdr
     src/ecs/gameObject.h
     src/ecs/component.h
+    src/ecs/manager.hpp
     src/ecs/entity.h
     src/ecs/ecs.hpp
 )
@@ -104,7 +106,7 @@ set(core_ecs_src
 )
 
 set(core_ecs_hdr
-src/core/ecs/componentPool.hpp
+    src/core/ecs/componentPool.hpp
 )
 
 set(engine_src

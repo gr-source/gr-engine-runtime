@@ -11,30 +11,20 @@
 #include "component.h"
 
 #define MAX_COMPONENT 16
+#define MAX_PAGES 10
 
 using ComponentID = std::size_t;
+using EntityID = grm::size;
 
 class GameObject;
-
-class ComponentIDGenerator {
-public:
-    template <typename T>
-    static ComponentID GenerateIDByType() noexcept {
-        static ComponentID id = GenerateID();
-        return id;
-    }
-
-private:
-    static ComponentID GenerateID() noexcept {
-        static ComponentID id = 0;
-        return id++;
-    }
-};
 
 /* Classe de entidades */
 class Entity {
 public:
-    static void (*Update)();
+    static void (*Update)(Entity *);
+    static void (*Init)(Entity *);
+
+    Entity(GameObject *gameObject, EntityID id);
 
     template <typename T>
     T &addComponent();
@@ -50,16 +40,21 @@ public:
     GameObject *getGameObject();
 
     std::unordered_map<std::string, std::shared_ptr<Component>> &getComponents();
+
+    void copy(Entity *entity);
+
+    EntityID getEntityID() const;
+
+    bool isActive() const;
     
 private:
     std::unordered_map<std::string, std::shared_ptr<Component>> m_componentPtr;
 
     std::vector<Component *> m_components;
 
-    GameObject *gameObject;
+    GameObject *m_gameObject;
 
-    grm::u32 m_entityID;
-
+    EntityID m_entityID;
 };
 
 #include "core/string.hpp"
@@ -71,7 +66,7 @@ inline T &Entity::addComponent() {
 
 template <typename T>
 inline T &Entity::getComponent() {
-    return *dynamic_cast<T*>(&(*m_componentPtr[String::RemoveNumber(typeid(T).name())]));
+    return *dynamic_cast<T* >(&(*m_componentPtr[String::RemoveNumber(typeid(T).name())]));
 }
 
 template <typename T>

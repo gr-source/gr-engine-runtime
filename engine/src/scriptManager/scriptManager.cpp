@@ -77,7 +77,9 @@ void (*ScriptManager::SetScreenSize)(const iVector2 &);
 // ComponentPool
 std::unordered_map<std::string, std::unique_ptr<Pool>> &(*ScriptManager::GetComponentPool)();
 
-void *(*ScriptManager::CreateComponentWithName)(const std::string &name);
+Component *(*ScriptManager::CreateComponentWithName)(const std::string &name);
+
+Component *(*ScriptManager::CopyComponentWithName)(const std::string &name, Component *component);
 
 void ScriptManager::Initialize() {
     Console::log(LogInfo::INFO, "Loading script...");
@@ -116,6 +118,7 @@ void ScriptManager::Shutdown() {
     // [ Entity ]
     UNREGISTER_API(GetEntityCount);
     UNREGISTER_API(Entity::Update);
+    UNREGISTER_API(Entity::Init);
 
     // Light
     UNREGISTER_API(GetListLight);
@@ -135,18 +138,11 @@ void ScriptManager::Shutdown() {
     // Screen
     UNREGISTER_API(SetScreenSize);
 
-    // gameobject
-    UNREGISTER_API(GameObject::Create);
-    UNREGISTER_API(GameObject::Find);
-    UNREGISTER_API(GameObject::Destroy);
-    UNREGISTER_API(GameObject::Rename);
-    UNREGISTER_API(GameObject::GetGameObjectCount);
-    UNREGISTER_API(GameObject::Instantiate);
-
     // Component Pool
     UNREGISTER_API(GetComponentPool);
 
     UNREGISTER_API(ScriptManager::CreateComponentWithName);
+    UNREGISTER_API(ScriptManager::CopyComponentWithName);
 
     if (!s_handle) {
         return;
@@ -177,7 +173,10 @@ void ScriptManager::RegisterApi() {
 
     // [ Entity ]
     REGISTER_API(std::size_t, void, GetEntityCount);
-    REGISTER_API_FROM_NAME("EntityUpdate", void, void, Entity::Update);
+    REGISTER_API_FROM_NAME("_ZN6Entity6updateEv", void, Entity *, Entity::Update);
+    REGISTER_API_FROM_NAME("_ZN6Entity4initEv", void, Entity *, Entity::Init);
+    REGISTER_FUNC("_ZN6Entity20addInternalComponentERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE", Entity::addInternalComponent);
+    // REGISTER_API_FROM_NAME("", void, Entity *, const std, Entity::AddInternalComponent);
 
     // Light
     REGISTER_API(std::vector<Light *> &, void, GetListLight);
@@ -208,14 +207,6 @@ void ScriptManager::RegisterApi() {
     // Screen
     REGISTER_API(void, const iVector2 &, SetScreenSize);
 
-    // gameobject
-    REGISTER_API_FROM_NAME_N("GameObjectCreate", GameObject &, GameObject::Create, const std::string &, const std::string &);
-    REGISTER_API_FROM_NAME_N("GameObjectFind", GameObject *, GameObject::Find, const std::string &);
-    REGISTER_API_FROM_NAME_N("_ZN10GameObject7DestroyEPS_", void, GameObject::Destroy, GameObject *);
-    REGISTER_API_FROM_NAME_N("_ZN10GameObject6RenameEPS_RKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE", void, GameObject::Rename, GameObject *, const std::string &);
-    REGISTER_API_FROM_NAME_N("_ZN10GameObject18GetGameObjectCountEv", grm::size, GameObject::GetGameObjectCount, void);
-    REGISTER_API_FROM_NAME_N("_ZN10GameObject11InstantiateEPS_", GameObject &, GameObject::Instantiate, GameObject *);
-
     // Scene
     REGISTER_FUNC("_ZN5Scene16CreateGameObjectERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEES7_", Scene::CreateGameObject);
     REGISTER_FUNC("_ZN5Scene6DeleteEP10GameObject", Scene::Delete);
@@ -224,7 +215,8 @@ void ScriptManager::RegisterApi() {
     // Component Pool
     GetComponentPool = (std::unordered_map<std::string, std::unique_ptr<Pool>> &(*)(void))dlsym(ScriptManager::s_handle, "GetComponentPool");
 
-    REGISTER_API_FROM_NAME_N("CreateComponentWithName", void *, ScriptManager::CreateComponentWithName, const std::string &);
+    REGISTER_API_FROM_NAME_N("CreateComponentWithName", Component *, ScriptManager::CreateComponentWithName, const std::string &);
+    REGISTER_API_FROM_NAME_N("CopyComponentWithName", Component *, ScriptManager::CopyComponentWithName, const std::string &, Component *);
 
     // Batching
     REGISTER_FUNC("_ZN8Batching6removeEP9Transform", Batching::remove);

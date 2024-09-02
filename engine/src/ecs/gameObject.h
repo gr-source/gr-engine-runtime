@@ -7,17 +7,22 @@
 
 class GameObject {
 public:
-    static GameObject &(*Create)(const std::string &name, const std::string &tag);
+    static GameObject& Create(const std::string& name, const std::string& tag = "unttaged");
 
-    static GameObject &(*Instantiate)(GameObject *gameObject);
+    static GameObject &Instantiate(GameObject *target);
 
-    static void (*Destroy)(GameObject *gameObject);
+    static GameObject *Find(const std::string &name);
 
-    static GameObject *(*Find)(const std::string &name);
+    static void Rename(GameObject *gameObject, const std::string &name);
 
-    static void (*Rename)(GameObject *gameObject, const std::string &name);
+    static void Destroy(GameObject *target);
 
-    static grm::size (*GetGameObjectCount)();
+    static grm::size GetGameObjectCount();
+
+    static void Clear();
+
+    GameObject(const std::string& name = "default", const std::string& tag = "unttaged");
+    ~GameObject();
 
     const std::string &getName();
 
@@ -55,6 +60,14 @@ private:
     Entity* m_entity;
 
     bool m_bActive;
+
+protected:
+
+    static std::unordered_map<std::string, std::unique_ptr<GameObject>> s_mapObject;
+
+    static std::unordered_map<std::string, int> s_names;
+
+    static std::string AddNameID(const std::string &name);
 };
 
 template <typename T>
