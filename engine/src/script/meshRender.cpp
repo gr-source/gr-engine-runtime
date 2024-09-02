@@ -3,8 +3,10 @@
 #include "transform.hpp"
 #include "animator.hpp"
 
-#include "../geometry/batching.hpp"
-#include "../geometry/mesh.h"
+#include "geometry/batching.hpp"
+#include "geometry/mesh.h"
+
+#include "core/resources.h"
 
 std::unordered_map<int, Material> &MeshRender::getMaterials() {
     return m_materials;
@@ -32,7 +34,12 @@ void MeshRender::build() {
         return;
     }
 
-    m_batched = &Batching::Add(mName, m_materials, mesh);
+    auto material = Resources::FindMaterial(mName);
+    if (!material) {
+        material = &Resources::AddMaterial(mName, m_materials);
+    }
+
+    m_batched = &Batching::Add(mName, material, mesh);
     m_batched->insert(&transform);
 }
 

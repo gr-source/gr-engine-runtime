@@ -24,6 +24,10 @@ public:
 
     grr::gTexture *getTexture(int idx) const;
 
+    void serialize(std::ostream &os) const;
+
+    void deserialize(std::istream &is);
+
 private:
     std::string m_name;
 

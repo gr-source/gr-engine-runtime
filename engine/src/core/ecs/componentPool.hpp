@@ -6,6 +6,8 @@
 
 #include <gr-math/gmath.h>
 
+#include "ecs/component.h"
+
 class Field {
 public:
     const std::string &getName() const;
@@ -27,22 +29,23 @@ private:
 
 class Pool {
 public:
-    virtual void *GenerateNewInstance() = 0;
+    virtual Component *CreateInstanceFrom(Component *component) = 0;
+
+    virtual Component *CreateInstance() = 0;
+
+    virtual grm::size GetSize() = 0;
 
     std::vector<Field> &getFields();
 
 private:
-    std::vector<Field> m_fieldMap;
-
     std::unordered_map<std::string, grm::size> m_fieldID;
+
+    std::vector<Field> m_fieldMap;
 };
 
 template <typename T>
 class ComponentPool : public Pool {
 public:
-    inline void *GenerateNewInstance() override {
-        return (void *)new T();
-    }
 };
 
 template <typename T>

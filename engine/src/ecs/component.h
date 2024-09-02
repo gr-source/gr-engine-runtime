@@ -2,6 +2,9 @@
 
 #include <gr-math/gmath.h>
 
+#include <ostream>
+#include <istream>
+
 class GameObject;
 class Entity;
 
@@ -12,6 +15,10 @@ public:
     virtual void Start() {}
 
     virtual void Update() {}
+
+    virtual std::ostream &Serialize(std::ostream &os) { return os; }
+
+    virtual std::istream &Deserialize(std::istream &is) { return is; }
 
     virtual ~Component() {}
 

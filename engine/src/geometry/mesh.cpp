@@ -36,3 +36,50 @@ const std::vector<BoneWeight> &Mesh::getBoneWeight() const {
     return m_boneWeight;
 }
 
+void Mesh::Serialize(std::ostream &os, const Mesh *mesh) {
+    auto &vertices = mesh->m_vertices;
+    auto &indices = mesh->m_indices;
+    auto &name = mesh->m_name;
+
+    // Serialzie name
+    auto nSize = name.size();
+    os.write(reinterpret_cast<const char *>(&nSize), sizeof(std::size_t));
+
+    os.write(name.data(), nSize);
+
+    // Serialize vertices
+    auto vSize = vertices.size();
+    os.write(reinterpret_cast<const char *>(&vSize), sizeof(std::size_t));
+    os.write(reinterpret_cast<const char *>(vertices.data()), vSize * sizeof(Vertex3D));
+
+    // Serialize indices
+    auto iSize = indices.size();
+    os.write(reinterpret_cast<const char *>(&iSize), sizeof(std::size_t));
+    os.write(reinterpret_cast<const char *>(indices.data()), iSize * sizeof(int));
+}
+
+void Mesh::Deserialize(std::istream &is, Mesh *mesh) {
+    auto &vertices = mesh->m_vertices;
+    auto &indices = mesh->m_indices;
+    auto &name = mesh->m_name;
+
+    // Deserialize name
+    std::size_t nSize;
+    is.read(reinterpret_cast<char *>(&nSize), sizeof(std::size_t));
+    name.resize(nSize, '\0');
+    is.read(name.data(), nSize);
+
+    // Deserialize vertices
+    std::size_t vSize;
+    is.read(reinterpret_cast<char *>(&vSize), sizeof(std::size_t));
+    vertices.resize(vSize);
+
+    is.read(reinterpret_cast<char *>(vertices.data()), vSize * sizeof(Vertex3D));
+
+    // Deserialize indices
+    std::size_t iSize;
+    is.read(reinterpret_cast<char *>(&iSize), sizeof(std::size_t));
+    indices.resize(iSize);
+
+    is.read(reinterpret_cast<char *>(indices.data()), iSize * sizeof(int));
+}

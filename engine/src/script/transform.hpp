@@ -65,6 +65,8 @@ private:
     void updateLocalMatrix();
 
     void updateGlobalMatrix();
+
+    friend class Scene;
 };
 
 

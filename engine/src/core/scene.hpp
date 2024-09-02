@@ -2,6 +2,8 @@
 
 #include "../ecs/gameObject.h"
 
+#include "geometry/material.h"
+
 #include <list>
 
 class Scene {
@@ -34,4 +36,18 @@ private:
     static std::string m_name;
 
     static void WriteScene();
+
+    static void WriteMaterial(const std::string &name, std::unordered_map<int, Material> &materials);
+
+    static void WriteMesh(const std::string &name, Mesh *mesh);
+
+    static void WriteGameObject(GameObject *gameObject);
+
+    static void ReadScene();
+
+    static void ReadMaterial();
+
+    static void ReadMesh();
+
+    static void ReadNode(Transform *parent = nullptr);
 };

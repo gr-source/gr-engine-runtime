@@ -16,7 +16,7 @@ std::unordered_map<std::string, std::unique_ptr<Batching>> Batching::m_batchedMa
 
 std::vector<Batching *> Batching::m_batched;
 
-Batching::Batching(const std::string &name, std::unordered_map<int, Material> &materials, Mesh *mesh) : m_name(name), m_materials(materials), m_vertexArray(nullptr), m_indiceCount(0), m_primCount(0), m_VBO(0), m_EBO(0), m_PBO(0), bHasIndice(false), isCompiled(false) {
+Batching::Batching(const std::string &name, std::unordered_map<int, Material> *materials, Mesh *mesh) : m_name(name), m_materials(materials), m_vertexArray(nullptr), m_indiceCount(0), m_primCount(0), m_VBO(0), m_EBO(0), m_PBO(0), bHasIndice(false), isCompiled(false) {
     compileMesh(mesh);
 }
 
@@ -172,7 +172,7 @@ void Batching::setupMaterial() {
     int idx[10]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
     int idxEn[10]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
-    for (auto&& [index, material] : m_materials) {
+    for (auto&& [index, material] : *m_materials) {
         std::memset(idxEn, 10, 0);
 
         for (auto i=0;i<10;++i) {

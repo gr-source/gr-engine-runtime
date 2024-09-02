@@ -33,7 +33,13 @@ public:
     T& getComponent();
     
     template <typename T>
-    const bool hasComponent() const;
+    bool hasComponent() const;
+
+    Component *addComponent(const std::string &name);
+
+    Component *getComponent(const std::string &name);
+    
+    bool hasComponent(const std::string &name) const;
 
     Component *addInternalComponent(const std::string &name);
     
@@ -66,11 +72,11 @@ inline T &Entity::addComponent() {
 
 template <typename T>
 inline T &Entity::getComponent() {
-    return *dynamic_cast<T* >(&(*m_componentPtr[String::RemoveNumber(typeid(T).name())]));
+    return *dynamic_cast<T *>(&(*m_componentPtr[String::RemoveNumber(typeid(T).name())]));
 }
 
 template <typename T>
-inline const bool Entity::hasComponent() const {
+inline bool Entity::hasComponent() const {
     auto it = m_componentPtr.find(String::RemoveNumber(typeid(T).name()));
     return it != m_componentPtr.end();
 }

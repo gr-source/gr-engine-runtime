@@ -139,7 +139,7 @@ void Game::Initialize() {
 
     m_currentFile = Filesystem::GetFile("");
 
-    Scene::LoadScene("MainScene");
+    Scene::LoadScene("default");
 }
 
 // ===================================== WARNING =========================================================

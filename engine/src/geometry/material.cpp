@@ -36,3 +36,43 @@ void Material::setTexture(int idx, grr::gTexture *texture) {
 grr::gTexture *Material::getTexture(int idx) const {
     return m_texture[idx];
 }
+
+void Material::serialize(std::ostream &os) const {
+    // serialize name
+    auto nSize = m_name.size();
+    os.write(reinterpret_cast<const char *>(&nSize), sizeof(std::size_t));
+    os.write(m_name.data(), nSize * sizeof(char));
+
+    // serialize albedo
+    os.write(reinterpret_cast<const char *>(&m_albedo), sizeof(Vector4));
+
+    // serialize metallic
+    os.write(reinterpret_cast<const char *>(&m_metallic), sizeof(float));
+
+    // serialize roughness
+    os.write(reinterpret_cast<const char *>(&m_roughness), sizeof(float));
+
+    // serialize ao
+    os.write(reinterpret_cast<const char *>(&m_ao), sizeof(float));
+}
+
+void Material::deserialize(std::istream &is) {
+    // deserialize name
+    std::size_t nSize;
+    is.read(reinterpret_cast<char *>(&nSize), sizeof(std::size_t));
+
+    m_name.resize(nSize, '\0');
+    is.read(m_name.data(), nSize * sizeof(char));
+
+    // deserialize albedo
+    is.read(reinterpret_cast<char *>(&m_albedo), sizeof(Vector4));
+
+    // deserialize metallic
+    is.read(reinterpret_cast<char *>(&m_metallic), sizeof(float));
+
+    // deserialize roughness
+    is.read(reinterpret_cast<char *>(&m_roughness), sizeof(float));
+
+    // deserialize ao
+    is.read(reinterpret_cast<char *>(&m_ao), sizeof(float));
+}

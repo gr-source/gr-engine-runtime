@@ -53,6 +53,9 @@ std::mutex Resources::s_gameObjectMutex;
 std::unordered_map<std::string, std::unique_ptr<Mesh>> Resources::s_meshList;
 std::mutex Resources::m_meshMutex;
 
+/***************** Material *****************/
+std::unordered_map<std::string, std::unordered_map<int, Material>> Resources::m_materialMap;
+
 std::thread Resources::m_thread;
 
 void Resources::Initialize() {
@@ -217,6 +220,18 @@ void Resources::DeleteMesh(Mesh *target) {
     }
     s_meshList.erase(it);
     lock.unlock();
+}
+
+std::unordered_map<std::string, std::unique_ptr<Mesh>> &Resources::GetMeshListMap() {
+    return s_meshList;
+}
+
+std::unordered_map<int, Material> *Resources::FindMaterial(const std::string &name) {
+    auto it = m_materialMap.find(name);
+    if (it == m_materialMap.end()) {
+        return nullptr;
+    }
+    return &it->second;
 }
 
 /***************** Texture Process ****************/
@@ -561,6 +576,11 @@ void Resources::ProcessBinary() {
         lock.lock();
         s_gameObjectFromLoader.pop_front();
     }
+}
+
+
+std::unordered_map<std::string, std::unordered_map<int, Material>> &Resources::GetMaterialMap() {
+    return m_materialMap;
 }
 
 #include "timer.h"

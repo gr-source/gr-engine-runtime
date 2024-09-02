@@ -19,6 +19,19 @@ GameObject *Entity::getGameObject() {
     return m_gameObject;
 }
 
+Component *Entity::addComponent(const std::string &name) {
+    return addInternalComponent(name);
+}
+
+Component *Entity::getComponent(const std::string &name) {
+    return &(*m_componentPtr[name]);
+}
+
+bool Entity::hasComponent(const std::string &name) const {
+    auto it = m_componentPtr.find(name);
+    return it != m_componentPtr.end();
+}
+
 std::unordered_map<std::string, std::shared_ptr<Component>> &Entity::getComponents() {
     return m_componentPtr;
 }

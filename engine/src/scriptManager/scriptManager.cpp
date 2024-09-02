@@ -195,6 +195,8 @@ void ScriptManager::RegisterApi() {
     REGISTER_FUNC("LoadShader", Resources::LoadShader);
     REGISTER_FUNC("LoadGameObject", Resources::LoadGameObject);
     REGISTER_FUNC("_ZN13AssetsManager13AddPostLoaderESt8functionIFbPvRKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEEE", Resources::AddPostLoader);
+    REGISTER_FUNC("_ZN13AssetsManager8FindMeshERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE", Resources::FindMesh);
+    REGISTER_FUNC("_ZN13AssetsManager12FindMaterialERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE", Resources::FindMaterial);
 
     REGISTER_API(std::unique_ptr<Animation>, const std::string &, LoadAnimation);
 

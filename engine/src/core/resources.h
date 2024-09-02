@@ -18,6 +18,7 @@
 #include "core/animation/animation.hpp"
 #include "core/binary/gHeader.hpp"
 
+#include "geometry/material.h"
 #include "geometry/mesh.h"
 
 class FbxAnimation;
@@ -44,6 +45,15 @@ public:
     static Mesh *AddMesh(Args &&...args);
 
     static void DeleteMesh(Mesh *target);
+
+    static std::unordered_map<std::string, std::unique_ptr<Mesh>> &GetMeshListMap();
+
+    static std::unordered_map<int, Material> *FindMaterial(const std::string &name);
+
+    template <typename ...Args>
+    static std::unordered_map<int, Material> &AddMaterial(Args &&...args);
+
+    static std::unordered_map<std::string, std::unordered_map<int, Material>> &GetMaterialMap();
 
     static void OnThread();
 
@@ -81,6 +91,9 @@ private:
     /***************** Mesh *****************/
     static std::unordered_map<std::string, std::unique_ptr<Mesh>> s_meshList;
     static std::mutex m_meshMutex;
+    
+    /***************** Material *****************/
+    static std::unordered_map<std::string, std::unordered_map<int, Material>> m_materialMap;
 
     static std::thread m_thread;
 
@@ -117,4 +130,10 @@ inline Mesh *Resources::AddMesh(Args &&...args) {
     auto mesh = &(*(*pair).second);
     lock.unlock();
     return mesh;
+}
+
+template <typename... Args>
+inline std::unordered_map<int, Material> &Resources::AddMaterial(Args &&...args) {
+    auto &&[it, added] = m_materialMap.emplace(std::forward<Args>(args)...);
+    return it->second;
 }
