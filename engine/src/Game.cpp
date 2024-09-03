@@ -772,8 +772,9 @@ void Game::RenderViewportUI() {
             }
 
             if (!isQuit) {
-                it = m_scenes.erase(it);
                 Scene::Use(nullptr);
+                
+                it = m_scenes.erase(it);
             } else {
                 ++it;
             }
@@ -1369,6 +1370,13 @@ void Game::RenderGameObjectPropertiUI() {
         ImGui::SameLine();
 
         ImGui::Text("[ %s - %s ]", s_objectSelected->getName().c_str(), s_objectSelected->getTag().c_str());
+
+        ImGui::SameLine();
+
+        auto isActive = s_objectSelected->isActive();
+        if (ImGui::Checkbox("##check_box_is_active", &isActive)) {
+            s_objectSelected->setActive(isActive);
+        }
 
         s_objectSelected->RenderProperty<Transform>(Game::OnPropertyTransform);
         s_objectSelected->RenderProperty<MeshFilter>(Game::OnPropertyMeshFilter);

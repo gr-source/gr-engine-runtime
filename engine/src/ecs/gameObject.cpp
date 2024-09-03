@@ -31,6 +31,8 @@ GameObject &GameObject::Create(const std::string &name, const std::string &tag) 
 
 GameObject &GameObject::Instantiate(GameObject *target) {
     auto &gameObject = GameObject::Create(String::RemoveNumber(target->m_name), target->m_tag);
+    gameObject.m_bEnable = target->m_bEnable;
+    gameObject.m_bActive = target->m_bActive;
 
     gameObject.getEntity()->copy(target->getEntity());
 
@@ -127,9 +129,16 @@ Entity *GameObject::getEntity() {
 }
 
 void GameObject::setEnable(bool value) {
-    assert(Entity::SetEnable && "Entity set enable point invalid");
-    Entity::SetEnable(m_entity, value);
-}   
+    m_bEnable = value;
+}
+
+bool GameObject::getActive() const {
+    return m_bActive;
+}
+
+bool GameObject::getEnable() const {
+    return m_bEnable;
+}
 
 std::string GameObject::AddNameID(const std::string &name) {
     auto it = s_names.find(name);

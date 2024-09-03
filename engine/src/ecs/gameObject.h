@@ -51,6 +51,10 @@ public:
     Entity *getEntity();
 
     void setEnable(bool value);
+
+    bool getActive() const;
+    
+    bool getEnable() const;
     
 private:
     Transform *m_transform;
@@ -64,6 +68,7 @@ private:
     bool m_bActive;
 
     bool m_bEnable;
+
 protected:
 
     static std::unordered_map<std::string, std::unique_ptr<GameObject>> s_mapObject;

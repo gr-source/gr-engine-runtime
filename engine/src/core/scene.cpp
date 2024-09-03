@@ -153,7 +153,7 @@ void Scene::setEnable(bool value) {
 }
 
 void Scene::setDisableEntity(Transform *transform, bool value) {
-    Entity::SetEnable(transform->entity, value);
+    transform->entity->setEnable(value);
 
     for (auto &child : transform->getChildren()) {
         setDisableEntity(child, value);
@@ -240,6 +240,11 @@ void Scene::WriteGameObject(GameObject *gameObject) {
 
     Stream::write(&tSize, 1);
     Stream::write(tag.data(),  tSize);
+
+    auto active = gameObject->getActive();
+    auto enable = gameObject->getEnable();
+    Stream::write(&active,  1);
+    Stream::write(&enable,  1);
 
     // Write Component
     auto entity = gameObject->getEntity();
@@ -364,10 +369,18 @@ void Scene::ReadNode(Transform *parent) {
     std::string tag(tSize, '\0');
     Stream::read(tag.data(),  tSize);
 
+    bool active;
+    bool enable;
+    Stream::read(&active,  1);
+    Stream::read(&enable,  1);
+
     std::size_t cSize;
     Stream::read(&cSize, 1);
 
     auto &gameObject = parent == nullptr ? Scene::GetCurrentScene()->CreateGameObject(String::RemoveNumber(name), tag) : GameObject::Create(String::RemoveNumber(name), tag);
+    gameObject.setActive(active);
+    gameObject.setEnable(enable);
+
     auto &transform = gameObject.getTransform();
     transform.setParent(parent);
 

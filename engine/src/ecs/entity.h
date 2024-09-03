@@ -26,7 +26,7 @@ public:
     
     static void (*Init)(Entity *);
 
-    static void (*SetEnable)(Entity *, bool);
+    // static void (*SetEnable)(Entity *, bool);
 
     Entity() = delete;
     Entity(GameObject *gameObject, EntityID id);
@@ -57,6 +57,8 @@ public:
     EntityID getEntityID() const;
 
     bool isActive() const;
+
+    void setEnable(bool value);
     
 private:
     std::unordered_map<std::string, std::shared_ptr<Component>> m_componentPtr;

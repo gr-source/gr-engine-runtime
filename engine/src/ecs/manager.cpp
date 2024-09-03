@@ -63,7 +63,6 @@ void Manager::Update() {
             Entity::Update(m_entity[j]);
         }
     }
-
 }
 
 grm::size Manager::GetEntityCount() {

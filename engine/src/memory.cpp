@@ -96,6 +96,14 @@ void Memory::free(void *ptr) noexcept {
 }
 
 void Memory::Hook(void *origFunc, void *newFunc) {
+    if (!origFunc) {
+        throw std::runtime_error("Origin function is invalid.");
+    }
+
+    if (!newFunc) {
+        throw std::runtime_error("new function is invalid.");
+    }
+
     auto pageSizeToProtect = sysconf(_SC_PAGESIZE);
     auto start = reinterpret_cast<std::uintptr_t>(origFunc);
     auto pageStart = start & ~(pageSizeToProtect - 1);
@@ -106,7 +114,7 @@ void Memory::Hook(void *origFunc, void *newFunc) {
     }
 
     // Cria a instrução de salto
-    uint8_t jumpInstruction[14];
+    uint8_t jumpInstruction[14] = {0};
     jumpInstruction[0] = 0x49; // REX prefix
     jumpInstruction[1] = 0xBB; // MOV r11, imm32
     *(int64_t*)(jumpInstruction + 2) = (int64_t)newFunc;

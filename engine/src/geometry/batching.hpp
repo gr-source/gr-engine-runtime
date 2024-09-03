@@ -29,11 +29,16 @@ public:
 
     void draw();
 
-    void rebuild();
-
     bool hasModel() const;
 
 private:
+    enum DrawType {
+        DrawType_Elements_Instanced = 1 << 1,
+        DrawType_Arrays_Instanced   = 1 << 2,
+        DrawType_Elements           = 1 << 3,
+        DrawType_Arrays             = 1 << 4
+    };
+
     static std::unordered_map<std::string, std::unique_ptr<Batching>> m_batchedMap;
 
     static std::vector<Batching *> m_batched;
@@ -60,7 +65,7 @@ private:
 
     bool bHasIndice;
 
-    bool isCompiled;
+    DrawType m_type;
 
     void compileMesh(Mesh *mesh);
 

@@ -10,3 +10,5 @@ GameObject *Component::getGameObject() {
     }
     return entity->getGameObject();
 }
+
+

@@ -56,7 +56,7 @@ void Batching::Renderer() {
     }
 }
 
-Batching::Batching(const std::string &name, std::unordered_map<int, Material> *materials, Mesh *mesh) : m_name(name), m_materials(materials), m_vertexArray(nullptr), m_indiceCount(0), m_primCount(0), m_VBO(0), m_EBO(0), m_PBO(0), bHasIndice(false), isCompiled(false) {
+Batching::Batching(const std::string &name, std::unordered_map<int, Material> *materials, Mesh *mesh) : m_name(name), m_materials(materials), m_vertexArray(nullptr), m_indiceCount(0), m_primCount(0), m_VBO(0), m_EBO(0), m_PBO(0), bHasIndice(false), m_type(DrawType_Arrays_Instanced) {
     compileMesh(mesh);
 }
 
@@ -94,22 +94,28 @@ void Batching::draw() {
     if (!m_vertexArray || !m_vertexArray->isValid()) {
         return;
     }
+
     setupMaterial();
 
     m_vertexArray->bind();
 
-    if (bHasIndice && m_primCount) {
-        grr::gVertexArray::DrawElementsInstanced(grr::PrimitiveType_Triangles, m_indiceCount, nullptr, m_primCount);
-    } else if (bHasIndice) {
-        return grr::gVertexArray::DrawElements(grr::PrimitiveType_Triangles, m_indiceCount, nullptr);
-    } else if (m_primCount) {
-        return grr::gVertexArray::DrawArraysInstanced(grr::PrimitiveType_Triangles, m_indiceCount, m_primCount);
+    switch (m_type) {
+    case DrawType_Elements_Instanced:
+        grr::gVertexArray::DrawElementsInstanced(grr::PrimitiveType_Triangles, m_indiceCount, nullptr, m_primCount);;
+        break;
+    case DrawType_Arrays_Instanced:
+        grr::gVertexArray::DrawArraysInstanced(grr::PrimitiveType_Triangles, m_indiceCount, m_primCount);
+        break;
+    case DrawType_Elements:
+        grr::gVertexArray::DrawElements(grr::PrimitiveType_Triangles, m_indiceCount, nullptr);
+        break;
+    case DrawType_Arrays:
+        grr::gVertexArray::DrawArrays(grr::PrimitiveType_Triangles, m_indiceCount);
+        break;
+    default:
+        throw std::runtime_error("Draw type invalid.");
+        break;
     }
-    return grr::gVertexArray::DrawArrays(grr::PrimitiveType_Triangles, m_indiceCount);
-}
-
-void Batching::rebuild() {
-    compile();
 }
 
 void Batching::compileMesh(Mesh *mesh) {
@@ -181,16 +187,15 @@ void Batching::compile() {
         return;
     }
     
-    std::vector<Matrix4x4> models;
-
     Statistics::m_totalRender += m_models.size();
 
+    std::vector<Matrix4x4> models;
     for (auto &transform : m_models) {
         auto &model = transform->getGlobalMatrix();
 
-        if (!Frustum::IsCubeInFrustumOOBB(m_boundbox.min, m_boundbox.max, model)) {
-            continue;
-        }
+        // if (!Frustum::IsCubeInFrustumOOBB(m_boundbox.min, m_boundbox.max, model)) {
+        //     continue;
+        // }
         models.push_back(model);
     }
 

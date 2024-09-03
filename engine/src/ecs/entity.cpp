@@ -13,7 +13,7 @@ void (*Entity::Update)(Entity *);
 
 void (*Entity::Init)(Entity *);
 
-void (*Entity::SetEnable)(Entity *, bool);
+// void (*Entity::SetEnable)(Entity *, bool);
 
 Entity::Entity(GameObject *gameObject, EntityID id) : m_gameObject(gameObject), m_entityID(id) {}
 
@@ -115,6 +115,24 @@ EntityID Entity::getEntityID() const {
 
 bool Entity::isActive() const {
     return m_gameObject->isActive();
+}
+
+void Entity::setEnable(bool value) {
+    auto pages = (m_components.size() + MAX_PAGES - 1) / MAX_PAGES;
+    for (auto i=0;i<pages;i++) {
+        auto start = i * MAX_PAGES;
+        auto end = std::min(start + MAX_PAGES, int(m_components.size()));
+
+        for (auto j=start;j<end;j++) {
+            m_components[j]->getGameObject()->setEnable(value);
+
+            if (value) {
+                m_components[j]->Enable();
+                continue;
+            }
+            m_components[j]->Disable();
+        }
+    }
 }
 
 Component *Entity::addInternalComponent(const std::string &name) {
