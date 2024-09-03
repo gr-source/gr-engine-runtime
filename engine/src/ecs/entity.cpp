@@ -13,6 +13,8 @@ void (*Entity::Update)(Entity *);
 
 void (*Entity::Init)(Entity *);
 
+void (*Entity::SetEnable)(Entity *, bool);
+
 Entity::Entity(GameObject *gameObject, EntityID id) : m_gameObject(gameObject), m_entityID(id) {}
 
 GameObject *Entity::getGameObject() {
@@ -74,7 +76,7 @@ void Entity::copy(Entity *entity) {
     if (auto parent = transform.getParent()) {
         localTransform.setParent(parent);
     } else {
-        Scene::Add(getGameObject());
+        Scene::GetCurrentScene()->Add(getGameObject());
     }
 
     for (auto &child : transform.getChildren()) {
@@ -98,6 +100,8 @@ bool Entity::isActive() const {
 }
 
 Component *Entity::addInternalComponent(const std::string &name) {
+    assert(ScriptManager::CreateComponentWithName && "Falied porcess Component");
+
     auto component = ScriptManager::CreateComponentWithName(name);
     component->entity = this;
     component->Init();

@@ -1,7 +1,5 @@
 #pragma once
 
-#include "../filesystem/filesystem.h"
-
 #include <condition_variable>
 #include <unordered_set>
 #include <functional>
@@ -17,6 +15,7 @@
 
 #include "core/animation/animation.hpp"
 #include "core/binary/gHeader.hpp"
+#include "core/file/file.hpp"
 
 #include "geometry/material.h"
 #include "geometry/mesh.h"

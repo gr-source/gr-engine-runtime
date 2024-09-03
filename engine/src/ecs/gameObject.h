@@ -4,7 +4,6 @@
 
 #include "entity.h"
 
-
 class GameObject {
 public:
     static GameObject& Create(const std::string& name, const std::string& tag = "unttaged");
@@ -13,7 +12,7 @@ public:
 
     static GameObject *Find(const std::string &name);
 
-    static void Rename(GameObject *gameObject, const std::string &name);
+    static void Rename(GameObject *gameObject, std::string name);
 
     static void Destroy(GameObject *target);
 
@@ -49,6 +48,8 @@ public:
     void RenderProperty(Args&&... args);
 
     Entity *getEntity();
+
+    void setEnable(bool value);
     
 private:
     Transform *m_transform;
@@ -68,6 +69,8 @@ protected:
     static std::unordered_map<std::string, int> s_names;
 
     static std::string AddNameID(const std::string &name);
+
+    static void RemoveNameID(const std::string &name);
 };
 
 template <typename T>

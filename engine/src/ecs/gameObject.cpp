@@ -10,6 +10,7 @@
 #include "core/event.hpp"
 
 #include "manager.hpp"
+#include "gameObject.h"
 
 std::unordered_map<std::string, std::unique_ptr<GameObject>> GameObject::s_mapObject;
 
@@ -43,11 +44,13 @@ GameObject *GameObject::Find(const std::string &name) {
     return &(*it->second);
 }
 
-void GameObject::Rename(GameObject *gameObject, const std::string &name) {
+void GameObject::Rename(GameObject *gameObject, std::string name) {
     auto it = s_mapObject.find(gameObject->getName());
     if (it == s_mapObject.end()) {
         return;
     }
+
+    name = AddNameID(String::RemoveNumber(name));
 
     auto ptr = std::move(it->second);
 
@@ -123,10 +126,23 @@ Entity *GameObject::getEntity() {
     return m_entity;
 }
 
+void GameObject::setEnable(bool value) {
+    assert(Entity::SetEnable && "Entity set enable point invalid");
+    Entity::SetEnable(m_entity, value);
+}
+
 std::string GameObject::AddNameID(const std::string &name) {
     auto it = s_names.find(name);
     if (it == s_names.end()) {
         s_names.emplace(name, 0);
     }
     return name + std::to_string(s_names[name]++);
+}
+
+void GameObject::RemoveNameID(const std::string &name) {
+    auto it = s_names.find(name);
+    if (it == s_names.end()) {
+        return;
+    }
+    s_names[name]--;
 }

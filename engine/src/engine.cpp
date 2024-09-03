@@ -17,8 +17,6 @@
 
 #include "physics/physicsScene.h"
 
-#include "filesystem/stream.h"
-
 #include "renderManager.h"
 #include "screenRender.hpp"
 #include "settings.h"
@@ -177,6 +175,8 @@ void Engine::OnDestroy() {
     }
 
     ImGuiRender::Shutdown();
+
+    Game::Shutdown();
 
     GameObject::Clear();
 

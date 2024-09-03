@@ -15,6 +15,9 @@
 
 #include "core/filmbox/filmbox.hpp"
 
+#include "core/file/stream.hpp"
+#include "core/file/file.hpp"
+
 #include "core/statistics.hpp"
 #include "core/resources.h"
 #include "core/scene.hpp"
@@ -31,9 +34,6 @@
 
 #include "ui/ImGuiRender.h"
 #include "ui/View.h"
-
-#include "filesystem/filesystem.h"
-#include "filesystem/stream.h"
 
 #include "scriptManager/scriptManager.hpp"
 
@@ -94,11 +94,11 @@ std::unordered_map<IconType, grr::gTexture *> iconsUI;
 
 std::vector<std::unique_ptr<Filmbox>> m_filmboxList;
 
-/* Seleciona um objeto no scenes(UI)*/
-GameObject *Game::s_objectSelected = nullptr;
-
-/* Textura do play button */
 grr::gTexture *Game::s_texturePlayGame = nullptr;
+
+std::unordered_map<std::string, std::shared_ptr<Scene>> Game::m_scenes;
+
+GameObject *Game::s_objectSelected = nullptr;
 
 ImGuiIO* Game::s_io = nullptr;
 
@@ -117,6 +117,8 @@ bool Game::bScriptReloaded = false;
 bool Game::bOpenPopupOptionGameObject = false;
 
 ImVec4 Game::FPSColor = {255, 255, 255, 255};
+
+ImVec2 Game::m_lastViewportSize = {0.0f, 0.0f};
 
 ImGuizmo::OPERATION Game::m_guizmoOperation = ImGuizmo::TRANSLATE;
 
@@ -137,9 +139,13 @@ void Game::Initialize() {
 
     Settings::IsGameRunning = false;
 
-    m_currentFile = Filesystem::GetFile("");
+    m_currentFile = File::GetFile("");
 
-    Scene::LoadScene("default");
+    // Scene::LoadScene("default");
+}
+
+void Game::Shutdown() {
+    m_scenes.clear();
 }
 
 // ===================================== WARNING =========================================================
@@ -315,7 +321,7 @@ void WriteAnimation(const FbxScene *fbxScene) {
     for (auto &animation : animations) {
         auto name = animation.getName();
 
-        if (!Stream::open(Filesystem::GetFile("/animation/" + name + ".anm"), std::ios_base::out | std::ios_base::binary)) {
+        if (!Stream::open(File::GetFile("/animation/" + name + ".anm"), std::ios_base::out | std::ios_base::binary)) {
             continue;
         }
         Stream::write<gHeader>(&pHeader, 1);
@@ -413,7 +419,7 @@ void WriteHeader(const FbxScene *scene, const FbxNode &node) {
 
     WriteAnimation(scene);
 
-    auto path = Filesystem::GetFile("/model/" + node.getName() + ".gmd");
+    auto path = File::GetFile("/model/" + node.getName() + ".gmd");
 
     std::ofstream os(path, std::ios_base::binary);
     if (!os.is_open()) {
@@ -469,16 +475,18 @@ void Game::RenderUI() {
     
     RenderDocking();
 
-    RenderScenesUI();
-
     RenderViewportUI();
+
+    RenderScenesUI();
 
     RenderConsoleUI();
 
     RenderPropertiUI();
 
     if (s_io->KeyCtrl && ImGui::IsKeyReleased(ImGuiKey_S)) {
-        Scene::Save();
+        for (auto &&[name, ptr] : m_scenes) {
+            ptr->save();
+        }
     }
 }
 
@@ -503,7 +511,7 @@ void Game::RenderScenesUI() {
         return;
     }
 
-    auto name = Scene::GetSceneName();
+    auto name = Scene::HasScene() ? Scene::GetCurrentScene()->getName() : "Default";
 
     ImGui::SetNextItemOpen(true, ImGuiCond_Appearing);
     if (ImGui::TreeNodeEx(name.c_str(), ImGuiTreeNodeFlags_SpanFullWidth)) {
@@ -520,32 +528,19 @@ void Game::RenderScenesUI() {
                     auto &ts = target->getTransform();
                     ts.setParent(nullptr);
                     
-                    Scene::Add(target);
+                    Scene::GetCurrentScene()->Add(target);
                 }
             }
             ImGui::EndDragDropTarget();
         }
         
-        // Render objects with scene
-        {
-            auto &list = Scene::GetGameObjects();
+        RenderHierarchi();
 
-            if (m_currentPage > 0 && ImGui::Button("Before")) {
-                --m_currentPage;
-            }
-            
-            RenderPage(list, m_currentPage);
-            
-            if (list.size() >= m_currentPage && ImGui::Button("Next")) {
-                ++m_currentPage;
-            }
-        }
-        
         ImGui::TreePop();
     }
 
     if (ImGui::IsKeyReleased(ImGuiKey_Delete) && s_objectSelected) {
-        Event::Add(Scene::Delete, s_objectSelected);
+        Event::Add(&Scene::Delete, Scene::GetCurrentScene(), s_objectSelected);
         s_objectSelected = nullptr;
     }
     
@@ -569,6 +564,24 @@ void Game::RenderScenesUI() {
     PopupMenuAdd();
 
     ImGui::End();
+}
+
+void Game::RenderHierarchi() {
+    if (!Scene::HasScene()) {
+        return;
+    }
+
+    auto &list = Scene::GetCurrentScene()->GetGameObjects();
+
+    if (m_currentPage > 0 && ImGui::Button("Before")) {
+        --m_currentPage;
+    }
+    
+    RenderPage(list, m_currentPage);
+    
+    if (list.size() >= m_currentPage && ImGui::Button("Next")) {
+        ++m_currentPage;
+    }
 }
 
 void Game::RenderPage(std::vector<GameObject *> &list, int page) {
@@ -636,7 +649,7 @@ void Game::ReadHierarchy(Transform *transform) {
                     if (ts != transform->getParent()) {
                         ts->setParent(transform);
                     
-                        Event::Add(&Scene::Remove, target);
+                        Event::Add(&Scene::Remove, Scene::GetCurrentScene(),  target);
                     }
                 }
             }
@@ -653,21 +666,22 @@ void Game::ReadHierarchy(Transform *transform) {
 }
 
 void Game::PopupMenuAdd() {
-    if (ImGui::BeginPopup("##popup_menu_add")) {
-        ImGui::Text("Add Object");
-
-        const char* item_name[1]{"Empty GameObject"};
-
-        auto id = 0;
-        if (ImGui::ListBox("##ListBoxOptionsGame", &id, item_name, 1)) {
-            if (id == 0) {
-                s_objectSelected = &Scene::CreateGameObject("Empty");
-            }
-            ImGui::CloseCurrentPopup();
-        }
-
-        ImGui::EndPopup();
+    auto isOpen = ImGui::BeginPopup("##popup_menu_add");
+    if (!isOpen) {
+        return;
     }
+    const char* item_name[1]{"Empty GameObject"};
+    auto id = 0;
+
+    ImGui::Text("Add Object");
+    if (ImGui::ListBox("##ListBoxOptionsGame", &id, item_name, 1)) {
+        if (id == 0) {
+            s_objectSelected = &Scene::GetCurrentScene()->CreateGameObject("Empty");
+        }
+        ImGui::CloseCurrentPopup();
+    }
+
+    ImGui::EndPopup();
 }
 
 void Game::PopupOptionsGameObject() {
@@ -678,7 +692,7 @@ void Game::PopupOptionsGameObject() {
         auto id = 0;
         if (ImGui::ListBox("##ListBoxOptionsGame", &id, item_name, 2)) {
             if (id == 0 && s_objectSelected) {
-                Event::Add(Scene::Delete, s_objectSelected);
+                Event::Add(&Scene::Delete, Scene::GetCurrentScene(), s_objectSelected);
                 s_objectSelected = nullptr;
             } else if (id == 1 && s_objectSelected) {
                 isOpenRename = true;
@@ -711,19 +725,76 @@ void Game::PopupRenameGameObject() {
 }
 
 void Game::RenderViewportUI() {
-    ImGui::Begin("Viewport", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+    auto isOpen = ImGui::Begin("Viewport", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+    if (!isOpen) {
+        return;
+    }
+    isOpen = false;
+
     bViewPortFocused = ImGui::IsWindowFocused();
 
+    if (ImGui::BeginTabBar("##SceneListTabBar")) {
+       for (auto it = m_scenes.begin(); it != m_scenes.end();) {
+            auto& [name, scene] = *it;
+            
+            bool isQuit = true;
+            if (ImGui::BeginTabItem(name.c_str(), &isQuit)) {
+                Scene::Use(&(*scene));
+                RenderScene();
+                ImGui::EndTabItem();
+            }
+
+            if (!isQuit) {
+                it = m_scenes.erase(it);
+                Scene::Use(nullptr);
+            } else {
+                ++it;
+            }
+        }
+
+        if (ImGui::TabItemButton("+")) {
+            isOpen = true;
+        }
+        ImGui::EndTabBar();
+    }
+
+    if (isOpen) {
+        ImGui::OpenPopup("##popup_menu_create_scene");
+    }
+
+    DropSceneInViewport();
+
+    PopupMenuCreateScene();
+
+    ImGui::End();
+}
+
+void Game::DropSceneInViewport() {
+    auto isOpen = ImGui::BeginDragDropTarget();
+    if (!isOpen) {
+        return;
+    }
+
+    if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(IMGUI_PAYLOAD_FILE)) {
+        std::string path((char*)payload->Data, payload->DataSize);
+        if (!path.empty() && std::filesystem::path(path).filename().extension() == ".scn") {
+            auto ptr = std::make_shared<Scene>("NoName");
+            ptr->load(path);
+            m_scenes.emplace(ptr->getName(), std::move(ptr));
+        }
+    }
+    ImGui::EndDragDropTarget();
+}
+
+void Game::RenderScene() {
+    auto size = ImGui::GetItemRectSize();
+    auto pos = ImGui::GetCursorPos();
+
     ImGuizmo::SetDrawlist();
+    ImGuizmo::SetRect(pos.x, pos.y, size.x, size.y);
 
-    ImVec2 size = ImGui::GetWindowSize();
-
-    ImGuizmo::SetRect(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y, size.x, size.y);
-
-    static ImVec2 lastSize = ImGui::GetContentRegionAvail();
     ImVec2 curSize = ImGui::GetContentRegionAvail();
-
-    if (lastSize.x != curSize.x || lastSize.y != curSize.y && curSize.x > 5.0f && curSize.y > 5.0f || bScriptReloaded) {
+    if (m_lastViewportSize.x != curSize.x || m_lastViewportSize.y != curSize.y && curSize.x > 5.0f && curSize.y > 5.0f || bScriptReloaded) {
         auto &viewport = Settings::ViewportSize = {static_cast<int>(curSize.x), static_cast<int>(curSize.y)};
 
         if (ScriptManager::SetScreenSize) {
@@ -737,28 +808,18 @@ void Game::RenderViewportUI() {
 
         PostProcessing::Resize(Engine::MainPostProcess, viewport);
         
-        lastSize = curSize;
+        m_lastViewportSize = curSize;
         bScriptReloaded = false;
     }
 
     auto texture = PostProcessing::GetTextureColor(Engine::ImGuiPostProcess);
     if (texture) {
         ImGui::Image(reinterpret_cast<ImTextureID>(texture->getID()), curSize, ImVec2(0, 1), ImVec2(1, 0));
+
+        DropGameObjectInScene();
     }
 
-    if (ImGui::BeginDragDropTarget()) {
-        ImGuiDragDropFlags target_flags = 0;
-        // target_flags |= ImGuiDragDropFlags_AcceptBeforeDelivery;
-        // target_flags |= ImGuiDragDropFlags_SourceAllowNullID;
-
-        if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(IMGUI_PAYLOAD_FILE, target_flags)) {
-            std::string path((char*)payload->Data, payload->DataSize);
-            if (!path.empty() && std::filesystem::path(path).filename().extension() == ".gmd") {
-                s_objectSelected = Resources::LoadGameObject(path);
-            }
-        }
-        ImGui::EndDragDropTarget();
-    }
+    /*
 
     // ImGui::SetCursorPos({curSize.x / 2.0f, curSize.y / 2.0f});
 // 
@@ -865,8 +926,43 @@ void Game::RenderViewportUI() {
     if (s_objectSelected && ImGui::IsWindowFocused() && s_io->KeyShift && ImGui::IsKeyReleased(ImGuiKey_D) && GameObject::Instantiate) {
         s_objectSelected = &GameObject::Instantiate(s_objectSelected);
     }
+    */
+}
 
-    ImGui::End();
+void Game::DropGameObjectInScene() {
+    auto isOpen = ImGui::BeginDragDropTarget();
+    if (!isOpen) {
+        return;
+    }
+
+    if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(IMGUI_PAYLOAD_FILE)) {
+        std::string path((char*)payload->Data, payload->DataSize);
+        if (!path.empty() && std::filesystem::path(path).filename().extension() == ".gmd") {
+            s_objectSelected = Resources::LoadGameObject(path);
+        }
+    }
+    ImGui::EndDragDropTarget();
+}
+
+void Game::PopupMenuCreateScene() {
+    auto isOpen = ImGui::BeginPopup("##popup_menu_create_scene");
+    if (!isOpen) {
+        return;
+    }
+
+    ImGui::Text("Input scene name: ");
+
+    if (!ImGui::IsAnyItemActive() && !ImGui::IsMouseClicked(0))
+        ImGui::SetKeyboardFocusHere(0);
+
+    char name[256] = {0};
+    if (ImGui::InputText("##input_scene_name", name, 256, ImGuiInputTextFlags_EnterReturnsTrue)) {
+        m_scenes.emplace(name, std::make_shared<Scene>(name));
+        
+        ImGui::CloseCurrentPopup();
+    }
+
+    ImGui::EndPopup();
 }
 
 bool bPopupOpen = false;
@@ -909,9 +1005,9 @@ void Game::RenderFilesUI() {
     if (s_io->KeyCtrl && ImGui::IsKeyDown(ImGuiKey_V) && ImGui::IsWindowFocused()) {
         for (auto &&[path, bCut] : fLisDirSelected) {
             if (bCopyAllFile)
-                Filesystem::Copy(path, m_currentFile);
+                File::Copy(path, m_currentFile);
             else if (bCutAllFile)
-                Filesystem::Move(path, m_currentFile);
+                File::Move(path, m_currentFile);
         }
         fLisDirSelected.clear();
     }
@@ -1027,7 +1123,7 @@ void Game::PopupDirmanager() {
             switch (idx) {
             case 0:
                 for (auto &&[path, isSeleceted] : fLisDirSelected) {
-                    Filesystem::Delete(path);
+                    File::Delete(path);
                 }
                 break;
             default:
@@ -1077,19 +1173,21 @@ void Game::PopupFileManager() {
 }
 
 void Game::PopupCreateDirectory() {
-    if (ImGui::BeginPopup("##popup_create_new_dir")) {
-        ImGui::Text("Input directory name:");
-        if (!ImGui::IsAnyItemActive() && !ImGui::IsMouseClicked(0))
-            ImGui::SetKeyboardFocusHere(0);
-
-        char name[256] = {0};
-        if (ImGui::InputText("##InputDirectoryName", name, 256, ImGuiInputTextFlags_EnterReturnsTrue)) {
-            Filesystem::CreateDirectory(m_currentFile.string() + "/" + std::string(name));
-            ImGui::CloseCurrentPopup();
-        }
-
-        ImGui::EndPopup();
+    auto isOpen = ImGui::BeginPopup("##popup_create_new_dir");
+    if (!isOpen) {
+        return;
     }
+    ImGui::Text("Input directory name:");
+    if (!ImGui::IsAnyItemActive() && !ImGui::IsMouseClicked(0))
+        ImGui::SetKeyboardFocusHere(0);
+
+    char name[256] = {0};
+    if (ImGui::InputText("##InputDirectoryName", name, 256, ImGuiInputTextFlags_EnterReturnsTrue)) {
+        File::CreateDirectory(m_currentFile.string() + "/" + std::string(name));
+        ImGui::CloseCurrentPopup();
+    }
+
+    ImGui::EndPopup();
 }
 
 void Game::RenderConsoleUI() {
@@ -1574,23 +1672,23 @@ void Game::StopGame() {
 }
 
 void Game::loadReources() {
-    iconsUI.emplace(IconType::ICON_FILE,        Resources::LoadTexture(Filesystem::GetFile("/icon/icons8-file-30.png")));
-    iconsUI.emplace(IconType::ICON_FOLDER,      Resources::LoadTexture(Filesystem::GetFile("/icon/icons8-folder-50.png")));
-    iconsUI.emplace(IconType::ICON_BACK_FILE,   Resources::LoadTexture(Filesystem::GetFile("/icon/icons8-go-back-50.png")));
-    iconsUI.emplace(IconType::ICON_GAMEOBJECT,  Resources::LoadTexture(Filesystem::GetFile("/icon/icons8-3d-object-50.png")));
-    iconsUI.emplace(IconType::ICON_PENCIL,      Resources::LoadTexture(Filesystem::GetFile("/icon/icons8-lápis-30.png")));
-    iconsUI.emplace(IconType::ICON_LIGHT,       Resources::LoadTexture(Filesystem::GetFile("/icon/icons8-lâmpada-globular-64.png")));
-    iconsUI.emplace(IconType::ICON_TEXTURE,     Resources::LoadTexture(Filesystem::GetFile("/icon/icons8-textura-de-renderização-32.png")));
-    iconsUI.emplace(IconType::ICON_PNG,         Resources::LoadTexture(Filesystem::GetFile("/icon/icons8-png-24.png")));
-    iconsUI.emplace(IconType::ICON_PLAY_GAME,   Resources::LoadTexture(Filesystem::GetFile("/icon/icons8-reproduzir-30.png")));
-    iconsUI.emplace(IconType::ICON_STOP_GAME,   Resources::LoadTexture(Filesystem::GetFile("/icon/icons8-parar-50.png")));
-    iconsUI.emplace(IconType::ICON_BIN,         Resources::LoadTexture(Filesystem::GetFile("/icon/icons8-resíduos-50.png")));
-    iconsUI.emplace(IconType::ICON_IMPORT,      Resources::LoadTexture(Filesystem::GetFile("/icon/icons8-importar-50.png")));
-    iconsUI.emplace(IconType::ICON_ASCENDENTE,  Resources::LoadTexture(Filesystem::GetFile("/icon/icons8-ordenar-para-a-direita-50.png")));
-    iconsUI.emplace(IconType::ICON_DESCENDENTE, Resources::LoadTexture(Filesystem::GetFile("/icon/icons8-ordem-descendente-50.png")));
-    iconsUI.emplace(IconType::ICON_EDIT,        Resources::LoadTexture(Filesystem::GetFile("/icon/icons8-editar-24.png")));
-    iconsUI.emplace(IconType::ICON_ANIMATION,   Resources::LoadTexture(Filesystem::GetFile("/icon/motion-graphics.png")));
-    iconsUI.emplace(IconType::ICON_SHADER,      Resources::LoadTexture(Filesystem::GetFile("/icon/shade.png")));
+    iconsUI.emplace(IconType::ICON_FILE,        Resources::LoadTexture(File::GetFile("/icon/icons8-file-30.png")));
+    iconsUI.emplace(IconType::ICON_FOLDER,      Resources::LoadTexture(File::GetFile("/icon/icons8-folder-50.png")));
+    iconsUI.emplace(IconType::ICON_BACK_FILE,   Resources::LoadTexture(File::GetFile("/icon/icons8-go-back-50.png")));
+    iconsUI.emplace(IconType::ICON_GAMEOBJECT,  Resources::LoadTexture(File::GetFile("/icon/icons8-3d-object-50.png")));
+    iconsUI.emplace(IconType::ICON_PENCIL,      Resources::LoadTexture(File::GetFile("/icon/icons8-lápis-30.png")));
+    iconsUI.emplace(IconType::ICON_LIGHT,       Resources::LoadTexture(File::GetFile("/icon/icons8-lâmpada-globular-64.png")));
+    iconsUI.emplace(IconType::ICON_TEXTURE,     Resources::LoadTexture(File::GetFile("/icon/icons8-textura-de-renderização-32.png")));
+    iconsUI.emplace(IconType::ICON_PNG,         Resources::LoadTexture(File::GetFile("/icon/icons8-png-24.png")));
+    iconsUI.emplace(IconType::ICON_PLAY_GAME,   Resources::LoadTexture(File::GetFile("/icon/icons8-reproduzir-30.png")));
+    iconsUI.emplace(IconType::ICON_STOP_GAME,   Resources::LoadTexture(File::GetFile("/icon/icons8-parar-50.png")));
+    iconsUI.emplace(IconType::ICON_BIN,         Resources::LoadTexture(File::GetFile("/icon/icons8-resíduos-50.png")));
+    iconsUI.emplace(IconType::ICON_IMPORT,      Resources::LoadTexture(File::GetFile("/icon/icons8-importar-50.png")));
+    iconsUI.emplace(IconType::ICON_ASCENDENTE,  Resources::LoadTexture(File::GetFile("/icon/icons8-ordenar-para-a-direita-50.png")));
+    iconsUI.emplace(IconType::ICON_DESCENDENTE, Resources::LoadTexture(File::GetFile("/icon/icons8-ordem-descendente-50.png")));
+    iconsUI.emplace(IconType::ICON_EDIT,        Resources::LoadTexture(File::GetFile("/icon/icons8-editar-24.png")));
+    iconsUI.emplace(IconType::ICON_ANIMATION,   Resources::LoadTexture(File::GetFile("/icon/motion-graphics.png")));
+    iconsUI.emplace(IconType::ICON_SHADER,      Resources::LoadTexture(File::GetFile("/icon/shade.png")));
 
     s_texturePlayGame = iconsUI[IconType::ICON_PLAY_GAME];
 }

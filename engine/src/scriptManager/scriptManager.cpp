@@ -175,8 +175,9 @@ void ScriptManager::RegisterApi() {
     REGISTER_API(std::size_t, void, GetEntityCount);
     REGISTER_API_FROM_NAME("_ZN6Entity6updateEv", void, Entity *, Entity::Update);
     REGISTER_API_FROM_NAME("_ZN6Entity4initEv", void, Entity *, Entity::Init);
+    REGISTER_API_FROM_NAME_N("_ZN6Entity9setEnableEb", void, Entity::SetEnable, Entity *, bool);
+
     REGISTER_FUNC("_ZN6Entity20addInternalComponentERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE", Entity::addInternalComponent);
-    // REGISTER_API_FROM_NAME("", void, Entity *, const std, Entity::AddInternalComponent);
 
     // Light
     REGISTER_API(std::vector<Light *> &, void, GetListLight);
@@ -221,7 +222,8 @@ void ScriptManager::RegisterApi() {
     REGISTER_API_FROM_NAME_N("CopyComponentWithName", Component *, ScriptManager::CopyComponentWithName, const std::string &, Component *);
 
     // Batching
-    REGISTER_FUNC("_ZN8Batching6removeEP9Transform", Batching::remove);
+    REGISTER_FUNC("_ZN8Batching6removeEP9Transformb", Batching::remove);
+    REGISTER_FUNC("_ZN8Batching6insertEP9Transform", Batching::insert);
 
     // Script
     REGISTER_FUNC("_ZN10MeshRender5buildEv", MeshRender::build);

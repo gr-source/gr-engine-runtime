@@ -3,8 +3,8 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "../core/stb/stb_image.h"
 
-#include "filesystem/filesystem.h"
-#include "filesystem/stream.h"
+#include "core/file/stream.hpp"
+#include "core/file/file.hpp"
 
 #include "core/animation/animation.hpp"
 
@@ -72,7 +72,7 @@ void Resources::Shutdown() {
 
 /***************** TEXTURE ****************/
 grr::gTexture *Resources::LoadTexture(const std::string &path) {
-    if (!std::filesystem::exists(path)) { 
+    if (!File::Exists(path)) { 
         Console::log(LogInfo::ERROR, "[ Resources::LoadTexture ] Falied to load texture: " + path);
         return nullptr;
     }
@@ -108,12 +108,12 @@ grr::gTexture *Resources::LoadTexture(const std::string &path) {
 
 /***************** SHADER ****************/
 grr::gShader *Resources::LoadShader(const std::string &frag, const std::string &vert) {
-    if (!Filesystem::Exists(frag)) {
+    if (!File::Exists(frag)) {
         Console::log(LogInfo::ERROR, "File do not found: " + frag);
         return nullptr;
     }
 
-    if (!Filesystem::Exists(vert)) {
+    if (!File::Exists(vert)) {
         Console::log(LogInfo::ERROR, "File do not found: " + vert);
         return nullptr;
     }
@@ -152,9 +152,9 @@ grr::gShader *Resources::LoadShader(const std::string &frag, const std::string &
 GameObject *Resources::LoadGameObject(const std::string &path) {
     Console::log(LogInfo::INFO, "Reading model...");
 
-    auto name = Filesystem::GetFileName(path);
+    auto name = File::GetFileName(path);
 
-    auto &gameObject = Scene::CreateGameObject(name);
+    auto &gameObject = Scene::GetCurrentScene()->CreateGameObject(name);
     auto &transform = gameObject.getTransform();
 
     {
@@ -166,7 +166,7 @@ GameObject *Resources::LoadGameObject(const std::string &path) {
 }
 
 Animation *Resources::LoadAnimation(const std::string &path) {
-    if (!Filesystem::Exists(path)) {
+    if (!File::Exists(path)) {
         Console::log(LogInfo::ERROR, "Falied to open animation: " + path);
         return nullptr;
     }
@@ -346,7 +346,7 @@ void Resources::ProcessShader() {
         // Loading Fragment shader
         Console::log(LogInfo::WARNING, "Loading FragmentShader: " + frag + " - " + vert);
 
-        auto fragSource = Filesystem::GetFileContent(frag);
+        auto fragSource = File::GetFileContent(frag);
         if (fragSource.empty()) {
             Console::log(LogInfo::ERROR, "Falied to load: " + frag);
             delete shader;
@@ -358,7 +358,7 @@ void Resources::ProcessShader() {
 
         // Loading vertex shader
         Console::log(LogInfo::WARNING, "Loading VertexShader: " + vert);
-        auto vertSource = Filesystem::GetFileContent(vert);
+        auto vertSource = File::GetFileContent(vert);
         if (vertSource.empty()) {
             Console::log(LogInfo::ERROR, "Falied to load: " + vert);
             delete shader;

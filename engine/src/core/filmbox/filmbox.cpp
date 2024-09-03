@@ -1,6 +1,6 @@
 #include "filmbox.hpp"
 
-#include "../../filesystem/filesystem.h"
+#include "core/file/file.hpp"
 #include "core/resources.h"
 
 #include "core/event.hpp"
@@ -31,11 +31,11 @@ void Filmbox::load() {
 }
 
 const bool Filmbox::isValid() const {
-    return Filesystem::Exists(m_path);
+    return File::Exists(m_path);
 }
 
 void Filmbox::doInBackground(const std::string &path) {
-    if (!Filesystem::Exists(path)) {
+    if (!File::Exists(path)) {
         return Console::log(LogInfo::ERROR, "falied to opennable .fbx: " + path);
     }
     Assimp::Importer importer;

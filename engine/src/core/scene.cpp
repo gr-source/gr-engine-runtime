@@ -2,8 +2,8 @@
 
 #include "../scriptManager/scriptManager.hpp"
 
-#include "filesystem/filesystem.h"
-#include "filesystem/stream.h"
+#include "core/file/stream.hpp"
+#include "core/file/file.hpp"
 
 #include "core/binary/gHeader.hpp"
 #include "core/resources.h"
@@ -13,22 +13,47 @@
 #include "script/meshRender.hpp"
 #include "script/transform.hpp"
 
+Scene *Scene::m_current = nullptr;
 
-std::vector<GameObject *> Scene::s_objects;
-
-std::string Scene::m_name = "default";
-
-void Scene::CreateScrene(const std::string &name) {
-    m_name = name;
+Scene *Scene::GetCurrentScene() {
+    return m_current;
 }
 
-void Scene::LoadScene(const std::string &name) {
-    if (!Filesystem::Exists(Filesystem::GetFile("/scenes/" + name))) {
+bool Scene::HasScene() {
+    return m_current != nullptr;
+}
+
+void Scene::Use(Scene *scene) {
+    if (m_current && m_current != scene && m_current->m_enable) {
+        m_current->setEnable(false);
+    }
+    if (scene && scene != m_current && !scene->m_enable) {
+        scene->setEnable(true);
+    }
+    m_current = scene;
+}
+
+Scene::Scene(const std::string &name) : m_name(name), m_enable(true) {}
+
+Scene::~Scene() {
+    for (auto &gameObject : s_objects) {
+        GameObject::Destroy(gameObject);
+    }
+}
+
+const std::string &Scene::getName() const {
+    return m_name;
+}
+
+void Scene::load(const std::string &path) {
+    Scene::Use(this);
+    
+    if (!File::Exists(path)) {
         return Console::log(LogInfo::ERROR, "Falied to load scene, file do not found");
     }
 
-    if (!Stream::open(Filesystem::GetFile("/scenes/" + name), std::ios_base::in | std::ios_base::binary)) {
-        return Console::log(LogInfo::ERROR, "Falied to load scene: " + name);
+    if (!Stream::open(path, std::ios_base::in | std::ios_base::binary)) {
+        return Console::log(LogInfo::ERROR, "Falied to load scene: " + path);
     }
 
     gHeader header{{'g', 'r', 's', 'c'}, 1.0f};
@@ -43,10 +68,39 @@ void Scene::LoadScene(const std::string &name) {
         return Console::log(LogInfo::ERROR, "Falied from load scene, invalid binary model.");
     }
 
+    std::size_t nSize;
+    Stream::read(&nSize, 1);
+
+    m_name.resize(nSize, '\0');
+    Stream::read(m_name.data(), nSize);
+
     ReadScene();
 
     Stream::close();
     Console::log(LogInfo::INFO, "Scene loaded suceess full.");
+}
+
+void Scene::save() {
+    if (!Stream::open(File::GetFile("/scenes/" + m_name + ".scn"), std::ios_base::out | std::ios_base::binary)) {
+        return Console::log(LogInfo::ERROR, "Falied to save scene: " + m_name);
+    }
+
+    gHeader header{{'g', 'r', 's', 'c'}, 1.0f};
+
+    if (!Stream::write(&header, 1)) {
+        Stream::close();
+        return Console::log(LogInfo::ERROR, "Falied from write header scene.");
+    }
+
+    auto nSize = m_name.size();
+    Stream::write(&nSize, 1);
+    Stream::write(m_name.data(), nSize);
+
+    WriteScene();
+
+    Stream::close();
+
+    Console::log(LogInfo::WARNING, "Scene saved: " + m_name);
 }
 
 void Scene::SetSceneName(const std::string &name) {
@@ -91,23 +145,19 @@ void Scene::Clear() {
     s_objects.clear();
 }
 
-void Scene::Save() {
-    if (!Stream::open(Filesystem::GetFile("/scenes/" + m_name), std::ios_base::out | std::ios_base::binary)) {
-        return Console::log(LogInfo::ERROR, "Falied to save scene: " + m_name);
+void Scene::setEnable(bool value) {
+    for (auto &gameObject : s_objects) {
+        setDisableEntity(&gameObject->getTransform(), value);
     }
+    m_enable = value;
+}
 
-    gHeader header{{'g', 'r', 's', 'c'}, 1.0f};
+void Scene::setDisableEntity(Transform *transform, bool value) {
+    Entity::SetEnable(transform->entity, value);
 
-    if (!Stream::write(&header, 1)) {
-        Stream::close();
-        return Console::log(LogInfo::ERROR, "Falied from write header scene.");
+    for (auto &child : transform->getChildren()) {
+        setDisableEntity(child, value);
     }
-
-    WriteScene();
-
-    Stream::close();
-
-    Console::log(LogInfo::WARNING, "Scene saved: " + m_name);
 }
 
 void Scene::WriteScene() {
@@ -290,7 +340,7 @@ void Scene::ReadNode(Transform *parent) {
     std::size_t cSize;
     Stream::read(&cSize, 1);
 
-    auto &gameObject = parent == nullptr ? Scene::CreateGameObject(String::RemoveNumber(name), tag) : GameObject::Create(String::RemoveNumber(name), tag);
+    auto &gameObject = parent == nullptr ? Scene::GetCurrentScene()->CreateGameObject(String::RemoveNumber(name), tag) : GameObject::Create(String::RemoveNumber(name), tag);
     auto &transform = gameObject.getTransform();
     transform.setParent(parent);
 

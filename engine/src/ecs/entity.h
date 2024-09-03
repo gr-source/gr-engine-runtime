@@ -22,7 +22,10 @@ class GameObject;
 class Entity {
 public:
     static void (*Update)(Entity *);
+    
     static void (*Init)(Entity *);
+
+    static void (*SetEnable)(Entity *, bool);
 
     Entity(GameObject *gameObject, EntityID id);
 

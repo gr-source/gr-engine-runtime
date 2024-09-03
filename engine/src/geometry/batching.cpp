@@ -16,6 +16,46 @@ std::unordered_map<std::string, std::unique_ptr<Batching>> Batching::m_batchedMa
 
 std::vector<Batching *> Batching::m_batched;
 
+grm::size Batching::GetBatchedCount() {
+    return m_batched.size();
+}
+
+Batching *Batching::Find(const std::string &name) {
+    auto it = m_batchedMap.find(name);
+    if (it == m_batchedMap.end()) {
+        return nullptr;
+    }
+    return &(*it->second);
+}
+
+void Batching::Delete(const std::string &name) {
+    auto it = m_batchedMap.find(name);
+    if (it == m_batchedMap.end()) {
+        return;
+    }
+
+    m_batched.erase(std::remove(m_batched.begin(), m_batched.end(), &(*it->second)), m_batched.end());
+
+    m_batchedMap.erase(it);
+}
+
+void Batching::Renderer() {
+    Statistics::m_drawRenderCount = 0;
+    Statistics::m_drawCallCount = 0;
+    Statistics::m_totalRender = 0;
+    
+    for (auto &batch : m_batched) {
+        if (!batch->hasModel()) {
+            continue;
+        }
+        batch->compile();
+
+        batch->draw();
+
+        Statistics::m_drawCallCount++;
+    }
+}
+
 Batching::Batching(const std::string &name, std::unordered_map<int, Material> *materials, Mesh *mesh) : m_name(name), m_materials(materials), m_vertexArray(nullptr), m_indiceCount(0), m_primCount(0), m_VBO(0), m_EBO(0), m_PBO(0), bHasIndice(false), isCompiled(false) {
     compileMesh(mesh);
 }
@@ -42,10 +82,10 @@ void Batching::insert(Transform *transform) {
     m_models.emplace_back(transform);
 }
 
-void Batching::remove(Transform *transform) {
+void Batching::remove(Transform *transform, bool bDelete) {
     m_models.erase(std::remove(m_models.begin(), m_models.end(), transform), m_models.end());
 
-    if (m_models.empty()) {
+    if (m_models.empty() && bDelete) {
         Batching::Delete(m_name);
     }
 }
@@ -192,39 +232,6 @@ void Batching::setupMaterial() {
     }
 }
 
-void Batching::Renderer() {
-    Statistics::m_drawRenderCount = 0;
-    Statistics::m_drawCallCount = 0;
-    Statistics::m_totalRender = 0;
-    
-    for (auto &batch : m_batched) {
-        batch->compile();
-
-        batch->draw();
-
-        Statistics::m_drawCallCount++;
-    }
-}
-
-Batching *Batching::Find(const std::string &name) {
-    auto it = m_batchedMap.find(name);
-    if (it == m_batchedMap.end()) {
-        return nullptr;
-    }
-    return &(*it->second);
-}
-
-void Batching::Delete(const std::string &name) {
-    auto it = m_batchedMap.find(name);
-    if (it == m_batchedMap.end()) {
-        return;
-    }
-
-    m_batched.erase(std::remove(m_batched.begin(), m_batched.end(), &(*it->second)), m_batched.end());
-
-    m_batchedMap.erase(it);
-}
-
-grm::size Batching::GetBatchedCount() {
-    return m_batched.size();
+bool Batching::hasModel() const {
+    return !m_models.empty();
 }

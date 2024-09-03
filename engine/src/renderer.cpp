@@ -19,8 +19,8 @@ bool DebugDraw::bDebugMode = false;
 grm::u32 DebugDraw::m_vbo = 0;
 
 void DebugDraw::Initialize() {
-    auto frag = Filesystem::GetFileContent(Filesystem::GetFile("/shader/ShaderPrimitive.frag"));
-    auto vert = Filesystem::GetFileContent(Filesystem::GetFile("/shader/ShaderPrimitive.vert"));
+    auto frag = File::GetFileContent(File::GetFile("/shader/ShaderPrimitive.frag"));
+    auto vert = File::GetFileContent(File::GetFile("/shader/ShaderPrimitive.vert"));
 
     auto fSource = frag.c_str();
     auto vSource = vert.c_str();

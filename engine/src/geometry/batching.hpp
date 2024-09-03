@@ -9,18 +9,7 @@
 
 class Batching {
 public:
-    Batching(const std::string &name, std::unordered_map<int, Material> *materials, Mesh *mesh);
-    ~Batching();
-
-    void insert(Transform *transform);
-
-    void remove(Transform *transform);
-
-    void draw();
-
-    void rebuild();
-
-    static void Renderer();
+    static grm::size GetBatchedCount();
 
     static Batching *Find(const std::string &name);
 
@@ -29,7 +18,20 @@ public:
     template <typename ...Args>
     static Batching &Add(const std::string &key, Args &&...args);
 
-    static grm::size GetBatchedCount();
+    static void Renderer();
+    
+    Batching(const std::string &name, std::unordered_map<int, Material> *materials, Mesh *mesh);
+    ~Batching();
+
+    void insert(Transform *transform);
+
+    void remove(Transform *transform, bool bDelete = true);
+
+    void draw();
+
+    void rebuild();
+
+    bool hasModel() const;
 
 private:
     static std::unordered_map<std::string, std::unique_ptr<Batching>> m_batchedMap;

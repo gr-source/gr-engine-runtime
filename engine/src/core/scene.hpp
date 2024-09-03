@@ -8,34 +8,51 @@
 
 class Scene {
 public:
-    static void CreateScrene(const std::string &name);
+    static Scene *GetCurrentScene();
 
-    static void LoadScene(const std::string &name);
+    static bool HasScene();
 
-    static void SetSceneName(const std::string &name);
-
-    static const std::string &GetSceneName();
-
-    static GameObject &CreateGameObject(const std::string &name, const std::string &tag = "untagged");
-
-    static std::vector<GameObject *> &GetGameObjects();
-
-    static void Add(GameObject *gameObject);
+    static void Use(Scene *scene);
     
-    static void Remove(GameObject *gameObject);
+    Scene(const std::string &name);
+    ~Scene();
 
-    static void Delete(GameObject *gameObject);
+    const std::string &getName() const;
+    
+    void load(const std::string &path);
 
-    static void Clear();
+    void save();
 
-    static void Save();
+    void SetSceneName(const std::string &name);
 
-private:
-    static std::vector<GameObject *> s_objects;
+    const std::string &GetSceneName();
 
-    static std::string m_name;
+    GameObject &CreateGameObject(const std::string &name, const std::string &tag = "untagged");
 
-    static void WriteScene();
+    std::vector<GameObject *> &GetGameObjects();
+
+    void Add(GameObject *gameObject);
+    
+    void Remove(GameObject *gameObject);
+
+    void Delete(GameObject *gameObject);
+
+    void Clear();
+
+private:    
+    static Scene *m_current;
+
+    std::vector<GameObject *> s_objects;
+
+    std::string m_name;
+
+    bool m_enable;
+
+    void setEnable(bool value);
+
+    void setDisableEntity(Transform *transform, bool value);
+
+    void WriteScene();
 
     static void WriteMaterial(const std::string &name, std::unordered_map<int, Material> &materials);
 

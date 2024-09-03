@@ -15,6 +15,8 @@ class Game {
 public:
     static void Initialize();
 
+    static void Shutdown();
+
     static void RenderUI();
 
     static void DropFile(const std::filesystem::path &path);
@@ -22,11 +24,11 @@ public:
     static void KeyBoardUp(grm::u32 key);
 
 private:
-    /* Seleciona um objeto no scenes(UI)*/
-    static GameObject *s_objectSelected;
-    
-    /* Textura do play button */
     static grr::gTexture *s_texturePlayGame;
+
+    static std::unordered_map<std::string, std::shared_ptr<Scene>> m_scenes;
+
+    static GameObject *s_objectSelected;
 
     static ImGuiIO* s_io;
 
@@ -48,6 +50,8 @@ private:
 
     static ImVec4 FPSColor;
 
+    static ImVec2 m_lastViewportSize;
+
     static ImGuizmo::OPERATION m_guizmoOperation;
 
     static ImGuizmo::MODE m_guizmoManipulate;
@@ -62,6 +66,8 @@ private:
 
     static void RenderScenesUI();
 
+    static void RenderHierarchi();
+
     static void RenderPage(std::vector<GameObject *> &list, int page);
 
     static void ReadHierarchy(Transform* transform);
@@ -73,6 +79,14 @@ private:
     static void PopupRenameGameObject();
 
     static void RenderViewportUI();
+
+    static void DropSceneInViewport();
+
+    static void RenderScene();
+
+    static void DropGameObjectInScene();
+
+    static void PopupMenuCreateScene();
 
     static void RenderFilesUI();
 
@@ -116,6 +130,7 @@ private:
     static void OnPropertyMeshRender(MeshRender* meshRender);
 
     static void OnPropertyAnimator(Animator* animator);
+
     static void OnPropertyLight(Light *light);
 
     static void TextureInfo(Texture*& texture);

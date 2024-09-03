@@ -1,4 +1,4 @@
-#include "stream.h"
+#include "stream.hpp"
 
 std::fstream Stream::stream;
 

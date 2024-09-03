@@ -11,11 +11,11 @@
 #include "script/camera.hpp"
 #include "script/light.hpp"
 
+#include "core/file/file.hpp"
+
 #include "core/resources.h"
 
 #include "scriptManager/scriptManager.hpp"
-
-#include "filesystem/filesystem.h"
 
 #include "geometry/batching.hpp"
 

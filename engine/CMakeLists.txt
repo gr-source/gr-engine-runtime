@@ -109,6 +109,16 @@ set(core_ecs_hdr
     src/core/ecs/componentPool.hpp
 )
 
+set(core_file_src
+    src/core/file/stream.cpp
+    src/core/file/file.cpp
+)
+
+set(core_file_hdr
+    src/core/file/stream.hpp
+    src/core/file/file.hpp
+)
+
 set(engine_src
     ${core_src}
     ${guizmo_src}
@@ -116,6 +126,7 @@ set(engine_src
     ${filmbox_src}
     ${core_ecs_src}
     ${animation_src}
+    ${core_file_src}
     ${simplexNoise_src}
     ${scriptManager_cpp}
     
@@ -156,9 +167,6 @@ set(engine_src
 
     src/culling/frustum.cpp
 
-    src/filesystem/filesystem.cpp
-    src/filesystem/stream.cpp
-
     src/physics/physicsScene.cpp
 )
 
@@ -169,6 +177,7 @@ set(engine_hdr
     ${filmbox_hdr}
     ${core_ecs_hdr}
     ${animation_hdr}
+    ${core_file_hdr}
     ${scriptManager_hdr}
 
     src/timer.h
@@ -207,9 +216,6 @@ set(engine_hdr
 
     src/culling/frustum.h
     
-    src/filesystem/filesystem.h
-    src/filesystem/stream.h
-
     src/physics/physicsScene.h
 )
 
