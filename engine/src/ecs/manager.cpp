@@ -17,6 +17,9 @@ grm::size Manager::m_entityCount = 0;
 bool Manager::bPlayScript = true;
 
 Entity &Manager::CreateEntity(GameObject * gameObject) {
+    if (!gameObject) {
+        throw std::runtime_error("GameObject ptr is not valid.");
+    }
     auto hasAvailable = !m_available.empty();
 
     auto id = (hasAvailable ? m_available.back() : m_entityCount++);
@@ -26,14 +29,12 @@ Entity &Manager::CreateEntity(GameObject * gameObject) {
     
     auto &entity = m_mapEntities[id] = std::make_unique<Entity>(gameObject, id);
 
-    m_entity.push_back(&(*entity));
-
-    return *entity;
+    return *m_entity.emplace_back(&(*entity));
 }
 
 void Manager::DestroyEntity(Entity *entity) {
     if (!entity) {
-        return;
+        throw std::runtime_error("Entity is not valid.");
     }
 
     auto id = entity->getEntityID();
@@ -62,6 +63,7 @@ void Manager::Update() {
             Entity::Update(m_entity[j]);
         }
     }
+
 }
 
 grm::size Manager::GetEntityCount() {

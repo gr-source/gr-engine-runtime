@@ -161,6 +161,19 @@ void Scene::setDisableEntity(Transform *transform, bool value) {
 }
 
 void Scene::WriteScene() {
+    // textures
+    auto &textureMap = Resources::GetTextureMap();
+    auto tSize = textureMap.size();
+
+    Stream::write(&tSize, 1);
+
+    for (auto &&[path, ptr] : textureMap) {
+        auto pSize = path.size();
+
+        Stream::write(&pSize, 1);
+        Stream::write(path.data(), pSize);
+    }
+
     // Materials
     auto &materialMap = Resources::GetMaterialMap();
     auto mSize = materialMap.size();
@@ -262,6 +275,20 @@ void Scene::WriteGameObject(GameObject *gameObject) {
 }
 
 void Scene::ReadScene() {
+    // Textures
+    std::size_t tSize;
+    Stream::read(&tSize, 1);
+
+    for (int i=0;i<tSize;i++) {
+        std::size_t pSize;
+        Stream::read(&pSize, 1);
+
+        std::string path(pSize, '\0');
+        Stream::read(path.data(), pSize);
+
+        Resources::LoadTexture(path);
+    }
+
     // Materials
     std::size_t mSize;
     Stream::read(&mSize, 1);

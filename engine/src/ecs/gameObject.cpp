@@ -20,6 +20,7 @@ GameObject &GameObject::Create(const std::string &name, const std::string &tag) 
     auto newName = AddNameID(name);
 
     auto &&[it, added] = s_mapObject.emplace(newName, std::make_unique<GameObject>(newName, tag));
+    assert(added && "Object overwrite.");
 
     auto &gameObject = it->second;
 
@@ -29,7 +30,7 @@ GameObject &GameObject::Create(const std::string &name, const std::string &tag) 
 }
 
 GameObject &GameObject::Instantiate(GameObject *target) {
-    auto &gameObject = GameObject::Create(target->m_name, target->m_tag);
+    auto &gameObject = GameObject::Create(String::RemoveNumber(target->m_name), target->m_tag);
 
     gameObject.getEntity()->copy(target->getEntity());
 
@@ -63,21 +64,20 @@ void GameObject::Rename(GameObject *gameObject, std::string name) {
 
 void GameObject::Destroy(GameObject *target) {
     if (!target) {
-        return;
-    }
-
-    auto &transform = target->getTransform();
-    transform.setParent(nullptr);
-
-    for (auto &child : transform.getChildren()) {
-        auto gameObject = child->getGameObject();
-
-        Event::Add(&GameObject::Destroy, gameObject);
+        throw std::runtime_error("GameObject not is valid.");
     }
 
     auto it = s_mapObject.find(target->getName());
     if (it == s_mapObject.end()) {
-        return;
+        throw std::runtime_error("Gameobject do not found: " + target->getName());
+    }
+
+    auto &transform = target->getTransform();
+
+    for (auto &child : transform.getChildren()) {
+        auto gameObject = child->getGameObject();
+
+        GameObject::Destroy(gameObject);
     }
 
     s_mapObject.erase(it);

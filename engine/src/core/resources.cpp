@@ -794,5 +794,17 @@ const grm::size Resources::GetMeshCount() {
     return count;
 }
 
+std::string Resources::GetTextureKeyMap(grr::gTexture *texture) {
+    auto it = std::find_if(s_textureList.begin(), s_textureList.end(), [&texture](const auto &tuple) {
+        return &(*std::get<std::unique_ptr<grr::gTexture>>(tuple)) == texture;
+    });
 
+    if (it == s_textureList.end()) {
+        return "";
+    }
+    return it->first;
+}
 
+std::unordered_map<std::string, std::unique_ptr<grr::gTexture>> &Resources::GetTextureMap() {
+    return s_textureList;
+}

@@ -1415,6 +1415,18 @@ void Game::RenderField(Field &field, Component *component) {
     auto name = field.getName();
     auto type = field.getType();
 
+    if (type == "bool") {
+        auto data = Field::GetFieldData<bool>(component, field);
+
+        ImGui::PushStyleColor(ImGuiCol_Button, {0.0f, 0.0f, 0.0f, 1.0f});
+        *data = ImGui::Button(name.c_str());
+        ImGui::PopStyleColor();
+        return;
+    }
+
+    ImGui::Text("%s:", name.c_str());
+    name = "##" + name;
+    
     if (type == "float") {
         auto data = Field::GetFieldData<float>(component, field);
 

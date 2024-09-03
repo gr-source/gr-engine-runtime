@@ -26,7 +26,11 @@ Component *Entity::addComponent(const std::string &name) {
 }
 
 Component *Entity::getComponent(const std::string &name) {
-    return &(*m_componentPtr[name]);
+    auto component = &(*m_componentPtr[name]);
+    if (!component) {
+        throw std::runtime_error("Component is inavlid.");
+    }
+    return component;
 }
 
 bool Entity::hasComponent(const std::string &name) const {
@@ -42,17 +46,28 @@ std::unordered_map<std::string, std::shared_ptr<Component>> &Entity::getComponen
 #include <tuple>
 
 void Entity::copy(Entity *entity) {
+    if (!entity) {
+        throw std::runtime_error("Entity do not is valid.");
+    }
+
     std::list<std::tuple<std::string, Component *>> m_list;
     for (auto &&[name, ptr] : entity->m_componentPtr) {
         m_list.emplace_front(name, &(*ptr));
     }
 
     for (auto &&[name, ptr] : m_list) {
+        if (!ptr) {
+            throw std::runtime_error("Component is not valid: " + name);
+        }
+        
         if (name == "Transform") {
             continue;
         }
 
-        auto component = ScriptManager::CopyComponentWithName(name, &(*ptr));
+        auto component = ScriptManager::CopyComponentWithName(name, ptr);
+        if (!component) {
+            throw std::runtime_error("Falied to copy component: " + name);
+        }
         component->entity = this;
         component->Init();
 
@@ -66,10 +81,16 @@ void Entity::copy(Entity *entity) {
         }
     }
 
-    auto &transform = entity->getGameObject()->getTransform();
-    auto &localTransform = getGameObject()->getTransform();
+    auto targetGameObject = entity->getGameObject();
+    if (!targetGameObject) {
+        throw std::runtime_error("GameObject is invalid");
+    }
 
-    // localTransform.setLocalScale(transform.getloca());
+    auto &transform = targetGameObject->getTransform();
+
+    auto &localTransform = m_gameObject->getTransform();
+
+    localTransform.setLocalScale(transform.getLocalScale());
     localTransform.setLocalRotation(transform.getLocalRotation());
     localTransform.setLocalPosition(transform.getLocalPosition());
 
@@ -82,7 +103,7 @@ void Entity::copy(Entity *entity) {
     for (auto &child : transform.getChildren()) {
         auto objectPtr = child->getGameObject();
         if (!objectPtr) {
-            continue;
+            throw std::runtime_error("Child do not is valid of: " + targetGameObject->getName());
         }
 
         auto &clone = GameObject::Instantiate(objectPtr);
@@ -100,9 +121,15 @@ bool Entity::isActive() const {
 }
 
 Component *Entity::addInternalComponent(const std::string &name) {
-    assert(ScriptManager::CreateComponentWithName && "Falied porcess Component");
+    if (!ScriptManager::CreateComponentWithName) {
+        throw std::runtime_error("Failed to process Component: CreateComponentWithName is null");
+    }
 
     auto component = ScriptManager::CreateComponentWithName(name);
+    if (!component) {
+        throw std::runtime_error("Failed to generate component for name: " + name);
+    }
+    
     component->entity = this;
     component->Init();
 

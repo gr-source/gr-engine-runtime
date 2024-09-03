@@ -1,5 +1,7 @@
 #include "material.h"
 
+#include "core/resources.h"
+
 Material::Material(const std::string &name, const Vector4 &albedo, float metallic, float roughness, float ao) : m_name(name), m_albedo(albedo), m_metallic(metallic), m_roughness(roughness), m_ao(ao), m_texture(10, nullptr) {}
 
 const std::string &Material::getName() const {
@@ -54,6 +56,18 @@ void Material::serialize(std::ostream &os) const {
 
     // serialize ao
     os.write(reinterpret_cast<const char *>(&m_ao), sizeof(float));
+
+    auto tSize = m_texture.size();
+    os.write(reinterpret_cast<const char *>(&tSize), sizeof(std::size_t));
+
+    for (int i = 0;i<m_texture.size();i++) {
+        os.write(reinterpret_cast<const char *>(&i), sizeof(int));
+        auto name = Resources::GetTextureKeyMap(m_texture[i]);
+
+        nSize = name.size();
+        os.write(reinterpret_cast<const char *>(&nSize), sizeof(std::size_t));
+        os.write(name.data(), nSize * sizeof(char));
+    }
 }
 
 void Material::deserialize(std::istream &is) {
@@ -75,4 +89,21 @@ void Material::deserialize(std::istream &is) {
 
     // deserialize ao
     is.read(reinterpret_cast<char *>(&m_ao), sizeof(float));
+
+    std::size_t tSize = 0;
+    is.read(reinterpret_cast<char *>(&tSize), sizeof(std::size_t));
+
+    for (int i=0;i<tSize;i++) {
+        int id = 0;
+        is.read(reinterpret_cast<char *>(&id), sizeof(int));
+        is.read(reinterpret_cast<char *>(&nSize), sizeof(std::size_t));
+
+        std::string name(nSize, '\0');
+        is.read(name.data(), nSize * sizeof(char));
+
+        if (name.empty()) {
+            continue;
+        }
+        m_texture[id] = Resources::LoadTexture(name);
+    }
 }

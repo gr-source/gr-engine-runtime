@@ -7,6 +7,8 @@
 
 class Transform : public Component {
 public:
+    Transform() = delete;
+
     void setLocalScale(const Vector3 &value);
 
     const Vector3 getLocalScale() const;
@@ -65,8 +67,6 @@ private:
     void updateLocalMatrix();
 
     void updateGlobalMatrix();
-
-    friend class Scene;
 };
 
 

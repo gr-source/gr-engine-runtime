@@ -48,7 +48,7 @@ target_include_directories(engine PRIVATE imgui/src imgui/src/backends ${BULLET_
 
 target_link_libraries(engine PRIVATE ${OPENGL_LIBRARIES} ${GRMATH_LIBRARIES} ${GRRENDER_LIBRARIES} ${BULLET_LIBRARIES})
 
-target_compile_definitions(engine PRIVATE IS_GAME=0 OPENGL_DEBUG=1)
+target_compile_definitions(engine PRIVATE IS_GAME=0 DEBUG=1)
 
 
 #### IMGUI ####

@@ -3,6 +3,7 @@
 #include <unordered_map>
 #include <algorithm>
 #include <stdexcept>
+#include <cassert>
 #include <memory>
 #include <vector>
 #include <bitset>
@@ -27,6 +28,7 @@ public:
 
     static void (*SetEnable)(Entity *, bool);
 
+    Entity() = delete;
     Entity(GameObject *gameObject, EntityID id);
 
     template <typename T>
@@ -70,12 +72,20 @@ private:
 
 template <typename T>
 inline T &Entity::addComponent() {
-    return *dynamic_cast<T *>(addInternalComponent(String::RemoveNumber(typeid(T).name())));
+    auto component = addInternalComponent(String::RemoveNumber(typeid(T).name()));
+    if (!component) {
+        throw std::runtime_error("Component is null.");
+    }
+    return *dynamic_cast<T *>(component);
 }
 
 template <typename T>
 inline T &Entity::getComponent() {
-    return *dynamic_cast<T *>(&(*m_componentPtr[String::RemoveNumber(typeid(T).name())]));
+    auto component = &(*m_componentPtr[String::RemoveNumber(typeid(T).name())]);
+    if (!component) {
+        throw std::runtime_error("Component is inavlid.");
+    }
+    return *dynamic_cast<T *>(component);
 }
 
 template <typename T>

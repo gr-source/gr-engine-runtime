@@ -12,6 +12,8 @@ public:
         eSpot      = 2,
     };
 
+    Light() = delete;
+
     Vector3 getposition() const;
 
     Vector3 getForward() const;

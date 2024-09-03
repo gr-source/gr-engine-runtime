@@ -20,7 +20,8 @@ public:
 
     static void Clear();
 
-    GameObject(const std::string& name = "default", const std::string& tag = "unttaged");
+    GameObject() = delete;
+    GameObject(const std::string& name, const std::string& tag = "unttaged");
     ~GameObject();
 
     const std::string &getName();

@@ -29,11 +29,9 @@ private:
 
 class Pool {
 public:
-    virtual Component *CreateInstanceFrom(Component *component) = 0;
+    virtual Component *CreateInstanceFrom(const Component *component) = 0;
 
     virtual Component *CreateInstance() = 0;
-
-    virtual grm::size GetSize() = 0;
 
     std::vector<Field> &getFields();
 
@@ -41,11 +39,6 @@ private:
     std::unordered_map<std::string, grm::size> m_fieldID;
 
     std::vector<Field> m_fieldMap;
-};
-
-template <typename T>
-class ComponentPool : public Pool {
-public:
 };
 
 template <typename T>

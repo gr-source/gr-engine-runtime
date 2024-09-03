@@ -9,6 +9,8 @@
 
 class Animator : public Component {
 public:
+    Animator() = delete;
+    
     void UpdateAnim();
 
     void insert(Animation *animation);

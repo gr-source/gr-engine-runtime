@@ -10,6 +10,8 @@ class Entity;
 
 class Component {
 public:
+    Component();
+    
     virtual void Init() {}
 
     virtual void Start() {}
@@ -26,9 +28,9 @@ public:
 
     virtual ~Component() {}
     
-    Entity* entity;
-
     GameObject *getGameObject();
+
+    Entity* entity;
 };
 
 

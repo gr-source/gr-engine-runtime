@@ -276,6 +276,9 @@ void ScriptManager::RegisterApi() {
 
     // Script
     REGISTER_FUNC("_ZN10MeshRender5buildEv", MeshRender::build);
+
+    // GameObject
+    REGISTER_FUNC("_ZN10GameObject11InstantiateEPS_", GameObject::Instantiate);
 }
 
 

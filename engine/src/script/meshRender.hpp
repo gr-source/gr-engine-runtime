@@ -11,6 +11,8 @@
 
 class MeshRender : public Component {
 public:
+    MeshRender() = delete;
+
     std::unordered_map<int, Material> &getMaterials();
 
     Material &addMaterial(int idx, const Material& material);

@@ -64,6 +64,10 @@ public:
     
     static const grm::size GetMeshCount();
 
+    static std::string GetTextureKeyMap(grr::gTexture *texture);
+
+    static std::unordered_map<std::string, std::unique_ptr<grr::gTexture>> &GetTextureMap();
+
 private:
     /***************** Shader *****************/
     static std::unordered_map<std::string, std::unique_ptr<grr::gShader>> s_shaderList;
@@ -81,7 +85,6 @@ private:
     static std::unordered_map<std::string, std::unique_ptr<Animation>> s_animationList;
     static std::list<std::tuple<std::string, Animation *>> s_animationFromLoader;
     static std::mutex s_animatioMutex;
-
 
     /***************** GameObject *****************/
     static std::list<std::tuple<std::string, Transform *>> s_gameObjectFromLoader;
