@@ -86,17 +86,14 @@ void Entity::copy(Entity *entity) {
         throw std::runtime_error("GameObject is invalid");
     }
 
-    auto &transform = targetGameObject->getTransform();
-
     auto &localTransform = m_gameObject->getTransform();
 
+    auto &transform = targetGameObject->getTransform();
     localTransform.setLocalScale(transform.getLocalScale());
     localTransform.setLocalRotation(transform.getLocalRotation());
     localTransform.setLocalPosition(transform.getLocalPosition());
 
-    if (auto parent = transform.getParent()) {
-        localTransform.setParent(parent);
-    } else {
+    if (!transform.hasParent()) {
         Scene::GetCurrentScene()->Add(getGameObject());
     }
 
