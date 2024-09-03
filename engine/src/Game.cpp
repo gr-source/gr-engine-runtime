@@ -88,6 +88,7 @@ enum IconType {
 	ICON_EDIT         = 14,
 	ICON_ANIMATION    = 15,
 	ICON_SHADER       = 16,
+	ICON_SCENE        = 17,
 };
 
 std::unordered_map<IconType, grr::gTexture *> iconsUI;
@@ -466,6 +467,32 @@ void Game::KeyBoardUp(grm::u32 key) {
         s_io->MouseDrawCursor = !s_io->MouseDrawCursor;
 }
 
+void Game::LoadScript() {
+    ScriptManager::Initialize();
+
+    if (ScriptManager::SetScreenSize) {
+        ScriptManager::SetScreenSize(Settings::ViewportSize);
+    }
+
+    RenderManager::Initialize();
+
+    ScreenRender::Initialize();
+
+    Manager::Replay();
+
+    bScriptReloaded = true;
+}
+
+void Game::UnloadScript() {
+    Manager::Stop();
+
+    RenderManager::Shutdown();
+
+    ScreenRender::Shutdown();
+
+    ScriptManager::Shutdown();
+}
+
 // ===================================== END =========================================================
 void Game::RenderUI() {
     if (Resources::m_processCount != 0) {
@@ -787,11 +814,8 @@ void Game::DropSceneInViewport() {
 }
 
 void Game::RenderScene() {
-    auto size = ImGui::GetItemRectSize();
-    auto pos = ImGui::GetCursorPos();
-
-    ImGuizmo::SetDrawlist();
-    ImGuizmo::SetRect(pos.x, pos.y, size.x, size.y);
+    auto cursorY = ImGui::GetCursorPosY();
+    cursorY += 5.0f;
 
     ImVec2 curSize = ImGui::GetContentRegionAvail();
     if (m_lastViewportSize.x != curSize.x || m_lastViewportSize.y != curSize.y && curSize.x > 5.0f && curSize.y > 5.0f || bScriptReloaded) {
@@ -819,11 +843,34 @@ void Game::RenderScene() {
         DropGameObjectInScene();
     }
 
-    /*
+    auto cursorPos =  ImGui::GetCursorPos();
+    auto pos = ImGui::GetWindowPos();
 
-    // ImGui::SetCursorPos({curSize.x / 2.0f, curSize.y / 2.0f});
-// 
-    // ImGui::Text("X");
+    // Play button
+    {
+        ImGui::SetCursorPos(ImVec2(curSize.x / 2 - cursorPos.x, cursorY));
+
+        if (ImGui::ImageButton(reinterpret_cast<ImTextureID>(s_texturePlayGame->getID()), ImVec2(16, 16))) {
+            Settings::IsGameRunning =! Settings::IsGameRunning;
+
+            if (Settings::IsGameRunning) {
+                s_texturePlayGame = iconsUI[IconType::ICON_STOP_GAME];
+
+                UnloadScript();
+
+                s_objectSelected = nullptr;
+            } else {
+                s_texturePlayGame = iconsUI[IconType::ICON_PLAY_GAME];
+
+                LoadScript();
+
+                bScriptReloaded = true;
+            }
+        }
+    }
+
+    ImGuizmo::SetDrawlist();
+    ImGuizmo::SetRect(pos.x, pos.y + (cursorY - 5.0f), curSize.x, curSize.y);
 
     if (s_objectSelected != nullptr) {
         if (s_io->KeyCtrl && ImGui::IsKeyReleased(ImGuiKey_T)) {
@@ -861,31 +908,6 @@ void Game::RenderScene() {
         }
     }
 
-    const ImVec2 wSize =  ImGui::GetCursorPos();
-
-    // Play button
-    {
-        ImGui::SetCursorPos(ImVec2(curSize.x / 2 - wSize.x, 32));
-
-        if (ImGui::ImageButton(reinterpret_cast<ImTextureID>(s_texturePlayGame->getID()), ImVec2(16, 16))) {
-            Settings::IsGameRunning =! Settings::IsGameRunning;
-
-            if (Settings::IsGameRunning) {
-                s_texturePlayGame = iconsUI[IconType::ICON_STOP_GAME];
-
-                StopGame();
-
-                s_objectSelected = nullptr;
-            } else {
-                s_texturePlayGame = iconsUI[IconType::ICON_PLAY_GAME];
-
-                PlayGame();
-
-                bScriptReloaded = true;
-            }
-        }
-    }
-
     if (TimeLast::FPS > 50) {
         FPSColor = {0, 255, 0, 255};
     } else if (TimeLast::FPS > 25) {
@@ -900,14 +922,14 @@ void Game::RenderScene() {
 
         auto textSize = ImGui::CalcTextSize(fps.c_str());
 
-        auto curtorPos = ImVec2(curSize.x - textSize.x, textSize.y * 2.5f);
+        auto curtorPos = ImVec2(curSize.x - textSize.x, cursorY + textSize.y);
 
         ImGui::SetCursorPos(curtorPos);
 
         ImGui::TextColored(FPSColor, "FPS: %.2f", TimeLast::FPS);
     }
 
-    ImGui::SetCursorPos({8.0f, 35.0f});
+    ImGui::SetCursorPos({8.0f, cursorY});
 
     ImGui::PushStyleColor(ImGuiCol_Text, {0.0f, 0.0f, 1.0f, 1.0f});
 
@@ -926,7 +948,6 @@ void Game::RenderScene() {
     if (s_objectSelected && ImGui::IsWindowFocused() && s_io->KeyShift && ImGui::IsKeyReleased(ImGuiKey_D) && GameObject::Instantiate) {
         s_objectSelected = &GameObject::Instantiate(s_objectSelected);
     }
-    */
 }
 
 void Game::DropGameObjectInScene() {
@@ -971,7 +992,7 @@ void Game::RenderFilesUI() {
     grr::gTexture *gtCurrentTexture = iconsUI[ICON_BACK_FILE];
 
     ImGui::BeginColumns("##colums_01", 5, ImGuiColumnsFlags_NoBorder);
-    if (ImGui::ImageButton(reinterpret_cast<ImTextureID>(gtCurrentTexture->getID()), ImVec2(32, 32), ImVec2(0, 1), ImVec2(1, 0)) && m_currentFile.has_parent_path()) {
+    if (ImGui::ImageButton(reinterpret_cast<ImTextureID>(gtCurrentTexture->getID()), {Settings::IconSize.x, Settings::IconSize.y}, ImVec2(0, 1), ImVec2(1, 0)) && m_currentFile.has_parent_path()) {
         m_currentFile = m_currentFile.parent_path();
 
         if (!bCutAllFile && !bCopyAllFile) {
@@ -1030,11 +1051,11 @@ void Game::RenderFilesUI() {
         } else {
             if (extension == ".gmd") {
                 gtCurrentTexture = iconsUI[ICON_GAMEOBJECT];
-            }
-            if (extension == ".anm") {
+            } else if (extension == ".anm") {
                 gtCurrentTexture = iconsUI[ICON_ANIMATION];
-            }
-            if (extension == ".frag" || extension == ".vert") {
+            } else if (extension == ".scn") {
+                gtCurrentTexture = iconsUI[ICON_SCENE];
+            }else if (extension == ".frag" || extension == ".vert") {
                 gtCurrentTexture = iconsUI[ICON_SHADER];
             }
         }
@@ -1055,7 +1076,7 @@ void Game::RenderFilesUI() {
             bFileDoubleClick = false;
         }
 
-        if (ImGui::ImageButton(reinterpret_cast<ImTextureID>(gtCurrentTexture->getID()), ImVec2(32, 32), ImVec2(0, 1), ImVec2(1, 0), -1, {0.0f, 0.0f, 0.0f, 0.0f}, tintColor) && !s_io->KeyShift) {
+        if (ImGui::ImageButton(reinterpret_cast<ImTextureID>(gtCurrentTexture->getID()), {Settings::IconSize.x, Settings::IconSize.y}, ImVec2(0, 1), ImVec2(1, 0), -1, {0.0f, 0.0f, 0.0f, 0.0f}, tintColor) && !s_io->KeyShift) {
             if (file.is_directory()) {
                 m_currentFile = path;
             }
@@ -1475,7 +1496,7 @@ void Game::OnPropertyMeshRender(MeshRender *meshRender) {
                     auto texture = material.getTexture(0);
 
                     if (texture != nullptr && texture->isValid()) {
-                        ImGui::Image(reinterpret_cast<ImTextureID>(texture->getID()), ImVec2(32, 32));
+                        ImGui::Image(reinterpret_cast<ImTextureID>(texture->getID()), {Settings::IconSize.x, Settings::IconSize.y});
                         if (ImGui::IsItemHovered() && ImGui::IsKeyDown(ImGuiKey_X)) {
                             texture = nullptr;
                         }
@@ -1647,30 +1668,6 @@ void Game::TextureInfo(Texture *&texture) {
     }
 }
 
-void Game::PlayGame() {
-    ScriptManager::Initialize();
-
-    if (ScriptManager::SetScreenSize) {
-        ScriptManager::SetScreenSize(Settings::ViewportSize);
-    }
-
-    RenderManager::Initialize();
-
-    ScreenRender::Initialize();
-
-    Manager::Replay();
-}
-
-void Game::StopGame() {
-    Manager::Stop();
-
-    RenderManager::Shutdown();
-
-    ScreenRender::Shutdown();
-
-    ScriptManager::Shutdown();
-}
-
 void Game::loadReources() {
     iconsUI.emplace(IconType::ICON_FILE,        Resources::LoadTexture(File::GetFile("/icon/icons8-file-30.png")));
     iconsUI.emplace(IconType::ICON_FOLDER,      Resources::LoadTexture(File::GetFile("/icon/icons8-folder-50.png")));
@@ -1689,6 +1686,7 @@ void Game::loadReources() {
     iconsUI.emplace(IconType::ICON_EDIT,        Resources::LoadTexture(File::GetFile("/icon/icons8-editar-24.png")));
     iconsUI.emplace(IconType::ICON_ANIMATION,   Resources::LoadTexture(File::GetFile("/icon/motion-graphics.png")));
     iconsUI.emplace(IconType::ICON_SHADER,      Resources::LoadTexture(File::GetFile("/icon/shade.png")));
+    iconsUI.emplace(IconType::ICON_SCENE,       Resources::LoadTexture(File::GetFile("/icon/studio-set.png")));
 
     s_texturePlayGame = iconsUI[IconType::ICON_PLAY_GAME];
 }

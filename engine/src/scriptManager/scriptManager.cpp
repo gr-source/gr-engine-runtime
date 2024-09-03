@@ -7,13 +7,18 @@
 
 #include "core/resources.h"
 #include "core/scene.hpp"
+#include "core/event.hpp"
 
 #include "../ecs/entity.h"
 
 #include "../input.h"
 #include "../memory.h"
 
+#include "settings.h"
+#include "Game.h"
+
 #include <iostream>
+#include <fstream>
 #include <dlfcn.h>
 
 #define REGISTER_API(r, p, f) \
@@ -43,6 +48,12 @@
 
 // #define REGISTER_FIELD(n, f, ) \
     // f = ((__VA_ARGS__ *)dlsym(ScriptManager::s_handle, n))
+
+grm::size ScriptManager::s_lastTime = 0;
+
+std::string ScriptManager::s_path = "";
+
+bool ScriptManager::s_bReload = false;
 
 void* ScriptManager::s_handle = nullptr;
 
@@ -82,9 +93,11 @@ Component *(*ScriptManager::CreateComponentWithName)(const std::string &name);
 Component *(*ScriptManager::CopyComponentWithName)(const std::string &name, Component *component);
 
 void ScriptManager::Initialize() {
+    s_path = "/home/grsource/Documentos/AppProjects/gr-component/lib/libgr-component.so";
+
     Console::log(LogInfo::INFO, "Loading script...");
 
-    s_handle = dlopen("/home/grsource/Documentos/AppProjects/gr-component/lib/libgr-component.so", RTLD_LAZY);
+    s_handle = dlopen(s_path.c_str(), RTLD_LAZY);
     if (!s_handle) {
         Console::log(LogInfo::ERROR, "Falied to load Script.");
         return;
@@ -153,6 +166,42 @@ void ScriptManager::Shutdown() {
     }
 
     s_handle = nullptr;
+}
+
+#include <sys/stat.h>
+
+void Reload() {
+    Settings::IsGameRunning =! Settings::IsGameRunning;
+
+    if (Settings::IsGameRunning) {
+        Game::UnloadScript();
+    } else {
+        Game::LoadScript();
+    }
+}
+
+void ScriptManager::doInBackground() {
+    // if (!File::Exists(s_path)) {
+    //     return;
+    // }
+
+    // struct stat result;
+    // if (stat(s_path.c_str(), &result) != 0) {
+    //     return;
+    // }
+
+    // if (s_lastTime != result.st_mtime) {
+    //     Event::Add(&Reload);
+    //     s_lastTime = result.st_mtime;
+
+    //     std::this_thread::sleep_for(std::chrono::seconds(5));
+
+    //     if (stat(s_path.c_str(), &result) != 0) {
+    //         return;
+    //     }
+
+    //     s_lastTime = result.st_mtime;
+    // }
 }
 
 void ScriptManager::RegisterApi() {

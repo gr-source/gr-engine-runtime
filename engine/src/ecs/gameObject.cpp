@@ -92,7 +92,7 @@ void GameObject::Clear() {
     s_names.clear();
 }
 
-GameObject::GameObject(const std::string &name, const std::string &tag) : m_name(name), m_tag(tag), m_entity(&Manager::CreateEntity(this)), m_bActive(true) {}
+GameObject::GameObject(const std::string &name, const std::string &tag) : m_name(name), m_tag(tag), m_entity(&Manager::CreateEntity(this)), m_bActive(true), m_bEnable(true) {}
 
 GameObject::~GameObject() {
     Manager::DestroyEntity(m_entity);
@@ -115,7 +115,7 @@ void GameObject::setActive(bool value) {
 }
 
 bool GameObject::isActive() const {
-    return m_bActive;
+    return m_bActive && m_bEnable;
 }
 
 Transform &GameObject::getTransform() {
@@ -129,7 +129,7 @@ Entity *GameObject::getEntity() {
 void GameObject::setEnable(bool value) {
     assert(Entity::SetEnable && "Entity set enable point invalid");
     Entity::SetEnable(m_entity, value);
-}
+}   
 
 std::string GameObject::AddNameID(const std::string &name) {
     auto it = s_names.find(name);

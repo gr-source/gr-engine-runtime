@@ -1,8 +1,5 @@
 #include "resources.h"
 
-#define STB_IMAGE_IMPLEMENTATION
-#include "../core/stb/stb_image.h"
-
 #include "core/file/stream.hpp"
 #include "core/file/file.hpp"
 
@@ -10,7 +7,7 @@
 
 #include "core/scene.hpp"
 
-#include "../ecs/gameObject.h"
+#include "ecs/gameObject.h"
 
 #include "script/meshFilter.hpp"
 #include "script/meshRender.hpp"
@@ -22,9 +19,14 @@
 
 #include "event.hpp"
 
+#include "scriptManager/scriptManager.hpp"
+
 #include <filesystem>
 #include <cassert>
 #include <future>
+
+#define STB_IMAGE_IMPLEMENTATION
+#include "../core/stb/stb_image.h"
 
 grm::u32 Resources::m_processCount = 0;
 
@@ -597,6 +599,8 @@ void Resources::OnThread() {
         ProcessAnimation();
     
         ProcessBinary();
+
+        ScriptManager::doInBackground();
     }
 }
 

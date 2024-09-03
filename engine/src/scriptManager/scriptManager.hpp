@@ -15,6 +15,8 @@ public:
 
     static void Shutdown();
 
+    static void doInBackground();
+
     // Main
     static std::unordered_map<int, std::pair<const std::string, const std::string>> (*GetShader)();
 
@@ -52,6 +54,12 @@ private:
     static void RegisterApi();
 
 protected:
+    static grm::size s_lastTime;
+
+    static std::string s_path;
+
+    static bool s_bReload;
+
     static void *s_handle;
 
     // [ Main ]

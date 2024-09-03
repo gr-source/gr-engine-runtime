@@ -23,6 +23,10 @@ public:
 
     static void KeyBoardUp(grm::u32 key);
 
+    static void LoadScript();
+
+    static void UnloadScript();
+
 private:
     static grr::gTexture *s_texturePlayGame;
 
@@ -118,10 +122,6 @@ private:
         NavegationFlags_files   = 1 << 3,
         NavegationFlags_models  = 1 << 4,
     };
-
-    static void PlayGame();
-
-    static void StopGame();
 
     static void OnPropertyTransform(Transform* transform);
     
