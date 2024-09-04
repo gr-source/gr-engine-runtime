@@ -422,6 +422,7 @@ int Scene::readTextures() {
 }
 
 void Scene::ReadMaterial() {
+    /*
     std::size_t sName;
     Stream::read(&sName, 1);
 
@@ -441,6 +442,7 @@ void Scene::ReadMaterial() {
         it->second.deserialize(Stream::stream);
     }
     Resources::AddMaterial(name, materials);
+    */
 }
 
 void Scene::ReadMesh() {

@@ -1494,8 +1494,8 @@ void Game::OnPropertyMeshFilter(MeshFilter *MeshFilter) {
 
 void Game::OnPropertyMeshRender(MeshRender *meshRender) {
     if (ImGui::TreeNode("MeshRender")) {
-        for (auto &&[idx, material] : meshRender->getMaterials()) {
-            if (ImGui::TreeNode(std::string(material.getName() + "(" + std::to_string(idx) + ")").c_str())) {
+        for (auto &material : meshRender->getMaterials()) {
+            if (ImGui::TreeNode(material.getName().c_str())) {
                 
                 auto& albedo = material.getAlbedo();
                 {

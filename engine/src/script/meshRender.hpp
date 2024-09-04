@@ -13,17 +13,20 @@ class MeshRender : public Component {
 public:
     MeshRender() = delete;
 
-    std::unordered_map<int, Material> &getMaterials();
+    std::vector<Material> &getMaterials();
 
-    Material &addMaterial(int idx, const Material& material);
+    template <typename ...Args>
+    Material &addMaterial(Args &&...args);
 
     void build();
 
 private:
-    std::unordered_map<int, Material> m_materials;
+    std::vector<Material> m_materials;
 
     Batching *m_batched;
 };
 
-
-
+template <typename... Args>
+inline Material &MeshRender::addMaterial(Args &&...args) {
+    return m_materials.emplace_back(std::forward<Args>(args)...);
+}

@@ -8,13 +8,8 @@
 
 #include "core/resources.h"
 
-std::unordered_map<int, Material> &MeshRender::getMaterials() {
+std::vector<Material> &MeshRender::getMaterials() {
     return m_materials;
-}
-
-Material &MeshRender::addMaterial(int idx, const Material &material) {
-    m_materials.emplace(idx, material);
-    return m_materials[idx];
 }
 
 void MeshRender::build() {
@@ -27,7 +22,7 @@ void MeshRender::build() {
     auto &transform = entity->getComponent<Transform>();
 
     std::string mName;
-    for (auto &&[id, material] : m_materials) {
+    for (auto &material : m_materials) {
         mName += material.getName();
     }
 

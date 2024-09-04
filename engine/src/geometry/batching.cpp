@@ -56,7 +56,7 @@ void Batching::Renderer() {
     }
 }
 
-Batching::Batching(const std::string &name, std::unordered_map<int, Material> *materials, Mesh *mesh) : m_name(name), m_materials(materials), m_vertexArray(nullptr), m_indiceCount(0), m_primCount(0), m_VBO(0), m_EBO(0), m_PBO(0), bHasIndice(false), m_type(DrawType_Arrays_Instanced) {
+Batching::Batching(const std::string &name, std::vector<Material> *materials, Mesh *mesh) : m_name(name), m_materials(materials), m_vertexArray(nullptr), m_indiceCount(0), m_primCount(0), m_VBO(0), m_EBO(0), m_PBO(0), bHasIndice(false), m_type(DrawType_Arrays_Instanced) {
     build(mesh);
 }
 
@@ -217,11 +217,13 @@ void Batching::setupMaterial() {
     int idx[10]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
     int idxEn[10]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
-    for (auto&& [index, material] : *m_materials) {
-        if (index >= 10) {
+    auto &materials = *m_materials;
+
+    for (auto i=0;i<materials.size();i++) {
+        auto &material = materials[i];
+        if (i >= 10) {
             continue;
         }
-
 
         std::memset(idxEn, 10, 0);
 
@@ -237,8 +239,8 @@ void Batching::setupMaterial() {
         grr::gShader::SetUniform<int>("m_texture", 10, (const int *)idx);
         grr::gShader::SetUniform<int>("m_activate", 10, (const int *)idxEn);
 
-        grr::gShader::SetUniform("m_material[" + std::to_string(index) + "].albedo", material.getAlbedo());
-        grr::gShader::SetUniform("m_material[" + std::to_string(index) + "].params", Vector3(material.getRoughness(), material.getMetallic(), material.getAmbientOcclusion()));
+        grr::gShader::SetUniform("m_material[" + std::to_string(i) + "].albedo", material.getAlbedo());
+        grr::gShader::SetUniform("m_material[" + std::to_string(i) + "].params", Vector3(material.getRoughness(), material.getMetallic(), material.getAmbientOcclusion()));
     }
 }
 

@@ -56,7 +56,7 @@ std::unordered_map<std::string, std::unique_ptr<Mesh>> Resources::s_meshList;
 std::mutex Resources::m_meshMutex;
 
 /***************** Material *****************/
-std::unordered_map<std::string, std::unordered_map<int, Material>> Resources::m_materialMap;
+std::unordered_map<std::string, std::vector<Material>> Resources::m_materialMap;
 
 std::thread Resources::m_thread;
 
@@ -231,7 +231,7 @@ std::unordered_map<std::string, std::unique_ptr<Mesh>> &Resources::GetMeshListMa
     return s_meshList;
 }
 
-std::unordered_map<int, Material> *Resources::FindMaterial(const std::string &name) {
+std::vector<Material> *Resources::FindMaterial(const std::string &name) {
     auto it = m_materialMap.find(name);
     if (it == m_materialMap.end()) {
         return nullptr;
@@ -522,10 +522,8 @@ void Resources::SetupGameObject(Transform *&out, gModel &model, Mesh *mesh, std:
 
         auto &meshRender = gameObject->addComponent<MeshRender>();
 
-        for (auto i=0;i<materials.size();++i) {
-            auto& material = materials[i];
-
-            auto &m = meshRender.addMaterial(i, {material.m_name, {material.m_color.r, material.m_color.g, material.m_color.b, material.m_color.a}});
+        for (auto &material : materials) {
+            auto &m = meshRender.addMaterial(material.m_name, Vector4(material.m_color.r, material.m_color.g, material.m_color.b, material.m_color.a));
 
             for (int i=0;i<material.m_textureCount;++i) { 
                 auto& texture = material.m_textures[i];
@@ -582,7 +580,7 @@ void Resources::ProcessBinary() {
     }
 }
 
-std::unordered_map<std::string, std::unordered_map<int, Material>> &Resources::GetMaterialMap() {
+std::unordered_map<std::string, std::vector<Material>> &Resources::GetMaterialMap() {
     return m_materialMap;
 }
 
@@ -689,24 +687,22 @@ void Resources::ReadChildren(Transform *parent) {
     }
 
     std::vector<gMaterial> m_materials(mSize);
-    // if (mSize >= 1) {
-        for (auto &material : m_materials) {
-            Stream::read(material.m_name, 256);
-            Stream::read(&material.m_color, 1);
-            Stream::read(&material.m_roughness, 1);
-            Stream::read(&material.m_metallic, 1);
-            Stream::read(&material.m_ambientOcclusion, 1);
+    for (auto &material : m_materials) {
+        Stream::read(material.m_name, 256);
+        Stream::read(&material.m_color, 1);
+        Stream::read(&material.m_roughness, 1);
+        Stream::read(&material.m_metallic, 1);
+        Stream::read(&material.m_ambientOcclusion, 1);
 
-            Stream::read(&material.m_textureCount, 1);
+        Stream::read(&material.m_textureCount, 1);
 
-            material.m_textures = new gTexture[material.m_textureCount];
-            Stream::read(material.m_textures, material.m_textureCount);
+        material.m_textures = new gTexture[material.m_textureCount];
+        Stream::read(material.m_textures, material.m_textureCount);
 
-            for (int i=0;i<material.m_textureCount;++i) {
-                auto &texture = material.m_textures[i];
-            }
+        for (int i=0;i<material.m_textureCount;++i) {
+            auto &texture = material.m_textures[i];
         }
-    // }
+    }
 
     grm::u32 nSize;
     Stream::read(&nSize, 1);

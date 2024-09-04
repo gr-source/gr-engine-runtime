@@ -20,7 +20,7 @@ public:
 
     static void Renderer();
     
-    Batching(const std::string &name, std::unordered_map<int, Material> *materials, Mesh *mesh);
+    Batching(const std::string &name, std::vector<Material> *materials, Mesh *mesh);
     ~Batching();
 
     void insert(Transform *transform);
@@ -43,7 +43,7 @@ private:
 
     static std::vector<Batching *> m_batched;
 
-    std::unordered_map<int, Material> *m_materials;
+    std::vector<Material> *m_materials;
 
     std::vector<Transform *> m_models;
 

@@ -47,12 +47,12 @@ public:
 
     static std::unordered_map<std::string, std::unique_ptr<Mesh>> &GetMeshListMap();
 
-    static std::unordered_map<int, Material> *FindMaterial(const std::string &name);
+    static std::vector<Material> *FindMaterial(const std::string &name);
 
     template <typename ...Args>
-    static std::unordered_map<int, Material> &AddMaterial(Args &&...args);
+    static std::vector<Material> &AddMaterial(Args &&...args);
 
-    static std::unordered_map<std::string, std::unordered_map<int, Material>> &GetMaterialMap();
+    static std::unordered_map<std::string, std::vector<Material>> &GetMaterialMap();
 
     static void OnThread();
 
@@ -95,7 +95,7 @@ private:
     static std::mutex m_meshMutex;
     
     /***************** Material *****************/
-    static std::unordered_map<std::string, std::unordered_map<int, Material>> m_materialMap;
+    static std::unordered_map<std::string, std::vector<Material>> m_materialMap;
 
     static std::thread m_thread;
 
@@ -135,7 +135,7 @@ inline Mesh *Resources::AddMesh(Args &&...args) {
 }
 
 template <typename... Args>
-inline std::unordered_map<int, Material> &Resources::AddMaterial(Args &&...args) {
+inline std::vector<Material> &Resources::AddMaterial(Args &&...args) {
     auto &&[it, added] = m_materialMap.emplace(std::forward<Args>(args)...);
     return it->second;
 }
