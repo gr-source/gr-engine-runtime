@@ -12,6 +12,7 @@
 
 #include "script/meshRender.hpp"
 #include "script/transform.hpp"
+#include "script/camera.hpp"
 
 Scene *Scene::m_current = nullptr;
 
@@ -33,7 +34,8 @@ void Scene::Use(Scene *scene) {
     m_current = scene;
 }
 
-Scene::Scene(const std::string &name) : m_name(name), m_enable(true) {}
+Scene::Scene(const std::string &name) : m_name(name), m_enable(true) {
+}
 
 Scene::~Scene() {
     for (auto &gameObject : s_objects) {
@@ -49,7 +51,7 @@ void Scene::load(const std::string &path) {
     Scene::Use(this);
     
     if (!File::Exists(path)) {
-        return Console::log(LogInfo::ERROR, "Falied to load scene, file do not found");
+        return Console::log(LogInfo::ERROR, "Falied to load scene, file do not found.");
     }
 
     if (!Stream::open(path, std::ios_base::in | std::ios_base::binary)) {
@@ -60,21 +62,30 @@ void Scene::load(const std::string &path) {
 
     if (!Stream::read(&header, 1)) {
         Stream::close();
-        return Console::log(LogInfo::ERROR, "Falied from load scene, invalid header.");
+        Console::log(LogInfo::ERROR, "Failed to read scene data RS(0)");
     }
 
     if (header.signature[0] != 'g' && header.signature[1] != 'r' && header.signature[2] != 's' && header.signature[3] != 'c') {
         Stream::close();
-        return Console::log(LogInfo::ERROR, "Falied from load scene, invalid binary model.");
+        return Console::log(LogInfo::ERROR, "Falied ffrom loader, binary do not is of scene.");
     }
 
     std::size_t nSize;
-    Stream::read(&nSize, 1);
+    if (!Stream::read(&nSize, 1)) {
+        Stream::close();
+        return Console::log(LogInfo::ERROR, "Failed to read scene data RS(1)");
+    }
 
     m_name.resize(nSize, '\0');
-    Stream::read(m_name.data(), nSize);
+    if (!Stream::read(m_name.data(), nSize)) {
+        Stream::close();
+        return Console::log(LogInfo::ERROR, "Failed to read scene data RS(2)");
+    }
 
-    ReadScene();
+    if (auto err = readScene() != 0) {
+        Stream::close();
+        return Console::log(LogInfo::ERROR, "Failed to read scene data child(" + std::to_string(err) + ")");
+    }
 
     Stream::close();
     Console::log(LogInfo::INFO, "Scene loaded suceess full.");
@@ -86,21 +97,30 @@ void Scene::save() {
     }
 
     gHeader header{{'g', 'r', 's', 'c'}, 1.0f};
-
     if (!Stream::write(&header, 1)) {
         Stream::close();
-        return Console::log(LogInfo::ERROR, "Falied from write header scene.");
+        return Console::log(LogInfo::ERROR, "Failed to write scene data WS(0)");
     }
 
     auto nSize = m_name.size();
-    Stream::write(&nSize, 1);
-    Stream::write(m_name.data(), nSize);
+    if (!Stream::write(&nSize, 1)) {
+        Stream::close();
+        return Console::log(LogInfo::ERROR, "Failed to write scene data WS(1)");
+    }
 
-    WriteScene();
+    if (!Stream::write(m_name.data(), nSize)) {
+        Stream::close();
+        return Console::log(LogInfo::ERROR, "Failed to write scene data WS(2)");
+    }
+
+    if (auto err = writeScene() != 0) {
+        Stream::close();
+        return Console::log(LogInfo::ERROR, "Failed to write scene data child(" + std::to_string(err));
+    }
 
     Stream::close();
 
-    Console::log(LogInfo::WARNING, "Scene saved: " + m_name);
+    Console::log(LogInfo::INFO, "Scene saved: " + m_name);
 }
 
 void Scene::SetSceneName(const std::string &name) {
@@ -160,30 +180,20 @@ void Scene::setDisableEntity(Transform *transform, bool value) {
     }
 }
 
-void Scene::WriteScene() {
+int Scene::writeScene() {
     // textures
-    auto &textureMap = Resources::GetTextureMap();
-    auto tSize = textureMap.size();
-
-    Stream::write(&tSize, 1);
-
-    for (auto &&[path, ptr] : textureMap) {
-        auto pSize = path.size();
-
-        Stream::write(&pSize, 1);
-        Stream::write(path.data(), pSize);
+    if (writeTexture() != 0) {
+        return 1;
     }
 
-    // Materials
-    auto &materialMap = Resources::GetMaterialMap();
-    auto mSize = materialMap.size();
-
-    Stream::write(&mSize, 1);
-
-    for (auto &&[name, material] : materialMap) {
-        WriteMaterial(name, material);
+    // Material
+    if (writeMaterial() != 0) {
+        return 2;
     }
 
+    return 0;
+    
+    /*
     // Meshes
     auto meshCount = Resources::GetMeshCount();
 
@@ -202,9 +212,40 @@ void Scene::WriteScene() {
     }
 
     std::for_each(s_objects.begin(), s_objects.end(), Scene::WriteGameObject);
+    */
 }
 
-void Scene::WriteMaterial(const std::string &name, std::unordered_map<int, Material> &materials) {
+int Scene::writeMaterial() {
+    auto count = Resources::GetTextureCount();
+    auto &materials = Resources::GetMaterialMap();
+    grm::size offset = 0;
+
+    //Write data
+    gStructHeader header{gStructType_Material, offset};
+    // Materials
+    /*
+    auto &materialMap = Resources::GetMaterialMap();
+    auto mSize = materialMap.size();
+
+    Stream::write(&mSize, 1);
+
+    for (auto &&[name, material] : materialMap) {
+        auto sName = name.size();
+        Stream::write(&sName, 1);
+        Stream::write(name.data(), sName);
+
+        auto mSize = materials.size();
+        Stream::write(&mSize, 1);
+
+        for (auto &&[idx, material] : materials) {
+            Stream::write(&idx, 1);
+
+            material.serialize(Stream::stream);
+        }
+    }
+    */
+    //
+    /*
     auto sName = name.size();
     Stream::write(&sName, 1);
     Stream::write(name.data(), sName);
@@ -217,6 +258,36 @@ void Scene::WriteMaterial(const std::string &name, std::unordered_map<int, Mater
 
         material.serialize(Stream::stream);
     }
+    */
+}
+
+int Scene::writeTexture() {
+    auto &textureMap = Resources::GetTextureMap();
+
+    std::vector<const char *> pathList;
+    for (auto &&[path, ptr] : textureMap) {
+        pathList.push_back(path.c_str());
+    }
+
+    grm::size offset = 0;
+
+    auto size = pathList.size();
+    offset += sizeof(size);
+    offset += size * sizeof(const char *);
+
+    gStructHeader header{gStructType_Texture, offset};
+    if (!Stream::write(&header, 1)) {
+        return 1;
+    }
+
+    if (!Stream::write(&size, 1)) {
+        return 2;
+    }
+
+    if (!Stream::write(pathList.data(), pathList.size())) {
+        return 3;
+    }
+    return 0;
 }
 
 void Scene::WriteMesh(const std::string &name, Mesh *mesh) {
@@ -279,9 +350,15 @@ void Scene::WriteGameObject(GameObject *gameObject) {
     }
 }
 
-void Scene::ReadScene() {
+int Scene::readScene() {
     // Textures
-    std::size_t tSize;
+    if (readTextures() != 0) {
+        return 1;
+    }
+
+    return 0;
+
+    /*std::size_t tSize;
     Stream::read(&tSize, 1);
 
     for (int i=0;i<tSize;i++) {
@@ -320,6 +397,28 @@ void Scene::ReadScene() {
     for (std::size_t i=0;i<objectCount;i++) {
         ReadNode();
     }
+    */
+}
+
+int Scene::readTextures() {
+    gStructHeader header{gStructType_None, 0};
+    if (!Stream::read(&header, 1)) {
+        return 1;
+    }
+
+    std::size_t size = 0;
+    if (!Stream::read(&size, 1)) {
+        return 2;
+    }
+
+    std::vector<const char *> pathList(size, nullptr);
+    if (!Stream::read(pathList.data(), pathList.size())) {
+        return 3;
+    }
+
+    for (auto &path : pathList) {
+    }
+    return 0;
 }
 
 void Scene::ReadMaterial() {
@@ -369,8 +468,8 @@ void Scene::ReadNode(Transform *parent) {
     std::string tag(tSize, '\0');
     Stream::read(tag.data(),  tSize);
 
-    bool active;
-    bool enable;
+    bool active = true;
+    bool enable = true;
     Stream::read(&active,  1);
     Stream::read(&enable,  1);
 

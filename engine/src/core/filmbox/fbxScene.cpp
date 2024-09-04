@@ -13,25 +13,20 @@ const FbxMaterial &FbxScene::getMaterial(int idx) const {
     return m_materials[idx];
 }
 
+const std::vector<FbxMaterial> &FbxScene::getMaterials() const {
+    return m_materials;
+}
+
 const std::size_t FbxScene::getMaterialCount() const {
     return m_materials.size();
 }
 
-const FbxMesh &FbxScene::getMesh(int idx) const {
-    if (idx >= m_meshes.size()) {
-        throw std::runtime_error("Falied to search mesh");
-    }
-    return m_meshes[idx];
-}
-
 FbxMesh *FbxScene::findMesh(const std::string &name) {
-    auto it = std::find_if(m_meshes.begin(), m_meshes.end(), [&name](const auto &mesh) {
-        return name == mesh.getName();
-    });
-    if (it != m_meshes.end()) {
-        return &(*it);
+    auto it = m_meshes.find(name);
+    if (it == m_meshes.end()) {
+        return nullptr;
     }
-    return nullptr;
+    return &it->second;
 }
 
 const std::size_t FbxScene::getMeshCount() const {

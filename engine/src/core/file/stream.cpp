@@ -2,7 +2,9 @@
 
 std::fstream Stream::stream;
 
-const bool Stream::open(const std::string& path, std::ios_base::openmode mode) {
+std::streamsize Stream::m_offset = 0;
+
+bool Stream::open(const std::string& path, std::ios_base::openmode mode) {
 	stream.open(path, mode);
 	return stream.is_open();
 }

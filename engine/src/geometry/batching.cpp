@@ -57,7 +57,7 @@ void Batching::Renderer() {
 }
 
 Batching::Batching(const std::string &name, std::unordered_map<int, Material> *materials, Mesh *mesh) : m_name(name), m_materials(materials), m_vertexArray(nullptr), m_indiceCount(0), m_primCount(0), m_VBO(0), m_EBO(0), m_PBO(0), bHasIndice(false), m_type(DrawType_Arrays_Instanced) {
-    compileMesh(mesh);
+    build(mesh);
 }
 
 Batching::~Batching() {
@@ -118,7 +118,7 @@ void Batching::draw() {
     }
 }
 
-void Batching::compileMesh(Mesh *mesh) {
+void Batching::build(Mesh *mesh) {
     bHasIndice = mesh->hasIndices();
 
     if (!m_vertexArray) {
@@ -218,6 +218,11 @@ void Batching::setupMaterial() {
     int idxEn[10]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
     for (auto&& [index, material] : *m_materials) {
+        if (index >= 10) {
+            continue;
+        }
+
+
         std::memset(idxEn, 10, 0);
 
         for (auto i=0;i<10;++i) {

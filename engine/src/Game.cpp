@@ -152,24 +152,23 @@ void Game::Shutdown() {
 // ===================================== WARNING =========================================================
 #include "core/binary/gHeader.hpp"
 
-void WriteNode(std::ofstream &os, const FbxScene *scene, const FbxNode &node) {
+void WriteNode(const FbxScene *scene, const FbxNode &node) {
     // Escreve os dados do modelo
     gModel pModel;
-    std::strcpy(pModel.m_name, node.getName().c_str());
-
     pModel.m_scale = node.getScale();
     pModel.m_rotation = node.getRotation();
     pModel.m_position = node.getPosition();
+    std::memcpy(pModel.m_name, node.getName().c_str(), 256);
 
-    if (!os.write(reinterpret_cast<const char *>(&pModel), sizeof(gModel))) {
+    if (!Stream::write(&pModel, 1)) {
         return;
     }
 
-    auto &meshIndex = node.getMeshes();
+    auto &nodeMesh = node.getMeshes();
 
     // escreve a quantidade de mesh
-    grm::u32 meshCount = static_cast<grm::u32>(meshIndex.size());
-    if (!os.write(reinterpret_cast<const char *>(&meshCount), sizeof(grm::u32))) {
+    grm::u32 meshCount = static_cast<grm::u32>(nodeMesh.size());
+    if (!Stream::write(&meshCount, 1)) {
         std::cerr << "Failed to write mesh count to file." << std::endl;
         return;
     }
@@ -177,12 +176,19 @@ void WriteNode(std::ofstream &os, const FbxScene *scene, const FbxNode &node) {
     // alloca as meshes na memória em forma de pilha (fácil acesso)
     std::vector<gMesh> meshes(meshCount);
     std::vector<gMaterial> pMateials;
-
+    std::unordered_map<std::string, int> m_map;
+    
     for (grm::u32 i = 0; i < meshCount; ++i) {
-        auto &fbxMesh = scene->getMesh(meshIndex[i]);
+        auto &fbxMesh = nodeMesh[i];
 
-        for (const auto &mIdx : fbxMesh.getMaterials()) {
+        for (auto &mIdx : fbxMesh.getMaterials()) {
             auto& fbxMaterial = scene->getMaterial(mIdx);
+
+            auto it = m_map.find(fbxMaterial.getName());
+            if (it != m_map.end()) {
+                continue;
+            }
+            m_map.emplace(fbxMaterial.getName(), 0);
 
             auto& m = pMateials.emplace_back();
             std::strcpy(m.m_name, fbxMaterial.getName().c_str());
@@ -210,7 +216,7 @@ void WriteNode(std::ofstream &os, const FbxScene *scene, const FbxNode &node) {
         auto &indices = fbxMesh.getIndices();
 
         auto &pMesh = meshes[i];
-        std::strcpy(pMesh.m_name, fbxMesh.getName().c_str());
+        std::memcpy(pMesh.m_name, fbxMesh.getName().c_str(), 256);
 
         pMesh.m_hasBone = fbxMesh.hasBone();
         
@@ -234,6 +240,7 @@ void WriteNode(std::ofstream &os, const FbxScene *scene, const FbxNode &node) {
             pMesh.m_indices[j] = indices[j];
         }
         
+        // Write bones from skeleton.
         if (!pMesh.m_hasBone) {
             continue;
         }
@@ -259,58 +266,42 @@ void WriteNode(std::ofstream &os, const FbxScene *scene, const FbxNode &node) {
     }
 
     // Escrever os dados das meshes no arquivo
-    for (const auto &mesh : meshes) {
-        if (!os.write(reinterpret_cast<const char *>(mesh.m_name), sizeof(char) * 256) ||
-            !os.write(reinterpret_cast<const char *>(&mesh.m_hasBone), sizeof(bool)) ||
-            !os.write(reinterpret_cast<const char *>(&mesh.m_verticeCount), sizeof(grm::u32)) ||
-            !os.write(reinterpret_cast<const char *>(mesh.m_vertices), mesh.m_verticeCount * sizeof(gVertex)) ||
-            !os.write(reinterpret_cast<const char *>(&mesh.m_indicesCount), sizeof(grm::u32)) ||
-            !os.write(reinterpret_cast<const char *>(mesh.m_indices), mesh.m_indicesCount * sizeof(grm::u32)) ||
-            !os.write(reinterpret_cast<const char *>(&mesh.m_boneCount), sizeof(grm::u32)) ||
-            !os.write(reinterpret_cast<const char *>(mesh.m_bones), mesh.m_boneCount * sizeof(gBone))
-            ) {
-            std::cerr << "Failed to write mesh data to file." << std::endl;
-            return;
+    for (auto &mesh : meshes) {
+        if (mesh.serialize() != 0) {
+            Console::log(LogInfo::ERROR, "Falied to write mesh: " + std::string(mesh.m_name));
+            continue;
         }
     }
 
     grm::u32 mSize = pMateials.size();
-    if (!os.write(reinterpret_cast<const char *>(&mSize), sizeof(grm::u32))) {
-        std::cout << "Falied to wite mateials." << std::endl;
-        return;
+    if (!Stream::write(&mSize, 1)) {
+        return Console::log(LogInfo::ERROR, "Falied to material data ");
     }
+
+    std::cout << "Material: " << mSize << std::endl;
+
 
     for (auto &material : pMateials) {
-        os.write(reinterpret_cast<const char *>(material.m_name), 256 * sizeof(char));
-        os.write(reinterpret_cast<const char *>(&material.m_color), sizeof(Color));
-        os.write(reinterpret_cast<const char *>(&material.m_roughness), sizeof(float));
-        os.write(reinterpret_cast<const char *>(&material.m_metallic), sizeof(float));
-        os.write(reinterpret_cast<const char *>(&material.m_ambientOcclusion), sizeof(float));
+        Stream::write(material.m_name, 256);
+        Stream::write(&material.m_color, 1);
+        Stream::write(&material.m_roughness, 1);
+        Stream::write(&material.m_metallic, 1);
+        Stream::write(&material.m_ambientOcclusion, 1);
 
-        os.write(reinterpret_cast<const char *>(&material.m_textureCount), sizeof(grm::u32));
-        os.write(reinterpret_cast<const char *>(material.m_textures), material.m_textureCount * sizeof(gTexture));
+        Stream::write(&material.m_textureCount, 1);
+        Stream::write(material.m_textures, material.m_textureCount);
 
         delete[] material.m_textures;
-    }
-
-    // Liberar a memória alocada
-    for (auto &mesh : meshes) {
-        delete[] mesh.m_vertices;
-        delete[] mesh.m_indices;
-
-        if (mesh.m_hasBone) {
-            delete[] mesh.m_bones;
-        }
     }
 
     auto &children = node.getChildren();
 
     grm::u32 nSize = children.size();
-    os.write(reinterpret_cast<const char *>(&nSize), sizeof(grm::u32));
+    Stream::write(&nSize, 1);
 
     // escreve os filhos
     for (const auto &child : children) {
-        WriteNode(os, scene, child);
+        WriteNode(scene, child);
     }
 }
 
@@ -416,30 +407,26 @@ void WriteAnimation(const FbxScene *fbxScene) {
 }
 
 void WriteHeader(const FbxScene *scene, const FbxNode &node) {
-    Console::log(LogInfo::INFO, "Writing model...");
+    Console::log(LogInfo::INFO, "Write 3D Mode: " + node.getName());
 
-    WriteAnimation(scene);
-
-    auto path = File::GetFile("/model/" + node.getName() + ".gmd");
-
-    std::ofstream os(path, std::ios_base::binary);
-    if (!os.is_open()) {
-        std::cerr << "Failed to open file for writing." << std::endl;
-        return;
+    if (!Stream::open(File::GetFile("/model/" + node.getName() + ".gmd"), std::ios_base::out | std::ios_base::binary)) {
+        return Console::log(LogInfo::INFO, "Failed to write the 3D model: " + node.getName());
     }
 
     gHeader pHeader {{'g', 'r', 'm', 'd'}, 1.0f};
-    if (!os.write(reinterpret_cast<const char *>(&pHeader), sizeof(gHeader))) {
-        std::cerr << "Failed to write header to file." << std::endl;
-        return;
+    if (!Stream::write(&pHeader, 1)) {
+        Stream::close();
+        return Console::log(LogInfo::INFO, "Failed to write the 3D model (0)");
     }
 
-    WriteNode(os, scene, node);
+    WriteNode(scene, node);
 
-    os.close();
+    Stream::close();
 }
 
 void PostProcess(const FbxScene *scene, Filmbox *filmbox) {
+    WriteAnimation(scene);
+    
     auto& fRootNode = scene->getRootNode();
     for (const auto& node : fRootNode.getChildren()) {
         WriteHeader(scene, node);

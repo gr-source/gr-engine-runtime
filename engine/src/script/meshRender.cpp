@@ -20,6 +20,9 @@ Material &MeshRender::addMaterial(int idx, const Material &material) {
 void MeshRender::build() {
     auto &meshFilter = entity->getComponent<MeshFilter>();
     auto mesh = meshFilter.getMesh();
+    if (!mesh) {
+        throw std::runtime_error("Mesh pointer is null.");
+    }
 
     auto &transform = entity->getComponent<Transform>();
 

@@ -11,11 +11,12 @@ public:
 
     const std::string &getName() const;
 
-    void addMesh(int idx);
+    template <typename ...Args>
+    void addMesh(Args &&...args);
 
     const bool hasMeshe() const;
 
-    const std::vector<int> &getMeshes() const;
+    const std::vector<FbxMesh> &getMeshes() const;
 
     template <typename ...Args>
     FbxNode &addNode(Args &&...args);
@@ -39,7 +40,7 @@ private:
 
     std::vector<FbxNode> m_children;
 
-    std::vector<int> m_meshes;
+    std::vector<FbxMesh> m_meshes;
 
     FbxNode *m_parent;
 
@@ -51,7 +52,11 @@ private:
 };
 
 template <typename... Args>
+inline void FbxNode::addMesh(Args &&...args) {
+    m_meshes.emplace_back(std::forward<Args>(args)...);
+}
+
+template <typename... Args>
 inline FbxNode &FbxNode::addNode(Args &&...args) {
     return m_children.emplace_back(std::forward<Args>(args)...);
 }
-

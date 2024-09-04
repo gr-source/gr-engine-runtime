@@ -67,7 +67,7 @@ private:
 
     DrawType m_type;
 
-    void compileMesh(Mesh *mesh);
+    void build(Mesh *mesh);
 
     void compile();
 
@@ -77,5 +77,9 @@ private:
 template <typename... Args>
 inline Batching &Batching::Add(const std::string &key, Args &&...args) {
     auto &&[it, added] = m_batchedMap.emplace(key, std::make_unique<Batching>(key, std::forward<Args>(args)...));
-    return *m_batched.emplace_back(&(*it->second));
+    assert(added && "Value subscrite.");
+    
+    auto ptr =  &(*it->second);
+    m_batched.push_back(ptr);
+    return *ptr;
 }

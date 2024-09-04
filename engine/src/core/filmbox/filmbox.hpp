@@ -36,7 +36,9 @@ private:
 
     void processMesh(aiMesh *mMesh);
 
-    void processNode(aiNode *mNode, FbxNode& node);
+    void inserMesh(FbxMesh *mesh, aiMesh *mMesh);
+
+    void processNode(aiNode *mNode, FbxNode& node, const aiScene *scene);
 
     std::function<void(const FbxScene *, Filmbox *)> m_funcPost;
 
@@ -45,6 +47,8 @@ private:
     std::unique_ptr<Thread> m_thread;
 
     std::string m_path;
+
+    std::unordered_map<std::string, int> m_indexMaterial;
 };
 
 

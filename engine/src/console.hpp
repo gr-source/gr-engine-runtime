@@ -25,8 +25,6 @@ public:
 
     static bool bChanged;
 
-    static std::ostream print;
-    
 private:
     static std::list<LogInfo> s_logs;
 

@@ -6,11 +6,7 @@ const std::string &FbxNode::getName() const {
     return m_name;
 }
 
-void FbxNode::addMesh(int idx) {
-    m_meshes.push_back(idx);
-}
-
-const std::vector<int> &FbxNode::getMeshes() const {
+const std::vector<FbxMesh> &FbxNode::getMeshes() const {
     return m_meshes;
 }
 

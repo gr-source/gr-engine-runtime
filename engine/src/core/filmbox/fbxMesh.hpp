@@ -20,6 +20,8 @@ public:
     const std::vector<FbxVertex> &getVertices() const;
 
     void addIndice(int idx);
+    
+    void addTriangle(int ia, int ib, int ic);
 
     const std::vector<int> &getIndices() const;
 

@@ -20,7 +20,9 @@ GameObject &GameObject::Create(const std::string &name, const std::string &tag) 
     auto newName = AddNameID(name);
 
     auto &&[it, added] = s_mapObject.emplace(newName, std::make_unique<GameObject>(newName, tag));
-    assert(added && "Object overwrite.");
+    if (!added) {
+        throw std::runtime_error("GameObject has been replaced: " + newName);
+    }
 
     auto &gameObject = it->second;
 

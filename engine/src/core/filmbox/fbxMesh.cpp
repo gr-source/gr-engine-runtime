@@ -18,6 +18,12 @@ void FbxMesh::addIndice(int idx) {
     m_indices.push_back(idx);
 }
 
+void FbxMesh::addTriangle(int ia, int ib, int ic) {
+    m_indices.push_back(ia);
+    m_indices.push_back(ib);
+    m_indices.push_back(ic);
+}
+
 const std::vector<int> &FbxMesh::getIndices() const {
     return m_indices;
 }

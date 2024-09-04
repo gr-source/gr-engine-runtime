@@ -168,6 +168,8 @@ set(engine_src
     src/culling/frustum.cpp
 
     src/physics/physicsScene.cpp
+
+    src/core/binary/gHeader.cpp
 )
 
 set(engine_hdr
@@ -217,6 +219,8 @@ set(engine_hdr
     src/culling/frustum.h
     
     src/physics/physicsScene.h
+
+    src/core/binary/gHeader.hpp
 )
 
 add_library(${PROJECT_NAME} STATIC ${engine_src} ${engine_hdr})

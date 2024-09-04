@@ -152,19 +152,22 @@ grr::gShader *Resources::LoadShader(const std::string &frag, const std::string &
 }
 
 GameObject *Resources::LoadGameObject(const std::string &path) {
-    Console::log(LogInfo::INFO, "Reading model...");
+    if (!File::Exists(path)) {
+        Console::log(LogInfo::ERROR, "Binary do not found: " + path);
+        return nullptr;
+    }
 
     auto name = File::GetFileName(path);
 
-    auto &gameObject = Scene::GetCurrentScene()->CreateGameObject(name);
-    auto &transform = gameObject.getTransform();
+    auto gameObject = &Scene::GetCurrentScene()->CreateGameObject(name);
+    auto &transform = gameObject->getTransform();
 
     {
         std::lock_guard<std::mutex> lock(s_gameObjectMutex);
         s_gameObjectFromLoader.emplace_back(path, &transform);
     }
 
-    return &gameObject;
+    return gameObject;
 }
 
 Animation *Resources::LoadAnimation(const std::string &path) {
@@ -500,7 +503,6 @@ void Resources::ProcessAnimation() {
 }
 
 std::condition_variable cond;
-
 void Resources::SetupGameObject(Transform *&out, gModel &model, Mesh *mesh, std::vector<gMaterial> &materials, Transform *parent) {
     // transformaçoes
     auto gameObject = &GameObject::Create(model.m_name, "unttaged");
@@ -580,7 +582,6 @@ void Resources::ProcessBinary() {
     }
 }
 
-
 std::unordered_map<std::string, std::unordered_map<int, Material>> &Resources::GetMaterialMap() {
     return m_materialMap;
 }
@@ -617,52 +618,8 @@ void Resources::ReadChildren(Transform *parent) {
     }
 
     std::vector<gMesh> meshes(meshCount);
-
     for (auto &mesh : meshes) {
-        // read name
-        if (!Stream::read<char>(mesh.m_name, 256)) {
-            continue;
-        }
-
-        // bone
-        if (!Stream::read<bool>(&mesh.m_hasBone, 1)) {
-            continue;
-        }
-
-        // read vertices
-        if (!Stream::read(&mesh.m_verticeCount, 1)) {
-            continue;
-        }
-
-        mesh.m_vertices = new gVertex[mesh.m_verticeCount];
-        if (!Stream::read(mesh.m_vertices, mesh.m_verticeCount)) {
-            continue;
-        }
-
-        // read indices
-        if (!Stream::read(&mesh.m_indicesCount, 1)) {
-            continue;
-        }
-
-        mesh.m_indices = new grm::u32[mesh.m_indicesCount];
-        if (!Stream::read(mesh.m_indices, mesh.m_indicesCount)) {
-            continue;
-        }
-    
-        // bad alloc
-        // if (!mesh.m_hasBone) {
-        //     continue;
-        // }
-
-        // read bones
-        if (!Stream::read(&mesh.m_boneCount, 1)) {
-            continue;
-        }
-
-        mesh.m_bones = new gBone[mesh.m_boneCount];
-        if (!Stream::read(mesh.m_bones, mesh.m_boneCount)) {
-            continue;
-        }
+        mesh.deserialize();
     }
 
     Animator *m_animator = nullptr;
@@ -702,9 +659,6 @@ void Resources::ReadChildren(Transform *parent) {
             }
             verticeCount += pMesh.m_verticeCount;
 
-            delete[] pMesh.m_vertices;
-            delete[] pMesh.m_indices;
-
             if (!pMesh.m_hasBone) {
                 continue;
             }
@@ -719,7 +673,6 @@ void Resources::ReadChildren(Transform *parent) {
                 m_animator->addBone(pBone.m_name, Bone{pBone.m_name, pBone.m_position, pBone.m_scale, pBone.m_rotation, pBone.m_id});
             }
 
-            delete[] pMesh.m_bones;
         }
 
         m_mesh = Resources::FindMesh(meshName);
@@ -735,9 +688,8 @@ void Resources::ReadChildren(Transform *parent) {
         return;
     }
 
-    std::vector<gMaterial> m_materials;
-    if (mSize >= 1) {
-        m_materials.resize(mSize);
+    std::vector<gMaterial> m_materials(mSize);
+    // if (mSize >= 1) {
         for (auto &material : m_materials) {
             Stream::read(material.m_name, 256);
             Stream::read(&material.m_color, 1);
@@ -754,7 +706,7 @@ void Resources::ReadChildren(Transform *parent) {
                 auto &texture = material.m_textures[i];
             }
         }
-    }
+    // }
 
     grm::u32 nSize;
     Stream::read(&nSize, 1);

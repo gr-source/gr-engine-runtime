@@ -52,15 +52,19 @@ private:
 
     void setDisableEntity(Transform *transform, bool value);
 
-    void WriteScene();
+    int writeScene();
 
-    static void WriteMaterial(const std::string &name, std::unordered_map<int, Material> &materials);
+    int writeMaterial();
+
+    int writeTexture();
 
     static void WriteMesh(const std::string &name, Mesh *mesh);
 
     static void WriteGameObject(GameObject *gameObject);
 
-    static void ReadScene();
+    static int readScene();
+
+    static int readTextures();
 
     static void ReadMaterial();
 

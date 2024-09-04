@@ -6,7 +6,7 @@
 class Stream {
 public:
 	
-	static const bool open(const std::string& path, std::ios_base::openmode mode);
+	static bool open(const std::string& path, std::ios_base::openmode mode);
 	
 	template <typename T>
 	static std::istream& read(T* data, std::streamsize count);
@@ -26,6 +26,8 @@ public:
 	static void close();
 	
 	static std::fstream stream;
+private:
+	static std::streamsize m_offset;
 };
 
 template <typename T>
@@ -44,5 +46,6 @@ template <typename T>
 inline std::ostream &Stream::write(const T* data, std::streamsize count) {
 	return stream.write(reinterpret_cast<const char*>(data), sizeof(T) * count);
 }
+
 
 

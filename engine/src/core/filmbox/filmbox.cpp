@@ -79,7 +79,7 @@ void Filmbox::sceneLoader(const aiScene *scene) {
     auto& fRootNode = m_fbxScene->m_rootNode;
 
     for (auto i=0;i<mRootNode->mNumChildren;++i) {
-        processNode(mRootNode->mChildren[i], fRootNode);
+        processNode(mRootNode->mChildren[i], fRootNode, scene);
     }
 }
 
@@ -126,8 +126,6 @@ void Filmbox::loadMaterial(const aiScene *scene) {
     for (auto i=0;i<scene->mNumMaterials;++i) {
         auto vMaterial = scene->mMaterials[i];
 
-        // vMaterial->GetTextureCount()
-
         auto name = vMaterial->GetName();
 
         auto& material = m_fbxScene->addMaterial(name.C_Str());
@@ -171,18 +169,25 @@ void Filmbox::loadMesh(const aiScene *scene) {
 }
 
 void Filmbox::processMesh(aiMesh *mMesh) {
-    auto name = mMesh->mName;
+    auto name = std::string(mMesh->mName.C_Str());
 
-    auto& mesh = m_fbxScene->addMesh(name.C_Str());
+    auto mesh = m_fbxScene->findMesh(name);
+    if (!mesh) {
+        mesh = &m_fbxScene->addMesh(name, name);
+    }
 
+    inserMesh(mesh, mMesh);
+}
+
+void Filmbox::inserMesh(FbxMesh *mesh, aiMesh *mMesh) {
     auto bHasPosition = mMesh->HasPositions();
     auto bHasNormal = mMesh->HasNormals();
     auto bHasTexCoord = mMesh->HasTextureCoords(0);
 
-    auto id = mesh.addMaterial(mMesh->mMaterialIndex);
+    auto id = mesh->addMaterial(mMesh->mMaterialIndex);
 
     for (auto i=0;i<mMesh->mNumVertices;++i) {
-        auto& vertice = mesh.addVertice(Vector3::zero, Vector3::zero, Vector2::zero, id);
+        auto& vertice = mesh->addVertice(Vector3::zero, Vector3::zero, Vector2::zero, id);
 
         if (bHasPosition) {
             auto &mVertice = mMesh->mVertices[i];
@@ -206,13 +211,15 @@ void Filmbox::processMesh(aiMesh *mMesh) {
     for (auto i=0;i<mMesh->mNumFaces;++i) {
         auto &mFace = mMesh->mFaces[i];
 
-        if (mFace.mNumIndices >= 3) {
+        if (mFace.mNumIndices > 3) {
             continue;
         }
 
-        mesh.addIndice(mFace.mIndices[0]);
-        mesh.addIndice(mFace.mIndices[1]);
-        mesh.addIndice(mFace.mIndices[2]);
+        mesh->addTriangle(
+            mFace.mIndices[0],
+            mFace.mIndices[1],
+            mFace.mIndices[2]
+        );
     }
 
     if (mMesh->HasBones()) {
@@ -226,7 +233,7 @@ void Filmbox::processMesh(aiMesh *mMesh) {
             aiVector3D position;
             mBone->mOffsetMatrix.Decompose(scale, rotation, position);
 
-            auto& fBone = mesh.addBone(name.C_Str(), i);
+            auto& fBone = mesh->addBone(name.C_Str(), i);
             fBone.setScale({scale.x, scale.y, scale.z});
             fBone.setPosition({position.x, position.y, position.z});
             fBone.setRotation({rotation.w, rotation.x, rotation.y, rotation.z});
@@ -234,7 +241,7 @@ void Filmbox::processMesh(aiMesh *mMesh) {
             for (auto j=0;j<mBone->mNumWeights;++j) {
                 auto weight = mBone->mWeights[j];
 
-                auto& vertice = mesh.getVertice(weight.mVertexId);
+                auto& vertice = mesh->getVertice(weight.mVertexId);
                 for (auto k=0;k<4;++k) {
                     if (vertice.boneIndex[k] != -1 || weight.mWeight <= 0.0f) {
                         continue;
@@ -248,7 +255,7 @@ void Filmbox::processMesh(aiMesh *mMesh) {
     }
 }
 
-void Filmbox::processNode(aiNode *mNode, FbxNode& node) {
+void Filmbox::processNode(aiNode *mNode, FbxNode& node, const aiScene *scene) {
     auto name = mNode->mName;
 
     auto& newNode = node.addNode(name.C_Str(), nullptr);
@@ -266,13 +273,21 @@ void Filmbox::processNode(aiNode *mNode, FbxNode& node) {
     newNode.setRotation({rotation.w, rotation.x, rotation.y, rotation.z});
 
     for (auto i=0;i<mNode->mNumMeshes;++i) {
-        newNode.addMesh(mNode->mMeshes[i]);
+        auto name = scene->mMeshes[mNode->mMeshes[i]]->mName.C_Str();
+
+        auto mesh = m_fbxScene->findMesh(name);
+        if (!mesh) {
+            std::cout << "Mesh do not found: " << name << std::endl;
+            continue;
+        }
+
+        newNode.addMesh(*mesh);
     }
 
     for (auto i=0;i<mNode->mNumChildren;++i) {
         auto child = mNode->mChildren[i];
 
-        processNode(child, newNode);
+        processNode(child, newNode, scene);
     }
 }
 

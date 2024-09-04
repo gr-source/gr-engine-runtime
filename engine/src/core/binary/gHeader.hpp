@@ -5,9 +5,24 @@
 #include <cstdint>
 #include <cstring>
 
+#include "core/file/stream.hpp"
+
 struct gHeader {
     char signature[4];
     float version;
+};
+
+enum gStructType {
+    gStructType_None     = 1 << 0,
+    gStructType_Texture  = 1 << 1,
+    gStructType_Material = 1 << 2,
+    gStructType_Mesh     = 1 << 3,
+    gStructType_Node     = 1 << 4
+};
+
+struct gStructHeader {
+    gStructType type;
+    grm::size endOffset;
 };
 
 struct gVertex {
@@ -45,6 +60,13 @@ struct gMesh {
 
     gBone *m_bones;
     grm::u32 m_boneCount;
+
+    gMesh();
+    ~gMesh();
+
+    int serialize(grm::size *offset = nullptr);
+
+    int deserialize();
 };
 
 enum gTextureType {
@@ -67,6 +89,18 @@ struct gMaterial {
     gTexture *m_textures;
 };
 
+struct gMaterialIndex {
+    char name[256];
+    Color color;
+    float roughness;
+    float metallic;
+    float ambientOcclusion;
+    int index;
+
+    grm::u32 textureCount;
+    gTexture *textures;
+};
+
 struct gModel {
     char m_name[256];
 
@@ -74,7 +108,6 @@ struct gModel {
     Quaternion m_rotation;
     Vector3 m_position;
 };
-
 
 // Animation
 struct gAnimationHeader {
