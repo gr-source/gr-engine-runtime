@@ -36,10 +36,10 @@ const std::vector<BoneWeight> &Mesh::getBoneWeight() const {
     return m_boneWeight;
 }
 
-void Mesh::Serialize(std::ostream &os, const Mesh *mesh) {
-    auto &vertices = mesh->m_vertices;
-    auto &indices = mesh->m_indices;
-    auto &name = mesh->m_name;
+void Mesh::serialize(std::ostream &os) const {
+    auto &vertices = m_vertices;
+    auto &indices = m_indices;
+    auto &name = m_name;
 
     // Serialzie name
     auto nSize = name.size();
@@ -58,10 +58,10 @@ void Mesh::Serialize(std::ostream &os, const Mesh *mesh) {
     os.write(reinterpret_cast<const char *>(indices.data()), iSize * sizeof(int));
 }
 
-void Mesh::Deserialize(std::istream &is, Mesh *mesh) {
-    auto &vertices = mesh->m_vertices;
-    auto &indices = mesh->m_indices;
-    auto &name = mesh->m_name;
+void Mesh::deserialize(std::istream &is) {
+    auto &vertices = m_vertices;
+    auto &indices = m_indices;
+    auto &name = m_name;
 
     // Deserialize name
     std::size_t nSize;

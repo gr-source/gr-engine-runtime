@@ -191,112 +191,98 @@ int Scene::writeScene() {
         return 2;
     }
 
-    return 0;
-    
-    /*
-    // Meshes
-    auto meshCount = Resources::GetMeshCount();
-
-    Stream::write(&meshCount, 1);
-
-    auto &meshList = Resources::GetMeshListMap();
-    for (auto &&[name, mesh] : meshList) {
-        WriteMesh(name, &(*mesh));
+    // Mesh
+    if (writeMesh() != 0) {
+        return 3;
     }
 
+    // Objects
+    if (writeObject() != 0) {
+        return 4;
+    }
+    
+    return 0;
+}
+
+int Scene::writeObject() {
     // Objects node
     auto objectCount = s_objects.size();
 
     if (!Stream::write(&objectCount, 1)) {
-        //
+        return 1;
     }
 
     std::for_each(s_objects.begin(), s_objects.end(), Scene::WriteGameObject);
-    */
+    return 0;
 }
 
 int Scene::writeMaterial() {
-    auto count = Resources::GetTextureCount();
+    auto count = Resources::GetMaterialCount();
     auto &materials = Resources::GetMaterialMap();
-    grm::size offset = 0;
 
-    //Write data
-    gStructHeader header{gStructType_Material, offset};
-    // Materials
-    /*
-    auto &materialMap = Resources::GetMaterialMap();
-    auto mSize = materialMap.size();
+    Stream::write(&count, 1);
+    for (auto &&[name, ptr] : materials) {
+        auto size = name.size();
 
-    Stream::write(&mSize, 1);
+        Stream::write(&size, 1);
+        Stream::write(name.data(), size);
 
-    for (auto &&[name, material] : materialMap) {
-        auto sName = name.size();
-        Stream::write(&sName, 1);
-        Stream::write(name.data(), sName);
+        size = ptr.size();
+        Stream::write(&size, 1);
 
-        auto mSize = materials.size();
-        Stream::write(&mSize, 1);
-
-        for (auto &&[idx, material] : materials) {
-            Stream::write(&idx, 1);
-
+        for (auto &material : ptr) {
             material.serialize(Stream::stream);
         }
     }
-    */
-    //
-    /*
-    auto sName = name.size();
-    Stream::write(&sName, 1);
-    Stream::write(name.data(), sName);
-
-    auto mSize = materials.size();
-    Stream::write(&mSize, 1);
-
-    for (auto &&[idx, material] : materials) {
-        Stream::write(&idx, 1);
-
-        material.serialize(Stream::stream);
-    }
-    */
+    return 0;
 }
 
 int Scene::writeTexture() {
     auto &textureMap = Resources::GetTextureMap();
-
-    std::vector<const char *> pathList;
-    for (auto &&[path, ptr] : textureMap) {
-        pathList.push_back(path.c_str());
-    }
+    auto count = Resources::GetTextureCount();
 
     grm::size offset = 0;
-
-    auto size = pathList.size();
-    offset += sizeof(size);
-    offset += size * sizeof(const char *);
+    offset += sizeof(grm::size);
+    offset += count * sizeof(std::size_t);
+    // offset += count * sizeof(char); // arrumar
 
     gStructHeader header{gStructType_Texture, offset};
     if (!Stream::write(&header, 1)) {
         return 1;
     }
 
-    if (!Stream::write(&size, 1)) {
+    if (!Stream::write(&count, 1)) {
         return 2;
     }
 
-    if (!Stream::write(pathList.data(), pathList.size())) {
-        return 3;
+    for (auto &&[path, ptr] : textureMap) {
+        auto size = path.size();
+
+        if (!Stream::write(&size, 1)) {
+            return 3;
+        }
+
+        if (!Stream::write(path.data(), size)) {
+            return 4;
+        }
     }
     return 0;
 }
 
-void Scene::WriteMesh(const std::string &name, Mesh *mesh) {
-    auto nSize = name.size();
+int Scene::writeMesh() {
+    auto meshCount = Resources::GetMeshCount();
 
-    Stream::write(&nSize, 1);
-    Stream::write(name.data(), nSize);
+    Stream::write(&meshCount, 1);
 
-    Mesh::Serialize(Stream::stream, mesh);
+    for (auto &&[name, mesh] : Resources::GetMeshListMap()) {
+        auto size = name.size();
+
+        Stream::write(&size, 1);
+        Stream::write(name.data(), size);
+
+        mesh->serialize(Stream::stream);
+    }
+    return 0;
 }
 
 void Scene::WriteGameObject(GameObject *gameObject) {
@@ -351,56 +337,68 @@ void Scene::WriteGameObject(GameObject *gameObject) {
 }
 
 int Scene::readScene() {
-    // Textures
-    if (readTextures() != 0) {
+    // Texture
+    if (readTexture() != 0) {
         return 1;
     }
 
+    // material
+    if (readMaterial() != 0) {
+        return 2;
+    }
+
+    // mesh
+    if (readMesh() != 0) {
+        return 3;
+    }
+
+    // objects
+    if (readObject() != 0) {
+        return 4;
+    }
     return 0;
-
-    /*std::size_t tSize;
-    Stream::read(&tSize, 1);
-
-    for (int i=0;i<tSize;i++) {
-        std::size_t pSize;
-        Stream::read(&pSize, 1);
-
-        std::string path(pSize, '\0');
-        Stream::read(path.data(), pSize);
-
-        Resources::LoadTexture(path);
-    }
-
-    // Materials
-    std::size_t mSize;
-    Stream::read(&mSize, 1);
-
-    for (int i=0;i<mSize;i++) {
-        ReadMaterial();
-    }
-
-    // Meshes
-    grm::size meshCount;
-    Stream::read(&meshCount, 1);
-
-    for (int i=0;i<meshCount;i++) {
-        ReadMesh();
-    }
-
-    // gameObject
-    std::size_t objectCount;
-
-    if (!Stream::read(&objectCount, 1)) {
-        //
-    }
-
-    for (std::size_t i=0;i<objectCount;i++) {
-        ReadNode();
-    }
-    */
 }
 
-int Scene::readTextures() {
+int Scene::readObject() {
+    // Objects node
+    std::size_t objectCount;
+    if (!Stream::read(&objectCount, 1)) {
+        return 1;
+    }
+
+    for (auto i=0;i<objectCount;i++) {
+        ReadNode(nullptr);
+    }
+
+    // std::for_each(s_objects.begin(), s_objects.end(), Scene::WriteGameObject);
+    return 0;
+}
+
+int Scene::readMaterial() {
+    grm::size count = 0;
+    Stream::read(&count, 1);
+
+    for (auto i=0;i<count;i++) {
+        std::size_t size;
+        Stream::read(&size, 1);
+
+        std::string name(size, '\0');
+        Stream::read(name.data(), size);
+
+        Stream::read(&size, 1);
+
+        std::vector<Material> materials(size);
+        for (auto &material : materials) {
+            material.deserialize(Stream::stream);
+        }
+        
+        if (!name.empty() || !materials.empty())
+            Resources::AddMaterial(name, materials);
+    }
+    return 0;
+}
+
+int Scene::readTexture() {
     gStructHeader header{gStructType_None, 0};
     if (!Stream::read(&header, 1)) {
         return 1;
@@ -411,50 +409,41 @@ int Scene::readTextures() {
         return 2;
     }
 
-    std::vector<const char *> pathList(size, nullptr);
-    if (!Stream::read(pathList.data(), pathList.size())) {
-        return 3;
+    std::vector<std::string> pathList(size);
+    for (auto &path : pathList) {
+        std::size_t size;
+        if (!Stream::read(&size, 1)) {
+            return 3;
+        }
+
+        path.resize(size, '\0');
+        if (!Stream::read(path.data(), size)) {
+            return 4;
+        }
     }
+    
 
     for (auto &path : pathList) {
+        Resources::LoadTexture(path);
     }
     return 0;
 }
 
-void Scene::ReadMaterial() {
-    /*
-    std::size_t sName;
-    Stream::read(&sName, 1);
+int Scene::readMesh() {
+    grm::size meshCount = 0;
+    Stream::read(&meshCount, 1);
 
-    std::string name(sName, '\0');
-    Stream::read(name.data(), sName);
+    for (auto i=0;i<meshCount;i++) {
+        std::size_t size = 0;
+        Stream::read(&size, 1);
 
-    std::size_t mSize;
-    Stream::read(&mSize, 1);
+        std::string name(size, '\0');
+        Stream::read(name.data(), size);
 
-    std::unordered_map<int, Material> materials;
-    for (int i=0;i<mSize;i++) {
-        int idx;
-        Stream::read(&idx, 1);
-
-        auto &&[it, added] = materials.emplace(idx, "default");
-
-        it->second.deserialize(Stream::stream);
+        auto mesh = Resources::AddMesh(name, std::make_unique<Mesh>(name));
+        mesh->deserialize(Stream::stream);
     }
-    Resources::AddMaterial(name, materials);
-    */
-}
-
-void Scene::ReadMesh() {
-    std::size_t nSize;
-
-    Stream::read(&nSize, 1);
-
-    std::string name(nSize, '\0');
-    Stream::read(name.data(), nSize);
-
-    auto ptr = Resources::AddMesh(name, std::make_unique<Mesh>(name));
-    Mesh::Deserialize(Stream::stream, ptr);
+    return 0;
 }
 
 void Scene::ReadNode(Transform *parent) {

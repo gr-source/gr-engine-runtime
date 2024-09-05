@@ -58,11 +58,13 @@ public:
 
     static grm::u32 m_processCount;
 
-    static const grm::size GetTextureCount();
+    static grm::size GetMaterialCount();
 
-    static const grm::size GetShaderCount();
+    static grm::size GetTextureCount();
+
+    static grm::size GetShaderCount();
     
-    static const grm::size GetMeshCount();
+    static grm::size GetMeshCount();
 
     static std::string GetTextureKeyMap(grr::gTexture *texture);
 

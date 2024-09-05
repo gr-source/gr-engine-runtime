@@ -54,21 +54,25 @@ private:
 
     int writeScene();
 
+    int writeObject();
+
+    int writeMesh();
+
     int writeMaterial();
 
     int writeTexture();
 
-    static void WriteMesh(const std::string &name, Mesh *mesh);
-
     static void WriteGameObject(GameObject *gameObject);
 
-    static int readScene();
+    int readScene();
 
-    static int readTextures();
+    int readObject();
 
-    static void ReadMaterial();
+    int readMaterial();
 
-    static void ReadMesh();
+    int readTexture();
+
+    int readMesh();
 
     static void ReadNode(Transform *parent = nullptr);
 };

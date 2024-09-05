@@ -725,15 +725,19 @@ void Resources::ReadChildren(Transform *parent) {
     transform = nullptr;
 }
 
-const grm::size Resources::GetTextureCount() {
+grm::size Resources::GetMaterialCount() {
+    return m_materialMap.size();
+}
+
+grm::size Resources::GetTextureCount() {
     return s_textureList.size();
 }
 
-const grm::size Resources::GetShaderCount() {
+grm::size Resources::GetShaderCount() {
     return s_shaderList.size();
 }
 
-const grm::size Resources::GetMeshCount() {
+grm::size Resources::GetMeshCount() {
     auto count = 0;
     {
         std::lock_guard<std::mutex> lock(m_meshMutex);

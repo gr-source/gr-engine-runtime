@@ -278,9 +278,6 @@ void WriteNode(const FbxScene *scene, const FbxNode &node) {
         return Console::log(LogInfo::ERROR, "Falied to material data ");
     }
 
-    std::cout << "Material: " << mSize << std::endl;
-
-
     for (auto &material : pMateials) {
         Stream::write(material.m_name, 256);
         Stream::write(&material.m_color, 1);
@@ -759,6 +756,7 @@ void Game::RenderViewportUI() {
             }
 
             if (!isQuit) {
+                s_objectSelected = nullptr;
                 Scene::Use(nullptr);
                 
                 it = m_scenes.erase(it);

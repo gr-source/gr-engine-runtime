@@ -34,9 +34,9 @@ public:
 
     const std::vector<BoneWeight> &getBoneWeight() const;
 
-    static void Serialize(std::ostream &os, const Mesh *mesh);
+    void serialize(std::ostream &os) const;
 
-    static void Deserialize(std::istream &is, Mesh *mesh);
+    void deserialize(std::istream &is);
 
 private:
     std::vector<Vertex3D> m_vertices;
