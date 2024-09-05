@@ -24,6 +24,8 @@ public:
 
     static PostProcessing *MainPostProcess;
 
+    static void MainFramebuffer();
+
 protected:
     static void GRWindowResize(grm::u32 width, grm::u32 height);
 
@@ -47,8 +49,6 @@ protected:
 
     static void RenderScene();
     
-    static void MainFramebuffer();
-
     #if !IS_GAME
     static void UIFramebuffer();
     #endif

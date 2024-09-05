@@ -39,7 +39,7 @@ public:
 
     const bool hasParent() const;
 
-    void setParent(Transform* transform);
+    void setParent(Transform* transform, bool remove = true);
 
     Transform *getParent();
 

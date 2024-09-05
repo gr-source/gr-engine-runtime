@@ -47,6 +47,10 @@ void Camera::setAspectRatio(float aspect) {
     updateMatrix();
 }
 
+float Camera::getAspectRatio() {
+    return m_aspect;
+}
+
 void Camera::updateMatrix() {
     m_projection = Math::perspective(Math::rad(m_fov), m_aspect, m_farPlane, m_nearPlane);
 }

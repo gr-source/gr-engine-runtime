@@ -14,6 +14,8 @@ public:
 
     static void Use(Scene *scene);
     
+    static Scene *Create(const std::string &name);
+
     Scene(const std::string &name);
     ~Scene();
 
@@ -22,10 +24,6 @@ public:
     void load(const std::string &path);
 
     void save();
-
-    void SetSceneName(const std::string &name);
-
-    const std::string &GetSceneName();
 
     GameObject &CreateGameObject(const std::string &name, const std::string &tag = "untagged");
 

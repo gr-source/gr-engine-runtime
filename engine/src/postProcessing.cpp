@@ -1,12 +1,9 @@
 #include "postProcessing.hpp"
 
-/*
-* Estrutura:
-*
-* FrameBuffer
-*   TextureColor (Armazena as cores)
-*   RenderBuffer (Armazedar o depth)
-*/
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "core/stb/stb_image_write.h"
+
+PostProcessing *PostProcessing::m_current = nullptr;
 
 PostProcessing *PostProcessing::Create(const iVector2 &size) {
     auto handle = new PostProcessing();
@@ -82,16 +79,43 @@ void PostProcessing::Bind(PostProcessing *target) {
 
     grr::gRender::SetRenderState(grr::GR_VIEWPORT, (void *)&target->m_viewport);
     grr::gFramebuffer::Bind(target->m_fbo);
+
+    m_current = target;
 }
 
 void PostProcessing::Unbind() {
     grr::gFramebuffer::Unbind();
+
+    m_current = nullptr;
 }
 
 grr::gTexture *PostProcessing::GetTextureColor(PostProcessing *target) {
     assert(target != nullptr);
     
     return target->m_texture;
+}
+
+void PostProcessing::Save(const std::string &path, PostProcessing *postProcessing) {
+    if (!postProcessing) {
+        throw std::runtime_error("PostProcess pointer is invalid.");
+    }
+
+    auto size = postProcessing->m_viewport;
+
+    char pixels[size.x][size.y][3];
+
+    PostProcessing::Bind(postProcessing);
+    grr::gFramebuffer::GetPixels(0, 0, size.x, size.y, grr::TextureFormat_RGB, pixels);
+
+    stbi_flip_vertically_on_write(true);
+    stbi_write_jpg(path.c_str(), size.x, size.y, 3, pixels, 100);
+}
+
+const iVector2 &PostProcessing::GetSize() {
+    if (!m_current) {
+        throw std::runtime_error("Do not exists post process.");
+    }
+    return m_current->m_viewport;
 }
 
 PostProcessing::PostProcessing() : m_texture(nullptr), m_rbo(0), m_fbo(0), m_viewport(0, 0) {}

@@ -496,8 +496,34 @@ void Game::RenderUI() {
 
     if (s_io->KeyCtrl && ImGui::IsKeyReleased(ImGuiKey_S)) {
         for (auto &&[name, ptr] : m_scenes) {
-            ptr->save();
+            Event::Add([&name, &ptr]{
+                Scene::Use(&(*ptr));
+                
+                auto camera = Camera::Current();
+                if (!camera) {
+                    return;
+                }
+
+                auto lastApect = camera->getAspectRatio();
+
+
+                PostProcessing::Bind(Engine::ImGuiPostProcess);
+                auto &size = PostProcessing::GetSize();
+
+                camera->setAspectRatio(static_cast<float>(size.x) / static_cast<float>(size.y));
+
+                Engine::MainFramebuffer();
+
+                // grr::gRender::SetRenderState(grr::GR_FRAMEBUFFER_SRGB, grr::GR_TRUE);
+
+                camera->setAspectRatio(lastApect);
+
+                PostProcessing::Save(File::GetFile("/texture/" + name + ".jpg"), Engine::ImGuiPostProcess);
+
+                ptr->save();
+            });
         }
+        // 
     }
 }
 
@@ -937,15 +963,22 @@ void Game::RenderScene() {
 }
 
 void Game::DropGameObjectInScene() {
+    auto camera = Camera::Current();
+
     auto isOpen = ImGui::BeginDragDropTarget();
-    if (!isOpen) {
+    if (!isOpen && camera) {
         return;
     }
+
+    auto camTransform = camera->getTransform();
 
     if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(IMGUI_PAYLOAD_FILE)) {
         std::string path((char*)payload->Data, payload->DataSize);
         if (!path.empty() && std::filesystem::path(path).filename().extension() == ".gmd") {
             s_objectSelected = Resources::LoadGameObject(path);
+
+            auto &transform = s_objectSelected->getTransform();
+            transform.setLocalPosition(camera->getPosition() + (camTransform->getforward() * 5.5f));
         }
     }
     ImGui::EndDragDropTarget();
@@ -964,15 +997,13 @@ void Game::PopupMenuCreateScene() {
 
     char name[256] = {0};
     if (ImGui::InputText("##input_scene_name", name, 256, ImGuiInputTextFlags_EnterReturnsTrue)) {
-        m_scenes.emplace(name, std::make_shared<Scene>(name));
+        m_scenes.emplace(name, std::shared_ptr<Scene>(Scene::Create(name)));
         
         ImGui::CloseCurrentPopup();
     }
 
     ImGui::EndPopup();
 }
-
-bool bPopupOpen = false;
 
 void Game::RenderFilesUI() {
     grr::gTexture *gtCurrentTexture = iconsUI[ICON_BACK_FILE];
@@ -987,6 +1018,7 @@ void Game::RenderFilesUI() {
     }
 
     bool bSelelectAll = false;
+    bool bPopupOpen = false;
 
     if (s_io->KeyCtrl && ImGui::IsKeyDown(ImGuiKey_A) && ImGui::IsWindowFocused()) {
         bSelelectAll = true;
@@ -1109,15 +1141,15 @@ void Game::RenderFilesUI() {
     }
 
     if (bPopupOpen)
-        PopupDirmanager();
+        PopupDirmanager(bPopupOpen);
 
     PopupFileManager();
 
     PopupCreateDirectory();
 }
 
-void Game::PopupDirmanager() {
-    if (ImGui::BeginPopupModal("##popup_dir_manager", &bPopupOpen)) {
+void Game::PopupDirmanager(bool &isOpen) {
+    if (ImGui::BeginPopupModal("##popup_dir_manager", &isOpen)) {
         for (auto &&[path, isSeleceted] : fLisDirSelected) {
             ImGui::Text("Dir: %s", path.filename().string().c_str());
         }
@@ -1142,11 +1174,9 @@ void Game::PopupDirmanager() {
         ImGui::EndPopup();
     }
 
-    if (!bPopupOpen) {
+    if (!isOpen) {
         fLisDirSelected.clear();
     }
-
-    // ImGui::
 }
 
 void Game::PopupFileManager() {
@@ -1348,7 +1378,7 @@ void Game::RenderGameObjectPropertiUI() {
     auto &componentPool = ScriptManager::GetComponentPool();
 
     auto isOpenPopup = false;
-    ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
+    // ImGui::SetNextItemOpen(true, ImGuiCond_Appearing);
     if (ImGui::BeginTabItem("GameObject", nullptr)) {
         ImGui::Image(reinterpret_cast<ImTextureID>(iconsUI[IconType::ICON_GAMEOBJECT]->getID()), ImVec2(16, 16));
 

@@ -94,7 +94,7 @@ private:
 
     static void RenderFilesUI();
 
-    static void PopupDirmanager();
+    static void PopupDirmanager(bool &isOpen);
 
     static void PopupFileManager();
 

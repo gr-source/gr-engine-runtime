@@ -34,6 +34,17 @@ void Scene::Use(Scene *scene) {
     m_current = scene;
 }
 
+Scene *Scene::Create(const std::string &name) {
+    auto scene = new Scene(name);
+
+    Scene::Use(scene);
+
+    auto &camera = scene->CreateGameObject("MainCamera");
+    camera.addComponent<Camera>();
+    
+    return scene;
+}
+
 Scene::Scene(const std::string &name) : m_name(name), m_enable(true) {
 }
 
@@ -121,14 +132,6 @@ void Scene::save() {
     Stream::close();
 
     Console::log(LogInfo::INFO, "Scene saved: " + m_name);
-}
-
-void Scene::SetSceneName(const std::string &name) {
-    m_name = name;
-}
-
-const std::string &Scene::GetSceneName() {
-    return m_name;
 }
 
 GameObject &Scene::CreateGameObject(const std::string &name, const std::string &tag) {

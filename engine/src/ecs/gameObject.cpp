@@ -77,8 +77,15 @@ void GameObject::Destroy(GameObject *target) {
     }
 
     auto &transform = target->getTransform();
+    // remove o objeto pai do objeto altual e se o pai me ter como filho me remove do objeto pai.
+    transform.setParent(nullptr);
 
-    for (auto &child : transform.getChildren()) {
+    auto& children = transform.getChildren();
+
+    for (auto &child : children) {
+        // como o objeto pai ja foi removido diz, aos filhos que não tem mais parent.
+        child->setParent(nullptr, false);
+
         auto gameObject = child->getGameObject();
 
         GameObject::Destroy(gameObject);
@@ -116,6 +123,10 @@ const std::string &GameObject::getTag() {
 
 void GameObject::setActive(bool value) {
     m_bActive = value;
+
+    for (auto child : m_transform->getChildren()) {
+        child->getGameObject()->setActive(value);
+    }
 }
 
 bool GameObject::isActive() const {

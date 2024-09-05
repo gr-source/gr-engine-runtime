@@ -17,7 +17,13 @@ public:
 
     static grr::gTexture *GetTextureColor(PostProcessing *target);
 
+    static void Save(const std::string &path, PostProcessing *postProcessing);
+
+    static const iVector2 &GetSize();
+
 private:
+    static PostProcessing *m_current;
+
     grr::gTexture *m_texture;
 
     grm::u32 m_rbo;
