@@ -58,6 +58,9 @@ void DebugDraw::AddLine(const Vector3& start, const Vector3& end, const Color& c
 }
 
 void DebugDraw::Renderer() {
+    if (!Camera::Current) {
+        return;
+    }
     auto camera = Camera::Current();
     if (!camera) {
         return;

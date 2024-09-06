@@ -463,8 +463,6 @@ void Game::LoadScript() {
     ScreenRender::Initialize();
 
     Manager::Replay();
-
-    bScriptReloaded = true;
 }
 
 void Game::UnloadScript() {
@@ -818,8 +816,15 @@ void Game::DropSceneInViewport() {
         std::string path((char*)payload->Data, payload->DataSize);
         if (!path.empty() && std::filesystem::path(path).filename().extension() == ".scn") {
             auto ptr = std::make_shared<Scene>("NoName");
+            auto lastScene = Scene::GetCurrentScene();
             ptr->load(path);
-            m_scenes.emplace(ptr->getName(), std::move(ptr));
+            Scene::Use(lastScene);
+
+            auto it = m_scenes.find(ptr->getName());
+            if (it == m_scenes.end()) {
+                m_scenes.emplace(ptr->getName(), std::move(ptr));
+            }
+
         }
     }
     ImGui::EndDragDropTarget();
@@ -873,10 +878,9 @@ void Game::RenderScene() {
                 s_objectSelected = nullptr;
             } else {
                 s_texturePlayGame = iconsUI[IconType::ICON_PLAY_GAME];
+                bScriptReloaded = true;
 
                 LoadScript();
-
-                bScriptReloaded = true;
             }
         }
     }
@@ -963,8 +967,14 @@ void Game::RenderScene() {
 }
 
 void Game::DropGameObjectInScene() {
+    if (!Camera::Current) {
+        return;
+    }
     auto camera = Camera::Current();
-
+    if (!camera) {
+        return;
+    }
+    
     auto isOpen = ImGui::BeginDragDropTarget();
     if (!isOpen && camera) {
         return;

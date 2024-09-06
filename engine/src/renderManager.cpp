@@ -49,12 +49,15 @@ void RenderManager::Initialize() {
 }
 
 void RenderManager::Process() {
+    if (!Camera::Current) {
+        return;
+    }
     m_camera = Camera::Current();
     if (!bRender || !m_camera) {
         return;
     }
 
-    Frustum::CalculateFrustum(m_camera->getPerspesctive() * m_camera->getViewmatrix());
+    // Frustum::CalculateFrustum(m_camera->getPerspesctive() * m_camera->getViewmatrix());
 }
 
 void RenderManager::Renderer() {

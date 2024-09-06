@@ -22,10 +22,6 @@ public:
 
     static std::unordered_map<int, grr::gShader *> (*GetShaders)();
 
-    // [ Componenet - Camera ]
-    static Camera *(*MainCamera)();
-    static Camera *(*CurrentCamera)();
-
     // [ Entity ]
     static std::size_t (*GetEntityCount)();
 

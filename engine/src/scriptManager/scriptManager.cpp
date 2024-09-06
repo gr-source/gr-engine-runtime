@@ -1,5 +1,7 @@
 #include "scriptManager.hpp"
 
+#include "scriptLoader.hpp"
+
 #include "script/meshRender.hpp"
 #include "script/camera.hpp"
 
@@ -21,34 +23,6 @@
 #include <fstream>
 #include <dlfcn.h>
 
-#define REGISTER_API(r, p, f) \
-    f = (r(*)(p))dlsym(ScriptManager::s_handle, #f); \
-    if (!f) { \
-        std::cout << "Falied to register function: " << #f << std::endl; \
-    } \
-
-#define REGISTER_API_FROM_NAME(n, r, p, f) \
-    f = (r(*)(p))dlsym(ScriptManager::s_handle, n); \
-    if (!f) { \
-        std::cout << "Falied to register function: " << #f << std::endl; \
-    } \
-
-#define REGISTER_API_FROM_NAME_N(n, r, f, ...) \
-    f = (r(*)(__VA_ARGS__))dlsym(ScriptManager::s_handle, n); \
-    if (!f) { \
-        std::cout << "Falied to register function: " << #f << std::endl; \
-    } \
-
-#define REGISTER_FUNC(symbol, hookFunc) Memory::Hook(dlsym(ScriptManager::s_handle, symbol), (void *)&hookFunc)
-
-#define UNREGISTER_API(func) func = nullptr
-
-#define REGISTER_FIELD(n, f, ...) \
-    f = ((__VA_ARGS__ *)dlsym(ScriptManager::s_handle, n))
-
-// #define REGISTER_FIELD(n, f, ) \
-    // f = ((__VA_ARGS__ *)dlsym(ScriptManager::s_handle, n))
-
 grm::size ScriptManager::s_lastTime = 0;
 
 std::string ScriptManager::s_path = "";
@@ -63,7 +37,7 @@ void (*ScriptManager::Update)();
 void (*ScriptManager::Destroy)();
 void (*ScriptManager::SetDeltaTime)(float);
 
-std::unordered_map<int, std::pair<const std::string, const std::string>> (*ScriptManager::GetShader)();
+std::unordered_map<int, std::pair<const std::string, const std::string>> (*ScriptManager::GetShader)() = nullptr;
 
 std::unordered_map<int, grr::gShader *> (*ScriptManager::GetShaders)();
 
@@ -72,10 +46,6 @@ std::size_t (*ScriptManager::GetEntityCount)();
 
 // LIght
 std::vector<Light *> &(*ScriptManager::GetListLight)();
-
-// [ Componenet - Camera ]
-Camera *(*ScriptManager::MainCamera)();
-Camera *(*ScriptManager::CurrentCamera)();
 
 // Event
 void (*ScriptManager::EventUpdate)();
@@ -95,13 +65,15 @@ Component *(*ScriptManager::CopyComponentWithName)(const std::string &name, Comp
 void ScriptManager::Initialize() {
     s_path = "/home/grsource/Documentos/AppProjects/gr-component/lib/libgr-component.so";
 
-    Console::log(LogInfo::INFO, "Loading script...");
-
-    s_handle = dlopen(s_path.c_str(), RTLD_LAZY);
-    if (!s_handle) {
-        Console::log(LogInfo::ERROR, "Falied to load Script.");
+    if (!ScriptLoader::open(s_path)) {
         return;
     }
+
+    // s_handle = dlopen(s_path.c_str(), RTLD_LAZY);
+    // if (!s_handle) {
+    //     Console::log(LogInfo::ERROR, "Falied to load Script.");
+    //     return;
+    // }
 
     RegisterApi();
 
@@ -118,54 +90,7 @@ void ScriptManager::Shutdown() {
         Destroy();
     }
 
-    // [ Main ]
-    UNREGISTER_API(InitializeScript);
-
-    UNREGISTER_API(Update);
-    UNREGISTER_API(Destroy);
-    UNREGISTER_API(SetDeltaTime);
-
-    UNREGISTER_API(GetShader);
-    UNREGISTER_API(GetShaders);
-
-    // [ Entity ]
-    UNREGISTER_API(GetEntityCount);
-    UNREGISTER_API(Entity::Update);
-    UNREGISTER_API(Entity::Init);
-
-    // Light
-    UNREGISTER_API(GetListLight);
-
-    // [ Componenet - Camera ]
-    UNREGISTER_API(MainCamera);
-    UNREGISTER_API(CurrentCamera);
-    UNREGISTER_API(Camera::GetCameras);
-    UNREGISTER_API(Camera::SetEnable);
-
-    // Event
-    UNREGISTER_API(EventUpdate);
-
-    // AssetManager
-    UNREGISTER_API(LoadAnimation);
-
-    // Screen
-    UNREGISTER_API(SetScreenSize);
-
-    // Component Pool
-    UNREGISTER_API(GetComponentPool);
-
-    UNREGISTER_API(ScriptManager::CreateComponentWithName);
-    UNREGISTER_API(ScriptManager::CopyComponentWithName);
-
-    if (!s_handle) {
-        return;
-    }
-
-    if (dlclose(s_handle) != 0) {
-        Console::log(LogInfo::ERROR, "Failed to flush script data: " + std::string(dlerror()));
-    }
-
-    s_handle = nullptr;
+    ScriptLoader::close();
 }
 
 #include <sys/stat.h>
@@ -204,81 +129,78 @@ void ScriptManager::doInBackground() {
     // }
 }
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpmf-conversions"
 void ScriptManager::RegisterApi() {
-    // Functions
-    REGISTER_FUNC("Consolelog", Console::log);
+    // Console log
+    ScriptLoader::replaceLibraryFunction("Consolelog", reinterpret_cast<void *>(&Console::log));
 
-    // [ Main ]
-    REGISTER_API_FROM_NAME_N("Initialize", void, InitializeScript, void);
+    // First function
+    ScriptLoader::registerFunction("Initialize",   reinterpret_cast<void **>(&InitializeScript));
+    ScriptLoader::registerFunction("Destroy",      reinterpret_cast<void **>(&Destroy));
+    ScriptLoader::registerFunction("SetDeltaTime", reinterpret_cast<void **>(&SetDeltaTime));
 
-    REGISTER_API(void, void, Update);
-    REGISTER_API(void, void, Destroy);
-    REGISTER_API(void, float, SetDeltaTime);
+    // shader functions
+    ScriptLoader::registerFunction("GetShader",  reinterpret_cast<void **>(&GetShader));
+    ScriptLoader::registerFunction("GetShaders", reinterpret_cast<void **>(&GetShaders));
 
-    GetShader = (std::unordered_map<int, std::pair<const std::string, const std::string>>(*)(void))dlsym(ScriptManager::s_handle, "GetShader");
-    GetShaders = (std::unordered_map<int, grr::gShader *>(*)(void))dlsym(ScriptManager::s_handle, "GetShaders");
+    // entity functions
+    // ScriptLoader::registerFunction("GetEntityCount", reinterpret_cast<void *>(&GetEntityCount));
+    ScriptLoader::registerFunction("_ZN6Entity6updateEv", reinterpret_cast<void **>(&Entity::Update));
+    ScriptLoader::registerFunction("_ZN6Entity4initEv",   reinterpret_cast<void **>(&Entity::Init));
+    ScriptLoader::replaceLibraryFunction("_ZN6Entity20addInternalComponentERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE", (void *)&Entity::addInternalComponent);
 
-    // REGISTER_API_FROM_NAME_N("GetShaders", std::unordered_map<int, grr::gShader *>, GetShaders, void);
+    // Light fundtiosn
+    ScriptLoader::registerFunction("GetListLight", reinterpret_cast<void **>(&GetListLight));
 
-    // [ Entity ]
-    REGISTER_API(std::size_t, void, GetEntityCount);
-    REGISTER_API_FROM_NAME("_ZN6Entity6updateEv", void, Entity *, Entity::Update);
-    REGISTER_API_FROM_NAME("_ZN6Entity4initEv", void, Entity *, Entity::Init);
-    // REGISTER_API_FROM_NAME_N("_ZN6Entity9setEnableEb", void, Entity::SetEnable, Entity *, bool);
+    // Camera functions
+    ScriptLoader::registerFunction("MainCamera",      reinterpret_cast<void **>(&Camera::Main));
+    ScriptLoader::registerFunction("CurrentCamera",   reinterpret_cast<void **>(&Camera::Current));
+    ScriptLoader::registerFunction("GetAllCamera",    reinterpret_cast<void **>(&Camera::GetCameras));
+    ScriptLoader::registerFunction("SetEnableCamera", reinterpret_cast<void **>(&Camera::SetEnable));
 
-    REGISTER_FUNC("_ZN6Entity20addInternalComponentERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE", Entity::addInternalComponent);
-
-    // Light
-    REGISTER_API(std::vector<Light *> &, void, GetListLight);
-
-    // [ Componenet - Camera ]
-    REGISTER_API(Camera*, void, MainCamera);
-    REGISTER_API(Camera*, void, CurrentCamera);
-    REGISTER_API_FROM_NAME("GetAllCamera", std::vector<Camera *> &, void, Camera::GetCameras);
-    REGISTER_API_FROM_NAME("SetEnableCamera", void, Camera *, Camera::SetEnable);
-
-    // Event
-    REGISTER_API(void, void, EventUpdate);
+    // Event Manager
+    ScriptLoader::registerFunction("EventUpdate", reinterpret_cast<void **>(&EventUpdate));
 
     // AssetManager
-    REGISTER_FUNC("LoadTexture", Resources::LoadTexture);
-    REGISTER_FUNC("LoadShader", Resources::LoadShader);
-    REGISTER_FUNC("LoadGameObject", Resources::LoadGameObject);
-    REGISTER_FUNC("_ZN13AssetsManager13AddPostLoaderESt8functionIFbPvRKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEEE", Resources::AddPostLoader);
-    REGISTER_FUNC("_ZN13AssetsManager8FindMeshERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE", Resources::FindMesh);
-    REGISTER_FUNC("_ZN13AssetsManager12FindMaterialERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE", Resources::FindMaterial);
+    ScriptLoader::replaceLibraryFunction("LoadTexture",                                                                                                reinterpret_cast<void *>(&Resources::LoadTexture));
+    ScriptLoader::replaceLibraryFunction("LoadShader",                                                                                                 reinterpret_cast<void *>(&Resources::LoadShader));
+    ScriptLoader::replaceLibraryFunction("LoadGameObject",                                                                                             reinterpret_cast<void *>(&Resources::LoadGameObject));
+    ScriptLoader::replaceLibraryFunction("_ZN13AssetsManager13AddPostLoaderESt8functionIFbPvRKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEEE", reinterpret_cast<void *>(&Resources::AddPostLoader));
+    ScriptLoader::replaceLibraryFunction("_ZN13AssetsManager8FindMeshERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE",                         reinterpret_cast<void *>(&Resources::FindMesh));
+    ScriptLoader::replaceLibraryFunction("_ZN13AssetsManager12FindMaterialERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE",                    reinterpret_cast<void *>(&Resources::FindMaterial));
 
-    REGISTER_API(std::unique_ptr<Animation>, const std::string &, LoadAnimation);
+    ScriptLoader::registerFunction("LoadAnimation", reinterpret_cast<void **>(&LoadAnimation));
 
     // Input
-    REGISTER_FUNC("InputIsKeyPress", Input::IsKeyPress);
-    REGISTER_FUNC("InputSetCursourPos", Input::SetCursorPos);
-    REGISTER_FUNC("InputGetCursorPos", Input::GetCursorPos);
-    // REGISTER_FUNC("InputIsMousePress", Input::IsMousePress);
+    ScriptLoader::replaceLibraryFunction("InputIsKeyPress",    reinterpret_cast<void *>(&Input::IsKeyPress));
+    ScriptLoader::replaceLibraryFunction("InputSetCursourPos", reinterpret_cast<void *>(&Input::SetCursorPos));
+    ScriptLoader::replaceLibraryFunction("InputGetCursorPos",  reinterpret_cast<void *>(&Input::GetCursorPos));
+    // ScriptLoader::replaceLibraryFunction("InputIsMousePress", Input::IsMousePress);
 
     // Screen
-    REGISTER_API(void, const iVector2 &, SetScreenSize);
+    ScriptLoader::registerFunction("SetScreenSize", reinterpret_cast<void **>(&SetScreenSize));
 
     // Scene
-    REGISTER_FUNC("_ZN5Scene16CreateGameObjectERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEES7_", Scene::CreateGameObject);
-    REGISTER_FUNC("_ZN5Scene6DeleteEP10GameObject", Scene::Delete);
-    REGISTER_FUNC("_ZN5Scene3AddEP10GameObject", Scene::Add);
+    // ScriptLoader::replaceLibraryFunction("_ZN5Scene16CreateGameObjectERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEES7_", Scene::CreateGameObject);
+    // ScriptLoader::replaceLibraryFunction("_ZN5Scene6DeleteEP10GameObject", Scene::Delete);
+    // ScriptLoader::replaceLibraryFunction("_ZN5Scene3AddEP10GameObject", Scene::Add);
 
     // Component Pool
     GetComponentPool = (std::unordered_map<std::string, std::unique_ptr<Pool>> &(*)(void))dlsym(ScriptManager::s_handle, "GetComponentPool");
 
-    REGISTER_API_FROM_NAME_N("CreateComponentWithName", Component *, ScriptManager::CreateComponentWithName, const std::string &);
-    REGISTER_API_FROM_NAME_N("CopyComponentWithName", Component *, ScriptManager::CopyComponentWithName, const std::string &, Component *);
+    ScriptLoader::registerFunction("CreateComponentWithName", reinterpret_cast<void **>(&ScriptManager::CreateComponentWithName));
+    ScriptLoader::registerFunction("CopyComponentWithName",   reinterpret_cast<void **>(&ScriptManager::CopyComponentWithName));
 
     // Batching
-    REGISTER_FUNC("_ZN8Batching6removeEP9Transformb", Batching::remove);
-    REGISTER_FUNC("_ZN8Batching6insertEP9Transform", Batching::insert);
+    ScriptLoader::replaceLibraryFunction("_ZN8Batching6removeEP9Transformb", (void *)&Batching::remove);
+    ScriptLoader::replaceLibraryFunction("_ZN8Batching6insertEP9Transform",  (void *)&Batching::insert);
 
     // Script
-    REGISTER_FUNC("_ZN10MeshRender5buildEv", MeshRender::build);
+    ScriptLoader::replaceLibraryFunction("_ZN10MeshRender5buildEv", (void *)&MeshRender::build);
 
     // GameObject
-    REGISTER_FUNC("_ZN10GameObject11InstantiateEPS_", GameObject::Instantiate);
+    ScriptLoader::replaceLibraryFunction("_ZN10GameObject11InstantiateEPS_", reinterpret_cast<void *>(&GameObject::Instantiate));
 }
-
+#pragma GCC diagnostic pop
 

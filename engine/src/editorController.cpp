@@ -23,6 +23,11 @@ void EditorController::Initialize() {
 
 void EditorController::Update() {
     static ImGuiIO& io = ImGui::GetIO();
+
+    if (!Camera::Main && !Camera::Current) {
+        return;
+    }
+
     m_mainCamera = Camera::Main();
 
     if (!m_mainCamera || m_mainCamera != Camera::Current() || !io.MouseDrawCursor || Settings::IsGameRunning) {

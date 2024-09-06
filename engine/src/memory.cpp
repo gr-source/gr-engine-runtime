@@ -96,14 +96,6 @@ void Memory::free(void *ptr) noexcept {
 }
 
 void Memory::Hook(void *origFunc, void *newFunc) {
-    if (!origFunc) {
-        throw std::runtime_error("Origin function is invalid.");
-    }
-
-    if (!newFunc) {
-        throw std::runtime_error("new function is invalid.");
-    }
-
     auto pageSizeToProtect = sysconf(_SC_PAGESIZE);
     auto start = reinterpret_cast<std::uintptr_t>(origFunc);
     auto pageStart = start & ~(pageSizeToProtect - 1);

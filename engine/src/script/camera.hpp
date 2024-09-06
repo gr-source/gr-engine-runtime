@@ -10,9 +10,9 @@ public:
 
     static void (*SetEnable)(Camera *camera);
 
-    static Camera *Main();
+    static Camera *(*Main)();
 
-    static Camera *Current();
+    static Camera *(*Current)();
 
     Camera() = delete;
 

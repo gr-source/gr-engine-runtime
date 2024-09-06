@@ -8,19 +8,9 @@ std::vector<Camera *> &(*Camera::GetCameras)();
 
 void (*Camera::SetEnable)(Camera *camera);
 
-Camera *Camera::Main() {
-    if (!ScriptManager::MainCamera) {
-        return nullptr;
-    }
-    return ScriptManager::MainCamera();
-}
+Camera *(*Camera::Main)();
 
-Camera *Camera::Current() {
-    if (!ScriptManager::CurrentCamera) {
-        return nullptr;
-    }
-    return ScriptManager::CurrentCamera();
-}
+Camera *(*Camera::Current)();
 
 const Matrix4x4 Camera::getPerspesctive() const {
     return m_projection;

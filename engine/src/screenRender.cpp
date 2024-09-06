@@ -14,8 +14,10 @@ grm::u32 ScreenRender::m_vbo = 0;
 
 void ScreenRender::Initialize() {
     if (!ScriptManager::GetShader) {
+        Console::log(LogInfo::ERROR, "Falied to get script function. [ ScriptManager::GetShader ]");
         return;
     }
+    
     auto shaders = ScriptManager::GetShader();
     auto it = shaders.find(1);
     if (it == shaders.end()) {
@@ -61,12 +63,8 @@ void ScreenRender::Shutdown() {
 }
 
 void ScreenRender::Render(grr::gTexture *texture) {
-    if (!texture || !texture->isValid()) {
-        return Console::log(LogInfo::ERROR, "[ ScreenRender ] Texture do not is valid.");
-    }
-
-    if (!m_shader || !m_shader->isValid()) {
-        return Console::log(LogInfo::ERROR, "[ ScreenRender ] Shader do not is valid.");
+    if (!texture || !texture->isValid() || !m_shader || !m_shader->isValid()) {
+        return;
     }
 
     grr::gShader::Bind(m_shader);
