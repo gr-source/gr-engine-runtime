@@ -12,6 +12,8 @@ public:
 
     static bool IsCubeInFrustumOOBB(const Vector3 &min, const Vector3 &max, const Matrix4x4 &model);
 
+    static bool IsCubeInFrustumAABB(const Vector3& min, const Vector3& max);
+
 private:
     static float m_Frustum[6][4];
 

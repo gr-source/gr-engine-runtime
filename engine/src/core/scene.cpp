@@ -394,9 +394,10 @@ int Scene::readMaterial() {
         for (auto &material : materials) {
             material.deserialize(Stream::stream);
         }
-        
-        if (!name.empty() || !materials.empty())
+
+        if (!name.empty() || !materials.empty() && !Resources::FindMaterial(name)) {
             Resources::AddMaterial(name, materials);
+        }
     }
     return 0;
 }

@@ -115,17 +115,6 @@ FileType getFileType(const std::string& extension);
 /* pega o a externsao do arquivo pelo tipo */
 const char* getFileTypeName(const FileType& type);
 
-struct GameStatics {
-	grm::u32 vertices;
-	grm::u32 indices;
-
-	float updateMs;
-	float renderMs;
-	float physicsMs;
-	float scriptMS;
-};
-
-extern GameStatics gameStatics;
 
 
 

@@ -20,16 +20,17 @@ enum PlaneData {
 
 void NormalizePlane(float frustum[6][4], int side) {
 	float magnitude = std::sqrt(frustum[side][A] * frustum[side][A] +  frustum[side][B] * frustum[side][B] + frustum[side][C] * frustum[side][C]);
-
-	// Then we divide the plane's values by it's magnitude.
-	// This makes it easier to work with.
-	frustum[side][A] /= magnitude;
-	frustum[side][B] /= magnitude;
-	frustum[side][C] /= magnitude;
-	frustum[side][D] /= magnitude; 
+	
+	if (magnitude > 1e-5f) {
+        float invMagnitude = 1.0f / magnitude;
+        frustum[side][A] *= invMagnitude;
+        frustum[side][B] *= invMagnitude;
+        frustum[side][C] *= invMagnitude;
+        frustum[side][D] *= invMagnitude;
+    }
 }
 
-float Frustum::m_Frustum[6][4]{
+float Frustum::m_Frustum[6][4] {
 	{0.0f, 0.0f, 0.0f, 0.0f},
 	{0.0f, 0.0f, 0.0f, 0.0f},
 	{0.0f, 0.0f, 0.0f, 0.0f},
@@ -128,6 +129,37 @@ bool Frustum::IsCubeInFrustumOOBB(const Vector3 &min, const Vector3 &max, const 
         if (allPointsOutside) return false;
     }
     return true;
+}
+
+// max 170
+bool Frustum::IsCubeInFrustumAABB(const Vector3& min, const Vector3& max) {
+    Vector3 points[8] {
+        {min.x, min.y, min.z},
+        {max.x, min.y, min.z},
+        {max.x, max.y, min.z},
+        {min.x, max.y, min.z},
+ 
+        {min.x, min.y, max.z},
+        {max.x, min.y, max.z},
+        {max.x, max.y, max.z},
+        {min.x, max.y, max.z}
+    };
+
+	if (DebugDraw::bDebugMode) {
+        DrawCube(points);
+    }
+
+	for (int i=0;i<6;i++) {
+        bool allPointsOutside = true;
+        for (int j=0;j<8;j++) {
+            if (IsPointInFrustum(points[j], i)) {
+                allPointsOutside = false;
+                break;
+            }
+        }
+        if (allPointsOutside) return false;
+    }
+	return true;
 }
 
 void Frustum::DrawCube(Vector3 points[8]) {

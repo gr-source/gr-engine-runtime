@@ -50,7 +50,7 @@ public:
     static std::vector<Material> *FindMaterial(const std::string &name);
 
     template <typename ...Args>
-    static std::vector<Material> &AddMaterial(Args &&...args);
+    static std::vector<Material> &AddMaterial(const std::string &name, Args &&...args);
 
     static std::unordered_map<std::string, std::vector<Material>> &GetMaterialMap();
 
@@ -137,7 +137,9 @@ inline Mesh *Resources::AddMesh(Args &&...args) {
 }
 
 template <typename... Args>
-inline std::vector<Material> &Resources::AddMaterial(Args &&...args) {
-    auto &&[it, added] = m_materialMap.emplace(std::forward<Args>(args)...);
+inline std::vector<Material> &Resources::AddMaterial(const std::string &name, Args &&...args) {
+    auto &&[it, added] = m_materialMap.emplace(name, std::forward<Args>(args)...);
+    if (!added) {
+    }
     return it->second;
 }

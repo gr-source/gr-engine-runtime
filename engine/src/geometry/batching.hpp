@@ -9,6 +9,13 @@
 
 class Batching {
 public:
+    enum Batching_Flags {
+        Batching_Flags_Dynamic           = 1 << 1,
+        Batching_Flags_Static_Mesh       = 1 << 2,
+        Batching_Flags_Instanced_Dynamic = 1 << 3,
+        Batching_Flags_Instanced_Static  = 1 << 4
+    };
+    
     static grm::size GetBatchedCount();
 
     static Batching *Find(const std::string &name);
@@ -20,7 +27,7 @@ public:
 
     static void Renderer();
     
-    Batching(const std::string &name, std::vector<Material> *materials, Mesh *mesh);
+    Batching(const std::string &name, std::vector<Material> *materials, Mesh *mesh, Batching_Flags flags);
     ~Batching();
 
     void insert(Transform *transform);
@@ -30,7 +37,9 @@ public:
     void draw();
 
     bool hasModel() const;
-
+    
+    grm::u32 m_primCount;
+    
 private:
     enum DrawType {
         DrawType_Elements_Instanced = 1 << 1,
@@ -51,8 +60,6 @@ private:
 
     grm::u32 m_indiceCount;
 
-    grm::u32 m_primCount;
-
     std::string m_name;
 
     Boundbox m_boundbox;
@@ -66,6 +73,10 @@ private:
     bool bHasIndice;
 
     DrawType m_type;
+
+    Mesh *m_mesh;
+
+    Batching_Flags m_flags;
 
     void build(Mesh *mesh);
 

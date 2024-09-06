@@ -3,7 +3,6 @@
 #include "transform.hpp"
 #include "animator.hpp"
 
-#include "geometry/batching.hpp"
 #include "geometry/mesh.h"
 
 #include "core/resources.h"
@@ -21,6 +20,13 @@ void MeshRender::build() {
 
     auto &transform = entity->getComponent<Transform>();
 
+    // if (flags == Batching::Batching_Flags_Dynamic) {
+    //     m_batched = &Batching::Add(getGameObject()->getName(), &m_materials, mesh, Batching::Batching_Flags_Dynamic);
+    //     m_batched->insert(&transform);
+    //     return;
+    // }
+
+    // /*
     std::string mName;
     for (auto &material : m_materials) {
         mName += material.getName();
@@ -37,6 +43,11 @@ void MeshRender::build() {
         material = &Resources::AddMaterial(mName, m_materials);
     }
 
-    m_batched = &Batching::Add(mName, material, mesh);
+    m_batched = &Batching::Add(mName, material, mesh, Batching::Batching_Flags_Instanced_Dynamic);
     m_batched->insert(&transform);
+    // */
+}
+
+Batching *MeshRender::getBatchGroup() {
+    return m_batched;
 }

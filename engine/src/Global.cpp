@@ -1,7 +1,5 @@
 #include "Global.h"
 
-GameStatics gameStatics;
-
 std::mutex glMutex;
 
 const char* getDragDrop(const DragDrop& type) {

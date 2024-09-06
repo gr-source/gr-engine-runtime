@@ -24,11 +24,12 @@ public:
         ShaderType_Dynamic = 0,
         ShaderType_Dynamic_Anim = 1,
         ShaderType_Dynamic_Multi_Model = 2,
+        ShaderType_Static_Multi_Model = 3,
     };
 
     static std::vector<GameObject*> s_objects;
 
-    static grr::gShader *m_shader[3];
+    static grr::gShader *m_shader[4];
 
     static Camera *m_camera;
 
@@ -36,7 +37,7 @@ public:
 
     static void SetupLight();
 
-    static void SetupMaterial(std::unordered_map<int, Material> &materials);
-
     static bool SetupShader(void *shader, const std::string &path);
+
+    static void RegisterUniform(bool model);
 };

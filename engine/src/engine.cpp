@@ -11,6 +11,7 @@
 #include "ui/ImGuiRender.h"
 
 #include "core/threadPool.hpp"
+#include "core/statistics.hpp"
 #include "core/resources.h"
 #include "core/event.hpp"
 #include "core/time.hpp"
@@ -54,8 +55,8 @@ void Engine::GRWindowResize(grm::u32 width, grm::u32 height) {
 void Engine::MainLoop(std::function<void()> func) {
     Time time;
     while (Settings::IsEngineRunning()) {
-        TimeLast::deltaTime = gameStatics.updateMs = time.start();
-        TimeLast::FPS = time.getFPS();
+        Statistics::m_threadFrame = {time.getFPS(), time.start()};
+        TimeLast::deltaTime = Statistics::m_threadFrame.delta;
 
         if (ScriptManager::SetDeltaTime) {
             ScriptManager::SetDeltaTime(TimeLast::deltaTime);
@@ -125,11 +126,15 @@ void Engine::OnInit() {
 
 void Engine::OnUpdate() {
     EditorController::Update();
+    Time time;
+
+    time.end();
 
     Manager::Update();
+
+    Statistics::m_scriptFrame = {time.getFPS(), time.start()};
 }
 
-Time tickRender;
 void Engine::OnRender() {
     Event::ProcessEvent();
 
@@ -137,18 +142,20 @@ void Engine::OnRender() {
         ScriptManager::EventUpdate();
     }
 
-    gameStatics.renderMs = tickRender.start();
-    TimeLast::RenderFPS = tickRender.getFPS();
+    Time time;
+    time.end();
 
     if (MainPostProcess) {
         MainFramebuffer();
     }
 
-    tickRender.end();
+    Statistics::m_sceneFrame = {time.getFPS(), time.start()};
 
+    time.end();
     if (ImGuiPostProcess) {
         UIFramebuffer();
     }
+    Statistics::m_guiFrame = {time.getFPS(), time.start()};
 }
 
 void Engine::OnPhysics() {
@@ -257,7 +264,7 @@ void Engine::MainFramebuffer() {
     // Fim do posprocessamento
     PostProcessing::Unbind();
 
-    // Capitura de posprocessamento para o imgui
+    // Captura de posprocessamento para o imgui
     PostProcessing::Bind(ImGuiPostProcess);
 
     // renderização da cena 2d e utilização do pos processamento;

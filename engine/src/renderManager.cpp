@@ -25,7 +25,7 @@
 
 std::vector<GameObject *> RenderManager::s_objects;
 
-grr::gShader *RenderManager::m_shader[3] = {nullptr, nullptr, nullptr};
+grr::gShader *RenderManager::m_shader[4] = {nullptr, nullptr, nullptr, nullptr};
 
 bool RenderManager::bWireFrame = false;
 
@@ -45,6 +45,7 @@ void RenderManager::Initialize() {
     m_shader[ShaderType_Dynamic] = shaders[ShaderType_Dynamic];
     m_shader[ShaderType_Dynamic_Anim] = shaders[ShaderType_Dynamic_Anim];
     m_shader[ShaderType_Dynamic_Multi_Model] = shaders[ShaderType_Dynamic_Multi_Model];
+    m_shader[ShaderType_Static_Multi_Model] = shaders[ShaderType_Static_Multi_Model];
 }
 
 void RenderManager::Process() {
@@ -97,7 +98,7 @@ void RenderManager::SetupLight() {
     }
     auto& lights = ScriptManager::GetListLight();
 
-    grr::gShader::SetUniform("m_lightcount", (int)lights.size());
+    grr::gShader::SetUniform("m_lightcount", static_cast<int>(lights.size()));
 
     if (lights.empty()) return;
 
@@ -113,40 +114,35 @@ void RenderManager::SetupLight() {
     }
 }
 
-void RenderManager::SetupMaterial(std::unordered_map<int, Material> &materials) {
-    int idx[10]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
-    int idxEn[10]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-
-    for (auto&& [index, material] : materials) {
-        std::memset(idxEn, 10, 0);
-
-        for (auto i=0;i<10;++i) {
-            auto texture = material.getTexture(i);
-            if (!texture || !texture->isValid()) {
-                continue;
-            }
-            grr::gTexture::Bind(texture, idx[i]);
-            idxEn[i] = 1;
-        }
-
-        grr::gShader::SetUniform<int>("m_texture", 10, (const int *)idx);
-        grr::gShader::SetUniform<int>("m_activate", 10, (const int *)idxEn);
-
-        grr::gShader::SetUniform("m_material[" + std::to_string(index) + "].albedo", material.getAlbedo());
-        grr::gShader::SetUniform("m_material[" + std::to_string(index) + "].params", Vector3(material.getRoughness(), material.getMetallic(), material.getAmbientOcclusion()));
-    }
-}
-
-bool RenderManager::SetupShader(void *shader, const std::string &path) {
-    if (m_shader[ShaderType_Dynamic_Multi_Model] != shader) {
+bool RenderManager::SetupShader(void *ptr, const std::string &path) {
+    auto shader = static_cast<grr::gShader *>(ptr);
+    if (m_shader[ShaderType_Dynamic] != shader &&
+        m_shader[ShaderType_Dynamic_Multi_Model] != shader &&
+        m_shader[ShaderType_Static_Multi_Model] != shader) {
         return false;
     }
 
-    grr::gShader::Bind(m_shader[ShaderType_Dynamic_Multi_Model]);
+    grr::gShader::Bind(shader);
 
+    RegisterUniform(m_shader[ShaderType_Dynamic] == shader);
+
+    grr::gShader::Unbind();
+
+    Console::log(LogInfo::INFO, "Shader loaded successfully.");
+
+    bRender = m_shader[ShaderType_Dynamic]->isValid() &&
+        m_shader[ShaderType_Dynamic_Multi_Model]->isValid() &&
+        m_shader[ShaderType_Static_Multi_Model]->isValid();
+
+    return bRender;
+}
+
+void RenderManager::RegisterUniform(bool model) {
     grr::gShader::Register("u_projection");
     grr::gShader::Register("u_view");
-    // grr::gShader::Register("u_model");
+
+    if (model)
+        grr::gShader::Register("u_model");
     // grr::gShader::Register("u_boneMatrices");
     // grr::gShader::Register("u_animatior");
 
@@ -170,15 +166,4 @@ bool RenderManager::SetupShader(void *shader, const std::string &path) {
         grr::gShader::Register("m_light[" + std::to_string(i) + "].params");
         grr::gShader::Register("m_light[" + std::to_string(i) + "].vp");
     }
-
-    grr::gShader::Unbind();
-
-    Console::log(LogInfo::INFO, "Shader loaded successfully.");
-
-    bRender = true;
-
-    return true;
 }
-
-
-

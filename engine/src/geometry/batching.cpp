@@ -56,8 +56,9 @@ void Batching::Renderer() {
     }
 }
 
-Batching::Batching(const std::string &name, std::vector<Material> *materials, Mesh *mesh) : m_name(name), m_materials(materials), m_vertexArray(nullptr), m_indiceCount(0), m_primCount(0), m_VBO(0), m_EBO(0), m_PBO(0), bHasIndice(false), m_type(DrawType_Arrays_Instanced) {
-    build(mesh);
+Batching::Batching(const std::string &name, std::vector<Material> *materials, Mesh *mesh, Batching_Flags flags) : m_flags(flags), m_mesh(mesh), m_name(name), m_materials(materials), m_vertexArray(nullptr), m_indiceCount(0), m_primCount(0), m_VBO(0), m_EBO(0), m_PBO(0), bHasIndice(false), m_type(DrawType_Elements) {
+    if (flags != Batching_Flags_Static_Mesh)
+        build(mesh);
 }
 
 Batching::~Batching() {
@@ -101,7 +102,7 @@ void Batching::draw() {
 
     switch (m_type) {
     case DrawType_Elements_Instanced:
-        grr::gVertexArray::DrawElementsInstanced(grr::PrimitiveType_Triangles, m_indiceCount, nullptr, m_primCount);;
+        grr::gVertexArray::DrawElementsInstanced(grr::PrimitiveType_Triangles, m_indiceCount, nullptr, m_primCount);
         break;
     case DrawType_Arrays_Instanced:
         grr::gVertexArray::DrawArraysInstanced(grr::PrimitiveType_Triangles, m_indiceCount, m_primCount);
@@ -129,7 +130,7 @@ void Batching::build(Mesh *mesh) {
         m_VBO = grr::gVertexArray::CreateBuffer(grr::BufferType_VBO);
     }
 
-    if (!m_PBO) {
+    if (!m_PBO && m_flags == Batching_Flags_Instanced_Dynamic || m_flags == Batching_Flags_Instanced_Static) {
         m_PBO = grr::gVertexArray::CreateBuffer(grr::BufferType_PBO);
     }
     
@@ -164,10 +165,12 @@ void Batching::build(Mesh *mesh) {
     grr::gVertexArray::SetAttrib(2, 2, sizeof(Vertex3D), reinterpret_cast<const void*>(offsetof(Vertex3D, texCoord)));
     grr::gVertexArray::SetAttrib(3, 1, sizeof(Vertex3D), reinterpret_cast<const void*>(offsetof(Vertex3D, mIdx)));
 
-    grr::gVertexArray::Bind(m_PBO);
-    for (int i=0;i<4;i++) {
-        grr::gVertexArray::SetAttrib(4 + i, 4, sizeof(Matrix4x4), reinterpret_cast<const void*>(i * sizeof(Vector4)));
-        grr::gVertexArray::SetAttribDivisor(4 + i, 1);
+    if (m_flags == Batching_Flags_Instanced_Dynamic || m_flags == Batching_Flags_Instanced_Static) {
+        grr::gVertexArray::Bind(m_PBO);
+        for (int i=0;i<4;i++) {
+            grr::gVertexArray::SetAttrib(4 + i, 4, sizeof(Matrix4x4), reinterpret_cast<const void*>(i * sizeof(Vector4)));
+            grr::gVertexArray::SetAttribDivisor(4 + i, 1);
+        }
     }
 
     m_vertexArray->unbind();
@@ -183,39 +186,88 @@ void Batching::build(Mesh *mesh) {
 }
 
 void Batching::compile() {
-    if (!m_vertexArray || !m_vertexArray->isValid() || m_models.empty()) {
-        return;
+    if (m_flags == Batching_Flags_Static_Mesh && m_primCount != m_models.size()) {
+        Mesh mesh;
+
+        grm::size verticeCount = 0;
+        for (auto &transform : m_models) {
+            auto &model = transform->getGlobalMatrix();
+
+            for (auto &vertice : m_mesh->getVertices()) {
+                mesh.addVertex(
+                    Vector3(model * Vector4(vertice.position, 1.0f)),
+                    Vector3(model * Vector4(vertice.normal, 0.0f)),
+                    vertice.texCoord,
+                    vertice.mIdx
+                );
+            }
+
+            for (auto &indice : m_mesh->getIndices()) {
+                mesh.addIndice(verticeCount + indice);
+            }
+            verticeCount += m_mesh->getVertices().size();
+        }
+        build(&mesh);
+
+        m_primCount = m_models.size();
+
+        m_type = DrawType_Elements;
+    } else if (m_flags == Batching_Flags_Instanced_Static && m_primCount != m_models.size()) {
+        std::vector<Matrix4x4> models;
+        for (auto &transform : m_models) {
+            auto &model = transform->getGlobalMatrix();
+            models.push_back(model);
+        }
+
+        if (models.empty()) {
+            return;
+        }
+
+        // Statistics::m_drawRenderCount += models.size();
+
+        m_vertexArray->bind();
+        grr::gVertexArray::Bind(m_PBO);
+        grr::gVertexArray::UpdateResizeBuffer(models.size() * sizeof(Matrix4x4), grr::gBufferFlags_Static);
+        grr::gVertexArray::SetBufferUpdate(0, models.size() * sizeof(Matrix4x4), models.data());
+
+        m_primCount = models.size();
+
+        std::cout << "Satic intamce" << std::endl;
+
+        m_type = DrawType_Arrays_Instanced;
+    } else if (m_flags == Batching_Flags_Instanced_Dynamic) {
+        std::vector<Matrix4x4> models;
+        for (auto &transform : m_models) {
+            auto &model = transform->getGlobalMatrix();
+            models.push_back(model);
+        }
+
+        if (models.empty()) {
+            return;
+        }
+
+        // Statistics::m_drawRenderCount += models.size();
+
+        m_vertexArray->bind();
+        grr::gVertexArray::Bind(m_PBO);
+        grr::gVertexArray::UpdateResizeBuffer(models.size() * sizeof(Matrix4x4), grr::gBufferFlags_Dynamic);
+        grr::gVertexArray::SetBufferUpdate(0, models.size() * sizeof(Matrix4x4), models.data());
+
+        m_primCount = models.size();
+
+        m_type = DrawType_Arrays_Instanced;
+    } if (m_flags == Batching_Flags_Dynamic) {
+        grr::gShader::SetUniform("u_model", 1, m_models[0]->getGlobalMatrix());
+
+        m_type = DrawType_Arrays;
     }
-    
-    Statistics::m_totalRender += m_models.size();
 
-    std::vector<Matrix4x4> models;
-    for (auto &transform : m_models) {
-        auto &model = transform->getGlobalMatrix();
-
-        // if (!Frustum::IsCubeInFrustumOOBB(m_boundbox.min, m_boundbox.max, model)) {
-        //     continue;
-        // }
-        models.push_back(model);
-    }
-
-    if (models.empty()) {
-        return;
-    }
-
-    Statistics::m_drawRenderCount += models.size();
-
-    m_vertexArray->bind();
-    grr::gVertexArray::Bind(m_PBO);
-    grr::gVertexArray::UpdateResizeBuffer(models.size() * sizeof(Matrix4x4), grr::gBufferFlags_Dynamic);
-    grr::gVertexArray::SetBufferUpdate(0, models.size() * sizeof(Matrix4x4), models.data());
-
-    m_primCount = models.size();
+    Statistics::m_totalRender += m_primCount;
 }
 
 void Batching::setupMaterial() {
-    int idx[10]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
-    int idxEn[10]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    int idx[10] {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+    int idxEn[10] {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
     auto &materials = *m_materials;
 
