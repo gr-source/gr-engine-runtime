@@ -43,7 +43,7 @@ void RenderManager::Initialize() {
     Resources::AddPostLoader(RenderManager::SetupShader);
 
     m_shader[ShaderType_Dynamic] = shaders[ShaderType_Dynamic];
-    m_shader[ShaderType_Dynamic_Anim] = shaders[ShaderType_Dynamic_Anim];
+    // m_shader[ShaderType_Dynamic_Anim] = shaders[ShaderType_Dynamic_Anim];
     m_shader[ShaderType_Dynamic_Multi_Model] = shaders[ShaderType_Dynamic_Multi_Model];
     m_shader[ShaderType_Static_Multi_Model] = shaders[ShaderType_Static_Multi_Model];
 }
@@ -57,6 +57,19 @@ void RenderManager::Process() {
         return;
     }
 
+    for (int i=0;i<4;i++) {
+        if (!m_shader[i] || !m_shader[i]->isValid()) {
+            continue;
+        }
+
+        grr::gShader::Bind(m_shader[i]);
+
+        grr::gShader::SetUniform("u_projection", 1, m_camera->getPerspesctive());
+        grr::gShader::SetUniform("u_view", 1, m_camera->getViewmatrix());
+        grr::gShader::SetUniform("m_eye", 1, m_camera->getPosition());
+
+        SetupLight();
+    }
     // Frustum::CalculateFrustum(m_camera->getPerspesctive() * m_camera->getViewmatrix());
 }
 
@@ -65,17 +78,11 @@ void RenderManager::Renderer() {
         return;
     }
 
-    grr::gShader::Bind(m_shader[ShaderType_Dynamic_Multi_Model]);
+    // grr::gShader::Bind(m_shader[ShaderType_Static_Multi_Model]);
 
-    grr::gShader::SetUniform("u_projection", 1, m_camera->getPerspesctive());
-    grr::gShader::SetUniform("u_view", 1, m_camera->getViewmatrix());
-    grr::gShader::SetUniform("m_eye", 1, m_camera->getPosition());
-
-    SetupLight();
-
-    if (bWireFrame) {
+    // if (bWireFrame) {
         // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-    }
+    // }
 
     // grr::gShader::SetUniform("u_animatior", static_cast<int>(false));
     // grr::gShader::SetUniform("u_model", 1, Matrix4x4::identityMatrix);
@@ -86,9 +93,9 @@ void RenderManager::Renderer() {
         grr::gTexture::Bind(nullptr, i);
     }
 
-    if (bWireFrame) {
+    // if (bWireFrame) {
         // glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-    }
+    // }
 }
 
 void RenderManager::Shutdown() {

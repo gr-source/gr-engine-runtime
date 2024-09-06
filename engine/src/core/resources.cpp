@@ -202,6 +202,14 @@ void Resources::AddPostLoader(std::function<bool(void *, const std::string &)> f
     m_functions.push_back(func);
 }
 
+grr::gShader *Resources::FindShader(const std::string &name) {
+    auto it = s_shaderList.find(name);
+    if (it == s_shaderList.end()) {
+        return nullptr;
+    }
+    return &(*it->second);
+}
+
 Mesh *Resources::FindMesh(const std::string &name) {
     std::unique_lock<std::mutex> lock(m_meshMutex);
     auto it = s_meshList.find(name);

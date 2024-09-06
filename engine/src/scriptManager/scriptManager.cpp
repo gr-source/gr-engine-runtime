@@ -29,8 +29,6 @@ std::string ScriptManager::s_path = "";
 
 bool ScriptManager::s_bReload = false;
 
-void* ScriptManager::s_handle = nullptr;
-
 // [ Main ]
 void (*ScriptManager::InitializeScript)();
 void (*ScriptManager::Update)();
@@ -169,6 +167,7 @@ void ScriptManager::RegisterApi() {
     ScriptLoader::replaceLibraryFunction("_ZN13AssetsManager13AddPostLoaderESt8functionIFbPvRKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEEE", reinterpret_cast<void *>(&Resources::AddPostLoader));
     ScriptLoader::replaceLibraryFunction("_ZN13AssetsManager8FindMeshERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE",                         reinterpret_cast<void *>(&Resources::FindMesh));
     ScriptLoader::replaceLibraryFunction("_ZN13AssetsManager12FindMaterialERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE",                    reinterpret_cast<void *>(&Resources::FindMaterial));
+    ScriptLoader::replaceLibraryFunction("_ZN13AssetsManager10FindShaderERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE",                      reinterpret_cast<void *>(&Resources::FindShader));
 
     ScriptLoader::registerFunction("LoadAnimation", reinterpret_cast<void **>(&LoadAnimation));
 
@@ -187,7 +186,7 @@ void ScriptManager::RegisterApi() {
     // ScriptLoader::replaceLibraryFunction("_ZN5Scene3AddEP10GameObject", Scene::Add);
 
     // Component Pool
-    GetComponentPool = (std::unordered_map<std::string, std::unique_ptr<Pool>> &(*)(void))dlsym(ScriptManager::s_handle, "GetComponentPool");
+    ScriptLoader::registerFunction("GetComponentPool", reinterpret_cast<void **>(&GetComponentPool));
 
     ScriptLoader::registerFunction("CreateComponentWithName", reinterpret_cast<void **>(&ScriptManager::CreateComponentWithName));
     ScriptLoader::registerFunction("CopyComponentWithName",   reinterpret_cast<void **>(&ScriptManager::CopyComponentWithName));

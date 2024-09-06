@@ -38,6 +38,8 @@ public:
 
     static void AddPostLoader(std::function<bool(void *, const std::string &)> func);
 
+    static grr::gShader *FindShader(const std::string &name);
+
     static Mesh *FindMesh(const std::string &name);
 
     template <typename ...Args>
@@ -140,6 +142,7 @@ template <typename... Args>
 inline std::vector<Material> &Resources::AddMaterial(const std::string &name, Args &&...args) {
     auto &&[it, added] = m_materialMap.emplace(name, std::forward<Args>(args)...);
     if (!added) {
+        // thw
     }
     return it->second;
 }

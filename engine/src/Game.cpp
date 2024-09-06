@@ -131,7 +131,9 @@ grm::u8 Game::m_currentPage = 0;
 
 std::unordered_map<std::filesystem::path, bool> Game::fLisDirSelected;
 
-std::filesystem::path Game::m_currentFile;
+std::filesystem::path Game::m_currentDirectory;
+
+std::filesystem::path Game::m_currentPath;
 
 void Game::Initialize() {
     s_io = &ImGui::GetIO();
@@ -140,7 +142,7 @@ void Game::Initialize() {
 
     Settings::IsGameRunning = false;
 
-    m_currentFile = File::GetFile("");
+    m_currentPath = File::GetFile("");
 
     // Scene::LoadScene("default");
 }
@@ -579,7 +581,7 @@ void Game::RenderScenesUI() {
         s_objectSelected = nullptr;
     }
     
-    if (ImGui::IsKeyReleased(ImGuiKey_F2) && ImGui::IsWindowFocused()) {
+    if (ImGui::IsKeyReleased(ImGuiKey_F2)) {
         ImGui::OpenPopup("##popup_rename_gameobject");
     }
 
@@ -743,20 +745,26 @@ void Game::PopupOptionsGameObject() {
 }
 
 void Game::PopupRenameGameObject() {
-    if (ImGui::BeginPopup("##popup_rename_gameobject")) {
-        ImGui::Text("Input new name");
-
-        if (!ImGui::IsAnyItemActive() && !ImGui::IsMouseClicked(0))
-            ImGui::SetKeyboardFocusHere(0);
-
-        char name[256] = {0};
-        if (ImGui::InputText("##InputName", name, 256, ImGuiInputTextFlags_EnterReturnsTrue)) {
-            GameObject::Rename(s_objectSelected, name);
-
-            ImGui::CloseCurrentPopup();
-        }
-        ImGui::EndPopup();
+    auto isOpen = ImGui::BeginPopup("##popup_rename_gameobject");
+    if (!isOpen) {
+        return;
     }
+    ImGui::Text("Input new name");
+
+    if (!ImGui::IsAnyItemActive() && !ImGui::IsMouseClicked(0))
+        ImGui::SetKeyboardFocusHere(0);
+
+    auto name = s_objectSelected->getName();
+    if (name.size() < 256) {
+        name.resize(256, '\0');
+    }
+    
+    if (ImGui::InputText("##input_new_name_gameobject", name.data(), name.size(), ImGuiInputTextFlags_EnterReturnsTrue)) {
+        GameObject::Rename(s_objectSelected, name);
+
+        ImGui::CloseCurrentPopup();
+    }
+    ImGui::EndPopup();
 }
 
 void Game::RenderViewportUI() {
@@ -1016,6 +1024,19 @@ void Game::PopupMenuCreateScene() {
 }
 
 void Game::RenderFilesUI() {
+    if (m_currentDirectory.empty()) {
+        m_currentDirectory = m_currentPath;
+    }
+
+    for (auto &entry : std::filesystem::directory_iterator(m_currentPath)) {
+        RenderTreeNodeFile(entry.path());
+    }
+
+    if (ImGui::IsWindowHovered() && ImGui::IsMouseReleased(ImGuiMouseButton_Right)) {
+        std::cout << m_currentDirectory << std::endl;
+    }
+
+    /*
     grr::gTexture *gtCurrentTexture = iconsUI[ICON_BACK_FILE];
 
     ImGui::BeginColumns("##colums_01", 5, ImGuiColumnsFlags_NoBorder);
@@ -1156,6 +1177,63 @@ void Game::RenderFilesUI() {
     PopupFileManager();
 
     PopupCreateDirectory();
+    */
+}
+
+void Game::RenderTreeNodeFile(std::filesystem::path path) {
+    ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_Leaf;
+    flags |= ImGuiTreeNodeFlags_SpanFullWidth;
+    flags |= ImGuiTreeNodeFlags_SpanAvailWidth;
+    flags |= ImGuiTreeNodeFlags_Selected;
+
+    auto bDirectory = std::filesystem::is_directory(path);
+    if (bDirectory) {
+        flags &= ~ImGuiTreeNodeFlags_Leaf;
+    }
+
+    if (m_currentDirectory != path) {
+        flags &= ~ImGuiTreeNodeFlags_Selected;
+    }
+
+    auto name = path.filename();
+
+    auto isOpen = ImGui::TreeNodeEx(name.c_str(), flags);
+    if (!isOpen) {
+        return;
+    }
+
+    if (ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
+        m_currentDirectory = path;
+    }
+
+    if (!bDirectory && ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceNoDisableHover | ImGuiDragDropFlags_SourceNoHoldToOpenOthers)) {
+        auto str = path.string();
+
+        ImGui::Text("%s", str.c_str());
+        ImGui::SetDragDropPayload(IMGUI_PAYLOAD_FILE, str.data(), str.size());
+        ImGui::EndDragDropSource();
+    }
+
+    if (!bDirectory) {
+        return ImGui::TreePop();
+    }
+
+    std::vector<std::filesystem::directory_entry> dirs;
+    for (auto &file : std::filesystem::directory_iterator(path)) {
+        dirs.push_back(file);
+    }
+
+    std::sort(dirs.begin(), dirs.end(), [](const auto& lhs, const auto& rhs) {
+        if (lhs.is_directory() != rhs.is_directory()) {
+            return lhs.is_directory() > rhs.is_directory();
+        }
+        return lhs.path().filename() < rhs.path().filename();
+    });
+
+    for (auto &file : dirs) {
+        RenderTreeNodeFile(file);
+    }
+    ImGui::TreePop();
 }
 
 void Game::PopupDirmanager(bool &isOpen) {
@@ -1230,7 +1308,7 @@ void Game::PopupCreateDirectory() {
 
     char name[256] = {0};
     if (ImGui::InputText("##InputDirectoryName", name, 256, ImGuiInputTextFlags_EnterReturnsTrue)) {
-        File::CreateDirectory(m_currentFile.string() + "/" + std::string(name));
+        File::CreateDirectory(m_currentPath.string() + "/" + std::string(name));
         ImGui::CloseCurrentPopup();
     }
 
@@ -1367,10 +1445,10 @@ void Game::RenderStatisticsMenu() {
     ImGui::Text("Event: %ld", Event::GetCount());
 
     ImGui::SeparatorText("FrameTime: ");
-    ImGui::Text("MainThread:  %fms  | FPS: %.2f",  Statistics::m_threadFrame.delta,  Statistics::m_threadFrame.fps);
-    ImGui::Text("Render:      %fms  | FPS: %.2f",  Statistics::m_sceneFrame.delta,   Statistics::m_sceneFrame.fps);
-    ImGui::Text("GUI:         %fms  | FPS: %.2f",  Statistics::m_guiFrame.delta,     Statistics::m_guiFrame.fps);
-    ImGui::Text("Script:      %fms  | FPS: %.2f",  Statistics::m_scriptFrame.delta,  Statistics::m_scriptFrame.fps);
+    ImGui::Text("MainThread:  %fms  | FPS: %.2f",  Statistics::m_threadFrame.delta,  (1.0f / Statistics::m_threadFrame.delta));
+    ImGui::Text("Render:      %fms  | FPS: %.2f",  Statistics::m_sceneFrame.delta,   (1.0f / Statistics::m_sceneFrame.delta));
+    ImGui::Text("GUI:         %fms  | FPS: %.2f",  Statistics::m_guiFrame.delta,     (1.0f / Statistics::m_guiFrame.delta));
+    ImGui::Text("Script:      %fms  | FPS: %.2f",  Statistics::m_scriptFrame.delta,  (1.0f / Statistics::m_scriptFrame.delta));
 
     ImGui::SeparatorText("Renderização");
     // ImGui::Text("Cameras: %ld",   Camera::Get.size());
@@ -1537,8 +1615,27 @@ void Game::OnPropertyMeshRender(MeshRender *meshRender) {
         return;
     }
 
-    if (ImGui::Button("Rebuild")) {
-        meshRender->getBatchGroup()->m_primCount = 0;
+    auto elem = meshRender->flags;
+
+    // int  = Batching::Batching_Flags_Dynamic;
+        
+    const char* elems_names[4] = {"Dynamic", "GroupMesh", "InstanceDynamic", "InstancedStatic"};
+    
+    const char* elem_name = (elem >= 0 && elem < 4) ? elems_names[elem] : "Unknown";
+
+    ImGui::Text("Mesh Optimize:");
+    if (ImGui::SliderInt("##mesh_optimize", &elem, 0, 4 - 1, elem_name)) {
+        meshRender->setMeshOptimize(elem);
+
+        // auto gameObject = meshRender->getGameObject();
+        // auto &transform = gameObject->getTransform();
+
+        // for (auto &child : transform.getChildren()) {
+        //     auto obj = child->getGameObject();
+        //     if (obj->hasComponent<MeshRender>()) {
+        //         obj->get
+        //     }
+        // }
     }
 
     for (auto &material : meshRender->getMaterials()) {
@@ -1644,7 +1741,7 @@ void Game::OnPropertyAnimator(Animator *animator) {
 
 void Game::OnPropertyLight(Light *light) {
     if (ImGui::TreeNode("Light")) {
-        static int elem = Light::LightType::eDirection;
+        int elem = Light::LightType::eDirection;
         
         const char* elems_names[3] = {"Directional", "Point", "Spot"};
         

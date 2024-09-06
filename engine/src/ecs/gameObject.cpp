@@ -19,6 +19,10 @@ std::unordered_map<std::string, int> GameObject::s_names;
 GameObject &GameObject::Create(const std::string &name, const std::string &tag) {
     auto newName = AddNameID(name);
 
+    while (Find(newName)) {
+        newName = AddNameID(name);
+    }
+
     auto &&[it, added] = s_mapObject.emplace(newName, std::make_unique<GameObject>(newName, tag));
     if (!added) {
         throw std::runtime_error("GameObject has been replaced: " + newName);
@@ -106,6 +110,7 @@ void GameObject::Clear() {
 GameObject::GameObject(const std::string &name, const std::string &tag) : m_name(name), m_tag(tag), m_entity(&Manager::CreateEntity(this)), m_bActive(true), m_bEnable(true) {}
 
 GameObject::~GameObject() {
+    
     Manager::DestroyEntity(m_entity);
 }
 

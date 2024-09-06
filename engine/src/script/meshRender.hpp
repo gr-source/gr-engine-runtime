@@ -20,12 +20,16 @@ public:
 
     Batching *getBatchGroup();
 
+    void setMeshOptimize(int value);
+
 private:
     std::vector<Material> m_materials;
 
+    int flags;
+
     Batching *m_batched;
 
-    Batching::Batching_Flags flags;
+    friend class Game;
 };
 
 template <typename... Args>

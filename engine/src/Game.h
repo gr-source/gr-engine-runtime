@@ -64,7 +64,9 @@ private:
 
     static std::unordered_map<std::filesystem::path, bool> fLisDirSelected;
 
-    static std::filesystem::path m_currentFile;
+    static std::filesystem::path m_currentDirectory;
+
+    static std::filesystem::path m_currentPath;
 
     static void RenderDocking();
 
@@ -93,6 +95,8 @@ private:
     static void PopupMenuCreateScene();
 
     static void RenderFilesUI();
+
+    static void RenderTreeNodeFile(std::filesystem::path path);
 
     static void PopupDirmanager(bool &isOpen);
 

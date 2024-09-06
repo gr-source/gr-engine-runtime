@@ -56,8 +56,6 @@ protected:
 
     static bool s_bReload;
 
-    static void *s_handle;
-
     // [ Main ]
     static void (*InitializeScript)();
     

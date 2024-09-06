@@ -95,6 +95,8 @@ void Entity::copy(Entity *entity) {
 
     if (!transform.hasParent()) {
         Scene::GetCurrentScene()->Add(getGameObject());
+    } else {
+        localTransform.setParent(transform.getParent());
     }
 
     for (auto &child : transform.getChildren()) {

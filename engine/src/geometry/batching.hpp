@@ -10,10 +10,10 @@
 class Batching {
 public:
     enum Batching_Flags {
-        Batching_Flags_Dynamic           = 1 << 1,
-        Batching_Flags_Static_Mesh       = 1 << 2,
-        Batching_Flags_Instanced_Dynamic = 1 << 3,
-        Batching_Flags_Instanced_Static  = 1 << 4
+        Batching_Flags_Dynamic           = 0,
+        Batching_Flags_Static_Mesh       = 1,
+        Batching_Flags_Instanced_Dynamic = 2,
+        Batching_Flags_Instanced_Static  = 3
     };
     
     static grm::size GetBatchedCount();
@@ -27,7 +27,7 @@ public:
 
     static void Renderer();
     
-    Batching(const std::string &name, std::vector<Material> *materials, Mesh *mesh, Batching_Flags flags);
+    Batching(const std::string &name, std::vector<Material> *materials, Mesh *mesh, grr::gShader *shader, int flags);
     ~Batching();
 
     void insert(Transform *transform);
@@ -76,7 +76,9 @@ private:
 
     Mesh *m_mesh;
 
-    Batching_Flags m_flags;
+    int m_flags;
+
+    grr::gShader *m_shader;
 
     void build(Mesh *mesh);
 

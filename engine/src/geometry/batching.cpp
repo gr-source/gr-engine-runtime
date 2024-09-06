@@ -48,6 +48,7 @@ void Batching::Renderer() {
         if (!batch->hasModel()) {
             continue;
         }
+        //
         batch->compile();
 
         batch->draw();
@@ -56,7 +57,7 @@ void Batching::Renderer() {
     }
 }
 
-Batching::Batching(const std::string &name, std::vector<Material> *materials, Mesh *mesh, Batching_Flags flags) : m_flags(flags), m_mesh(mesh), m_name(name), m_materials(materials), m_vertexArray(nullptr), m_indiceCount(0), m_primCount(0), m_VBO(0), m_EBO(0), m_PBO(0), bHasIndice(false), m_type(DrawType_Elements) {
+Batching::Batching(const std::string &name, std::vector<Material> *materials, Mesh *mesh, grr::gShader *shader, int flags) : m_shader(shader), m_flags(flags), m_mesh(mesh), m_name(name), m_materials(materials), m_vertexArray(nullptr), m_indiceCount(0), m_primCount(0), m_VBO(0), m_EBO(0), m_PBO(0), bHasIndice(false), m_type(DrawType_Elements) {
     if (flags != Batching_Flags_Static_Mesh)
         build(mesh);
 }
@@ -92,7 +93,7 @@ void Batching::remove(Transform *transform, bool bDelete) {
 }
 
 void Batching::draw() {
-    if (!m_vertexArray || !m_vertexArray->isValid()) {
+    if (!m_vertexArray || !m_shader || !m_vertexArray->isValid() || !m_shader->isValid()) {
         return;
     }
 
@@ -186,6 +187,8 @@ void Batching::build(Mesh *mesh) {
 }
 
 void Batching::compile() {
+    grr::gShader::Bind(m_shader);
+
     if (m_flags == Batching_Flags_Static_Mesh && m_primCount != m_models.size()) {
         Mesh mesh;
 
@@ -211,7 +214,7 @@ void Batching::compile() {
 
         m_primCount = m_models.size();
 
-        m_type = DrawType_Elements;
+        m_type = DrawType_Arrays;
     } else if (m_flags == Batching_Flags_Instanced_Static && m_primCount != m_models.size()) {
         std::vector<Matrix4x4> models;
         for (auto &transform : m_models) {
