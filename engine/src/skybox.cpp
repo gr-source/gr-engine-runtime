@@ -1,6 +1,6 @@
 #include "skybox.h"
 
-#include "core/resources.h"
+#include "core/assetsManager.hpp"
 #include "core/event.hpp"
 
 #include "cubeFramebuffer.hpp"
@@ -31,9 +31,9 @@ void Skybox::Initialize() {
 
     CreateCube();
 
-    m_texture = Resources::LoadTexture(File::GetFile("/texture/skybox/industrial_sunset_puresky_1k.hdr"));
+    m_texture = AssetsManager::LoadTexture(File::GetFile("/texture/skybox/industrial_sunset_puresky_1k.hdr"));
 
-    Resources::AddPostLoader(&Skybox::SetupTexture);
+    AssetsManager::AddPostLoader(&Skybox::SetupTexture);
 }
 
 void Skybox::Shutdown() {
@@ -130,21 +130,21 @@ bool Skybox::SetupTexture(void *texture, const std::string &path) {
     }
 
     Event::Add([]{
-        m_irradianceShader = Resources::LoadShader(
+        m_irradianceShader = AssetsManager::LoadShader(
             File::GetFile("/shader/skybox/Irradiance.frag"),
             File::GetFile("/shader/skybox/Irradiance.vert")
         );
 
-        m_skyShader = Resources::LoadShader(
+        m_skyShader = AssetsManager::LoadShader(
             File::GetFile("/shader/skybox/Skybox.frag"),
             File::GetFile("/shader/skybox/Skybox.vert"));
 
-        m_shader = Resources::LoadShader(
+        m_shader = AssetsManager::LoadShader(
             File::GetFile("/shader/skybox/Background.frag"),
             File::GetFile("/shader/skybox/Background.vert")
         );
 
-        Resources::AddPostLoader(&Skybox::SetupShader);
+        AssetsManager::AddPostLoader(&Skybox::SetupShader);
     });
 
     return true;

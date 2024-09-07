@@ -10,9 +10,9 @@
 
 #include "ui/ImGuiRender.h"
 
+#include "core/assetsManager.hpp"
 #include "core/threadPool.hpp"
 #include "core/statistics.hpp"
-#include "core/resources.h"
 #include "core/event.hpp"
 #include "core/time.hpp"
 
@@ -97,7 +97,7 @@ void Engine::OnInit() {
 
     ImGuiRender::Initialize("#version 330 core");
 
-    Resources::Initialize();
+    AssetsManager::Initialize();
 
     // Buffer de renderização.
     MainPostProcess = PostProcessing::Create({1, 1});
@@ -193,7 +193,7 @@ void Engine::OnDestroy() {
 
     ScreenRender::Shutdown();
 
-    Resources::Shutdown();
+    AssetsManager::Shutdown();
     
     Memory::Shutdown();
 }

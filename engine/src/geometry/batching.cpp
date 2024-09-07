@@ -135,7 +135,7 @@ void Batching::build(Mesh *mesh) {
         m_PBO = grr::gVertexArray::CreateBuffer(grr::BufferType_PBO);
     }
     
-    if (!m_EBO) {
+    if (!m_EBO && bHasIndice) {
         m_EBO = grr::gVertexArray::CreateBuffer(grr::BufferType_EBO);
     }
 
@@ -214,7 +214,7 @@ void Batching::compile() {
 
         m_primCount = m_models.size();
 
-        m_type = DrawType_Arrays;
+        m_type = bHasIndice ? DrawType_Elements : DrawType_Arrays;
     } else if (m_flags == Batching_Flags_Instanced_Static && m_primCount != m_models.size()) {
         std::vector<Matrix4x4> models;
         for (auto &transform : m_models) {
@@ -262,7 +262,7 @@ void Batching::compile() {
     } if (m_flags == Batching_Flags_Dynamic) {
         grr::gShader::SetUniform("u_model", 1, m_models[0]->getGlobalMatrix());
 
-        m_type = DrawType_Arrays;
+        m_type = bHasIndice ? DrawType_Elements : DrawType_Arrays;
     }
 
     Statistics::m_totalRender += m_primCount;

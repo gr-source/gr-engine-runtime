@@ -5,7 +5,7 @@
 
 #include "geometry/mesh.h"
 
-#include "core/resources.h"
+#include "core/assetsManager.hpp"
 
 std::vector<Material> &MeshRender::getMaterials() {
     return m_materials;
@@ -26,7 +26,7 @@ void MeshRender::build() {
     }
 
     if (flags == Batching::Batching_Flags_Dynamic) {
-        auto shader = Resources::FindShader("/home/grsource/Documentos/AppProjects/gr-component/lib/shader/model/dynamic_model.frag/home/grsource/Documentos/AppProjects/gr-component/lib/shader/model/dynamic_one_model.vert");
+        auto shader = AssetsManager::FindShader("/home/grsource/Documentos/AppProjects/gr-component/lib/shader/model/dynamic_model.frag/home/grsource/Documentos/AppProjects/gr-component/lib/shader/model/dynamic_one_model.vert");
         if (!shader) {
             throw std::runtime_error("Shader do not found.");
         }
@@ -45,9 +45,9 @@ void MeshRender::build() {
         return m_batched->insert(&transform);
     }
 
-    auto material = Resources::FindMaterial(mName);
+    auto material = AssetsManager::FindMaterial(mName);
     if (!material) {
-        material = &Resources::AddMaterial(mName, m_materials);
+        material = &AssetsManager::AddMaterial(mName, m_materials);
     }
 
     std::string name;
@@ -64,7 +64,7 @@ void MeshRender::build() {
         break;
     }
 
-    auto shader = Resources::FindShader(name);
+    auto shader = AssetsManager::FindShader(name);
     if (!shader) {
         throw std::runtime_error("Shader do not found.");
     }

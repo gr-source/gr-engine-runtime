@@ -22,7 +22,7 @@
 
 class FbxAnimation;
 
-class Resources {
+class AssetsManager {
 public:
     static void Initialize();
 
@@ -43,7 +43,7 @@ public:
     static Mesh *FindMesh(const std::string &name);
 
     template <typename ...Args>
-    static Mesh *AddMesh(Args &&...args);
+    static Mesh *AddMesh(const std::string &key, Args &&...args);
 
     static void DeleteMesh(Mesh *target);
 
@@ -130,16 +130,16 @@ private:
 };
 
 template <typename... Args>
-inline Mesh *Resources::AddMesh(Args &&...args) {
+inline Mesh *AssetsManager::AddMesh(const std::string &key, Args &&...args) {
     std::unique_lock<std::mutex> lock(m_meshMutex);
-    auto &&[pair, added] = s_meshList.emplace(std::forward<Args>(args)...);
+    auto &&[pair, added] = s_meshList.emplace(key, std::make_unique<Mesh>(std::forward<Args>(args)...));
     auto mesh = &(*(*pair).second);
     lock.unlock();
     return mesh;
 }
 
 template <typename... Args>
-inline std::vector<Material> &Resources::AddMaterial(const std::string &name, Args &&...args) {
+inline std::vector<Material> &AssetsManager::AddMaterial(const std::string &name, Args &&...args) {
     auto &&[it, added] = m_materialMap.emplace(name, std::forward<Args>(args)...);
     if (!added) {
         // thw

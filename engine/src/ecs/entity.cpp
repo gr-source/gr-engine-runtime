@@ -13,7 +13,7 @@ void (*Entity::Update)(Entity *);
 
 void (*Entity::Init)(Entity *);
 
-// void (*Entity::SetEnable)(Entity *, bool);
+Component *(*Entity::addInternalComponent)(Entity *, const std::string &);
 
 Entity::Entity(GameObject *gameObject, EntityID id) : m_gameObject(gameObject), m_entityID(id) {}
 
@@ -22,7 +22,7 @@ GameObject *Entity::getGameObject() {
 }
 
 Component *Entity::addComponent(const std::string &name) {
-    return addInternalComponent(name);
+    return addInternalComponent(this, name);
 }
 
 Component *Entity::getComponent(const std::string &name) {
@@ -137,6 +137,7 @@ void Entity::setEnable(bool value) {
     }
 }
 
+/*
 Component *Entity::addInternalComponent(const std::string &name) {
     if (!ScriptManager::CreateComponentWithName) {
         throw std::runtime_error("Failed to process Component: CreateComponentWithName is null");
@@ -156,4 +157,4 @@ Component *Entity::addInternalComponent(const std::string &name) {
 
     return component;
 }
-
+*/

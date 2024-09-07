@@ -6,7 +6,7 @@
 #include "core/file/file.hpp"
 
 #include "core/binary/gHeader.hpp"
-#include "core/resources.h"
+#include "core/assetsManager.hpp"
 
 #include "console.hpp"
 
@@ -220,8 +220,8 @@ int Scene::writeObject() {
 }
 
 int Scene::writeMaterial() {
-    auto count = Resources::GetMaterialCount();
-    auto &materials = Resources::GetMaterialMap();
+    auto count = AssetsManager::GetMaterialCount();
+    auto &materials = AssetsManager::GetMaterialMap();
 
     Stream::write(&count, 1);
     for (auto &&[name, ptr] : materials) {
@@ -241,8 +241,8 @@ int Scene::writeMaterial() {
 }
 
 int Scene::writeTexture() {
-    auto &textureMap = Resources::GetTextureMap();
-    auto count = Resources::GetTextureCount();
+    auto &textureMap = AssetsManager::GetTextureMap();
+    auto count = AssetsManager::GetTextureCount();
 
     grm::size offset = 0;
     offset += sizeof(grm::size);
@@ -273,11 +273,11 @@ int Scene::writeTexture() {
 }
 
 int Scene::writeMesh() {
-    auto meshCount = Resources::GetMeshCount();
+    auto meshCount = AssetsManager::GetMeshCount();
 
     Stream::write(&meshCount, 1);
 
-    for (auto &&[name, mesh] : Resources::GetMeshListMap()) {
+    for (auto &&[name, mesh] : AssetsManager::GetMeshListMap()) {
         auto size = name.size();
 
         Stream::write(&size, 1);
@@ -395,8 +395,8 @@ int Scene::readMaterial() {
             material.deserialize(Stream::stream);
         }
 
-        if (!name.empty() || !materials.empty() && !Resources::FindMaterial(name)) {
-            Resources::AddMaterial(name, materials);
+        if (!name.empty() || !materials.empty() && !AssetsManager::FindMaterial(name)) {
+            AssetsManager::AddMaterial(name, materials);
         }
     }
     return 0;
@@ -428,7 +428,7 @@ int Scene::readTexture() {
     
 
     for (auto &path : pathList) {
-        Resources::LoadTexture(path);
+        AssetsManager::LoadTexture(path);
     }
     return 0;
 }
@@ -444,7 +444,7 @@ int Scene::readMesh() {
         std::string name(size, '\0');
         Stream::read(name.data(), size);
 
-        auto mesh = Resources::AddMesh(name, std::make_unique<Mesh>(name));
+        auto mesh = AssetsManager::AddMesh(name, name);
         mesh->deserialize(Stream::stream);
     }
     return 0;

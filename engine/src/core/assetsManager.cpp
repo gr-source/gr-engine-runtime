@@ -1,4 +1,4 @@
-#include "resources.h"
+#include "assetsManager.hpp"
 
 #include "core/file/stream.hpp"
 #include "core/file/file.hpp"
@@ -28,52 +28,52 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "../core/stb/stb_image.h"
 
-grm::u32 Resources::m_processCount = 0;
+grm::u32 AssetsManager::m_processCount = 0;
 
 /***************** Shader *****************/
-std::unordered_map<std::string, std::unique_ptr<grr::gShader>> Resources::s_shaderList;
-std::list<std::tuple<std::tuple<std::string, std::string>, grr::gShader *>> Resources::s_shaderFromLoader;
-std::mutex Resources::s_shaderMutex;
+std::unordered_map<std::string, std::unique_ptr<grr::gShader>> AssetsManager::s_shaderList;
+std::list<std::tuple<std::tuple<std::string, std::string>, grr::gShader *>> AssetsManager::s_shaderFromLoader;
+std::mutex AssetsManager::s_shaderMutex;
 
-std::vector<std::function<bool(void *, const std::string &)>> Resources::m_functions;
+std::vector<std::function<bool(void *, const std::string &)>> AssetsManager::m_functions;
 
 /***************** Texture *****************/
-std::unordered_map<std::string, std::unique_ptr<grr::gTexture>> Resources::s_textureList;
-std::list<std::tuple<std::string, grr::gTexture *>> Resources::s_textureFromLoader;
-std::mutex Resources::s_textureMutex;
+std::unordered_map<std::string, std::unique_ptr<grr::gTexture>> AssetsManager::s_textureList;
+std::list<std::tuple<std::string, grr::gTexture *>> AssetsManager::s_textureFromLoader;
+std::mutex AssetsManager::s_textureMutex;
 
 /***************** Animation *****************/
-std::unordered_map<std::string, std::unique_ptr<Animation>> Resources::s_animationList;
-std::list<std::tuple<std::string, Animation *>> Resources::s_animationFromLoader;
-std::mutex Resources::s_animatioMutex;
+std::unordered_map<std::string, std::unique_ptr<Animation>> AssetsManager::s_animationList;
+std::list<std::tuple<std::string, Animation *>> AssetsManager::s_animationFromLoader;
+std::mutex AssetsManager::s_animatioMutex;
 
 /***************** GameObject *****************/
-std::list<std::tuple<std::string, Transform *>> Resources::s_gameObjectFromLoader;
-std::mutex Resources::s_gameObjectMutex;
+std::list<std::tuple<std::string, Transform *>> AssetsManager::s_gameObjectFromLoader;
+std::mutex AssetsManager::s_gameObjectMutex;
 
 /***************** Mesh *****************/
-std::unordered_map<std::string, std::unique_ptr<Mesh>> Resources::s_meshList;
-std::mutex Resources::m_meshMutex;
+std::unordered_map<std::string, std::unique_ptr<Mesh>> AssetsManager::s_meshList;
+std::mutex AssetsManager::m_meshMutex;
 
 /***************** Material *****************/
-std::unordered_map<std::string, std::vector<Material>> Resources::m_materialMap;
+std::unordered_map<std::string, std::vector<Material>> AssetsManager::m_materialMap;
 
-std::thread Resources::m_thread;
+std::thread AssetsManager::m_thread;
 
-void Resources::Initialize() {
+void AssetsManager::Initialize() {
     stbi_set_flip_vertically_on_load(true);
 
-    m_thread = std::thread(&Resources::OnThread);
+    m_thread = std::thread(&AssetsManager::OnThread);
 }
 
-void Resources::Shutdown() {
+void AssetsManager::Shutdown() {
     if (m_thread.joinable()) {
         m_thread.join();
     }
 }
 
 /***************** TEXTURE ****************/
-grr::gTexture *Resources::LoadTexture(const std::string &path) {
+grr::gTexture *AssetsManager::LoadTexture(const std::string &path) {
     if (!File::Exists(path)) { 
         Console::log(LogInfo::ERROR, "[ Resources::LoadTexture ] Falied to load texture: " + path);
         return nullptr;
@@ -109,7 +109,7 @@ grr::gTexture *Resources::LoadTexture(const std::string &path) {
 }
 
 /***************** SHADER ****************/
-grr::gShader *Resources::LoadShader(const std::string &frag, const std::string &vert) {
+grr::gShader *AssetsManager::LoadShader(const std::string &frag, const std::string &vert) {
     if (!File::Exists(frag)) {
         Console::log(LogInfo::ERROR, "File do not found: " + frag);
         return nullptr;
@@ -151,7 +151,7 @@ grr::gShader *Resources::LoadShader(const std::string &frag, const std::string &
     return shader;
 }
 
-GameObject *Resources::LoadGameObject(const std::string &path) {
+GameObject *AssetsManager::LoadGameObject(const std::string &path) {
     if (!File::Exists(path)) {
         Console::log(LogInfo::ERROR, "Binary do not found: " + path);
         return nullptr;
@@ -170,7 +170,7 @@ GameObject *Resources::LoadGameObject(const std::string &path) {
     return gameObject;
 }
 
-Animation *Resources::LoadAnimation(const std::string &path) {
+Animation *AssetsManager::LoadAnimation(const std::string &path) {
     if (!File::Exists(path)) {
         Console::log(LogInfo::ERROR, "Falied to open animation: " + path);
         return nullptr;
@@ -198,11 +198,11 @@ Animation *Resources::LoadAnimation(const std::string &path) {
     return animation;
 }
 
-void Resources::AddPostLoader(std::function<bool(void *, const std::string &)> func) {
+void AssetsManager::AddPostLoader(std::function<bool(void *, const std::string &)> func) {
     m_functions.push_back(func);
 }
 
-grr::gShader *Resources::FindShader(const std::string &name) {
+grr::gShader *AssetsManager::FindShader(const std::string &name) {
     auto it = s_shaderList.find(name);
     if (it == s_shaderList.end()) {
         return nullptr;
@@ -210,7 +210,7 @@ grr::gShader *Resources::FindShader(const std::string &name) {
     return &(*it->second);
 }
 
-Mesh *Resources::FindMesh(const std::string &name) {
+Mesh *AssetsManager::FindMesh(const std::string &name) {
     std::unique_lock<std::mutex> lock(m_meshMutex);
     auto it = s_meshList.find(name);
     if (it == s_meshList.end()) {
@@ -221,7 +221,7 @@ Mesh *Resources::FindMesh(const std::string &name) {
     return mesh;
 }
 
-void Resources::DeleteMesh(Mesh *target) {
+void AssetsManager::DeleteMesh(Mesh *target) {
     if (!target) {
         return;
     }
@@ -235,11 +235,11 @@ void Resources::DeleteMesh(Mesh *target) {
     lock.unlock();
 }
 
-std::unordered_map<std::string, std::unique_ptr<Mesh>> &Resources::GetMeshListMap() {
+std::unordered_map<std::string, std::unique_ptr<Mesh>> &AssetsManager::GetMeshListMap() {
     return s_meshList;
 }
 
-std::vector<Material> *Resources::FindMaterial(const std::string &name) {
+std::vector<Material> *AssetsManager::FindMaterial(const std::string &name) {
     auto it = m_materialMap.find(name);
     if (it == m_materialMap.end()) {
         return nullptr;
@@ -248,7 +248,7 @@ std::vector<Material> *Resources::FindMaterial(const std::string &name) {
 }
 
 /***************** Texture Process ****************/
-void Resources::SetupTexture(grr::gTexture *texture, int width, int height, int ch, void *pixels, std::string path) {
+void AssetsManager::SetupTexture(grr::gTexture *texture, int width, int height, int ch, void *pixels, std::string path) {
     s_textureList.emplace(path, std::unique_ptr<grr::gTexture>(texture));
 
     grr::TextureFormat format;
@@ -281,7 +281,7 @@ void Resources::SetupTexture(grr::gTexture *texture, int width, int height, int 
     Console::log(LogInfo::INFO, "Texture loaded: " + path);
 }
 
-void Resources::ProcessTexture() {
+void AssetsManager::ProcessTexture() {
     std::unique_lock<std::mutex> lock(s_textureMutex);
     while (!s_textureFromLoader.empty()) {
         auto [path, texture] = s_textureFromLoader.front();
@@ -299,7 +299,7 @@ void Resources::ProcessTexture() {
             continue;
         }
 
-        Event::Add(Resources::SetupTexture, texture, width, height, ch, (void *)pixels, path);
+        Event::Add(AssetsManager::SetupTexture, texture, width, height, ch, (void *)pixels, path);
 
         lock.lock();
         s_textureFromLoader.pop_front();
@@ -307,7 +307,7 @@ void Resources::ProcessTexture() {
 }
 
 /***************** Shader Process ****************/
-void Resources::SetupShader(grr::gShader *shader, const std::string &frag, const std::string &vert, const std::string &path) {
+void AssetsManager::SetupShader(grr::gShader *shader, const std::string &frag, const std::string &vert, const std::string &path) {
     Console::log(LogInfo::WARNING, "Shader loadedd sucessfull.");
 
     const char *fShader = frag.c_str();
@@ -329,7 +329,7 @@ void Resources::SetupShader(grr::gShader *shader, const std::string &frag, const
     s_shaderList.emplace(path, std::unique_ptr<grr::gShader>(shader));
 }
 
-bool Resources::CheckShaderError(grr::gShader *shader) {
+bool AssetsManager::CheckShaderError(grr::gShader *shader) {
     if (shader->isValid()) {
         return false;
     }
@@ -345,7 +345,7 @@ bool Resources::CheckShaderError(grr::gShader *shader) {
     return true;
 }
 
-void Resources::ProcessShader() {
+void AssetsManager::ProcessShader() {
     std::unique_lock<std::mutex> lock(s_shaderMutex);
     while (!s_shaderFromLoader.empty()) {
         auto &&[tuple, shader] = s_shaderFromLoader.front();
@@ -381,7 +381,7 @@ void Resources::ProcessShader() {
             continue;
         }
 
-        Event::Add(Resources::SetupShader, shader, fragSource, vertSource, frag + vert);
+        Event::Add(AssetsManager::SetupShader, shader, fragSource, vertSource, frag + vert);
 
         lock.lock();
         s_shaderFromLoader.pop_front();
@@ -390,7 +390,7 @@ void Resources::ProcessShader() {
 
 #include "filmbox/fbxScene.hpp"
 
-void Resources::SetupAnimation(const std::string &path, FbxAnimation *temp, Animation *animation) {
+void AssetsManager::SetupAnimation(const std::string &path, FbxAnimation *temp, Animation *animation) {
     animation->setName(temp->getName());
     animation->setDuration(temp->getDuration());
     animation->setTick(temp->getTick());
@@ -416,7 +416,7 @@ void Resources::SetupAnimation(const std::string &path, FbxAnimation *temp, Anim
     delete temp;
 }
 
-void Resources::doAnimationInBackground(const std::string &path, Animation *target) {
+void AssetsManager::doAnimationInBackground(const std::string &path, Animation *target) {
     if (!Stream::open(path, std::ios_base::in | std::ios_base::binary)) {
         Console::log(LogInfo::ERROR, "Falied to open animation: " + path);
         return;
@@ -494,10 +494,10 @@ void Resources::doAnimationInBackground(const std::string &path, Animation *targ
 
     Stream::close();
 
-    Event::Add(&Resources::SetupAnimation, path, fbxAnimation, target);
+    Event::Add(&AssetsManager::SetupAnimation, path, fbxAnimation, target);
 }
 
-void Resources::ProcessAnimation() {
+void AssetsManager::ProcessAnimation() {
     std::unique_lock<std::mutex> lock(s_animatioMutex);
     while (!s_animationFromLoader.empty()) {
         auto &&[path, animation] = s_animationFromLoader.front();
@@ -511,7 +511,7 @@ void Resources::ProcessAnimation() {
 }
 
 std::condition_variable cond;
-void Resources::SetupGameObject(Transform *&out, gModel &model, Mesh *mesh, std::vector<gMaterial> &materials, Transform *parent) {
+void AssetsManager::SetupGameObject(Transform *&out, gModel &model, Mesh *mesh, std::vector<gMaterial> &materials, Transform *parent) {
     // transformaçoes
     auto gameObject = &GameObject::Create(model.m_name, "unttaged");
 
@@ -536,7 +536,7 @@ void Resources::SetupGameObject(Transform *&out, gModel &model, Mesh *mesh, std:
             for (int i=0;i<material.m_textureCount;++i) { 
                 auto& texture = material.m_textures[i];
 
-                m.setTexture(i, Resources::LoadTexture(texture.m_path));
+                m.setTexture(i, AssetsManager::LoadTexture(texture.m_path));
             }
 
             delete[] material.m_textures;
@@ -556,7 +556,7 @@ void Resources::SetupGameObject(Transform *&out, gModel &model, Mesh *mesh, std:
     cond.notify_one();
 }
 
-void Resources::doInBackgroundGameObject(const std::string &path, Transform *target) {
+void AssetsManager::doInBackgroundGameObject(const std::string &path, Transform *target) {
     if (!Stream::open(path, std::ios_base::in | std::ios_base::binary)) {
         return Console::log(LogInfo::ERROR, "Failed to load model. " + path);
     }
@@ -575,7 +575,7 @@ void Resources::doInBackgroundGameObject(const std::string &path, Transform *tar
     Stream::close();
 }
 
-void Resources::ProcessBinary() {
+void AssetsManager::ProcessBinary() {
     std::unique_lock<std::mutex> lock(s_gameObjectMutex);
     while (!s_gameObjectFromLoader.empty()) {
         auto &&[path, transform] = s_gameObjectFromLoader.front();
@@ -588,13 +588,13 @@ void Resources::ProcessBinary() {
     }
 }
 
-std::unordered_map<std::string, std::vector<Material>> &Resources::GetMaterialMap() {
+std::unordered_map<std::string, std::vector<Material>> &AssetsManager::GetMaterialMap() {
     return m_materialMap;
 }
 
 #include "timer.h"
 
-void Resources::OnThread() {
+void AssetsManager::OnThread() {
     TimeLast last(5.0f);
     while (Settings::IsEngineRunning()) {
         last.SleepTick();
@@ -611,7 +611,7 @@ void Resources::OnThread() {
     }
 }
 
-void Resources::ReadChildren(Transform *parent) {
+void AssetsManager::ReadChildren(Transform *parent) {
     gModel pModel;
     if (!Stream::read(&pModel, 1)) {
         return;
@@ -681,11 +681,11 @@ void Resources::ReadChildren(Transform *parent) {
 
         }
 
-        m_mesh = Resources::FindMesh(meshName);
+        m_mesh = AssetsManager::FindMesh(meshName);
         if (!m_mesh) {
             mesh.setName(meshName);
 
-            m_mesh = Resources::AddMesh(meshName, std::make_unique<Mesh>(mesh));
+            m_mesh = AssetsManager::AddMesh(meshName, mesh);
         }
     }
 
@@ -717,7 +717,7 @@ void Resources::ReadChildren(Transform *parent) {
 
     Transform *transform = nullptr;
 
-    Event::Add(&Resources::SetupGameObject, std::ref(transform), pModel, m_mesh, m_materials, parent);
+    Event::Add(&AssetsManager::SetupGameObject, std::ref(transform), pModel, m_mesh, m_materials, parent);
 
     std::unique_lock<std::mutex> lock(s_gameObjectMutex);
     cond.wait(lock, [&transform] {
@@ -733,19 +733,19 @@ void Resources::ReadChildren(Transform *parent) {
     transform = nullptr;
 }
 
-grm::size Resources::GetMaterialCount() {
+grm::size AssetsManager::GetMaterialCount() {
     return m_materialMap.size();
 }
 
-grm::size Resources::GetTextureCount() {
+grm::size AssetsManager::GetTextureCount() {
     return s_textureList.size();
 }
 
-grm::size Resources::GetShaderCount() {
+grm::size AssetsManager::GetShaderCount() {
     return s_shaderList.size();
 }
 
-grm::size Resources::GetMeshCount() {
+grm::size AssetsManager::GetMeshCount() {
     auto count = 0;
     {
         std::lock_guard<std::mutex> lock(m_meshMutex);
@@ -754,7 +754,7 @@ grm::size Resources::GetMeshCount() {
     return count;
 }
 
-std::string Resources::GetTextureKeyMap(grr::gTexture *texture) {
+std::string AssetsManager::GetTextureKeyMap(grr::gTexture *texture) {
     auto it = std::find_if(s_textureList.begin(), s_textureList.end(), [&texture](const auto &tuple) {
         return &(*std::get<std::unique_ptr<grr::gTexture>>(tuple)) == texture;
     });
@@ -765,6 +765,6 @@ std::string Resources::GetTextureKeyMap(grr::gTexture *texture) {
     return it->first;
 }
 
-std::unordered_map<std::string, std::unique_ptr<grr::gTexture>> &Resources::GetTextureMap() {
+std::unordered_map<std::string, std::unique_ptr<grr::gTexture>> &AssetsManager::GetTextureMap() {
     return s_textureList;
 }

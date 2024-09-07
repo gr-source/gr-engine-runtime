@@ -13,7 +13,7 @@
 
 #include "core/file/file.hpp"
 
-#include "core/resources.h"
+#include "core/assetsManager.hpp"
 
 #include "scriptManager/scriptManager.hpp"
 
@@ -40,7 +40,7 @@ void RenderManager::Initialize() {
 
     auto shaders = ScriptManager::GetShaders();
 
-    Resources::AddPostLoader(RenderManager::SetupShader);
+    AssetsManager::AddPostLoader(RenderManager::SetupShader);
 
     m_shader[ShaderType_Dynamic] = shaders[ShaderType_Dynamic];
     // m_shader[ShaderType_Dynamic_Anim] = shaders[ShaderType_Dynamic_Anim];

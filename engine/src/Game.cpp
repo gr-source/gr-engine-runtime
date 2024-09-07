@@ -19,7 +19,7 @@
 #include "core/file/file.hpp"
 
 #include "core/statistics.hpp"
-#include "core/resources.h"
+#include "core/assetsManager.hpp"
 #include "core/scene.hpp"
 #include "core/event.hpp"
 
@@ -479,7 +479,7 @@ void Game::UnloadScript() {
 
 // ===================================== END =========================================================
 void Game::RenderUI() {
-    if (Resources::m_processCount != 0) {
+    if (AssetsManager::m_processCount != 0) {
         ProgressLoad();
         return;
     }
@@ -993,7 +993,7 @@ void Game::DropGameObjectInScene() {
     if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(IMGUI_PAYLOAD_FILE)) {
         std::string path((char*)payload->Data, payload->DataSize);
         if (!path.empty() && std::filesystem::path(path).filename().extension() == ".gmd") {
-            s_objectSelected = Resources::LoadGameObject(path);
+            s_objectSelected = AssetsManager::LoadGameObject(path);
 
             auto &transform = s_objectSelected->getTransform();
             transform.setLocalPosition(camera->getPosition() + (camTransform->getforward() * 5.5f));
@@ -1438,10 +1438,10 @@ void Game::RenderStatisticsMenu() {
     // ImGui::Text("Triangulos: %.2f", (gameStatics.indices / 3.0f));
 
     ImGui::SeparatorText("AssetsManager");
-    ImGui::Text("Textures: %ld", Resources::GetTextureCount());
-    ImGui::Text("Shaders: %ld", Resources::GetShaderCount());
-    ImGui::Text("Mesh: %ld", Resources::GetMeshCount());
-    ImGui::Text("Material: %ld", Resources::GetMaterialCount());
+    ImGui::Text("Textures: %ld", AssetsManager::GetTextureCount());
+    ImGui::Text("Shaders: %ld", AssetsManager::GetShaderCount());
+    ImGui::Text("Mesh: %ld", AssetsManager::GetMeshCount());
+    ImGui::Text("Material: %ld", AssetsManager::GetMaterialCount());
     ImGui::Text("Event: %ld", Event::GetCount());
 
     ImGui::SeparatorText("FrameTime: ");
@@ -1568,7 +1568,7 @@ void Game::PopupAddComponent() {
 
         for (auto &&[name, pool] : componentPool) {
             if (ImGui::SmallButton(name.c_str())) {
-                s_objectSelected->getEntity()->addInternalComponent(name);
+                Entity::addInternalComponent(s_objectSelected->getEntity(), name);
 
                 ImGui::CloseCurrentPopup();
             }
@@ -1719,7 +1719,7 @@ void Game::OnPropertyAnimator(Animator *animator) {
             if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(IMGUI_PAYLOAD_FILE, target_flags)) {
                 std::string path((char*)payload->Data, payload->DataSize);
                 if (!path.empty() && std::filesystem::path(path).filename().extension() == ".anm") {
-                    animator->insert(Resources::LoadAnimation(path));
+                    animator->insert(AssetsManager::LoadAnimation(path));
                 }
             }
             ImGui::EndDragDropTarget();
@@ -1819,24 +1819,24 @@ void Game::TextureInfo(Texture *&texture) {
 }
 
 void Game::loadReources() {
-    iconsUI.emplace(IconType::ICON_FILE,        Resources::LoadTexture(File::GetFile("/icon/icons8-file-30.png")));
-    iconsUI.emplace(IconType::ICON_FOLDER,      Resources::LoadTexture(File::GetFile("/icon/icons8-folder-50.png")));
-    iconsUI.emplace(IconType::ICON_BACK_FILE,   Resources::LoadTexture(File::GetFile("/icon/icons8-go-back-50.png")));
-    iconsUI.emplace(IconType::ICON_GAMEOBJECT,  Resources::LoadTexture(File::GetFile("/icon/icons8-3d-object-50.png")));
-    iconsUI.emplace(IconType::ICON_PENCIL,      Resources::LoadTexture(File::GetFile("/icon/icons8-lápis-30.png")));
-    iconsUI.emplace(IconType::ICON_LIGHT,       Resources::LoadTexture(File::GetFile("/icon/icons8-lâmpada-globular-64.png")));
-    iconsUI.emplace(IconType::ICON_TEXTURE,     Resources::LoadTexture(File::GetFile("/icon/icons8-textura-de-renderização-32.png")));
-    iconsUI.emplace(IconType::ICON_PNG,         Resources::LoadTexture(File::GetFile("/icon/icons8-png-24.png")));
-    iconsUI.emplace(IconType::ICON_PLAY_GAME,   Resources::LoadTexture(File::GetFile("/icon/icons8-reproduzir-30.png")));
-    iconsUI.emplace(IconType::ICON_STOP_GAME,   Resources::LoadTexture(File::GetFile("/icon/icons8-parar-50.png")));
-    iconsUI.emplace(IconType::ICON_BIN,         Resources::LoadTexture(File::GetFile("/icon/icons8-resíduos-50.png")));
-    iconsUI.emplace(IconType::ICON_IMPORT,      Resources::LoadTexture(File::GetFile("/icon/icons8-importar-50.png")));
-    iconsUI.emplace(IconType::ICON_ASCENDENTE,  Resources::LoadTexture(File::GetFile("/icon/icons8-ordenar-para-a-direita-50.png")));
-    iconsUI.emplace(IconType::ICON_DESCENDENTE, Resources::LoadTexture(File::GetFile("/icon/icons8-ordem-descendente-50.png")));
-    iconsUI.emplace(IconType::ICON_EDIT,        Resources::LoadTexture(File::GetFile("/icon/icons8-editar-24.png")));
-    iconsUI.emplace(IconType::ICON_ANIMATION,   Resources::LoadTexture(File::GetFile("/icon/motion-graphics.png")));
-    iconsUI.emplace(IconType::ICON_SHADER,      Resources::LoadTexture(File::GetFile("/icon/shade.png")));
-    iconsUI.emplace(IconType::ICON_SCENE,       Resources::LoadTexture(File::GetFile("/icon/studio-set.png")));
+    iconsUI.emplace(IconType::ICON_FILE,        AssetsManager::LoadTexture(File::GetFile("/icon/icons8-file-30.png")));
+    iconsUI.emplace(IconType::ICON_FOLDER,      AssetsManager::LoadTexture(File::GetFile("/icon/icons8-folder-50.png")));
+    iconsUI.emplace(IconType::ICON_BACK_FILE,   AssetsManager::LoadTexture(File::GetFile("/icon/icons8-go-back-50.png")));
+    iconsUI.emplace(IconType::ICON_GAMEOBJECT,  AssetsManager::LoadTexture(File::GetFile("/icon/icons8-3d-object-50.png")));
+    iconsUI.emplace(IconType::ICON_PENCIL,      AssetsManager::LoadTexture(File::GetFile("/icon/icons8-lápis-30.png")));
+    iconsUI.emplace(IconType::ICON_LIGHT,       AssetsManager::LoadTexture(File::GetFile("/icon/icons8-lâmpada-globular-64.png")));
+    iconsUI.emplace(IconType::ICON_TEXTURE,     AssetsManager::LoadTexture(File::GetFile("/icon/icons8-textura-de-renderização-32.png")));
+    iconsUI.emplace(IconType::ICON_PNG,         AssetsManager::LoadTexture(File::GetFile("/icon/icons8-png-24.png")));
+    iconsUI.emplace(IconType::ICON_PLAY_GAME,   AssetsManager::LoadTexture(File::GetFile("/icon/icons8-reproduzir-30.png")));
+    iconsUI.emplace(IconType::ICON_STOP_GAME,   AssetsManager::LoadTexture(File::GetFile("/icon/icons8-parar-50.png")));
+    iconsUI.emplace(IconType::ICON_BIN,         AssetsManager::LoadTexture(File::GetFile("/icon/icons8-resíduos-50.png")));
+    iconsUI.emplace(IconType::ICON_IMPORT,      AssetsManager::LoadTexture(File::GetFile("/icon/icons8-importar-50.png")));
+    iconsUI.emplace(IconType::ICON_ASCENDENTE,  AssetsManager::LoadTexture(File::GetFile("/icon/icons8-ordenar-para-a-direita-50.png")));
+    iconsUI.emplace(IconType::ICON_DESCENDENTE, AssetsManager::LoadTexture(File::GetFile("/icon/icons8-ordem-descendente-50.png")));
+    iconsUI.emplace(IconType::ICON_EDIT,        AssetsManager::LoadTexture(File::GetFile("/icon/icons8-editar-24.png")));
+    iconsUI.emplace(IconType::ICON_ANIMATION,   AssetsManager::LoadTexture(File::GetFile("/icon/motion-graphics.png")));
+    iconsUI.emplace(IconType::ICON_SHADER,      AssetsManager::LoadTexture(File::GetFile("/icon/shade.png")));
+    iconsUI.emplace(IconType::ICON_SCENE,       AssetsManager::LoadTexture(File::GetFile("/icon/studio-set.png")));
 
     s_texturePlayGame = iconsUI[IconType::ICON_PLAY_GAME];
 }
@@ -1854,10 +1854,10 @@ void Game::ProgressLoad() {
     ImGui::Text("Carregando UI");
 
     if (!s_maxProgress) {
-        s_maxProgress = Resources::m_processCount;
+        s_maxProgress = AssetsManager::m_processCount;
     }
 
-    grm::u32 current = Resources::m_processCount;
+    grm::u32 current = AssetsManager::m_processCount;
     if (current > s_maxProgress) {
         s_maxProgress = current;
     }

@@ -1,7 +1,7 @@
 #include "filmbox.hpp"
 
 #include "core/file/file.hpp"
-#include "core/resources.h"
+#include "core/assetsManager.hpp"
 
 #include "core/event.hpp"
 

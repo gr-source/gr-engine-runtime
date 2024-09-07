@@ -1,6 +1,6 @@
 #include "material.h"
 
-#include "core/resources.h"
+#include "core/assetsManager.hpp"
 
 Material::Material(const std::string &name, const Vector4 &albedo, float metallic, float roughness, float ao) : m_name(name), m_albedo(albedo), m_metallic(metallic), m_roughness(roughness), m_ao(ao), m_texture(10, nullptr) {}
 
@@ -62,7 +62,7 @@ void Material::serialize(std::ostream &os) const {
 
     for (int i = 0;i<m_texture.size();i++) {
         os.write(reinterpret_cast<const char *>(&i), sizeof(int));
-        auto name = Resources::GetTextureKeyMap(m_texture[i]);
+        auto name = AssetsManager::GetTextureKeyMap(m_texture[i]);
 
         nSize = name.size();
         os.write(reinterpret_cast<const char *>(&nSize), sizeof(std::size_t));
@@ -104,6 +104,6 @@ void Material::deserialize(std::istream &is) {
         if (name.empty()) {
             continue;
         }
-        m_texture[id] = Resources::LoadTexture(name);
+        m_texture[id] = AssetsManager::LoadTexture(name);
     }
 }

@@ -7,7 +7,7 @@
 
 #include "geometry/batching.hpp"
 
-#include "core/resources.h"
+#include "core/assetsManager.hpp"
 #include "core/scene.hpp"
 #include "core/event.hpp"
 
@@ -143,10 +143,9 @@ void ScriptManager::RegisterApi() {
     ScriptLoader::registerFunction("GetShaders", reinterpret_cast<void **>(&GetShaders));
 
     // entity functions
-    // ScriptLoader::registerFunction("GetEntityCount", reinterpret_cast<void *>(&GetEntityCount));
     ScriptLoader::registerFunction("_ZN6Entity6updateEv", reinterpret_cast<void **>(&Entity::Update));
     ScriptLoader::registerFunction("_ZN6Entity4initEv",   reinterpret_cast<void **>(&Entity::Init));
-    ScriptLoader::replaceLibraryFunction("_ZN6Entity20addInternalComponentERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE", (void *)&Entity::addInternalComponent);
+    ScriptLoader::registerFunction("_ZN6Entity20addInternalComponentERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE", reinterpret_cast<void **>(&Entity::addInternalComponent));
 
     // Light fundtiosn
     ScriptLoader::registerFunction("GetListLight", reinterpret_cast<void **>(&GetListLight));
@@ -161,13 +160,14 @@ void ScriptManager::RegisterApi() {
     ScriptLoader::registerFunction("EventUpdate", reinterpret_cast<void **>(&EventUpdate));
 
     // AssetManager
-    ScriptLoader::replaceLibraryFunction("LoadTexture",                                                                                                reinterpret_cast<void *>(&Resources::LoadTexture));
-    ScriptLoader::replaceLibraryFunction("LoadShader",                                                                                                 reinterpret_cast<void *>(&Resources::LoadShader));
-    ScriptLoader::replaceLibraryFunction("LoadGameObject",                                                                                             reinterpret_cast<void *>(&Resources::LoadGameObject));
-    ScriptLoader::replaceLibraryFunction("_ZN13AssetsManager13AddPostLoaderESt8functionIFbPvRKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEEE", reinterpret_cast<void *>(&Resources::AddPostLoader));
-    ScriptLoader::replaceLibraryFunction("_ZN13AssetsManager8FindMeshERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE",                         reinterpret_cast<void *>(&Resources::FindMesh));
-    ScriptLoader::replaceLibraryFunction("_ZN13AssetsManager12FindMaterialERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE",                    reinterpret_cast<void *>(&Resources::FindMaterial));
-    ScriptLoader::replaceLibraryFunction("_ZN13AssetsManager10FindShaderERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE",                      reinterpret_cast<void *>(&Resources::FindShader));
+    ScriptLoader::replaceLibraryFunction("LoadTexture",                                                                                                reinterpret_cast<void *>(&AssetsManager::LoadTexture));
+    ScriptLoader::replaceLibraryFunction("LoadShader",                                                                                                 reinterpret_cast<void *>(&AssetsManager::LoadShader));
+    ScriptLoader::replaceLibraryFunction("LoadGameObject",                                                                                             reinterpret_cast<void *>(&AssetsManager::LoadGameObject));
+    ScriptLoader::replaceLibraryFunction("_ZN13AssetsManager13AddPostLoaderESt8functionIFbPvRKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEEE", reinterpret_cast<void *>(&AssetsManager::AddPostLoader));
+    ScriptLoader::replaceLibraryFunction("_ZN13AssetsManager8FindMeshERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE",                         reinterpret_cast<void *>(&AssetsManager::FindMesh));
+    ScriptLoader::replaceLibraryFunction("_ZN13AssetsManager12FindMaterialERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE",                    reinterpret_cast<void *>(&AssetsManager::FindMaterial));
+    ScriptLoader::replaceLibraryFunction("_ZN13AssetsManager10FindShaderERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE",                      reinterpret_cast<void *>(&AssetsManager::FindShader));
+    // ScriptLoader::replaceLibraryFunction("_ZN13AssetsManager7AddMeshERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE",                          reinterpret_cast<void *>(&AssetsManager::AddMesh<const std::string &>));
 
     ScriptLoader::registerFunction("LoadAnimation", reinterpret_cast<void **>(&LoadAnimation));
 
@@ -200,6 +200,8 @@ void ScriptManager::RegisterApi() {
 
     // GameObject
     ScriptLoader::replaceLibraryFunction("_ZN10GameObject11InstantiateEPS_", reinterpret_cast<void *>(&GameObject::Instantiate));
+    ScriptLoader::replaceLibraryFunction("_ZN10GameObject6CreateERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEES7_", reinterpret_cast<void *>(&GameObject::Create));
+    ScriptLoader::replaceLibraryFunction("_ZN10GameObject7DestroyEPS_", reinterpret_cast<void *>(&GameObject::Destroy));
 }
 #pragma GCC diagnostic pop
 

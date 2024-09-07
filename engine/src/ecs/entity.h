@@ -46,7 +46,7 @@ public:
     
     bool hasComponent(const std::string &name) const;
 
-    Component *addInternalComponent(const std::string &name);
+    static Component *(*addInternalComponent)(Entity *, const std::string &);
     
     GameObject *getGameObject();
 
@@ -74,7 +74,7 @@ private:
 
 template <typename T>
 inline T &Entity::addComponent() {
-    auto component = addInternalComponent(String::RemoveNumber(typeid(T).name()));
+    auto component = addInternalComponent(this, String::RemoveNumber(typeid(T).name()));
     if (!component) {
         throw std::runtime_error("Component is null.");
     }

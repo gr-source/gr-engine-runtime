@@ -2,7 +2,7 @@
 
 #include "geometry/mesh.h"
 
-#include "core/resources.h"
+#include "core/assetsManager.hpp"
 
 #include "script/camera.hpp"
 
