@@ -14,6 +14,8 @@ public:
 
     static void Renderer();
 
+    static grr::gTexture *GetTextureCubemap();
+
 private:
     static grr::gVertexArray *m_vertexArray;
 

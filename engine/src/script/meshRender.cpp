@@ -27,7 +27,7 @@ void MeshRender::build() {
     }
 
     if (flags == Batching::Batching_Flags_Dynamic) {
-        auto shader = AssetsManager::FindShader("/home/grsource/Documentos/AppProjects/gr-component/lib/shader/model/dynamic_model.frag/home/grsource/Documentos/AppProjects/gr-component/lib/shader/model/dynamic_one_model.vert");
+        auto shader = AssetsManager::FindShader("dynamic_one_model");
         if (!shader) {
             throw std::runtime_error("Shader do not found.");
         }
@@ -66,10 +66,10 @@ void MeshRender::build() {
     switch (flags) {
     case Batching::Batching_Flags_Instanced_Static:
     case Batching::Batching_Flags_Instanced_Dynamic:
-        name = "/home/grsource/Documentos/AppProjects/gr-component/lib/shader/model/dynamic_model.frag/home/grsource/Documentos/AppProjects/gr-component/lib/shader/model/dynamic_multi_model.vert";
+        name = "dynamic_multi_model";
         break;
     case Batching::Batching_Flags_Static_Mesh:
-        name = "/home/grsource/Documentos/AppProjects/gr-component/lib/shader/model/dynamic_model.frag/home/grsource/Documentos/AppProjects/gr-component/lib/shader/model/static_multi_model.vert";
+        name = "static_multi_model";
         break;
     default:
         throw std::runtime_error(".");

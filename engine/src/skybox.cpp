@@ -26,12 +26,13 @@ grm::u32 Skybox::m_vbo = 0;
 
 grm::u32 Skybox::m_ebo = 0;
 
+// TODO: falta adicionara a textura default ao skybox
 void Skybox::Initialize() {
     m_cubeColor = CubeFramebuffer::Create({512, 512});
 
     CreateCube();
 
-    m_texture = AssetsManager::LoadTexture(File::GetFile("/texture/skybox/industrial_sunset_puresky_1k.hdr"));
+    m_texture = AssetsManager::LoadTexture("/home/grsource/Documentos/AppProjects/gr-engine/bin/assets/texture/skybox/industrial_sunset_puresky_1k.hdr");
 
     AssetsManager::AddPostLoader(&Skybox::SetupTexture);
 }
@@ -69,6 +70,10 @@ void Skybox::Renderer() {
 
     m_vertexArray->bind();
     grr::gVertexArray::DrawElements(grr::PrimitiveType_Triangles, m_count, nullptr);
+}
+
+grr::gTexture *Skybox::GetTextureCubemap() {
+    return CubeFramebuffer::GetTextureColor(m_cubeColor);
 }
 
 void Skybox::CreateCube() {
@@ -130,19 +135,19 @@ bool Skybox::SetupTexture(void *texture, const std::string &path) {
     }
 
     Event::Add([]{
-        // m_irradianceShader = AssetsManager::LoadShader(
-        //     File::GetFile("/shader/skybox/Irradiance.frag"),
-        //     File::GetFile("/shader/skybox/Irradiance.vert")
-        // );
+        m_irradianceShader = AssetsManager::LoadShader("SkyboxIrradianceShader",
+            ("/home/grsource/Documentos/AppProjects/gr-engine/bin/assets/shader/skybox/Irradiance.frag"),
+            ("/home/grsource/Documentos/AppProjects/gr-engine/bin/assets/shader/skybox/Irradiance.vert")
+        );
 
-        // m_skyShader = AssetsManager::LoadShader(
-        //     File::GetFile("/shader/skybox/Skybox.frag"),
-        //     File::GetFile("/shader/skybox/Skybox.vert"));
+        m_skyShader = AssetsManager::LoadShader("SkyBoxShader",
+            ("/home/grsource/Documentos/AppProjects/gr-engine/bin/assets/shader/skybox/Skybox.frag"),
+            ("/home/grsource/Documentos/AppProjects/gr-engine/bin/assets/shader/skybox/Skybox.vert"));
 
-        // m_shader = AssetsManager::LoadShader(
-        //     File::GetFile("/shader/skybox/Background.frag"),
-        //     File::GetFile("/shader/skybox/Background.vert")
-        // );
+        m_shader = AssetsManager::LoadShader("SkyboxBackgroundShader",
+            ("/home/grsource/Documentos/AppProjects/gr-engine/bin/assets/shader/skybox/Background.frag"),
+            ("/home/grsource/Documentos/AppProjects/gr-engine/bin/assets/shader/skybox/Background.vert")
+        );
 
         AssetsManager::AddPostLoader(&Skybox::SetupShader);
     });

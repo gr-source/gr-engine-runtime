@@ -164,13 +164,12 @@ void ScriptManager::RegisterApi() {
 
     // AssetManager
     ScriptLoader::replaceLibraryFunction("LoadTexture",                                                                                                reinterpret_cast<void *>(&AssetsManager::LoadTexture));
-    ScriptLoader::replaceLibraryFunction("LoadShader",                                                                                                 reinterpret_cast<void *>(&AssetsManager::LoadShader));
     ScriptLoader::replaceLibraryFunction("LoadGameObject",                                                                                             reinterpret_cast<void *>(&AssetsManager::LoadGameObject));
     ScriptLoader::replaceLibraryFunction("_ZN13AssetsManager13AddPostLoaderESt8functionIFbPvRKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEEE", reinterpret_cast<void *>(&AssetsManager::AddPostLoader));
     ScriptLoader::replaceLibraryFunction("_ZN13AssetsManager8FindMeshERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE",                         reinterpret_cast<void *>(&AssetsManager::FindMesh));
     ScriptLoader::replaceLibraryFunction("_ZN13AssetsManager12FindMaterialERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE",                    reinterpret_cast<void *>(&AssetsManager::FindMaterial));
     ScriptLoader::replaceLibraryFunction("_ZN13AssetsManager10FindShaderERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE",                      reinterpret_cast<void *>(&AssetsManager::FindShader));
-    // ScriptLoader::replaceLibraryFunction("_ZN13AssetsManager7AddMeshERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE",                          reinterpret_cast<void *>(&AssetsManager::AddMesh<const std::string &>));
+    ScriptLoader::replaceLibraryFunction("_ZN13AssetsManager10LoadShaderERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEES7_S7_",                reinterpret_cast<void *>(&AssetsManager::LoadShader));
 
     ScriptLoader::registerFunction("LoadAnimation", reinterpret_cast<void **>(&LoadAnimation));
 
@@ -205,6 +204,9 @@ void ScriptManager::RegisterApi() {
     ScriptLoader::replaceLibraryFunction("_ZN10GameObject11InstantiateEPS_", reinterpret_cast<void *>(&GameObject::Instantiate));
     ScriptLoader::replaceLibraryFunction("_ZN10GameObject6CreateERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEES7_", reinterpret_cast<void *>(&GameObject::Create));
     ScriptLoader::replaceLibraryFunction("_ZN10GameObject7DestroyEPS_", reinterpret_cast<void *>(&GameObject::Destroy));
+
+    // File
+    ScriptLoader::replaceLibraryFunction("_ZN4File7GetFileERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE", reinterpret_cast<void *>(&File::GetFile));
 }
 #pragma GCC diagnostic pop
 

@@ -1,7 +1,9 @@
 #include "projectMenu.hpp"
 
 #include "screenRender.hpp"
+#include "renderManager.h"
 #include "console.hpp"
+#include "skybox.h"
 #include "Game.h"
 
 #include "core/file/stream.hpp"
@@ -57,6 +59,11 @@ void ProjectMenu::Shutdown() {
     if (!bProjectOpen) {
         return;
     }
+
+    RenderManager::Shutdown();
+
+    Skybox::Shutdown();
+
     Game::Shutdown();
 
     ScreenRender::Shutdown();
@@ -228,7 +235,11 @@ void ProjectMenu::OpenProject(Project &project) {
 
     ScriptManager::Initialize("/home/grsource/Documentos/AppProjects/gr-component/lib/libgr-component.so");
 
+    RenderManager::Initialize();
+
     ScreenRender::Initialize();
+
+    Skybox::Initialize();
 
     Game::Initialize();
 

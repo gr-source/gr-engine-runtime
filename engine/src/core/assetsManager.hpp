@@ -30,7 +30,7 @@ public:
 
     static grr::gTexture *LoadTexture(const std::string &path);
 
-    static grr::gShader *LoadShader(const std::string &frag, const std::string &vert);
+    static grr::gShader *LoadShader(const std::string &name, const std::string &frag, const std::string &vert);
 
     static GameObject *LoadGameObject(const std::string &path);
 
@@ -75,7 +75,7 @@ public:
 private:
     /***************** Shader *****************/
     static std::unordered_map<std::string, std::unique_ptr<grr::gShader>> s_shaderList;
-    static std::list<std::tuple<std::tuple<std::string, std::string>, grr::gShader *>> s_shaderFromLoader;
+    static std::list<std::tuple<std::string, std::string, std::string, grr::gShader *>> s_shaderFromLoader;
     static std::mutex s_shaderMutex;
 
     static std::vector<std::function<bool(void *, const std::string &)>> m_functions;
@@ -109,7 +109,7 @@ private:
 
     static void SetupShader(grr::gShader *shader, const std::string &frag, const std::string &vert, const std::string &path);
     
-    static bool CheckShaderError(grr::gShader *shader);
+    static bool CheckShaderError(grr::gShader *shader, const std::string &name);
 
     static void ProcessShader();
 
