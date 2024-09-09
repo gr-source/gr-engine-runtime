@@ -1892,24 +1892,24 @@ void Game::TextureInfo(Texture *&texture) {
 }
 
 void Game::LoadReources() {
-    iconsUI.emplace(IconType::ICON_FILE,        AssetsManager::LoadTexture(File::GetFile("/icon/icons8-file-30.png")));
-    iconsUI.emplace(IconType::ICON_FOLDER,      AssetsManager::LoadTexture(File::GetFile("/icon/icons8-folder-50.png")));
-    iconsUI.emplace(IconType::ICON_BACK_FILE,   AssetsManager::LoadTexture(File::GetFile("/icon/icons8-go-back-50.png")));
-    iconsUI.emplace(IconType::ICON_GAMEOBJECT,  AssetsManager::LoadTexture(File::GetFile("/icon/icons8-3d-object-50.png")));
-    iconsUI.emplace(IconType::ICON_PENCIL,      AssetsManager::LoadTexture(File::GetFile("/icon/icons8-lápis-30.png")));
-    iconsUI.emplace(IconType::ICON_LIGHT,       AssetsManager::LoadTexture(File::GetFile("/icon/icons8-lâmpada-globular-64.png")));
-    iconsUI.emplace(IconType::ICON_TEXTURE,     AssetsManager::LoadTexture(File::GetFile("/icon/icons8-textura-de-renderização-32.png")));
-    iconsUI.emplace(IconType::ICON_PNG,         AssetsManager::LoadTexture(File::GetFile("/icon/icons8-png-24.png")));
-    iconsUI.emplace(IconType::ICON_PLAY_GAME,   AssetsManager::LoadTexture(File::GetFile("/icon/icons8-reproduzir-30.png")));
-    iconsUI.emplace(IconType::ICON_STOP_GAME,   AssetsManager::LoadTexture(File::GetFile("/icon/icons8-parar-50.png")));
-    iconsUI.emplace(IconType::ICON_BIN,         AssetsManager::LoadTexture(File::GetFile("/icon/icons8-resíduos-50.png")));
-    iconsUI.emplace(IconType::ICON_IMPORT,      AssetsManager::LoadTexture(File::GetFile("/icon/icons8-importar-50.png")));
-    iconsUI.emplace(IconType::ICON_ASCENDENTE,  AssetsManager::LoadTexture(File::GetFile("/icon/icons8-ordenar-para-a-direita-50.png")));
-    iconsUI.emplace(IconType::ICON_DESCENDENTE, AssetsManager::LoadTexture(File::GetFile("/icon/icons8-ordem-descendente-50.png")));
-    iconsUI.emplace(IconType::ICON_EDIT,        AssetsManager::LoadTexture(File::GetFile("/icon/icons8-editar-24.png")));
-    iconsUI.emplace(IconType::ICON_ANIMATION,   AssetsManager::LoadTexture(File::GetFile("/icon/motion-graphics.png")));
-    iconsUI.emplace(IconType::ICON_SHADER,      AssetsManager::LoadTexture(File::GetFile("/icon/shade.png")));
-    iconsUI.emplace(IconType::ICON_SCENE,       AssetsManager::LoadTexture(File::GetFile("/icon/studio-set.png")));
+    iconsUI.emplace(IconType::ICON_FILE,        AssetsManager::LoadTexture(File::GetFile("/icon/icons8-file-30.png", true)));
+    iconsUI.emplace(IconType::ICON_FOLDER,      AssetsManager::LoadTexture(File::GetFile("/icon/icons8-folder-50.png", true)));
+    iconsUI.emplace(IconType::ICON_BACK_FILE,   AssetsManager::LoadTexture(File::GetFile("/icon/icons8-go-back-50.png", true)));
+    iconsUI.emplace(IconType::ICON_GAMEOBJECT,  AssetsManager::LoadTexture(File::GetFile("/icon/icons8-3d-object-50.png", true)));
+    iconsUI.emplace(IconType::ICON_PENCIL,      AssetsManager::LoadTexture(File::GetFile("/icon/icons8-lápis-30.png", true)));
+    iconsUI.emplace(IconType::ICON_LIGHT,       AssetsManager::LoadTexture(File::GetFile("/icon/icons8-lâmpada-globular-64.png", true)));
+    iconsUI.emplace(IconType::ICON_TEXTURE,     AssetsManager::LoadTexture(File::GetFile("/icon/icons8-textura-de-renderização-32.png", true)));
+    iconsUI.emplace(IconType::ICON_PNG,         AssetsManager::LoadTexture(File::GetFile("/icon/icons8-png-24.png", true)));
+    iconsUI.emplace(IconType::ICON_PLAY_GAME,   AssetsManager::LoadTexture(File::GetFile("/icon/icons8-reproduzir-30.png", true)));
+    iconsUI.emplace(IconType::ICON_STOP_GAME,   AssetsManager::LoadTexture(File::GetFile("/icon/icons8-parar-50.png", true)));
+    iconsUI.emplace(IconType::ICON_BIN,         AssetsManager::LoadTexture(File::GetFile("/icon/icons8-resíduos-50.png", true)));
+    iconsUI.emplace(IconType::ICON_IMPORT,      AssetsManager::LoadTexture(File::GetFile("/icon/icons8-importar-50.png", true)));
+    iconsUI.emplace(IconType::ICON_ASCENDENTE,  AssetsManager::LoadTexture(File::GetFile("/icon/icons8-ordenar-para-a-direita-50.png", true)));
+    iconsUI.emplace(IconType::ICON_DESCENDENTE, AssetsManager::LoadTexture(File::GetFile("/icon/icons8-ordem-descendente-50.png", true)));
+    iconsUI.emplace(IconType::ICON_EDIT,        AssetsManager::LoadTexture(File::GetFile("/icon/icons8-editar-24.png", true)));
+    iconsUI.emplace(IconType::ICON_ANIMATION,   AssetsManager::LoadTexture(File::GetFile("/icon/motion-graphics.png", true)));
+    iconsUI.emplace(IconType::ICON_SHADER,      AssetsManager::LoadTexture(File::GetFile("/icon/shade.png", true)));
+    iconsUI.emplace(IconType::ICON_SCENE,       AssetsManager::LoadTexture(File::GetFile("/icon/studio-set.png", true)));
 
     s_texturePlayGame = iconsUI[IconType::ICON_PLAY_GAME];
 }

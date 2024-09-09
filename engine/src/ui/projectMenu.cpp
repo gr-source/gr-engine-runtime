@@ -253,19 +253,21 @@ void ProjectMenu::RefreshProjectList() {
 }
 
 void ProjectMenu::LoadResources() {
-    auto lastPath = File::GetCurrentProject();
-
-    File::SetCurrentProject("/home/grsource/Documentos/AppProjects/gr-engine/bin/");
-
     Game::LoadReources();
-
-    File::SetCurrentProject(lastPath);
 }
 
 void ProjectMenu::LoadConfig() {
     auto config = File::getHomeDirectory() + "/.config/gr-engine";
 
-    File::CreateDirectories(config);
+    File::SetConfigPath(config);
+
+    if (File::CreateDirectories(config)) {
+        DownloadConfig(config);
+    }
+}
+
+void ProjectMenu::DownloadConfig(const std::string &path) {
+    File::Copy("./assets", path);
 }
 
 std::string ProjectMenu::GetCurrentDirProject() {

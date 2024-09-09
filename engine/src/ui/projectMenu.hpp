@@ -54,6 +54,8 @@ private:
 
     static void LoadConfig();
 
+    static void DownloadConfig(const std::string &path);
+
     static std::string GetCurrentDirProject();
 };
 

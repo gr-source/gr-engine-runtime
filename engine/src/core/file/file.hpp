@@ -9,13 +9,15 @@ public:
 
     static const std::string &GetCurrentProject();
 
+    static void SetConfigPath(const std::string &path);
+
     static std::string GetFileContent(const std::string &path);
 
     static bool Exists(const std::string& path);
 
     static std::string GetFileName(const std::string &path);
 
-    static std::string GetFile(const std::string &path);
+    static std::string GetFile(const std::string &path, bool internal = false);
 
     static bool CreateDirectories(const std::string &path);
 
@@ -31,4 +33,6 @@ public:
     
 private:
     static std::string m_currentPath;
+
+    static std::string m_configPath;
 };

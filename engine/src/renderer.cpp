@@ -19,8 +19,8 @@ bool DebugDraw::bDebugMode = false;
 grm::u32 DebugDraw::m_vbo = 0;
 
 void DebugDraw::Initialize() {
-    auto frag = File::GetFileContent(File::GetFile("/shader/ShaderPrimitive.frag"));
-    auto vert = File::GetFileContent(File::GetFile("/shader/ShaderPrimitive.vert"));
+    auto frag = File::GetFileContent(File::GetFile("/shader/ShaderPrimitive.frag", true));
+    auto vert = File::GetFileContent(File::GetFile("/shader/ShaderPrimitive.vert", true));
     if (frag.empty() || vert.empty()) {
         throw std::runtime_error("Frag or Vert shader is empty: " + File::GetFile("/shader/ShaderPrimitive.frag") + " - " + File::GetFile("/shader/ShaderPrimitive.vert"));
     }

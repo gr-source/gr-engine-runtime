@@ -5,12 +5,18 @@
 
 std::string File::m_currentPath;
 
+std::string File::m_configPath;
+
 void File::SetCurrentProject(const std::string &path) {
     m_currentPath = path;
 }
 
 const std::string &File::GetCurrentProject() {
     return m_currentPath;
+}
+
+void File::SetConfigPath(const std::string &path) {
+    m_configPath = path;
 }
 
 std::string File::GetFileContent(const std::string &path) {
@@ -33,8 +39,8 @@ std::string File::GetFileName(const std::string &path) {
     return fileName.replace_extension().string();
 }
 
-std::string File::GetFile(const std::string &path) {
-    return m_currentPath + "/assets" + path;
+std::string File::GetFile(const std::string &path, bool internal) {
+    return internal ? (m_configPath + "/assets" + path) : (m_currentPath + "/assets" + path);
 }
 
 bool File::CreateDirectories(const std::string &path) {
