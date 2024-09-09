@@ -60,8 +60,11 @@ Component *(*ScriptManager::CreateComponentWithName)(const std::string &name);
 
 Component *(*ScriptManager::CopyComponentWithName)(const std::string &name, Component *component);
 
-void ScriptManager::Initialize() {
-    s_path = "/home/grsource/Documentos/AppProjects/gr-component/lib/libgr-component.so";
+void ScriptManager::Initialize(const std::string &path) {
+    if (!File::Exists(path)) {
+        throw std::runtime_error("Script data do not exists: " + path);
+    }
+    s_path = path;
 
     if (!ScriptLoader::open(s_path)) {
         return;

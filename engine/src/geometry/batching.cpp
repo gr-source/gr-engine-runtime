@@ -43,18 +43,8 @@ void Batching::Renderer() {
     Statistics::m_drawRenderCount = 0;
     Statistics::m_drawCallCount = 0;
     Statistics::m_totalRender = 0;
-    
-    for (auto &batch : m_batched) {
-        if (!batch->hasModel()) {
-            continue;
-        }
-        //
-        batch->compile();
 
-        batch->draw();
-
-        Statistics::m_drawCallCount++;
-    }
+    std::for_each(m_batched.begin(), m_batched.end(), &Batching::Draw);
 }
 
 Batching::Batching(const std::string &name, std::vector<Material> *materials, Mesh *mesh, grr::gShader *shader, int flags) : m_shader(shader), m_flags(flags), m_mesh(mesh), m_name(name), m_materials(materials), m_vertexArray(nullptr), m_indiceCount(0), m_primCount(0), m_VBO(0), m_EBO(0), m_PBO(0), bHasIndice(false), m_type(DrawType_Elements) {
@@ -118,6 +108,18 @@ void Batching::draw() {
         throw std::runtime_error("Draw type invalid.");
         break;
     }
+}
+
+void Batching::Draw(Batching *batching) {
+    if (!batching->hasModel()) {
+        return;
+    }
+    
+    batching->compile();
+
+    batching->draw();
+
+    Statistics::m_drawCallCount++;
 }
 
 void Batching::build(Mesh *mesh) {
@@ -262,7 +264,7 @@ void Batching::compile() {
     } if (m_flags == Batching_Flags_Dynamic) {
         grr::gShader::SetUniform("u_model", 1, m_models[0]->getGlobalMatrix());
 
-        m_type = bHasIndice ? DrawType_Elements : DrawType_Arrays;
+        m_type = DrawType_Arrays;
     }
 
     Statistics::m_totalRender += m_primCount;

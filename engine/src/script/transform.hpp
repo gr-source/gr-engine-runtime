@@ -33,6 +33,8 @@ public:
 
     const Vector3 getforward() const;
 
+    void setGlobalMatrix(const Matrix4x4 &matrix);
+
     const Matrix4x4 &getGlobalMatrix() const;
 
     const Matrix4x4 &getLocalMatrix() const;

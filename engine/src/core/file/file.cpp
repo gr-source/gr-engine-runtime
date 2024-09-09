@@ -3,6 +3,16 @@
 #include <filesystem>
 #include <fstream>
 
+std::string File::m_currentPath;
+
+void File::SetCurrentProject(const std::string &path) {
+    m_currentPath = path;
+}
+
+const std::string &File::GetCurrentProject() {
+    return m_currentPath;
+}
+
 std::string File::GetFileContent(const std::string &path) {
     std::ifstream is(path);
     if (!is.is_open())
@@ -24,17 +34,22 @@ std::string File::GetFileName(const std::string &path) {
 }
 
 std::string File::GetFile(const std::string &path) {
-    return "./assets" + path;
+    return m_currentPath + "/assets" + path;
 }
 
-bool File::CreateDirectory(const std::string &path) {
+bool File::CreateDirectories(const std::string &path) {
     return std::filesystem::create_directories(path);
 }
 
+bool File::CreateDirectory(const std::string &path) {
+    return std::filesystem::create_directory(path);
+}
+
 void File::Delete(const std::string &path) {
-    if (std::filesystem::exists(path)) {
-        std::filesystem::remove_all(path);
+    if (!std::filesystem::exists(path)) {
+        return;
     }
+    std::filesystem::remove_all(path);
 }
 
 void File::Move(const std::string &from, const std::string &to) {
@@ -61,3 +76,7 @@ void File::Copy(const std::string &from, const std::string &to) {
     }
 }
 
+std::string File::getHomeDirectory() {
+    auto path = getenv("HOME");
+    return std::string(path != nullptr ? path : "/");
+}

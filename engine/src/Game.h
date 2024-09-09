@@ -27,6 +27,8 @@ public:
 
     static void UnloadScript();
 
+    static void LoadReources();
+
 private:
     static grr::gTexture *s_texturePlayGame;
 
@@ -51,6 +53,8 @@ private:
     static bool bScriptReloaded;
 
     static bool bOpenPopupOptionGameObject;
+
+    static bool pPopupFileManager;
 
     static ImVec4 FPSColor;
 
@@ -98,7 +102,7 @@ private:
 
     static void RenderTreeNodeFile(std::filesystem::path path);
 
-    static void PopupDirmanager(bool &isOpen);
+    static void PopupDirmanager();
 
     static void PopupFileManager();
 
@@ -115,8 +119,6 @@ private:
     static void RenderField(Field &field, Component *component);
 
     static void PopupAddComponent();
-
-    static void loadReources();
 
     static void ProgressLoad();
 

@@ -117,6 +117,8 @@ bool Game::bScriptReloaded = false;
 
 bool Game::bOpenPopupOptionGameObject = false;
 
+bool Game::pPopupFileManager = false;
+
 ImVec4 Game::FPSColor = {255, 255, 255, 255};
 
 ImVec2 Game::m_lastViewportSize = {0.0f, 0.0f};
@@ -137,8 +139,6 @@ std::filesystem::path Game::m_currentPath;
 
 void Game::Initialize() {
     s_io = &ImGui::GetIO();
-
-    loadReources();
 
     Settings::IsGameRunning = false;
 
@@ -454,31 +454,33 @@ void Game::KeyBoardUp(grm::u32 key) {
 }
 
 void Game::LoadScript() {
-    ScriptManager::Initialize();
+    // ScriptManager::Initialize();
 
-    if (ScriptManager::SetScreenSize) {
-        ScriptManager::SetScreenSize(Settings::ViewportSize);
-    }
+    // if (ScriptManager::SetScreenSize) {
+    //     ScriptManager::SetScreenSize(Settings::ViewportSize);
+    // }
 
-    RenderManager::Initialize();
+    // RenderManager::Initialize();
 
-    ScreenRender::Initialize();
+    // ScreenRender::Initialize();
 
-    Manager::Replay();
+    // Manager::Replay();
 }
 
 void Game::UnloadScript() {
-    Manager::Stop();
+    // Manager::Stop();
 
-    RenderManager::Shutdown();
+    // RenderManager::Shutdown();
 
-    ScreenRender::Shutdown();
+    // ScreenRender::Shutdown();
 
-    ScriptManager::Shutdown();
+    // ScriptManager::Shutdown();
 }
 
 // ===================================== END =========================================================
 void Game::RenderUI() {
+    // ImGui::ShowDemoWindow();
+    // return;
     if (AssetsManager::m_processCount != 0) {
         ProgressLoad();
         return;
@@ -838,6 +840,56 @@ void Game::DropSceneInViewport() {
     ImGui::EndDragDropTarget();
 }
 
+Matrix4x4 InverseMatrix(const Matrix4x4 &matrix) {
+    float a = matrix.m00, b = matrix.m01, c = matrix.m02, d = matrix.m03;
+    float e = matrix.m10, f = matrix.m11, g = matrix.m12, h = matrix.m13;
+    float i = matrix.m20, j = matrix.m21, k = matrix.m22, l = matrix.m23;
+    float m = matrix.m30, n = matrix.m31, o = matrix.m32, p = matrix.m33;
+
+    float kp_lo = k * p - l * o;
+    float jp_ln = j * p - l * n;
+    float jo_kn = j * o - k * n;
+    float ip_lm = i * p - l * m;
+    float io_km = i * o - k * m;
+    float in_jm = i * n - j * m;
+
+    float a00 = +(f * kp_lo - g * jp_ln + h * jo_kn);
+    float a01 = -(e * kp_lo - g * ip_lm + h * io_km);
+    float a02 = +(e * jp_ln - f * ip_lm + h * in_jm);
+    float a03 = -(e * jo_kn - f * io_km + g * in_jm);
+
+    float det = a * a00 + b * a01 + c * a02 + d * a03;
+
+    if (std::abs(det) < 1e-6f) {
+        return Matrix4x4::identityMatrix;
+    }
+
+    float invDet = 1.0f / det;
+
+    Matrix4x4 result = Matrix4x4::identityMatrix;
+    result.m00 = a00 * invDet;
+    result.m01 = -(b * kp_lo - c * jp_ln + d * jo_kn) * invDet;
+    result.m02 = +(b * (g * p - h * o) - c * (f * p - h * n) + d * (f * o - g * n)) * invDet;
+    result.m03 = -(b * (g * l - h * k) - c * (f * l - h * j) + d * (f * k - g * j)) * invDet;
+
+    result.m10 = a01 * invDet;
+    result.m11 = +(a * kp_lo - c * ip_lm + d * io_km) * invDet;
+    result.m12 = -(a * (g * p - h * o) - c * (e * p - h * m) + d * (e * o - g * m)) * invDet;
+    result.m13 = +(a * (g * l - h * k) - c * (e * l - h * i) + d * (e * k - g * i)) * invDet;
+
+    result.m20 = a02 * invDet;
+    result.m21 = -(a * ip_lm - b * io_km + d * in_jm) * invDet;
+    result.m22 = +(a * (f * p - h * o) - b * (e * p - h * m) + d * (e * n - f * m)) * invDet;
+    result.m23 = -(a * (f * k - g * j) - b * (e * k - g * i) + d * (e * j - f * i)) * invDet;
+
+    result.m30 = a03 * invDet;
+    result.m31 = +(a * jo_kn - b * io_km + c * in_jm) * invDet;
+    result.m32 = -(a * (f * o - g * n) - b * (e * o - g * m) + c * (e * n - f * m)) * invDet;
+    result.m33 = +(a * (f * k - g * j) - b * (e * k - g * i) + c * (e * j - f * i)) * invDet;
+
+    return result;
+}
+
 void Game::RenderScene() {
     auto cursorY = ImGui::GetCursorPosY();
     cursorY += 5.0f;
@@ -896,7 +948,7 @@ void Game::RenderScene() {
     ImGuizmo::SetDrawlist();
     ImGuizmo::SetRect(pos.x, pos.y + (cursorY - 5.0f), curSize.x, curSize.y);
 
-    if (s_objectSelected != nullptr) {
+    if (s_objectSelected && Camera::Current) {
         if (s_io->KeyCtrl && ImGui::IsKeyReleased(ImGuiKey_T)) {
             m_guizmoOperation = ImGuizmo::TRANSLATE;
         }
@@ -916,15 +968,22 @@ void Game::RenderScene() {
         
         auto& transform = s_objectSelected->getTransform();
 
-        auto model = transform.getGlobalMatrix();
+        auto globalMatrix = transform.getGlobalMatrix();
 
         auto camera = Camera::Current();
 
-        if (camera && ImGuizmo::Manipulate(camera->getViewmatrix().data, camera->getPerspesctive().data, m_guizmoOperation, m_guizmoManipulate, model.data)) {
+        if (camera && ImGuizmo::Manipulate(camera->getViewmatrix().data, camera->getPerspesctive().data, m_guizmoOperation, m_guizmoManipulate, globalMatrix.data)) {
+            // auto localMatrix = globalMatrix;
+            // if (transform.hasParent()) {
+            //     auto inverseParent = InverseMatrix(transform.getParent()->getGlobalMatrix());
+
+            //     localMatrix = inverseParent * localMatrix;
+            //     // localMatrix = localMatrix.transpose();
+            // }
             Vector3 s;
             Quaternion r;
             Vector3 t;
-            model.decompose(s, r, t);
+            globalMatrix.decompose(s, r, t);
 
             transform.setLocalScale(s);
             transform.setLocalRotation(r);
@@ -969,7 +1028,7 @@ void Game::RenderScene() {
 
     ImGui::PopStyleColor();
 
-    if (s_objectSelected && ImGui::IsWindowFocused() && s_io->KeyShift && ImGui::IsKeyReleased(ImGuiKey_D) && GameObject::Instantiate) {
+    if (s_objectSelected && ImGui::IsWindowFocused() && s_io->KeyShift && ImGui::IsKeyReleased(ImGuiKey_D)) {
         s_objectSelected = &GameObject::Instantiate(s_objectSelected);
     }
 }
@@ -1027,15 +1086,16 @@ void Game::RenderFilesUI() {
     if (m_currentDirectory.empty()) {
         m_currentDirectory = m_currentPath;
     }
-
+    
     for (auto &entry : std::filesystem::directory_iterator(m_currentPath)) {
         RenderTreeNodeFile(entry.path());
     }
 
-    if (ImGui::IsWindowHovered() && ImGui::IsMouseReleased(ImGuiMouseButton_Right)) {
-        std::cout << m_currentDirectory << std::endl;
+    if (pPopupFileManager && !ImGui::IsPopupOpen("##popup_dir_manager")) {
+        ImGui::OpenPopup("##popup_dir_manager");
     }
 
+    PopupDirmanager();
     /*
     grr::gTexture *gtCurrentTexture = iconsUI[ICON_BACK_FILE];
 
@@ -1171,8 +1231,7 @@ void Game::RenderFilesUI() {
         bOpenPopupInfoDir = false;
     }
 
-    if (bPopupOpen)
-        PopupDirmanager(bPopupOpen);
+    
 
     PopupFileManager();
 
@@ -1191,19 +1250,26 @@ void Game::RenderTreeNodeFile(std::filesystem::path path) {
         flags &= ~ImGuiTreeNodeFlags_Leaf;
     }
 
-    if (m_currentDirectory != path) {
+    if (fLisDirSelected.find(path) == fLisDirSelected.end()) {
         flags &= ~ImGuiTreeNodeFlags_Selected;
     }
 
     auto name = path.filename();
-
+    
     auto isOpen = ImGui::TreeNodeEx(name.c_str(), flags);
     if (!isOpen) {
         return;
     }
 
-    if (ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
-        m_currentDirectory = path;
+    if (ImGui::IsItemClicked(ImGuiMouseButton_Right) && !fLisDirSelected.empty()) {
+        pPopupFileManager = true;
+    } else if (s_io->KeyShift && ImGui::IsItemClicked(ImGuiMouseButton_Left)) {
+        fLisDirSelected.emplace(path, true);
+    } else if (ImGui::IsItemClicked(ImGuiMouseButton_Left) && fLisDirSelected.find(path) == fLisDirSelected.end()) {
+        fLisDirSelected.clear();
+    } else if (ImGui::IsItemClicked(ImGuiMouseButton_Left) && fLisDirSelected.find(path) != fLisDirSelected.end()) {
+        fLisDirSelected.clear();
+        fLisDirSelected.emplace(path, true);
     }
 
     if (!bDirectory && ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceNoDisableHover | ImGuiDragDropFlags_SourceNoHoldToOpenOthers)) {
@@ -1236,7 +1302,8 @@ void Game::RenderTreeNodeFile(std::filesystem::path path) {
     ImGui::TreePop();
 }
 
-void Game::PopupDirmanager(bool &isOpen) {
+void Game::PopupDirmanager() {
+    auto isOpen = true;
     if (ImGui::BeginPopupModal("##popup_dir_manager", &isOpen)) {
         for (auto &&[path, isSeleceted] : fLisDirSelected) {
             ImGui::Text("Dir: %s", path.filename().string().c_str());
@@ -1262,8 +1329,10 @@ void Game::PopupDirmanager(bool &isOpen) {
         ImGui::EndPopup();
     }
 
-    if (!isOpen) {
+    if (!isOpen && pPopupFileManager) {
+        std::cout << "Close" << std::endl;
         fLisDirSelected.clear();
+        pPopupFileManager = false;
     }
 }
 
@@ -1563,47 +1632,51 @@ void Game::PopupAddComponent() {
         return;
     }
     
-    if (ImGui::BeginPopup("##popup_add_component")) {
-        auto &componentPool = ScriptManager::GetComponentPool();
-
-        for (auto &&[name, pool] : componentPool) {
-            if (ImGui::SmallButton(name.c_str())) {
-                Entity::addInternalComponent(s_objectSelected->getEntity(), name);
-
-                ImGui::CloseCurrentPopup();
-            }
-        }
-        
-        ImGui::EndPopup();
+    auto isOpen = ImGui::BeginPopup("##popup_add_component");
+    if (!isOpen) {
+        return;
     }
+    auto &componentPool = ScriptManager::GetComponentPool();
+
+    for (auto &&[name, pool] : componentPool) {
+        if (ImGui::SmallButton(name.c_str())) {
+            Entity::addInternalComponent(s_objectSelected->getEntity(), name);
+
+            ImGui::CloseCurrentPopup();
+        }
+    }
+    
+    ImGui::EndPopup();
 }
 
 /* ********** Propriedades ********** */
-void Game::OnPropertyTransform(Transform* transform) {
-    if (ImGui::TreeNode("Transform")) {
-        const char* text[] {"X", "Y", "Z"};
-
-        auto position = transform->getLocalPosition();
-        ImGui::Text("Posição:");
-        if (ImGui::DragFloatEx("##Posicao", text, position.data, 1.0f, 0.0f, 0.0f, "%.3f")) {
-            transform->setLocalPosition(position);
-        }
-
-        auto scale = transform->getLocalScale();
-        ImGui::Text("Escala:");
-        if (ImGui::DragFloatEx("##Escala", text, scale.data, 1.0f, 1.0f, 0.0f, "%.3f")) {
-            transform->setLocalScale(scale);
-        }
-
-        Vector3 euler = Math::eulerAngles(transform->getLocalRotation());
-
-        ImGui::Text("Rotação:");
-        if (ImGui::DragFloatEx("##Rotacao", text, euler.data, 1.0f, -360.0f, 360.0f)) {
-            transform->setLocalRotation(Math::normalize(Math::euler({Math::rad(euler.x), Math::rad(euler.y), Math::rad(euler.z)})));
-        }
-
-        ImGui::TreePop();
+void Game::OnPropertyTransform(Transform *transform) {
+    auto isOpen = ImGui::TreeNode("Transform");
+    if (!isOpen) {
+        return;
     }
+    const char* text[] {"X", "Y", "Z"};
+
+    auto position = transform->getLocalPosition();
+    ImGui::Text("Posição:");
+    if (ImGui::DragFloatEx("##Posicao", text, position.data, 1.0f, 0.0f, 0.0f, "%.3f")) {
+        transform->setLocalPosition(position);
+    }
+
+    auto scale = transform->getLocalScale();
+    ImGui::Text("Escala:");
+    if (ImGui::DragFloatEx("##Escala", text, scale.data, 1.0f, 1.0f, 0.0f, "%.3f")) {
+        transform->setLocalScale(scale);
+    }
+
+    auto euler = Math::eulerAngles(transform->getLocalRotation());
+
+    ImGui::Text("Rotação:");
+    if (ImGui::DragFloatEx("##Rotacao", text, euler.data, 1.0f, -360.0f, 360.0f)) {
+        transform->setLocalRotation(Math::normalize(Math::euler({Math::rad(euler.x), Math::rad(euler.y), Math::rad(euler.z)})));
+    }
+
+    ImGui::TreePop();
 }
 
 void Game::OnPropertyMeshFilter(MeshFilter *MeshFilter) {
@@ -1818,7 +1891,7 @@ void Game::TextureInfo(Texture *&texture) {
     }
 }
 
-void Game::loadReources() {
+void Game::LoadReources() {
     iconsUI.emplace(IconType::ICON_FILE,        AssetsManager::LoadTexture(File::GetFile("/icon/icons8-file-30.png")));
     iconsUI.emplace(IconType::ICON_FOLDER,      AssetsManager::LoadTexture(File::GetFile("/icon/icons8-folder-50.png")));
     iconsUI.emplace(IconType::ICON_BACK_FILE,   AssetsManager::LoadTexture(File::GetFile("/icon/icons8-go-back-50.png")));

@@ -179,6 +179,7 @@ void Filmbox::processMesh(aiMesh *mMesh) {
     inserMesh(mesh, mMesh);
 }
 
+// TODO: falta corrigir o indice da mesh
 void Filmbox::inserMesh(FbxMesh *mesh, aiMesh *mMesh) {
     auto bHasPosition = mMesh->HasPositions();
     auto bHasNormal = mMesh->HasNormals();
@@ -211,15 +212,19 @@ void Filmbox::inserMesh(FbxMesh *mesh, aiMesh *mMesh) {
     for (auto i=0;i<mMesh->mNumFaces;++i) {
         auto &mFace = mMesh->mFaces[i];
 
-        if (mFace.mNumIndices > 3) {
-            continue;
+        // if (mFace.mNumIndices > 3) {
+        //     continue;
+        // }
+
+        for (auto j=0;j<mFace.mNumIndices;j++) {
+            mesh->addIndice(mesh->getVertices().size() + mFace.mIndices[j]);
         }
 
-        mesh->addTriangle(
-            mFace.mIndices[0],
-            mFace.mIndices[1],
-            mFace.mIndices[2]
-        );
+        // mesh->addTriangle(
+        //     mFace.mIndices[0],
+        //     mFace.mIndices[1],
+        //     mFace.mIndices[2]
+        // );
     }
 
     if (mMesh->HasBones()) {
@@ -265,8 +270,19 @@ void Filmbox::processNode(aiNode *mNode, FbxNode& node, const aiScene *scene) {
     aiQuaternion rotation;
     mNode->mTransformation.Decompose(scale, rotation, position);
 
-    NORMALIZE(scale)
-    // NORMALIZE(position)
+    float magnitude = std::sqrt((scale.x * scale.x) + (scale.y * scale.y) + (scale.z * scale.z));
+    if (magnitude > 1e-5f) {
+        scale.x /= magnitude;
+        scale.y /= magnitude;
+        scale.z /= magnitude;
+    }
+
+    magnitude = std::sqrt((position.x * position.x) + (position.y * position.y) + (position.z * position.z));
+    if (magnitude > 1e-5f) {
+        position.x /= magnitude;
+        position.y /= magnitude;
+        position.z /= magnitude;
+    }
 
     newNode.setPosition({position.x, position.y, position.z});
     newNode.setScale({scale.x, scale.y, scale.z});

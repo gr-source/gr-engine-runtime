@@ -103,7 +103,7 @@ void Scene::load(const std::string &path) {
 }
 
 void Scene::save() {
-    if (!Stream::open(File::GetFile("/scenes/" + m_name + ".scn"), std::ios_base::out | std::ios_base::binary)) {
+    if (!Stream::open(File::GetFile("/scene/" + m_name + ".scn"), std::ios_base::out | std::ios_base::binary)) {
         return Console::log(LogInfo::ERROR, "Falied to save scene: " + m_name);
     }
 
@@ -234,7 +234,7 @@ int Scene::writeMaterial() {
         Stream::write(&size, 1);
 
         for (auto &material : ptr) {
-            material.serialize(Stream::stream);
+            material.serialize(Stream::GetStream());
         }
     }
     return 0;
@@ -283,7 +283,7 @@ int Scene::writeMesh() {
         Stream::write(&size, 1);
         Stream::write(name.data(), size);
 
-        mesh->serialize(Stream::stream);
+        mesh->serialize(Stream::GetStream());
     }
     return 0;
 }
@@ -323,7 +323,7 @@ void Scene::WriteGameObject(GameObject *gameObject) {
         Stream::write(&nSize, 1);
         Stream::write(name.data(), nSize);
 
-        ptr->Serialize(Stream::stream);
+        ptr->Serialize(Stream::GetStream());
     }
 
     auto &transform = gameObject->getTransform();
@@ -392,7 +392,7 @@ int Scene::readMaterial() {
 
         std::vector<Material> materials(size);
         for (auto &material : materials) {
-            material.deserialize(Stream::stream);
+            material.deserialize(Stream::GetStream());
         }
 
         if (!name.empty() || !materials.empty() && !AssetsManager::FindMaterial(name)) {
@@ -445,7 +445,7 @@ int Scene::readMesh() {
         Stream::read(name.data(), size);
 
         auto mesh = AssetsManager::AddMesh(name, name);
-        mesh->deserialize(Stream::stream);
+        mesh->deserialize(Stream::GetStream());
     }
     return 0;
 }
@@ -489,13 +489,13 @@ void Scene::ReadNode(Transform *parent) {
         if (entt->hasComponent(name)) {
             auto component = entt->getComponent(name);
 
-            component->Deserialize(Stream::stream);
+            component->Deserialize(Stream::GetStream());
 
             continue;
         }
 
         auto component = entt->addComponent(name);
-        component->Deserialize(Stream::stream);
+        component->Deserialize(Stream::GetStream());
     }
 
     Stream::read(&cSize, 1);

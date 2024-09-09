@@ -164,6 +164,7 @@ set(engine_src
 
     src/ui/View.cpp
     src/ui/ImGuiRender.cpp
+    src/ui/projectMenu.cpp
 
     src/culling/frustum.cpp
 
@@ -215,6 +216,7 @@ set(engine_hdr
     
     src/ui/View.h
     src/ui/ImGuiRender.h
+    src/ui/projectMenu.hpp
 
     src/culling/frustum.h
     

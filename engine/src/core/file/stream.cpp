@@ -24,3 +24,7 @@ std::streampos Stream::tellg() {
 void Stream::close() {
 	stream.close();
 }
+
+std::fstream &Stream::GetStream() {
+	return stream;
+}

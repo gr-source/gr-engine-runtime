@@ -130,19 +130,19 @@ bool Skybox::SetupTexture(void *texture, const std::string &path) {
     }
 
     Event::Add([]{
-        m_irradianceShader = AssetsManager::LoadShader(
-            File::GetFile("/shader/skybox/Irradiance.frag"),
-            File::GetFile("/shader/skybox/Irradiance.vert")
-        );
+        // m_irradianceShader = AssetsManager::LoadShader(
+        //     File::GetFile("/shader/skybox/Irradiance.frag"),
+        //     File::GetFile("/shader/skybox/Irradiance.vert")
+        // );
 
-        m_skyShader = AssetsManager::LoadShader(
-            File::GetFile("/shader/skybox/Skybox.frag"),
-            File::GetFile("/shader/skybox/Skybox.vert"));
+        // m_skyShader = AssetsManager::LoadShader(
+        //     File::GetFile("/shader/skybox/Skybox.frag"),
+        //     File::GetFile("/shader/skybox/Skybox.vert"));
 
-        m_shader = AssetsManager::LoadShader(
-            File::GetFile("/shader/skybox/Background.frag"),
-            File::GetFile("/shader/skybox/Background.vert")
-        );
+        // m_shader = AssetsManager::LoadShader(
+        //     File::GetFile("/shader/skybox/Background.frag"),
+        //     File::GetFile("/shader/skybox/Background.vert")
+        // );
 
         AssetsManager::AddPostLoader(&Skybox::SetupShader);
     });

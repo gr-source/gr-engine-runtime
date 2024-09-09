@@ -80,6 +80,8 @@ private:
 
     grr::gShader *m_shader;
 
+    static void Draw(Batching *batching);
+
     void build(Mesh *mesh);
 
     void compile();

@@ -11,6 +11,7 @@ std::vector<Material> &MeshRender::getMaterials() {
     return m_materials;
 }
 
+// TODO: falta orimizar e corrigir erros do material;
 void MeshRender::build() {
     auto &meshFilter = entity->getComponent<MeshFilter>();
     auto mesh = meshFilter.getMesh();
@@ -30,7 +31,18 @@ void MeshRender::build() {
         if (!shader) {
             throw std::runtime_error("Shader do not found.");
         }
-        m_batched = &Batching::Add(getGameObject()->getName(), &m_materials, mesh, shader, Batching::Batching_Flags_Dynamic);
+
+        std::string mName;
+        for (auto &material : m_materials) {
+            mName += material.getName();
+        }
+
+        auto material = AssetsManager::FindMaterial(mName);
+        if (!material) {
+            material = &AssetsManager::AddMaterial(mName, m_materials);
+        }
+
+        m_batched = &Batching::Add(getGameObject()->getName(), material, mesh, shader, Batching::Batching_Flags_Dynamic);
         m_batched->insert(&transform);
         return;
     }

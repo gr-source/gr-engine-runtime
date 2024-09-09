@@ -53,7 +53,7 @@
 //#define IMGUI_INCLUDE_IMGUI_USER_H
 
 //---- Pack colors to BGRA8 instead of RGBA8 (to avoid converting from one to another)
-//#define IMGUI_USE_BGRA_PACKED_COLOR
+// #define IMGUI_USE_BGRA_PACKED_COLOR
 
 //---- Use 32-bit for ImWchar (default is 16-bit) to support unicode planes 1-16. (e.g. point beyond 0xFFFF like emoticons, dingbats, symbols, shapes, ancient languages, etc...)
 //#define IMGUI_USE_WCHAR32
@@ -88,11 +88,16 @@
 
 //---- Define constructor and implicit cast operators to convert back<>forth between your math types and ImVec2/ImVec4.
 // This will be inlined as part of ImVec2 and ImVec4 class declarations.
-/*
-#define IM_VEC2_CLASS_EXTRA                                                     \
-        constexpr ImVec2(const MyVec2& f) : x(f.x), y(f.y) {}                   \
-        operator MyVec2() const { return MyVec2(x,y); }
+#define IM_VEC2_CLASS_EXTRA                                                      \
+        ImVec2 operator /(float rhs) { return {x / rhs, y / rhs}; } \
+        ImVec2 operator -(const ImVec2 &rhs) { return {x - rhs.x, y - rhs.y}; } \
+        
+        // ImVec2 &operator +=(const ImVec2 &rhs) { x += rhs.x; y += rhs.y; return *this; } \
+        // ImVec2 &operator -=(const ImVec2 &rhs) { x -= rhs.x; y -= rhs.y; return *this; } \
+        // constexpr ImVec2(const MyVec2& f) : x(f.x), y(f.y) {}                   
+        // operator MyVec2() const { return MyVec2(x,y); }
 
+/*
 #define IM_VEC4_CLASS_EXTRA                                                     \
         constexpr ImVec4(const MyVec4& f) : x(f.x), y(f.y), z(f.z), w(f.w) {}   \
         operator MyVec4() const { return MyVec4(x,y,z,w); }

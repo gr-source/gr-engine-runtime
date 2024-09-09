@@ -8,6 +8,7 @@
 #include "script/meshRender.hpp"
 #include "script/camera.hpp"
 
+#include "ui/projectMenu.hpp"
 #include "ui/ImGuiRender.h"
 
 #include "core/assetsManager.hpp"
@@ -109,27 +110,26 @@ void Engine::OnInit() {
 
     SetupEnable();
 
-    DebugDraw::Initialize();
+    // DebugDraw::Initialize();
 
-    ScriptManager::Initialize();
+    // ScriptManager::Initialize();
 
-    Skybox::Initialize();
+    // Skybox::Initialize();
 
-    ScreenRender::Initialize();
+    // ScreenRender::Initialize();
 
-    Game::Initialize();
+    ProjectMenu::Initialize();
 
-    RenderManager::Initialize();
+    // RenderManager::Initialize();
 
     EditorController::Initialize();
 }
 
 void Engine::OnUpdate() {
-    EditorController::Update();
     Time time;
-
     time.end();
 
+    EditorController::Update();
     Manager::Update();
 
     Statistics::m_scriptFrame = {time.getFPS(), time.start()};
@@ -183,15 +183,15 @@ void Engine::OnDestroy() {
 
     ImGuiRender::Shutdown();
 
-    Game::Shutdown();
+    ProjectMenu::Shutdown();
 
     GameObject::Clear();
 
-    Skybox::Shutdown();
+    // Skybox::Shutdown();
     
-    ScriptManager::Shutdown();
+    // ScriptManager::Shutdown();
 
-    ScreenRender::Shutdown();
+    // ScreenRender::Shutdown();
 
     AssetsManager::Shutdown();
     
@@ -298,7 +298,8 @@ void Engine::UIFramebuffer() {
     grr::gRender::SetRenderState(grr::GR_BACKGROUND, grr::GR_COLOR_BUFFER);
 
     ImGuiRender::Begin();
-    Game::RenderUI();
+    ProjectMenu::Render();
+
     ImGuiRender::End();
 }
 

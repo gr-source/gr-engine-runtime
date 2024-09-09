@@ -24,10 +24,13 @@ public:
 	static std::streampos tellg();
 	
 	static void close();
+
+	static std::fstream &GetStream();
 	
-	static std::fstream stream;
 private:
 	static std::streamsize m_offset;
+	
+	static std::fstream stream;
 };
 
 template <typename T>

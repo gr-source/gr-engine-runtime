@@ -65,6 +65,14 @@ const Vector3 Transform::getforward() const {
     return getRotation() * Vector3::forward;
 }
 
+void Transform::setGlobalMatrix(const Matrix4x4 &matrix) {
+    m_globalMatrix = matrix;
+    
+    for (auto & child : m_children) {
+        child->updateLocalMatrix();
+    }
+}
+
 const Matrix4x4 &Transform::getGlobalMatrix() const {
     return m_globalMatrix;
 }

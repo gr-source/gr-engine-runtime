@@ -74,6 +74,9 @@ private:
 
 template <typename T>
 inline T &Entity::addComponent() {
+    if (!addInternalComponent) {
+        throw std::runtime_error("[ Entity - addComponent ] ScriptManager do not loaded addInternalComponent.");
+    }
     auto component = addInternalComponent(this, String::RemoveNumber(typeid(T).name()));
     if (!component) {
         throw std::runtime_error("Component is null.");
