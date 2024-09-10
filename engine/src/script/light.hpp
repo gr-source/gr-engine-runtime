@@ -53,7 +53,7 @@ private:
 
     float m_angleOuterCone;
 
-    friend class Game;
+    friend class Editor;
 };
 
 

@@ -29,7 +29,7 @@ private:
 
     Batching *m_batched;
 
-    friend class Game;
+    friend class Editor;
 };
 
 template <typename... Args>

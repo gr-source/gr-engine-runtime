@@ -19,6 +19,8 @@ public:
 
     static std::string GetFile(const std::string &path, bool internal = false);
 
+    static std::string GetAsset(const std::string &path, bool internal = false);
+
     static bool CreateDirectories(const std::string &path);
 
     static bool CreateDirectory(const std::string &path);

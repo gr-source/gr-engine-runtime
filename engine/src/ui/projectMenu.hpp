@@ -56,6 +56,10 @@ private:
 
     static void DownloadConfig(const std::string &path);
 
+    static void SaveLastProject(Project &project);
+
+    static bool ReadLastProject();
+
     static std::string GetCurrentDirProject();
 };
 

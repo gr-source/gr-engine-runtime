@@ -17,7 +17,7 @@
 #include "../memory.h"
 
 #include "settings.h"
-#include "Game.h"
+// #include "Game.h"
 
 #include <iostream>
 #include <fstream>
@@ -96,15 +96,15 @@ void ScriptManager::Shutdown() {
 
 #include <sys/stat.h>
 
-void Reload() {
-    Settings::IsGameRunning =! Settings::IsGameRunning;
+// void Reload() {
+//     Settings::IsGameRunning =! Settings::IsGameRunning;
 
-    if (Settings::IsGameRunning) {
-        Game::UnloadScript();
-    } else {
-        Game::LoadScript();
-    }
-}
+//     if (Settings::IsGameRunning) {
+//         Game::UnloadScript();
+//     } else {
+//         Game::LoadScript();
+//     }
+// }
 
 void ScriptManager::doInBackground() {
     // if (!File::Exists(s_path)) {

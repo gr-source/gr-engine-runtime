@@ -103,7 +103,7 @@ void Scene::load(const std::string &path) {
 }
 
 void Scene::save() {
-    if (!Stream::open(File::GetFile("/scene/" + m_name + ".scn"), std::ios_base::out | std::ios_base::binary)) {
+    if (!Stream::open(File::GetAsset("/scene/" + m_name + ".scn"), std::ios_base::out | std::ios_base::binary)) {
         return Console::log(LogInfo::ERROR, "Falied to save scene: " + m_name);
     }
 

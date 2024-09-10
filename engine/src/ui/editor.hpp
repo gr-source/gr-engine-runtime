@@ -11,7 +11,7 @@
 
 #include <gr-render/gTexture.h>
 
-class Game {
+class Editor {
 public:
     static void Initialize();
 
@@ -68,11 +68,11 @@ private:
 
     static std::unordered_map<std::filesystem::path, bool> fLisDirSelected;
 
-    static std::filesystem::path m_currentDirectory;
-
     static std::filesystem::path m_currentPath;
 
     static void RenderDocking();
+
+    static void CloseProject();
 
     static void RenderScenesUI();
 

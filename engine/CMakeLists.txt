@@ -110,11 +110,13 @@ set(core_ecs_hdr
 )
 
 set(core_file_src
+    src/core/file/initialization.cpp
     src/core/file/stream.cpp
     src/core/file/file.cpp
 )
 
 set(core_file_hdr
+    src/core/file/initialization.hpp
     src/core/file/stream.hpp
     src/core/file/file.hpp
 )
@@ -130,7 +132,6 @@ set(engine_src
     ${simplexNoise_src}
     ${scriptManager_cpp}
     
-    src/Game.cpp
     src/input.cpp
     src/timer.cpp
     src/engine.cpp
@@ -163,6 +164,7 @@ set(engine_src
     ${ecs_src}
 
     src/ui/View.cpp
+    src/ui/editor.cpp
     src/ui/ImGuiRender.cpp
     src/ui/projectMenu.cpp
 
@@ -184,7 +186,6 @@ set(engine_hdr
     ${scriptManager_hdr}
 
     src/timer.h
-    src/Game.h
     src/input.h
     src/engine.h
     src/memory.h
@@ -215,6 +216,7 @@ set(engine_hdr
     ${ecs_hdr}
     
     src/ui/View.h
+    src/ui/editor.hpp
     src/ui/ImGuiRender.h
     src/ui/projectMenu.hpp
 

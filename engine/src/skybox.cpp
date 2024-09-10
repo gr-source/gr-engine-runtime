@@ -32,7 +32,7 @@ void Skybox::Initialize() {
 
     CreateCube();
 
-    m_texture = AssetsManager::LoadTexture(File::GetFile("/texture/skybox/industrial_sunset_puresky_1k.hdr", true));
+    m_texture = AssetsManager::LoadTexture(File::GetAsset("/texture/skybox/industrial_sunset_puresky_1k.hdr", true));
 
     AssetsManager::AddPostLoader(&Skybox::SetupTexture);
 }

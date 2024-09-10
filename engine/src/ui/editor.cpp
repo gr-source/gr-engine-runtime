@@ -1,4 +1,4 @@
-#include "Game.h"
+#include "editor.hpp"
 
 #include "postProcessing.hpp"
 #include "editorController.h"
@@ -95,59 +95,55 @@ std::unordered_map<IconType, grr::gTexture *> iconsUI;
 
 std::vector<std::unique_ptr<Filmbox>> m_filmboxList;
 
-grr::gTexture *Game::s_texturePlayGame = nullptr;
+grr::gTexture *Editor::s_texturePlayGame = nullptr;
 
-std::unordered_map<std::string, std::shared_ptr<Scene>> Game::m_scenes;
+std::unordered_map<std::string, std::shared_ptr<Scene>> Editor::m_scenes;
 
-GameObject *Game::s_objectSelected = nullptr;
+GameObject *Editor::s_objectSelected = nullptr;
 
-ImGuiIO* Game::s_io = nullptr;
+ImGuiIO* Editor::s_io = nullptr;
 
-bool Game::bFileDoubleClick = false;
+bool Editor::bFileDoubleClick = false;
 
-bool Game::bCutAllFile = false;
+bool Editor::bCutAllFile = false;
 
-bool Game::bCopyAllFile = false;
+bool Editor::bCopyAllFile = false;
 
-bool Game::bViewPortFocused = false;
+bool Editor::bViewPortFocused = false;
 
-bool Game::bOpenPopupInfoDir = false;
+bool Editor::bOpenPopupInfoDir = false;
 
-bool Game::bScriptReloaded = false;
+bool Editor::bScriptReloaded = false;
 
-bool Game::bOpenPopupOptionGameObject = false;
+bool Editor::bOpenPopupOptionGameObject = false;
 
-bool Game::pPopupFileManager = false;
+bool Editor::pPopupFileManager = false;
 
-ImVec4 Game::FPSColor = {255, 255, 255, 255};
+ImVec4 Editor::FPSColor = {255, 255, 255, 255};
 
-ImVec2 Game::m_lastViewportSize = {0.0f, 0.0f};
+ImVec2 Editor::m_lastViewportSize = {0.0f, 0.0f};
 
-ImGuizmo::OPERATION Game::m_guizmoOperation = ImGuizmo::TRANSLATE;
+ImGuizmo::OPERATION Editor::m_guizmoOperation = ImGuizmo::TRANSLATE;
 
-ImGuizmo::MODE Game::m_guizmoManipulate = ImGuizmo::WORLD;
+ImGuizmo::MODE Editor::m_guizmoManipulate = ImGuizmo::WORLD;
 
-grm::u32 Game::s_maxProgress = 0;
+grm::u32 Editor::s_maxProgress = 0;
 
-grm::u8 Game::m_currentPage = 0;
+grm::u8 Editor::m_currentPage = 0;
 
-std::unordered_map<std::filesystem::path, bool> Game::fLisDirSelected;
+std::unordered_map<std::filesystem::path, bool> Editor::fLisDirSelected;
 
-std::filesystem::path Game::m_currentDirectory;
+std::filesystem::path Editor::m_currentPath;
 
-std::filesystem::path Game::m_currentPath;
-
-void Game::Initialize() {
+void Editor::Initialize() {
     s_io = &ImGui::GetIO();
 
     Settings::IsGameRunning = false;
 
-    m_currentPath = File::GetFile("");
-
-    // Scene::LoadScene("default");
+    m_currentPath = File::GetAsset("");
 }
 
-void Game::Shutdown() {
+void Editor::Shutdown() {
     m_scenes.clear();
 }
 
@@ -312,7 +308,7 @@ void WriteAnimation(const FbxScene *fbxScene) {
     for (auto &animation : animations) {
         auto name = animation.getName();
 
-        if (!Stream::open(File::GetFile("/animation/" + name + ".anm"), std::ios_base::out | std::ios_base::binary)) {
+        if (!Stream::open(File::GetAsset("/animation/" + name + ".anm"), std::ios_base::out | std::ios_base::binary)) {
             continue;
         }
         Stream::write<gHeader>(&pHeader, 1);
@@ -408,7 +404,7 @@ void WriteAnimation(const FbxScene *fbxScene) {
 void WriteHeader(const FbxScene *scene, const FbxNode &node) {
     Console::log(LogInfo::INFO, "Write 3D Mode: " + node.getName());
 
-    if (!Stream::open(File::GetFile("/model/" + node.getName() + ".gmd"), std::ios_base::out | std::ios_base::binary)) {
+    if (!Stream::open(File::GetAsset("/model/" + node.getName() + ".gmd"), std::ios_base::out | std::ios_base::binary)) {
         return Console::log(LogInfo::INFO, "Failed to write the 3D model: " + node.getName());
     }
 
@@ -433,7 +429,7 @@ void PostProcess(const FbxScene *scene, Filmbox *filmbox) {
     delete filmbox;
 }
 
-void Game::DropFile(const std::filesystem::path &path) {
+void Editor::DropFile(const std::filesystem::path &path) {
     if (path.extension() != ".fbx") {
         return;
     }
@@ -444,7 +440,7 @@ void Game::DropFile(const std::filesystem::path &path) {
     filmbox->load();
 }
 
-void Game::KeyBoardUp(grm::u32 key) {
+void Editor::KeyBoardUp(grm::u32 key) {
     if (!(bViewPortFocused && key == KEY_ESC)) {
         return;
     }
@@ -453,7 +449,7 @@ void Game::KeyBoardUp(grm::u32 key) {
         s_io->MouseDrawCursor = !s_io->MouseDrawCursor;
 }
 
-void Game::LoadScript() {
+void Editor::LoadScript() {
     // ScriptManager::Initialize();
 
     // if (ScriptManager::SetScreenSize) {
@@ -467,7 +463,7 @@ void Game::LoadScript() {
     // Manager::Replay();
 }
 
-void Game::UnloadScript() {
+void Editor::UnloadScript() {
     // Manager::Stop();
 
     // RenderManager::Shutdown();
@@ -478,7 +474,7 @@ void Game::UnloadScript() {
 }
 
 // ===================================== END =========================================================
-void Game::RenderUI() {
+void Editor::RenderUI() {
     // ImGui::ShowDemoWindow();
     // return;
     if (AssetsManager::m_processCount != 0) {
@@ -520,7 +516,7 @@ void Game::RenderUI() {
 
                 camera->setAspectRatio(lastApect);
 
-                PostProcessing::Save(File::GetFile("/texture/" + name + ".jpg"), Engine::ImGuiPostProcess);
+                PostProcessing::Save(File::GetAsset("/texture/" + name + ".jpg"), Engine::ImGuiPostProcess);
 
                 ptr->save();
             });
@@ -529,14 +525,24 @@ void Game::RenderUI() {
     }
 }
 
-void Game::RenderDocking() {
+void Editor::RenderDocking() {
     ImGuiViewport* viewport = ImGui::GetMainViewport();
     ImGui::SetNextWindowPos(viewport->WorkPos);
     ImGui::SetNextWindowSize(viewport->WorkSize);
     ImGui::SetNextWindowViewport(viewport->ID);
 
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-    ImGui::Begin("GR - GameEngine 3D", nullptr, ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoNavFocus | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoTitleBar);
+    ImGui::Begin("GR - GameEngine 3D", nullptr, ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoNavFocus | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_MenuBar);
+    if (ImGui::BeginMenuBar()) {
+        if (ImGui::BeginMenu("Project")) {
+            if (ImGui::MenuItem("Close")) {
+                CloseProject();
+            }
+            ImGui::EndMenu();
+        }
+        ImGui::EndMenuBar();
+    }
+
     if (s_io->ConfigFlags & ImGuiConfigFlags_DockingEnable) {
         ImGui::DockSpace(ImGui::GetID("##RenderDocking"), ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_PassthruCentralNode);
     }
@@ -544,7 +550,29 @@ void Game::RenderDocking() {
     ImGui::PopStyleVar();
 }
 
-void Game::RenderScenesUI() {
+void Editor::CloseProject() {
+    auto path = File::GetFile("/config.ini", true);
+    if (!File::Exists(path)) {
+        return;
+    }
+    File::Delete(path);
+
+    ScriptManager::Shutdown();
+
+    RenderManager::Shutdown();
+
+    ScreenRender::Shutdown();
+
+    Skybox::Shutdown();
+
+    Editor::Shutdown();
+
+    AssetsManager::Shutdown();
+
+    GameObject::Clear();
+}
+
+void Editor::RenderScenesUI() {
     auto isOpen = ImGui::Begin("Cenario", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
     if (!isOpen) {
         return;
@@ -605,7 +633,7 @@ void Game::RenderScenesUI() {
     ImGui::End();
 }
 
-void Game::RenderHierarchi() {
+void Editor::RenderHierarchi() {
     if (!Scene::HasScene()) {
         return;
     }
@@ -623,7 +651,7 @@ void Game::RenderHierarchi() {
     }
 }
 
-void Game::RenderPage(std::vector<GameObject *> &list, int page) {
+void Editor::RenderPage(std::vector<GameObject *> &list, int page) {
     int start = page * ITEMS_PER_PAGE;
     int end = std::min(start + ITEMS_PER_PAGE, static_cast<int>(list.size()));
 
@@ -634,7 +662,7 @@ void Game::RenderPage(std::vector<GameObject *> &list, int page) {
     }
 }
 
-void Game::ReadHierarchy(Transform *transform) {
+void Editor::ReadHierarchy(Transform *transform) {
     ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_Selected | ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanFullWidth;
 
     auto gameObject = transform->getGameObject();
@@ -704,7 +732,7 @@ void Game::ReadHierarchy(Transform *transform) {
     }
 }
 
-void Game::PopupMenuAdd() {
+void Editor::PopupMenuAdd() {
     auto isOpen = ImGui::BeginPopup("##popup_menu_add");
     if (!isOpen) {
         return;
@@ -723,7 +751,7 @@ void Game::PopupMenuAdd() {
     ImGui::EndPopup();
 }
 
-void Game::PopupOptionsGameObject() {
+void Editor::PopupOptionsGameObject() {
     bool isOpenRename = false;
     if (ImGui::BeginPopup("##popup_options_gameobject")) {
         const char* item_name[2] {"Delete", "Rename"};
@@ -746,7 +774,7 @@ void Game::PopupOptionsGameObject() {
     }
 }
 
-void Game::PopupRenameGameObject() {
+void Editor::PopupRenameGameObject() {
     auto isOpen = ImGui::BeginPopup("##popup_rename_gameobject");
     if (!isOpen) {
         return;
@@ -769,7 +797,7 @@ void Game::PopupRenameGameObject() {
     ImGui::EndPopup();
 }
 
-void Game::RenderViewportUI() {
+void Editor::RenderViewportUI() {
     auto isOpen = ImGui::Begin("Viewport", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
     if (!isOpen) {
         return;
@@ -816,7 +844,7 @@ void Game::RenderViewportUI() {
     ImGui::End();
 }
 
-void Game::DropSceneInViewport() {
+void Editor::DropSceneInViewport() {
     auto isOpen = ImGui::BeginDragDropTarget();
     if (!isOpen) {
         return;
@@ -890,7 +918,7 @@ Matrix4x4 InverseMatrix(const Matrix4x4 &matrix) {
     return result;
 }
 
-void Game::RenderScene() {
+void Editor::RenderScene() {
     auto cursorY = ImGui::GetCursorPosY();
     cursorY += 5.0f;
 
@@ -1033,7 +1061,7 @@ void Game::RenderScene() {
     }
 }
 
-void Game::DropGameObjectInScene() {
+void Editor::DropGameObjectInScene() {
     if (!Camera::Current) {
         return;
     }
@@ -1061,7 +1089,7 @@ void Game::DropGameObjectInScene() {
     ImGui::EndDragDropTarget();
 }
 
-void Game::PopupMenuCreateScene() {
+void Editor::PopupMenuCreateScene() {
     auto isOpen = ImGui::BeginPopup("##popup_menu_create_scene");
     if (!isOpen) {
         return;
@@ -1082,11 +1110,7 @@ void Game::PopupMenuCreateScene() {
     ImGui::EndPopup();
 }
 
-void Game::RenderFilesUI() {
-    if (m_currentDirectory.empty()) {
-        m_currentDirectory = m_currentPath;
-    }
-    
+void Editor::RenderFilesUI() {
     for (auto &entry : std::filesystem::directory_iterator(m_currentPath)) {
         RenderTreeNodeFile(entry.path());
     }
@@ -1239,7 +1263,7 @@ void Game::RenderFilesUI() {
     */
 }
 
-void Game::RenderTreeNodeFile(std::filesystem::path path) {
+void Editor::RenderTreeNodeFile(std::filesystem::path path) {
     ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_Leaf;
     flags |= ImGuiTreeNodeFlags_SpanFullWidth;
     flags |= ImGuiTreeNodeFlags_SpanAvailWidth;
@@ -1302,7 +1326,7 @@ void Game::RenderTreeNodeFile(std::filesystem::path path) {
     ImGui::TreePop();
 }
 
-void Game::PopupDirmanager() {
+void Editor::PopupDirmanager() {
     auto isOpen = true;
     if (ImGui::BeginPopupModal("##popup_dir_manager", &isOpen)) {
         for (auto &&[path, isSeleceted] : fLisDirSelected) {
@@ -1336,7 +1360,7 @@ void Game::PopupDirmanager() {
     }
 }
 
-void Game::PopupFileManager() {
+void Editor::PopupFileManager() {
     static bool isOpenPopup = false;
     if (ImGui::BeginPopup("##popup_file_manager")) {
         ImGui::Text("FileManager");
@@ -1366,7 +1390,7 @@ void Game::PopupFileManager() {
     }
 }
 
-void Game::PopupCreateDirectory() {
+void Editor::PopupCreateDirectory() {
     auto isOpen = ImGui::BeginPopup("##popup_create_new_dir");
     if (!isOpen) {
         return;
@@ -1384,7 +1408,7 @@ void Game::PopupCreateDirectory() {
     ImGui::EndPopup();
 }
 
-void Game::RenderConsoleUI() {
+void Editor::RenderConsoleUI() {
     static NavegationFlags flags = NavegationFlags_console;
 
     auto isOpen = ImGui::Begin("Navegador", nullptr, ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_AlwaysHorizontalScrollbar | ImGuiWindowFlags_AlwaysAutoResize);
@@ -1450,7 +1474,7 @@ void Game::RenderConsoleUI() {
     ImGui::End();
 }
 
-void Game::RenderPropertiUI() {
+void Editor::RenderPropertiUI() {
     auto isOpen = ImGui::Begin("Propriedades", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
     if (!isOpen) {
         return;
@@ -1493,7 +1517,7 @@ void Game::RenderPropertiUI() {
     ImGui::End();
 }
 
-void Game::RenderStatisticsMenu() {
+void Editor::RenderStatisticsMenu() {
     ImGui::SeparatorText("Scripts");
             
     ImGui::Text("Entidades: %ld", Manager::GetEntityCount());
@@ -1528,7 +1552,7 @@ void Game::RenderStatisticsMenu() {
     ImGui::Text("Batched: %ld", Batching::GetBatchedCount());
 }
 
-void Game::RenderGameObjectPropertiUI() {
+void Editor::RenderGameObjectPropertiUI() {
     if (!s_objectSelected || !ScriptManager::GetComponentPool) {
         return;
     }
@@ -1551,10 +1575,10 @@ void Game::RenderGameObjectPropertiUI() {
             s_objectSelected->setActive(isActive);
         }
 
-        s_objectSelected->RenderProperty<Transform>(Game::OnPropertyTransform);
-        s_objectSelected->RenderProperty<MeshFilter>(Game::OnPropertyMeshFilter);
-        s_objectSelected->RenderProperty<MeshRender>(Game::OnPropertyMeshRender);
-        s_objectSelected->RenderProperty<Light>(Game::OnPropertyLight);
+        s_objectSelected->RenderProperty<Transform>(Editor::OnPropertyTransform);
+        s_objectSelected->RenderProperty<MeshFilter>(Editor::OnPropertyMeshFilter);
+        s_objectSelected->RenderProperty<MeshRender>(Editor::OnPropertyMeshRender);
+        s_objectSelected->RenderProperty<Light>(Editor::OnPropertyLight);
 
         for (auto &&[name, ptr] : s_objectSelected->getEntity()->getComponents()) {
             if (name == "Transform" || name == "Light" || name == "MeshRender" || name == "MeshFilter") {
@@ -1592,7 +1616,7 @@ void Game::RenderGameObjectPropertiUI() {
     PopupAddComponent();
 }
 
-void Game::RenderField(Field &field, Component *component) {
+void Editor::RenderField(Field &field, Component *component) {
     auto name = field.getName();
     auto type = field.getType();
 
@@ -1627,7 +1651,7 @@ void Game::RenderField(Field &field, Component *component) {
     }
 }
 
-void Game::PopupAddComponent() {
+void Editor::PopupAddComponent() {
     if (!ScriptManager::GetComponentPool && !s_objectSelected) {
         return;
     }
@@ -1650,7 +1674,7 @@ void Game::PopupAddComponent() {
 }
 
 /* ********** Propriedades ********** */
-void Game::OnPropertyTransform(Transform *transform) {
+void Editor::OnPropertyTransform(Transform *transform) {
     auto isOpen = ImGui::TreeNode("Transform");
     if (!isOpen) {
         return;
@@ -1679,10 +1703,10 @@ void Game::OnPropertyTransform(Transform *transform) {
     ImGui::TreePop();
 }
 
-void Game::OnPropertyMeshFilter(MeshFilter *MeshFilter) {
+void Editor::OnPropertyMeshFilter(MeshFilter *MeshFilter) {
 }
 
-void Game::OnPropertyMeshRender(MeshRender *meshRender) {
+void Editor::OnPropertyMeshRender(MeshRender *meshRender) {
     auto isOpen = ImGui::TreeNode("MeshRender");
     if (!isOpen) {
         return;
@@ -1756,7 +1780,7 @@ void Game::OnPropertyMeshRender(MeshRender *meshRender) {
     ImGui::TreePop();
 }
 
-void Game::OnPropertyAnimator(Animator *animator) {
+void Editor::OnPropertyAnimator(Animator *animator) {
     auto &m_current = !animator->m_animation ? animator->m_animation : animator->m_nextAnimation;
 
     if (ImGui::TreeNode("Animator")) {
@@ -1812,7 +1836,7 @@ void Game::OnPropertyAnimator(Animator *animator) {
     }
 }
 
-void Game::OnPropertyLight(Light *light) {
+void Editor::OnPropertyLight(Light *light) {
     if (ImGui::TreeNode("Light")) {
         int elem = Light::LightType::eDirection;
         
@@ -1854,7 +1878,7 @@ void Game::OnPropertyLight(Light *light) {
     }
 }
 
-void Game::TextureInfo(Texture *&texture) {
+void Editor::TextureInfo(Texture *&texture) {
     bool IsOpen = true;
 
     const ImVec2 textureSize(100, 100);
@@ -1891,30 +1915,30 @@ void Game::TextureInfo(Texture *&texture) {
     }
 }
 
-void Game::LoadReources() {
-    iconsUI.emplace(IconType::ICON_FILE,        AssetsManager::LoadTexture(File::GetFile("/icon/icons8-file-30.png", true)));
-    iconsUI.emplace(IconType::ICON_FOLDER,      AssetsManager::LoadTexture(File::GetFile("/icon/icons8-folder-50.png", true)));
-    iconsUI.emplace(IconType::ICON_BACK_FILE,   AssetsManager::LoadTexture(File::GetFile("/icon/icons8-go-back-50.png", true)));
-    iconsUI.emplace(IconType::ICON_GAMEOBJECT,  AssetsManager::LoadTexture(File::GetFile("/icon/icons8-3d-object-50.png", true)));
-    iconsUI.emplace(IconType::ICON_PENCIL,      AssetsManager::LoadTexture(File::GetFile("/icon/icons8-lápis-30.png", true)));
-    iconsUI.emplace(IconType::ICON_LIGHT,       AssetsManager::LoadTexture(File::GetFile("/icon/icons8-lâmpada-globular-64.png", true)));
-    iconsUI.emplace(IconType::ICON_TEXTURE,     AssetsManager::LoadTexture(File::GetFile("/icon/icons8-textura-de-renderização-32.png", true)));
-    iconsUI.emplace(IconType::ICON_PNG,         AssetsManager::LoadTexture(File::GetFile("/icon/icons8-png-24.png", true)));
-    iconsUI.emplace(IconType::ICON_PLAY_GAME,   AssetsManager::LoadTexture(File::GetFile("/icon/icons8-reproduzir-30.png", true)));
-    iconsUI.emplace(IconType::ICON_STOP_GAME,   AssetsManager::LoadTexture(File::GetFile("/icon/icons8-parar-50.png", true)));
-    iconsUI.emplace(IconType::ICON_BIN,         AssetsManager::LoadTexture(File::GetFile("/icon/icons8-resíduos-50.png", true)));
-    iconsUI.emplace(IconType::ICON_IMPORT,      AssetsManager::LoadTexture(File::GetFile("/icon/icons8-importar-50.png", true)));
-    iconsUI.emplace(IconType::ICON_ASCENDENTE,  AssetsManager::LoadTexture(File::GetFile("/icon/icons8-ordenar-para-a-direita-50.png", true)));
-    iconsUI.emplace(IconType::ICON_DESCENDENTE, AssetsManager::LoadTexture(File::GetFile("/icon/icons8-ordem-descendente-50.png", true)));
-    iconsUI.emplace(IconType::ICON_EDIT,        AssetsManager::LoadTexture(File::GetFile("/icon/icons8-editar-24.png", true)));
-    iconsUI.emplace(IconType::ICON_ANIMATION,   AssetsManager::LoadTexture(File::GetFile("/icon/motion-graphics.png", true)));
-    iconsUI.emplace(IconType::ICON_SHADER,      AssetsManager::LoadTexture(File::GetFile("/icon/shade.png", true)));
-    iconsUI.emplace(IconType::ICON_SCENE,       AssetsManager::LoadTexture(File::GetFile("/icon/studio-set.png", true)));
+void Editor::LoadReources() {
+    iconsUI.emplace(IconType::ICON_FILE,        AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-file-30.png", true)));
+    iconsUI.emplace(IconType::ICON_FOLDER,      AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-folder-50.png", true)));
+    iconsUI.emplace(IconType::ICON_BACK_FILE,   AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-go-back-50.png", true)));
+    iconsUI.emplace(IconType::ICON_GAMEOBJECT,  AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-3d-object-50.png", true)));
+    iconsUI.emplace(IconType::ICON_PENCIL,      AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-lápis-30.png", true)));
+    iconsUI.emplace(IconType::ICON_LIGHT,       AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-lâmpada-globular-64.png", true)));
+    iconsUI.emplace(IconType::ICON_TEXTURE,     AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-textura-de-renderização-32.png", true)));
+    iconsUI.emplace(IconType::ICON_PNG,         AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-png-24.png", true)));
+    iconsUI.emplace(IconType::ICON_PLAY_GAME,   AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-reproduzir-30.png", true)));
+    iconsUI.emplace(IconType::ICON_STOP_GAME,   AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-parar-50.png", true)));
+    iconsUI.emplace(IconType::ICON_BIN,         AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-resíduos-50.png", true)));
+    iconsUI.emplace(IconType::ICON_IMPORT,      AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-importar-50.png", true)));
+    iconsUI.emplace(IconType::ICON_ASCENDENTE,  AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-ordenar-para-a-direita-50.png", true)));
+    iconsUI.emplace(IconType::ICON_DESCENDENTE, AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-ordem-descendente-50.png", true)));
+    iconsUI.emplace(IconType::ICON_EDIT,        AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-editar-24.png", true)));
+    iconsUI.emplace(IconType::ICON_ANIMATION,   AssetsManager::LoadTexture(File::GetAsset("/icon/motion-graphics.png", true)));
+    iconsUI.emplace(IconType::ICON_SHADER,      AssetsManager::LoadTexture(File::GetAsset("/icon/shade.png", true)));
+    iconsUI.emplace(IconType::ICON_SCENE,       AssetsManager::LoadTexture(File::GetAsset("/icon/studio-set.png", true)));
 
     s_texturePlayGame = iconsUI[IconType::ICON_PLAY_GAME];
 }
 
-void Game::ProgressLoad() {
+void Editor::ProgressLoad() {
     const ImVec2 windowSize = {300, 200};
 
     ImVec2 displaySize = s_io->DisplaySize;

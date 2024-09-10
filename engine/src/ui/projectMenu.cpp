@@ -1,11 +1,12 @@
 #include "projectMenu.hpp"
+#include "editor.hpp"
 
 #include "screenRender.hpp"
 #include "renderManager.h"
 #include "console.hpp"
 #include "skybox.h"
-#include "Game.h"
 
+#include "core/file/initialization.hpp"
 #include "core/file/stream.hpp"
 #include "core/file/file.hpp"
 
@@ -52,7 +53,9 @@ void ProjectMenu::Initialize() {
 
     LoadResources();
 
-    ReadProjects();
+    if (!ReadLastProject()) {
+        ReadProjects();
+    }
 }
 
 void ProjectMenu::Shutdown() {
@@ -64,7 +67,7 @@ void ProjectMenu::Shutdown() {
 
     Skybox::Shutdown();
 
-    Game::Shutdown();
+    Editor::Shutdown();
 
     ScreenRender::Shutdown();
 
@@ -73,7 +76,7 @@ void ProjectMenu::Shutdown() {
 
 void ProjectMenu::Render() {
     if (bProjectOpen) {
-        return Game::RenderUI();
+        return Editor::RenderUI();
     }
     RenderMainMenu();
 }
@@ -175,21 +178,14 @@ void ProjectMenu::CreateProjectInfo(const std::string name, const std::string pa
 }
 
 void ProjectMenu::CreateProjectMetadata(const std::string &path, const std::string &name) {
-    if (!Stream::open(path + "/metadata.bin", std::ios_base::out)) {
-        return;
-    }
-    Stream::GetStream() << "name=" << name << std::endl;
-    Stream::close();
+    Initialization ini(path + "/metadata.ini", std::ios_base::out);
+    ini.setValue("name", name);
+    ini.save();
 }
 
 void ProjectMenu::CreateProjectAssets(const std::string &path) {
     for (auto &dir : m_assetsFile) {
         auto fullPath = path + "/assets/" + dir;
-        
-
-        // if (File::Exists(fullPath)) {
-        //     continue;
-        // }
 
         if (File::CreateDirectories(fullPath)) {
             continue;
@@ -209,7 +205,7 @@ void ProjectMenu::ReadProjects() {
         if (!entry.is_directory()) {
             continue;
         }
-        if (!Stream::open(entry.path().string() + "/metadata.bin", std::ios_base::in)) {
+        if (!Stream::open(entry.path().string() + "/metadata.ini", std::ios_base::in)) {
             continue;
         }
         
@@ -241,7 +237,9 @@ void ProjectMenu::OpenProject(Project &project) {
 
     Skybox::Initialize();
 
-    Game::Initialize();
+    Editor::Initialize();
+
+    SaveLastProject(project);
 
     bProjectOpen = true;
 }
@@ -253,7 +251,7 @@ void ProjectMenu::RefreshProjectList() {
 }
 
 void ProjectMenu::LoadResources() {
-    Game::LoadReources();
+    Editor::LoadReources();
 }
 
 void ProjectMenu::LoadConfig() {
@@ -268,6 +266,41 @@ void ProjectMenu::LoadConfig() {
 
 void ProjectMenu::DownloadConfig(const std::string &path) {
     File::Copy("./assets", path);
+}
+
+void ProjectMenu::SaveLastProject(Project &project) {
+    if (!Stream::open(File::GetFile("/config.ini", true), std::ios_base::out)) {
+        return;
+    }
+    Stream::GetStream() << "name=" << project.name << std::endl;
+    Stream::GetStream() << "path=" << project.path << std::endl;
+    Stream::close();
+}
+
+bool ProjectMenu::ReadLastProject() {
+    auto path = File::GetFile("/config.ini", true);
+    if (!File::Exists(path)) {
+        return false;
+    }
+
+    Initialization ini(path, std::ios_base::in);
+    if (!ini.is_open()) {
+        return false;
+    }
+
+    if (ini.empty() || !ini.hasKey("name") || !ini.hasKey("path")) {
+        return false;
+    }
+
+    path = ini.getValue<std::string>("path");
+
+    if (!File::Exists(path)) {
+        return false;
+    }
+
+    Project project = {ini.getValue<std::string>("name"), path};
+    OpenProject(project);
+    return true;
 }
 
 std::string ProjectMenu::GetCurrentDirProject() {

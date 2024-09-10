@@ -49,7 +49,7 @@ private:
 
     Bone *findBone(const std::string &name);
 
-    friend class Game;
+    friend class Editor;
 };
 
 template <typename ...Args>

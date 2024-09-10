@@ -32,7 +32,7 @@
 
 /* pasta: src */
 class PostProcessing;
-class Game;
+class Editor;
 
 /* pasta: src/engine */
 class Mesh;

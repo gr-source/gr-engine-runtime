@@ -74,7 +74,7 @@ void Engine::MainLoop(std::function<void()> func) {
 }
 
 void Engine::GRKeyboardDown(grm::u32 key) {
-    Game::KeyBoardUp(key);
+    Editor::KeyBoardUp(key);
 }
 
 void Engine::GRKeyboardUp(grm::u32 key) {}
@@ -90,7 +90,7 @@ void Engine::GRCursorScrool(float xoffset, float yoffset) {
 }
 
 void Engine::GRDropFunc(const char *path) {
-    Game::DropFile(path);
+    Editor::DropFile(path);
 }
 
 void Engine::OnInit() {

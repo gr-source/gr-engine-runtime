@@ -40,7 +40,11 @@ std::string File::GetFileName(const std::string &path) {
 }
 
 std::string File::GetFile(const std::string &path, bool internal) {
-    return internal ? (m_configPath + "/assets" + path) : (m_currentPath + "/assets" + path);
+    return (internal ? m_configPath : m_currentPath) + path;
+}
+
+std::string File::GetAsset(const std::string &path, bool internal) {
+    return GetFile("/assets" + path, internal);
 }
 
 bool File::CreateDirectories(const std::string &path) {

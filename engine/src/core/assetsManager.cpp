@@ -70,6 +70,33 @@ void AssetsManager::Shutdown() {
     if (m_thread.joinable()) {
         m_thread.join();
     }
+
+    // clear assets
+    m_processCount = 0;
+
+    /***************** Shader *****************/
+    s_shaderList.clear();
+    s_shaderFromLoader.clear();
+
+    /***************** Functions *****************/
+    m_functions.clear();
+
+    /***************** Texture *****************/
+    s_textureList.clear();
+    s_textureFromLoader.clear();
+
+    /***************** Animation *****************/
+    s_animationList.clear();
+    s_animationFromLoader.clear();
+
+    /***************** GameObject *****************/
+    s_gameObjectFromLoader.clear();
+
+    /***************** Mesh *****************/
+    s_meshList.clear();
+
+    /***************** Material *****************/
+    m_materialMap.clear();
 }
 
 /***************** TEXTURE ****************/
