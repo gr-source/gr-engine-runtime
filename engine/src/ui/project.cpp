@@ -1,0 +1,21 @@
+#include "project.hpp"
+
+Project *Project::m_current = nullptr;
+
+Project *Project::GetCurrent() {
+    return m_current;
+}
+
+Project::Project(const std::string &name, const std::string &path) : m_name(name), m_path(path) {}
+
+const std::string &Project::getPath() const {
+    return m_path;
+}
+
+const std::string &Project::getName() const {
+    return m_name;
+}
+
+void Project::open() {
+    m_current = this;
+}

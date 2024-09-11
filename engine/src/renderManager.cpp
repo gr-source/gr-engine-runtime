@@ -23,9 +23,7 @@
 
 #include <cstring>
 
-std::vector<GameObject *> RenderManager::s_objects;
-
-grr::gShader *RenderManager::m_shader[4] = {nullptr, nullptr, nullptr, nullptr};
+std::array<grr::gShader *, 4> RenderManager::m_shader = {nullptr, nullptr, nullptr, nullptr};
 
 bool RenderManager::bWireFrame = false;
 
@@ -99,7 +97,13 @@ void RenderManager::Renderer() {
 }
 
 void RenderManager::Shutdown() {
-    s_objects.clear();
+    bRender = false;
+    
+    m_camera = nullptr;
+    
+    for (auto &shader : m_shader) {
+        shader = nullptr;
+    }
 }
 
 void RenderManager::SetupLight() {

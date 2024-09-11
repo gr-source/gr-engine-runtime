@@ -1,7 +1,10 @@
 #include "ImGuiRender.h"
 
+#include "core/file/file.hpp"
+
 #include <GLFW/glfw3.h>
 
+#include <iostream>
 ImGuiIO *ImGuiRender::s_io = nullptr;
 
 void ImGuiRender::Initialize(const char* openglVersion) {

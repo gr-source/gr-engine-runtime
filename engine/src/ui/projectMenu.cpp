@@ -109,7 +109,7 @@ void ProjectMenu::RenderMainMenu() {
 }
 
 void ProjectMenu::RenderProject(Project &project) {
-    auto &name = project.name;
+    auto &name = project.getName();
 
     if (ImGui::Selectable(name.c_str())) {
         OpenProject(project);
@@ -227,7 +227,9 @@ void ProjectMenu::ReadProjects() {
 }
 
 void ProjectMenu::OpenProject(Project &project) {
-    File::SetCurrentProject(project.path);
+    File::SetCurrentProject(project.getPath());
+
+    project.open();
 
     ScriptManager::Initialize("/home/grsource/Documentos/AppProjects/gr-component/lib/libgr-component.so");
 
@@ -269,12 +271,13 @@ void ProjectMenu::DownloadConfig(const std::string &path) {
 }
 
 void ProjectMenu::SaveLastProject(Project &project) {
-    if (!Stream::open(File::GetFile("/config.ini", true), std::ios_base::out)) {
+    Initialization ini(File::GetFile("/config.ini", true), std::ios_base::out);
+    if (!ini.is_open()) {
         return;
     }
-    Stream::GetStream() << "name=" << project.name << std::endl;
-    Stream::GetStream() << "path=" << project.path << std::endl;
-    Stream::close();
+    ini.setValue("name", project.getName());
+    ini.setValue("path", project.getPath());
+    ini.save();
 }
 
 bool ProjectMenu::ReadLastProject() {
@@ -298,7 +301,8 @@ bool ProjectMenu::ReadLastProject() {
         return false;
     }
 
-    Project project = {ini.getValue<std::string>("name"), path};
+    auto &project = m_projects.emplace_back(ini.getValue<std::string>("name"), path);
+
     OpenProject(project);
     return true;
 }

@@ -30,6 +30,8 @@ public:
     static void LoadReources();
 
 private:
+    static ImGuiViewport *m_viewport;
+
     static grr::gTexture *s_texturePlayGame;
 
     static std::unordered_map<std::string, std::shared_ptr<Scene>> m_scenes;
@@ -69,6 +71,8 @@ private:
     static std::unordered_map<std::filesystem::path, bool> fLisDirSelected;
 
     static std::filesystem::path m_currentPath;
+
+    static void PopupComponentMenu();
 
     static void RenderDocking();
 

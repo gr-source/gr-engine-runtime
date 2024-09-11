@@ -27,7 +27,7 @@ bool Initialization::empty() {
 
 void Initialization::save() {
     for (auto &&[key, value] : m_map) {
-        m_stream << key << "=" << value;
+        m_stream << key << "=" << value << std::endl;
     }
 }
 

@@ -41,8 +41,9 @@ void MeshRender::build() {
         if (!material) {
             material = &AssetsManager::AddMaterial(mName, m_materials);
         }
+        m_materials = *material;
 
-        m_batched = &Batching::Add(getGameObject()->getName(), material, mesh, shader, Batching::Batching_Flags_Dynamic);
+        m_batched = &Batching::Add(getGameObject()->getName(), &m_materials, mesh, shader, Batching::Batching_Flags_Dynamic);
         m_batched->insert(&transform);
         return;
     }

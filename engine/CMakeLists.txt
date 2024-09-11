@@ -165,6 +165,7 @@ set(engine_src
 
     src/ui/View.cpp
     src/ui/editor.cpp
+    src/ui/project.cpp
     src/ui/ImGuiRender.cpp
     src/ui/projectMenu.cpp
 
@@ -217,6 +218,7 @@ set(engine_hdr
     
     src/ui/View.h
     src/ui/editor.hpp
+    src/ui/project.hpp
     src/ui/ImGuiRender.h
     src/ui/projectMenu.hpp
 

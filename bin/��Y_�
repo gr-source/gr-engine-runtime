@@ -1,0 +1,38 @@
+[Window][Debug##Default]
+Pos=60,60
+Size=400,400
+Collapsed=0
+
+[Window][Viewport]
+Pos=202,44
+Size=521,556
+Collapsed=0
+DockId=0x00000002,0
+
+[Window][Propriedades]
+Pos=725,44
+Size=299,556
+Collapsed=0
+DockId=0x00000006,0
+
+[Window][Navegador]
+Pos=0,324
+Size=200,276
+Collapsed=0
+DockId=0x00000004,0
+
+[Window][Cenario]
+Pos=0,44
+Size=200,278
+Collapsed=0
+DockId=0x00000003,0
+
+[Docking][Data]
+DockSpace       ID=0x69D99999 Window=0xE68DEE11 Pos=0,44 Size=1024,556 Split=X
+  DockNode      ID=0x00000005 Parent=0x69D99999 SizeRef=723,556 Split=X
+    DockNode    ID=0x00000001 Parent=0x00000005 SizeRef=200,556 Split=Y Selected=0x7CEF5C6D
+      DockNode  ID=0x00000003 Parent=0x00000001 SizeRef=90,278 Selected=0x7CEF5C6D
+      DockNode  ID=0x00000004 Parent=0x00000001 SizeRef=90,276 Selected=0x53395EA0
+    DockNode    ID=0x00000002 Parent=0x00000005 SizeRef=521,556 CentralNode=1 Selected=0x13926F0B
+  DockNode      ID=0x00000006 Parent=0x69D99999 SizeRef=299,556 Selected=0x125D137C
+

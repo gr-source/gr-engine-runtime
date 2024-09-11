@@ -15,6 +15,7 @@
 
 #include "core/filmbox/filmbox.hpp"
 
+#include "core/file/initialization.hpp"
 #include "core/file/stream.hpp"
 #include "core/file/file.hpp"
 
@@ -33,6 +34,7 @@
 #include "guizmo/ImGuizmo.h"
 
 #include "ui/ImGuiRender.h"
+#include "ui/project.hpp"
 #include "ui/View.h"
 
 #include "scriptManager/scriptManager.hpp"
@@ -51,23 +53,19 @@
 
 #define ITEMS_PER_PAGE 20
 
-const std::string getfilesize(std::size_t sz) {
+std::string getfilesize(std::size_t sz) {
     float kb = sz / 1024.0f;
     float mb = kb / 1024.0f;
     float gb = mb / 1024.0f;
 
-    std::ostringstream oss;
-
     if (gb >= 1.0f) {
-        oss << std::fixed << std::setprecision(2) << gb << "GB";
+        return std::to_string(gb) + "GB";
     } else if (mb >= 1.0f) {
-        oss << std::fixed << std::setprecision(2) << mb << "MB";
+        return std::to_string(mb) + "MB";
     } else if (kb >= 1.0f) {
-        oss << std::fixed << std::setprecision(2) << kb << "KB";
-    } else {
-        oss << std::fixed << std::setprecision(2) << sz << "B";
+        return std::to_string(kb) + "KB";
     }
-    return oss.str();
+    return std::to_string(sz) + "B";
 }
 
 enum IconType {
@@ -94,6 +92,8 @@ enum IconType {
 std::unordered_map<IconType, grr::gTexture *> iconsUI;
 
 std::vector<std::unique_ptr<Filmbox>> m_filmboxList;
+
+ImGuiViewport *Editor::m_viewport = nullptr;
 
 grr::gTexture *Editor::s_texturePlayGame = nullptr;
 
@@ -136,6 +136,8 @@ std::unordered_map<std::filesystem::path, bool> Editor::fLisDirSelected;
 std::filesystem::path Editor::m_currentPath;
 
 void Editor::Initialize() {
+    m_viewport = ImGui::GetMainViewport();
+
     s_io = &ImGui::GetIO();
 
     Settings::IsGameRunning = false;
@@ -475,10 +477,7 @@ void Editor::UnloadScript() {
 
 // ===================================== END =========================================================
 void Editor::RenderUI() {
-    // ImGui::ShowDemoWindow();
-    // return;
-    if (AssetsManager::m_processCount != 0) {
-        ProgressLoad();
+    if (!Project::GetCurrent()) {
         return;
     }
     
@@ -521,18 +520,30 @@ void Editor::RenderUI() {
                 ptr->save();
             });
         }
-        // 
     }
+
+    PopupComponentMenu();
+}
+
+void Editor::PopupComponentMenu() {
+    auto isOpen = ImGui::BeginPopup("##game_object_component_menu");
+    if (!isOpen) {
+        return;
+    }
+    ImGui::EndPopup();
 }
 
 void Editor::RenderDocking() {
-    ImGuiViewport* viewport = ImGui::GetMainViewport();
-    ImGui::SetNextWindowPos(viewport->WorkPos);
-    ImGui::SetNextWindowSize(viewport->WorkSize);
-    ImGui::SetNextWindowViewport(viewport->ID);
+    ImGui::SetNextWindowSize(m_viewport->WorkSize, ImGuiCond_Always);
+    ImGui::SetNextWindowPos(m_viewport->WorkPos, ImGuiCond_Always);
+    ImGui::SetNextWindowViewport(m_viewport->ID);
+
+    auto name = Project::GetCurrent()->getName();
 
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-    ImGui::Begin("GR - GameEngine 3D", nullptr, ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoNavFocus | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_MenuBar);
+    ImGui::Begin(name.c_str(), nullptr, ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoNavFocus | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_MenuBar);
+    ImGui::PopStyleVar();
+
     if (ImGui::BeginMenuBar()) {
         if (ImGui::BeginMenu("Project")) {
             if (ImGui::MenuItem("Close")) {
@@ -547,17 +558,16 @@ void Editor::RenderDocking() {
         ImGui::DockSpace(ImGui::GetID("##RenderDocking"), ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_PassthruCentralNode);
     }
     ImGui::End();
-    ImGui::PopStyleVar();
 }
 
+#include "projectMenu.hpp"
+
+// TODO: falta resolver problema do shutdown em assets
 void Editor::CloseProject() {
     auto path = File::GetFile("/config.ini", true);
-    if (!File::Exists(path)) {
-        return;
+    if (File::Exists(path)) {
+        File::Delete(path);
     }
-    File::Delete(path);
-
-    ScriptManager::Shutdown();
 
     RenderManager::Shutdown();
 
@@ -567,9 +577,13 @@ void Editor::CloseProject() {
 
     Editor::Shutdown();
 
-    AssetsManager::Shutdown();
+    // AssetsManager::Shutdown();
 
     GameObject::Clear();
+
+    ScriptManager::Shutdown();
+
+    ProjectMenu::bProjectOpen = false;
 }
 
 void Editor::RenderScenesUI() {
@@ -1584,23 +1598,24 @@ void Editor::RenderGameObjectPropertiUI() {
             if (name == "Transform" || name == "Light" || name == "MeshRender" || name == "MeshFilter") {
                 continue;
             }
-            auto isOpen = ImGui::TreeNode(name.c_str());
-
-            if (isOpen) {
-                auto it = componentPool.find(name);
-                if (it == componentPool.end()) {
-                    Console::log(LogInfo::ERROR, "Invalid component: " + name);
-                    ImGui::TreePop();
-                    continue;
-                }
-                auto &fieldList = it->second->getFields();
-
-                for (auto &field : fieldList) {
-                    RenderField(field, &(*ptr));
-                }
-
-                ImGui::TreePop();
+            auto isOpen = ImGui::TreeNodeEx(name.c_str());
+            if (!isOpen) {
+                continue;
             }
+
+            auto it = componentPool.find(name);
+            if (it == componentPool.end()) {
+                Console::log(LogInfo::ERROR, "Invalid component: " + name);
+                ImGui::TreePop();
+                continue;
+            }
+            auto &fieldList = it->second->getFields();
+
+            for (auto &field : fieldList) {
+                RenderField(field, &(*ptr));
+            }
+
+            ImGui::TreePop();
         }
 
         if (ImGui::SmallButton("AddComponent")) {
@@ -1708,6 +1723,10 @@ void Editor::OnPropertyMeshFilter(MeshFilter *MeshFilter) {
 
 void Editor::OnPropertyMeshRender(MeshRender *meshRender) {
     auto isOpen = ImGui::TreeNode("MeshRender");
+    if (ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
+        ImGui::OpenPopup("##game_object_component_menu");
+    }
+
     if (!isOpen) {
         return;
     }
@@ -1736,45 +1755,55 @@ void Editor::OnPropertyMeshRender(MeshRender *meshRender) {
     }
 
     for (auto &material : meshRender->getMaterials()) {
-        if (ImGui::TreeNode(material.getName().c_str())) {
-            
-            auto& albedo = material.getAlbedo();
-            {
-                ImGui::SeparatorText("Albedo");
-                auto texture = material.getTexture(0);
-
-                if (texture != nullptr && texture->isValid()) {
-                    ImGui::Image(reinterpret_cast<ImTextureID>(texture->getID()), {Settings::IconSize.x, Settings::IconSize.y});
-                    if (ImGui::IsItemHovered() && ImGui::IsKeyDown(ImGuiKey_X)) {
-                        texture = nullptr;
-                    }
-                } else {
-
-                    if (View::TextureInputUI(ImColor(albedo.x, albedo.y, albedo.z, albedo.w))) {
-                        ImGui::OpenPopup("#PopupChangeColorAlbedo");
-                    }
-                }
-
-                /*
-                if (ImGui::BeginDragDropTarget()) {
-                    if (const ImGuiPayload* data = ImGui::AcceptDragDropPayload(getDragDrop(DragDrop::TEXTURE), ImGuiDragDropFlags_None)) {
-                        std::string path((char*)data->Data, data->DataSize);
-                        if (!path.empty()) {
-                            material.texture[TexturePBR::ALBEDO] = Resources::Load<Texture>(path);
-                        }
-                    }
-                    ImGui::EndDragDropTarget();
-                }
-                */
-            }
-
-            Color clr = {albedo.x, albedo.y, albedo.z, albedo.w};
-            if (View::PopupChangeColor("Albedo", clr)) {
-                material.setAlbedo({clr.r, clr.g, clr.b, clr.a});
-            }
-
-            ImGui::TreePop();
+        auto isOpen = ImGui::TreeNode(material.getName().c_str());
+        if (!isOpen) {
+            continue;
         }
+            
+        auto& albedo = material.getAlbedo();
+        {
+            ImGui::SeparatorText("Albedo");
+            auto texture = material.getTexture(0);
+
+            if (texture != nullptr && texture->isValid()) {
+                ImGui::Image(reinterpret_cast<ImTextureID>(texture->getID()), {Settings::IconSize.x, Settings::IconSize.y});
+                if (ImGui::IsItemHovered() && ImGui::IsKeyDown(ImGuiKey_X)) {
+                    texture = nullptr;
+                }
+            } else {
+
+                if (View::TextureInputUI(ImColor(albedo.x, albedo.y, albedo.z, albedo.w))) {
+                    ImGui::OpenPopup("#PopupChangeColorAlbedo");
+                }
+            }
+
+            /*
+            if (ImGui::BeginDragDropTarget()) {
+                if (const ImGuiPayload* data = ImGui::AcceptDragDropPayload(getDragDrop(DragDrop::TEXTURE), ImGuiDragDropFlags_None)) {
+                    std::string path((char*)data->Data, data->DataSize);
+                    if (!path.empty()) {
+                        material.texture[TexturePBR::ALBEDO] = Resources::Load<Texture>(path);
+                    }
+                }
+                ImGui::EndDragDropTarget();
+            }
+            */
+        }
+
+        Color clr = {albedo.x, albedo.y, albedo.z, albedo.w};
+        if (View::PopupChangeColor("Albedo", clr)) {
+            material.setAlbedo({clr.r, clr.g, clr.b, clr.a});
+        }
+
+        ImGui::Text("Roghness:");
+        ImGui::DragFloat("##mesh_render_material_roughness", &material.m_roughness, 0.001f);
+
+        ImGui::Text("Mettallic:");
+        ImGui::DragFloat("##mesh_render_material_metallic", &material.m_metallic, 0.001f);
+
+        ImGui::Text("AO:");
+        ImGui::DragFloat("##mesh_render_material_ao", &material.m_ao, 0.001f);
+        ImGui::TreePop();
     }
 
     ImGui::TreePop();
@@ -1837,45 +1866,47 @@ void Editor::OnPropertyAnimator(Animator *animator) {
 }
 
 void Editor::OnPropertyLight(Light *light) {
-    if (ImGui::TreeNode("Light")) {
-        int elem = Light::LightType::eDirection;
-        
-        const char* elems_names[3] = {"Directional", "Point", "Spot"};
-        
-        const char* elem_name = (elem >= 0 && elem < 3) ? elems_names[elem] : "Unknown";
-
-        ImGui::Text("Type:");
-        if (ImGui::SliderInt("##LightType", &elem, 0, 3 - 1, elem_name)) {
-            light->setType(elem);
-        }
-        
-        ImGui::Text("Constante:");
-        ImGui::DragFloat("##constant", &light->m_attenuationConstant, 0.005f, 0.01f, 1.0f);
-
-        ImGui::Text("Linear:");
-        ImGui::DragFloat("##linear", &light->m_attenuationLinear, 0.005f, 0.01f, 1.0f);
-
-        ImGui::Text("Quadract:");
-        ImGui::DragFloat("##quadract", &light->m_attenuationQuadratic, 0.005f, 0.01f, 1.0f);
-
-        ImGui::Text("InConner:");
-        ImGui::DragFloat("##inconer", &light->m_angleInnerCone, 0.005f, 0.01f, 1.0f);
-
-        ImGui::Text("IuterConner:");
-        ImGui::DragFloat("##outerconner", &light->m_angleOuterCone, 0.005f, 0.01f, 1.0f);
-
-        ImGui::Text("Cor:");
-        ImVec4 color = {light->m_color.r, light->m_color.g, light->m_color.b, 1.0f};
-        if (ImGui::ColorButton("##LightColor", color)) {
-            ImGui::OpenPopup("##LightColorPopup");
-        }
-        if (ImGui::BeginPopup("##LightColorPopup")) {
-            ImGui::ColorPicker4("#LightColorPick", light->m_color.data);
-            ImGui::EndPopup();
-        }
-
-        ImGui::TreePop();
+    auto isOpen = ImGui::TreeNode("Light");
+    if (!isOpen) {
+        return;
     }
+    int elem = light->getType();
+    
+    const char* elems_names[3] = {"Directional", "Point", "Spot"};
+    
+    const char* elem_name = (elem >= 0 && elem < 3) ? elems_names[elem] : "Unknown";
+
+    ImGui::Text("Type:");
+    if (ImGui::SliderInt("##LightType", &elem, 0, 3 - 1, elem_name)) {
+        light->setType(elem);
+    }
+    
+    ImGui::Text("Constante:");
+    ImGui::DragFloat("##constant", &light->m_attenuationConstant, 0.005f, 0.01f, 1.0f);
+
+    ImGui::Text("Linear:");
+    ImGui::DragFloat("##linear", &light->m_attenuationLinear, 0.005f, 0.01f, 1.0f);
+
+    ImGui::Text("Quadract:");
+    ImGui::DragFloat("##quadract", &light->m_attenuationQuadratic, 0.005f, 0.01f, 1.0f);
+
+    ImGui::Text("InConner:");
+    ImGui::DragFloat("##inconer", &light->m_angleInnerCone, 0.005f, 0.01f, 1.0f);
+
+    ImGui::Text("IuterConner:");
+    ImGui::DragFloat("##outerconner", &light->m_angleOuterCone, 0.005f, 0.01f, 1.0f);
+
+    ImGui::Text("Cor:");
+    ImVec4 color = {light->m_color.r, light->m_color.g, light->m_color.b, 1.0f};
+    if (ImGui::ColorButton("##LightColor", color)) {
+        ImGui::OpenPopup("##LightColorPopup");
+    }
+    if (ImGui::BeginPopup("##LightColorPopup")) {
+        ImGui::ColorPicker4("#LightColorPick", light->m_color.data);
+        ImGui::EndPopup();
+    }
+
+    ImGui::TreePop();
 }
 
 void Editor::TextureInfo(Texture *&texture) {

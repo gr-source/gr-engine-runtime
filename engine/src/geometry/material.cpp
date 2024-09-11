@@ -104,6 +104,6 @@ void Material::deserialize(std::istream &is) {
         if (name.empty()) {
             continue;
         }
-        // m_texture[id] = AssetsManager::LoadTexture(name);
+        m_texture[id] = AssetsManager::LoadTexture(name);
     }
 }

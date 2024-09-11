@@ -40,5 +40,7 @@ private:
     float m_ao;
 
     std::vector<grr::gTexture *> m_texture;
+
+    friend class Editor;
 };
 

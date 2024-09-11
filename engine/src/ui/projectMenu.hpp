@@ -5,11 +5,7 @@
 #include <array>
 
 #include "ImGuiRender.h"
-
-struct Project {
-    std::string name;
-    std::string path;
-};
+#include "project.hpp"
 
 class ProjectMenu {
 public:
@@ -19,6 +15,8 @@ public:
     
     static void Render();
 
+    static bool bProjectOpen;
+
 private:
     static std::array<const std::string, 6> m_assetsFile;
 
@@ -27,8 +25,6 @@ private:
     static ImGuiViewport *m_mainViewport;
 
     static ImGuiStyle *m_style;
-
-    static bool bProjectOpen;
 
     static ImGuiIO *m_io;
 

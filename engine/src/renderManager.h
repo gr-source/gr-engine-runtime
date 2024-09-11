@@ -27,9 +27,7 @@ public:
         ShaderType_Static_Multi_Model = 3,
     };
 
-    static std::vector<GameObject*> s_objects;
-
-    static grr::gShader *m_shader[4];
+    static std::array<grr::gShader *, 4> m_shader;
 
     static Camera *m_camera;
 

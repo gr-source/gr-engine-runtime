@@ -75,7 +75,8 @@
         "unordered_set": "cpp",
         "valarray": "cpp",
         "coroutine": "cpp",
-        "any": "cpp"
+        "any": "cpp",
+        "span": "cpp"
     },
     "Lua.diagnostics.globals": [
         "Scene"
