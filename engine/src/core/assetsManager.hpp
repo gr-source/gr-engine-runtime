@@ -43,10 +43,8 @@ public:
 
     static grr::gShader *LoadShader(const std::string &name, const std::string &frag, const std::string &vert);
 
-    // static GameObject *LoadGameObject(const std::string &path);
-
     template <typename ...Args>
-    static void LoadGameObjectF(const std::string &path, Args &&...args);
+    static void LoadGameObject(const std::string &path, Args &&...args);
 
     static Animation *LoadAnimation(const std::string &path);
 
@@ -85,6 +83,8 @@ public:
     static std::string GetTextureKeyMap(grr::gTexture *texture);
 
     static std::unordered_map<std::string, std::unique_ptr<grr::gTexture>> &GetTextureMap();
+
+    static void SetGameObjectList(const std::string &path, std::function<void(GameObject *)> &func);
 
 private:
     /***************** Shader *****************/
@@ -141,12 +141,10 @@ private:
     static void ProcessBinary();
 
     static void ReadChildren(Transform *transform, GameObjectHandle &handle);
-
-    static void SetGameObjectList(const std::string &path, std::function<void(GameObject *)> &func);
 };
 
 template <typename... Args>
-inline void AssetsManager::LoadGameObjectF(const std::string &path, Args &&...args) {
+inline void AssetsManager::LoadGameObject(const std::string &path, Args &&...args) {
     std::function<void(GameObject *)> func = std::bind(std::forward<Args>(args)..., std::placeholders::_1);
 
     SetGameObjectList(path, func);

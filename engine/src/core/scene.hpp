@@ -31,7 +31,7 @@ public:
 
     void Add(GameObject *gameObject);
     
-    void Remove(GameObject *gameObject);
+    static void Remove(GameObject *gameObject);
 
     void Delete(GameObject *gameObject);
 
@@ -73,4 +73,6 @@ private:
     int readMesh();
 
     static void ReadNode(Transform *parent = nullptr);
+
+    void remove(GameObject *gameObject);
 };

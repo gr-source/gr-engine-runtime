@@ -752,7 +752,7 @@ void Editor::ReadHierarchy(Transform *transform) {
                     if (ts != transform->getParent()) {
                         ts->setParent(transform);
                     
-                        Event::Add(&Scene::Remove, Scene::GetCurrentScene(),  target);
+                        Event::Add(&Scene::Remove, target);
                     }
                 }
             }
@@ -1106,7 +1106,7 @@ void Editor::DropGameObjectInScene() {
     if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(IMGUI_PAYLOAD_FILE)) {
         std::string path((char*)payload->Data, payload->DataSize);
         if (!path.empty() && std::filesystem::path(path).filename().extension() == ".gmd") {
-            AssetsManager::LoadGameObjectF(path, &Editor::PostLoadGameObject);
+            AssetsManager::LoadGameObject(path, &Editor::PostLoadGameObject);
         }
     }
     ImGui::EndDragDropTarget();

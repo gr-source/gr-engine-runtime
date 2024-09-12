@@ -151,7 +151,7 @@ void Scene::Add(GameObject *gameObject) {
 }
 
 void Scene::Remove(GameObject *gameObject) {
-    s_objects.erase(std::remove(s_objects.begin(), s_objects.end(), gameObject), s_objects.end());
+    GetCurrentScene()->remove(gameObject);
 }
 
 void Scene::Delete(GameObject *gameObject) {
@@ -503,4 +503,8 @@ void Scene::ReadNode(Transform *parent) {
     for (int i=0;i<cSize;i++) {
         ReadNode(&transform);
     }
+}
+
+void Scene::remove(GameObject *gameObject) {
+    s_objects.erase(std::remove(s_objects.begin(), s_objects.end(), gameObject), s_objects.end());
 }
