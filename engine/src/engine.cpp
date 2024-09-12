@@ -118,6 +118,8 @@ void Engine::OnInit() {
 
     // ScreenRender::Initialize();
 
+    Input::Initialize();
+
     ProjectMenu::Initialize();
 
     // RenderManager::Initialize();
@@ -129,7 +131,10 @@ void Engine::OnUpdate() {
     Time time;
     time.end();
 
+    Input::Update();
+    
     EditorController::Update();
+
     Manager::Update();
 
     Statistics::m_scriptFrame = {time.getFPS(), time.start()};

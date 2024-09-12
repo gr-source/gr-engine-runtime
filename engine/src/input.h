@@ -1,10 +1,14 @@
 #pragma once
 
-#include <cassert>
+#include <unordered_map>
 #include <string>
-#include <map>
 
 #include <gr-math/gmath.h>
+
+enum MouseButton {
+    MouseButton_Right = 1 << 1,
+    MouseButton_Left = 1 << 2,
+};
 
 class Input {
 public:
@@ -31,16 +35,24 @@ public:
 
     static bool IsKeyPress(grm::u32 key);
 
-    static bool IsMouseUp(Key button);
+    static bool IsMouseReleased(MouseButton button);
 
-    static bool IsMousePress(grm::u32 button);
+    static bool IsMouseDown(MouseButton button);
 
     static void SetCursorPos(const Vector2& position);
 
     static Vector2 GetCursorPos();
 
-    static void SetInstance(void* instance);
+    static void Initialize();
 
-    static void* m_instance;
+    static void Update();
 private:
+    struct MouseData {
+        Vector2 pos;
+        bool want;
+    };
+
+    static std::unordered_map<MouseButton, bool> m_mouseButtonState;
+
+    static MouseData m_mouseData;
 };

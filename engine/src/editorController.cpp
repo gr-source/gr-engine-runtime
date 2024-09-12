@@ -18,7 +18,7 @@ Vector2 EditorController::lastMousePos = {0.0f, 0.0f};
 Vector2 EditorController::elapsed = {0.0f, 0.0f};
 
 void EditorController::Initialize() {
-    lastMousePos = Input::GetCursorPos();
+    lastMousePos = Vector2::zero;
 }
 
 void EditorController::Update() {
@@ -65,17 +65,29 @@ void EditorController::Update() {
 }
 
 void EditorController::updateCursor() {
-    const Vector2 delta = Input::GetCursorPos() - lastMousePos;
-
-    // if (Math::magnitude(delta) > 0.005f)
-        ProcessMouse(delta);
-
-    auto center = Settings::ViewportSize / 2;
-    lastMousePos = {static_cast<float>(center.x), static_cast<float>(center.y)};
-
-    if (!Input::IsMousePress(Input::BUTTON_MIDDLE)) {
-        Input::SetCursorPos(lastMousePos);
+    if (Input::IsMouseDown(MouseButton_Left) && lastMousePos == Vector2::zero) {
+        lastMousePos = Input::GetCursorPos();
     }
+    if (Input::IsMouseReleased(MouseButton_Left)) {
+        lastMousePos = Vector2::zero;
+    }
+
+    if (Math::magnitude(lastMousePos) > 1e-5f) {
+        auto delta = Input::GetCursorPos() - lastMousePos;
+
+        ProcessMouse(delta);
+            
+        lastMousePos = Input::GetCursorPos();
+    }
+
+    // // if (Math::magnitude(delta) > 0.005f)
+
+    // auto center = Settings::ViewportSize / 2;
+    // lastMousePos = {static_cast<float>(center.x), static_cast<float>(center.y)};
+
+    // if (!Input::IsMousePress(Input::BUTTON_MIDDLE)) {
+    //     Input::SetCursorPos(lastMousePos);
+    // }
 }
 
 void EditorController::ProcessMouse(const Vector2 &delta) {

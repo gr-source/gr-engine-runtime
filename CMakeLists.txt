@@ -10,6 +10,13 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
 #defina a versão do c++
 set(CMAKE_CXX_STANDARD 17)
 
+# Set the CMAKE_CXX_FLAGS to include profiling flags
+# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pg")
+# set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pg")
+
+# Optional: Set the linker flags if needed
+# set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -pg")
+
 if(NOT CMAKE_CXX_STANDARD)
     set(CMAKE_CXX_STANDARD 17)
     message(WARNING "CMAKE_CXX_STANDARD não definido. Usando C++17 como padrão.")

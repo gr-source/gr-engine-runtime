@@ -22,6 +22,17 @@
 
 class FbxAnimation;
 
+class GameObjectHandle {
+public:
+    GameObjectHandle(std::function<void(GameObject *)> &function, const std::string &path) : m_function(function), m_gameObject(nullptr), m_path(path) {}
+
+    std::function<void(GameObject *)> m_function;
+
+    GameObject *m_gameObject;
+
+    std::string m_path;
+};
+
 class AssetsManager {
 public:
     static void Initialize();
@@ -32,7 +43,10 @@ public:
 
     static grr::gShader *LoadShader(const std::string &name, const std::string &frag, const std::string &vert);
 
-    static GameObject *LoadGameObject(const std::string &path);
+    // static GameObject *LoadGameObject(const std::string &path);
+
+    template <typename ...Args>
+    static void LoadGameObjectF(const std::string &path, Args &&...args);
 
     static Animation *LoadAnimation(const std::string &path);
 
@@ -91,7 +105,8 @@ private:
     static std::mutex s_animatioMutex;
 
     /***************** GameObject *****************/
-    static std::list<std::tuple<std::string, Transform *>> s_gameObjectFromLoader;
+    static std::list<GameObjectHandle> s_gameObjectFromLoader;
+    // static std::list<std::tuple<std::string, Transform *>> s_gameObjectFromLoader;
     static std::mutex s_gameObjectMutex;
 
     /***************** Mesh *****************/
@@ -119,18 +134,27 @@ private:
 
     static void ProcessAnimation();
 
-    static void SetupGameObject(Transform *&out, gModel &model, Mesh *mesh, std::vector<gMaterial> &materials, Transform *parent);
+    static void SetupGameObject(GameObjectHandle &handle, Transform *&out, gModel &model, Mesh *mesh, std::vector<gMaterial> &materials, Transform *parent);
 
-    static void doInBackgroundGameObject(const std::string &path, Transform *target);
+    static void doInBackgroundGameObject(GameObjectHandle &handle);
 
     static void ProcessBinary();
 
-    static void ReadChildren(Transform *transform);
+    static void ReadChildren(Transform *transform, GameObjectHandle &handle);
 
+    static void SetGameObjectList(const std::string &path, std::function<void(GameObject *)> &func);
 };
 
 template <typename... Args>
-inline Mesh *AssetsManager::AddMesh(const std::string &key, Args &&...args) {
+inline void AssetsManager::LoadGameObjectF(const std::string &path, Args &&...args) {
+    std::function<void(GameObject *)> func = std::bind(std::forward<Args>(args)..., std::placeholders::_1);
+
+    SetGameObjectList(path, func);
+}
+
+template <typename... Args>
+inline Mesh *AssetsManager::AddMesh(const std::string &key, Args &&...args)
+{
     std::unique_lock<std::mutex> lock(m_meshMutex);
     auto &&[pair, added] = s_meshList.emplace(key, std::make_unique<Mesh>(std::forward<Args>(args)...));
     auto mesh = &(*(*pair).second);

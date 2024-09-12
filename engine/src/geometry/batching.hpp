@@ -86,6 +86,14 @@ private:
 
     void compile();
 
+    void buildDynamic();
+
+    void buildDynamicInstanced();
+
+    void buildStaticInstanced();
+
+    void buildStaticMesh();
+
     void setupMaterial();
 };
 

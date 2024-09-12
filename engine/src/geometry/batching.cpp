@@ -83,6 +83,8 @@ void Batching::remove(Transform *transform, bool bDelete) {
 }
 
 void Batching::draw() {
+    compile();
+    
     if (!m_vertexArray || !m_shader || !m_vertexArray->isValid() || !m_shader->isValid()) {
         return;
     }
@@ -115,8 +117,6 @@ void Batching::Draw(Batching *batching) {
         return;
     }
     
-    batching->compile();
-
     batching->draw();
 
     Statistics::m_drawCallCount++;
@@ -191,83 +191,106 @@ void Batching::build(Mesh *mesh) {
 void Batching::compile() {
     grr::gShader::Bind(m_shader);
 
-    if (m_flags == Batching_Flags_Static_Mesh && m_primCount != m_models.size()) {
-        Mesh mesh;
-
-        grm::size verticeCount = 0;
-        for (auto &transform : m_models) {
-            auto &model = transform->getGlobalMatrix();
-
-            for (auto &vertice : m_mesh->getVertices()) {
-                mesh.addVertex(
-                    Vector3(model * Vector4(vertice.position, 1.0f)),
-                    Vector3(model * Vector4(vertice.normal, 0.0f)),
-                    vertice.texCoord,
-                    vertice.mIdx
-                );
-            }
-
-            for (auto &indice : m_mesh->getIndices()) {
-                mesh.addIndice(verticeCount + indice);
-            }
-            verticeCount += m_mesh->getVertices().size();
-        }
-        build(&mesh);
-
-        m_primCount = m_models.size();
-
-        m_type = bHasIndice ? DrawType_Elements : DrawType_Arrays;
-    } else if (m_flags == Batching_Flags_Instanced_Static && m_primCount != m_models.size()) {
-        std::vector<Matrix4x4> models;
-        for (auto &transform : m_models) {
-            auto &model = transform->getGlobalMatrix();
-            models.push_back(model);
-        }
-
-        if (models.empty()) {
-            return;
-        }
-
-        // Statistics::m_drawRenderCount += models.size();
-
-        m_vertexArray->bind();
-        grr::gVertexArray::Bind(m_PBO);
-        grr::gVertexArray::UpdateResizeBuffer(models.size() * sizeof(Matrix4x4), grr::gBufferFlags_Static);
-        grr::gVertexArray::SetBufferUpdate(0, models.size() * sizeof(Matrix4x4), models.data());
-
-        m_primCount = models.size();
-
-        std::cout << "Satic intamce" << std::endl;
-
-        m_type = DrawType_Arrays_Instanced;
-    } else if (m_flags == Batching_Flags_Instanced_Dynamic) {
-        std::vector<Matrix4x4> models;
-        for (auto &transform : m_models) {
-            auto &model = transform->getGlobalMatrix();
-            models.push_back(model);
-        }
-
-        if (models.empty()) {
-            return;
-        }
-
-        // Statistics::m_drawRenderCount += models.size();
-
-        m_vertexArray->bind();
-        grr::gVertexArray::Bind(m_PBO);
-        grr::gVertexArray::UpdateResizeBuffer(models.size() * sizeof(Matrix4x4), grr::gBufferFlags_Dynamic);
-        grr::gVertexArray::SetBufferUpdate(0, models.size() * sizeof(Matrix4x4), models.data());
-
-        m_primCount = models.size();
-
-        m_type = DrawType_Arrays_Instanced;
-    } if (m_flags == Batching_Flags_Dynamic) {
-        grr::gShader::SetUniform("u_model", 1, m_models[0]->getGlobalMatrix());
-
-        m_type = DrawType_Arrays;
+    switch (m_flags) {
+    case Batching_Flags_Static_Mesh:
+        buildStaticMesh();
+        break;
+    case Batching_Flags_Instanced_Static:
+        buildStaticInstanced();
+        break;
+    case Batching_Flags_Instanced_Dynamic:
+        buildDynamicInstanced();
+        break;
+    case Batching_Flags_Dynamic:
+        buildDynamic();
+        break;
+    default:
+        throw std::runtime_error(".");
+        break;
     }
 
     Statistics::m_totalRender += m_primCount;
+}
+
+void Batching::buildDynamic() {
+    grr::gShader::SetUniform("u_model", 1, m_models[0]->getGlobalMatrix());
+
+    m_type = DrawType_Arrays;
+}
+
+void Batching::buildDynamicInstanced() {
+    std::vector<Matrix4x4> models;
+    for (auto &transform : m_models) {
+        models.push_back(transform->getGlobalMatrix());
+    }
+
+    if (models.empty()) {
+        return;
+    }
+
+    m_vertexArray->bind();
+    grr::gVertexArray::Bind(m_PBO);
+    grr::gVertexArray::UpdateResizeBuffer(models.size() * sizeof(Matrix4x4), grr::gBufferFlags_Dynamic);
+    grr::gVertexArray::SetBufferUpdate(0, models.size() * sizeof(Matrix4x4), models.data());
+
+    m_type = DrawType_Arrays_Instanced;
+
+    m_primCount = models.size();
+}
+
+void Batching::buildStaticInstanced() {
+    if (m_primCount == m_models.size()) {
+        return;
+    }
+
+    std::vector<Matrix4x4> models;
+    for (auto &transform : m_models) {
+        models.push_back(transform->getGlobalMatrix());
+    }
+
+    if (models.empty()) {
+        return;
+    }
+
+    m_vertexArray->bind();
+    grr::gVertexArray::Bind(m_PBO);
+    grr::gVertexArray::UpdateResizeBuffer(models.size() * sizeof(Matrix4x4), grr::gBufferFlags_Static);
+    grr::gVertexArray::SetBufferUpdate(0, models.size() * sizeof(Matrix4x4), models.data());
+
+    m_type = DrawType_Arrays_Instanced;
+
+    m_primCount = models.size();
+}
+
+void Batching::buildStaticMesh() {
+    if (m_primCount == m_models.size()) {
+        return;
+    }
+    Mesh mesh;
+
+    grm::size verticeCount = 0;
+    for (auto &transform : m_models) {
+        auto &model = transform->getGlobalMatrix();
+
+        for (auto &vertice : m_mesh->getVertices()) {
+            mesh.addVertex(
+                Vector3(model * Vector4(vertice.position, 1.0f)),
+                Vector3(model * Vector4(vertice.normal, 0.0f)),
+                vertice.texCoord,
+                vertice.mIdx
+            );
+        }
+
+        for (auto &indice : m_mesh->getIndices()) {
+            mesh.addIndice(verticeCount + indice);
+        }
+        verticeCount += m_mesh->getVertices().size();
+    }
+    build(&mesh);
+
+    m_type = DrawType_Arrays;
+
+    m_primCount = m_models.size();
 }
 
 void Batching::setupMaterial() {

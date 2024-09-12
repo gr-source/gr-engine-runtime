@@ -135,6 +135,26 @@ std::unordered_map<std::filesystem::path, bool> Editor::fLisDirSelected;
 
 std::filesystem::path Editor::m_currentPath;
 
+
+void Editor::PostLoadGameObject(GameObject *gameObject) {
+    if (!Camera::Current || !gameObject) {
+        return;
+    }
+    std::cout << "Ok" << std::endl;
+    
+    auto camera = Camera::Current();
+    if (!camera) {
+        return;
+    }
+    
+    auto camTransform = camera->getTransform();
+
+    auto &transform = gameObject->getTransform();
+    transform.setLocalPosition(camera->getPosition() + (camTransform->getforward() * 5.5f));
+
+    s_objectSelected = gameObject;
+}
+
 void Editor::Initialize() {
     m_viewport = ImGui::GetMainViewport();
 
@@ -143,6 +163,8 @@ void Editor::Initialize() {
     Settings::IsGameRunning = false;
 
     m_currentPath = File::GetAsset("");
+
+    // AssetsManager::LoadGameObjectF("cube.gmd", &PostLoadGameObject, "Teste");
 }
 
 void Editor::Shutdown() {
@@ -452,27 +474,27 @@ void Editor::KeyBoardUp(grm::u32 key) {
 }
 
 void Editor::LoadScript() {
-    // ScriptManager::Initialize();
+    ScriptManager::Initialize("/home/grsource/Documentos/AppProjects/gr-component/lib/libgr-component.so");
 
-    // if (ScriptManager::SetScreenSize) {
-    //     ScriptManager::SetScreenSize(Settings::ViewportSize);
-    // }
+    if (ScriptManager::SetScreenSize) {
+        ScriptManager::SetScreenSize(Settings::ViewportSize);
+    }
 
-    // RenderManager::Initialize();
+    RenderManager::Initialize();
 
-    // ScreenRender::Initialize();
+    ScreenRender::Initialize();
 
-    // Manager::Replay();
+    Manager::Replay();
 }
 
 void Editor::UnloadScript() {
-    // Manager::Stop();
+    Manager::Stop();
 
-    // RenderManager::Shutdown();
+    RenderManager::Shutdown();
 
-    // ScreenRender::Shutdown();
+    ScreenRender::Shutdown();
 
-    // ScriptManager::Shutdown();
+    ScriptManager::Shutdown();
 }
 
 // ===================================== END =========================================================
@@ -1076,28 +1098,15 @@ void Editor::RenderScene() {
 }
 
 void Editor::DropGameObjectInScene() {
-    if (!Camera::Current) {
-        return;
-    }
-    auto camera = Camera::Current();
-    if (!camera) {
-        return;
-    }
-    
     auto isOpen = ImGui::BeginDragDropTarget();
-    if (!isOpen && camera) {
+    if (!isOpen) {
         return;
     }
-
-    auto camTransform = camera->getTransform();
 
     if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(IMGUI_PAYLOAD_FILE)) {
         std::string path((char*)payload->Data, payload->DataSize);
         if (!path.empty() && std::filesystem::path(path).filename().extension() == ".gmd") {
-            s_objectSelected = AssetsManager::LoadGameObject(path);
-
-            auto &transform = s_objectSelected->getTransform();
-            transform.setLocalPosition(camera->getPosition() + (camTransform->getforward() * 5.5f));
+            AssetsManager::LoadGameObjectF(path, &Editor::PostLoadGameObject);
         }
     }
     ImGui::EndDragDropTarget();
@@ -1129,8 +1138,9 @@ void Editor::RenderFilesUI() {
         RenderTreeNodeFile(entry.path());
     }
 
-    if (pPopupFileManager && !ImGui::IsPopupOpen("##popup_dir_manager")) {
+    if (pPopupFileManager) {
         ImGui::OpenPopup("##popup_dir_manager");
+        pPopupFileManager = false;
     }
 
     PopupDirmanager();
@@ -1341,37 +1351,32 @@ void Editor::RenderTreeNodeFile(std::filesystem::path path) {
 }
 
 void Editor::PopupDirmanager() {
-    auto isOpen = true;
-    if (ImGui::BeginPopupModal("##popup_dir_manager", &isOpen)) {
-        for (auto &&[path, isSeleceted] : fLisDirSelected) {
-            ImGui::Text("Dir: %s", path.filename().string().c_str());
-        }
+    auto isOpen = ImGui::BeginPopup("##popup_dir_manager");
+    if (!isOpen) {
+        return;
+    }
+    for (auto &&[path, isSeleceted] : fLisDirSelected) {
+        ImGui::Text("Dir: %s", path.filename().string().c_str());
+    }
 
-        auto idx = 0;
+    auto idx = 0;
 
-        const char *item_list[2] {"Delete"};
+    const char *item_list[2] {"Delete"};
 
-        if (ImGui::ListBox("##DirManager", &idx, item_list, 1)) {
-            switch (idx) {
-            case 0:
-                for (auto &&[path, isSeleceted] : fLisDirSelected) {
-                    File::Delete(path);
-                }
-                break;
-            default:
-                break;
+    if (ImGui::ListBox("##DirManager", &idx, item_list, 1)) {
+        switch (idx) {
+        case 0:
+            for (auto &&[path, isSeleceted] : fLisDirSelected) {
+                File::Delete(path);
             }
-            fLisDirSelected.clear();
-            ImGui::CloseCurrentPopup();
+            break;
+        default:
+            break;
         }
-        ImGui::EndPopup();
-    }
-
-    if (!isOpen && pPopupFileManager) {
-        std::cout << "Close" << std::endl;
         fLisDirSelected.clear();
-        pPopupFileManager = false;
+        ImGui::CloseCurrentPopup();
     }
+    ImGui::EndPopup();
 }
 
 void Editor::PopupFileManager() {

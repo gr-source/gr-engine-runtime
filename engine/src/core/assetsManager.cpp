@@ -48,7 +48,7 @@ std::list<std::tuple<std::string, Animation *>> AssetsManager::s_animationFromLo
 std::mutex AssetsManager::s_animatioMutex;
 
 /***************** GameObject *****************/
-std::list<std::tuple<std::string, Transform *>> AssetsManager::s_gameObjectFromLoader;
+std::list<GameObjectHandle> AssetsManager::s_gameObjectFromLoader;
 std::mutex AssetsManager::s_gameObjectMutex;
 
 /***************** Mesh *****************/
@@ -174,6 +174,7 @@ grr::gShader *AssetsManager::LoadShader(const std::string &name, const std::stri
     return shader;
 }
 
+/*
 GameObject *AssetsManager::LoadGameObject(const std::string &path) {
     if (!File::Exists(path)) {
         Console::log(LogInfo::ERROR, "Binary do not found: " + path);
@@ -187,11 +188,12 @@ GameObject *AssetsManager::LoadGameObject(const std::string &path) {
 
     {
         std::lock_guard<std::mutex> lock(s_gameObjectMutex);
-        s_gameObjectFromLoader.emplace_back(path, &transform);
+        // s_gameObjectFromLoader.emplace_back(path, &transform);
     }
 
     return gameObject;
 }
+*/
 
 Animation *AssetsManager::LoadAnimation(const std::string &path) {
     if (!File::Exists(path)) {
@@ -529,9 +531,16 @@ void AssetsManager::ProcessAnimation() {
 }
 
 std::condition_variable cond;
-void AssetsManager::SetupGameObject(Transform *&out, gModel &model, Mesh *mesh, std::vector<gMaterial> &materials, Transform *parent) {
+void AssetsManager::SetupGameObject(GameObjectHandle &handle, Transform *&out, gModel &model, Mesh *mesh, std::vector<gMaterial> &materials, Transform *parent) {
     // transformaçoes
-    auto gameObject = &GameObject::Create(model.m_name, "unttaged");
+    GameObject *gameObject = nullptr;
+    {
+        std::lock_guard<std::mutex> lock(s_gameObjectMutex);
+        gameObject = (handle.m_gameObject != nullptr ? &GameObject::Create(model.m_name, "unttaged") : &Scene::GetCurrentScene()->CreateGameObject(model.m_name, "unttaged"));
+        if (!handle.m_gameObject) {
+            handle.m_gameObject = gameObject;
+        }
+    }
 
     auto &transform = gameObject->getTransform();
 
@@ -563,10 +572,6 @@ void AssetsManager::SetupGameObject(Transform *&out, gModel &model, Mesh *mesh, 
         meshRender.build();
     }
 
-    m_functions.erase(std::remove_if(m_functions.begin(), m_functions.end(), [&gameObject, &model](auto &func) {
-        return func(gameObject, model.m_name);
-    }), m_functions.end());
-
     {
         std::lock_guard<std::mutex> lock(s_gameObjectMutex);
         out = &transform;
@@ -574,9 +579,9 @@ void AssetsManager::SetupGameObject(Transform *&out, gModel &model, Mesh *mesh, 
     cond.notify_one();
 }
 
-void AssetsManager::doInBackgroundGameObject(const std::string &path, Transform *target) {
-    if (!Stream::open(path, std::ios_base::in | std::ios_base::binary)) {
-        return Console::log(LogInfo::ERROR, "Failed to load model. " + path);
+void AssetsManager::doInBackgroundGameObject(GameObjectHandle &handle) {
+    if (!Stream::open(handle.m_path, std::ios_base::in | std::ios_base::binary)) {
+        return Console::log(LogInfo::ERROR, "Failed to load model. " + handle.m_path);
     }
 
     gHeader pHeader;
@@ -585,21 +590,34 @@ void AssetsManager::doInBackgroundGameObject(const std::string &path, Transform 
     }
 
     if (std::string(pHeader.signature) != "grmd") {
-        return Console::log(LogInfo::ERROR, "Model invalid: " + path);
+        return Console::log(LogInfo::ERROR, "Model invalid: " + handle.m_path);
     }
 
-    ReadChildren(target);
+    ReadChildren(nullptr, handle);
 
     Stream::close();
+
+
+    std::function<void(GameObject *)> func = nullptr;
+    GameObject *gameObject = nullptr;
+
+    {
+        std::lock_guard<std::mutex> lock(s_gameObjectMutex);
+        gameObject = handle.m_gameObject;
+        func = handle.m_function;
+    }
+
+    if (func && gameObject)
+        Event::Add(func, gameObject);
 }
 
 void AssetsManager::ProcessBinary() {
     std::unique_lock<std::mutex> lock(s_gameObjectMutex);
     while (!s_gameObjectFromLoader.empty()) {
-        auto &&[path, transform] = s_gameObjectFromLoader.front();
+        auto &handle = s_gameObjectFromLoader.front();
         lock.unlock();
 
-        doInBackgroundGameObject(path, transform);
+        doInBackgroundGameObject(handle);
 
         lock.lock();
         s_gameObjectFromLoader.pop_front();
@@ -629,7 +647,7 @@ void AssetsManager::OnThread() {
     }
 }
 
-void AssetsManager::ReadChildren(Transform *parent) {
+void AssetsManager::ReadChildren(Transform *parent, GameObjectHandle &handle) {
     gModel pModel;
     if (!Stream::read(&pModel, 1)) {
         return;
@@ -735,7 +753,7 @@ void AssetsManager::ReadChildren(Transform *parent) {
 
     Transform *transform = nullptr;
 
-    Event::Add(&AssetsManager::SetupGameObject, std::ref(transform), pModel, m_mesh, m_materials, parent);
+    Event::Add(&AssetsManager::SetupGameObject, std::ref(handle), std::ref(transform), pModel, m_mesh, m_materials, parent);
 
     std::unique_lock<std::mutex> lock(s_gameObjectMutex);
     cond.wait(lock, [&transform] {
@@ -744,11 +762,27 @@ void AssetsManager::ReadChildren(Transform *parent) {
     lock.unlock();
 
     for (int i=0;i<nSize;++i) {
-        ReadChildren(transform);
+        ReadChildren(transform, handle);
     }
     
     // lock.lock();
     transform = nullptr;
+}
+
+void AssetsManager::SetGameObjectList(const std::string &path, std::function<void(GameObject *)> &func) {
+    if (!File::Exists(path)) {
+        Console::log(LogInfo::ERROR, "Binary do not found: " + path);
+        return;
+    }
+
+    auto name = File::GetFileName(path);
+
+    {
+        std::lock_guard<std::mutex> lock(s_gameObjectMutex);
+        s_gameObjectFromLoader.emplace_back(func, path);
+    }
+
+    // return gameObject;
 }
 
 grm::size AssetsManager::GetMaterialCount() {

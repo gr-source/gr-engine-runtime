@@ -164,7 +164,7 @@ void ScriptManager::RegisterApi() {
 
     // AssetManager
     ScriptLoader::replaceLibraryFunction("LoadTexture",                                                                                                reinterpret_cast<void *>(&AssetsManager::LoadTexture));
-    ScriptLoader::replaceLibraryFunction("LoadGameObject",                                                                                             reinterpret_cast<void *>(&AssetsManager::LoadGameObject));
+    // ScriptLoader::replaceLibraryFunction("LoadGameObject",                                                                                             reinterpret_cast<void *>(&AssetsManager::LoadGameObject));
     ScriptLoader::replaceLibraryFunction("_ZN13AssetsManager13AddPostLoaderESt8functionIFbPvRKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEEE", reinterpret_cast<void *>(&AssetsManager::AddPostLoader));
     ScriptLoader::replaceLibraryFunction("_ZN13AssetsManager8FindMeshERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE",                         reinterpret_cast<void *>(&AssetsManager::FindMesh));
     ScriptLoader::replaceLibraryFunction("_ZN13AssetsManager12FindMaterialERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE",                    reinterpret_cast<void *>(&AssetsManager::FindMaterial));

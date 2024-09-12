@@ -144,4 +144,6 @@ private:
     static void OnPropertyLight(Light *light);
 
     static void TextureInfo(Texture*& texture);
+    
+    static void PostLoadGameObject(GameObject *gameObject);
 };

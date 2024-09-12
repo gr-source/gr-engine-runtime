@@ -127,8 +127,6 @@ int OnApplicationInit() {
         return printf("GLEW do not created");
     }
 
-    Input::m_instance = window;
-
     Settings::StartPlayEngine();
 
     Engine::HandleEvent(Engine::GR_INITIALIZE, nullptr);

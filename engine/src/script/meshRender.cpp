@@ -13,11 +13,13 @@ std::vector<Material> &MeshRender::getMaterials() {
 
 // TODO: falta orimizar e corrigir erros do material;
 void MeshRender::build() {
+    if (!entity->hasComponent<MeshFilter>()) {
+        return;
+    }
     auto &meshFilter = entity->getComponent<MeshFilter>();
     auto mesh = meshFilter.getMesh();
     if (!mesh) {
         return;
-        // throw std::runtime_error("Mesh or shader pointer is null.");
     }
 
     auto &transform = entity->getComponent<Transform>();

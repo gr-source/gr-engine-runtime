@@ -55,12 +55,12 @@ void RenderManager::Process() {
         return;
     }
 
-    for (int i=0;i<4;i++) {
-        if (!m_shader[i] || !m_shader[i]->isValid()) {
+    for (auto &shader : m_shader) {
+        if (!shader || !shader->isValid()) {
             continue;
         }
 
-        grr::gShader::Bind(m_shader[i]);
+        grr::gShader::Bind(shader);
 
         grr::gShader::SetUniform("u_projection", 1, m_camera->getPerspesctive());
         grr::gShader::SetUniform("u_view", 1, m_camera->getViewmatrix());
