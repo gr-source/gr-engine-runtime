@@ -131,7 +131,7 @@ void Engine::OnUpdate() {
     Time time;
     time.end();
 
-    Input::Update();
+    // Input::Update();
     
     EditorController::Update();
 

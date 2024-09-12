@@ -83,6 +83,8 @@ void Batching::remove(Transform *transform, bool bDelete) {
 }
 
 void Batching::draw() {
+    grr::gShader::Bind(m_shader);
+
     compile();
     
     if (!m_vertexArray || !m_shader || !m_vertexArray->isValid() || !m_shader->isValid()) {
@@ -189,8 +191,6 @@ void Batching::build(Mesh *mesh) {
 }
 
 void Batching::compile() {
-    grr::gShader::Bind(m_shader);
-
     switch (m_flags) {
     case Batching_Flags_Static_Mesh:
         buildStaticMesh();
@@ -209,7 +209,7 @@ void Batching::compile() {
         break;
     }
 
-    Statistics::m_totalRender += m_primCount;
+    Statistics::m_totalRender += m_models.size();
 }
 
 void Batching::buildDynamic() {
@@ -286,6 +286,7 @@ void Batching::buildStaticMesh() {
         }
         verticeCount += m_mesh->getVertices().size();
     }
+    
     build(&mesh);
 
     m_type = DrawType_Arrays;
@@ -301,10 +302,6 @@ void Batching::setupMaterial() {
 
     for (auto i=0;i<materials.size();i++) {
         auto &material = materials[i];
-        if (i >= 10) {
-            continue;
-        }
-
         std::memset(idxEn, 10, 0);
 
         for (auto i=0;i<10;++i) {

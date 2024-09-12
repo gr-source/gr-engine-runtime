@@ -23,5 +23,5 @@
 
 * INI File: https://pt.wikipedia.org/wiki/INI_(formato_de_arquivo)
 
-
+* Frustum culling: https://www.maxwell.vrac.puc-rio.br/31453/31453_4.PDF
 
