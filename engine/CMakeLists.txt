@@ -13,7 +13,6 @@ set(ecs_src
     src/ecs/component.cpp
     src/ecs/manager.cpp
     src/ecs/entity.cpp
-    src/ecs/ecs.cpp
 )
 
 set(ecs_hdr
@@ -21,7 +20,6 @@ set(ecs_hdr
     src/ecs/component.h
     src/ecs/manager.hpp
     src/ecs/entity.h
-    src/ecs/ecs.hpp
 )
 
 set(octree_src

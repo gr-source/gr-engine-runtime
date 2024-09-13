@@ -44,7 +44,7 @@ public:
 
     static Component *(*CreateComponentWithName)(const std::string &name);
 
-    static Component *(*CopyComponentWithName)(const std::string &name, Component *component);
+    static Component *(*CopyComponentWithName)(const std::string &name, const Component *component);
     
 private:
     static void RegisterApi();

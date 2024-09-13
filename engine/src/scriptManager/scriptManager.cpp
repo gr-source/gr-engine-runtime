@@ -58,7 +58,7 @@ std::unordered_map<std::string, std::unique_ptr<Pool>> &(*ScriptManager::GetComp
 
 Component *(*ScriptManager::CreateComponentWithName)(const std::string &name);
 
-Component *(*ScriptManager::CopyComponentWithName)(const std::string &name, Component *component);
+Component *(*ScriptManager::CopyComponentWithName)(const std::string &name, const Component *component);
 
 void ScriptManager::Initialize(const std::string &path) {
     if (!File::Exists(path)) {

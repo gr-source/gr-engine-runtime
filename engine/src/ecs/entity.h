@@ -95,6 +95,5 @@ inline T &Entity::getComponent() {
 
 template <typename T>
 inline bool Entity::hasComponent() const {
-    auto it = m_componentPtr.find(String::RemoveNumber(typeid(T).name()));
-    return it != m_componentPtr.end();
+    return m_componentPtr.find(String::RemoveNumber(typeid(T).name())) != m_componentPtr.end();
 }

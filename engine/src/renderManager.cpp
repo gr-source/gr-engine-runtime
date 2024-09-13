@@ -2,8 +2,6 @@
 
 #include "console.hpp"
 
-#include "ecs/ecs.hpp"
-
 #include "script/meshRender.hpp"
 #include "script/meshFilter.hpp"
 #include "script/transform.hpp"

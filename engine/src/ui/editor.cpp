@@ -904,6 +904,7 @@ void Editor::DropSceneInViewport() {
     ImGui::EndDragDropTarget();
 }
 
+// TODO: falta resolver o problema da matrix inversa, para ser possivel escala, rotacionar e tranlata o filho
 Matrix4x4 InverseMatrix(const Matrix4x4 &matrix) {
     float a = matrix.m00, b = matrix.m01, c = matrix.m02, d = matrix.m03;
     float e = matrix.m10, f = matrix.m11, g = matrix.m12, h = matrix.m13;
@@ -1434,6 +1435,7 @@ void Editor::RenderConsoleUI() {
     if (!isOpen) {
         return;
     }
+    
     if (ImGui::BeginMenuBar()) {
         if (ImGui::MenuItem("Console")) {
             flags = NavegationFlags_console;
@@ -1682,7 +1684,17 @@ void Editor::PopupAddComponent() {
     }
     auto &componentPool = ScriptManager::GetComponentPool();
 
+    std::vector<std::string> m_componentName;
+
     for (auto &&[name, pool] : componentPool) {
+        m_componentName.push_back(name);
+    }
+
+    std::sort(m_componentName.begin(), m_componentName.end(), [](const auto &lhs, const auto &rhs) {
+        return lhs < rhs;
+    });
+
+    for (auto &name : m_componentName) {
         if (ImGui::SmallButton(name.c_str())) {
             Entity::addInternalComponent(s_objectSelected->getEntity(), name);
 
