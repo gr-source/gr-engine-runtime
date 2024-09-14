@@ -25,6 +25,8 @@
 #include <cassert>
 #include <future>
 
+#include <gr-render/gError.h>
+
 #define STB_IMAGE_IMPLEMENTATION
 #include "../core/stb/stb_image.h"
 
@@ -366,7 +368,6 @@ bool AssetsManager::CheckShaderError(grr::gShader *shader, const std::string &na
     while (std::getline(iss, line)) {
         Console::log(LogInfo::ERROR, line);
     }
-    grr::gError::Clean();
 
     return true;
 }

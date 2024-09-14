@@ -1,5 +1,8 @@
 #include "cubeFramebuffer.hpp"
 
+#include <gr-render/gFramebuffer.h>
+#include <gr-render/gTexture.h>
+
 CubeFramebuffer *CubeFramebuffer::s_current = nullptr;
 
 CubeFramebuffer *CubeFramebuffer::Create(const iVector2 &size) {

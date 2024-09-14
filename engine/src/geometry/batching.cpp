@@ -12,6 +12,9 @@
 
 #include <cstring>
 
+#include <gr-render/gVertexArray.h>
+#include <gr-render/gShader.h>
+
 std::unordered_map<std::string, std::unique_ptr<Batching>> Batching::m_batchedMap;
 
 std::vector<Batching *> Batching::m_batched;

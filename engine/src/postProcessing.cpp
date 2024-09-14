@@ -1,5 +1,8 @@
 #include "postProcessing.hpp"
 
+#include <gr-render/gFramebuffer.h>
+#include <gr-render/gTexture.h>
+
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "core/stb/stb_image_write.h"
 

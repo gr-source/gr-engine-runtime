@@ -6,6 +6,10 @@
 
 #include "settings.h"
 
+#include <gr-render/gVertexArray.h>
+#include <gr-render/gTexture.h>
+#include <gr-render/gError.h>
+
 grr::gVertexArray *ScreenRender::m_vertexArray = nullptr;
 
 grr::gShader *ScreenRender::m_shader = nullptr;
@@ -38,7 +42,6 @@ void ScreenRender::Initialize() {
         while (std::getline(iss, line)) {
             Console::log(LogInfo::ERROR, line);
         }
-        grr::gError::Clean();
         return;
     }
 

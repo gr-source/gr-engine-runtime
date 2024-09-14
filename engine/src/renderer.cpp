@@ -6,6 +6,9 @@
 
 #include "script/camera.hpp"
 
+#include <gr-render/gVertexArray.h>
+#include <gr-render/gShader.h>
+
 grr::gVertexArray *DebugDraw::m_primitive = nullptr;
 
 std::vector<Line> DebugDraw::m_points;

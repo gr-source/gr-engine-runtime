@@ -21,6 +21,8 @@
 
 #include <cstring>
 
+#include <gr-render/gColor.h>
+
 std::array<grr::gShader *, 4> RenderManager::m_shader = {nullptr, nullptr, nullptr, nullptr};
 
 bool RenderManager::bWireFrame = false;
@@ -95,7 +97,7 @@ void RenderManager::Renderer() {
 }
 
 void RenderManager::Shutdown() {
-    bRender = false;
+    // bRender = false;
     
     m_camera = nullptr;
     
