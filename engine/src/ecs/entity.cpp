@@ -9,11 +9,7 @@
 
 #include "core/scene.hpp"
 
-void (*Entity::Update)(Entity *);
-
-void (*Entity::Init)(Entity *);
-
-Component *(*Entity::addInternalComponent)(Entity *, const std::string &);
+// void (*Entity::Update)(Entity *);
 
 Entity::Entity(GameObject *gameObject, EntityID id) : m_gameObject(gameObject), m_entityID(id) {}
 
@@ -22,7 +18,7 @@ GameObject *Entity::getGameObject() {
 }
 
 Component *Entity::addComponent(const std::string &name) {
-    return addInternalComponent(this, name);
+    return addInternalComponent(name);
 }
 
 Component *Entity::getComponent(const std::string &name) {
@@ -38,7 +34,7 @@ bool Entity::hasComponent(const std::string &name) const {
     return it != m_componentPtr.end();
 }
 
-std::unordered_map<std::string, std::shared_ptr<Component>> &Entity::getComponents() {
+std::unordered_map<std::string, Component *> &Entity::getComponents() {
     return m_componentPtr;
 }
 
@@ -71,9 +67,9 @@ void Entity::copy(Entity *entity) {
         component->entity = this;
         component->Init();
 
-        m_componentPtr.emplace(name, std::shared_ptr<Component>(component));
+        m_componentPtr.emplace(name, component);
 
-        m_components.push_back(component);
+        m_components.emplace_back(component);
 
         if (name == "MeshRender") {
             auto meshRender = dynamic_cast<MeshRender *>(component);
@@ -137,10 +133,29 @@ void Entity::setEnable(bool value) {
     }
 }
 
-/*
+
+void Entity::init() {
+    auto pages = (m_components.size() + MAX_PAGES - 1) / MAX_PAGES;
+    for (auto i=0;i<pages;i++) {
+        auto start = i * MAX_PAGES;
+        auto end = std::min(start + MAX_PAGES, int(m_components.size()));
+
+        for (auto j=start;j<end;j++) {
+            if (m_components[j])
+                m_components[j]->Init();
+        }
+    }
+}
+
+void Entity::clear() {
+    m_componentPtr.clear();
+
+    m_components.clear();
+}
+
 Component *Entity::addInternalComponent(const std::string &name) {
     if (!ScriptManager::CreateComponentWithName) {
-        throw std::runtime_error("Failed to process Component: CreateComponentWithName is null");
+        return nullptr;
     }
 
     auto component = ScriptManager::CreateComponentWithName(name);
@@ -151,10 +166,9 @@ Component *Entity::addInternalComponent(const std::string &name) {
     component->entity = this;
     component->Init();
 
-    m_componentPtr.emplace(name, std::shared_ptr<Component>(component));
+    m_componentPtr.emplace(name, component);
 
-    m_components.push_back(component);
+    m_components.emplace_back(component);
 
     return component;
 }
-*/

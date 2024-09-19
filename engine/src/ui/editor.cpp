@@ -490,11 +490,11 @@ void Editor::LoadScript() {
 void Editor::UnloadScript() {
     Manager::Stop();
 
+    ScriptManager::Shutdown();
+
     RenderManager::Shutdown();
 
     ScreenRender::Shutdown();
-
-    ScriptManager::Shutdown();
 }
 
 // ===================================== END =========================================================
@@ -513,7 +513,7 @@ void Editor::RenderUI() {
 
     RenderPropertiUI();
 
-    if (s_io->KeyCtrl && ImGui::IsKeyReleased(ImGuiKey_S)) {
+    if (Camera::Current && s_io->KeyCtrl && ImGui::IsKeyReleased(ImGuiKey_S)) {
         for (auto &&[name, ptr] : m_scenes) {
             Event::Add([&name, &ptr]{
                 Scene::Use(&(*ptr));
@@ -680,7 +680,8 @@ void Editor::RenderHierarchi() {
         --m_currentPage;
     }
     
-    RenderPage(list, m_currentPage);
+    if (Manager::IsAvailable())
+        RenderPage(list, m_currentPage);
     
     if (list.size() >= m_currentPage && ImGui::Button("Next")) {
         ++m_currentPage;
@@ -960,7 +961,7 @@ void Editor::RenderScene() {
     cursorY += 5.0f;
 
     ImVec2 curSize = ImGui::GetContentRegionAvail();
-    if (m_lastViewportSize.x != curSize.x || m_lastViewportSize.y != curSize.y && curSize.x > 5.0f && curSize.y > 5.0f || bScriptReloaded) {
+    if (Camera::Current && (m_lastViewportSize.x != curSize.x || m_lastViewportSize.y != curSize.y && curSize.x > 5.0f && curSize.y > 5.0f || bScriptReloaded)) {
         auto &viewport = Settings::ViewportSize = {static_cast<int>(curSize.x), static_cast<int>(curSize.y)};
 
         if (ScriptManager::SetScreenSize) {
@@ -1003,9 +1004,10 @@ void Editor::RenderScene() {
                 s_objectSelected = nullptr;
             } else {
                 s_texturePlayGame = iconsUI[IconType::ICON_PLAY_GAME];
-                bScriptReloaded = true;
 
                 LoadScript();
+
+                bScriptReloaded = true;
             }
         }
     }
@@ -1685,7 +1687,6 @@ void Editor::PopupAddComponent() {
     auto &componentPool = ScriptManager::GetComponentPool();
 
     std::vector<std::string> m_componentName;
-
     for (auto &&[name, pool] : componentPool) {
         m_componentName.push_back(name);
     }
@@ -1696,7 +1697,7 @@ void Editor::PopupAddComponent() {
 
     for (auto &name : m_componentName) {
         if (ImGui::SmallButton(name.c_str())) {
-            Entity::addInternalComponent(s_objectSelected->getEntity(), name);
+            s_objectSelected->getEntity()->addComponent(name);
 
             ImGui::CloseCurrentPopup();
         }

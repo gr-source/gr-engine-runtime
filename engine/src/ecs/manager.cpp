@@ -1,5 +1,7 @@
 #include "manager.hpp"
 
+#include "script/transform.hpp"
+
 #include "gameObject.h"
 
 #include "settings.h"
@@ -47,9 +49,11 @@ void Manager::DestroyEntity(Entity *entity) {
 }
 
 void Manager::Update() {
+    /*
     if (!Manager::bPlayScript) {
         return;
     }
+    
     auto pages = (m_entity.size() + MAX_PAGES - 1) / MAX_PAGES;
     for (auto i=0;i<pages;i++) {
         auto start = i * MAX_PAGES;
@@ -63,6 +67,7 @@ void Manager::Update() {
             Entity::Update(m_entity[j]);
         }
     }
+    */
 }
 
 grm::size Manager::GetEntityCount() {
@@ -79,22 +84,54 @@ void Manager::Clear() {
     m_entityCount = 0;
 }
 
+std::list<std::tuple<EntityID, std::string>> m_vali;
+
 void Manager::Replay() {
-    auto pages = (m_entity.size() + MAX_PAGES - 1) / MAX_PAGES;
-    for (auto i=0;i<pages;i++) {
-        auto start = i * MAX_PAGES;
-        auto end = std::min(start + MAX_PAGES, static_cast<int>(m_entity.size()));
+    if (Manager::bPlayScript) {
+        return;
+    }
 
-        for (auto j=start;j<end;j++) {
-            if (!m_entity[j]->isActive() || !Entity::Update) {
-                continue;
-            }
+    for (auto &&[id, name] : m_vali) {
+        auto entity = GetEntity(id);
+        if (!entity) {
+            continue;
+        }
 
-            Entity::Init(m_entity[j]);
+        auto component = entity->addInternalComponent(name);
+        if (name == "Transform") {
+            entity->getGameObject()->setTransform(dynamic_cast<Transform *>(component));
         }
     }
+
+    m_vali.clear();
+    Manager::bPlayScript = true;
 }
 
 void Manager::Stop() {
-    Manager::bPlayScript = true;
+    for (auto &entity : m_entity) {
+        auto id = entity->getEntityID();
+
+        for (auto &&[name, ptr] : entity->getComponents()) {
+            m_vali.emplace_front(id, name);
+        }
+
+        entity->clear();
+    }
+    Manager::bPlayScript = false;
+}
+
+bool Manager::IsAvailable() {
+    return bPlayScript;
+}
+
+bool Manager::IsValid(EntityID id) {
+    return m_mapEntities.find(id) != m_mapEntities.end();
+}
+
+Entity *Manager::GetEntity(EntityID id) {
+    auto it = m_mapEntities.find(id);
+    if (it == m_mapEntities.end()) {
+        return nullptr;
+    }
+    return &(*it->second);
 }

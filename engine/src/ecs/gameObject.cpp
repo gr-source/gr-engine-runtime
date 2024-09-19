@@ -77,7 +77,7 @@ void GameObject::Destroy(GameObject *target) {
 
     auto it = s_mapObject.find(target->getName());
     if (it == s_mapObject.end()) {
-        throw std::runtime_error("Gameobject do not found: " + target->getName());
+        return;
     }
 
     auto &transform = target->getTransform();
@@ -136,6 +136,10 @@ void GameObject::setActive(bool value) {
 
 bool GameObject::isActive() const {
     return m_bActive && m_bEnable;
+}
+
+void GameObject::setTransform(Transform *transform) {
+    m_transform = transform;
 }
 
 Transform &GameObject::getTransform() {

@@ -35,15 +35,13 @@
 
 #include <filesystem>
 
-#include <gr-render/gRender.h>
-
 PostProcessing *Engine::ImGuiPostProcess = nullptr;
 
 PostProcessing *Engine::MainPostProcess = nullptr;
 
 Shadowbuffer* m_shadowbuffer = nullptr;
 
-void Engine::GRWindowResize(grm::u32 width, grm::u32 height) {
+void Engine::Reize(grm::u32 width, grm::u32 height) {
     Screen::SetResolution(width, height);
 
     iVector2 size((int) width, (int) height);
@@ -53,47 +51,7 @@ void Engine::GRWindowResize(grm::u32 width, grm::u32 height) {
     }
 }
 
-void Engine::MainLoop(std::function<void()> func) {
-    Time time;
-    while (Settings::IsEngineRunning()) {
-        Statistics::m_threadFrame = {time.getFPS(), time.start()};
-        TimeLast::deltaTime = Statistics::m_threadFrame.delta;
-
-        if (ScriptManager::SetDeltaTime) {
-            ScriptManager::SetDeltaTime(TimeLast::deltaTime);
-        }
-
-        Engine::OnUpdate();
-
-        Engine::OnRender();
-
-        time.end();
-
-        func();
-    }
-}
-
-void Engine::GRKeyboardDown(grm::u32 key) {
-    Editor::KeyBoardUp(key);
-}
-
-void Engine::GRKeyboardUp(grm::u32 key) {}
-
-void Engine::GRCursorPos(float xpos, float ypos) {}
-
-void Engine::GRCursorScrool(float xoffset, float yoffset) {
-    if (yoffset == -1.0f) {
-        EditorController::movementSpeed += 5.0f;
-    } else if (yoffset == 1.0f) {
-        EditorController::movementSpeed -= 5.0f;
-    }
-}
-
-void Engine::GRDropFunc(const char *path) {
-    Editor::DropFile(path);
-}
-
-void Engine::OnInit() {
+void Engine::Initialize() {
     Memory::Initialize();
 
     ImGuiRender::Initialize("#version 330 core");
@@ -127,7 +85,23 @@ void Engine::OnInit() {
     EditorController::Initialize();
 }
 
-void Engine::OnUpdate() {
+void Engine::Idle() {
+    static Time time;
+    Statistics::m_threadFrame = {time.getFPS(), time.start()};
+    TimeLast::deltaTime = Statistics::m_threadFrame.delta;
+
+    if (ScriptManager::SetDeltaTime) {
+        ScriptManager::SetDeltaTime(TimeLast::deltaTime);
+    }
+
+    Engine::Update();
+
+    Engine::Render();
+
+    time.end();
+}
+
+void Engine::Update() {
     Time time;
     time.end();
 
@@ -140,7 +114,7 @@ void Engine::OnUpdate() {
     Statistics::m_scriptFrame = {time.getFPS(), time.start()};
 }
 
-void Engine::OnRender() {
+void Engine::Render() {
     Event::ProcessEvent();
 
     if (ScriptManager::EventUpdate) {
@@ -163,21 +137,7 @@ void Engine::OnRender() {
     Statistics::m_guiFrame = {time.getFPS(), time.start()};
 }
 
-void Engine::OnPhysics() {
-    /*
-    PhysicsScene&  pPhysicsScene  = PhysicsScene::getInstance();
-    Time timer(60.0f);
-
-    do {
-        gameStatics.physicsMs = timer.SleepTick();
-
-        if (Settings::IsGameRunning)
-            pPhysicsScene.Simulate(gameStatics.physicsMs);
-    } while (Settings::IsEngineRunning);
-    */
-}
-
-void Engine::OnDestroy() {
+void Engine::Shutdown() {
     if (MainPostProcess) {
         PostProcessing::Shutdown(MainPostProcess);
     }
@@ -203,16 +163,50 @@ void Engine::OnDestroy() {
     Memory::Shutdown();
 }
 
+void Engine::GRKeyboardDown(grm::u32 key) {
+    Editor::KeyBoardUp(key);
+}
+
+void Engine::GRKeyboardUp(grm::u32 key) {}
+
+void Engine::GRCursorPos(float xpos, float ypos) {}
+
+void Engine::GRCursorScrool(float xoffset, float yoffset) {
+    if (yoffset == -1.0f) {
+        EditorController::movementSpeed += 5.0f;
+    } else if (yoffset == 1.0f) {
+        EditorController::movementSpeed -= 5.0f;
+    }
+}
+
+void Engine::GRDropFunc(const char *path) {
+    Editor::DropFile(path);
+}
+
+void Engine::OnPhysics() {
+    /*
+    PhysicsScene&  pPhysicsScene  = PhysicsScene::getInstance();
+    Time timer(60.0f);
+
+    do {
+        gameStatics.physicsMs = timer.SleepTick();
+
+        if (Settings::IsGameRunning)
+            pPhysicsScene.Simulate(gameStatics.physicsMs);
+    } while (Settings::IsEngineRunning);
+    */
+}
+
 void Engine::HandleEvent(EngineEvent event, const void* data) {
     switch (event) {
     case GR_INITIALIZE: {
-        OnInit();
+        Initialize();
         break;
     }
     case GR_RESIZE: {
         const grm::u32* scale = static_cast<const grm::u32*>(data);
 
-        GRWindowResize(scale[0], scale[1]);
+        Reize(scale[0], scale[1]);
         break;
     }
     case GR_KEYBOARD_DOWN: {
@@ -233,11 +227,8 @@ void Engine::HandleEvent(EngineEvent event, const void* data) {
         GRCursorScrool(offset[0], offset[1]);
         break;
     }
-    case GR_MAINLOOP: {
-        auto func = *static_cast<const std::function<void()>*>(data);
-        assert(func);
-        
-        MainLoop(func);
+    case GR_IDLE: {
+        Idle();
         break;
     }
     case GR_DROFUNC: {
@@ -245,7 +236,7 @@ void Engine::HandleEvent(EngineEvent event, const void* data) {
         break;
     }
     case GR_DESTROY: {
-        OnDestroy();
+        Shutdown();
         break;
     }
     default:

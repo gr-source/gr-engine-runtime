@@ -218,7 +218,7 @@ void Batching::compile() {
 void Batching::buildDynamic() {
     grr::gShader::SetUniform("u_model", 1, m_models[0]->getGlobalMatrix());
 
-    m_type = DrawType_Arrays;
+    m_type = bHasIndice ? DrawType_Elements : DrawType_Arrays;
 }
 
 void Batching::buildDynamicInstanced() {
@@ -292,7 +292,7 @@ void Batching::buildStaticMesh() {
     
     build(&mesh);
 
-    m_type = DrawType_Arrays;
+    m_type = bHasIndice ? DrawType_Elements : DrawType_Arrays;
 
     m_primCount = m_models.size();
 }

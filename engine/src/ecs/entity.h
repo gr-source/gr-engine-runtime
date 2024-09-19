@@ -22,12 +22,8 @@ class GameObject;
 /* Classe de entidades */
 class Entity {
 public:
-    static void (*Update)(Entity *);
+    // static void (*Update)(Entity *);
     
-    static void (*Init)(Entity *);
-
-    // static void (*SetEnable)(Entity *, bool);
-
     Entity() = delete;
     Entity(GameObject *gameObject, EntityID id);
 
@@ -46,11 +42,11 @@ public:
     
     bool hasComponent(const std::string &name) const;
 
-    static Component *(*addInternalComponent)(Entity *, const std::string &);
+    Component *addInternalComponent(const std::string &name);
     
     GameObject *getGameObject();
 
-    std::unordered_map<std::string, std::shared_ptr<Component>> &getComponents();
+    std::unordered_map<std::string, Component *> &getComponents();
 
     void copy(Entity *entity);
 
@@ -59,11 +55,15 @@ public:
     bool isActive() const;
 
     void setEnable(bool value);
+
+    void init();
+
+    void clear();
     
 private:
-    std::unordered_map<std::string, std::shared_ptr<Component>> m_componentPtr;
+    std::unordered_map<std::string, Component *> m_componentPtr;
 
-    std::vector<Component *> m_components;
+    std::vector<std::unique_ptr<Component>> m_components;
 
     GameObject *m_gameObject;
 
@@ -74,10 +74,7 @@ private:
 
 template <typename T>
 inline T &Entity::addComponent() {
-    if (!addInternalComponent) {
-        throw std::runtime_error("[ Entity - addComponent ] ScriptManager do not loaded addInternalComponent.");
-    }
-    auto component = addInternalComponent(this, String::RemoveNumber(typeid(T).name()));
+    auto component = addInternalComponent(String::RemoveNumber(typeid(T).name()));
     if (!component) {
         throw std::runtime_error("Component is null.");
     }
@@ -86,11 +83,24 @@ inline T &Entity::addComponent() {
 
 template <typename T>
 inline T &Entity::getComponent() {
-    auto component = &(*m_componentPtr[String::RemoveNumber(typeid(T).name())]);
-    if (!component) {
-        throw std::runtime_error("Component is inavlid.");
+    auto typeName = String::RemoveNumber(typeid(T).name());
+    
+    auto it = m_componentPtr.find(typeName);
+    if (it == m_componentPtr.end()) {
+        throw std::runtime_error("Component type not found.");
     }
-    return *dynamic_cast<T *>(component);
+
+    auto component = &(*it->second);
+    if (!component) {
+        throw std::runtime_error("Component pointer is null.");
+    }
+
+    auto typedComponent = dynamic_cast<T*>(component);
+    if (!typedComponent) {
+        throw std::runtime_error("Component cast failed.");
+    }
+
+    return *typedComponent;
 }
 
 template <typename T>

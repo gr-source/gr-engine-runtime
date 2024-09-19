@@ -2,8 +2,6 @@
 
 #include "default.hpp"
 
-#include "entity.h"
-
 class GameObject {
 public:
     static GameObject& Create(const std::string& name, const std::string& tag = "unttaged");
@@ -34,6 +32,8 @@ public:
     
     bool isActive() const;
 
+    void setTransform(Transform *transform);
+
     Transform &getTransform();
 
     template <typename T>
@@ -58,7 +58,7 @@ public:
     
 private:
     Transform *m_transform;
-
+    
     std::string m_name;
 
     std::string m_tag;
@@ -70,7 +70,6 @@ private:
     bool m_bEnable;
 
 protected:
-
     static std::unordered_map<std::string, std::unique_ptr<GameObject>> s_mapObject;
 
     static std::unordered_map<std::string, int> s_names;
@@ -79,6 +78,8 @@ protected:
 
     static void RemoveNameID(const std::string &name);
 };
+
+#include "entity.h"
 
 template <typename T>
 inline T &GameObject::addComponent() {

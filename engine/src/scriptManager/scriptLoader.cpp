@@ -36,6 +36,14 @@ void ScriptLoader::replaceLibraryFunction(const std::string &name, void *ptr) {
     Memory::Hook(symbol, ptr);
 }
 
+void ScriptLoader::replaceLibraryField(const std::string &name, void *ptr) {
+    auto symbol = FindSymbol(name);
+    if (!symbol) {
+        return;
+    }
+    symbol = ptr;
+}
+
 void ScriptLoader::registerFunction(const std::string &name, void **ptr) {
     auto symbol = FindSymbol(name);
     if (!symbol) {
@@ -51,12 +59,12 @@ void ScriptLoader::close() {
     for (auto &ptr : m_funcMap) {
         *ptr = nullptr;
     }
+    m_funcMap.clear();
 
     if (dlclose(m_script) != 0) {
         Console::log(LogInfo::ERROR, "Falied to close script: " + std::string(dlerror()));
     }
     m_script = nullptr;
-    m_funcMap.clear();
 }
 
 Script ScriptLoader::FindSymbol(const std::string &name) {

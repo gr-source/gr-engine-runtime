@@ -20,6 +20,8 @@ public:
 
     static void Stop();
 
+    static bool IsAvailable();
+
 private:
     static std::unordered_map<EntityID, std::unique_ptr<Entity>> m_mapEntities;
 
@@ -30,6 +32,10 @@ private:
     static grm::size m_entityCount;
 
     static bool bPlayScript;
+
+    static bool IsValid(EntityID id);
+
+    static Entity *GetEntity(EntityID id);
 };
 
 

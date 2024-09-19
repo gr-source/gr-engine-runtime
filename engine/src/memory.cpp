@@ -122,4 +122,5 @@ void Memory::Hook(void *origFunc, void *newFunc) {
     if (mprotect((void*)pageStart, pageSizeToProtect, PROT_READ | PROT_EXEC) == -1) {
         std::cout << "Failed to roll back page permissions in memory." << std::endl;
     }
+    
 }

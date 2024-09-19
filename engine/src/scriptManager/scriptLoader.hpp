@@ -13,6 +13,8 @@ public:
     static bool open(const std::string &path);
 
     static void replaceLibraryFunction(const std::string &name, void *ptr);
+    
+    static void replaceLibraryField(const std::string &name, void *ptr);
 
     static void registerFunction(const std::string &name, void **ptr);
 

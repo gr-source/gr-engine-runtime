@@ -32,26 +32,11 @@ Window CreateWindown(const char* name, int width, int height, Window share, bool
     return glfwCreateWindow(width, height, name, nullptr, share);
 }
 
-void OnDestroy() {
-    Settings::StopPlayEngine();
-
-    Engine::HandleEvent(Engine::GR_DESTROY, nullptr);
-
-    glfwTerminate(); // Error?
-    if (window != nullptr) {
-        glfwDestroyWindow(window);
-    }
-}
-
 void OnPreLoad() {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     // glfwWindowHint(GLFW_SAMPLES, 4);
-}
-
-void GLFWwindowclosefunCallback(GLFWwindow* window) {
-    Settings::StopPlayEngine();
 }
 
 void GLFWframebuffersizefunCallback(GLFWwindow* window, int width, int height) {
@@ -88,8 +73,6 @@ void GLFWdropfunCallback(GLFWwindow* window, int path_count, const char* paths[]
 }
 
 void glfwInstallCallback(Window window) {
-    glfwSetWindowCloseCallback(window, GLFWwindowclosefunCallback);
-
     glfwSetFramebufferSizeCallback(window, GLFWframebuffersizefunCallback);
 
     glfwSetKeyCallback(window, GLFWkeyfunCallback);
@@ -124,7 +107,10 @@ int OnApplicationInit() {
     glfwSetWindowPos(window, 0, 0);
 
     if (!grr::gRender::Initialize()) {
-        OnDestroy();
+        glfwTerminate(); // Error?
+        if (window != nullptr) {
+            glfwDestroyWindow(window);
+        }
         return printf("GLEW do not created");
     }
 
@@ -134,16 +120,22 @@ int OnApplicationInit() {
 
     GLFWframebuffersizefunCallback(window, SCREEN_WIDTH, SCREEN_HEIGHT);
 
-    std::function<void()> func([&]() {
+    while (Settings::IsEngineRunning() && !glfwWindowShouldClose(window)) {
         glfwSwapBuffers(window);
         glfwPollEvents();
-    });
 
-    Engine::HandleEvent(Engine::GR_MAINLOOP, &func);
+        Engine::HandleEvent(Engine::GR_IDLE, nullptr);
+    }
+    
+    Settings::StopPlayEngine();
 
-    // Engine::HandleEvent(Engine::GR_DESTROY, nullptr);
+    Engine::HandleEvent(Engine::GR_DESTROY, nullptr);
 
-    OnDestroy();
+    glfwTerminate(); // Error?
+    if (window != nullptr) {
+        glfwDestroyWindow(window);
+    }
+
     return 0;
 }
 

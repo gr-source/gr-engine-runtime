@@ -5,9 +5,13 @@
 #include <unordered_set>
 #include <algorithm>
 #include <vector>
-#include <array>
+#include <memory>
 #include <mutex>
+#include <array>
 #include <list>
+
+class Component;
+class Entity;
 
 class GameObject;
 

@@ -15,8 +15,6 @@ public:
 
     static void Shutdown();
 
-    static void doInBackground();
-
     // Main
     static std::unordered_map<int, std::pair<const std::string, const std::string>> (*GetShader)();
 

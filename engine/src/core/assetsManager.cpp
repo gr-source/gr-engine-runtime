@@ -643,8 +643,6 @@ void AssetsManager::OnThread() {
         ProcessAnimation();
     
         ProcessBinary();
-
-        ScriptManager::doInBackground();
     }
 }
 

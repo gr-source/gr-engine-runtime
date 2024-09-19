@@ -209,6 +209,7 @@ void Filmbox::inserMesh(FbxMesh *mesh, aiMesh *mMesh) {
         }
     }
 
+    /*
     for (auto i=0;i<mMesh->mNumFaces;++i) {
         auto &mFace = mMesh->mFaces[i];
 
@@ -226,6 +227,7 @@ void Filmbox::inserMesh(FbxMesh *mesh, aiMesh *mMesh) {
         //     mFace.mIndices[2]
         // );
     }
+    */
 
     if (mMesh->HasBones()) {
         for (auto i=0;i<mMesh->mNumBones;++i) {

@@ -14,6 +14,8 @@
 #include "script/transform.hpp"
 #include "script/camera.hpp"
 
+#include "ecs/entity.h"
+
 Scene *Scene::m_current = nullptr;
 
 Scene *Scene::GetCurrentScene() {
@@ -39,8 +41,12 @@ Scene *Scene::Create(const std::string &name) {
 
     Scene::Use(scene);
 
-    auto &camera = scene->CreateGameObject("MainCamera");
-    camera.addComponent<Camera>();
+    try {
+        auto &camera = scene->CreateGameObject("MainCamera");
+        camera.addComponent<Camera>();
+    } catch (std::runtime_error e) {
+        std::cout << "Falah ao adiconar uma camera na cena: " << e.what() << std::endl;
+    }
     
     return scene;
 }

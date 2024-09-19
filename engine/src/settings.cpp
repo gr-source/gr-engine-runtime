@@ -1,6 +1,6 @@
 #include "settings.h"
 
-std::atomic<bool> Settings::m_bEngineRunning = false;
+std::atomic<bool> Settings::m_bEngineRunning = true;
 
 std::atomic<bool> Settings::IsGameRunning = false;
 
