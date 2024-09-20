@@ -122,8 +122,8 @@ void ScriptManager::RegisterApi() {
     ScriptLoader::registerFunction("GetListLight", reinterpret_cast<void **>(&GetListLight));
 
     // Camera functions
-    ScriptLoader::registerFunction("MainCamera",      reinterpret_cast<void **>(&Camera::Main));
-    ScriptLoader::registerFunction("CurrentCamera",   reinterpret_cast<void **>(&Camera::Current));
+    ScriptLoader::registerFunction("_ZN6Camera4MainEv",    reinterpret_cast<void **>(&Camera::Main));
+    ScriptLoader::registerFunction("_ZN6Camera7CurrentEv", reinterpret_cast<void **>(&Camera::Current));
     ScriptLoader::registerFunction("GetAllCamera",    reinterpret_cast<void **>(&Camera::GetCameras));
     ScriptLoader::registerFunction("SetEnableCamera", reinterpret_cast<void **>(&Camera::SetEnable));
 
