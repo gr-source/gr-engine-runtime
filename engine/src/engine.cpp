@@ -105,8 +105,6 @@ void Engine::Update() {
     Time time;
     time.end();
 
-    // Input::Update();
-    
     EditorController::Update();
 
     Manager::Update();

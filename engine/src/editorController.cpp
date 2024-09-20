@@ -10,6 +10,7 @@
 #include "timer.h"
 
 Camera *EditorController::m_mainCamera = nullptr;
+ImGuiIO *EditorController::m_io = nullptr;
 
 float EditorController::movementSpeed = 30.0f;
 float EditorController::mouseSensitivity = 0.1f;
@@ -19,18 +20,21 @@ Vector2 EditorController::elapsed = {0.0f, 0.0f};
 
 void EditorController::Initialize() {
     lastMousePos = Vector2::zero;
+
+    m_io = ImGuiRender::GetIO();
+    if (!m_io) {
+        throw std::runtime_error("IO pointer do not is valid.");
+    }
 }
 
 void EditorController::Update() {
-    static ImGuiIO& io = ImGui::GetIO();
-
     if (!Camera::Main && !Camera::Current) {
         return;
     }
 
     m_mainCamera = Camera::Main();
 
-    if (!m_mainCamera || m_mainCamera != Camera::Current() || !io.MouseDrawCursor || Settings::IsGameRunning) {
+    if (!m_mainCamera || m_mainCamera != Camera::Current() || !m_io->MouseDrawCursor || Settings::IsGameRunning) {
         return;
     }
 

@@ -16,7 +16,9 @@ void MeshRender::build() {
     if (!entity->hasComponent<MeshFilter>()) {
         return;
     }
+    
     auto &meshFilter = entity->getComponent<MeshFilter>();
+    
     auto mesh = meshFilter.getMesh();
     if (!mesh) {
         return;
@@ -28,7 +30,7 @@ void MeshRender::build() {
         m_batched->remove(&entity->getComponent<Transform>());
     }
 
-    if (flags == Batching::Batching_Flags_Dynamic) {
+    if (m_flags == Batching::Batching_Flags_Dynamic) {
         auto shader = AssetsManager::FindShader("dynamic_one_model");
         if (!shader) {
             throw std::runtime_error("Shader do not found.");
@@ -66,7 +68,7 @@ void MeshRender::build() {
     }
 
     std::string name;
-    switch (flags) {
+    switch (m_flags) {
     case Batching::Batching_Flags_Instanced_Static:
     case Batching::Batching_Flags_Instanced_Dynamic:
         name = "dynamic_multi_model";
@@ -84,7 +86,7 @@ void MeshRender::build() {
         throw std::runtime_error("Shader do not found.");
     }
 
-    m_batched = &Batching::Add(mName, material, mesh, shader, flags);
+    m_batched = &Batching::Add(mName, material, mesh, shader, m_flags);
     m_batched->insert(&transform);
 }
 
@@ -93,7 +95,7 @@ Batching *MeshRender::getBatchGroup() {
 }
 
 void MeshRender::setMeshOptimize(int value) {
-    flags = value;
+    m_flags = value;
 
     build();
 
@@ -108,3 +110,11 @@ void MeshRender::setMeshOptimize(int value) {
         meshRender.setMeshOptimize(value);
     }
 }
+
+const int &MeshRender::getFlags() const {
+    return m_flags;
+}
+
+
+
+

@@ -49,7 +49,6 @@ void Manager::DestroyEntity(Entity *entity) {
 }
 
 void Manager::Update() {
-    /*
     if (!Manager::bPlayScript) {
         return;
     }
@@ -60,14 +59,13 @@ void Manager::Update() {
         auto end = std::min(start + MAX_PAGES, static_cast<int>(m_entity.size()));
 
         for (auto j=start;j<end;j++) {
-            if (!m_entity[j]->isActive() || !Entity::Update) {
+            if (!m_entity[j]->isActive()) {
                 continue;
             }
 
-            Entity::Update(m_entity[j]);
+            m_entity[j]->update();
         }
     }
-    */
 }
 
 grm::size Manager::GetEntityCount() {

@@ -2,8 +2,6 @@
 
 #include "ui/editor.hpp"
 
-#include <iostream>
-
 class Engine {
 public:
     enum EngineEvent {
@@ -47,12 +45,9 @@ protected:
 
     static void OnPhysics();
 
-
     static void RenderScene();
     
-    #if !IS_GAME
     static void UIFramebuffer();
-    #endif
     
     static void SetupEnable();
 };

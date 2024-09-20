@@ -1749,7 +1749,7 @@ void Editor::OnPropertyMeshRender(MeshRender *meshRender) {
         return;
     }
 
-    auto elem = meshRender->flags;
+    auto elem = meshRender->getFlags();
 
     // int  = Batching::Batching_Flags_Dynamic;
         

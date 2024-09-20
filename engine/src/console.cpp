@@ -19,6 +19,10 @@ void Console::log(LogInfo::LogType type, const std::string &msg) {
 }
 
 std::list<LogInfo> Console::GetListLogs() {
-    std::lock_guard<std::mutex> lock(m_mutex);
-    return s_logs;
+    std::list<LogInfo> logs;
+    {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        logs = s_logs;
+    }
+    return logs;
 }

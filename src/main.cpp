@@ -2,7 +2,6 @@
 #include <engine.h>
 #include <input.h>
 
-
 #include <linux/input-event-codes.h>
 
 #include <GLFW/glfw3.h>
@@ -18,16 +17,12 @@ std::unordered_map<int, grm::u32> m_keyMap = {
     {GLFW_KEY_D, KEY_D}
 };
 
-typedef GLFWwindow* Window;
+typedef GLFWwindow *Window;
 
 Window window = nullptr;
 
 Window CreateWindown(const char* name, int width, int height, Window share, bool isVisible) {
-    if (isVisible) {
-        glfwWindowHint(GLFW_VISIBLE, GL_TRUE);
-    } else {
-        glfwWindowHint(GLFW_VISIBLE, GL_FALSE);
-    }
+    glfwWindowHint(GLFW_VISIBLE, isVisible ? GL_TRUE : GL_FALSE);
 
     return glfwCreateWindow(width, height, name, nullptr, share);
 }

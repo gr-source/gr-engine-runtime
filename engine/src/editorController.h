@@ -15,8 +15,10 @@ public:
     static void Update();
 
     static void updateCursor();
-private:
 
+private:
+    static ImGuiIO *m_io;
+    
     static Camera *m_mainCamera;
 
     static Vector2 lastMousePos;

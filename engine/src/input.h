@@ -46,6 +46,7 @@ public:
     static void Initialize();
 
     static void Update();
+    
 private:
     struct MouseData {
         Vector2 pos;

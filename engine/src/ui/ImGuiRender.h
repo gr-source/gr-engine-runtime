@@ -19,8 +19,10 @@ public:
 
     static void End();
 
+    static ImGuiIO *GetIO();
+
 protected:
-    static ImGuiIO* s_io;
+    static ImGuiIO *m_io;
 };
 
 

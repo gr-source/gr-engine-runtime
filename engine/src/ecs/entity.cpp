@@ -133,6 +133,18 @@ void Entity::setEnable(bool value) {
     }
 }
 
+void Entity::update() {
+    auto pages = (m_components.size() + MAX_PAGES - 1) / MAX_PAGES;
+    for (auto i=0;i<pages;i++) {
+        auto start = i * MAX_PAGES;
+        auto end = std::min(start + MAX_PAGES, int(m_components.size()));
+
+        for (auto j=start;j<end;j++) {
+            m_components[j]->Update();
+        }
+    }
+}
+
 void Entity::init() {
     auto pages = (m_components.size() + MAX_PAGES - 1) / MAX_PAGES;
     for (auto i=0;i<pages;i++) {

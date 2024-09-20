@@ -56,6 +56,8 @@ public:
 
     void setEnable(bool value);
 
+    void update();
+
     void init();
 
     void clear();

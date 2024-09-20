@@ -5,7 +5,7 @@
 #include <GLFW/glfw3.h>
 
 #include <iostream>
-ImGuiIO *ImGuiRender::s_io = nullptr;
+ImGuiIO *ImGuiRender::m_io = nullptr;
 
 void ImGuiRender::Initialize(const char* openglVersion) {
     IMGUI_CHECKVERSION();
@@ -17,9 +17,9 @@ void ImGuiRender::Initialize(const char* openglVersion) {
     ImGui_ImplGlfw_InitForOpenGL(glfwGetCurrentContext(), true);
     ImGui_ImplOpenGL3_Init(openglVersion);
 
-    s_io = &ImGui::GetIO();
-    s_io->ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-    s_io->Fonts->AddFontFromFileTTF("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 16.5f);
+    m_io = &ImGui::GetIO();
+    m_io->ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+    m_io->Fonts->AddFontFromFileTTF("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 16.5f);
 }
 
 void ImGuiRender::Shutdown() {
@@ -95,7 +95,7 @@ void ImGuiRender::PushStyle(ImGuiStyle& dst) {
 }
 
 void ImGuiRender::AddFont(const char* path) {
-    s_io->Fonts->AddFontFromFileTTF(path, 16.5f);
+    m_io->Fonts->AddFontFromFileTTF(path, 16.5f);
 }
 
 void ImGuiRender::Begin() {
@@ -109,6 +109,9 @@ void ImGuiRender::End() {
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
 
+ImGuiIO *ImGuiRender::GetIO() {
+    return m_io;
+}
 
 
 

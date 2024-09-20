@@ -22,14 +22,14 @@ public:
 
     void setMeshOptimize(int value);
 
+    const int &getFlags() const;
+
 private:
     std::vector<Material> m_materials;
 
-    int flags;
+    int m_flags;
 
     Batching *m_batched;
-
-    friend class Editor;
 };
 
 template <typename... Args>
