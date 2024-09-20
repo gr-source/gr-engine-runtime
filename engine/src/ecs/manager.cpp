@@ -84,20 +84,16 @@ void Manager::Clear() {
     m_entityCount = 0;
 }
 
-std::list<std::tuple<EntityID, std::string>> m_vali;
+std::list<std::tuple<Entity *, std::string>> m_vali;
 
 void Manager::Replay() {
     if (Manager::bPlayScript) {
         return;
     }
 
-    for (auto &&[id, name] : m_vali) {
-        auto entity = GetEntity(id);
-        if (!entity) {
-            continue;
-        }
-
+    for (auto &&[entity, name] : m_vali) {
         auto component = entity->addInternalComponent(name);
+        
         if (name == "Transform") {
             entity->getGameObject()->setTransform(dynamic_cast<Transform *>(component));
         }
@@ -109,10 +105,8 @@ void Manager::Replay() {
 
 void Manager::Stop() {
     for (auto &entity : m_entity) {
-        auto id = entity->getEntityID();
-
         for (auto &&[name, ptr] : entity->getComponents()) {
-            m_vali.emplace_front(id, name);
+            m_vali.emplace_front(entity, name);
         }
 
         entity->clear();

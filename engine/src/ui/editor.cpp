@@ -643,7 +643,7 @@ void Editor::RenderScenesUI() {
     }
 
     if (ImGui::IsKeyReleased(ImGuiKey_Delete) && s_objectSelected) {
-        Event::Add(&Scene::Delete, Scene::GetCurrentScene(), s_objectSelected);
+        Event::Add(&Scene::Delete, s_objectSelected);
         s_objectSelected = nullptr;
     }
     
@@ -796,7 +796,7 @@ void Editor::PopupOptionsGameObject() {
         auto id = 0;
         if (ImGui::ListBox("##ListBoxOptionsGame", &id, item_name, 2)) {
             if (id == 0 && s_objectSelected) {
-                Event::Add(&Scene::Delete, Scene::GetCurrentScene(), s_objectSelected);
+                Event::Add(&Scene::Delete, s_objectSelected);
                 s_objectSelected = nullptr;
             } else if (id == 1 && s_objectSelected) {
                 isOpenRename = true;

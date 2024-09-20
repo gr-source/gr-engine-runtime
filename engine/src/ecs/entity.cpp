@@ -133,7 +133,6 @@ void Entity::setEnable(bool value) {
     }
 }
 
-
 void Entity::init() {
     auto pages = (m_components.size() + MAX_PAGES - 1) / MAX_PAGES;
     for (auto i=0;i<pages;i++) {

@@ -33,7 +33,7 @@ public:
     
     static void Remove(GameObject *gameObject);
 
-    void Delete(GameObject *gameObject);
+    static void Delete(GameObject *gameObject);
 
     void Clear();
 

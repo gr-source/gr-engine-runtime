@@ -90,12 +90,12 @@ inline T &Entity::getComponent() {
         throw std::runtime_error("Component type not found.");
     }
 
-    auto component = &(*it->second);
+    auto component = it->second;
     if (!component) {
         throw std::runtime_error("Component pointer is null.");
     }
 
-    auto typedComponent = dynamic_cast<T*>(component);
+    auto typedComponent = dynamic_cast<T *>(component);
     if (!typedComponent) {
         throw std::runtime_error("Component cast failed.");
     }
