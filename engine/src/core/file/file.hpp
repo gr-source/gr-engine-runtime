@@ -11,6 +11,10 @@ public:
 
     static void SetConfigPath(const std::string &path);
 
+    static void SetCachePath(const std::string &path);
+
+    static std::string GetCacheFile(const std::string &path);
+
     static std::string GetFileContent(const std::string &path);
 
     static bool Exists(const std::string& path);
@@ -37,4 +41,6 @@ private:
     static std::string m_currentPath;
 
     static std::string m_configPath;
+
+    static std::string m_cachePath;
 };

@@ -24,8 +24,6 @@ void MeshRender::build() {
         return;
     }
 
-    auto &transform = entity->getComponent<Transform>();
-
     if (m_batched) {
         m_batched->remove(&entity->getComponent<Transform>());
     }
@@ -45,10 +43,12 @@ void MeshRender::build() {
         if (!material) {
             material = &AssetsManager::AddMaterial(mName, m_materials);
         }
-        m_materials = *material;
 
-        m_batched = &Batching::Add(getGameObject()->getName(), &m_materials, mesh, shader, Batching::Batching_Flags_Dynamic);
-        m_batched->insert(&transform);
+        m_batched = Batching::Find(getGameObject()->getName());
+        if (!m_batched) {
+            m_batched = &Batching::Add(getGameObject()->getName(), material, mesh, shader, Batching::Batching_Flags_Dynamic);
+        }
+        m_batched->insert(m_transform);
         return;
     }
 
@@ -59,7 +59,7 @@ void MeshRender::build() {
 
     m_batched = Batching::Find(mName);
     if (m_batched) {
-        return m_batched->insert(&transform);
+        return m_batched->insert(m_transform);
     }
 
     auto material = AssetsManager::FindMaterial(mName);
@@ -87,7 +87,7 @@ void MeshRender::build() {
     }
 
     m_batched = &Batching::Add(mName, material, mesh, shader, m_flags);
-    m_batched->insert(&transform);
+    m_batched->insert(m_transform);
 }
 
 Batching *MeshRender::getBatchGroup() {

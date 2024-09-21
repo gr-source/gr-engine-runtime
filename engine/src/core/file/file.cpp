@@ -7,6 +7,8 @@ std::string File::m_currentPath;
 
 std::string File::m_configPath;
 
+std::string File::m_cachePath;
+
 void File::SetCurrentProject(const std::string &path) {
     m_currentPath = path;
 }
@@ -17,6 +19,14 @@ const std::string &File::GetCurrentProject() {
 
 void File::SetConfigPath(const std::string &path) {
     m_configPath = path;
+}
+
+void File::SetCachePath(const std::string &path) {
+    m_cachePath = path;
+}
+
+std::string File::GetCacheFile(const std::string &path) {
+    return m_cachePath + path;
 }
 
 std::string File::GetFileContent(const std::string &path) {

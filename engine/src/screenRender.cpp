@@ -10,6 +10,8 @@
 #include <gr-render/gTexture.h>
 #include <gr-render/gError.h>
 
+#include "core/assetsManager.hpp"
+
 grr::gVertexArray *ScreenRender::m_vertexArray = nullptr;
 
 grr::gShader *ScreenRender::m_shader = nullptr;
@@ -17,48 +19,23 @@ grr::gShader *ScreenRender::m_shader = nullptr;
 grm::u32 ScreenRender::m_vbo = 0;
 
 void ScreenRender::Initialize() {
-    if (!ScriptManager::GetShader) {
-        Console::log(LogInfo::ERROR, "Falied to get script function. [ ScriptManager::GetShader ]");
-        return;
-    }
-    
-    auto shaders = ScriptManager::GetShader();
-    auto it = shaders.find(1);
-    if (it == shaders.end()) {
-        return Console::log(LogInfo::ERROR, "Falied to find postprocess shader 'id=1'");
-    }
-    auto &&[frag, vert] = (*it).second;
-
-    auto dataF = frag.c_str();
-    auto dataV = vert.c_str();
-
-    Console::log(LogInfo::INFO, "Postprocess loading shader...");
-
-    m_shader = grr::gShader::Create(&dataF, &dataV);
-    if (!m_shader || !m_shader->isValid()) {
-        std::stringstream iss(grr::gError::GetError());
-
-        std::string line;
-        while (std::getline(iss, line)) {
-            Console::log(LogInfo::ERROR, line);
-        }
+    if (!ScriptManager::GetShaders) {
+        Console::log(LogInfo::ERROR, "Falied to get script function. [ ScriptManager::GetShaders ]");
         return;
     }
 
-    grr::gShader::Bind(m_shader);
+    AssetsManager::AddPostLoader(&ScreenRender::RegisterShader);
 
-    grr::gShader::Register("u_texture");
-    grr::gShader::Unbind();
+    m_shader = ScriptManager::GetShaders()[4];
+    if (!m_shader) {
+        Console::log(LogInfo::ERROR, "Shader points is not valid.");
+        return;
+    }
 
     CreateMesh();
 }
 
 void ScreenRender::Shutdown() {
-    if (m_shader) {
-        delete m_shader;
-    }
-    m_shader = nullptr;
-
     if (m_vertexArray && !Settings::IsEngineRunning()) {
         m_vertexArray->destroy();
         m_vertexArray = nullptr;
@@ -119,9 +96,13 @@ void ScreenRender::CreateMesh() {
     m_vertexArray->unbind();
 }
 
+bool ScreenRender::RegisterShader(void *ptr, const std::string &name) {
+    if (name != "screen") {
+        return false;
+    }
+    grr::gShader::Bind(static_cast<grr::gShader *>(ptr));
 
-
-
-
-
-
+    grr::gShader::Register("u_texture");
+    grr::gShader::Unbind();
+    return true;
+}

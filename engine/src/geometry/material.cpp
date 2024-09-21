@@ -36,6 +36,9 @@ void Material::setTexture(int idx, grr::gTexture *texture) {
 }
 
 grr::gTexture *Material::getTexture(int idx) const {
+    if (idx >= m_texture.size()) {
+        throw std::runtime_error("Id id not avaliable:" + std::to_string(idx));
+    }
     return m_texture[idx];
 }
 

@@ -18,6 +18,8 @@ private:
     static grm::u32 m_vbo;
 
     static void CreateMesh();
+
+    static bool RegisterShader(void *ptr, const std::string &name);
 };
 
 

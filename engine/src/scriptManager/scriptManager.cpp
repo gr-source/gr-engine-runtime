@@ -35,7 +35,7 @@ void (*ScriptManager::Update)();
 void (*ScriptManager::Destroy)();
 void (*ScriptManager::SetDeltaTime)(float);
 
-std::unordered_map<int, std::pair<const std::string, const std::string>> (*ScriptManager::GetShader)() = nullptr;
+// std::unordered_map<int, std::pair<const std::string, const std::string>> (*ScriptManager::GetShader)() = nullptr;
 
 std::unordered_map<int, grr::gShader *> (*ScriptManager::GetShaders)();
 
@@ -110,7 +110,7 @@ void ScriptManager::RegisterApi() {
     ScriptLoader::registerFunction("SetDeltaTime", reinterpret_cast<void **>(&SetDeltaTime));
 
     // shader functions
-    ScriptLoader::registerFunction("GetShader",  reinterpret_cast<void **>(&GetShader));
+    // ScriptLoader::registerFunction("GetShader",  reinterpret_cast<void **>(&GetShader));
     ScriptLoader::registerFunction("GetShaders", reinterpret_cast<void **>(&GetShaders));
 
     // entity functions

@@ -258,8 +258,12 @@ void ProjectMenu::LoadResources() {
 
 void ProjectMenu::LoadConfig() {
     auto config = File::getHomeDirectory() + "/.config/gr-engine";
+    auto cache = File::getHomeDirectory() + "/.cache/gr-engine";
 
     File::SetConfigPath(config);
+    File::SetCachePath(cache);
+
+    if (File::CreateDirectories(cache)) {}
 
     if (File::CreateDirectories(config)) {
         DownloadConfig(config);

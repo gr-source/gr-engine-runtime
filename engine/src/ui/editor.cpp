@@ -135,7 +135,6 @@ std::unordered_map<std::filesystem::path, bool> Editor::fLisDirSelected;
 
 std::filesystem::path Editor::m_currentPath;
 
-
 void Editor::PostLoadGameObject(GameObject *gameObject) {
     if (!Camera::Current || !gameObject) {
         return;
@@ -570,6 +569,16 @@ void Editor::RenderDocking() {
         if (ImGui::BeginMenu("Project")) {
             if (ImGui::MenuItem("Close")) {
                 CloseProject();
+            }
+            ImGui::EndMenu();
+        }
+        if (ImGui::BeginMenu("View")) {
+            if (ImGui::MenuItem("Propriedades")) {
+            }
+            ImGui::EndMenu();
+        }
+        if (ImGui::BeginMenu("build")) {
+            if (ImGui::MenuItem("compile")) {
             }
             ImGui::EndMenu();
         }
@@ -1095,7 +1104,7 @@ void Editor::RenderScene() {
 
     ImGui::PopStyleColor();
 
-    if (s_objectSelected && ImGui::IsWindowFocused() && s_io->KeyShift && ImGui::IsKeyReleased(ImGuiKey_D)) {
+    if (s_objectSelected && !s_io->MouseDrawCursor && ImGui::IsWindowFocused() && s_io->KeyShift && ImGui::IsKeyReleased(ImGuiKey_D)) {
         s_objectSelected = &GameObject::Instantiate(s_objectSelected);
     }
 }

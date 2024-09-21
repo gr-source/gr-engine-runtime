@@ -163,8 +163,5 @@ inline Mesh *AssetsManager::AddMesh(const std::string &key, Args &&...args)
 template <typename... Args>
 inline std::vector<Material> &AssetsManager::AddMaterial(const std::string &name, Args &&...args) {
     auto &&[it, added] = m_materialMap.emplace(name, std::forward<Args>(args)...);
-    if (!added) {
-        // thw
-    }
     return it->second;
 }

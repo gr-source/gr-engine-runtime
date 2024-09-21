@@ -25,7 +25,7 @@ float Time::start() {
 }
 
 void Time::end() {
-    // m_end = std::chrono::system_clock::now();
+    // m_end = m_start;//std::chrono::system_clock::now();
 }
 
 #include <iostream>

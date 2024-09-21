@@ -6,7 +6,8 @@
 
 #include "settings.h"
 
-#include <algorithm>
+#include "core/file/stream.hpp"
+#include "core/file/file.hpp"
 
 std::unordered_map<EntityID, std::unique_ptr<Entity>> Manager::m_mapEntities;
 
@@ -95,6 +96,10 @@ void Manager::Replay() {
         if (name == "Transform") {
             entity->getGameObject()->setTransform(dynamic_cast<Transform *>(component));
         }
+
+        Stream::open(File::GetCacheFile("/" + name + "_" + std::to_string(entity->getEntityID())), std::ios_base::in | std::ios_base::binary);
+        component->Deserialize(Stream::GetStream());
+        Stream::close();
     }
 
     m_vali.clear();
@@ -105,6 +110,10 @@ void Manager::Stop() {
     for (auto &entity : m_entity) {
         for (auto &&[name, ptr] : entity->getComponents()) {
             m_vali.emplace_front(entity, name);
+
+            Stream::open(File::GetCacheFile("/" + name + "_" + std::to_string(entity->getEntityID())), std::ios_base::out | std::ios_base::binary);
+            ptr->Serialize(Stream::GetStream());
+            Stream::close();
         }
 
         entity->clear();

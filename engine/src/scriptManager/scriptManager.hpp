@@ -16,7 +16,7 @@ public:
     static void Shutdown();
 
     // Main
-    static std::unordered_map<int, std::pair<const std::string, const std::string>> (*GetShader)();
+    // static std::unordered_map<int, std::pair<const std::string, const std::string>> (*GetShader)();
 
     static std::unordered_map<int, grr::gShader *> (*GetShaders)();
 

@@ -30,6 +30,8 @@ private:
     int m_flags;
 
     Batching *m_batched;
+
+    Transform *m_transform;
 };
 
 template <typename... Args>
