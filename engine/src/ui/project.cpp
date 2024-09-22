@@ -2,6 +2,10 @@
 
 Project *Project::m_current = nullptr;
 
+void Project::SetCurrent(Project *project) {
+    m_current = project;
+}
+
 Project *Project::GetCurrent() {
     return m_current;
 }
@@ -16,6 +20,3 @@ const std::string &Project::getName() const {
     return m_name;
 }
 
-void Project::open() {
-    m_current = this;
-}

@@ -119,12 +119,21 @@ set(core_file_hdr
     src/core/file/file.hpp
 )
 
+set(core_cmd_hdr
+    src/core/cmd/cmd.hpp
+)
+
+set(core_cmd_src
+    src/core/cmd/cmd.cpp
+)
+
 set(engine_src
     ${core_src}
     ${guizmo_src}
     ${octree_src}
     ${filmbox_src}
     ${core_ecs_src}
+    ${core_cmd_src}
     ${animation_src}
     ${core_file_src}
     ${simplexNoise_src}
@@ -180,6 +189,7 @@ set(engine_hdr
     ${octree_hdr}
     ${filmbox_hdr}
     ${core_ecs_hdr}
+    ${core_cmd_hdr}
     ${animation_hdr}
     ${core_file_hdr}
     ${scriptManager_hdr}

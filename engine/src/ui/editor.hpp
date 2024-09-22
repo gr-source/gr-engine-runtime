@@ -58,6 +58,8 @@ private:
 
     static bool pPopupFileManager;
 
+    static bool bBuildDock;
+
     static ImVec4 FPSColor;
 
     static ImVec2 m_lastViewportSize;
@@ -71,6 +73,8 @@ private:
     static std::unordered_map<std::filesystem::path, bool> fLisDirSelected;
 
     static std::filesystem::path m_currentPath;
+
+    static void BuildDock(ImGuiID dockspace_id, ImGuiDockNodeFlags dockspace_flags);
 
     static void PopupComponentMenu();
 

@@ -52,6 +52,9 @@ void Skybox::Shutdown() {
     if (m_ebo) {
         grr::gVertexArray::DeleteBuffer(m_ebo);
     }
+    m_vertexArray = nullptr;
+    m_vbo = 0;
+    m_ebo = 0;
 }
 
 void Skybox::Renderer() {

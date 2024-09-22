@@ -25,11 +25,13 @@ public:
 
     static bool bChanged;
 
+    static void Shutdown();
+
 private:
-    static std::list<LogInfo> s_logs;
+    static std::list<LogInfo> m_logs;
 
     static std::mutex m_mutex;
 
-    static int s_maxLog;
+    static int m_maxLog;
 };
 

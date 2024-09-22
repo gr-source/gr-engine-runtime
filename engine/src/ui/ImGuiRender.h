@@ -15,6 +15,8 @@ public:
 
     static void AddFont(const char* path);
 
+    static void SetConfigPath(const char* path);
+
     static void Begin();
 
     static void End();

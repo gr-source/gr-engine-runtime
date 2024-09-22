@@ -119,6 +119,8 @@ bool Editor::bOpenPopupOptionGameObject = false;
 
 bool Editor::pPopupFileManager = false;
 
+bool Editor::bBuildDock = false;
+
 ImVec4 Editor::FPSColor = {255, 255, 255, 255};
 
 ImVec2 Editor::m_lastViewportSize = {0.0f, 0.0f};
@@ -154,6 +156,8 @@ void Editor::PostLoadGameObject(GameObject *gameObject) {
     s_objectSelected = gameObject;
 }
 
+#include "core/cmd/cmd.hpp"
+
 void Editor::Initialize() {
     m_viewport = ImGui::GetMainViewport();
 
@@ -163,11 +167,33 @@ void Editor::Initialize() {
 
     m_currentPath = File::GetAsset("");
 
-    // AssetsManager::LoadGameObjectF("cube.gmd", &PostLoadGameObject, "Teste");
+    bBuildDock = File::Exists("imgui.ini");
+
+    LoadReources();
+
+    ScriptManager::Initialize("/home/grsource/Documentos/AppProjects/gr-component/lib/libgr-component.so");
+
+    RenderManager::Initialize();
+
+    ScreenRender::Initialize();
+
+    Skybox::Initialize();
 }
 
 void Editor::Shutdown() {
     m_scenes.clear();
+
+    RenderManager::Shutdown();
+
+    Skybox::Shutdown();
+
+    ScreenRender::Shutdown();
+
+    ScriptManager::Shutdown();
+
+    Console::Shutdown();
+
+    iconsUI.clear();
 }
 
 // ===================================== WARNING =========================================================
@@ -511,6 +537,7 @@ void Editor::RenderUI() {
     RenderConsoleUI();
 
     RenderPropertiUI();
+    /*
 
     if (Camera::Current && s_io->KeyCtrl && ImGui::IsKeyReleased(ImGuiKey_S)) {
         for (auto &&[name, ptr] : m_scenes) {
@@ -544,6 +571,30 @@ void Editor::RenderUI() {
     }
 
     PopupComponentMenu();
+    */
+}
+
+void Editor::BuildDock(ImGuiID dockspace_id, ImGuiDockNodeFlags dockspace_flags) {
+    ImGui::DockBuilderRemoveNode(dockspace_id); // clear any previous layout
+	ImGui::DockBuilderAddNode(dockspace_id, dockspace_flags | ImGuiDockNodeFlags_DockSpace);
+	ImGui::DockBuilderSetNodeSize(dockspace_id, m_viewport->Size);
+
+	// auto dock_id_center = ImGui::DockBuilderGetCentralNode(dockspace_id);
+	auto dock_id_down = ImGui::DockBuilderSplitNode(dockspace_id, ImGuiDir_Down, 0.25f, nullptr, &dockspace_id);
+	auto dock_id_left = ImGui::DockBuilderSplitNode(dockspace_id, ImGuiDir_Left, 0.2f, nullptr, &dockspace_id);
+	auto dock_id_right = ImGui::DockBuilderSplitNode(dockspace_id, ImGuiDir_Right, 0.15f, nullptr, &dockspace_id);
+	auto dock_id_left_down = ImGui::DockBuilderSplitNode(dock_id_left, ImGuiDir_Down, 0.2f, nullptr, &dock_id_left);
+
+    // Right
+	ImGui::DockBuilderDockWindow("Propriedades", dock_id_right);
+
+    // Left
+	ImGui::DockBuilderDockWindow("Cenario", dock_id_left);
+	ImGui::DockBuilderDockWindow("Navegador", dock_id_left_down);
+
+	ImGui::DockBuilderDockWindow("Viewport", dockspace_id);
+
+	ImGui::DockBuilderFinish(dockspace_id);
 }
 
 void Editor::PopupComponentMenu() {
@@ -555,15 +606,31 @@ void Editor::PopupComponentMenu() {
 }
 
 void Editor::RenderDocking() {
-    ImGui::SetNextWindowSize(m_viewport->WorkSize, ImGuiCond_Always);
-    ImGui::SetNextWindowPos(m_viewport->WorkPos, ImGuiCond_Always);
+    if (m_viewport == nullptr)
+        m_viewport = ImGui::GetMainViewport();
+
+    ImGui::SetNextWindowPos(m_viewport->WorkPos);
+    ImGui::SetNextWindowSize(m_viewport->WorkSize);
     ImGui::SetNextWindowViewport(m_viewport->ID);
 
-    auto name = Project::GetCurrent()->getName();
+    ImGuiWindowFlags host_window_flags = 0;
+    host_window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoDocking;
+    host_window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
+    host_window_flags |= ImGuiWindowFlags_MenuBar;
 
+    ImGuiDockNodeFlags dockspace_flags = 0;
+    dockspace_flags |= ImGuiDockNodeFlags_PassthruCentralNode;
+    if (dockspace_flags & ImGuiDockNodeFlags_PassthruCentralNode)
+        host_window_flags |= ImGuiWindowFlags_NoBackground;
+
+    char label[32];
+    ImFormatString(label, IM_ARRAYSIZE(label), "DockSpaceViewport_%08X", m_viewport->ID);
+
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-    ImGui::Begin(name.c_str(), nullptr, ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoNavFocus | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_MenuBar);
-    ImGui::PopStyleVar();
+    ImGui::Begin(label, NULL, host_window_flags);
+    ImGui::PopStyleVar(3);
 
     if (ImGui::BeginMenuBar()) {
         if (ImGui::BeginMenu("Project")) {
@@ -585,10 +652,17 @@ void Editor::RenderDocking() {
         ImGui::EndMenuBar();
     }
 
-    if (s_io->ConfigFlags & ImGuiConfigFlags_DockingEnable) {
-        ImGui::DockSpace(ImGui::GetID("##RenderDocking"), ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_PassthruCentralNode);
-    }
+    ImGuiID dockspace_id = ImGui::GetID("DockSpace");
+    ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
     ImGui::End();
+
+    if (bBuildDock) {
+        return;
+    }
+
+    BuildDock(dockspace_id, dockspace_flags);
+
+    bBuildDock = true;
 }
 
 #include "projectMenu.hpp"
@@ -600,28 +674,15 @@ void Editor::CloseProject() {
         File::Delete(path);
     }
 
-    RenderManager::Shutdown();
-
-    ScreenRender::Shutdown();
-
-    Skybox::Shutdown();
-
     Editor::Shutdown();
 
-    // AssetsManager::Shutdown();
+    Scene::SetCurrent(nullptr);
 
-    GameObject::Clear();
-
-    ScriptManager::Shutdown();
-
-    ProjectMenu::bProjectOpen = false;
+    Project::SetCurrent(nullptr);
 }
 
 void Editor::RenderScenesUI() {
-    auto isOpen = ImGui::Begin("Cenario", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
-    if (!isOpen) {
-        return;
-    }
+    ImGui::Begin("Cenario", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
 
     auto name = Scene::HasScene() ? Scene::GetCurrentScene()->getName() : "Default";
 
@@ -844,11 +905,9 @@ void Editor::PopupRenameGameObject() {
 }
 
 void Editor::RenderViewportUI() {
-    auto isOpen = ImGui::Begin("Viewport", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
-    if (!isOpen) {
-        return;
-    }
-    isOpen = false;
+    ImGui::Begin("Viewport", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+    
+    auto isOpen = false;
 
     bViewPortFocused = ImGui::IsWindowFocused();
 
@@ -1442,10 +1501,7 @@ void Editor::PopupCreateDirectory() {
 void Editor::RenderConsoleUI() {
     static NavegationFlags flags = NavegationFlags_console;
 
-    auto isOpen = ImGui::Begin("Navegador", nullptr, ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_AlwaysHorizontalScrollbar | ImGuiWindowFlags_AlwaysAutoResize);
-    if (!isOpen) {
-        return;
-    }
+    ImGui::Begin("Navegador", nullptr, ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_AlwaysHorizontalScrollbar | ImGuiWindowFlags_AlwaysAutoResize);
     
     if (ImGui::BeginMenuBar()) {
         if (ImGui::MenuItem("Console")) {
@@ -1507,10 +1563,7 @@ void Editor::RenderConsoleUI() {
 }
 
 void Editor::RenderPropertiUI() {
-    auto isOpen = ImGui::Begin("Propriedades", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
-    if (!isOpen) {
-        return;
-    }
+    ImGui::Begin("Propriedades", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
 
     if (ImGui::BeginTabBar("##propertimenubar")) {
         RenderGameObjectPropertiUI();

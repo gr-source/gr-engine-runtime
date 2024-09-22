@@ -11,6 +11,8 @@ private:
     std::string m_path;
     
 public:
+    static void SetCurrent(Project *project);
+
     static Project *GetCurrent();
     
     Project(const std::string &name, const std::string &path);
@@ -18,7 +20,5 @@ public:
     const std::string &getPath() const;
 
     const std::string &getName() const;
-
-    void open();
 };
 

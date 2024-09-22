@@ -31,8 +31,6 @@ std::vector<Project> ProjectMenu::m_projects;
 
 ImGuiStyle *ProjectMenu::m_style = nullptr;
 
-bool ProjectMenu::bProjectOpen = false;
-
 ImGuiIO *ProjectMenu::m_io = nullptr;
 
 void ProjectMenu::Initialize() {
@@ -59,23 +57,11 @@ void ProjectMenu::Initialize() {
 }
 
 void ProjectMenu::Shutdown() {
-    if (!bProjectOpen) {
-        return;
-    }
-
-    RenderManager::Shutdown();
-
-    Skybox::Shutdown();
-
     Editor::Shutdown();
-
-    ScreenRender::Shutdown();
-
-    ScriptManager::Shutdown();
 }
 
 void ProjectMenu::Render() {
-    if (bProjectOpen) {
+    if (Project::GetCurrent()) {
         return Editor::RenderUI();
     }
     RenderMainMenu();
@@ -229,21 +215,11 @@ void ProjectMenu::ReadProjects() {
 void ProjectMenu::OpenProject(Project &project) {
     File::SetCurrentProject(project.getPath());
 
-    project.open();
-
-    ScriptManager::Initialize("/home/grsource/Documentos/AppProjects/gr-component/lib/libgr-component.so");
-
-    RenderManager::Initialize();
-
-    ScreenRender::Initialize();
-
-    Skybox::Initialize();
+    Project::SetCurrent(&project);
 
     Editor::Initialize();
 
     SaveLastProject(project);
-
-    bProjectOpen = true;
 }
 
 void ProjectMenu::RefreshProjectList() {

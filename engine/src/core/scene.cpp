@@ -18,6 +18,10 @@
 
 Scene *Scene::m_current = nullptr;
 
+void Scene::SetCurrent(Scene *scene) {
+    m_current = scene;
+}
+
 Scene *Scene::GetCurrentScene() {
     return m_current;
 }

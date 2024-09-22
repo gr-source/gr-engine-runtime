@@ -8,6 +8,8 @@
 
 class Scene {
 public:
+    static void SetCurrent(Scene *scene);
+
     static Scene *GetCurrentScene();
 
     static bool HasScene();

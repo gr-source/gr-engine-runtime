@@ -15,8 +15,6 @@ public:
     
     static void Render();
 
-    static bool bProjectOpen;
-
 private:
     static std::array<const std::string, 6> m_assetsFile;
 

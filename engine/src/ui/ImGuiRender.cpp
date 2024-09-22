@@ -98,6 +98,10 @@ void ImGuiRender::AddFont(const char* path) {
     m_io->Fonts->AddFontFromFileTTF(path, 16.5f);
 }
 
+void ImGuiRender::SetConfigPath(const char *path) {
+    m_io->IniFilename = path;
+}
+
 void ImGuiRender::Begin() {
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
