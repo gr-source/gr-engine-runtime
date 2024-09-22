@@ -41,6 +41,10 @@ float Camera::getAspectRatio() {
     return m_aspect;
 }
 
+void Camera::lookIt(const Vector3 &direction) {
+    m_transform->setLocalRotation(Math::normalize(Math::lookRotation(direction, Vector3::up)));
+}
+
 void Camera::updateMatrix() {
     m_projection = Math::perspective(Math::rad(m_fov), m_aspect, m_farPlane, m_nearPlane);
 }

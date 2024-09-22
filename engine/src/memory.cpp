@@ -105,7 +105,6 @@ void Memory::Hook(void *origFunc, void *newFunc) {
         return;
     }
 
-    // Cria a instrução de salto
     uint8_t jumpInstruction[14] = {0};
     jumpInstruction[0] = 0x49; // REX prefix
     jumpInstruction[1] = 0xBB; // MOV r11, imm32
@@ -119,8 +118,7 @@ void Memory::Hook(void *origFunc, void *newFunc) {
         return;
     }
 
-    if (mprotect((void*)pageStart, pageSizeToProtect, PROT_READ | PROT_EXEC) == -1) {
+    if (mprotect(reinterpret_cast<void *>(pageStart), pageSizeToProtect, PROT_READ | PROT_EXEC) == -1) {
         std::cout << "Failed to roll back page permissions in memory." << std::endl;
     }
-    
 }

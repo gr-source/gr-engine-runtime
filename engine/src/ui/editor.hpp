@@ -116,6 +116,8 @@ private:
 
     static void RenderConsoleUI();
 
+    static void RenderSettings();
+
     static void RenderPropertiUI();
 
     static void RenderStatisticsMenu();

@@ -28,6 +28,8 @@ public:
 
     float getAspectRatio();
 
+    void lookIt(const Vector3 &direction);
+
 private:
     Transform *m_transform;
 

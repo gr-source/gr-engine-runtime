@@ -843,17 +843,40 @@ void Editor::PopupMenuAdd() {
 }
 
 void Editor::PopupOptionsGameObject() {
+    if (!s_objectSelected && Camera::Current) {
+        return;
+    }
+
+    auto cam = Camera::Current();
+    
     bool isOpenRename = false;
     if (ImGui::BeginPopup("##popup_options_gameobject")) {
-        const char* item_name[2] {"Delete", "Rename"};
+        std::vector<const char *> item_name {"Delete", "Rename", "Look at me"};
 
         auto id = 0;
-        if (ImGui::ListBox("##ListBoxOptionsGame", &id, item_name, 2)) {
-            if (id == 0 && s_objectSelected) {
+        if (ImGui::ListBox("##ListBoxOptionsGame", &id, item_name.data(), item_name.size())) {
+            switch (id) {
+            case 0:
                 Event::Add(&Scene::Delete, s_objectSelected);
                 s_objectSelected = nullptr;
-            } else if (id == 1 && s_objectSelected) {
+                break;
+            case 1:
                 isOpenRename = true;
+                break;
+            case 2:
+                {
+                    if (!cam) {
+                        break;
+                    }
+                    auto &transform = s_objectSelected->getTransform();
+
+                    auto dir = Math::normalize(cam->getPosition() - transform.getPosition());
+
+                    cam->lookIt(dir);
+                    break;
+                }
+            default:
+                break;
             }
             ImGui::CloseCurrentPopup();
         }
@@ -1546,6 +1569,34 @@ void Editor::RenderConsoleUI() {
     ImGui::End();
 }
 
+void Editor::RenderSettings() {
+    ImGui::SeparatorText("Render");
+    ImGui::Checkbox("Wireframe", &RenderManager::bWireFrame);
+    ImGui::Checkbox("Debug Mode", &DebugDraw::bDebugMode);
+
+    ImGui::SeparatorText("Camera");
+    if (!Camera::GetCameras) {
+        return;
+    }
+    auto viewport = Settings::ViewportSize;
+
+    for (auto &camera : Camera::GetCameras()) {
+        auto gameObject = camera->getGameObject();
+
+        auto name = gameObject->getName();
+
+        ImGui::PushID(name.c_str());
+        if (ImGui::Button(name.c_str())) {
+            camera->setAspectRatio(static_cast<float>(viewport.x) / static_cast<float>(viewport.y));
+
+            Camera::SetEnable(camera);
+        }
+        ImGui::PopID();
+    }
+
+    ImGui::SeparatorText("");
+}
+
 void Editor::RenderPropertiUI() {
     ImGui::Begin("Propriedades", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
 
@@ -1558,27 +1609,7 @@ void Editor::RenderPropertiUI() {
         }
 
         if (ImGui::BeginTabItem("Configuraçoes")) {
-            ImGui::Checkbox("Wireframe", &RenderManager::bWireFrame);
-            ImGui::Checkbox("Debug Mode", &DebugDraw::bDebugMode);
-
-            ImGui::Text("Camera: ");
-            if (Camera::GetCameras) {
-                const auto &viewport = Settings::ViewportSize;
-
-                for (auto &camera : Camera::GetCameras()) {
-                    auto gameObject = camera->getGameObject();
-
-                    auto name = gameObject->getName();
-
-                    ImGui::PushID(name.c_str());
-                    if (ImGui::Button(name.c_str())) {
-                        camera->setAspectRatio(static_cast<float>(viewport.x) / static_cast<float>(viewport.y));
-
-                        Camera::SetEnable(camera);
-                    }
-                    ImGui::PopID();
-                }
-            }
+            RenderSettings();
             ImGui::EndTabItem();
         }
         ImGui::EndTabBar();
