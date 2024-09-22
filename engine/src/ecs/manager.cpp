@@ -1,10 +1,10 @@
 #include "manager.hpp"
 
-#include "script/transform.hpp"
-
 #include "gameObject.h"
-
+#include "console.hpp"
 #include "settings.h"
+
+#include "script/transform.hpp"
 
 #include "core/file/stream.hpp"
 #include "core/file/file.hpp"
@@ -91,8 +91,17 @@ void Manager::Replay() {
     }
 
     for (auto &&[entity, name] : m_vali) {
-        auto component = entity->addInternalComponent(name);
-        
+        Component *component = nullptr;
+        try {
+            component = entity->addInternalComponent(name);
+        } catch (const std::runtime_error &e) {
+            Console::log(LogInfo::ERROR, "Fatal error: " + std::string(e.what()));
+        }
+
+        if (!component) {
+            continue;
+        }
+
         if (name == "Transform") {
             entity->getGameObject()->setTransform(dynamic_cast<Transform *>(component));
         }

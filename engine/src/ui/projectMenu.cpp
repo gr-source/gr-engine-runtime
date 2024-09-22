@@ -10,6 +10,8 @@
 #include "core/file/stream.hpp"
 #include "core/file/file.hpp"
 
+#include "core/scene.hpp"
+
 #include "scriptManager/scriptManager.hpp"
 
 #include <filesystem>
@@ -65,6 +67,23 @@ void ProjectMenu::Render() {
         return Editor::RenderUI();
     }
     RenderMainMenu();
+}
+
+void ProjectMenu::CloseProject() {
+    auto path = File::GetFile("/config.ini", true);
+    if (File::Exists(path)) {
+        File::Delete(path);
+    }
+
+    Editor::Shutdown();
+
+    Scene::SetCurrent(nullptr);
+
+    Project::SetCurrent(nullptr);
+
+    m_projects.clear();
+
+    ReadProjects();
 }
 
 void ProjectMenu::RenderMainMenu() {

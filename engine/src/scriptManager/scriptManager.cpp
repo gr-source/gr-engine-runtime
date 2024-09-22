@@ -135,7 +135,7 @@ void ScriptManager::RegisterApi() {
     ScriptLoader::replaceLibraryFunction("_ZN13AssetsManager17SetGameObjectListERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEERSt8functionIFvP10GameObjectEE", reinterpret_cast<void *>(&AssetsManager::SetGameObjectList));
     ScriptLoader::replaceLibraryFunction("_ZN13AssetsManager13AddPostLoaderESt8functionIFbPvRKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEEE",                 reinterpret_cast<void *>(&AssetsManager::AddPostLoader));
     ScriptLoader::replaceLibraryFunction("_ZN13AssetsManager8FindMeshERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE",                                         reinterpret_cast<void *>(&AssetsManager::FindMesh));
-    // ScriptLoader::replaceLibraryFunction("_ZN13AssetsManager12FindMaterialERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE",                                    reinterpret_cast<void *>(&AssetsManager::FindMaterial));
+    ScriptLoader::replaceLibraryFunction("_ZN13AssetsManager12FindMaterialERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE",                                    reinterpret_cast<void *>(&AssetsManager::FindMaterial));
     ScriptLoader::replaceLibraryFunction("_ZN13AssetsManager10FindShaderERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE",                                      reinterpret_cast<void *>(&AssetsManager::FindShader));
     ScriptLoader::replaceLibraryFunction("_ZN13AssetsManager10LoadShaderERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEES7_S7_",                                reinterpret_cast<void *>(&AssetsManager::LoadShader));
 

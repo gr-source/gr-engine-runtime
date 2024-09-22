@@ -80,8 +80,6 @@ private:
 
     static void RenderDocking();
 
-    static void CloseProject();
-
     static void RenderScenesUI();
 
     static void RenderHierarchi();
@@ -128,7 +126,7 @@ private:
 
     static void PopupAddComponent();
 
-    static void ProgressLoad();
+    static bool ProgressLoad(int max, int current);
 
     enum NavegationFlags : grm::u8 {
         NavegationFlags_default = 1 << 1,

@@ -527,7 +527,7 @@ void Editor::RenderUI() {
     if (!Project::GetCurrent()) {
         return;
     }
-    
+
     RenderDocking();
 
     RenderViewportUI();
@@ -537,7 +537,6 @@ void Editor::RenderUI() {
     RenderConsoleUI();
 
     RenderPropertiUI();
-    /*
 
     if (Camera::Current && s_io->KeyCtrl && ImGui::IsKeyReleased(ImGuiKey_S)) {
         for (auto &&[name, ptr] : m_scenes) {
@@ -571,7 +570,6 @@ void Editor::RenderUI() {
     }
 
     PopupComponentMenu();
-    */
 }
 
 void Editor::BuildDock(ImGuiID dockspace_id, ImGuiDockNodeFlags dockspace_flags) {
@@ -605,6 +603,8 @@ void Editor::PopupComponentMenu() {
     ImGui::EndPopup();
 }
 
+#include "projectMenu.hpp"
+
 void Editor::RenderDocking() {
     if (m_viewport == nullptr)
         m_viewport = ImGui::GetMainViewport();
@@ -635,7 +635,7 @@ void Editor::RenderDocking() {
     if (ImGui::BeginMenuBar()) {
         if (ImGui::BeginMenu("Project")) {
             if (ImGui::MenuItem("Close")) {
-                CloseProject();
+                ProjectMenu::CloseProject();
             }
             ImGui::EndMenu();
         }
@@ -663,22 +663,6 @@ void Editor::RenderDocking() {
     BuildDock(dockspace_id, dockspace_flags);
 
     bBuildDock = true;
-}
-
-#include "projectMenu.hpp"
-
-// TODO: falta resolver problema do shutdown em assets
-void Editor::CloseProject() {
-    auto path = File::GetFile("/config.ini", true);
-    if (File::Exists(path)) {
-        File::Delete(path);
-    }
-
-    Editor::Shutdown();
-
-    Scene::SetCurrent(nullptr);
-
-    Project::SetCurrent(nullptr);
 }
 
 void Editor::RenderScenesUI() {
@@ -2049,8 +2033,8 @@ void Editor::LoadReources() {
     s_texturePlayGame = iconsUI[IconType::ICON_PLAY_GAME];
 }
 
-void Editor::ProgressLoad() {
-    const ImVec2 windowSize = {300, 200};
+bool Editor::ProgressLoad(int max, int current) {
+    const ImVec2 windowSize(300, 200);
 
     ImVec2 displaySize = s_io->DisplaySize;
     displaySize.x = (displaySize.x / 2.0f) - windowSize.x / 2.0f;
@@ -2061,21 +2045,11 @@ void Editor::ProgressLoad() {
     ImGui::Begin("GameRender...", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove| ImGuiWindowFlags_NoScrollWithMouse);
     ImGui::Text("Carregando UI");
 
-    if (!s_maxProgress) {
-        s_maxProgress = AssetsManager::m_processCount;
-    }
+    ImGui::ProgressBar(static_cast<float>(current) / static_cast<float>(max), ImVec2(windowSize.x, 16));
 
-    grm::u32 current = AssetsManager::m_processCount;
-    if (current > s_maxProgress) {
-        s_maxProgress = current;
-    }
+    ImGui::Text("%d/%d", max, current);
 
-    ImGui::ProgressBar(1.0f - (float)current / s_maxProgress, ImVec2(windowSize.x, 16));
-
-    ImGui::Text("%d/%d", current, s_maxProgress);
-
-    if (current <= 1) {
-        s_maxProgress = 0;
-    }
     ImGui::End();
+
+    return current >= max;
 }
