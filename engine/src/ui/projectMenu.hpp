@@ -2,6 +2,8 @@
 
 #include <vector>
 #include <string>
+#include <thread>
+#include <atomic>
 #include <array>
 
 #include "ImGuiRender.h"
@@ -24,9 +26,19 @@ private:
 
     static ImGuiViewport *m_mainViewport;
 
+    static std::atomic<bool> bRequestJoin;
+
+    static std::thread m_installThread;
+
     static ImGuiStyle *m_style;
 
+    static bool bInstalling;
+
     static ImGuiIO *m_io;
+
+    static void InitProject();
+
+    static void RenderWindowInstalling();
 
     static void RenderMainMenu();
 
@@ -48,7 +60,7 @@ private:
 
     static void LoadResources();
 
-    static void LoadConfig();
+    static void InstallConfig(const std::string &path);
 
     static void DownloadConfig(const std::string &path);
 
@@ -57,6 +69,12 @@ private:
     static bool ReadLastProject();
 
     static std::string GetCurrentDirProject();
+
+    static void InitInstallThread(const std::string &path);
+
+    static void InstallThread(std::string path);
+
+    static void ThreadJoin();
 };
 
 

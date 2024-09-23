@@ -88,9 +88,11 @@
 
 //---- Define constructor and implicit cast operators to convert back<>forth between your math types and ImVec2/ImVec4.
 // This will be inlined as part of ImVec2 and ImVec4 class declarations.
-#define IM_VEC2_CLASS_EXTRA                                                      \
-        ImVec2 operator /(float rhs) { return {x / rhs, y / rhs}; } \
-        ImVec2 operator -(const ImVec2 &rhs) { return {x - rhs.x, y - rhs.y}; } \
+// #define IM_VEC2_CLASS_EXTRA                                                      \
+//         ImVec2 &operator /=(float rhs) { x /= rhs; y /= rhs; return *this; } \
+//         ImVec2 &operator /=(const ImVec2 &rhs) { x /= rhs.x; y /= rhs.y; return *this; } \
+//         ImVec2 operator /(float rhs) { return {x / rhs, y / rhs}; } \
+//         ImVec2 operator -(const ImVec2 &rhs) { return {x - rhs.x, y - rhs.y}; } \
         
         // ImVec2 &operator +=(const ImVec2 &rhs) { x += rhs.x; y += rhs.y; return *this; } \
         // ImVec2 &operator -=(const ImVec2 &rhs) { x -= rhs.x; y -= rhs.y; return *this; } \
@@ -103,7 +105,7 @@
         operator MyVec4() const { return MyVec4(x,y,z,w); }
 */
 //---- ...Or use Dear ImGui's own very basic math operators.
-//#define IMGUI_DEFINE_MATH_OPERATORS
+#define IMGUI_DEFINE_MATH_OPERATORS
 
 //---- Use 32-bit vertex indices (default is 16-bit) is one way to allow large meshes with more than 64K vertices.
 // Your renderer backend will need to support it (most example renderer backends support both 16/32-bit indices).

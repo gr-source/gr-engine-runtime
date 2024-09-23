@@ -6,11 +6,13 @@
 #include "console.hpp"
 #include "skybox.h"
 
+#include "core/cmd/cmd.hpp"
+
+#include "core/scene.hpp"
+
 #include "core/file/initialization.hpp"
 #include "core/file/stream.hpp"
 #include "core/file/file.hpp"
-
-#include "core/scene.hpp"
 
 #include "scriptManager/scriptManager.hpp"
 
@@ -22,16 +24,22 @@ std::array<const std::string, 6> ProjectMenu::m_assetsFile {
     "animation",
     "texture",
     "shader",
+    "script",
     "scene",
     "model",
-    "build",
 };
 
 ImGuiViewport *ProjectMenu::m_mainViewport = nullptr;
 
+std::atomic<bool> ProjectMenu::bRequestJoin = false;
+
+std::thread ProjectMenu::m_installThread;
+
 std::vector<Project> ProjectMenu::m_projects;
 
 ImGuiStyle *ProjectMenu::m_style = nullptr;
+
+bool ProjectMenu::bInstalling = false;
 
 ImGuiIO *ProjectMenu::m_io = nullptr;
 
@@ -42,20 +50,14 @@ void ProjectMenu::Initialize() {
 
     m_io = &ImGui::GetIO();
 
-    LoadConfig();
-
-    auto currentProject = GetCurrentDirProject();
-    if (!File::Exists(currentProject)) {
-        if (!File::CreateDirectories(currentProject)) {
-            std::cout << "Falied to create home project directory: " << currentProject << std::endl;
-        }
+    auto config = File::getHomeDirectory() + "/.config/gr-engine";
+    bInstalling = !File::Exists(config);
+    if (bInstalling) {
+        InstallConfig(config);
+        return;
     }
 
-    LoadResources();
-
-    if (!ReadLastProject()) {
-        ReadProjects();
-    }
+    InitProject();
 }
 
 void ProjectMenu::Shutdown() {
@@ -63,6 +65,13 @@ void ProjectMenu::Shutdown() {
 }
 
 void ProjectMenu::Render() {
+    if (bInstalling) {
+        RenderWindowInstalling();
+        if (bRequestJoin) {
+            ThreadJoin();
+        }
+        return;
+    }
     if (Project::GetCurrent()) {
         return Editor::RenderUI();
     }
@@ -84,6 +93,68 @@ void ProjectMenu::CloseProject() {
     m_projects.clear();
 
     ReadProjects();
+}
+
+void ProjectMenu::InitProject() {
+    auto currentProject = GetCurrentDirProject();
+    if (!File::Exists(currentProject)) {
+        if (!File::CreateDirectories(currentProject)) {
+            std::cout << "Falied to create home project directory: " << currentProject << std::endl;
+        }
+    }
+
+    LoadResources();
+
+    if (!ReadLastProject()) {
+        ReadProjects();
+    }
+}
+
+void ProjectMenu::RenderWindowInstalling() {
+    ImVec2 vWindowSize(600, 500);
+
+    ImGui::SetNextWindowSize(vWindowSize);
+    ImGui::SetNextWindowPos((m_mainViewport->WorkSize - vWindowSize) / 2.0f);
+    ImGui::Begin("Install", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse);
+
+    const char *text = "Output:";
+    auto textSize = ImGui::CalcTextSize(text);
+
+    ImGui::SetCursorPosX((vWindowSize.x - textSize.x) / 2.0f);
+    ImGui::Text("%s", text);
+    
+    for (auto &log : Console::GetListLogs()) {
+        ImVec4 color = {1.0f, 1.0f, 1.0f, 1.0f};
+        std::string type = "[ DEFAULT ]";
+
+        switch (log.type) {
+        case LogInfo::LogType::INFO:
+            color = {0.0f, 1.0f, 0.0f, 1.0f};
+            type = "[ INFO ]";
+            break;
+        case LogInfo::LogType::WARNING:
+            color = {1.0f, 1.0f, 0.0f, 1.0f};
+            type = "[ WARNING ]";
+            break;
+        case LogInfo::LogType::ERROR:
+            color = {1.0f, 0.0f, 0.0f, 1.0f};
+            type = "[ ERROR ]";
+            break;
+        default:
+            break;
+        }
+
+        ImGui::TextColored(color, "%s", type.c_str());
+        ImGui::SameLine();
+        ImGui::Text("%s", log.message.c_str());
+
+    }
+
+    if (Console::bChanged) {
+        ImGui::SetScrollHereY(1.0f);
+        Console::bChanged = false;
+    }
+    ImGui::End();
 }
 
 void ProjectMenu::RenderMainMenu() {
@@ -122,18 +193,22 @@ void ProjectMenu::RenderProject(Project &project) {
 }
 
 void ProjectMenu::CreateProject() {
-    ImVec2 size(300.0f, 400.0f);
+    ImVec2 vWindowSize(300.0f, 400.0f);
 
-    ImGui::SetNextWindowSize(size);
-    ImGui::SetNextWindowPos((m_mainViewport->Size / 2.0f) - (size / 2.0f));
+    ImGui::SetNextWindowSize(vWindowSize);
+    ImGui::SetNextWindowPos((m_mainViewport->Size / 2.0f) - (vWindowSize / 2.0f));
 
     auto isOpen = ImGui::BeginPopupModal("##create_new_project", nullptr, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
     if (!isOpen) {
         return;
     }
 
-    ImGui::SetCursorPosX((size.x / 2.0f) - (ImGui::CalcTextSize("Create project").x / 2.0f));
-    ImGui::Text("Create project");
+    const char *title = "Create project";
+
+    auto textSize = ImGui::CalcTextSize(title);
+
+    ImGui::SetCursorPosX((vWindowSize.x / 2.0f) - (textSize.x / 2.0f));
+    ImGui::Text("%s", title);
 
     ImGui::Separator();
     ImGui::NewLine();
@@ -150,15 +225,16 @@ void ProjectMenu::CreateProject() {
     ImGui::SameLine();
 
     std::string path = GetCurrentDirProject() + "/" + name;
-    ImGui::InputText("##create_project_input_path", path.data(), path.size(), ImGuiInputTextFlags_AlwaysOverwrite);
+    ImGui::InputText("##create_project_input_text_path", path.data(), path.size(), ImGuiInputTextFlags_AlwaysOverwrite);
     
-    auto textSize = ImGui::CalcTextSize("Create");
-    ImGui::SetCursorPos({(size.x / 2.0f) - (textSize.x / 2.0f), size.y - (textSize.y + m_style->WindowPadding.y)});
+    textSize = ImGui::CalcTextSize("Create");
+    ImGui::SetCursorPos({(vWindowSize.x / 2.0f) - (textSize.x / 2.0f), vWindowSize.y - (textSize.y + m_style->WindowPadding.y)});
     if (ImGui::SmallButton("Create")) {
         path.erase(std::remove(path.begin(), path.end(), '\0'), path.end());
 
-        CreateProjectInfo(name, path);
         ImGui::CloseCurrentPopup();
+
+        CreateProjectInfo(name, path);
     }
 
     ImGui::EndPopup();
@@ -190,6 +266,9 @@ void ProjectMenu::CreateProjectMetadata(const std::string &path, const std::stri
 
 void ProjectMenu::CreateProjectAssets(const std::string &path) {
     for (auto &dir : m_assetsFile) {
+        if (dir.empty()) {
+            continue;
+        }
         auto fullPath = path + "/assets/" + dir;
 
         if (File::CreateDirectories(fullPath)) {
@@ -251,22 +330,49 @@ void ProjectMenu::LoadResources() {
     Editor::LoadReources();
 }
 
-void ProjectMenu::LoadConfig() {
-    auto config = File::getHomeDirectory() + "/.config/gr-engine";
+void ProjectMenu::InstallConfig(const std::string &config) {
     auto cache = File::getHomeDirectory() + "/.cache/gr-engine";
 
     File::SetConfigPath(config);
     File::SetCachePath(cache);
 
-    if (File::CreateDirectories(cache)) {}
+    LOG_INFO("Initializing the installation...");
 
+    LOG_INFO("Creating cache data...");
+    File::CreateDirectories(cache);
+
+    LOG_INFO("Installing the base configuration...");
     if (File::CreateDirectories(config)) {
         DownloadConfig(config);
     }
 }
 
 void ProjectMenu::DownloadConfig(const std::string &path) {
-    File::Copy("./assets", path);
+    LOG_INFO("Importing rendering data...");
+    if (!File::Copy("./assets", path)) {
+        LOG_ERROR("Falied to import data: " + File::GetError());
+        return;
+    }
+
+    LOG_INFO("Importing config data...");
+    if (!File::Copy("./config", path)) {
+        LOG_ERROR("Falied to import data: " + File::GetError());
+        return;
+    }
+
+    LOG_INFO("Importing script data...");
+    if (!File::Copy("./script", path)) {
+        LOG_ERROR("Falied to import data: " + File::GetError());
+        return;
+    }
+
+    LOG_INFO("Importing component data...");
+    if (!File::Copy("./component", path)) {
+        LOG_ERROR("Falied to import data: " + File::GetError());
+        return;
+    } else {
+        InitInstallThread(path);
+    }
 }
 
 void ProjectMenu::SaveLastProject(Project &project) {
@@ -308,4 +414,45 @@ bool ProjectMenu::ReadLastProject() {
 
 std::string ProjectMenu::GetCurrentDirProject() {
     return File::getHomeDirectory() + "/gr-project";
+}
+
+void ProjectMenu::InitInstallThread(const std::string &path) {
+    m_installThread = std::thread(&ProjectMenu::InstallThread, path);
+}
+
+#include <future>
+void ProjectMenu::InstallThread(std::string path) {
+    LOG_INFO("Initialize build script data...");
+    auto component = path + "/component";
+    auto script = path + "/script";
+
+    std::vector<std::string> m_list = {
+        "export DENGINE_COMPONENT_PATH=" + component,
+        "chmod +x " + script + "/configure.sh",
+        "sh " + script + "/configure.sh"
+    };
+
+    auto func = [](std::string line) {
+        LOG_WARNIG(line);
+    };
+
+    if (!Command::exec(m_list, func)) {
+        LOG_ERROR("Falied to execute command.");
+    }
+
+    bRequestJoin = true;
+}
+
+void ProjectMenu::ThreadJoin() {
+    if (m_installThread.joinable()) {
+        m_installThread.join();
+
+        LOG_INFO("Instalation sucessfull.");
+    }
+    bRequestJoin = false;
+    bInstalling = false;
+
+    Console::Shutdown();
+
+    InitProject();
 }

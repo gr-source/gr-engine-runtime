@@ -9,7 +9,7 @@ protected:
 private:
     std::string m_name;
     std::string m_path;
-    
+
 public:
     static void SetCurrent(Project *project);
 

@@ -33,6 +33,7 @@
 /* pasta: src */
 class PostProcessing;
 class Editor;
+class Config;
 
 /* pasta: src/engine */
 class Mesh;

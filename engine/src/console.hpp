@@ -35,3 +35,10 @@ private:
     static int m_maxLog;
 };
 
+#define LOG_WARNIG(msg) Console::log(LogInfo::WARNING, msg)
+
+#define LOG_ERROR(msg) Console::log(LogInfo::ERROR, msg)
+
+#define LOG_INFO(msg) Console::log(LogInfo::INFO, msg)
+
+

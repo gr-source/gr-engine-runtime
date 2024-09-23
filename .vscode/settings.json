@@ -76,7 +76,8 @@
         "valarray": "cpp",
         "coroutine": "cpp",
         "any": "cpp",
-        "span": "cpp"
+        "span": "cpp",
+        "regex": "cpp"
     },
     "Lua.diagnostics.globals": [
         "Scene"

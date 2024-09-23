@@ -74,6 +74,10 @@ private:
 
     static std::filesystem::path m_currentPath;
 
+    static std::filesystem::path m_SelectedPath;
+
+    static std::shared_ptr<Config> m_projectConfig;
+
     static void BuildDock(ImGuiID dockspace_id, ImGuiDockNodeFlags dockspace_flags);
 
     static void PopupComponentMenu();
@@ -112,11 +116,15 @@ private:
 
     static void PopupFileManager();
 
+    static void PopupCreateScript();
+
     static void PopupCreateDirectory();
 
     static void RenderConsoleUI();
 
     static void RenderSettings();
+
+    static void ConfigureVSCode();
 
     static void RenderPropertiUI();
 
@@ -150,4 +158,9 @@ private:
     static void TextureInfo(Texture*& texture);
     
     static void PostLoadGameObject(GameObject *gameObject);
+
+    static void CreateScriptTemplate(const std::string &path, const std::string &name);
+
+    // PopupMenu
+    static void PopupMenuSettings();
 };

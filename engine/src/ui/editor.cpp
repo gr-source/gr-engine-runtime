@@ -17,6 +17,7 @@
 
 #include "core/file/initialization.hpp"
 #include "core/file/stream.hpp"
+#include "core/file/config.hpp"
 #include "core/file/file.hpp"
 
 #include "core/statistics.hpp"
@@ -137,24 +138,9 @@ std::unordered_map<std::filesystem::path, bool> Editor::fLisDirSelected;
 
 std::filesystem::path Editor::m_currentPath;
 
-void Editor::PostLoadGameObject(GameObject *gameObject) {
-    if (!Camera::Current || !gameObject) {
-        return;
-    }
-    std::cout << "Ok" << std::endl;
-    
-    auto camera = Camera::Current();
-    if (!camera) {
-        return;
-    }
-    
-    auto camTransform = camera->getTransform();
+std::filesystem::path Editor::m_SelectedPath;
 
-    auto &transform = gameObject->getTransform();
-    transform.setLocalPosition(camera->getPosition() + (camTransform->getforward() * 5.5f));
-
-    s_objectSelected = gameObject;
-}
+std::shared_ptr<Config> Editor::m_projectConfig;
 
 #include "core/cmd/cmd.hpp"
 
@@ -167,11 +153,22 @@ void Editor::Initialize() {
 
     m_currentPath = File::GetAsset("");
 
+    m_projectConfig = std::make_shared<Config>(File::GetFile("/config.ini"));
+    try {
+        m_projectConfig->load();
+    } catch (const std::runtime_error &e) {
+        Console::log(LogInfo::WARNING, e.what());
+    }
+    
     bBuildDock = File::Exists("imgui.ini");
 
     LoadReources();
 
-    ScriptManager::Initialize("/home/grsource/Documentos/AppProjects/gr-component/lib/libgr-component.so");
+    try {
+        ScriptManager::Initialize("/home/grsource/Documentos/AppProjects/gr-component/lib/libgr-component.so");
+    } catch (const std::runtime_error &e) {
+        Console::log(LogInfo::ERROR, "Fatal Error: " + std::string(e.what()));
+    }
 
     RenderManager::Initialize();
 
@@ -181,6 +178,10 @@ void Editor::Initialize() {
 }
 
 void Editor::Shutdown() {
+    if (m_projectConfig) {
+        m_projectConfig->save();
+        m_projectConfig = nullptr;
+    }
     m_scenes.clear();
 
     RenderManager::Shutdown();
@@ -570,6 +571,8 @@ void Editor::RenderUI() {
     }
 
     PopupComponentMenu();
+
+    PopupMenuSettings();
 }
 
 void Editor::BuildDock(ImGuiID dockspace_id, ImGuiDockNodeFlags dockspace_flags) {
@@ -632,6 +635,8 @@ void Editor::RenderDocking() {
     ImGui::Begin(label, NULL, host_window_flags);
     ImGui::PopStyleVar(3);
 
+    auto bPopupMenuSettings = false;
+
     if (ImGui::BeginMenuBar()) {
         if (ImGui::BeginMenu("Project")) {
             if (ImGui::MenuItem("Close")) {
@@ -639,13 +644,22 @@ void Editor::RenderDocking() {
             }
             ImGui::EndMenu();
         }
+        
         if (ImGui::BeginMenu("View")) {
             if (ImGui::MenuItem("Propriedades")) {
             }
             ImGui::EndMenu();
         }
-        if (ImGui::BeginMenu("build")) {
+        
+        if (ImGui::BeginMenu("Build")) {
             if (ImGui::MenuItem("compile")) {
+            }
+            ImGui::EndMenu();
+        }
+        
+        if (ImGui::BeginMenu("Preferences")) {
+            if (ImGui::MenuItem("Settings")) {
+                bPopupMenuSettings = true;
             }
             ImGui::EndMenu();
         }
@@ -655,6 +669,10 @@ void Editor::RenderDocking() {
     ImGuiID dockspace_id = ImGui::GetID("DockSpace");
     ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
     ImGui::End();
+
+    if (bPopupMenuSettings) {
+        ImGui::OpenPopup("##popup_menu_settings");
+    }
 
     if (bBuildDock) {
         return;
@@ -843,7 +861,7 @@ void Editor::PopupMenuAdd() {
 }
 
 void Editor::PopupOptionsGameObject() {
-    if (!s_objectSelected && Camera::Current) {
+    if (!s_objectSelected || !Camera::Current) {
         return;
     }
 
@@ -1222,147 +1240,10 @@ void Editor::RenderFilesUI() {
     }
 
     PopupDirmanager();
-    /*
-    grr::gTexture *gtCurrentTexture = iconsUI[ICON_BACK_FILE];
-
-    ImGui::BeginColumns("##colums_01", 5, ImGuiColumnsFlags_NoBorder);
-    if (ImGui::ImageButton(reinterpret_cast<ImTextureID>(gtCurrentTexture->getID()), {Settings::IconSize.x, Settings::IconSize.y}, ImVec2(0, 1), ImVec2(1, 0)) && m_currentFile.has_parent_path()) {
-        m_currentFile = m_currentFile.parent_path();
-
-        if (!bCutAllFile && !bCopyAllFile) {
-            fLisDirSelected.clear();
-        }
-    }
-
-    bool bSelelectAll = false;
-    bool bPopupOpen = false;
-
-    if (s_io->KeyCtrl && ImGui::IsKeyDown(ImGuiKey_A) && ImGui::IsWindowFocused()) {
-        bSelelectAll = true;
-        fLisDirSelected.clear();
-    }
-
-    if (s_io->KeyCtrl && ImGui::IsKeyDown(ImGuiKey_X) && ImGui::IsWindowFocused()) {
-        for (auto &&[path, bCut] : fLisDirSelected) {
-            bCut = true;
-        }
-        bCutAllFile = true;
-        bCopyAllFile = false;
-    }
-
-    if (s_io->KeyCtrl && ImGui::IsKeyDown(ImGuiKey_C) && ImGui::IsWindowFocused()) {
-        for (auto &&[path, bCut] : fLisDirSelected) {
-            bCut = true;
-        }
-        bCutAllFile = false;
-        bCopyAllFile = true;
-    }
-
-    if (s_io->KeyCtrl && ImGui::IsKeyDown(ImGuiKey_V) && ImGui::IsWindowFocused()) {
-        for (auto &&[path, bCut] : fLisDirSelected) {
-            if (bCopyAllFile)
-                File::Copy(path, m_currentFile);
-            else if (bCutAllFile)
-                File::Move(path, m_currentFile);
-        }
-        fLisDirSelected.clear();
-    }
-    
-    for (auto& file : std::filesystem::directory_iterator(m_currentFile)) {
-        ImGui::NextColumn();
-
-        auto &path = file.path();
-
-        auto extension = path.extension().string();
-        auto name = path.filename().string();
-
-        ImVec4 tintColor(1.0f, 1.0f, 1.0f, 1.0f);
-
-        ImGui::PushID(name.c_str());
-
-        gtCurrentTexture = iconsUI[ICON_FILE];
-        if (file.is_directory()) {
-            gtCurrentTexture = iconsUI[ICON_FOLDER];
-        } else {
-            if (extension == ".gmd") {
-                gtCurrentTexture = iconsUI[ICON_GAMEOBJECT];
-            } else if (extension == ".anm") {
-                gtCurrentTexture = iconsUI[ICON_ANIMATION];
-            } else if (extension == ".scn") {
-                gtCurrentTexture = iconsUI[ICON_SCENE];
-            }else if (extension == ".frag" || extension == ".vert") {
-                gtCurrentTexture = iconsUI[ICON_SHADER];
-            }
-        }
-
-        auto it = fLisDirSelected.find(path);
-        if (it != fLisDirSelected.end()) {
-            tintColor = {0.5f, 0.0f, 0.8f, 1.0f};
-
-            if ((*it).second)
-                tintColor = {0.5f, 0.5f, 0.5f, 1.0f};
-        }
-
-        if (s_io->KeyShift) {
-            if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
-                bFileDoubleClick = true;
-            }
-        } else {
-            bFileDoubleClick = false;
-        }
-
-        if (ImGui::ImageButton(reinterpret_cast<ImTextureID>(gtCurrentTexture->getID()), {Settings::IconSize.x, Settings::IconSize.y}, ImVec2(0, 1), ImVec2(1, 0), -1, {0.0f, 0.0f, 0.0f, 0.0f}, tintColor) && !s_io->KeyShift) {
-            if (file.is_directory()) {
-                m_currentFile = path;
-            }
-        }
-        
-
-        // para adicionar os arquivos a lista @fLisDirSelected
-        if (bFileDoubleClick && ImGui::IsItemHovered() && it == fLisDirSelected.end() || bSelelectAll) {
-            fLisDirSelected.emplace(path, false);
-        }
-
-        // Click com dois dedos touchpad
-        if (ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
-            if (!fLisDirSelected.empty()) {
-                fLisDirSelected.clear();
-            }
-            fLisDirSelected.emplace(path, false);
-            bOpenPopupInfoDir = true;
-        }
-
-        if (!file.is_directory() && ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceNoDisableHover | ImGuiDragDropFlags_SourceNoHoldToOpenOthers)) {
-            auto str = path.string();
-
-            ImGui::Text("Moving \"%s\"", str.c_str());
-            ImGui::SetDragDropPayload(IMGUI_PAYLOAD_FILE, str.data(), str.size());
-            ImGui::EndDragDropSource();
-        }
-
-        ImGui::Text("%s", name.c_str());
-
-        ImGui::PopID();
-    }
-
-    ImGui::EndColumns();
-    
-    if (!bOpenPopupInfoDir && fLisDirSelected.empty() && ImGui::IsMouseClicked(ImGuiMouseButton_Right) && ImGui::IsWindowHovered()) {
-        ImGui::OpenPopup("##popup_file_manager");
-    }
-
-    if (bOpenPopupInfoDir || !fLisDirSelected.empty() && ImGui::IsMouseClicked(ImGuiMouseButton_Right) && ImGui::IsWindowHovered()) {
-        bPopupOpen = true;
-        ImGui::OpenPopup("##popup_dir_manager");
-        bOpenPopupInfoDir = false;
-    }
-
-    
-
-    PopupFileManager();
 
     PopupCreateDirectory();
-    */
+
+    PopupCreateScript();
 }
 
 void Editor::RenderTreeNodeFile(std::filesystem::path path) {
@@ -1383,11 +1264,15 @@ void Editor::RenderTreeNodeFile(std::filesystem::path path) {
     auto name = path.filename();
     
     auto isOpen = ImGui::TreeNodeEx(name.c_str(), flags);
-    if (!isOpen) {
-        return;
+
+    if (ImGui::IsWindowFocused() && ImGui::IsKeyReleased(ImGuiKey_Escape)) {
+        fLisDirSelected.clear();
     }
 
-    if (ImGui::IsItemClicked(ImGuiMouseButton_Right) && !fLisDirSelected.empty()) {
+    if (ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
+        if (!(flags & ImGuiTreeNodeFlags_Selected)) {
+            fLisDirSelected.emplace(path, true);
+        }
         pPopupFileManager = true;
     } else if (s_io->KeyShift && ImGui::IsItemClicked(ImGuiMouseButton_Left)) {
         fLisDirSelected.emplace(path, true);
@@ -1396,6 +1281,10 @@ void Editor::RenderTreeNodeFile(std::filesystem::path path) {
     } else if (ImGui::IsItemClicked(ImGuiMouseButton_Left) && fLisDirSelected.find(path) != fLisDirSelected.end()) {
         fLisDirSelected.clear();
         fLisDirSelected.emplace(path, true);
+    }
+
+    if (!isOpen) {
+        return;
     }
 
     if (!bDirectory && ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceNoDisableHover | ImGuiDragDropFlags_SourceNoHoldToOpenOthers)) {
@@ -1433,20 +1322,31 @@ void Editor::PopupDirmanager() {
     if (!isOpen) {
         return;
     }
+
     for (auto &&[path, isSeleceted] : fLisDirSelected) {
         ImGui::Text("Dir: %s", path.filename().string().c_str());
+
+        m_SelectedPath = path;
     }
 
     auto idx = 0;
+    bool bCreateDiretory = false;
+    bool bCreateScript = false;
 
-    const char *item_list[2] {"Delete"};
+    std::array<const char *, 3> item_list{"Delete", "Create Dir", "Create Script"};
 
-    if (ImGui::ListBox("##DirManager", &idx, item_list, 1)) {
+    if (ImGui::ListBox("##DirManager", &idx, item_list.data(), item_list.size())) {
         switch (idx) {
         case 0:
             for (auto &&[path, isSeleceted] : fLisDirSelected) {
                 File::Delete(path);
             }
+            break;
+        case 1:
+            bCreateDiretory = true;
+            break;
+        case 2:
+            bCreateScript = true;
             break;
         default:
             break;
@@ -1455,10 +1355,18 @@ void Editor::PopupDirmanager() {
         ImGui::CloseCurrentPopup();
     }
     ImGui::EndPopup();
+
+    if (bCreateDiretory) {
+        ImGui::OpenPopup("##popup_create_new_dir");
+    }
+
+    if (bCreateScript) {
+        ImGui::OpenPopup("##popup_create_new_script");
+    }
 }
 
 void Editor::PopupFileManager() {
-    static bool isOpenPopup = false;
+    bool isOpenPopup = false;
     if (ImGui::BeginPopup("##popup_file_manager")) {
         ImGui::Text("FileManager");
 
@@ -1482,9 +1390,24 @@ void Editor::PopupFileManager() {
 
     if (isOpenPopup) {
         ImGui::OpenPopup("##popup_create_new_dir");
-
-        isOpenPopup = false;
     }
+}
+
+void Editor::PopupCreateScript() {
+    auto isOpen = ImGui::BeginPopup("##popup_create_new_script");
+    if (!isOpen) {
+        return;
+    }
+
+    ImGui::Text("Input your script name");
+
+    char name[256] = {0};
+    if (ImGui::InputText("##input_text_popup_create_script_name", name, 256, ImGuiInputTextFlags_EnterReturnsTrue)) {
+        CreateScriptTemplate(m_SelectedPath.string(), name);
+
+        ImGui::CloseCurrentPopup();
+    }
+    ImGui::EndPopup();
 }
 
 void Editor::PopupCreateDirectory() {
@@ -1492,15 +1415,18 @@ void Editor::PopupCreateDirectory() {
     if (!isOpen) {
         return;
     }
+    
     ImGui::Text("Input directory name:");
     if (!ImGui::IsAnyItemActive() && !ImGui::IsMouseClicked(0))
         ImGui::SetKeyboardFocusHere(0);
 
     char name[256] = {0};
     if (ImGui::InputText("##InputDirectoryName", name, 256, ImGuiInputTextFlags_EnterReturnsTrue)) {
-        File::CreateDirectory(m_currentPath.string() + "/" + std::string(name));
+        File::CreateDirectory(m_SelectedPath.string() + "/" + std::string(name));
         ImGui::CloseCurrentPopup();
     }
+
+    ImGui::Text("%s/%s", m_SelectedPath.c_str(), name);
 
     ImGui::EndPopup();
 }
@@ -1564,6 +1490,7 @@ void Editor::RenderConsoleUI() {
             ImGui::SetScrollHereY(1.0f);
             Console::bChanged = false;
         }
+    
     }
 
     ImGui::End();
@@ -1574,27 +1501,30 @@ void Editor::RenderSettings() {
     ImGui::Checkbox("Wireframe", &RenderManager::bWireFrame);
     ImGui::Checkbox("Debug Mode", &DebugDraw::bDebugMode);
 
-    ImGui::SeparatorText("Camera");
-    if (!Camera::GetCameras) {
-        return;
-    }
-    auto viewport = Settings::ViewportSize;
+    ImGui::SeparatorText("Editor");
 
-    for (auto &camera : Camera::GetCameras()) {
-        auto gameObject = camera->getGameObject();
+    std::array<const char *, 3> editor_name{"None", "Visual Studio Code", "Sublime Text"};
 
-        auto name = gameObject->getName();
+    int item = m_projectConfig->hasKey("use_editor") ? m_projectConfig->getValue<int>("use_editor") : m_projectConfig->setValue<int>("use_editor", 0);
+    if (ImGui::Combo("##render_settings_list_box", &item, editor_name.data(), editor_name.size())) {
+        m_projectConfig->setValue<int>("use_editor", item);
 
-        ImGui::PushID(name.c_str());
-        if (ImGui::Button(name.c_str())) {
-            camera->setAspectRatio(static_cast<float>(viewport.x) / static_cast<float>(viewport.y));
-
-            Camera::SetEnable(camera);
+        switch (item) {
+        case 1: // Visual Studio Code
+            return ConfigureVSCode();
         }
-        ImGui::PopID();
     }
+}
 
-    ImGui::SeparatorText("");
+void Editor::ConfigureVSCode() {
+    LOG_INFO("Initializing Visual Studio Code Setup...");
+    
+    auto vscode = File::GetFile("/assets/.vscode");
+    if (File::CreateDirectory(vscode)) {
+        //
+    } else {
+        LOG_WARNIG("Visual Studio Code has been configured.");
+    }
 }
 
 void Editor::RenderPropertiUI() {
@@ -1608,10 +1538,10 @@ void Editor::RenderPropertiUI() {
             ImGui::EndTabItem();
         }
 
-        if (ImGui::BeginTabItem("Configuraçoes")) {
-            RenderSettings();
-            ImGui::EndTabItem();
-        }
+        // if (ImGui::BeginTabItem("Configuraçoes")) {
+        //     RenderSettings();
+        //     ImGui::EndTabItem();
+        // }
         ImGui::EndTabBar();
     }
     ImGui::End();
@@ -2084,3 +2014,137 @@ bool Editor::ProgressLoad(int max, int current) {
 
     return current >= max;
 }
+
+void Editor::PostLoadGameObject(GameObject *gameObject) {
+    if (!Camera::Current || !gameObject) {
+        return;
+    }
+    std::cout << "Ok" << std::endl;
+    
+    auto camera = Camera::Current();
+    if (!camera) {
+        return;
+    }
+    
+    auto camTransform = camera->getTransform();
+
+    auto &transform = gameObject->getTransform();
+    transform.setLocalPosition(camera->getPosition() + (camTransform->getforward() * 5.5f));
+
+    s_objectSelected = gameObject;
+}
+
+std::string GenerateScriptHeader(const std::string& name) {
+    std::string ScriptTemplateHeader = R"(
+#pragma once
+
+#include "ecs/entity.hpp"
+
+class #name : public Component {
+    CLASS_FUNCTIONS
+public:
+    #name();
+    ~#name();
+};
+
+REGISTER_COMPONENT(#name)
+)";
+
+    while (true) {
+    	size_t pos = ScriptTemplateHeader.find("#name");
+	    if (pos == std::string::npos) {
+	        break;
+	    }
+	    ScriptTemplateHeader.replace(pos, 5, name);
+    }
+
+    return ScriptTemplateHeader;
+}
+
+// ${workspaceFolder}/**
+std::string GenerateScriptSource(const std::string& name) {
+    std::string ScriptTemplateSource = R"(
+#include "#name.hpp"
+#include "console.hpp"
+
+#name::#name() {
+    Console::log(LogInfo::DEFAULT, "Initialize: #name");
+}
+
+#name::~#name() {
+    Console::log(LogInfo::DEFAULT, "Shutdown: #name");
+}
+)";
+
+    while (true) {
+    	size_t pos = ScriptTemplateSource.find("#name");
+	    if (pos == std::string::npos) {
+	        break;
+	    }
+	    ScriptTemplateSource.replace(pos, 5, name);
+    }
+
+    return ScriptTemplateSource;
+}
+
+#include <regex>
+
+void Editor::CreateScriptTemplate(const std::string &path, const std::string &name) {
+    std::ofstream os_header(path  + "/" + name + ".hpp");
+    os_header << GenerateScriptHeader(name);
+    os_header.close();
+
+    std::ofstream os_source(path + "/" + name + ".cpp");
+    os_source << GenerateScriptSource(name);
+    os_source.close();
+
+    std::string p = m_currentPath.string();
+    p = std::regex_replace(p, std::regex(" "), "\\ ");
+
+    Command::exec("code " + p);
+}
+
+// PopupMenu
+void Editor::PopupMenuSettings() {
+    ImVec2 vViewportWorkSize = m_viewport->WorkSize;
+    ImVec2 vPopupMenuSize(300, 400);
+
+    ImGui::SetNextWindowSize(vPopupMenuSize);
+    ImGui::SetNextWindowPos((vViewportWorkSize / 2.0f) - (vPopupMenuSize / 2.0f));
+    auto isOpen = ImGui::BeginPopup("##popup_menu_settings");
+    if (!isOpen) {
+        return;
+    }
+
+    const char *title = "Settings";
+
+    auto textSize = ImGui::CalcTextSize(title);
+
+    ImGui::SetCursorPosX((vPopupMenuSize.x / 2.0f) - (textSize.x / 2.0f));
+    ImGui::Text("%s", title);
+
+    ImGui::NewLine();
+
+    RenderSettings();
+
+    ImGui::EndPopup();
+}
+
+/*
+{
+    "configurations": [
+        {
+            "name": "Linux",
+            "includePath": [
+                "/home/grsource/Documentos/AppProjects/gr-component/src/**"
+            ],
+            "defines": [],
+            "compilerPath": "/usr/local/bin/clang",
+            "cStandard": "c17",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "linux-clang-x64"
+        }
+    ],
+    "version": 4
+}
+*/

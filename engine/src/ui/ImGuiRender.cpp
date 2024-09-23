@@ -5,6 +5,7 @@
 #include <GLFW/glfw3.h>
 
 #include <iostream>
+
 ImGuiIO *ImGuiRender::m_io = nullptr;
 
 void ImGuiRender::Initialize(const char* openglVersion) {

@@ -9,6 +9,8 @@ std::string File::m_configPath;
 
 std::string File::m_cachePath;
 
+std::stringstream File::m_error;
+
 void File::SetCurrentProject(const std::string &path) {
     m_currentPath = path;
 }
@@ -77,26 +79,51 @@ void File::Move(const std::string &from, const std::string &to) {
     Delete(from);
 }
 
-void File::Copy(const std::string &from, const std::string &to) {
+bool File::Copy(const std::string &from, const std::string &to) {
+    if (!std::filesystem::exists(from)) {
+        m_error << "Target directory or file do not exists: " << from << std::endl;
+        return false;
+    }
+
     if (!std::filesystem::is_directory(from)) {
         auto next = to + "/" + std::filesystem::path(from).filename().string();
-        if (std::filesystem::exists(next) && !std::filesystem::is_directory(next)) {
-            return;
+        
+        if (std::filesystem::is_directory(next)) {
+            m_error << "Path: " << next << " is a directory" << std::endl;
+            return false;
         }
-        return std::filesystem::copy(from, to);
+
+        if (std::filesystem::exists(next)) {
+            std::filesystem::remove(next);
+        }
+        
+        std::filesystem::copy(from, to);
+        return true;
     }
+    
     auto newRoot = to + "/" + std::filesystem::path(from).filename().string();
 
     CreateDirectory(newRoot);
 
+    auto isSucess = true;
     for (auto entry : std::filesystem::directory_iterator(from)) {
         auto name = entry.path().filename().string();
 
-        Copy(entry.path(), newRoot);
+        isSucess = Copy(entry.path(), newRoot);
+        if (!isSucess) {
+            break;
+        }
     }
+    return isSucess;
 }
 
 std::string File::getHomeDirectory() {
     auto path = getenv("HOME");
     return std::string(path != nullptr ? path : "/");
+}
+
+std::string File::GetError() {
+    auto temp = m_error.str();
+    m_error.clear();
+    return temp;
 }

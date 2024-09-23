@@ -33,9 +33,11 @@ public:
 
     static void Move(const std::string &from, const std::string &to);
 
-    static void Copy(const std::string &from, const std::string &to);
+    static bool Copy(const std::string &from, const std::string &to);
 
     static std::string getHomeDirectory();
+
+    static std::string GetError();
     
 private:
     static std::string m_currentPath;
@@ -43,4 +45,6 @@ private:
     static std::string m_configPath;
 
     static std::string m_cachePath;
+
+    static std::stringstream m_error;
 };
