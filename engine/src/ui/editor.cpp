@@ -166,7 +166,7 @@ void Editor::Initialize() {
     LoadReources();
 
     try {
-        ScriptManager::Initialize(File::GetUserFile("/project/lib/libgr-script.so"));
+        ScriptManager::Initialize(File::GetFile("/.build/component/lib/libgr-component.so"));
     } catch (const std::exception &e) {
         Console::log(LogInfo::ERROR, "Fatal error in script: " + std::string(e.what()));
     }
@@ -503,7 +503,7 @@ void Editor::KeyBoardUp(grm::u32 key) {
 
 void Editor::LoadScript() {
     try {
-        ScriptManager::Initialize(File::GetUserFile("/project/lib/libgr-script.so"));
+        ScriptManager::Initialize(File::GetFile("/.build/component/lib/libgr-component.so"));
     } catch (const std::runtime_error &e) {
         LOG_ERROR(e.what());
     }
@@ -2145,7 +2145,7 @@ void Editor::PopupMenuSettings() {
 
 void Editor::BuildScript() {
     LOG_INFO("Initilize build scipt");
-    auto static_library = File::GetFile("/component/libgr-component.a", true);
+    auto static_library = File::GetFile("/component/libgr-component.so", true);
     if (!File::Exists(static_library)) {
         return LOG_ERROR("Internal library not found.");
     }
@@ -2167,52 +2167,25 @@ void Editor::BuildScript() {
 }
 
 void Editor::ReconfigScript() {
-    auto path = File::GetUserFile("/project");
+    LOG_INFO("[ BUILD ] Initialized reconfigation...");
 
-    LOG_INFO("Clearing data...");
+    auto component = File::GetFile("/component", true);
+    if (!File::Exists(component)) {
+        return LOG_ERROR("[ BULD ] Falied to load internal data component.");
+    }
+
+    auto path = File::GetFile("/.build");
     if (File::Exists(path)) {
         File::Delete(path);
     }
 
-    LOG_INFO("Configurate data...");
     File::CreateDirectory(path);
 
-    auto cmake = File::GetFile("/cmake/CMakeLists.txt", true);
-    if (!File::Exists(cmake)) {
-        return LOG_ERROR("CMake file do not exits.");
+    if (!File::Copy(component, path)) {
+        return LOG_ERROR("[ BULD ]" + File::GetError());
     }
 
-    auto gr_cpp = File::GetFile("/cmake/gr-script.cpp", true);
-    if (!File::Exists(cmake)) {
-        return LOG_ERROR("File do not exits.");
-    }
-
-    if (File::CreateDirectory(path + "/script")) {
-        File::Copy(gr_cpp, path + "/script");
-    }
-
-    auto text = File::GetFileContent(cmake);
-    if (text.empty()) {
-        return LOG_ERROR("CMake data is empty.");
-    }
-
-    auto component = File::GetFile("/component/lib/libgr-component.a", true);
-    if (!File::Exists(component)) {
-        return LOG_ERROR("Component library do not found.");
-    }
-
-    auto header = File::GetFile("/component/include", true);
-    if (!File::Exists(header)) {
-        return LOG_ERROR("Header data do not found.");
-    }
-
-    text = String::replace_all(text, "${GR_PROJECT_NAME}", "gr-script");
-    text = String::replace_all(text, "${GR_LIBRARIES}", component);
-    text = String::replace_all(text, "${GR_DIRECTORY}", header);
-
-    std::ofstream os(path + "/CMakeLists.txt");
-    os << text << std::endl;
-    os.close();
+    LOG_INFO("[ BUILD ] building scipt...");
 
     ThreadPool::AddTask(&Editor::BuildProject, path);
 }
@@ -2223,14 +2196,14 @@ void Editor::BuildProject(std::string path) {
         return LOG_ERROR("Build script do not found.");
     }
 
-    auto componet = File::GetFile("/component/lib/libgr-component.a", true);
-    if (!File::Exists(componet)) {
-        return LOG_ERROR("Component library do not found.");
+    auto component = File::GetFile("/.build/component");
+    if (!File::Exists(component)) {
+        return LOG_ERROR("Component library do not found. [1]");
     }
 
     std::vector<std::string> command{
-        "export GR_PROJECT_PATH=" + path,
-        "export GR_ROOT_PROJECT_PATH=" + File::GetFile("", false),
+        "export GR_ROOT_PROJECT_PATH=" + component,
+        "export GR_ROOT_ASSETS_PATH=" + File::GetAsset(""),
         "chmod +x " + build,
         "sh " + build,
     };

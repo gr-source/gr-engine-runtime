@@ -25,8 +25,6 @@ private:
 
     static ImGuiViewport *m_mainViewport;
 
-    static std::atomic<bool> bRequestJoin;
-
     static ImGuiStyle *m_style;
 
     static bool bInstalling;

@@ -1,9 +1,11 @@
 cmake_minimum_required(VERSION 3.5.0)
+
 project(gr-component VERSION 0.1.0 LANGUAGES C CXX)
 
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
 
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(CMAKE_CXX_STANDARD 17)
 
 set(ecs_src
@@ -53,10 +55,16 @@ set(animation_src
 
 find_package(gr-math REQUIRED)
 
-add_library(${PROJECT_NAME} STATIC main.cpp src/api.cpp ${ecs_src} ${script_src} ${core_src} ${animation_src} ${geometry_src})
+add_library(${PROJECT_NAME} SHARED main.cpp src/api.cpp ${ecs_src} ${script_src} ${core_src} ${animation_src} ${geometry_src})
 
-target_link_libraries(${PROJECT_NAME} PRIVATE ${GRMATH_LIBRARIES})
+add_subdirectory(script)
 
 target_include_directories(${PROJECT_NAME} PUBLIC
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
 )
+
+target_include_directories(script PUBLIC
+$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+)
+
+target_link_libraries(${PROJECT_NAME} PRIVATE ${GRMATH_LIBRARIES} script)

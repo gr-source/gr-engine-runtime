@@ -32,8 +32,6 @@ std::array<const std::string, 6> ProjectMenu::m_assetsFile {
 
 ImGuiViewport *ProjectMenu::m_mainViewport = nullptr;
 
-std::atomic<bool> ProjectMenu::bRequestJoin = false;
-
 std::vector<Project> ProjectMenu::m_projects;
 
 ImGuiStyle *ProjectMenu::m_style = nullptr;
@@ -66,9 +64,6 @@ void ProjectMenu::Shutdown() {
 void ProjectMenu::Render() {
     if (bInstalling) {
         RenderWindowInstalling();
-        if (bRequestJoin) {
-            ThreadJoin();
-        }
         return;
     }
     if (Project::GetCurrent()) {
@@ -368,19 +363,12 @@ void ProjectMenu::DownloadConfig(const std::string &path) {
         return;
     }
 
-    LOG_INFO("Importing cmake data...");
-    if (!File::Copy("./cmake", path)) {
-        LOG_ERROR("Falied to import data: " + File::GetError());
-        return;
-    }
-
     LOG_INFO("Importing component data...");
     if (!File::Copy("./component", path)) {
         LOG_ERROR("Falied to import data: " + File::GetError());
-        return;
-    } else {
-        InitInstallThread(path);
     }
+
+    ThreadJoin();
 }
 
 void ProjectMenu::SaveLastProject(Project &project) {
@@ -424,35 +412,7 @@ std::string ProjectMenu::GetCurrentDirProject() {
     return File::getHomeDirectory() + "/gr-project";
 }
 
-void ProjectMenu::InitInstallThread(const std::string &path) {
-    ThreadPool::AddTask(&ProjectMenu::InstallThread, path);
-}
-
-#include <future>
-void ProjectMenu::InstallThread(std::string path) {
-    LOG_INFO("Initialize build script data...");
-    auto component = path + "/component";
-    auto script = path + "/script";
-
-    std::vector<std::string> m_list = {
-        "export DENGINE_COMPONENT_PATH=" + component,
-        "chmod +x " + script + "/configure.sh",
-        "sh " + script + "/configure.sh"
-    };
-
-    auto func = [](std::string line) {
-        LOG_WARNIG(line);
-    };
-
-    if (!Command::exec(m_list, func)) {
-        LOG_ERROR("Falied to execute command.");
-    }
-
-    bRequestJoin = true;
-}
-
 void ProjectMenu::ThreadJoin() {
-    bRequestJoin = false;
     bInstalling = false;
 
     Console::Shutdown();

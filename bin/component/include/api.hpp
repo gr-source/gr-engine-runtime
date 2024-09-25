@@ -14,9 +14,9 @@ extern "C" {
 #endif
 
 // [ Initialzie ]
-void Initialize();
+GR_EXPORT void Initialize();
 
-void Destroy();
+GR_EXPORT void Destroy();
 
 void SetDeltaTime(float deltaTime);
 
