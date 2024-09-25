@@ -8,6 +8,7 @@
 
 #include "core/cmd/cmd.hpp"
 
+#include "core/threadPool.hpp"
 #include "core/scene.hpp"
 
 #include "core/file/initialization.hpp"
@@ -32,8 +33,6 @@ std::array<const std::string, 6> ProjectMenu::m_assetsFile {
 ImGuiViewport *ProjectMenu::m_mainViewport = nullptr;
 
 std::atomic<bool> ProjectMenu::bRequestJoin = false;
-
-std::thread ProjectMenu::m_installThread;
 
 std::vector<Project> ProjectMenu::m_projects;
 
@@ -96,14 +95,16 @@ void ProjectMenu::CloseProject() {
 }
 
 void ProjectMenu::InitProject() {
+    File::SetConfigPath(File::getHomeDirectory() + "/.config/gr-engine");
+    File::SetCachePath(File::getHomeDirectory() + "/.cache/gr-engine");
+    File::SetUserPath(File::getHomeDirectory() + "/.local/share/gr-engine");
+
     auto currentProject = GetCurrentDirProject();
     if (!File::Exists(currentProject)) {
         if (!File::CreateDirectories(currentProject)) {
             std::cout << "Falied to create home project directory: " << currentProject << std::endl;
         }
     }
-
-    LoadResources();
 
     if (!ReadLastProject()) {
         ReadProjects();
@@ -326,20 +327,21 @@ void ProjectMenu::RefreshProjectList() {
     ReadProjects();
 }
 
-void ProjectMenu::LoadResources() {
-    Editor::LoadReources();
-}
-
 void ProjectMenu::InstallConfig(const std::string &config) {
     auto cache = File::getHomeDirectory() + "/.cache/gr-engine";
+    auto user = File::getHomeDirectory() + "/.local/share/gr-engine";
 
     File::SetConfigPath(config);
     File::SetCachePath(cache);
+    File::SetUserPath(user);
 
     LOG_INFO("Initializing the installation...");
 
     LOG_INFO("Creating cache data...");
     File::CreateDirectories(cache);
+
+    LOG_INFO("Creating user data...");
+    File::CreateDirectories(user);
 
     LOG_INFO("Installing the base configuration...");
     if (File::CreateDirectories(config)) {
@@ -362,6 +364,12 @@ void ProjectMenu::DownloadConfig(const std::string &path) {
 
     LOG_INFO("Importing script data...");
     if (!File::Copy("./script", path)) {
+        LOG_ERROR("Falied to import data: " + File::GetError());
+        return;
+    }
+
+    LOG_INFO("Importing cmake data...");
+    if (!File::Copy("./cmake", path)) {
         LOG_ERROR("Falied to import data: " + File::GetError());
         return;
     }
@@ -417,7 +425,7 @@ std::string ProjectMenu::GetCurrentDirProject() {
 }
 
 void ProjectMenu::InitInstallThread(const std::string &path) {
-    m_installThread = std::thread(&ProjectMenu::InstallThread, path);
+    ThreadPool::AddTask(&ProjectMenu::InstallThread, path);
 }
 
 #include <future>
@@ -444,11 +452,6 @@ void ProjectMenu::InstallThread(std::string path) {
 }
 
 void ProjectMenu::ThreadJoin() {
-    if (m_installThread.joinable()) {
-        m_installThread.join();
-
-        LOG_INFO("Instalation sucessfull.");
-    }
     bRequestJoin = false;
     bInstalling = false;
 
@@ -456,3 +459,6 @@ void ProjectMenu::ThreadJoin() {
 
     InitProject();
 }
+
+// uninstall engine
+// rm -rf ~/.cache/gr-engine ~/.config/gr-engine ~/.local/share/gr-engine ~/gr-project

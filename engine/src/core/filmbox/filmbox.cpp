@@ -1,8 +1,9 @@
 #include "filmbox.hpp"
 
 #include "core/file/file.hpp"
-#include "core/assetsManager.hpp"
 
+#include "core/assetsManager.hpp"
+#include "core/threadPool.hpp"
 #include "core/event.hpp"
 
 #include "console.hpp"
@@ -14,20 +15,14 @@
 
 #define NORM(n) n > 6.0f ? n / 1e2f : n
 
-Filmbox::Filmbox(const std::string &path) : m_path(path), m_thread(std::make_unique<Thread>()) {}
-
-Filmbox::~Filmbox() {
-    if (m_thread) {
-        m_thread->stop();
-    }
-}
+Filmbox::Filmbox(const std::string &path) : m_path(path) {}
 
 void Filmbox::setPostProcess(std::function<void(const FbxScene *, Filmbox *)> func) {
     m_funcPost = func;
 }
 
 void Filmbox::load() {
-    m_thread->run(&Filmbox::doInBackground, this, m_path);
+    ThreadPool::AddTask(&Filmbox::doInBackground, this, m_path);
 }
 
 const bool Filmbox::isValid() const {

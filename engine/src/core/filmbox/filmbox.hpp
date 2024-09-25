@@ -4,14 +4,11 @@
 
 #include <assimp/cimport.h>
 
-#include "../thread.hpp"
-
 #include <assimp/scene.h>
 
 class Filmbox {
 public:
     Filmbox(const std::string &path);
-    ~Filmbox();
 
     void setPostProcess(std::function<void(const FbxScene *, Filmbox *)> func);
 
@@ -43,8 +40,6 @@ private:
     std::function<void(const FbxScene *, Filmbox *)> m_funcPost;
 
     std::unique_ptr<FbxScene> m_fbxScene;
-
-    std::unique_ptr<Thread> m_thread;
 
     std::string m_path;
 

@@ -1,6 +1,8 @@
 #include "timer.h"
 #include "Global.h"
 
+#include <thread>
+
 float TimeLast::deltaTime = 0.0f;
 float TimeLast::FPS = 0;
 

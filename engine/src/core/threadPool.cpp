@@ -12,30 +12,9 @@ std::mutex ThreadPool::m_mutex;
 
 bool ThreadPool::m_bStop = false;
 
-void ThreadPool::Initialize(int maxThread) {
-    for (int i=0;i<maxThread;i++) {
-        m_threads.emplace_back([]{
-            while (true) {
-                std::unique_lock<std::mutex> lock(m_mutex);
-                m_cv.wait(lock, []{
-                    return m_bStop || !m_task.empty();
-                });
-
-                if (m_bStop) {
-                    std::cout << "Stop" << std::endl;
-                    break;
-                }
-
-                auto task = m_task.front();
-
-                lock.unlock();
-
-                task();
-
-                lock.lock();
-                // m_task.pop_front();
-            }
-        });
+void ThreadPool::Initialize(std::uint32_t maxThread) {
+    for (std::uint32_t i=0;i<maxThread;i++) {
+        m_threads.emplace_back(&ThreadPool::Update);
     }
 }
 
@@ -55,4 +34,22 @@ void ThreadPool::Stop() {
         m_bStop = true;
     }
     m_cv.notify_all();
+}
+
+void ThreadPool::Update() {
+    while (true) {
+        std::unique_lock<std::mutex> lock(m_mutex);
+        m_cv.wait(lock, [] {
+            return m_bStop || !m_task.empty();
+        });
+
+        if (m_bStop) {
+            break;
+        }
+
+        auto task = m_task.front();
+        m_task.pop_front();
+
+        task();
+    }
 }

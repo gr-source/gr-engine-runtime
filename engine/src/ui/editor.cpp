@@ -15,13 +15,16 @@
 
 #include "core/filmbox/filmbox.hpp"
 
+#include "core/cmd/cmd.hpp"
+
 #include "core/file/initialization.hpp"
 #include "core/file/stream.hpp"
 #include "core/file/config.hpp"
 #include "core/file/file.hpp"
 
-#include "core/statistics.hpp"
 #include "core/assetsManager.hpp"
+#include "core/threadPool.hpp"
+#include "core/statistics.hpp"
 #include "core/scene.hpp"
 #include "core/event.hpp"
 
@@ -142,8 +145,6 @@ std::filesystem::path Editor::m_SelectedPath;
 
 std::shared_ptr<Config> Editor::m_projectConfig;
 
-#include "core/cmd/cmd.hpp"
-
 void Editor::Initialize() {
     m_viewport = ImGui::GetMainViewport();
 
@@ -165,9 +166,9 @@ void Editor::Initialize() {
     LoadReources();
 
     try {
-        ScriptManager::Initialize("/home/grsource/Documentos/AppProjects/gr-component/lib/libgr-component.so");
-    } catch (const std::runtime_error &e) {
-        Console::log(LogInfo::ERROR, "Fatal Error: " + std::string(e.what()));
+        ScriptManager::Initialize(File::GetUserFile("/project/lib/libgr-script.so"));
+    } catch (const std::exception &e) {
+        Console::log(LogInfo::ERROR, "Fatal error in script: " + std::string(e.what()));
     }
 
     RenderManager::Initialize();
@@ -182,6 +183,7 @@ void Editor::Shutdown() {
         m_projectConfig->save();
         m_projectConfig = nullptr;
     }
+
     m_scenes.clear();
 
     RenderManager::Shutdown();
@@ -500,7 +502,11 @@ void Editor::KeyBoardUp(grm::u32 key) {
 }
 
 void Editor::LoadScript() {
-    ScriptManager::Initialize("/home/grsource/Documentos/AppProjects/gr-component/lib/libgr-component.so");
+    try {
+        ScriptManager::Initialize(File::GetUserFile("/project/lib/libgr-script.so"));
+    } catch (const std::runtime_error &e) {
+        LOG_ERROR(e.what());
+    }
 
     if (ScriptManager::SetScreenSize) {
         ScriptManager::SetScreenSize(Settings::ViewportSize);
@@ -639,6 +645,14 @@ void Editor::RenderDocking() {
 
     if (ImGui::BeginMenuBar()) {
         if (ImGui::BeginMenu("Project")) {
+            if (ImGui::MenuItem("Reconfigure Script")) {
+                ReconfigScript();
+            }
+            
+            if (ImGui::MenuItem("Reconfigure Component")) {
+                // ProjectMenu::CloseProject();
+            }
+            
             if (ImGui::MenuItem("Close")) {
                 ProjectMenu::CloseProject();
             }
@@ -1083,7 +1097,7 @@ void Editor::RenderScene() {
     auto pos = ImGui::GetWindowPos();
 
     // Play button
-    {
+    if (s_texturePlayGame) {
         ImGui::SetCursorPos(ImVec2(curSize.x / 2 - cursorPos.x, cursorY));
 
         if (ImGui::ImageButton(reinterpret_cast<ImTextureID>(s_texturePlayGame->getID()), ImVec2(16, 16))) {
@@ -1098,7 +1112,7 @@ void Editor::RenderScene() {
             } else {
                 s_texturePlayGame = iconsUI[IconType::ICON_PLAY_GAME];
 
-                LoadScript();
+                ThreadPool::AddTask(&Editor::BuildProject, File::GetUserFile("/project"));
 
                 bScriptReloaded = true;
             }
@@ -2088,7 +2102,6 @@ std::string GenerateScriptSource(const std::string& name) {
 }
 
 #include <regex>
-
 void Editor::CreateScriptTemplate(const std::string &path, const std::string &name) {
     std::ofstream os_header(path  + "/" + name + ".hpp");
     os_header << GenerateScriptHeader(name);
@@ -2130,21 +2143,101 @@ void Editor::PopupMenuSettings() {
     ImGui::EndPopup();
 }
 
-/*
-{
-    "configurations": [
-        {
-            "name": "Linux",
-            "includePath": [
-                "/home/grsource/Documentos/AppProjects/gr-component/src/**"
-            ],
-            "defines": [],
-            "compilerPath": "/usr/local/bin/clang",
-            "cStandard": "c17",
-            "cppStandard": "c++17",
-            "intelliSenseMode": "linux-clang-x64"
-        }
-    ],
-    "version": 4
+void Editor::BuildScript() {
+    LOG_INFO("Initilize build scipt");
+    auto static_library = File::GetFile("/component/libgr-component.a", true);
+    if (!File::Exists(static_library)) {
+        return LOG_ERROR("Internal library not found.");
+    }
+
+    auto build_script = File::GetFile("/script/build.sh", true);
+    if (!File::Exists(build_script)) {
+        return LOG_ERROR("Internal script not found.");
+    }
+   
+    std::vector<std::string> command {
+        "export" + build_script,
+        "chmod +x " + build_script,
+        "sh " + build_script
+    };
+
+    Command::exec(command, [](std::string line) {
+        LOG_WARNIG(line);
+    });
 }
-*/
+
+void Editor::ReconfigScript() {
+    auto path = File::GetUserFile("/project");
+
+    LOG_INFO("Clearing data...");
+    if (File::Exists(path)) {
+        File::Delete(path);
+    }
+
+    LOG_INFO("Configurate data...");
+    File::CreateDirectory(path);
+
+    auto cmake = File::GetFile("/cmake/CMakeLists.txt", true);
+    if (!File::Exists(cmake)) {
+        return LOG_ERROR("CMake file do not exits.");
+    }
+
+    auto gr_cpp = File::GetFile("/cmake/gr-script.cpp", true);
+    if (!File::Exists(cmake)) {
+        return LOG_ERROR("File do not exits.");
+    }
+
+    if (File::CreateDirectory(path + "/script")) {
+        File::Copy(gr_cpp, path + "/script");
+    }
+
+    auto text = File::GetFileContent(cmake);
+    if (text.empty()) {
+        return LOG_ERROR("CMake data is empty.");
+    }
+
+    auto component = File::GetFile("/component/lib/libgr-component.a", true);
+    if (!File::Exists(component)) {
+        return LOG_ERROR("Component library do not found.");
+    }
+
+    auto header = File::GetFile("/component/include", true);
+    if (!File::Exists(header)) {
+        return LOG_ERROR("Header data do not found.");
+    }
+
+    text = String::replace_all(text, "${GR_PROJECT_NAME}", "gr-script");
+    text = String::replace_all(text, "${GR_LIBRARIES}", component);
+    text = String::replace_all(text, "${GR_DIRECTORY}", header);
+
+    std::ofstream os(path + "/CMakeLists.txt");
+    os << text << std::endl;
+    os.close();
+
+    ThreadPool::AddTask(&Editor::BuildProject, path);
+}
+
+void Editor::BuildProject(std::string path) {
+    auto build = File::GetFile("/script/build.sh", true);
+    if (!File::Exists(build)) {
+        return LOG_ERROR("Build script do not found.");
+    }
+
+    auto componet = File::GetFile("/component/lib/libgr-component.a", true);
+    if (!File::Exists(componet)) {
+        return LOG_ERROR("Component library do not found.");
+    }
+
+    std::vector<std::string> command{
+        "export GR_PROJECT_PATH=" + path,
+        "export GR_ROOT_PROJECT_PATH=" + File::GetFile("", false),
+        "chmod +x " + build,
+        "sh " + build,
+    };
+
+    Command::exec(command, [](std::string line) {
+        LOG_WARNIG(line);
+    });
+
+    Event::Add(Editor::LoadScript);
+}

@@ -2,7 +2,6 @@
 
 #include <vector>
 #include <string>
-#include <thread>
 #include <atomic>
 #include <array>
 
@@ -27,8 +26,6 @@ private:
     static ImGuiViewport *m_mainViewport;
 
     static std::atomic<bool> bRequestJoin;
-
-    static std::thread m_installThread;
 
     static ImGuiStyle *m_style;
 
@@ -57,8 +54,6 @@ private:
     static void OpenProject(Project &project);
 
     static void RefreshProjectList();
-
-    static void LoadResources();
 
     static void InstallConfig(const std::string &path);
 

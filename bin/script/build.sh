@@ -1,50 +1,80 @@
 #!/usr/bin/echo
 
-project_script_path="${header_internal_script}"
-temp_path="/tmp/gr-engine"
-current_path="${PWD}"
+current_path=${PWD}
 
-if [ ! -d "${project_script_path}/build" ]; then
-    mkdir "${project_script_path}/build"
-
-    cd "${project_script_path}/build"
-
-    cmake ..
-
-    cd current_path
+# ===== Check Project Exists =====
+if ! [ -d "${GR_PROJECT_PATH}" ]; then
+    echo "Project do not exist."
+    exit 1
 fi
 
-if [ ! -f "${project_script_path}/CMakeLists.txt" ]; then
-    echo "CMakeLists.txt do not found: ${project_script_path}/CMakeLists.txt"
-    exit
+if ! [ -d "${GR_PROJECT_PATH}/script" ]; then
+    mkdir "${GR_PROJECT_PATH}/script"
+fi
+
+# ===== Check Cmake exist and clear files in cmake =====
+echo "Clearing data..."
+if [ ! -f "${GR_PROJECT_PATH}/CMakeLists.txt" ]; then
+    echo "CMakeLists.txt do not found: ${GR_PROJECT_PATH}/CMakeLists.txt"
+    exit 2
 else
-    # sed -i '/#{start}/,/#{file_source_input}/d' "${project_script_path}/CMakeLists.txt"
-    sed -i '/#{start}/,/#{file_source_input}/ {
-            /#{start}/!{
-                /#{file_source_input}/!d
+    sed -i '/#{GR_START}/,/#{GR_END}/ {
+            /#{GR_START}/!{
+                /#{GR_END}/!d
             }
-        }' "${project_script_path}/CMakeLists.txt"
+        }' "${GR_PROJECT_PATH}/CMakeLists.txt"
 fi
 
-if [ ! -d "${temp_path}" ]; then
-    mkdir "${temp_path}"
-fi
+# ===== Create temp file =====
+find "${GR_ROOT_PROJECT_PATH}" -type f -name "*.cpp" > "script_source.txt"
+find "${GR_ROOT_PROJECT_PATH}" -type f -name "*.hpp" > "script_header.txt"
 
-# .cpp files
-find "${PWD}" -type f -name "*.cpp" > "${temp_path}/script_source.txt"
-
-if [ -f "${temp_path}/script_source.txt" ]; then
+# ===== Read temp file and copy from project =====
+if [ -f "script_source.txt" ]; then
     while IFS= read -r line; do
         if [ -f "$line" ]; then
-            cp "$line" "${project_script_path}/src/script"
+            cp "$line" "${GR_PROJECT_PATH}/script"
 
             filename=$(basename "$line")
 
-            sed -i "/#{file_source_input}/i ${project_script_path}/src/script/$filename" "${project_script_path}/CMakeLists.txt"
+            sed -i "/#{GR_END}/i ${GR_PROJECT_PATH}/script/$filename" "${GR_PROJECT_PATH}/CMakeLists.txt"
         fi
-    done < "${temp_path}/script_source.txt"
+    done < "script_source.txt"
 fi
 
-find "${PWD}" -type f -name "*.hpp" -exec cp {} "${project_script_path}/src/script/" \;
+if [ -f "script_header.txt" ]; then
+    while IFS= read -r line; do
+        if [ -f "$line" ]; then
+            cp "$line" "${GR_PROJECT_PATH}/script"
+        fi
+    done < "script_header.txt"
+fi
 
-cmake --build "${project_script_path}/build"
+# clean twmp files
+rm script_source.txt
+rm script_header.txt
+
+if ! [ -d "${GR_PROJECT_PATH}/build" ]; then
+    echo "Initialize configure project..."
+
+    mkdir "${GR_PROJECT_PATH}/build"
+
+    cd "${GR_PROJECT_PATH}/build"
+
+    if cmake .. > /dev/null 2>&1; then
+        echo "Project configured."
+    else
+        echo "Falied to configure project."
+        exit 3
+    fi
+
+    cd "${current_path}"
+fi
+
+echo "Initialize build project..."
+if cmake --build "${GR_PROJECT_PATH}/build" > /dev/null 2>&1; then
+    echo "Build project sucess full."
+else
+    echo "Falied to build project."
+    exit 2
+fi

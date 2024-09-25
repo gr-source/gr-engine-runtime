@@ -70,12 +70,6 @@ void ScriptManager::Initialize(const std::string &path) {
         return;
     }
 
-    // s_handle = dlopen(s_path.c_str(), RTLD_LAZY);
-    // if (!s_handle) {
-    //     Console::log(LogInfo::ERROR, "Falied to load Script.");
-    //     return;
-    // }
-
     RegisterApi();
 
     if (InitializeScript) {

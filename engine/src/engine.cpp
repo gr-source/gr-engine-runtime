@@ -54,6 +54,8 @@ void Engine::Reize(grm::u32 width, grm::u32 height) {
 void Engine::Initialize() {
     Memory::Initialize();
 
+    ThreadPool::Initialize();
+
     ImGuiRender::Initialize("#version 330 core");
 
     AssetsManager::Initialize();
@@ -68,19 +70,9 @@ void Engine::Initialize() {
 
     SetupEnable();
 
-    // DebugDraw::Initialize();
-
-    // ScriptManager::Initialize();
-
-    // Skybox::Initialize();
-
-    // ScreenRender::Initialize();
-
     Input::Initialize();
 
     ProjectMenu::Initialize();
-
-    // RenderManager::Initialize();
 
     EditorController::Initialize();
 }
@@ -150,13 +142,9 @@ void Engine::Shutdown() {
 
     GameObject::Clear();
 
-    // Skybox::Shutdown();
-    
-    // ScriptManager::Shutdown();
-
-    // ScreenRender::Shutdown();
-
     AssetsManager::Shutdown();
+
+    ThreadPool::Shutdown();
     
     Memory::Shutdown();
 }

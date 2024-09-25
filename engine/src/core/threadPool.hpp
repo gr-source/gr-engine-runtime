@@ -9,7 +9,7 @@
 
 class ThreadPool {
 public:
-    static void Initialize(int maxThread = std::thread::hardware_concurrency());
+    static void Initialize(std::uint32_t maxThread = std::thread::hardware_concurrency());
 
     static void Shutdown();
 
@@ -28,6 +28,8 @@ private:
     static std::mutex m_mutex;
 
     static bool m_bStop;
+
+    static void Update();
 };
 
 template <typename... Args>

@@ -15,7 +15,6 @@
 #include <string>
 #include <memory>
 #include <vector>
-#include <thread>
 #include <future>
 #include <fstream>
 #include <ostream>

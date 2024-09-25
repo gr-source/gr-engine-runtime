@@ -9,6 +9,8 @@ std::string File::m_configPath;
 
 std::string File::m_cachePath;
 
+std::string File::m_userPath;
+
 std::stringstream File::m_error;
 
 void File::SetCurrentProject(const std::string &path) {
@@ -25,6 +27,14 @@ void File::SetConfigPath(const std::string &path) {
 
 void File::SetCachePath(const std::string &path) {
     m_cachePath = path;
+}
+
+void File::SetUserPath(const std::string &path) {
+    m_userPath = path;
+}
+
+std::string File::GetUserFile(const std::string &path) {
+    return m_userPath + path;
 }
 
 std::string File::GetCacheFile(const std::string &path) {

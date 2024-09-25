@@ -44,7 +44,6 @@ set(core_src
     src/core/assetsManager.cpp
     src/core/statistics.cpp
     src/core/threadPool.cpp
-    src/core/thread.cpp
     src/core/string.cpp
     src/core/event.cpp
     src/core/scene.cpp
@@ -56,7 +55,6 @@ set(core_hdr
     src/core/statistics.hpp
     src/core/threadPool.hpp
     src/core/event.hpp
-    src/core/thread.hpp
     src/core/string.hpp
     src/core/scene.hpp
     src/core/time.hpp

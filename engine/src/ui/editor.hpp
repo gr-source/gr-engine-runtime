@@ -163,4 +163,11 @@ private:
 
     // PopupMenu
     static void PopupMenuSettings();
+
+    // Script
+    static void BuildScript();
+
+    static void ReconfigScript();
+
+    static void BuildProject(std::string path);
 };

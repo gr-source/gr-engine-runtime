@@ -13,6 +13,10 @@ public:
 
     static void SetCachePath(const std::string &path);
 
+    static void SetUserPath(const std::string &path);
+
+    static std::string GetUserFile(const std::string &path);
+
     static std::string GetCacheFile(const std::string &path);
 
     static std::string GetFileContent(const std::string &path);
@@ -45,6 +49,8 @@ private:
     static std::string m_configPath;
 
     static std::string m_cachePath;
+
+    static std::string m_userPath;
 
     static std::stringstream m_error;
 };
