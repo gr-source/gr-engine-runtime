@@ -368,6 +368,11 @@ void ProjectMenu::DownloadConfig(const std::string &path) {
         LOG_ERROR("Falied to import data: " + File::GetError());
     }
 
+    LOG_INFO("Importing example data...");
+    if (!File::Copy("./example", path)) {
+        LOG_ERROR("Falied to import data: " + File::GetError());
+    }
+
     ThreadJoin();
 }
 

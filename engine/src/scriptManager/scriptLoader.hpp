@@ -7,24 +7,26 @@ using Script = void *;
 
 class ScriptLoader {
 public:
-    ScriptLoader() = delete;
-    ~ScriptLoader() = delete;
+    ScriptLoader(const std::string &path);
+    ~ScriptLoader();
 
-    static bool open(const std::string &path);
+    bool open(const std::string &path);
 
-    static void replaceLibraryFunction(const std::string &name, void *ptr);
+    bool isValid() const;
+
+    void replaceLibraryFunction(const std::string &name, void *ptr);
     
-    static void replaceLibraryField(const std::string &name, void *ptr);
+    void replaceLibraryField(const std::string &name, void *ptr);
 
-    static void registerFunction(const std::string &name, void **ptr);
+    void registerFunction(const std::string &name, void **ptr);
 
-    static void close();
+    void close();
 
 private:
-    static std::vector<void **> m_funcMap;
+    std::vector<void **> m_funcMap;
     
-    static Script m_script;
+    Script m_script;
 
-    static Script FindSymbol(const std::string &name);
+    Script FindSymbol(const std::string &name);
 
 };

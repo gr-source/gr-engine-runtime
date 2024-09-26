@@ -1,5 +1,7 @@
 #pragma once
 
+#include "scriptLoader.hpp"
+
 #include "../ecs/gameObject.h"
 
 #include "console.hpp"
@@ -14,6 +16,8 @@ public:
     static void Initialize(const std::string &path);
 
     static void Shutdown();
+
+    static bool IsValid();
 
     // Main
     // static std::unordered_map<int, std::pair<const std::string, const std::string>> (*GetShader)();
@@ -53,6 +57,8 @@ protected:
     static std::string s_path;
 
     static bool s_bReload;
+
+    static std::unique_ptr<ScriptLoader> m_script;
 
     // [ Main ]
     static void (*InitializeScript)();

@@ -53,18 +53,25 @@ set(animation_src
     src/core/animation/bone.cpp
 )
 
+set(source_src
+    source/gr-script.cpp
+    #{GR_SRC_START}
+    #{GR_SRC_END}
+)
+
+set(source_hdr
+    source/gr-script.hpp
+    #{GR_HDR_START}
+    #{GR_HDR_END}
+)
+
 find_package(gr-math REQUIRED)
 
-add_library(${PROJECT_NAME} SHARED main.cpp src/api.cpp ${ecs_src} ${script_src} ${core_src} ${animation_src} ${geometry_src})
+add_library(${PROJECT_NAME} SHARED main.cpp src/api.cpp ${ecs_src} ${script_src} ${source_src} ${core_src} ${animation_src} ${geometry_src})
 
-add_subdirectory(script)
+target_link_libraries(${PROJECT_NAME} PRIVATE ${GRMATH_LIBRARIES})
 
 target_include_directories(${PROJECT_NAME} PUBLIC
-$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
 )
 
-target_include_directories(script PUBLIC
-$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-)
-
-target_link_libraries(${PROJECT_NAME} PRIVATE ${GRMATH_LIBRARIES} script)

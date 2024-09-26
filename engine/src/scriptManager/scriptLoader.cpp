@@ -7,9 +7,13 @@
 
 #include <dlfcn.h>
 
-std::vector<void **> ScriptLoader::m_funcMap;
+ScriptLoader::ScriptLoader(const std::string &path) : m_script(nullptr) {
+    open(path);
+}
 
-Script ScriptLoader::m_script = nullptr;
+ScriptLoader::~ScriptLoader() {
+    close();
+}
 
 bool ScriptLoader::open(const std::string &path) {
     if (!File::Exists(path)) {
@@ -26,6 +30,10 @@ bool ScriptLoader::open(const std::string &path) {
     Console::log(LogInfo::INFO, "Script laoded sucess full.");
 
     return true;
+}
+
+bool ScriptLoader::isValid() const {
+    return m_script != nullptr;
 }
 
 void ScriptLoader::replaceLibraryFunction(const std::string &name, void *ptr) {

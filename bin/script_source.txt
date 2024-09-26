@@ -1,2 +1,0 @@
-/home/grsource/gr-project/MyFirst/assets/script/CubeController.cpp
-/home/grsource/gr-project/MyFirst/assets/script/MyScript.cpp

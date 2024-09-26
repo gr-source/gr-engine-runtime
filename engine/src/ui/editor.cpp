@@ -502,6 +502,10 @@ void Editor::KeyBoardUp(grm::u32 key) {
 }
 
 void Editor::LoadScript() {
+    if (ScriptManager::IsValid()) {
+        LOG_WARNIG("Script reloaded...");
+        UnloadScript();
+    }
     try {
         ScriptManager::Initialize(File::GetFile("/.build/component/lib/libgr-component.so"));
     } catch (const std::runtime_error &e) {
@@ -2049,56 +2053,23 @@ void Editor::PostLoadGameObject(GameObject *gameObject) {
 }
 
 std::string GenerateScriptHeader(const std::string& name) {
-    std::string ScriptTemplateHeader = R"(
-#pragma once
-
-#include "ecs/entity.hpp"
-
-class #name : public Component {
-    CLASS_FUNCTIONS
-public:
-    #name();
-    ~#name();
-};
-
-REGISTER_COMPONENT(#name)
-)";
-
-    while (true) {
-    	size_t pos = ScriptTemplateHeader.find("#name");
-	    if (pos == std::string::npos) {
-	        break;
-	    }
-	    ScriptTemplateHeader.replace(pos, 5, name);
+    auto source = File::GetFileContent(File::GetFile("/example/script.hpp", true));
+    if (source.empty()) {
+        LOG_ERROR("[ SCRIPT ] falied to generate source file.");
+        return "";
     }
-
-    return ScriptTemplateHeader;
+    source = String::replace_all(source, "#name", name);
+    return source;
 }
 
-// ${workspaceFolder}/**
 std::string GenerateScriptSource(const std::string& name) {
-    std::string ScriptTemplateSource = R"(
-#include "#name.hpp"
-#include "console.hpp"
-
-#name::#name() {
-    Console::log(LogInfo::DEFAULT, "Initialize: #name");
-}
-
-#name::~#name() {
-    Console::log(LogInfo::DEFAULT, "Shutdown: #name");
-}
-)";
-
-    while (true) {
-    	size_t pos = ScriptTemplateSource.find("#name");
-	    if (pos == std::string::npos) {
-	        break;
-	    }
-	    ScriptTemplateSource.replace(pos, 5, name);
+    auto source = File::GetFileContent(File::GetFile("/example/script.cpp", true));
+    if (source.empty()) {
+        LOG_ERROR("[ SCRIPT ] falied to generate source file.");
+        return "";
     }
-
-    return ScriptTemplateSource;
+    source = String::replace_all(source, "#name", name);
+    return source;
 }
 
 #include <regex>
