@@ -78,8 +78,9 @@ void Engine::Initialize() {
 }
 
 void Engine::Idle() {
+    auto fps = Editor::GetFps();
     static Time time;
-    Statistics::m_threadFrame = {time.getFPS(), time.start()};
+    Statistics::m_threadFrame = {time.getFPS(), (fps > 0.0f ? time.sleep(fps) : time.start())};
     TimeLast::deltaTime = Statistics::m_threadFrame.delta;
 
     if (ScriptManager::SetDeltaTime) {

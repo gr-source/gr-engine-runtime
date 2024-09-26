@@ -1343,7 +1343,6 @@ void Editor::OpenFileDoubleClick(std::filesystem::path path) {
     if (path.extension().string() != ".hpp" && path.extension().string() != ".cpp") {
         return;
     }
-    std::cout << path.extension() << std::endl;
 
     Command::exec("code " + m_currentPath.string());
     Command::exec("code " + path.string());
@@ -1546,6 +1545,13 @@ void Editor::RenderSettings() {
             return ConfigureVSCode();
         }
         ImGui::CloseCurrentPopup();
+    }
+
+    ImGui::SeparatorText("World");
+
+    auto bFpsLimited = (*m_config)["fps_limit"] ? m_config->getValue<bool>("fps_limit") : m_config->setValue<bool>("fps_limit", true);
+    if (ImGui::Checkbox("Fps Limited", &bFpsLimited)) {
+        m_config->setValue<bool>("fps_limit", bFpsLimited);
     }
 }
 
@@ -2053,6 +2059,13 @@ void Editor::LoadReources() {
     s_texturePlayGame = iconsUI[IconType::ICON_PLAY_GAME];
 }
 
+float Editor::GetFps() {
+    if (!m_config || !(*m_config)["fps_limit"]) {
+        return -1.0f;
+    }
+    return m_config->getValue<bool>("fps_limit") ? 60.0f : -1.0f;
+}
+
 bool Editor::ProgressLoad(int max, int current) {
     const ImVec2 windowSize(300, 200);
 
@@ -2157,10 +2170,6 @@ void Editor::PopupMenuSettings() {
 
 void Editor::BuildScript() {
     LOG_INFO("Initilize build scipt");
-    auto static_library = File::GetFile("/component/libgr-component.so", true);
-    if (!File::Exists(static_library)) {
-        return LOG_ERROR("Internal library not found.");
-    }
 
     auto build_script = File::GetFile("/script/build.sh", true);
     if (!File::Exists(build_script)) {

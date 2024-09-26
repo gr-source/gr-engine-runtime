@@ -29,6 +29,8 @@ public:
 
     static void LoadReources();
 
+    static float GetFps();
+
 private:
     static ImGuiViewport *m_viewport;
 

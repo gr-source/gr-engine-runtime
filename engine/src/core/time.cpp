@@ -19,16 +19,12 @@ float Time::start() {
         m_countTime = 0;
     }
 
-    m_end = m_start;
-
     return dt;
 }
 
 void Time::end() {
-    // m_end = m_start;//std::chrono::system_clock::now();
+    m_end = m_start;
 }
-
-#include <iostream>
 
 float Time::sleep(float fps) {
     auto m_targetFrameTime(1000.0f / fps);
