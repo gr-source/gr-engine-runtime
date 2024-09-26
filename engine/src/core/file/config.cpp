@@ -47,6 +47,10 @@ const std::unordered_map<std::string, std::string> &Config::getData() const {
     return m_keyMap;
 }
 
+bool Config::operator[](const std::string &key) const {
+    return m_keyMap.find(key) != m_keyMap.end();
+}
+
 // SET
 template <>
 std::string Config::setValue(const std::string &key, std::string value) {

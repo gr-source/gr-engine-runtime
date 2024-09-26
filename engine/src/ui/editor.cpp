@@ -143,7 +143,7 @@ std::filesystem::path Editor::m_currentPath;
 
 std::filesystem::path Editor::m_SelectedPath;
 
-std::shared_ptr<Config> Editor::m_projectConfig;
+std::shared_ptr<Config> Editor::m_config;
 
 void Editor::Initialize() {
     m_viewport = ImGui::GetMainViewport();
@@ -154,9 +154,9 @@ void Editor::Initialize() {
 
     m_currentPath = File::GetAsset("");
 
-    m_projectConfig = std::make_shared<Config>(File::GetFile("/config.ini"));
+    m_config = std::make_shared<Config>(File::GetFile("/config.ini"));
     try {
-        m_projectConfig->load();
+        m_config->load();
     } catch (const std::runtime_error &e) {
         Console::log(LogInfo::WARNING, e.what());
     }
@@ -179,9 +179,9 @@ void Editor::Initialize() {
 }
 
 void Editor::Shutdown() {
-    if (m_projectConfig) {
-        m_projectConfig->save();
-        m_projectConfig = nullptr;
+    if (m_config) {
+        m_config->save();
+        m_config = nullptr;
     }
 
     m_scenes.clear();
@@ -1287,6 +1287,10 @@ void Editor::RenderTreeNodeFile(std::filesystem::path path) {
         fLisDirSelected.clear();
     }
 
+    if (ImGui::IsItemClicked() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
+        OpenFileDoubleClick(path);
+    }
+
     if (ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
         if (!(flags & ImGuiTreeNodeFlags_Selected)) {
             fLisDirSelected.emplace(path, true);
@@ -1333,6 +1337,16 @@ void Editor::RenderTreeNodeFile(std::filesystem::path path) {
         RenderTreeNodeFile(file);
     }
     ImGui::TreePop();
+}
+
+void Editor::OpenFileDoubleClick(std::filesystem::path path) {
+    if (path.extension().string() != ".hpp" && path.extension().string() != ".cpp") {
+        return;
+    }
+    std::cout << path.extension() << std::endl;
+
+    Command::exec("code " + m_currentPath.string());
+    Command::exec("code " + path.string());
 }
 
 void Editor::PopupDirmanager() {
@@ -1523,26 +1537,53 @@ void Editor::RenderSettings() {
 
     std::array<const char *, 3> editor_name{"None", "Visual Studio Code", "Sublime Text"};
 
-    int item = m_projectConfig->hasKey("use_editor") ? m_projectConfig->getValue<int>("use_editor") : m_projectConfig->setValue<int>("use_editor", 0);
+    int item = m_config->hasKey("use_editor") ? m_config->getValue<int>("use_editor") : m_config->setValue<int>("use_editor", 0);
     if (ImGui::Combo("##render_settings_list_box", &item, editor_name.data(), editor_name.size())) {
-        m_projectConfig->setValue<int>("use_editor", item);
+        m_config->setValue<int>("use_editor", item);
 
         switch (item) {
         case 1: // Visual Studio Code
             return ConfigureVSCode();
         }
+        ImGui::CloseCurrentPopup();
     }
 }
 
+// TODO: adicionar suporte ao vs code
 void Editor::ConfigureVSCode() {
     LOG_INFO("Initializing Visual Studio Code Setup...");
     
-    auto vscode = File::GetFile("/assets/.vscode");
-    if (File::CreateDirectory(vscode)) {
-        //
-    } else {
-        LOG_WARNIG("Visual Studio Code has been configured.");
+    auto internal_vscode = File::GetFile("/config/vscode/c_cpp_properties.json", true);
+    if (!File::Exists(internal_vscode)) {
+        return LOG_ERROR("Falied to load internal data config.");
     }
+
+    auto header = File::GetFile("/.build/component/include");
+    if (!File::Exists(header)) {
+        return LOG_ERROR("Project do not configured.");
+    }
+
+    auto source = File::GetFileContent(internal_vscode);
+    if (source.empty()) {
+        return LOG_ERROR("Falied to read internal data.");
+    }
+
+    source = String::replace_all(source, "${header_internal_script}", header);
+
+    auto dest_vscode = File::GetAsset("/.vscode");
+    if (File::Exists(dest_vscode)) {
+        File::Delete(dest_vscode);
+    }
+
+    if (!File::CreateDirectory(dest_vscode)) {
+        return LOG_ERROR("Falied to create config in project.");
+    }
+
+    std::ofstream os(File::GetAsset("/.vscode/c_cpp_properties.json"));
+    os << source << std::endl;
+    os.close();
+
+    LOG_WARNIG("Visual Studio Code has been configured.");
 }
 
 void Editor::RenderPropertiUI() {

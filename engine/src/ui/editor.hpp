@@ -76,7 +76,7 @@ private:
 
     static std::filesystem::path m_SelectedPath;
 
-    static std::shared_ptr<Config> m_projectConfig;
+    static std::shared_ptr<Config> m_config;
 
     static void BuildDock(ImGuiID dockspace_id, ImGuiDockNodeFlags dockspace_flags);
 
@@ -111,6 +111,8 @@ private:
     static void RenderFilesUI();
 
     static void RenderTreeNodeFile(std::filesystem::path path);
+
+    static void OpenFileDoubleClick(std::filesystem::path path);
 
     static void PopupDirmanager();
 

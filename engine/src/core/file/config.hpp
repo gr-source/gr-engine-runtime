@@ -20,7 +20,9 @@ public:
     T getValue(const std::string &key);
     
     const std::unordered_map<std::string, std::string> &getData() const;
-    
+
+    bool operator [](const std::string &key) const;
+
 private:
     std::unordered_map<std::string, std::string> m_keyMap;
 
