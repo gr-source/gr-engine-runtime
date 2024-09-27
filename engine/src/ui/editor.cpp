@@ -550,7 +550,9 @@ void Editor::RenderUI() {
     RenderPropertiUI();
 
     if (Camera::Current && s_io->KeyCtrl && ImGui::IsKeyReleased(ImGuiKey_S)) {
-        for (auto &&[name, ptr] : m_scenes) {
+        for (auto &&[name, scene] : m_scenes) {
+            Event::Add(&Editor::SaveScene, name, &(*scene));
+            /*
             Event::Add([&name, &ptr]{
                 Scene::Use(&(*ptr));
                 
@@ -577,6 +579,7 @@ void Editor::RenderUI() {
 
                 ptr->save();
             });
+            */
         }
     }
 
@@ -2234,4 +2237,10 @@ void Editor::BuildProject(std::string path) {
     });
 
     Event::Add(Editor::LoadScript);
+}
+
+void Editor::SaveScene(const std::string &name, Scene *scene) {
+    Scene::Use(scene);
+
+    scene->save();
 }

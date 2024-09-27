@@ -174,4 +174,7 @@ private:
     static void ReconfigScript();
 
     static void BuildProject(std::string path);
+
+    // Scene
+    static void SaveScene(const std::string &name, Scene *scene);
 };

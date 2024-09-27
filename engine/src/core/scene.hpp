@@ -39,7 +39,9 @@ public:
 
     void Clear();
 
-private:    
+private:
+    static std::hash<std::string> hash;
+
     static Scene *m_current;
 
     std::vector<GameObject *> s_objects;
@@ -74,7 +76,7 @@ private:
 
     int readMesh();
 
-    static void ReadNode(Transform *parent = nullptr);
+    int readNode(Transform *parent = nullptr);
 
     void remove(GameObject *gameObject);
 };

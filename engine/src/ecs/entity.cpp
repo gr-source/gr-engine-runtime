@@ -169,7 +169,13 @@ Component *Entity::addInternalComponent(const std::string &name) {
         return nullptr;
     }
 
-    auto component = ScriptManager::CreateComponentWithName(name);
+    Component *component = nullptr;
+    try {
+        component = ScriptManager::CreateComponentWithName(name);
+    } catch (const std::exception &e) {
+        throw;
+    }
+
     if (!component) {
         throw std::runtime_error("Failed to generate component for name: " + name);
     }

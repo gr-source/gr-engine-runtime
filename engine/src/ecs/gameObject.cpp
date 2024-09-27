@@ -75,6 +75,8 @@ void GameObject::Destroy(GameObject *target) {
         throw std::runtime_error("GameObject not is valid.");
     }
 
+    auto sname = String::RemoveNumber(target->getName());
+
     auto it = s_mapObject.find(target->getName());
     if (it == s_mapObject.end()) {
         return;
@@ -96,6 +98,9 @@ void GameObject::Destroy(GameObject *target) {
     }
 
     s_mapObject.erase(it);
+
+
+    RemoveNameID(sname);
 }
 
 grm::size GameObject::GetGameObjectCount() {
@@ -110,7 +115,6 @@ void GameObject::Clear() {
 GameObject::GameObject(const std::string &name, const std::string &tag) : m_name(name), m_tag(tag), m_entity(&Manager::CreateEntity(this)), m_bActive(true), m_bEnable(true) {}
 
 GameObject::~GameObject() {
-    
     Manager::DestroyEntity(m_entity);
 }
 
@@ -175,5 +179,8 @@ void GameObject::RemoveNameID(const std::string &name) {
     if (it == s_names.end()) {
         return;
     }
-    s_names[name]--;
+    if (it->second <= 0) {
+        s_names.erase(it);
+    }
+    it->second--;
 }

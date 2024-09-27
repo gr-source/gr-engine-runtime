@@ -107,6 +107,7 @@ set(core_ecs_hdr
 
 set(core_file_src
     src/core/file/initialization.cpp
+    src/core/file/streaming.cpp
     src/core/file/stream.cpp
     src/core/file/config.cpp
     src/core/file/file.cpp
@@ -114,6 +115,7 @@ set(core_file_src
 
 set(core_file_hdr
     src/core/file/initialization.hpp
+    src/core/file/streaming.hpp
     src/core/file/stream.hpp
     src/core/file/config.hpp
     src/core/file/file.hpp

@@ -2,6 +2,7 @@
 
 #include "../scriptManager/scriptManager.hpp"
 
+#include "core/file/streaming.hpp"
 #include "core/file/stream.hpp"
 #include "core/file/file.hpp"
 
@@ -15,6 +16,8 @@
 #include "script/camera.hpp"
 
 #include "ecs/entity.h"
+
+std::hash<std::string> Scene::hash;
 
 Scene *Scene::m_current = nullptr;
 
@@ -79,16 +82,16 @@ void Scene::load(const std::string &path) {
         return Console::log(LogInfo::ERROR, "Falied to load scene: " + path);
     }
 
-    gHeader header{{'g', 'r', 's', 'c'}, 1.0f};
+    gHeader header;
 
     if (!Stream::read(&header, 1)) {
         Stream::close();
-        Console::log(LogInfo::ERROR, "Failed to read scene data RS(0)");
+        return Console::log(LogInfo::ERROR, "Failed to read scene data RS(0)");
     }
 
     if (header.signature[0] != 'g' && header.signature[1] != 'r' && header.signature[2] != 's' && header.signature[3] != 'c') {
         Stream::close();
-        return Console::log(LogInfo::ERROR, "Falied ffrom loader, binary do not is of scene.");
+        return Console::log(LogInfo::ERROR, "Falied to loader, binary do not is of scene.");
     }
 
     std::size_t nSize;
@@ -103,9 +106,10 @@ void Scene::load(const std::string &path) {
         return Console::log(LogInfo::ERROR, "Failed to read scene data RS(2)");
     }
 
-    if (auto err = readScene() != 0) {
+    auto result = readScene();
+    if (result != 0) {
         Stream::close();
-        return Console::log(LogInfo::ERROR, "Failed to read scene data child(" + std::to_string(err) + ")");
+        return Console::log(LogInfo::ERROR, "Failed to read data err=" + std::to_string(result));
     }
 
     Stream::close();
@@ -333,7 +337,16 @@ void Scene::WriteGameObject(GameObject *gameObject) {
         Stream::write(&nSize, 1);
         Stream::write(name.data(), nSize);
 
-        ptr->Serialize(Stream::GetStream());
+        auto path = File::GetFile("/.build/temp");
+        if (!File::Exists(path)) {
+            File::CreateDirectory(path);
+        }
+
+        std::string filename = gameObject->getName() + name;
+
+        Streaming s(path + "/" + std::to_string(hash(filename)) + ".dat", std::ios_base::out | std::ios_base::binary);
+        
+        ptr->Serialize(s);
     }
 
     auto &transform = gameObject->getTransform();
@@ -351,22 +364,26 @@ void Scene::WriteGameObject(GameObject *gameObject) {
 
 int Scene::readScene() {
     // Texture
-    if (readTexture() != 0) {
+    auto result = readTexture();
+    if (result != 0) {
         return 1;
     }
 
     // material
-    if (readMaterial() != 0) {
+    result = readMaterial();
+    if (result != 0) {
         return 2;
     }
 
     // mesh
-    if (readMesh() != 0) {
+    result = readMesh();
+    if (result != 0) {
         return 3;
     }
 
     // objects
-    if (readObject() != 0) {
+    result = readObject();
+    if (result != 0) {
         return 4;
     }
     return 0;
@@ -379,26 +396,37 @@ int Scene::readObject() {
         return 1;
     }
 
+    int result = 0;
     for (auto i=0;i<objectCount;i++) {
-        ReadNode(nullptr);
+        result = readNode();
+        if (result != 0) {
+            break;
+        }
     }
 
-    // std::for_each(s_objects.begin(), s_objects.end(), Scene::WriteGameObject);
-    return 0;
+    return result;
 }
 
 int Scene::readMaterial() {
     grm::size count = 0;
-    Stream::read(&count, 1);
+    if (!Stream::read(&count, 1)) {
+        return 1;
+    }
 
     for (auto i=0;i<count;i++) {
         std::size_t size;
-        Stream::read(&size, 1);
+        if (!Stream::read(&size, 1)) {
+            return 2;
+        }
 
         std::string name(size, '\0');
-        Stream::read(name.data(), size);
+        if (!Stream::read(name.data(), size)) {
+            return 3;
+        }
 
-        Stream::read(&size, 1);
+        if (!Stream::read(&size, 1)) {
+            return 4;
+        }
 
         std::vector<Material> materials(size);
         for (auto &material : materials) {
@@ -436,7 +464,6 @@ int Scene::readTexture() {
         }
     }
     
-
     for (auto &path : pathList) {
         AssetsManager::LoadTexture(path);
     }
@@ -445,14 +472,20 @@ int Scene::readTexture() {
 
 int Scene::readMesh() {
     grm::size meshCount = 0;
-    Stream::read(&meshCount, 1);
+    if (!Stream::read(&meshCount, 1)) {
+        return 1;
+    }
 
     for (auto i=0;i<meshCount;i++) {
         std::size_t size = 0;
-        Stream::read(&size, 1);
+        if (!Stream::read(&size, 1)) {
+            return 2;
+        }
 
         std::string name(size, '\0');
-        Stream::read(name.data(), size);
+        if (!Stream::read(name.data(), size)) {
+            return 3;
+        }
 
         auto mesh = AssetsManager::AddMesh(name, name);
         mesh->deserialize(Stream::GetStream());
@@ -460,26 +493,40 @@ int Scene::readMesh() {
     return 0;
 }
 
-void Scene::ReadNode(Transform *parent) {
+int Scene::readNode(Transform *parent) {
     std::size_t nSize;
-    Stream::read(&nSize, 1);
+    if (!Stream::read(&nSize, 1)) {
+        return 1;
+    }
 
     std::string name(nSize, '\0');
-    Stream::read(name.data(), nSize);
+    if (!Stream::read(name.data(), nSize)) {
+        return 2;
+    }
 
     std::size_t tSize;
-    Stream::read(&tSize, 1);
+    if (!Stream::read(&tSize, 1)) {
+        return 3;
+    }
 
     std::string tag(tSize, '\0');
-    Stream::read(tag.data(),  tSize);
+    if (!Stream::read(tag.data(),  tSize)) {
+        return 4;
+    }
 
     bool active = true;
     bool enable = true;
-    Stream::read(&active,  1);
-    Stream::read(&enable,  1);
+    if (!Stream::read(&active,  1)) {
+        return 5;
+    }
+    if (!Stream::read(&enable,  1)) {
+        return 6;
+    }
 
     std::size_t cSize;
-    Stream::read(&cSize, 1);
+    if (!Stream::read(&cSize, 1)) {
+        return 7;
+    }
 
     auto &gameObject = parent == nullptr ? Scene::GetCurrentScene()->CreateGameObject(String::RemoveNumber(name), tag) : GameObject::Create(String::RemoveNumber(name), tag);
     gameObject.setActive(active);
@@ -491,28 +538,51 @@ void Scene::ReadNode(Transform *parent) {
     auto entt = gameObject.getEntity();
 
     for (std::size_t j=0;j<cSize;j++) {
-        Stream::read(&nSize, 1);
-
-        name = std::string(nSize, '\0');
-        Stream::read(name.data(), nSize);
-
-        if (entt->hasComponent(name)) {
-            auto component = entt->getComponent(name);
-
-            component->Deserialize(Stream::GetStream());
-
-            continue;
+        if (!Stream::read(&nSize, 1)) {
+            return 8;
         }
 
-        auto component = entt->addComponent(name);
-        component->Deserialize(Stream::GetStream());
+        name = std::string(nSize, '\0');
+        if (!Stream::read(name.data(), nSize)) {
+            return 9;
+        }
+
+        Component *component = nullptr;
+        if (entt->hasComponent(name)) {
+            component = entt->getComponent(name);
+        } else {
+            try {
+                component = entt->addComponent(name);
+            } catch (const std::exception &e) {
+                LOG_ERROR("Falied to add component: " + std::string(e.what()));
+                continue;
+            }
+        }
+        
+        auto path = File::GetFile("/.build/temp");
+        if (!File::Exists(path)) {
+            File::CreateDirectory(path);
+        }
+
+        std::string filename = gameObject.getName() + name;
+
+        Streaming s(path + "/" + std::to_string(hash(filename)) + ".dat", std::ios_base::in | std::ios_base::binary);
+        if (s.is_open())
+            component->Deserialize(s);
     }
 
-    Stream::read(&cSize, 1);
+    if (!Stream::read(&cSize, 1)) {
+        return 10;
+    }
 
+    int result = 0;
     for (int i=0;i<cSize;i++) {
-        ReadNode(&transform);
+        result = readNode(&transform);
+        if (result != 0) {
+            break;
+        }
     }
+    return result;
 }
 
 void Scene::remove(GameObject *gameObject) {
