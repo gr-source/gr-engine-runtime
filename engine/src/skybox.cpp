@@ -140,28 +140,67 @@ bool Skybox::SetupTexture(void *texture, const std::string &path) {
         return false;
     }
 
-    Event::Add([]{
-        m_irradianceShader = AssetsManager::LoadShader("SkyboxIrradianceShader",
-            ("/home/grsource/Documentos/AppProjects/gr-engine/bin/assets/shader/skybox/Irradiance.frag"),
-            ("/home/grsource/Documentos/AppProjects/gr-engine/bin/assets/shader/skybox/Irradiance.vert")
-        );
-
-        m_skyShader = AssetsManager::LoadShader("SkyBoxShader",
-            ("/home/grsource/Documentos/AppProjects/gr-engine/bin/assets/shader/skybox/Skybox.frag"),
-            ("/home/grsource/Documentos/AppProjects/gr-engine/bin/assets/shader/skybox/Skybox.vert"));
-
-        m_shader = AssetsManager::LoadShader("SkyboxBackgroundShader",
-            ("/home/grsource/Documentos/AppProjects/gr-engine/bin/assets/shader/skybox/Background.frag"),
-            ("/home/grsource/Documentos/AppProjects/gr-engine/bin/assets/shader/skybox/Background.vert")
-        );
-
-        AssetsManager::AddPostLoader(&Skybox::SetupShader);
-    });
+    Event::Add(&Skybox::UploadShader);
 
     return true;
 }
 
-bool Skybox::SetupShader(void *shader, const std::string &path) {
+void SetCommonRegister(grr::gShader *shader) {
+    grr::gShader::Bind(shader);
+    grr::gShader::Register("projection");
+    grr::gShader::Register("u_texture");
+    grr::gShader::Register("view");
+}
+
+void RegisterDeafult(grr::gShader **out, grr::gShader *shader) {
+    *out = shader;
+
+    SetCommonRegister(shader);
+}
+
+void Skybox::RegisterSky(grr::gShader **out, grr::gShader *shader) {
+    *out = shader;
+
+    SetCommonRegister(shader);
+
+    CubeFramebuffer::Bind(m_cubeColor);
+        GenerateMap([](grm::u32 i) {
+            grr::gFramebufferFlags flags = grr::gFramebufferFlags_Cubemap;
+            switch (i) {
+                case 0: flags = grr::gFramebufferFlags_Cubemap_Positive_X; break;
+                case 1: flags = grr::gFramebufferFlags_Cubemap_Negative_X; break;
+                case 2: flags = grr::gFramebufferFlags_Cubemap_Positive_Y; break;
+                case 3: flags = grr::gFramebufferFlags_Cubemap_Negative_Y; break;
+                case 4: flags = grr::gFramebufferFlags_Cubemap_Positive_Z; break;
+                case 5: flags = grr::gFramebufferFlags_Cubemap_Negative_Z; break;
+            }
+            m_cubeColor->SetTexture(flags);
+        }, m_texture);
+        grr::gShader::Unbind();
+}
+
+void Skybox::UploadShader() {
+    AssetsManager::LoadShader("SkyboxIrradianceShader",
+        ("/home/grsource/Documentos/AppProjects/gr-engine/bin/assets/shader/skybox/Irradiance.frag"),
+        ("/home/grsource/Documentos/AppProjects/gr-engine/bin/assets/shader/skybox/Irradiance.vert"),
+        RegisterDeafult, &m_irradianceShader
+    );
+
+    AssetsManager::LoadShader("SkyBoxShader",
+        ("/home/grsource/Documentos/AppProjects/gr-engine/bin/assets/shader/skybox/Skybox.frag"),
+        ("/home/grsource/Documentos/AppProjects/gr-engine/bin/assets/shader/skybox/Skybox.vert"),
+        Skybox::RegisterSky, &m_skyShader
+    );
+
+    AssetsManager::LoadShader("SkyboxBackgroundShader",
+        ("/home/grsource/Documentos/AppProjects/gr-engine/bin/assets/shader/skybox/Background.frag"),
+        ("/home/grsource/Documentos/AppProjects/gr-engine/bin/assets/shader/skybox/Background.vert"),
+        RegisterDeafult, &m_shader
+    );
+}
+
+/*
+bool Skybox::SetupShader(grr::gShader *shader, const std::string &path) {
     if (shader == m_shader || shader == m_irradianceShader || shader == m_skyShader) {
         grr::gShader::Bind((grr::gShader *)shader);
         grr::gShader::Register("projection");
@@ -196,6 +235,7 @@ bool Skybox::SetupShader(void *shader, const std::string &path) {
 
     return false;
 }
+*/
 
 void Skybox::GenerateMap(std::function<void(grm::u32)> func, grr::gTexture *texture) {
     auto projection = Math::perspective(Math::rad(90.0f), 1.0f, 0.1f, 10.0f);

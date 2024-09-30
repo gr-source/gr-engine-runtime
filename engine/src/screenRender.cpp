@@ -19,18 +19,12 @@ grr::gShader *ScreenRender::m_shader = nullptr;
 grm::u32 ScreenRender::m_vbo = 0;
 
 void ScreenRender::Initialize() {
-    if (!ScriptManager::GetShaders) {
-        Console::log(LogInfo::ERROR, "Falied to get script function. [ ScriptManager::GetShaders ]");
-        return;
-    }
-
-    AssetsManager::AddPostLoader(&ScreenRender::RegisterShader);
-
-    m_shader = ScriptManager::GetShaders()[4];
-    if (!m_shader) {
-        Console::log(LogInfo::ERROR, "Shader points is not valid.");
-        return;
-    }
+    AssetsManager::LoadShader(
+        "screen",
+        File::GetAsset("/shader/screen.frag"),
+        File::GetAsset("/shader/screen.vert"),
+        &ScreenRender::RegisterShader
+    );
 
     CreateMesh();
 }
@@ -96,13 +90,11 @@ void ScreenRender::CreateMesh() {
     m_vertexArray->unbind();
 }
 
-bool ScreenRender::RegisterShader(void *ptr, const std::string &name) {
-    if (name != "screen") {
-        return false;
-    }
-    grr::gShader::Bind(static_cast<grr::gShader *>(ptr));
+void ScreenRender::RegisterShader(grr::gShader *shader) {
+    grr::gShader::Bind(shader);
 
     grr::gShader::Register("u_texture");
     grr::gShader::Unbind();
-    return true;
+
+    m_shader = shader;
 }

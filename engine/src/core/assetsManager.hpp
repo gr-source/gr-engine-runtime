@@ -33,6 +33,21 @@ public:
     std::string m_path;
 };
 
+class ShaderHandle {
+public:
+    ShaderHandle(std::function<void(grr::gShader *)> &function, const std::string &name, const std::string &frag, const std::string &vert) : m_function(function), m_shader(nullptr), m_name(name), m_frag(frag), m_vert(vert) {}
+
+    std::function<void(grr::gShader *)> m_function;
+
+    grr::gShader *m_shader;
+
+    std::string m_name;
+    
+    std::string m_frag;
+
+    std::string m_vert;
+};
+
 class AssetsManager {
 public:
     static void Initialize();
@@ -41,7 +56,8 @@ public:
 
     static grr::gTexture *LoadTexture(const std::string &path);
 
-    static grr::gShader *LoadShader(const std::string &name, const std::string &frag, const std::string &vert);
+    template <typename ...Args>
+    static void LoadShader(const std::string &name, const std::string &frag, const std::string &vert, Args &&...args);
 
     template <typename ...Args>
     static void LoadGameObject(const std::string &path, Args &&...args);
@@ -86,10 +102,12 @@ public:
 
     static void SetGameObjectList(const std::string &path, std::function<void(GameObject *)> &func);
 
+    static void SetShaderList(const std::string &name, const std::string &frag, const std::string &vert, std::function<void(grr::gShader *)> &func);
+
 private:
     /***************** Shader *****************/
     static std::unordered_map<std::string, std::unique_ptr<grr::gShader>> s_shaderList;
-    static std::list<std::tuple<std::string, std::string, std::string, grr::gShader *>> s_shaderFromLoader;
+    static std::list<ShaderHandle> s_shaderFromLoader;
     static std::mutex s_shaderMutex;
 
     static std::vector<std::function<bool(void *, const std::string &)>> m_functions;
@@ -122,7 +140,7 @@ private:
 
     static void ProcessTexture();
 
-    static void SetupShader(grr::gShader *shader, const std::string &frag, const std::string &vert, const std::string &path);
+    static void SetupShader(ShaderHandle handle, const std::string &frag, const std::string &vert);
     
     static bool CheckShaderError(grr::gShader *shader, const std::string &name);
 
@@ -151,8 +169,14 @@ inline void AssetsManager::LoadGameObject(const std::string &path, Args &&...arg
 }
 
 template <typename... Args>
-inline Mesh *AssetsManager::AddMesh(const std::string &key, Args &&...args)
-{
+inline void AssetsManager::LoadShader(const std::string &name, const std::string &frag, const std::string &vert, Args &&...args) {
+    std::function<void(grr::gShader *)> func = std::bind(std::forward<Args>(args)..., std::placeholders::_1);
+    
+    SetShaderList(name, frag, vert, func);
+}
+
+template <typename... Args>
+inline Mesh *AssetsManager::AddMesh(const std::string &key, Args &&...args) {
     std::unique_lock<std::mutex> lock(m_meshMutex);
     auto &&[pair, added] = s_meshList.emplace(key, std::make_unique<Mesh>(std::forward<Args>(args)...));
     auto mesh = &(*(*pair).second);

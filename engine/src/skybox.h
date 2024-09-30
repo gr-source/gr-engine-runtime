@@ -39,7 +39,9 @@ private:
     
     static bool SetupTexture(void *texture, const std::string &path);
 
-    static bool SetupShader(void *shader, const std::string &path);
+    static void UploadShader();
+
+    static void RegisterSky(grr::gShader **out, grr::gShader *shader);
 
     static void GenerateMap(std::function<void(grm::u32)> func, grr::gTexture *texture);
 };

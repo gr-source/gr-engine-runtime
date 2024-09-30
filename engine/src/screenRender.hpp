@@ -19,7 +19,7 @@ private:
 
     static void CreateMesh();
 
-    static bool RegisterShader(void *ptr, const std::string &name);
+    static void RegisterShader(grr::gShader *shader);
 };
 
 

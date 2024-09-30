@@ -16,7 +16,8 @@ public:
     template <typename ...Args>
     static void LoadGameObject(const std::string &path, Args &&...args);
 
-    static grr::gShader *LoadShader(const std::string &name, const std::string &frag, const std::string &vert);
+    template <typename ...Args>
+    static void LoadShader(const std::string &name, const std::string &frag, const std::string &vert, Args &&...args);
 
     static void AddPostLoader(std::function<bool(void *, const std::string &)> func);
 
@@ -28,6 +29,8 @@ public:
 
 private:
     static void SetGameObjectList(const std::string &path, std::function<void(GameObject *)> &func);
+
+    static void SetShaderList(const std::string &name, const std::string &frag, const std::string &vert, std::function<void(grr::gShader *)> &func);
 };
 
 template <typename... Args>
@@ -37,3 +40,9 @@ inline void AssetsManager::LoadGameObject(const std::string &path, Args &&...arg
     SetGameObjectList(path, func);
 }
 
+template <typename... Args>
+inline void AssetsManager::LoadShader(const std::string &name, const std::string &frag, const std::string &vert, Args &&...args) {
+    std::function<void(grr::gShader *)> func = std::bind(std::forward<Args>(args)..., std::placeholders::_1);
+    
+    SetShaderList(name, frag, vert, func);
+}

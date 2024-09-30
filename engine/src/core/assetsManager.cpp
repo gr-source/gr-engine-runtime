@@ -34,7 +34,7 @@ grm::u32 AssetsManager::m_processCount = 0;
 
 /***************** Shader *****************/
 std::unordered_map<std::string, std::unique_ptr<grr::gShader>> AssetsManager::s_shaderList;
-std::list<std::tuple<std::string, std::string, std::string, grr::gShader *>> AssetsManager::s_shaderFromLoader;
+std::list<ShaderHandle> AssetsManager::s_shaderFromLoader;
 std::mutex AssetsManager::s_shaderMutex;
 
 std::vector<std::function<bool(void *, const std::string &)>> AssetsManager::m_functions;
@@ -135,45 +135,6 @@ grr::gTexture *AssetsManager::LoadTexture(const std::string &path) {
         s_textureFromLoader.emplace_back(path, m_texture);
     }
     return m_texture;
-}
-
-/***************** SHADER ****************/
-grr::gShader *AssetsManager::LoadShader(const std::string &name, const std::string &frag, const std::string &vert) {
-    if (!File::Exists(frag)) {
-        LOG_ERROR("[ AssetsManager-Shader ] File do not found: " + frag);
-        return nullptr;
-    }
-
-    if (!File::Exists(vert)) {
-        LOG_ERROR("[ AssetsManager-Shader ] File do not found: " + vert);
-        return nullptr;
-    }
-
-    auto it = s_shaderList.find(name);
-    if (it != s_shaderList.end()) {
-        return &(*(*it).second);
-    }
-
-    {
-        std::lock_guard<std::mutex> lock(s_shaderMutex);
-        auto it = std::find_if(s_shaderFromLoader.begin(), s_shaderFromLoader.end(), [&name](auto &tuple) {
-            auto &&[key, frag, vert, shader] = tuple;
-
-            return key == name;
-        });
-
-        if (it != s_shaderFromLoader.end()) {
-            return std::get<grr::gShader *>((*it));
-        }
-    }
-
-    grr::gShader *shader = new grr::gShader();
-
-    {
-        std::lock_guard<std::mutex> lock(s_shaderMutex);
-        s_shaderFromLoader.emplace_back(name, frag, vert, shader);
-    }
-    return shader;
 }
 
 Animation *AssetsManager::LoadAnimation(const std::string &path) {
@@ -313,24 +274,30 @@ void AssetsManager::ProcessTexture() {
 }
 
 /***************** Shader Process ****************/
-void AssetsManager::SetupShader(grr::gShader *shader, const std::string &frag, const std::string &vert, const std::string &name) {
+void AssetsManager::SetupShader(ShaderHandle handle, const std::string &frag, const std::string &vert) {
+    std::function<void(grr::gShader *)> func = nullptr;
+    std::string name;
+    {
+        std::lock_guard<std::mutex> lock(s_shaderMutex);
+        func = handle.m_function;
+        name = handle.m_name;
+    }
+
     Console::log(LogInfo::INFO, "Shader loadedd sucessfull: " + name);
 
     const char *fShader = frag.c_str();
     const char *vShader = vert.c_str();
 
-    grr::gShader::Bind(shader);
-    grr::gShader::SetupShader(&fShader, &vShader);
-    grr::gShader::Unbind();
+    auto shader = grr::gShader::Create(&fShader, &vShader);
 
     if (CheckShaderError(shader, name)) {
         delete shader;
         return;
     }
 
-    m_functions.erase(std::remove_if(m_functions.begin(), m_functions.end(), [&shader, &name](auto &func) {
-        return func(shader, name);
-    }), m_functions.end());
+    if (func) {
+        func(shader);
+    }
 
     s_shaderList.emplace(name, std::unique_ptr<grr::gShader>(shader));
 }
@@ -354,37 +321,31 @@ bool AssetsManager::CheckShaderError(grr::gShader *shader, const std::string &na
 void AssetsManager::ProcessShader() {
     std::unique_lock<std::mutex> lock(s_shaderMutex);
     while (!s_shaderFromLoader.empty()) {
-        auto &&[name, frag, vert, shader] = s_shaderFromLoader.front();
-
-        lock.unlock();
+        auto handle = s_shaderFromLoader.front();
+        s_shaderFromLoader.pop_front();
+        // lock.unlock();
 
         // Processing shader
-
-        auto fragSource = File::GetFileContent(frag);
+        auto fragSource = File::GetFileContent(handle.m_frag);
         if (fragSource.empty()) {
-            Console::log(LogInfo::ERROR, "Falied to shader: " + name + " Fragment: " + frag);
-            delete shader;
+            Console::log(LogInfo::ERROR, "Falied to shader: " + handle.m_name + " Fragment: " + handle.m_frag);
 
-            lock.lock();
-            s_shaderFromLoader.pop_front();
+            // lock.lock();
             continue;
         }
 
         // Loading vertex shader
-        auto vertSource = File::GetFileContent(vert);
+        auto vertSource = File::GetFileContent(handle.m_vert);
         if (vertSource.empty()) {
-            Console::log(LogInfo::ERROR, "Falied to shader: " + name + " Vertex: " + vert);
-            delete shader;
+            Console::log(LogInfo::ERROR, "Falied to shader: " + handle.m_name + " Vertex: " + handle.m_vert);
 
-            lock.lock();
-            s_shaderFromLoader.pop_front();
+            // lock.lock();
             continue;
         }
 
-        Event::Add(AssetsManager::SetupShader, shader, fragSource, vertSource, name);
+        Event::Add(AssetsManager::SetupShader, handle, fragSource, vertSource);
 
-        lock.lock();
-        s_shaderFromLoader.pop_front();
+        // lock.lock();
     }
 }
 
@@ -753,14 +714,25 @@ void AssetsManager::SetGameObjectList(const std::string &path, std::function<voi
         return;
     }
 
-    auto name = File::GetFileName(path);
-
     {
         std::lock_guard<std::mutex> lock(s_gameObjectMutex);
         s_gameObjectFromLoader.emplace_back(func, path);
     }
+}
 
-    // return gameObject;
+void AssetsManager::SetShaderList(const std::string &name, const std::string &frag, const std::string &vert, std::function<void(grr::gShader *)> &func) {
+    if (!File::Exists(frag)) {
+        return LOG_ERROR("[ AssetsManager-Shader ] File do not exists: " + frag);
+    }
+
+    if (!File::Exists(vert)) {
+        return LOG_ERROR("[ AssetsManager-Shader ] File do not exists: " + vert);
+    }
+
+    {
+        std::lock_guard<std::mutex> lock(s_shaderMutex);
+        s_shaderFromLoader.emplace_back(func, name, frag, vert);
+    }
 }
 
 grm::size AssetsManager::GetMaterialCount() {

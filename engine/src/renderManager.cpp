@@ -29,19 +29,21 @@ Camera *RenderManager::m_camera = nullptr;
 
 bool RenderManager::bRender = false;
 
+void Teste(grr::gShader *shader) {}
+
 void RenderManager::Initialize() {
     if (!ScriptManager::GetShaders) {
         return;
     }
 
-    auto shaders = ScriptManager::GetShaders();
+    // auto shaders = ScriptManager::GetShaders();
 
-    AssetsManager::AddPostLoader(RenderManager::SetupShader);
+    // AssetsManager::AddPostLoader(RenderManager::SetupShader);
 
-    m_shader[ShaderType_Dynamic] = shaders[ShaderType_Dynamic];
-    // m_shader[ShaderType_Dynamic_Anim] = shaders[ShaderType_Dynamic_Anim];
-    m_shader[ShaderType_Dynamic_Multi_Model] = shaders[ShaderType_Dynamic_Multi_Model];
-    m_shader[ShaderType_Static_Multi_Model] = shaders[ShaderType_Static_Multi_Model];
+    // m_shader[ShaderType_Dynamic] = shaders[ShaderType_Dynamic];
+    // // m_shader[ShaderType_Dynamic_Anim] = shaders[ShaderType_Dynamic_Anim];
+    // m_shader[ShaderType_Dynamic_Multi_Model] = shaders[ShaderType_Dynamic_Multi_Model];
+    // m_shader[ShaderType_Static_Multi_Model] = shaders[ShaderType_Static_Multi_Model];
 }
 
 void RenderManager::Process() {

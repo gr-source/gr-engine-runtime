@@ -13,10 +13,6 @@ grr::gTexture *AssetsManager::Load(const std::string &path, const std::string &r
     throw std::runtime_error("function do not implemented.");
 }
 
-grr::gShader *AssetsManager::LoadShader(const std::string &name, const std::string &frag, const std::string &vert) {
-    throw std::runtime_error("function do not implemented.");
-}
-
 void AssetsManager::AddPostLoader(std::function<bool(void *, const std::string &)> func) {
     throw std::runtime_error("function do not implemented.");
 }
@@ -30,6 +26,10 @@ grr::gShader *AssetsManager::FindShader(const std::string &name) {
 }
 
 void AssetsManager::SetGameObjectList(const std::string &path, std::function<void(GameObject *)> &func) {
+    throw std::runtime_error("function do not implemented.");
+}
+
+void AssetsManager::SetShaderList(const std::string &name, const std::string &frag, const std::string &vert, std::function<void(grr::gShader *)> &func) {
     throw std::runtime_error("function do not implemented.");
 }
 
