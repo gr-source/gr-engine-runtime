@@ -140,12 +140,12 @@ grr::gTexture *AssetsManager::LoadTexture(const std::string &path) {
 /***************** SHADER ****************/
 grr::gShader *AssetsManager::LoadShader(const std::string &name, const std::string &frag, const std::string &vert) {
     if (!File::Exists(frag)) {
-        Console::log(LogInfo::ERROR, "File do not found: " + frag);
+        LOG_ERROR("[ AssetsManager-Shader ] File do not found: " + frag);
         return nullptr;
     }
 
     if (!File::Exists(vert)) {
-        Console::log(LogInfo::ERROR, "File do not found: " + vert);
+        LOG_ERROR("[ AssetsManager-Shader ] File do not found: " + vert);
         return nullptr;
     }
 
@@ -175,27 +175,6 @@ grr::gShader *AssetsManager::LoadShader(const std::string &name, const std::stri
     }
     return shader;
 }
-
-/*
-GameObject *AssetsManager::LoadGameObject(const std::string &path) {
-    if (!File::Exists(path)) {
-        Console::log(LogInfo::ERROR, "Binary do not found: " + path);
-        return nullptr;
-    }
-
-    auto name = File::GetFileName(path);
-
-    auto gameObject = &Scene::GetCurrentScene()->CreateGameObject(name);
-    auto &transform = gameObject->getTransform();
-
-    {
-        std::lock_guard<std::mutex> lock(s_gameObjectMutex);
-        // s_gameObjectFromLoader.emplace_back(path, &transform);
-    }
-
-    return gameObject;
-}
-*/
 
 Animation *AssetsManager::LoadAnimation(const std::string &path) {
     if (!File::Exists(path)) {
@@ -559,7 +538,7 @@ void AssetsManager::SetupGameObject(GameObjectHandle &handle, Transform *&out, g
         auto &meshRender = gameObject->addComponent<MeshRender>();
 
         for (auto &material : materials) {
-            auto &m = meshRender.addMaterial(material.m_name, Vector4(material.m_color.r, material.m_color.g, material.m_color.b, material.m_color.a));
+            auto &m = meshRender.addMaterial(material.m_name, material.m_color);
 
             for (int i=0;i<material.m_textureCount;++i) { 
                 auto& texture = material.m_textures[i];

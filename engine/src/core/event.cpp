@@ -4,6 +4,11 @@ std::list<std::function<void()>> Event::m_events;
 
 std::mutex Event::m_mutex;
 
+void Event::AddEvent(std::function<void()> func) {
+    std::lock_guard<std::mutex> lock(m_mutex);
+    m_events.push_back(func);
+}
+
 void Event::ProcessEvent() {
     std::unique_lock<std::mutex> lock(m_mutex);
     while (!m_events.empty()) {

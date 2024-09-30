@@ -77,9 +77,5 @@ void SetDeltaTime(float deltaTime) {
     Time::deltaTime = deltaTime;
 }
 
-void EventUpdate() {
-    return Event::Update();
-}
-
 
 

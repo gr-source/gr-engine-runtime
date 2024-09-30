@@ -34,9 +34,6 @@ public:
 
     static void (*Update)();
 
-    // Event;
-    static void (*EventUpdate)();
-
     static std::unique_ptr<Animation> (*LoadAnimation)(const std::string &);
     
     static void (*SetScreenSize)(const iVector2 &);

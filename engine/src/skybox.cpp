@@ -42,7 +42,7 @@ void Skybox::Initialize() {
 
 void Skybox::Shutdown() {
     if (m_vertexArray) {
-        m_vertexArray->destroy();
+        grr::gVertexArray::Destroy(m_vertexArray);
     }
 
     if (m_vbo) {

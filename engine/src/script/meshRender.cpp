@@ -14,18 +14,19 @@ std::vector<Material> &MeshRender::getMaterials() {
 // TODO: falta orimizar e corrigir erros do material;
 void MeshRender::build() {
     if (!entity->hasComponent<MeshFilter>()) {
-        return;
+        throw std::runtime_error("MeshFilter component do not found.");
     }
     
     auto &meshFilter = entity->getComponent<MeshFilter>();
     
     auto mesh = meshFilter.getMesh();
     if (!mesh) {
-        return;
+        throw std::runtime_error("Object do not has mesh.");
     }
 
     if (m_batched) {
-        m_batched->remove(&entity->getComponent<Transform>());
+        m_batched->remove(m_transform);
+        m_batched = nullptr;
     }
 
     if (m_flags == Batching::Batching_Flags_Dynamic) {
@@ -42,12 +43,15 @@ void MeshRender::build() {
         auto material = AssetsManager::FindMaterial(mName);
         if (!material) {
             material = &AssetsManager::AddMaterial(mName, m_materials);
+        } else {
+            m_materials = *material;
         }
 
         m_batched = Batching::Find(getGameObject()->getName());
         if (!m_batched) {
-            m_batched = &Batching::Add(getGameObject()->getName(), material, mesh, shader, Batching::Batching_Flags_Dynamic);
+            m_batched = &Batching::Add(getGameObject()->getName(), &m_materials, mesh, shader, Batching::Batching_Flags_Dynamic);
         }
+        
         m_batched->insert(m_transform);
         return;
     }

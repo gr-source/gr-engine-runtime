@@ -3,17 +3,17 @@
 #include "api.hpp"
 
 bool Input::IskeyPress(InputKey key) {
-    return false;//InputIsKeyPress((grm::u32)key);
+    throw std::runtime_error("function do not implemented.");
 }
 
 void Input::SetCursorPos(const Vector2 &value) {
-    // InputSetCursourPos(value);
+    throw std::runtime_error("function do not implemented.");
 }
 
 Vector2 Input::GetCursorPos() {
-    return {};// InputGetCursorPos();
+    throw std::runtime_error("function do not implemented.");
 }
 
 bool Input::IsMousePress(InputKey key) {
-    return false; //InputIsMousePress((grm::u32) key);
+    throw std::runtime_error("function do not implemented.");
 }

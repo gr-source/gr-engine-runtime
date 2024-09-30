@@ -57,7 +57,7 @@ Batching::Batching(const std::string &name, std::vector<Material> *materials, Me
 
 Batching::~Batching() {
     if (m_vertexArray) {
-        m_vertexArray->destroy();
+        grr::gVertexArray::Destroy(m_vertexArray);
     }
 
     if (m_VBO) {
@@ -305,7 +305,6 @@ void Batching::setupMaterial() {
 
     for (auto i=0;i<materials.size();i++) {
         auto &material = materials[i];
-        std::memset(idxEn, 10, 0);
 
         for (auto i=0;i<10;++i) {
             auto texture = material.getTexture(i);

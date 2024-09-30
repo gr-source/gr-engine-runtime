@@ -21,6 +21,10 @@ public:
 
     static void DropFile(const std::filesystem::path &path);
 
+    static void Import3DModel(const std::string &path);
+
+    static void ImportImage(const std::string &path);
+
     static void KeyBoardUp(grm::u32 key);
 
     static void LoadScript();
@@ -154,6 +158,8 @@ private:
     static void OnPropertyMeshFilter(MeshFilter* MeshFilter);
     
     static void OnPropertyMeshRender(MeshRender* meshRender);
+
+    static void InsertTexture(Material &material);
 
     static void OnPropertyAnimator(Animator* animator);
 

@@ -6,19 +6,19 @@
 
 class Material {
 public:
-    Material(const std::string& name = "Material", const Vector4& albedo = {1.0f, 1.0f, 1.0f, 1.0f}, float metallic = 0.5f, float roughness = 0.5f, float ao = 0.5f);
+    Material(const std::string& name = "Material", const Color& albedo = Color::black, float metallic = 0.5f, float roughness = 0.5f, float ao = 0.5f);
 
     const std::string& getName() const;
 
-    const Vector4 &getAlbedo() const;
+    Color getAlbedo() const;
 
-    void setAlbedo(const Vector4 &color);
+    void setAlbedo(const Color &color);
 
-    const float getMetallic() const;
+    float getMetallic() const;
     
-    const float getRoughness() const;
+    float getRoughness() const;
 
-    const float getAmbientOcclusion() const;
+    float getAmbientOcclusion() const;
 
     void setTexture(int idx, grr::gTexture *texture);
 
@@ -31,7 +31,7 @@ public:
 private:
     std::string m_name;
 
-    Vector4 m_albedo;
+    Color m_albedo;
 
     float m_metallic;
 

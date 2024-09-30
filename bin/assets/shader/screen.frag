@@ -2,12 +2,12 @@
 
 out vec4 FragColor;
   
-in vec2 TexCoords;
+in vec2 u_texCoord;
 
-uniform sampler2D screenTexture;
+uniform sampler2D u_texture;
 
 void main() {
-    vec3 color = texture(screenTexture, TexCoords).rgb;
+    vec3 color = texture(u_texture, u_texCoord).rgb;
 
     // HDR
     color = vec3(1.0) - exp(color * 1.3);

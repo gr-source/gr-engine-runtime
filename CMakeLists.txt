@@ -37,30 +37,20 @@ find_package(Bullet REQUIRED)
 add_subdirectory(engine)
 add_subdirectory(imgui)
 
+
+#### ENGINE ####
+target_include_directories(engine PRIVATE imgui/src imgui/src/backends ${BULLET_INCLUDE_DIRS} ${OPENGL_INCLUDE_DIRS} ${GLEW_INCLUDE_DIRS})
+
+target_link_libraries(engine PRIVATE ${OPENGL_LIBRARIES} ${GRMATH_LIBRARIES} ${GRRENDER_LIBRARIES} ${BULLET_LIBRARIES})
+
+#### IMGUI ####
+target_include_directories(imgui PRIVATE imgui/src imgui/src/backends)
+
 #### MAIN ####
 
 target_include_directories(${PROJECT_NAME} PRIVATE imgui/src imgui/src/backends engine/src)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE engine glfw imgui assimp ${GLEW_LIBRARIES} ${OPENGL_LIBRARIES})
-
-#### ENGINE ####
-
-target_include_directories(engine PRIVATE imgui/src imgui/src/backends ${BULLET_INCLUDE_DIRS} ${OPENGL_INCLUDE_DIRS} ${GLEW_INCLUDE_DIRS})
-
-target_link_libraries(${PROJECT_NAME} PRIVATE engine glfw imgui assimp ${GLEW_LIBRARIES} ${OPENGL_LIBRARIES})
-
-#### ENGINE ####
-
-target_include_directories(engine PRIVATE imgui/src imgui/src/backends ${BULLET_INCLUDE_DIRS})
-
-target_link_libraries(engine PRIVATE ${OPENGL_LIBRARIES} ${GRMATH_LIBRARIES} ${GRRENDER_LIBRARIES} ${BULLET_LIBRARIES})
-
-target_compile_definitions(engine PRIVATE IS_GAME=0 DEBUG=1)
-
-
-#### IMGUI ####
-
-target_include_directories(imgui PRIVATE imgui/src imgui/src/backends)
 
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
 set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})

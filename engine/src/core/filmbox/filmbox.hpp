@@ -6,6 +6,8 @@
 
 #include <assimp/scene.h>
 
+#include <memory>
+
 class Filmbox {
 public:
     Filmbox(const std::string &path);

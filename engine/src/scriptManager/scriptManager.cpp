@@ -47,9 +47,6 @@ std::size_t (*ScriptManager::GetEntityCount)();
 // LIght
 std::vector<Light *> &(*ScriptManager::GetListLight)();
 
-// Event
-void (*ScriptManager::EventUpdate)();
-
 std::unique_ptr<Animation> (*ScriptManager::LoadAnimation)(const std::string &);
 
 // Screen
@@ -129,7 +126,7 @@ void ScriptManager::RegisterApi() {
     m_script->registerFunction("SetEnableCamera", reinterpret_cast<void **>(&Camera::SetEnable));
 
     // Event Manager
-    m_script->registerFunction("EventUpdate", reinterpret_cast<void **>(&EventUpdate));
+    m_script->replaceLibraryFunction("_ZN5Event17AddEvent_InternalESt8functionIFvvEE", reinterpret_cast<void **>(&Event::AddEvent));
 
     // AssetManager
     m_script->replaceLibraryFunction("_ZN13AssetsManager4LoadIN3grr8gTextureEEEPT_RKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEESC_",                      reinterpret_cast<void *>(&AssetsManager::LoadTexture));
@@ -174,7 +171,7 @@ void ScriptManager::RegisterApi() {
     m_script->replaceLibraryFunction("_ZN10GameObject7DestroyEPS_", reinterpret_cast<void *>(&GameObject::Destroy));
 
     // File
-    // m_script->replaceLibraryFunction("_ZN4File7GetFileERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb", reinterpret_cast<void *>(&File::GetFile));
+    m_script->replaceLibraryFunction("_ZN4File7GetFileERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb", reinterpret_cast<void *>(&File::GetFile));
 
     // Time
     // m_script->replaceLibraryField("_ZN4Time9deltaTimeE", reinterpret_cast<void *>(&TimeLast::deltaTime));

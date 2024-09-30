@@ -52,7 +52,7 @@ Scene *Scene::Create(const std::string &name) {
         auto &camera = scene->CreateGameObject("MainCamera");
         camera.addComponent<Camera>();
     } catch (std::runtime_error e) {
-        std::cout << "Falah ao adiconar uma camera na cena: " << e.what() << std::endl;
+        LOG_ERROR("[ SCENE ] Falha ao adiconar uma camera na cena: " + std::string(e.what()));
     }
     
     return scene;
@@ -566,9 +566,13 @@ int Scene::readNode(Transform *parent) {
 
         std::string filename = gameObject.getName() + name;
 
-        Streaming s(path + "/" + std::to_string(hash(filename)) + ".dat", std::ios_base::in | std::ios_base::binary);
-        if (s.is_open())
-            component->Deserialize(s);
+        try {
+            Streaming s(path + "/" + std::to_string(hash(filename)) + ".dat", std::ios_base::in | std::ios_base::binary);
+            if (s.is_open())
+                component->Deserialize(s);
+        } catch (const std::exception &e) {
+            LOG_ERROR("[ LoadScene ] Faltal error: " + std::string(e.what()));
+        }
     }
 
     if (!Stream::read(&cSize, 1)) {

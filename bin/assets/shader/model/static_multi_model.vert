@@ -8,20 +8,19 @@ layout (location = 3) in int in_index;
 flat out int u_index;
 out vec3 u_fragPos;
 out vec3 u_normal;
+out vec2 u_texCoord;
 
-uniform mat4 projection;
-uniform mat4 view;
-uniform mat4 model;
+uniform mat4 u_projection;
+uniform mat4 u_view;
 
 void main() {
-    vec4 worldPos = model * vec4(in_pos, 1.0);
-    vec4 worldNorm = model * vec4(in_normal, 1.0);
-
-    u_fragPos = worldPos.xyz;
+    u_fragPos = in_pos;
 
     u_index = in_index;
 
-    u_normal = mat3(model) * in_normal;
+    u_texCoord = in_texCood;
 
-    gl_Position = projection * view * worldPos;
+    u_normal = in_normal;
+
+    gl_Position = u_projection * u_view * vec4(in_pos, 1.0);
 }

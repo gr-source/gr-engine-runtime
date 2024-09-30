@@ -1,6 +1,5 @@
 #include "core/time.hpp"
 
-#include <thread>
 
 float Time::deltaTime = 0.0f;
 int Time::FPS = 0;

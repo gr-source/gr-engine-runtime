@@ -267,12 +267,7 @@ void Filmbox::processNode(aiNode *mNode, FbxNode& node, const aiScene *scene) {
     aiQuaternion rotation;
     mNode->mTransformation.Decompose(scale, rotation, position);
 
-    // float magnitude = std::sqrt((scale.x * scale.x) + (scale.y * scale.y) + (scale.z * scale.z));
-    // if (magnitude > 1e-5f) {
-    //     scale.x /= magnitude;
-    //     scale.y /= magnitude;
-    //     scale.z /= magnitude;
-    // }
+    NORMALIZE(scale)
 
     // magnitude = std::sqrt((position.x * position.x) + (position.y * position.y) + (position.z * position.z));
     // if (magnitude > 1e-5f) {

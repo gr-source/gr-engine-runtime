@@ -21,8 +21,6 @@
 
 #include <cstring>
 
-#include <gr-render/gColor.h>
-
 std::array<grr::gShader *, 4> RenderManager::m_shader = {nullptr, nullptr, nullptr, nullptr};
 
 bool RenderManager::bWireFrame = false;
@@ -120,11 +118,10 @@ void RenderManager::SetupLight() {
         const auto& light = lights[i];
 
         grr::gShader::SetUniform("m_light[" + std::to_string(i) + "].position",    light->getposition());
-        grr::gShader::SetUniform("m_light[" + std::to_string(i) + "].color",       grr::gColor(light->getcolor().r, light->getcolor().g, light->getcolor().b, light->getcolor().a));
+        grr::gShader::SetUniform("m_light[" + std::to_string(i) + "].color",       light->getcolor());
         grr::gShader::SetUniform("m_light[" + std::to_string(i) + "].attenuation", Vector3(light->getattenuationconstant(), light->getattenuationlinear(), light->getattenuationquadractc()));
         grr::gShader::SetUniform("m_light[" + std::to_string(i) + "].direction",   light->getForward());
         grr::gShader::SetUniform("m_light[" + std::to_string(i) + "].params",      Vector3(light->getinnecone(), light->getoutercone(), (float)light->getType()));
-        // grr::gShader::SetUniform("m_light[" + std::to_string(i) + "].vp",            light->getprojectionview());
     }
 }
 

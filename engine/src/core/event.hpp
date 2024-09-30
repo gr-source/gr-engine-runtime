@@ -10,14 +10,15 @@
 
 class Event {
 public:
-    
     template <typename ...Args>
     static void Add(Args &&...args);
+
+    static void AddEvent(std::function<void()> func);
 
     static void ProcessEvent();
 
     static grm::size GetCount();
-    
+
 protected:
     static std::list<std::function<void()>> m_events;
     

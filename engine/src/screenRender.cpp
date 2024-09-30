@@ -37,7 +37,7 @@ void ScreenRender::Initialize() {
 
 void ScreenRender::Shutdown() {
     if (m_vertexArray && !Settings::IsEngineRunning()) {
-        m_vertexArray->destroy();
+        grr::gVertexArray::Destroy(m_vertexArray);
         m_vertexArray = nullptr;
     }
 }

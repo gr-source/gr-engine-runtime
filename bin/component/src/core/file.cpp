@@ -27,5 +27,5 @@ std::string File::GetAsset(const std::string &path) {
 }
 
 std::string File::GetFile(const std::string &path, bool internal) {
-    return nullptr;
+    throw std::runtime_error("function do not implemented.");
 }

@@ -108,10 +108,6 @@ void Engine::Update() {
 void Engine::Render() {
     Event::ProcessEvent();
 
-    if (ScriptManager::EventUpdate) {
-        ScriptManager::EventUpdate();
-    }
-
     Time time;
     time.end();
 

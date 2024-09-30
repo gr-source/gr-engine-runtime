@@ -10,26 +10,29 @@
 
 template <>
 grr::gTexture *AssetsManager::Load(const std::string &path, const std::string &rhs) {
-    return nullptr;
+    throw std::runtime_error("function do not implemented.");
 }
 
 grr::gShader *AssetsManager::LoadShader(const std::string &name, const std::string &frag, const std::string &vert) {
-    return nullptr;
+    throw std::runtime_error("function do not implemented.");
 }
 
 void AssetsManager::AddPostLoader(std::function<bool(void *, const std::string &)> func) {
+    throw std::runtime_error("function do not implemented.");
 }
 
 Mesh *AssetsManager::FindMesh(const std::string &name) {
-    return nullptr;
+    throw std::runtime_error("function do not implemented.");
 }
 
 grr::gShader *AssetsManager::FindShader(const std::string &name) {
-    return nullptr;
+    throw std::runtime_error("function do not implemented.");
 }
 
-void AssetsManager::SetGameObjectList(const std::string &path, std::function<void(GameObject *)> &func) {}
+void AssetsManager::SetGameObjectList(const std::string &path, std::function<void(GameObject *)> &func) {
+    throw std::runtime_error("function do not implemented.");
+}
 
 std::vector<Material> *AssetsManager::FindMaterial(const std::string &name) {
-    return nullptr;
+    throw std::runtime_error("function do not implemented.");
 }

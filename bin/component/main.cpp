@@ -14,9 +14,6 @@ void Initialize() {
 
 void Destroy() {
     std::cout << "shutdowm" << std::endl;
-    Event::Shutdown();
-
-    // ComponentRegistry::GetPool().clear();
 }
 
 enum ShaderType : int {
@@ -32,36 +29,36 @@ std::unordered_map<int, grr::gShader *> GetShaders() {
         {
             ShaderType_Dynamic,
             AssetsManager::LoadShader("dynamic_one_model",
-                "/home/grsource/Documentos/AppProjects/gr-component/lib/shader/model/dynamic_model.frag",
-                "/home/grsource/Documentos/AppProjects/gr-component/lib/shader/model/dynamic_one_model.vert"
+                File::GetAsset("/shader/model/dynamic_model.frag"),
+                File::GetAsset("/shader/model/dynamic_one_model.vert")
             )
         },
         {
             ShaderType_Dynamic_Anim,
             AssetsManager::LoadShader("dynamic_anim",
-                "/home/grsource/Documentos/AppProjects/gr-component/lib/shader/model/dynamic_model.frag",
-                "/home/grsource/Documentos/AppProjects/gr-component/lib/shader/model/dynamic_model_anim.vert"
+                File::GetAsset("/shader/model/dynamic_model.frag"),
+                File::GetAsset("/shader/model/dynamic_model_anim.vert")
             )
         },
         {
             ShaderType_Dynamic_Multi_Model,
             AssetsManager::LoadShader("dynamic_multi_model",
-                "/home/grsource/Documentos/AppProjects/gr-component/lib/shader/model/dynamic_model.frag",
-                "/home/grsource/Documentos/AppProjects/gr-component/lib/shader/model/dynamic_multi_model.vert"
+                File::GetAsset("/shader/model/dynamic_model.frag"),
+                File::GetAsset("/shader/model/dynamic_multi_model.vert")
             )
         },
         {
             ShaderType_Static_Multi_Model,
             AssetsManager::LoadShader("static_multi_model",
-                "/home/grsource/Documentos/AppProjects/gr-component/lib/shader/model/dynamic_model.frag",
-                "/home/grsource/Documentos/AppProjects/gr-component/lib/shader/model/static_multi_model.vert"
+                File::GetAsset("/shader/model/dynamic_model.frag"),
+                File::GetAsset("/shader/model/static_multi_model.vert")
             )
         },
         {
             ShaderType_Screen,
             AssetsManager::LoadShader("screen",
-                "/home/grsource/Documentos/AppProjects/gr-component/lib/shader/screen.frag",
-                "/home/grsource/Documentos/AppProjects/gr-component/lib/shader/screen.vert"
+                File::GetAsset("/shader/screen.frag"),
+                File::GetAsset("/shader/screen.vert")
             )
         },
     };

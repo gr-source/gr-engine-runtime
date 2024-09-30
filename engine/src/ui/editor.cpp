@@ -54,6 +54,7 @@
 
 #define IMGUI_PAYLOAD_GAMEOBJECT "##payload_game_object"
 #define IMGUI_PAYLOAD_FILE "##payload_file"
+#define IMGUI_PAYLOAD_IMAGE "##playload_image"
 
 #define ITEMS_PER_PAGE 20
 
@@ -208,7 +209,7 @@ void WriteNode(const FbxScene *scene, const FbxNode &node) {
     pModel.m_scale = node.getScale();
     pModel.m_rotation = node.getRotation();
     pModel.m_position = node.getPosition();
-    std::memcpy(pModel.m_name, node.getName().c_str(), 256);
+    std::strcpy(pModel.m_name, node.getName().c_str());
 
     if (!Stream::write(&pModel, 1)) {
         return;
@@ -454,16 +455,16 @@ void WriteAnimation(const FbxScene *fbxScene) {
 }
 
 void WriteHeader(const FbxScene *scene, const FbxNode &node) {
-    Console::log(LogInfo::INFO, "Write 3D Mode: " + node.getName());
+    LOG_INFO("Write 3D Mode: " + node.getName());
 
     if (!Stream::open(File::GetAsset("/model/" + node.getName() + ".gmd"), std::ios_base::out | std::ios_base::binary)) {
-        return Console::log(LogInfo::INFO, "Failed to write the 3D model: " + node.getName());
+        return LOG_ERROR("Failed to write the 3D model: " + node.getName());
     }
 
     gHeader pHeader {{'g', 'r', 'm', 'd'}, 1.0f};
     if (!Stream::write(&pHeader, 1)) {
         Stream::close();
-        return Console::log(LogInfo::INFO, "Failed to write the 3D model (0)");
+        return LOG_ERROR("Failed to write the 3D model (0)");
     }
 
     WriteNode(scene, node);
@@ -482,14 +483,31 @@ void PostProcess(const FbxScene *scene, Filmbox *filmbox) {
 }
 
 void Editor::DropFile(const std::filesystem::path &path) {
-    if (path.extension() != ".fbx") {
-        return;
+    if (path.extension() == ".fbx") {
+        return Import3DModel(path.string());
+    } else if (path.extension() == ".png" || path.extension() == ".jpg") {
+        return ImportImage(path.string());
     }
-    Console::log(LogInfo::INFO, "Loading fbx: " + path.extension().string());
+}
 
-    auto *filmbox = new Filmbox(path.string());
+void Editor::Import3DModel(const std::string &path) {
+    LOG_INFO("[ Import ] Importing 3D model...");
+    auto *filmbox = new Filmbox(path);
     filmbox->setPostProcess(PostProcess);
     filmbox->load();
+}
+
+void Editor::ImportImage(const std::string &path) {
+    auto assets_texture = File::GetAsset("/texture");
+    if (!File::Exists(assets_texture)) {
+        return LOG_ERROR("[ Import ] Assets data project do not loaded.");
+    }
+    LOG_INFO("[ Import ] Importing texture...");
+
+    if (!File::Copy(path, assets_texture)) {
+        return LOG_ERROR("[ Import ] " + File::GetError());
+    }
+    LOG_INFO("[ Import ] Texture imported.");
 }
 
 void Editor::KeyBoardUp(grm::u32 key) {
@@ -506,6 +524,7 @@ void Editor::LoadScript() {
         LOG_WARNIG("Script reloaded...");
         UnloadScript();
     }
+
     try {
         ScriptManager::Initialize(File::GetFile("/.build/component/lib/libgr-component.so"));
     } catch (const std::runtime_error &e) {
@@ -710,7 +729,7 @@ void Editor::RenderScenesUI() {
     auto name = Scene::HasScene() ? Scene::GetCurrentScene()->getName() : "Default";
 
     ImGui::SetNextItemOpen(true, ImGuiCond_Appearing);
-    if (ImGui::TreeNodeEx(name.c_str(), ImGuiTreeNodeFlags_SpanFullWidth)) {
+    if (ImGui::TreeNodeEx(name.empty() ? "Scene name is empty!" : name.c_str(), ImGuiTreeNodeFlags_SpanFullWidth)) {
         if (ImGui::BeginDragDropTarget()) {
             ImGuiDragDropFlags target_flags = 0;
             // target_flags |= ImGuiDragDropFlags_AcceptBeforeDelivery;
@@ -1201,6 +1220,7 @@ void Editor::RenderScene() {
     if (ImGui::RadioButton("Local", m_guizmoManipulate == ImGuizmo::LOCAL)) {
         m_guizmoManipulate = ImGuizmo::LOCAL;
     }
+    
     ImGui::SameLine();
     if (ImGui::RadioButton("World", m_guizmoManipulate == ImGuizmo::WORLD)) {
         m_guizmoManipulate = ImGuizmo::WORLD;
@@ -1242,7 +1262,10 @@ void Editor::PopupMenuCreateScene() {
 
     char name[256] = {0};
     if (ImGui::InputText("##input_scene_name", name, 256, ImGuiInputTextFlags_EnterReturnsTrue)) {
-        m_scenes.emplace(name, std::shared_ptr<Scene>(Scene::Create(name)));
+        std::string to_str = name;
+        if (!to_str.empty()) {
+            m_scenes.emplace(name, std::shared_ptr<Scene>(Scene::Create(name)));
+        }
         
         ImGui::CloseCurrentPopup();
     }
@@ -1252,7 +1275,12 @@ void Editor::PopupMenuCreateScene() {
 
 void Editor::RenderFilesUI() {
     for (auto &entry : std::filesystem::directory_iterator(m_currentPath)) {
-        RenderTreeNodeFile(entry.path());
+        auto path = entry.path();
+        
+        if (path.filename().string()[0] == '.') {
+            continue;
+        }
+        RenderTreeNodeFile(path);
     }
 
     if (pPopupFileManager) {
@@ -1852,40 +1880,12 @@ void Editor::OnPropertyMeshRender(MeshRender *meshRender) {
         if (!isOpen) {
             continue;
         }
-            
-        auto& albedo = material.getAlbedo();
-        {
-            ImGui::SeparatorText("Albedo");
-            auto texture = material.getTexture(0);
 
-            if (texture != nullptr && texture->isValid()) {
-                ImGui::Image(reinterpret_cast<ImTextureID>(texture->getID()), {Settings::IconSize.x, Settings::IconSize.y});
-                if (ImGui::IsItemHovered() && ImGui::IsKeyDown(ImGuiKey_X)) {
-                    texture = nullptr;
-                }
-            } else {
+        auto albedo = material.getAlbedo();
+        InsertTexture(material);
 
-                if (View::TextureInputUI(ImColor(albedo.x, albedo.y, albedo.z, albedo.w))) {
-                    ImGui::OpenPopup("#PopupChangeColorAlbedo");
-                }
-            }
-
-            /*
-            if (ImGui::BeginDragDropTarget()) {
-                if (const ImGuiPayload* data = ImGui::AcceptDragDropPayload(getDragDrop(DragDrop::TEXTURE), ImGuiDragDropFlags_None)) {
-                    std::string path((char*)data->Data, data->DataSize);
-                    if (!path.empty()) {
-                        material.texture[TexturePBR::ALBEDO] = Resources::Load<Texture>(path);
-                    }
-                }
-                ImGui::EndDragDropTarget();
-            }
-            */
-        }
-
-        Color clr = {albedo.x, albedo.y, albedo.z, albedo.w};
-        if (View::PopupChangeColor("Albedo", clr)) {
-            material.setAlbedo({clr.r, clr.g, clr.b, clr.a});
+        if (View::PopupChangeColor("Albedo", albedo)) {
+            material.setAlbedo(albedo);
         }
 
         ImGui::Text("Roghness:");
@@ -1900,6 +1900,30 @@ void Editor::OnPropertyMeshRender(MeshRender *meshRender) {
     }
 
     ImGui::TreePop();
+}
+
+void Editor::InsertTexture(Material &material) {
+    auto color = material.getAlbedo();
+    ImGui::SeparatorText("Albedo");
+    
+    auto texture = material.getTexture(0);
+    if (!texture) {
+        if (View::TextureInputUI(ImColor(color.r, color.g, color.b, color.a))) {
+            ImGui::OpenPopup("#PopupChangeColorAlbedo");
+        }
+    } else {
+        ImGui::Image(reinterpret_cast<ImTextureID>(texture->getID()), ImVec2(Settings::IconSize.x, Settings::IconSize.y));
+    }
+
+    if (ImGui::BeginDragDropTarget()) {
+        if (const ImGuiPayload* data = ImGui::AcceptDragDropPayload(IMGUI_PAYLOAD_FILE, ImGuiDragDropFlags_None)) {
+            std::string path((char*)data->Data, data->DataSize);
+            if (!path.empty()) {
+                material.setTexture(0, AssetsManager::LoadTexture(path));
+            }
+        }
+        ImGui::EndDragDropTarget();
+    }
 }
 
 void Editor::OnPropertyAnimator(Animator *animator) {

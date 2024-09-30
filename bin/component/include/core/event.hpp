@@ -9,17 +9,11 @@ public:
     template <typename ...Args>
     static void AddEvent(Args &&...args);
 
-    static void Update();
-
-    static void Shutdown();
 private:
-    static std::list<std::function<void()>> s_events;
-
-    static std::mutex s_mutex;
+    static void AddEvent_Internal(std::function<void()> func);
 };
 
 template <typename... Args>
 inline void Event::AddEvent(Args &&...args) {
-    std::lock_guard<std::mutex> lock(s_mutex);
-    s_events.emplace_back(std::bind(std::forward<Args>(args)...));
+    AddEvent_Internal(std::bind(std::forward<Args>(args)...));
 }
