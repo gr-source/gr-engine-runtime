@@ -28,21 +28,27 @@ public:
     static grr::gShader *FindShader(const std::string &name);
 
 private:
-    static void SetGameObjectList(const std::string &path, std::function<void(GameObject *)> &func);
+    static void SetGameObjectList(const std::string &path, std::function<void(GameObject *)> func);
 
-    static void SetShaderList(const std::string &name, const std::string &frag, const std::string &vert, std::function<void(grr::gShader *)> &func);
+    static void SetShaderList(const std::string &name, const std::string &frag, const std::string &vert, std::function<void(grr::gShader *)> func);
 };
 
 template <typename... Args>
 inline void AssetsManager::LoadGameObject(const std::string &path, Args &&...args) {
-    std::function<void(GameObject *)> func = std::bind(std::forward<Args>(args)..., std::placeholders::_1);
+    std::function<void(GameObject *)> func = nullptr;
+    if constexpr (sizeof...(Args) > 0) {
+        func = std::bind(std::forward<Args>(args)..., std::placeholders::_1);
+    }
 
     SetGameObjectList(path, func);
 }
 
 template <typename... Args>
 inline void AssetsManager::LoadShader(const std::string &name, const std::string &frag, const std::string &vert, Args &&...args) {
-    std::function<void(grr::gShader *)> func = std::bind(std::forward<Args>(args)..., std::placeholders::_1);
+    std::function<void(grr::gShader *)> func = nullptr;
+    if constexpr (sizeof...(Args) > 0) {
+        func = std::bind(std::forward<Args>(args)..., std::placeholders::_1);
+    }
     
     SetShaderList(name, frag, vert, func);
 }

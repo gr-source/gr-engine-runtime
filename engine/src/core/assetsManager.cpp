@@ -5,6 +5,7 @@
 
 #include "core/animation/animation.hpp"
 
+#include "core/threadpool.hpp"
 #include "core/scene.hpp"
 
 #include "ecs/gameObject.h"
@@ -65,7 +66,7 @@ std::thread AssetsManager::m_thread;
 void AssetsManager::Initialize() {
     stbi_set_flip_vertically_on_load(true);
 
-    m_thread = std::thread(&AssetsManager::OnThread);
+    // m_thread = std::thread(&AssetsManager::OnThread);
 }
 
 void AssetsManager::Shutdown() {
@@ -134,6 +135,8 @@ grr::gTexture *AssetsManager::LoadTexture(const std::string &path) {
         std::lock_guard<std::mutex> lock(s_textureMutex);
         s_textureFromLoader.emplace_back(path, m_texture);
     }
+
+    // ThreadPool::AddTask(&AssetsManager::ProcessTexture);
     return m_texture;
 }
 
@@ -251,8 +254,8 @@ void AssetsManager::SetupTexture(grr::gTexture *texture, int width, int height, 
 void AssetsManager::ProcessTexture() {
     std::unique_lock<std::mutex> lock(s_textureMutex);
     while (!s_textureFromLoader.empty()) {
-        auto [path, texture] = s_textureFromLoader.front();
-        lock.unlock();
+        auto &&[path, texture] = s_textureFromLoader.front();
+        // lock.unlock();
 
         int width, height, ch;
         auto pixels = stbi_load(path.c_str(), &width, &height, &ch, 0);
@@ -261,45 +264,45 @@ void AssetsManager::ProcessTexture() {
 
             delete texture;
 
-            lock.lock();
+            // lock.lock();
             s_textureFromLoader.pop_front();
             continue;
         }
 
         Event::Add(AssetsManager::SetupTexture, texture, width, height, ch, (void *)pixels, path);
 
-        lock.lock();
+        // lock.lock();
         s_textureFromLoader.pop_front();
     }
 }
 
 /***************** Shader Process ****************/
 void AssetsManager::SetupShader(ShaderHandle handle, const std::string &frag, const std::string &vert) {
-    std::function<void(grr::gShader *)> func = nullptr;
-    std::string name;
-    {
-        std::lock_guard<std::mutex> lock(s_shaderMutex);
-        func = handle.m_function;
-        name = handle.m_name;
+    auto it = s_shaderList.find(handle.m_name);
+    if (it != s_shaderList.end()) {
+        if (handle.m_function) {
+            handle.m_function(&(*it->second));
+        }
+        return LOG_WARNIG("[ AssetsManager::Shader - Shader has be loaded.]");
     }
-
-    Console::log(LogInfo::INFO, "Shader loadedd sucessfull: " + name);
 
     const char *fShader = frag.c_str();
     const char *vShader = vert.c_str();
 
     auto shader = grr::gShader::Create(&fShader, &vShader);
 
-    if (CheckShaderError(shader, name)) {
+    if (CheckShaderError(shader, handle.m_name)) {
         delete shader;
         return;
     }
 
-    if (func) {
-        func(shader);
+    if (handle.m_function) {
+        handle.m_function(shader);
     }
 
-    s_shaderList.emplace(name, std::unique_ptr<grr::gShader>(shader));
+    s_shaderList.emplace(handle.m_name, std::unique_ptr<grr::gShader>(shader));
+
+    LOG_INFO("Shader loadedd sucessfull: " + handle.m_name);
 }
 
 bool AssetsManager::CheckShaderError(grr::gShader *shader, const std::string &name) {
@@ -323,14 +326,14 @@ void AssetsManager::ProcessShader() {
     while (!s_shaderFromLoader.empty()) {
         auto handle = s_shaderFromLoader.front();
         s_shaderFromLoader.pop_front();
-        // lock.unlock();
+        lock.unlock();
 
         // Processing shader
         auto fragSource = File::GetFileContent(handle.m_frag);
         if (fragSource.empty()) {
             Console::log(LogInfo::ERROR, "Falied to shader: " + handle.m_name + " Fragment: " + handle.m_frag);
 
-            // lock.lock();
+            lock.lock();
             continue;
         }
 
@@ -339,13 +342,14 @@ void AssetsManager::ProcessShader() {
         if (vertSource.empty()) {
             Console::log(LogInfo::ERROR, "Falied to shader: " + handle.m_name + " Vertex: " + handle.m_vert);
 
-            // lock.lock();
+            lock.lock();
             continue;
         }
 
+        // lock.unlock();
         Event::Add(AssetsManager::SetupShader, handle, fragSource, vertSource);
 
-        // lock.lock();
+        lock.lock();
     }
 }
 
@@ -572,18 +576,18 @@ std::unordered_map<std::string, std::vector<Material>> &AssetsManager::GetMateri
 #include "timer.h"
 
 void AssetsManager::OnThread() {
-    TimeLast last(5.0f);
-    while (Settings::IsEngineRunning()) {
-        last.SleepTick();
+    // TimeLast last(5.0f);
+    // while (Settings::IsEngineRunning()) {
+    //     last.SleepTick();
 
-        ProcessShader();
+    //     ProcessShader();
 
-        ProcessTexture();
+    //     ProcessTexture();
     
-        ProcessAnimation();
+    //     ProcessAnimation();
     
-        ProcessBinary();
-    }
+    //     ProcessBinary();
+    // }
 }
 
 void AssetsManager::ReadChildren(Transform *parent, GameObjectHandle &handle) {
@@ -708,7 +712,7 @@ void AssetsManager::ReadChildren(Transform *parent, GameObjectHandle &handle) {
     transform = nullptr;
 }
 
-void AssetsManager::SetGameObjectList(const std::string &path, std::function<void(GameObject *)> &func) {
+void AssetsManager::SetGameObjectList(const std::string &path, std::function<void(GameObject *)> func) {
     if (!File::Exists(path)) {
         Console::log(LogInfo::ERROR, "Binary do not found: " + path);
         return;
@@ -718,9 +722,12 @@ void AssetsManager::SetGameObjectList(const std::string &path, std::function<voi
         std::lock_guard<std::mutex> lock(s_gameObjectMutex);
         s_gameObjectFromLoader.emplace_back(func, path);
     }
+
+    // ThreadPool::AddTask(&AssetsManager::ProcessBinary);
 }
 
-void AssetsManager::SetShaderList(const std::string &name, const std::string &frag, const std::string &vert, std::function<void(grr::gShader *)> &func) {
+// TODO: aicionar lista de callbacks a serem chamadas apos shader serem adicionado a thread
+void AssetsManager::SetShaderList(const std::string &name, const std::string &frag, const std::string &vert, std::function<void(grr::gShader *)> func) {
     if (!File::Exists(frag)) {
         return LOG_ERROR("[ AssetsManager-Shader ] File do not exists: " + frag);
     }
@@ -729,10 +736,30 @@ void AssetsManager::SetShaderList(const std::string &name, const std::string &fr
         return LOG_ERROR("[ AssetsManager-Shader ] File do not exists: " + vert);
     }
 
+    auto it = s_shaderList.find(name);
+    if (it != s_shaderList.end()) {
+        LOG_WARNIG("Shader has be loaded: " + name);
+        
+        if (func)
+            func(&(*it->second));
+        return;
+    }
+
     {
         std::lock_guard<std::mutex> lock(s_shaderMutex);
+        auto it = std::find_if(s_shaderFromLoader.begin(), s_shaderFromLoader.end(), [name](auto &handle) {
+            return handle.m_name == name;
+        });
+        
+        if (it != s_shaderFromLoader.end()) {
+            return;
+        }
         s_shaderFromLoader.emplace_back(func, name, frag, vert);
     }
+
+    std::cout << name << std::endl;
+
+    ThreadPool::AddTask(&AssetsManager::ProcessShader);
 }
 
 grm::size AssetsManager::GetMaterialCount() {

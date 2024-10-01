@@ -23,7 +23,7 @@
 #include "core/file/file.hpp"
 
 #include "core/assetsManager.hpp"
-#include "core/threadPool.hpp"
+#include "core/threadpool.hpp"
 #include "core/statistics.hpp"
 #include "core/scene.hpp"
 #include "core/event.hpp"

@@ -32,9 +32,9 @@ bool RenderManager::bRender = false;
 void Teste(grr::gShader *shader) {}
 
 void RenderManager::Initialize() {
-    if (!ScriptManager::GetShaders) {
-        return;
-    }
+    // if (!ScriptManager::GetShaders) {
+    //     return;
+    // }
 
     // auto shaders = ScriptManager::GetShaders();
 

@@ -1,6 +1,4 @@
-#include "threadPool.hpp"
-
-#include <iostream>
+#include "threadpool.hpp"
 
 std::list<std::function<void()>> ThreadPool::m_task;
 
@@ -49,6 +47,7 @@ void ThreadPool::Update() {
 
         auto task = m_task.front();
         m_task.pop_front();
+        lock.unlock();
 
         task();
     }

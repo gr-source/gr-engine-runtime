@@ -8,7 +8,7 @@
 
 #include "core/cmd/cmd.hpp"
 
-#include "core/threadPool.hpp"
+#include "core/threadpool.hpp"
 #include "core/scene.hpp"
 
 #include "core/file/initialization.hpp"

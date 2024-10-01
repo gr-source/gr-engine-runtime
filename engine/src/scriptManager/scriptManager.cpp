@@ -37,10 +37,6 @@ void (*ScriptManager::Update)();
 void (*ScriptManager::Destroy)();
 void (*ScriptManager::SetDeltaTime)(float);
 
-// std::unordered_map<int, std::pair<const std::string, const std::string>> (*ScriptManager::GetShader)() = nullptr;
-
-std::unordered_map<int, grr::gShader *> (*ScriptManager::GetShaders)();
-
 // [ Entity ]
 std::size_t (*ScriptManager::GetEntityCount)();
 
@@ -106,16 +102,7 @@ void ScriptManager::RegisterApi() {
     m_script->registerFunction("Destroy",      reinterpret_cast<void **>(&Destroy));
 
     m_script->registerFunction("SetDeltaTime", reinterpret_cast<void **>(&SetDeltaTime));
-
-    // shader functions
-    // m_script->registerFunction("GetShader",  reinterpret_cast<void **>(&GetShader));
-    m_script->registerFunction("GetShaders", reinterpret_cast<void **>(&GetShaders));
-
-    // entity functions
-    // m_script->registerFunction("_ZN6Entity6updateEv", reinterpret_cast<void **>(&Entity::Update));
-    // m_script->registerFunction("_ZN6Entity4initEv",   reinterpret_cast<void **>(&Entity::Init));
-    // m_script->replaceLibraryFunction("_ZN6Entity20addInternalComponentERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE", reinterpret_cast<void *>(&Entity::addInternalComponent));
-
+    
     // Light fundtiosn
     m_script->registerFunction("GetListLight", reinterpret_cast<void **>(&GetListLight));
 
@@ -130,12 +117,12 @@ void ScriptManager::RegisterApi() {
 
     // AssetManager
     m_script->replaceLibraryFunction("_ZN13AssetsManager4LoadIN3grr8gTextureEEEPT_RKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEESC_",                          reinterpret_cast<void *>(&AssetsManager::LoadTexture));
-    m_script->replaceLibraryFunction("_ZN13AssetsManager17SetGameObjectListERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEERSt8functionIFvP10GameObjectEE",     reinterpret_cast<void *>(&AssetsManager::SetGameObjectList));
+    m_script->replaceLibraryFunction("_ZN13AssetsManager17SetGameObjectListERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEESt8functionIFvP10GameObjectEE",     reinterpret_cast<void *>(&AssetsManager::SetGameObjectList));
     m_script->replaceLibraryFunction("_ZN13AssetsManager13AddPostLoaderESt8functionIFbPvRKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEEE",                     reinterpret_cast<void *>(&AssetsManager::AddPostLoader));
     m_script->replaceLibraryFunction("_ZN13AssetsManager8FindMeshERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE",                                             reinterpret_cast<void *>(&AssetsManager::FindMesh));
     m_script->replaceLibraryFunction("_ZN13AssetsManager12FindMaterialERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE",                                        reinterpret_cast<void *>(&AssetsManager::FindMaterial));
     m_script->replaceLibraryFunction("_ZN13AssetsManager10FindShaderERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE",                                          reinterpret_cast<void *>(&AssetsManager::FindShader));
-    m_script->replaceLibraryFunction("_ZN13AssetsManager13SetShaderListERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEES7_S7_RSt8functionIFvPN3grr7gShaderEEE", reinterpret_cast<void *>(&AssetsManager::SetShaderList));
+    m_script->replaceLibraryFunction("_ZN13AssetsManager13SetShaderListERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEES7_S7_St8functionIFvPN3grr7gShaderEEE", reinterpret_cast<void *>(&AssetsManager::SetShaderList));
 
     m_script->registerFunction("LoadAnimation", reinterpret_cast<void **>(&LoadAnimation));
 

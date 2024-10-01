@@ -97,28 +97,26 @@ void Memory::free(void *ptr) noexcept {
 
 void Memory::Hook(void *origFunc, void *newFunc) {
     auto pageSizeToProtect = sysconf(_SC_PAGESIZE);
-    auto start = reinterpret_cast<std::uintptr_t>(origFunc);
+    auto start = reinterpret_cast<long>(origFunc);
     auto pageStart = start & ~(pageSizeToProtect - 1);
 
     if (mprotect(reinterpret_cast<void *>(pageStart), pageSizeToProtect, PROT_READ | PROT_WRITE | PROT_EXEC) == -1) {
-        std::cout << "Failed to change page permission in memory." << std::endl;
-        return;
+        throw std::runtime_error("Failed to change page permission in memory.");
     }
 
     uint8_t jumpInstruction[14] = {0};
     jumpInstruction[0] = 0x49; // REX prefix
     jumpInstruction[1] = 0xBB; // MOV r11, imm32
-    *(int64_t*)(jumpInstruction + 2) = (int64_t)newFunc;
+    *reinterpret_cast<int64_t *>(jumpInstruction + 2) = reinterpret_cast<int64_t>(newFunc);
     jumpInstruction[10] = 0x41; // REX prefix
     jumpInstruction[11] = 0xFF; // JMP r11
     jumpInstruction[12] = 0xE3; // RIP-Relative Jump
 
     if (!memcpy(origFunc, jumpInstruction, sizeof(jumpInstruction))) {
-        std::cout << "Falied to copy instructions." << std::endl;
-        return;
+        throw std::runtime_error("Falied to copy instructions.");
     }
 
     if (mprotect(reinterpret_cast<void *>(pageStart), pageSizeToProtect, PROT_READ | PROT_EXEC) == -1) {
-        std::cout << "Failed to roll back page permissions in memory." << std::endl;
+        throw std::runtime_error("Failed to roll back page permissions in memory.");
     }
 }

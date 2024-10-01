@@ -19,11 +19,6 @@ public:
 
     static bool IsValid();
 
-    // Main
-    // static std::unordered_map<int, std::pair<const std::string, const std::string>> (*GetShader)();
-
-    static std::unordered_map<int, grr::gShader *> (*GetShaders)();
-
     // [ Entity ]
     static std::size_t (*GetEntityCount)();
 

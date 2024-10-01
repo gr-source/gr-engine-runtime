@@ -19,13 +19,14 @@ grr::gShader *ScreenRender::m_shader = nullptr;
 grm::u32 ScreenRender::m_vbo = 0;
 
 void ScreenRender::Initialize() {
-    AssetsManager::LoadShader(
-        "screen",
-        File::GetAsset("/shader/screen.frag"),
-        File::GetAsset("/shader/screen.vert"),
-        &ScreenRender::RegisterShader
-    );
-
+    if (!m_shader) {
+        AssetsManager::LoadShader(
+            "screen",
+            File::GetAsset("/shader/screen.frag"),
+            File::GetAsset("/shader/screen.vert"),
+            &ScreenRender::RegisterShader
+        );
+    }
     CreateMesh();
 }
 

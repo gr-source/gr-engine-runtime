@@ -20,11 +20,6 @@ void Destroy();
 
 void SetDeltaTime(float deltaTime);
 
-// Event
-void EventUpdate();
-
-std::unordered_map<int, grr::gShader *> GetShaders();
-
 // [ Component - Camera ]
 void SetEnableCamera(Camera *camera);
 

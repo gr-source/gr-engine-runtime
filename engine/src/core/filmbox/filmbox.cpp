@@ -3,7 +3,7 @@
 #include "core/file/file.hpp"
 
 #include "core/assetsManager.hpp"
-#include "core/threadPool.hpp"
+#include "core/threadpool.hpp"
 #include "core/event.hpp"
 
 #include "console.hpp"

@@ -25,11 +25,11 @@ grr::gShader *AssetsManager::FindShader(const std::string &name) {
     throw std::runtime_error("function do not implemented.");
 }
 
-void AssetsManager::SetGameObjectList(const std::string &path, std::function<void(GameObject *)> &func) {
+void AssetsManager::SetGameObjectList(const std::string &path, std::function<void(GameObject *)> func) {
     throw std::runtime_error("function do not implemented.");
 }
 
-void AssetsManager::SetShaderList(const std::string &name, const std::string &frag, const std::string &vert, std::function<void(grr::gShader *)> &func) {
+void AssetsManager::SetShaderList(const std::string &name, const std::string &frag, const std::string &vert, std::function<void(grr::gShader *)> func) {
     throw std::runtime_error("function do not implemented.");
 }
 

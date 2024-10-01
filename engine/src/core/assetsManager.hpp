@@ -35,7 +35,7 @@ public:
 
 class ShaderHandle {
 public:
-    ShaderHandle(std::function<void(grr::gShader *)> &function, const std::string &name, const std::string &frag, const std::string &vert) : m_function(function), m_shader(nullptr), m_name(name), m_frag(frag), m_vert(vert) {}
+    ShaderHandle(std::function<void(grr::gShader *)> function, std::string name, std::string frag, std::string vert) : m_function(function), m_shader(nullptr), m_name(name), m_frag(frag), m_vert(vert) {}
 
     std::function<void(grr::gShader *)> m_function;
 
@@ -100,9 +100,9 @@ public:
 
     static std::unordered_map<std::string, std::unique_ptr<grr::gTexture>> &GetTextureMap();
 
-    static void SetGameObjectList(const std::string &path, std::function<void(GameObject *)> &func);
+    static void SetGameObjectList(const std::string &path, std::function<void(GameObject *)> func);
 
-    static void SetShaderList(const std::string &name, const std::string &frag, const std::string &vert, std::function<void(grr::gShader *)> &func);
+    static void SetShaderList(const std::string &name, const std::string &frag, const std::string &vert, std::function<void(grr::gShader *)> func);
 
 private:
     /***************** Shader *****************/
@@ -163,14 +163,20 @@ private:
 
 template <typename... Args>
 inline void AssetsManager::LoadGameObject(const std::string &path, Args &&...args) {
-    std::function<void(GameObject *)> func = std::bind(std::forward<Args>(args)..., std::placeholders::_1);
+    std::function<void(GameObject *)> func = nullptr;
+    if constexpr (sizeof...(Args) > 0) {
+        func = std::bind(std::forward<Args>(args)..., std::placeholders::_1);
+    }
 
     SetGameObjectList(path, func);
 }
 
 template <typename... Args>
 inline void AssetsManager::LoadShader(const std::string &name, const std::string &frag, const std::string &vert, Args &&...args) {
-    std::function<void(grr::gShader *)> func = std::bind(std::forward<Args>(args)..., std::placeholders::_1);
+    std::function<void(grr::gShader *)> func = nullptr;
+    if constexpr (sizeof...(Args) > 0) {
+        func = std::bind(std::forward<Args>(args)..., std::placeholders::_1);
+    }
     
     SetShaderList(name, frag, vert, func);
 }
