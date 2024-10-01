@@ -35,9 +35,10 @@ void Skybox::Initialize() {
 
     CreateCube();
 
-    m_texture = AssetsManager::LoadTexture(File::GetAsset("/texture/skybox/industrial_sunset_puresky_1k.hdr", true));
+    AssetsManager::LoadTexture(File::GetAsset("/texture/skybox/industrial_sunset_puresky_1k.hdr", true), &Skybox::SetupTexture);
 
-    AssetsManager::AddPostLoader(&Skybox::SetupTexture);
+    
+    // AssetsManager::AddPostLoader(&Skybox::SetupTexture);
 }
 
 void Skybox::Shutdown() {
@@ -135,14 +136,10 @@ void Skybox::CreateCube() {
     m_vertexArray->unbind();
 }
 
-bool Skybox::SetupTexture(void *texture, const std::string &path) {
-    if (m_texture != texture) {
-        return false;
-    }
+void Skybox::SetupTexture(grr::gTexture *texture) {
+    m_texture = texture;
 
     Event::Add(&Skybox::UploadShader);
-
-    return true;
 }
 
 void SetCommonRegister(grr::gShader *shader) {

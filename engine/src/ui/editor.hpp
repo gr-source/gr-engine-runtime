@@ -11,6 +11,29 @@
 
 #include <gr-render/gTexture.h>
 
+
+enum IconType : int {
+    ICON_FOLDER       = 0,
+    ICON_FILE         = 1,
+    ICON_BACK_FILE    = 2,
+    ICON_GAMEOBJECT   = 3,
+	ICON_PENCIL       = 4,
+	ICON_LIGHT        = 5,
+	ICON_TEXTURE      = 6,
+	ICON_PNG          = 7,
+	ICON_PLAY_GAME    = 8,
+	ICON_STOP_GAME    = 9,
+	ICON_BIN          = 10,
+	ICON_IMPORT       = 11,
+	ICON_ASCENDENTE   = 12,
+	ICON_DESCENDENTE  = 13,
+	ICON_EDIT         = 14,
+	ICON_ANIMATION    = 15,
+	ICON_SHADER       = 16,
+	ICON_SCENE        = 17
+};
+
+
 class Editor {
 public:
     static void Initialize();
@@ -32,6 +55,8 @@ public:
     static void UnloadScript();
 
     static void LoadReources();
+    
+    static void SetupTexture(IconType type, grr::gTexture *texture);
 
     static float GetFps();
 

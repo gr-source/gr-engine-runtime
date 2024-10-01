@@ -37,7 +37,7 @@ private:
 
     static void CreateCube();
     
-    static bool SetupTexture(void *texture, const std::string &path);
+    static void SetupTexture(grr::gTexture *texture);
 
     static void UploadShader();
 

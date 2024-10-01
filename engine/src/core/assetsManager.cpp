@@ -42,7 +42,7 @@ std::vector<std::function<bool(void *, const std::string &)>> AssetsManager::m_f
 
 /***************** Texture *****************/
 std::unordered_map<std::string, std::unique_ptr<grr::gTexture>> AssetsManager::s_textureList;
-std::list<std::tuple<std::string, grr::gTexture *>> AssetsManager::s_textureFromLoader;
+std::list<TextureHandle> AssetsManager::s_textureFromLoader;
 std::mutex AssetsManager::s_textureMutex;
 
 /***************** Animation *****************/
@@ -61,19 +61,11 @@ std::mutex AssetsManager::m_meshMutex;
 /***************** Material *****************/
 std::unordered_map<std::string, std::vector<Material>> AssetsManager::m_materialMap;
 
-std::thread AssetsManager::m_thread;
-
 void AssetsManager::Initialize() {
     stbi_set_flip_vertically_on_load(true);
-
-    // m_thread = std::thread(&AssetsManager::OnThread);
 }
 
 void AssetsManager::Shutdown() {
-    if (m_thread.joinable()) {
-        m_thread.join();
-    }
-
     // clear assets
     m_processCount = 0;
 
@@ -100,44 +92,6 @@ void AssetsManager::Shutdown() {
 
     /***************** Material *****************/
     m_materialMap.clear();
-}
-
-/***************** TEXTURE ****************/
-grr::gTexture *AssetsManager::LoadTexture(const std::string &path) {
-    if (!File::Exists(path)) { 
-        Console::log(LogInfo::ERROR, "[ Resources::LoadTexture ] Falied to load texture: " + path);
-        return nullptr;
-    }
-
-    auto it = s_textureList.find(path);
-    if (it != s_textureList.end()) {
-        Console::log(LogInfo::WARNING, "The texture has already been loaded.");
-        return &(*(*it).second);
-    }
-
-    {
-        std::lock_guard<std::mutex> lock(s_textureMutex);
-        auto it = std::find_if(s_textureFromLoader.begin(), s_textureFromLoader.end(), [path](const auto &pair) {
-            return std::get<std::string>(pair) == path;
-        });
-        if (it != s_textureFromLoader.end()) {
-            return std::get<grr::gTexture *>((*it));
-        }
-    }
-
-    auto m_texture = grr::gTexture::Create();
-    if (!m_texture) {
-        Console::log(LogInfo::ERROR, "[ Resources::LoadTexture ] Falied to create texture.");
-        return nullptr;
-    }
-    
-    {
-        std::lock_guard<std::mutex> lock(s_textureMutex);
-        s_textureFromLoader.emplace_back(path, m_texture);
-    }
-
-    // ThreadPool::AddTask(&AssetsManager::ProcessTexture);
-    return m_texture;
 }
 
 Animation *AssetsManager::LoadAnimation(const std::string &path) {
@@ -218,8 +172,15 @@ std::vector<Material> *AssetsManager::FindMaterial(const std::string &name) {
 }
 
 /***************** Texture Process ****************/
-void AssetsManager::SetupTexture(grr::gTexture *texture, int width, int height, int ch, void *pixels, std::string path) {
-    s_textureList.emplace(path, std::unique_ptr<grr::gTexture>(texture));
+void AssetsManager::SetupTexture(TextureHandle handle, int width, int height, int ch, void *pixels) {
+    auto it = s_textureList.find(handle.m_path);
+    if (it != s_textureList.end()) {
+        if (handle.m_function) {
+            handle.m_function(&(*it->second));
+        }
+        return;
+    }
+    auto texture = grr::gTexture::Create();
 
     grr::TextureFormat format;
 
@@ -244,35 +205,36 @@ void AssetsManager::SetupTexture(grr::gTexture *texture, int width, int height, 
 
     stbi_image_free(pixels);
 
-    m_functions.erase(std::remove_if(m_functions.begin(), m_functions.end(), [&texture, &path](auto &func) {
-        return func(texture, path);
-    }), m_functions.end());
+    s_textureList.emplace(handle.m_path, std::unique_ptr<grr::gTexture>(texture));
 
-    Console::log(LogInfo::INFO, "Texture loaded: " + path);
+    if (handle.m_function) {
+        handle.m_function(texture);
+    }
+
+    LOG_INFO("[ AssetsManager::Texture ] Texture loaded: " + handle.m_path);
 }
 
 void AssetsManager::ProcessTexture() {
     std::unique_lock<std::mutex> lock(s_textureMutex);
     while (!s_textureFromLoader.empty()) {
-        auto &&[path, texture] = s_textureFromLoader.front();
-        // lock.unlock();
+        auto handle = s_textureFromLoader.front();
+        s_textureFromLoader.pop_front();
+        lock.unlock();
+
+        auto path = handle.m_path;
 
         int width, height, ch;
         auto pixels = stbi_load(path.c_str(), &width, &height, &ch, 0);
         if (!pixels) {
-            Console::log(LogInfo::ERROR, "Failed to load texture: " + path);
+            LOG_ERROR("[ AssetsManager::Texture ] Failed to load texture: " + path);
 
-            delete texture;
-
-            // lock.lock();
-            s_textureFromLoader.pop_front();
+            lock.lock();
             continue;
         }
 
-        Event::Add(AssetsManager::SetupTexture, texture, width, height, ch, (void *)pixels, path);
+        Event::Add(AssetsManager::SetupTexture, handle, width, height, ch, (void *)pixels);
 
-        // lock.lock();
-        s_textureFromLoader.pop_front();
+        lock.lock();
     }
 }
 
@@ -283,7 +245,7 @@ void AssetsManager::SetupShader(ShaderHandle handle, const std::string &frag, co
         if (handle.m_function) {
             handle.m_function(&(*it->second));
         }
-        return LOG_WARNIG("[ AssetsManager::Shader - Shader has be loaded.]");
+        return;
     }
 
     const char *fShader = frag.c_str();
@@ -296,13 +258,13 @@ void AssetsManager::SetupShader(ShaderHandle handle, const std::string &frag, co
         return;
     }
 
+    s_shaderList.emplace(handle.m_name, std::unique_ptr<grr::gShader>(shader));
+
     if (handle.m_function) {
         handle.m_function(shader);
     }
 
-    s_shaderList.emplace(handle.m_name, std::unique_ptr<grr::gShader>(shader));
-
-    LOG_INFO("Shader loadedd sucessfull: " + handle.m_name);
+    LOG_INFO("[ AssetsManager::Shader ] Shader loadedd sucessfull: " + handle.m_name);
 }
 
 bool AssetsManager::CheckShaderError(grr::gShader *shader, const std::string &name) {
@@ -508,7 +470,8 @@ void AssetsManager::SetupGameObject(GameObjectHandle &handle, Transform *&out, g
             for (int i=0;i<material.m_textureCount;++i) { 
                 auto& texture = material.m_textures[i];
 
-                m.setTexture(i, AssetsManager::LoadTexture(texture.m_path));
+                throw std::runtime_error("");
+                // m.setTexture(i, AssetsManager::LoadTexture(texture.m_path));
             }
 
             delete[] material.m_textures;
@@ -738,8 +701,6 @@ void AssetsManager::SetShaderList(const std::string &name, const std::string &fr
 
     auto it = s_shaderList.find(name);
     if (it != s_shaderList.end()) {
-        LOG_WARNIG("Shader has be loaded: " + name);
-        
         if (func)
             func(&(*it->second));
         return;
@@ -757,9 +718,34 @@ void AssetsManager::SetShaderList(const std::string &name, const std::string &fr
         s_shaderFromLoader.emplace_back(func, name, frag, vert);
     }
 
-    std::cout << name << std::endl;
-
     ThreadPool::AddTask(&AssetsManager::ProcessShader);
+}
+
+void AssetsManager::SetTextureList(const std::string &path, std::function<void(grr::gTexture *)> func) {
+    if (!File::Exists(path)) {
+        return LOG_ERROR("[ AssetsManager::Texture ] File not found: " + path);
+    }
+
+    auto it = s_textureList.find(path);
+    if (it != s_textureList.end()) {
+        if (func) {
+            func(&(*it->second));
+        }
+        return;
+    }
+
+    {
+        std::lock_guard<std::mutex> lock(s_textureMutex);
+        auto it = std::find_if(s_textureFromLoader.begin(), s_textureFromLoader.end(), [path](const auto &handle) {
+            return handle.m_path == path;
+        });
+        if (it != s_textureFromLoader.end()) {
+            return;
+        }
+        s_textureFromLoader.emplace_back(func, path);
+    }
+
+    ThreadPool::AddTask(&AssetsManager::ProcessTexture);
 }
 
 grm::size AssetsManager::GetMaterialCount() {

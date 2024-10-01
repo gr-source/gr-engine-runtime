@@ -116,7 +116,7 @@ void ScriptManager::RegisterApi() {
     m_script->replaceLibraryFunction("_ZN5Event17AddEvent_InternalESt8functionIFvvEE", reinterpret_cast<void **>(&Event::AddEvent));
 
     // AssetManager
-    m_script->replaceLibraryFunction("_ZN13AssetsManager4LoadIN3grr8gTextureEEEPT_RKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEESC_",                          reinterpret_cast<void *>(&AssetsManager::LoadTexture));
+    // m_script->replaceLibraryFunction("_ZN13AssetsManager4LoadIN3grr8gTextureEEEPT_RKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEESC_",                          reinterpret_cast<void *>(&AssetsManager::LoadTexture));
     m_script->replaceLibraryFunction("_ZN13AssetsManager17SetGameObjectListERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEESt8functionIFvP10GameObjectEE",     reinterpret_cast<void *>(&AssetsManager::SetGameObjectList));
     m_script->replaceLibraryFunction("_ZN13AssetsManager13AddPostLoaderESt8functionIFbPvRKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEEE",                     reinterpret_cast<void *>(&AssetsManager::AddPostLoader));
     m_script->replaceLibraryFunction("_ZN13AssetsManager8FindMeshERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE",                                             reinterpret_cast<void *>(&AssetsManager::FindMesh));

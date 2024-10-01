@@ -1,11 +1,9 @@
 #pragma once
 
 #include <condition_variable>
-#include <unordered_set>
 #include <functional>
 #include <memory>
 #include <string>
-#include <thread>
 #include <vector>
 #include <mutex>
 #include <list>
@@ -48,13 +46,25 @@ public:
     std::string m_vert;
 };
 
+class TextureHandle {
+public:
+    TextureHandle(std::function<void(grr::gTexture *)> function, std::string path) : m_function(function), m_shader(nullptr), m_path(path) {}
+
+    std::function<void(grr::gTexture *)> m_function;
+
+    grr::gTexture *m_shader;
+
+    std::string m_path;
+};
+
 class AssetsManager {
 public:
     static void Initialize();
 
     static void Shutdown();
 
-    static grr::gTexture *LoadTexture(const std::string &path);
+    template <typename ...Args>
+    static void LoadTexture(const std::string &path, Args &&...args);
 
     template <typename ...Args>
     static void LoadShader(const std::string &name, const std::string &frag, const std::string &vert, Args &&...args);
@@ -104,6 +114,8 @@ public:
 
     static void SetShaderList(const std::string &name, const std::string &frag, const std::string &vert, std::function<void(grr::gShader *)> func);
 
+    static void SetTextureList(const std::string &path, std::function<void(grr::gTexture *)> func);
+
 private:
     /***************** Shader *****************/
     static std::unordered_map<std::string, std::unique_ptr<grr::gShader>> s_shaderList;
@@ -114,7 +126,7 @@ private:
 
     /***************** Texture *****************/
     static std::unordered_map<std::string, std::unique_ptr<grr::gTexture>> s_textureList;
-    static std::list<std::tuple<std::string, grr::gTexture *>> s_textureFromLoader;
+    static std::list<TextureHandle> s_textureFromLoader;
     static std::mutex s_textureMutex;
 
     /***************** Animation *****************/
@@ -134,9 +146,7 @@ private:
     /***************** Material *****************/
     static std::unordered_map<std::string, std::vector<Material>> m_materialMap;
 
-    static std::thread m_thread;
-
-    static void SetupTexture(grr::gTexture *texture, int width, int height, int ch, void *pixels, std::string path);
+    static void SetupTexture(TextureHandle handle, int width, int height, int ch, void *pixels);
 
     static void ProcessTexture();
 
@@ -169,6 +179,16 @@ inline void AssetsManager::LoadGameObject(const std::string &path, Args &&...arg
     }
 
     SetGameObjectList(path, func);
+}
+
+template <typename ...Args>
+inline void AssetsManager::LoadTexture(const std::string &path, Args &&...args) {
+    std::function<void(grr::gTexture *)> func = nullptr;
+    if constexpr (sizeof...(Args) > 0) {
+        func = std::bind(std::forward<Args>(args)..., std::placeholders::_1);
+    }
+
+    SetTextureList(path, func);
 }
 
 template <typename... Args>

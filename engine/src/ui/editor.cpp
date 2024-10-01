@@ -73,27 +73,6 @@ std::string getfilesize(std::size_t sz) {
     return std::to_string(sz) + "B";
 }
 
-enum IconType {
-    ICON_FOLDER       = 0,
-    ICON_FILE         = 1,
-    ICON_BACK_FILE    = 2,
-    ICON_GAMEOBJECT   = 3,
-	ICON_PENCIL       = 4,
-	ICON_LIGHT        = 5,
-	ICON_TEXTURE      = 6,
-	ICON_PNG          = 7,
-	ICON_PLAY_GAME    = 8,
-	ICON_STOP_GAME    = 9,
-	ICON_BIN          = 10,
-	ICON_IMPORT       = 11,
-	ICON_ASCENDENTE   = 12,
-	ICON_DESCENDENTE  = 13,
-	ICON_EDIT         = 14,
-	ICON_ANIMATION    = 15,
-	ICON_SHADER       = 16,
-	ICON_SCENE        = 17,
-};
-
 std::unordered_map<IconType, grr::gTexture *> iconsUI;
 
 std::vector<std::unique_ptr<Filmbox>> m_filmboxList;
@@ -1919,7 +1898,8 @@ void Editor::InsertTexture(Material &material) {
         if (const ImGuiPayload* data = ImGui::AcceptDragDropPayload(IMGUI_PAYLOAD_FILE, ImGuiDragDropFlags_None)) {
             std::string path((char*)data->Data, data->DataSize);
             if (!path.empty()) {
-                material.setTexture(0, AssetsManager::LoadTexture(path));
+                throw std::runtime_error(".");
+                // material.setTexture(0, AssetsManager::LoadTexture(path));
             }
         }
         ImGui::EndDragDropTarget();
@@ -2064,26 +2044,32 @@ void Editor::TextureInfo(Texture *&texture) {
 }
 
 void Editor::LoadReources() {
-    iconsUI.emplace(IconType::ICON_FILE,        AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-file-30.png", true)));
-    iconsUI.emplace(IconType::ICON_FOLDER,      AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-folder-50.png", true)));
-    iconsUI.emplace(IconType::ICON_BACK_FILE,   AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-go-back-50.png", true)));
-    iconsUI.emplace(IconType::ICON_GAMEOBJECT,  AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-3d-object-50.png", true)));
-    iconsUI.emplace(IconType::ICON_PENCIL,      AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-lápis-30.png", true)));
-    iconsUI.emplace(IconType::ICON_LIGHT,       AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-lâmpada-globular-64.png", true)));
-    iconsUI.emplace(IconType::ICON_TEXTURE,     AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-textura-de-renderização-32.png", true)));
-    iconsUI.emplace(IconType::ICON_PNG,         AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-png-24.png", true)));
-    iconsUI.emplace(IconType::ICON_PLAY_GAME,   AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-reproduzir-30.png", true)));
-    iconsUI.emplace(IconType::ICON_STOP_GAME,   AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-parar-50.png", true)));
-    iconsUI.emplace(IconType::ICON_BIN,         AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-resíduos-50.png", true)));
-    iconsUI.emplace(IconType::ICON_IMPORT,      AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-importar-50.png", true)));
-    iconsUI.emplace(IconType::ICON_ASCENDENTE,  AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-ordenar-para-a-direita-50.png", true)));
-    iconsUI.emplace(IconType::ICON_DESCENDENTE, AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-ordem-descendente-50.png", true)));
-    iconsUI.emplace(IconType::ICON_EDIT,        AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-editar-24.png", true)));
-    iconsUI.emplace(IconType::ICON_ANIMATION,   AssetsManager::LoadTexture(File::GetAsset("/icon/motion-graphics.png", true)));
-    iconsUI.emplace(IconType::ICON_SHADER,      AssetsManager::LoadTexture(File::GetAsset("/icon/shade.png", true)));
-    iconsUI.emplace(IconType::ICON_SCENE,       AssetsManager::LoadTexture(File::GetAsset("/icon/studio-set.png", true)));
+    AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-file-30.png", true),                    &Editor::SetupTexture, IconType::ICON_FILE);
+    AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-folder-50.png", true),                  &Editor::SetupTexture, IconType::ICON_FOLDER);
+    AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-go-back-50.png", true),                 &Editor::SetupTexture, IconType::ICON_BACK_FILE);
+    AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-3d-object-50.png", true),               &Editor::SetupTexture, IconType::ICON_GAMEOBJECT);
+    AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-lápis-30.png", true),                   &Editor::SetupTexture, IconType::ICON_PENCIL);
+    AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-lâmpada-globular-64.png", true),        &Editor::SetupTexture, IconType::ICON_LIGHT);
+    AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-textura-de-renderização-32.png", true), &Editor::SetupTexture, IconType::ICON_TEXTURE);
+    AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-png-24.png", true),                     &Editor::SetupTexture, IconType::ICON_PNG);
+    AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-reproduzir-30.png", true),              &Editor::SetupTexture, IconType::ICON_PLAY_GAME);
+    AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-parar-50.png", true),                   &Editor::SetupTexture, IconType::ICON_STOP_GAME);
+    AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-resíduos-50.png", true),                &Editor::SetupTexture, IconType::ICON_BIN);
+    AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-importar-50.png", true),                &Editor::SetupTexture, IconType::ICON_IMPORT);
+    AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-ordenar-para-a-direita-50.png", true),  &Editor::SetupTexture, IconType::ICON_ASCENDENTE);
+    AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-ordem-descendente-50.png", true),       &Editor::SetupTexture, IconType::ICON_DESCENDENTE);
+    AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-editar-24.png", true),                  &Editor::SetupTexture, IconType::ICON_EDIT);
+    AssetsManager::LoadTexture(File::GetAsset("/icon/motion-graphics.png", true),                   &Editor::SetupTexture, IconType::ICON_ANIMATION);
+    AssetsManager::LoadTexture(File::GetAsset("/icon/shade.png", true),                             &Editor::SetupTexture, IconType::ICON_SHADER);
+    AssetsManager::LoadTexture(File::GetAsset("/icon/studio-set.png", true),                        &Editor::SetupTexture, IconType::ICON_SCENE);
+}
 
-    s_texturePlayGame = iconsUI[IconType::ICON_PLAY_GAME];
+void Editor::SetupTexture(IconType type, grr::gTexture *texture) {
+    iconsUI[type] = texture;
+
+    if (type == IconType::ICON_PLAY_GAME) {
+        s_texturePlayGame = iconsUI[IconType::ICON_PLAY_GAME];
+    }
 }
 
 float Editor::GetFps() {
