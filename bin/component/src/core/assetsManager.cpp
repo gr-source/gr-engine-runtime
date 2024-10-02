@@ -8,11 +8,6 @@
 
 #include "api.hpp"
 
-template <>
-grr::gTexture *AssetsManager::Load(const std::string &path, const std::string &rhs) {
-    throw std::runtime_error("function do not implemented.");
-}
-
 void AssetsManager::AddPostLoader(std::function<bool(void *, const std::string &)> func) {
     throw std::runtime_error("function do not implemented.");
 }
@@ -30,6 +25,10 @@ void AssetsManager::SetGameObjectList(const std::string &path, std::function<voi
 }
 
 void AssetsManager::SetShaderList(const std::string &name, const std::string &frag, const std::string &vert, std::function<void(grr::gShader *)> func) {
+    throw std::runtime_error("function do not implemented.");
+}
+
+void AssetsManager::SetTextureList(const std::string &path, std::function<void(grr::gTexture *)> func) {
     throw std::runtime_error("function do not implemented.");
 }
 

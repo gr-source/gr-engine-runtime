@@ -242,8 +242,8 @@ void AssetsManager::ProcessTexture() {
 void AssetsManager::SetupShader(ShaderHandle handle, const std::string &frag, const std::string &vert) {
     auto it = s_shaderList.find(handle.m_name);
     if (it != s_shaderList.end()) {
-        if (handle.m_function) {
-            handle.m_function(&(*it->second));
+        for (auto func : handle.m_functions) {
+            func(&(*it->second));
         }
         return;
     }
@@ -260,8 +260,8 @@ void AssetsManager::SetupShader(ShaderHandle handle, const std::string &frag, co
 
     s_shaderList.emplace(handle.m_name, std::unique_ptr<grr::gShader>(shader));
 
-    if (handle.m_function) {
-        handle.m_function(shader);
+    for (auto func : handle.m_functions) {
+        func(shader);
     }
 
     LOG_INFO("[ AssetsManager::Shader ] Shader loadedd sucessfull: " + handle.m_name);
@@ -713,6 +713,9 @@ void AssetsManager::SetShaderList(const std::string &name, const std::string &fr
         });
         
         if (it != s_shaderFromLoader.end()) {
+            (*it).m_functions.push_back(func);
+            // throw std::runtime_error(".");
+            // std::cout << name << std::endl;
             return;
         }
         s_shaderFromLoader.emplace_back(func, name, frag, vert);

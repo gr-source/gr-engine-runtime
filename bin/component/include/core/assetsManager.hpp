@@ -10,9 +10,9 @@
 
 class AssetsManager {
 public:
-    template <typename T>
-    static T *Load(const std::string &lhs, const std::string &rhs = "");
-
+    template <typename ...Args>
+    static void LoadTexture(const std::string &path, Args &&...args);
+    
     template <typename ...Args>
     static void LoadGameObject(const std::string &path, Args &&...args);
 
@@ -31,7 +31,18 @@ private:
     static void SetGameObjectList(const std::string &path, std::function<void(GameObject *)> func);
 
     static void SetShaderList(const std::string &name, const std::string &frag, const std::string &vert, std::function<void(grr::gShader *)> func);
+
+    static void SetTextureList(const std::string &path, std::function<void(grr::gTexture *)> func);
 };
+
+template <typename... Args>
+inline void AssetsManager::LoadTexture(const std::string &path, Args &&...args) {
+    std::function<void(grr::gTexture *)> func = nullptr;
+    if constexpr (sizeof...(Args) > 0) {
+        func = std::bind(std::forward<Args>(args)..., std::placeholders::_1);
+    }
+    SetTextureList(path, func);
+}
 
 template <typename... Args>
 inline void AssetsManager::LoadGameObject(const std::string &path, Args &&...args) {

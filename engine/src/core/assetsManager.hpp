@@ -33,9 +33,14 @@ public:
 
 class ShaderHandle {
 public:
-    ShaderHandle(std::function<void(grr::gShader *)> function, std::string name, std::string frag, std::string vert) : m_function(function), m_shader(nullptr), m_name(name), m_frag(frag), m_vert(vert) {}
+    ShaderHandle(std::function<void(grr::gShader *)> function, std::string name, std::string frag, std::string vert) : m_shader(nullptr), m_name(name), m_frag(frag), m_vert(vert) {
+        if (!function) {
+            return;
+        }
+        m_functions.push_back(function);
+    }
 
-    std::function<void(grr::gShader *)> m_function;
+    std::vector<std::function<void(grr::gShader *)>> m_functions;
 
     grr::gShader *m_shader;
 
