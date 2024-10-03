@@ -162,6 +162,10 @@ void ScriptManager::RegisterApi() {
 
     // Time
     // m_script->replaceLibraryField("_ZN4Time9deltaTimeE", reinterpret_cast<void *>(&TimeLast::deltaTime));
+
+    // Material
+    m_script->replaceLibraryFunction("_ZNK8Material9serializeERSo", (void *)&Material::serialize);
+    m_script->replaceLibraryFunction("_ZN8Material11deserializeERSi", (void *)&Material::deserialize);
 }
 #pragma GCC diagnostic pop
 

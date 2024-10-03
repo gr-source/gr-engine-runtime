@@ -428,14 +428,14 @@ int Scene::readMaterial() {
             return 4;
         }
 
-        std::vector<Material> materials(size);
-        for (auto &material : materials) {
-            material.deserialize(Stream::GetStream());
-        }
+        // std::vector<Material> materials(size);
+        // for (auto &material : materials) {
+        //     material.deserialize(Stream::GetStream());
+        // }
 
-        if (!name.empty() || !materials.empty() && !AssetsManager::FindMaterial(name)) {
-            AssetsManager::AddMaterial(name, materials);
-        }
+        // if (!name.empty() || !materials.empty() && !AssetsManager::FindMaterial(name)) {
+            // AssetsManager::AddMaterial(name, materials);
+        // }
     }
     return 0;
 }

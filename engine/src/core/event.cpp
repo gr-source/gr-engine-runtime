@@ -12,13 +12,13 @@ void Event::AddEvent(std::function<void()> func) {
 void Event::ProcessEvent() {
     std::unique_lock<std::mutex> lock(m_mutex);
     while (!m_events.empty()) {
-        auto &event = m_events.front();
+        auto event = m_events.front();
+        m_events.pop_front();
         lock.unlock();
 
         event();
 
         lock.lock();
-        m_events.pop_front();
     }
 }
 

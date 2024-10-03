@@ -13,6 +13,7 @@
 #include <cstring>
 
 #include <gr-render/gVertexArray.h>
+#include <gr-render/gTexture.h>
 #include <gr-render/gShader.h>
 
 std::unordered_map<std::string, std::unique_ptr<Batching>> Batching::m_batchedMap;
@@ -50,7 +51,7 @@ void Batching::Renderer() {
     std::for_each(m_batched.begin(), m_batched.end(), &Batching::Draw);
 }
 
-Batching::Batching(const std::string &name, std::vector<Material> *materials, Mesh *mesh, grr::gShader *shader, int flags) : m_shader(shader), m_flags(flags), m_mesh(mesh), m_name(name), m_materials(materials), m_vertexArray(nullptr), m_indiceCount(0), m_primCount(0), m_VBO(0), m_EBO(0), m_PBO(0), bHasIndice(false), m_type(DrawType_Elements) {
+Batching::Batching(const std::string &name, std::vector<std::shared_ptr<Material>> *materials, Mesh *mesh, grr::gShader *shader, int flags) : m_shader(shader), m_flags(flags), m_mesh(mesh), m_name(name), m_materials(materials), m_vertexArray(nullptr), m_indiceCount(0), m_primCount(0), m_VBO(0), m_EBO(0), m_PBO(0), bHasIndice(false), m_type(DrawType_Elements) {
     if (flags != Batching_Flags_Static_Mesh)
         build(mesh);
 }
@@ -307,7 +308,7 @@ void Batching::setupMaterial() {
         auto &material = materials[i];
 
         for (auto i=0;i<10;++i) {
-            auto texture = material.getTexture(i);
+            auto texture = material->getTexture(i);
             if (!texture || !texture->isValid()) {
                 continue;
             }
@@ -318,8 +319,8 @@ void Batching::setupMaterial() {
         grr::gShader::SetUniform<int>("m_texture", 10, (const int *)idx);
         grr::gShader::SetUniform<int>("m_activate", 10, (const int *)idxEn);
 
-        grr::gShader::SetUniform("m_material[" + std::to_string(i) + "].albedo", material.getAlbedo());
-        grr::gShader::SetUniform("m_material[" + std::to_string(i) + "].params", Vector3(material.getRoughness(), material.getMetallic(), material.getAmbientOcclusion()));
+        grr::gShader::SetUniform("m_material[" + std::to_string(i) + "].albedo", material->getAlbedo());
+        grr::gShader::SetUniform("m_material[" + std::to_string(i) + "].params", Vector3(material->getRoughness(), material->getMetallic(), material->getAmbientOcclusion()));
     }
 }
 

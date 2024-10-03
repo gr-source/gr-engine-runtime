@@ -1854,29 +1854,29 @@ void Editor::OnPropertyMeshRender(MeshRender *meshRender) {
         // }
     }
 
-    for (auto &material : meshRender->getMaterials()) {
-        auto isOpen = ImGui::TreeNode(material.getName().c_str());
-        if (!isOpen) {
-            continue;
-        }
+    // for (auto &material : meshRender->getMaterials()) {
+    //     auto isOpen = ImGui::TreeNode(material.getName().c_str());
+    //     if (!isOpen) {
+    //         continue;
+    //     }
 
-        auto albedo = material.getAlbedo();
-        InsertTexture(material);
+    //     auto albedo = material.getAlbedo();
+    //     InsertTexture(material);
 
-        if (View::PopupChangeColor("Albedo", albedo)) {
-            material.setAlbedo(albedo);
-        }
+    //     if (View::PopupChangeColor("Albedo", albedo)) {
+    //         material.setAlbedo(albedo);
+    //     }
 
-        ImGui::Text("Roghness:");
-        ImGui::DragFloat("##mesh_render_material_roughness", &material.m_roughness, 0.001f);
+    //     // ImGui::Text("Roghness:");
+    //     // ImGui::DragFloat("##mesh_render_material_roughness", &material.m_roughness, 0.001f);
 
-        ImGui::Text("Mettallic:");
-        ImGui::DragFloat("##mesh_render_material_metallic", &material.m_metallic, 0.001f);
+    //     // ImGui::Text("Mettallic:");
+    //     // ImGui::DragFloat("##mesh_render_material_metallic", &material.m_metallic, 0.001f);
 
-        ImGui::Text("AO:");
-        ImGui::DragFloat("##mesh_render_material_ao", &material.m_ao, 0.001f);
-        ImGui::TreePop();
-    }
+    //     // ImGui::Text("AO:");
+    //     // ImGui::DragFloat("##mesh_render_material_ao", &material.m_ao, 0.001f);
+    //     ImGui::TreePop();
+    // }
 
     ImGui::TreePop();
 }
@@ -1894,16 +1894,21 @@ void Editor::InsertTexture(Material &material) {
         ImGui::Image(reinterpret_cast<ImTextureID>(texture->getID()), ImVec2(Settings::IconSize.x, Settings::IconSize.y));
     }
 
-    if (ImGui::BeginDragDropTarget()) {
-        if (const ImGuiPayload* data = ImGui::AcceptDragDropPayload(IMGUI_PAYLOAD_FILE, ImGuiDragDropFlags_None)) {
-            std::string path((char*)data->Data, data->DataSize);
-            if (!path.empty()) {
-                throw std::runtime_error(".");
-                // material.setTexture(0, AssetsManager::LoadTexture(path));
-            }
-        }
-        ImGui::EndDragDropTarget();
+    if (!ImGui::BeginDragDropTarget()) {
+        return;
     }
+    auto data = ImGui::AcceptDragDropPayload(IMGUI_PAYLOAD_FILE, ImGuiDragDropFlags_None);
+    if (!data) {
+        return ImGui::EndDragDropTarget();
+    }
+
+    std::string path((char*)data->Data, data->DataSize);
+    if (path.empty()) {
+        LOG_ERROR("[ GUI ] Texture do not loaded, patg is empty.");
+        return ImGui::EndDragDropTarget();
+    }
+    AssetsManager::LoadTexture(path, &Editor::SetupTextureMaterial, std::ref(material), 0);
+    ImGui::EndDragDropTarget();
 }
 
 void Editor::OnPropertyAnimator(Animator *animator) {
@@ -2117,6 +2122,10 @@ void Editor::PostLoadGameObject(GameObject *gameObject) {
     transform.setLocalPosition(camera->getPosition() + (camTransform->getforward() * 5.5f));
 
     s_objectSelected = gameObject;
+}
+
+void Editor::SetupTextureMaterial(Material &material, int id, grr::gTexture *texture) {
+    material.setTexture(id, texture);
 }
 
 std::string GenerateScriptHeader(const std::string& name) {

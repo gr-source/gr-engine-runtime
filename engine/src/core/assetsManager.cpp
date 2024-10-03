@@ -27,6 +27,7 @@
 #include <future>
 
 #include <gr-render/gError.h>
+#include <gr-render/gTexture.h>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "../core/stb/stb_image.h"
@@ -41,9 +42,9 @@ std::mutex AssetsManager::s_shaderMutex;
 std::vector<std::function<bool(void *, const std::string &)>> AssetsManager::m_functions;
 
 /***************** Texture *****************/
-std::unordered_map<std::string, std::unique_ptr<grr::gTexture>> AssetsManager::s_textureList;
-std::list<TextureHandle> AssetsManager::s_textureFromLoader;
-std::mutex AssetsManager::s_textureMutex;
+std::unordered_map<std::string, std::unique_ptr<grr::gTexture>> AssetsManager::m_textureMap;
+std::list<TextureHandle> AssetsManager::m_textureHandle;
+std::mutex AssetsManager::m_mutexTexture;
 
 /***************** Animation *****************/
 std::unordered_map<std::string, std::unique_ptr<Animation>> AssetsManager::s_animationList;
@@ -59,7 +60,7 @@ std::unordered_map<std::string, std::unique_ptr<Mesh>> AssetsManager::s_meshList
 std::mutex AssetsManager::m_meshMutex;
 
 /***************** Material *****************/
-std::unordered_map<std::string, std::vector<Material>> AssetsManager::m_materialMap;
+// std::unordered_map<std::string, std::vector<Material>> AssetsManager::m_materialMap;
 
 void AssetsManager::Initialize() {
     stbi_set_flip_vertically_on_load(true);
@@ -77,8 +78,8 @@ void AssetsManager::Shutdown() {
     m_functions.clear();
 
     /***************** Texture *****************/
-    s_textureList.clear();
-    s_textureFromLoader.clear();
+    m_textureMap.clear();
+    m_textureHandle.clear();
 
     /***************** Animation *****************/
     s_animationList.clear();
@@ -91,7 +92,7 @@ void AssetsManager::Shutdown() {
     s_meshList.clear();
 
     /***************** Material *****************/
-    m_materialMap.clear();
+    // m_materialMap.clear();
 }
 
 Animation *AssetsManager::LoadAnimation(const std::string &path) {
@@ -164,17 +165,18 @@ std::unordered_map<std::string, std::unique_ptr<Mesh>> &AssetsManager::GetMeshLi
 }
 
 std::vector<Material> *AssetsManager::FindMaterial(const std::string &name) {
-    auto it = m_materialMap.find(name);
-    if (it == m_materialMap.end()) {
-        return nullptr;
-    }
-    return &it->second;
+    // auto it = m_materialMap.find(name);
+    // if (it == m_materialMap.end()) {
+    //     return nullptr;
+    // }
+    // return &it->second;
+    return nullptr;
 }
 
 /***************** Texture Process ****************/
 void AssetsManager::SetupTexture(TextureHandle handle, int width, int height, int ch, void *pixels) {
-    auto it = s_textureList.find(handle.m_path);
-    if (it != s_textureList.end()) {
+    auto it = m_textureMap.find(handle.m_path);
+    if (it != m_textureMap.end()) {
         if (handle.m_function) {
             handle.m_function(&(*it->second));
         }
@@ -205,8 +207,8 @@ void AssetsManager::SetupTexture(TextureHandle handle, int width, int height, in
 
     stbi_image_free(pixels);
 
-    s_textureList.emplace(handle.m_path, std::unique_ptr<grr::gTexture>(texture));
-
+    m_textureMap.emplace(handle.m_path, std::unique_ptr<grr::gTexture>(texture));
+   
     if (handle.m_function) {
         handle.m_function(texture);
     }
@@ -215,10 +217,10 @@ void AssetsManager::SetupTexture(TextureHandle handle, int width, int height, in
 }
 
 void AssetsManager::ProcessTexture() {
-    std::unique_lock<std::mutex> lock(s_textureMutex);
-    while (!s_textureFromLoader.empty()) {
-        auto handle = s_textureFromLoader.front();
-        s_textureFromLoader.pop_front();
+    std::unique_lock<std::mutex> lock(m_mutexTexture);
+    while (!m_textureHandle.empty()) {
+        auto handle = m_textureHandle.front();
+        m_textureHandle.pop_front();
         lock.unlock();
 
         auto path = handle.m_path;
@@ -437,8 +439,7 @@ void AssetsManager::ProcessAnimation() {
     }
 }
 
-std::condition_variable cond;
-void AssetsManager::SetupGameObject(GameObjectHandle &handle, Transform *&out, gModel &model, Mesh *mesh, std::vector<gMaterial> &materials, Transform *parent) {
+void AssetsManager::SetupGameObject(std::condition_variable &cond, GameObjectHandle &handle, Transform *&out, gModel model, Mesh *mesh, std::vector<gMaterial> materials, Transform *parent) {
     // transformaçoes
     GameObject *gameObject = nullptr;
     {
@@ -465,16 +466,17 @@ void AssetsManager::SetupGameObject(GameObjectHandle &handle, Transform *&out, g
         auto &meshRender = gameObject->addComponent<MeshRender>();
 
         for (auto &material : materials) {
-            auto &m = meshRender.addMaterial(material.m_name, material.m_color);
+            if (!material.m_textures) {
+                throw std::runtime_error("Texture ptr is invalid.");
+            }
+            
+            auto material_ptr = meshRender.addMaterial(material.m_name, material.m_color);
 
             for (int i=0;i<material.m_textureCount;++i) { 
                 auto& texture = material.m_textures[i];
-
-                throw std::runtime_error("");
-                // m.setTexture(i, AssetsManager::LoadTexture(texture.m_path));
+                
+                AssetsManager::LoadTexture(texture.m_path, &AssetsManager::SetupTextureMaterial, material_ptr, i);
             }
-
-            delete[] material.m_textures;
         }
 
         meshRender.build();
@@ -485,72 +487,6 @@ void AssetsManager::SetupGameObject(GameObjectHandle &handle, Transform *&out, g
         out = &transform;
     }
     cond.notify_one();
-}
-
-void AssetsManager::doInBackgroundGameObject(GameObjectHandle &handle) {
-    if (!Stream::open(handle.m_path, std::ios_base::in | std::ios_base::binary)) {
-        return Console::log(LogInfo::ERROR, "Failed to load model. " + handle.m_path);
-    }
-
-    gHeader pHeader;
-    if (!Stream::read(&pHeader, 1)) {
-        return Console::log(LogInfo::ERROR, "Failed to read header to file.");
-    }
-
-    if (std::string(pHeader.signature) != "grmd") {
-        return Console::log(LogInfo::ERROR, "Model invalid: " + handle.m_path);
-    }
-
-    ReadChildren(nullptr, handle);
-
-    Stream::close();
-
-
-    std::function<void(GameObject *)> func = nullptr;
-    GameObject *gameObject = nullptr;
-
-    {
-        std::lock_guard<std::mutex> lock(s_gameObjectMutex);
-        gameObject = handle.m_gameObject;
-        func = handle.m_function;
-    }
-
-    if (func && gameObject)
-        Event::Add(func, gameObject);
-}
-
-void AssetsManager::ProcessBinary() {
-    std::unique_lock<std::mutex> lock(s_gameObjectMutex);
-    while (!s_gameObjectFromLoader.empty()) {
-        auto &handle = s_gameObjectFromLoader.front();
-        lock.unlock();
-
-        doInBackgroundGameObject(handle);
-
-        lock.lock();
-        s_gameObjectFromLoader.pop_front();
-    }
-}
-
-std::unordered_map<std::string, std::vector<Material>> &AssetsManager::GetMaterialMap() {
-    return m_materialMap;
-}
-
-#include "timer.h"
-
-void AssetsManager::OnThread() {
-    // TimeLast last(5.0f);
-    // while (Settings::IsEngineRunning()) {
-    //     last.SleepTick();
-
-    //     ProcessShader();
-
-    //     ProcessTexture();
-    
-    //     ProcessAnimation();
-    
-    //     ProcessBinary();
-    // }
 }
 
 void AssetsManager::ReadChildren(Transform *parent, GameObjectHandle &handle) {
@@ -575,7 +511,7 @@ void AssetsManager::ReadChildren(Transform *parent, GameObjectHandle &handle) {
 
     // adiciona o mesh componenet
     if (!meshes.empty()) {
-        Mesh mesh; //meshFilter.getMesh();
+        Mesh mesh;
 
         std::string meshName;
 
@@ -648,24 +584,26 @@ void AssetsManager::ReadChildren(Transform *parent, GameObjectHandle &handle) {
 
         material.m_textures = new gTexture[material.m_textureCount];
         Stream::read(material.m_textures, material.m_textureCount);
-
-        for (int i=0;i<material.m_textureCount;++i) {
-            auto &texture = material.m_textures[i];
-        }
     }
 
     grm::u32 nSize;
     Stream::read(&nSize, 1);
 
     Transform *transform = nullptr;
+    std::condition_variable cond;
 
-    Event::Add(&AssetsManager::SetupGameObject, std::ref(handle), std::ref(transform), pModel, m_mesh, m_materials, parent);
+    Event::Add(&AssetsManager::SetupGameObject, std::ref(cond), std::ref(handle), std::ref(transform), pModel, m_mesh, m_materials, parent);
 
     std::unique_lock<std::mutex> lock(s_gameObjectMutex);
     cond.wait(lock, [&transform] {
         return transform;
     });
     lock.unlock();
+
+    for (auto &material : m_materials) {
+        delete[] material.m_textures;
+    }
+
 
     for (int i=0;i<nSize;++i) {
         ReadChildren(transform, handle);
@@ -675,10 +613,56 @@ void AssetsManager::ReadChildren(Transform *parent, GameObjectHandle &handle) {
     transform = nullptr;
 }
 
+void AssetsManager::doInBackgroundGameObject(GameObjectHandle handle) {
+    if (!Stream::open(handle.m_path, std::ios_base::in | std::ios_base::binary)) {
+        return Console::log(LogInfo::ERROR, "Failed to load model. " + handle.m_path);
+    }
+
+    gHeader pHeader;
+    if (!Stream::read(&pHeader, 1)) {
+        return Console::log(LogInfo::ERROR, "Failed to read header to file.");
+    }
+
+    if (std::string(pHeader.signature) != "grmd") {
+        return Console::log(LogInfo::ERROR, "Model invalid: " + handle.m_path);
+    }
+
+    ReadChildren(nullptr, handle);
+
+    Stream::close();
+
+    if (handle.m_function && handle.m_gameObject)
+        Event::Add(handle.m_function, handle.m_gameObject);
+}
+
+void AssetsManager::ProcessBinary() {
+    std::unique_lock<std::mutex> lock(s_gameObjectMutex);
+    while (!s_gameObjectFromLoader.empty()) {
+        auto handle = s_gameObjectFromLoader.front();
+        s_gameObjectFromLoader.pop_front();
+        lock.unlock();
+
+        doInBackgroundGameObject(handle);
+
+        lock.lock();
+    }
+}
+
+void AssetsManager::SetupTextureMaterial(Material *material, int id, grr::gTexture * texture) {
+    if (!material) {
+        return;
+    }
+    material->setTexture(id, texture);
+}
+
+std::unordered_map<std::string, std::vector<Material>> &AssetsManager::GetMaterialMap() {
+    throw std::runtime_error(".");
+    // return m_materialMap;
+}
+
 void AssetsManager::SetGameObjectList(const std::string &path, std::function<void(GameObject *)> func) {
     if (!File::Exists(path)) {
-        Console::log(LogInfo::ERROR, "Binary do not found: " + path);
-        return;
+        return LOG_ERROR("[ AssetsManager::GameObject ] File not found: " + path);
     }
 
     {
@@ -686,7 +670,7 @@ void AssetsManager::SetGameObjectList(const std::string &path, std::function<voi
         s_gameObjectFromLoader.emplace_back(func, path);
     }
 
-    // ThreadPool::AddTask(&AssetsManager::ProcessBinary);
+    ThreadPool::AddTask(&AssetsManager::ProcessBinary);
 }
 
 // TODO: aicionar lista de callbacks a serem chamadas apos shader serem adicionado a thread
@@ -729,8 +713,8 @@ void AssetsManager::SetTextureList(const std::string &path, std::function<void(g
         return LOG_ERROR("[ AssetsManager::Texture ] File not found: " + path);
     }
 
-    auto it = s_textureList.find(path);
-    if (it != s_textureList.end()) {
+    auto it = m_textureMap.find(path);
+    if (it != m_textureMap.end()) {
         if (func) {
             func(&(*it->second));
         }
@@ -738,25 +722,25 @@ void AssetsManager::SetTextureList(const std::string &path, std::function<void(g
     }
 
     {
-        std::lock_guard<std::mutex> lock(s_textureMutex);
-        auto it = std::find_if(s_textureFromLoader.begin(), s_textureFromLoader.end(), [path](const auto &handle) {
+        std::lock_guard<std::mutex> lock(m_mutexTexture);
+        auto it = std::find_if(m_textureHandle.begin(), m_textureHandle.end(), [path](const auto &handle) {
             return handle.m_path == path;
         });
-        if (it != s_textureFromLoader.end()) {
+        if (it != m_textureHandle.end()) {
             return;
         }
-        s_textureFromLoader.emplace_back(func, path);
+        m_textureHandle.emplace_back(func, path);
     }
 
     ThreadPool::AddTask(&AssetsManager::ProcessTexture);
 }
 
 grm::size AssetsManager::GetMaterialCount() {
-    return m_materialMap.size();
+    return 0;//m_materialMap.size();
 }
 
 grm::size AssetsManager::GetTextureCount() {
-    return s_textureList.size();
+    return m_textureMap.size();
 }
 
 grm::size AssetsManager::GetShaderCount() {
@@ -773,16 +757,20 @@ grm::size AssetsManager::GetMeshCount() {
 }
 
 std::string AssetsManager::GetTextureKeyMap(grr::gTexture *texture) {
-    auto it = std::find_if(s_textureList.begin(), s_textureList.end(), [&texture](const auto &tuple) {
+    auto it = std::find_if(m_textureMap.begin(), m_textureMap.end(), [&texture](const auto &tuple) {
         return &(*std::get<std::unique_ptr<grr::gTexture>>(tuple)) == texture;
     });
 
-    if (it == s_textureList.end()) {
+    if (it == m_textureMap.end()) {
         return "";
     }
     return it->first;
 }
 
 std::unordered_map<std::string, std::unique_ptr<grr::gTexture>> &AssetsManager::GetTextureMap() {
-    return s_textureList;
+    return m_textureMap;
 }
+
+
+
+

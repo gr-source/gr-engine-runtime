@@ -30,14 +30,14 @@ float Material::getAmbientOcclusion() const {
 
 void Material::setTexture(int idx, grr::gTexture *texture) {
     if (idx >= m_texture.size()) {
-        return;
+        throw std::runtime_error("Limite texture exceded." + std::to_string(idx) + "-" + std::to_string(m_texture.size()));
     }
     m_texture[idx] = texture;
 }
 
 grr::gTexture *Material::getTexture(int idx) const {
     if (idx >= m_texture.size()) {
-        throw std::runtime_error("Id id not avaliable:" + std::to_string(idx));
+        throw std::runtime_error("Id not avaliable:" + std::to_string(idx) + "/" + std::to_string(m_texture.size()));
     }
     return m_texture[idx];
 }
@@ -107,7 +107,10 @@ void Material::deserialize(std::istream &is) {
         if (name.empty()) {
             continue;
         }
-        throw std::runtime_error(".");
-        // m_texture[id] = AssetsManager::LoadTexture(name);
+        AssetsManager::LoadTexture(name, &Material::setupTexture, this, id);
     }
+}
+
+void Material::setupTexture(int id, grr::gTexture *texture) {
+    m_texture[id] = texture;
 }

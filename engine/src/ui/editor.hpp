@@ -191,8 +191,11 @@ private:
     static void OnPropertyLight(Light *light);
 
     static void TextureInfo(Texture*& texture);
-    
+
+    // Loader    
     static void PostLoadGameObject(GameObject *gameObject);
+
+    static void SetupTextureMaterial(Material &material, int id, grr::gTexture *texture);
 
     static void CreateScriptTemplate(const std::string &path, const std::string &name);
 

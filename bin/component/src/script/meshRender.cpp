@@ -18,7 +18,7 @@ MeshRender::~MeshRender() {
     if (!m_batched) {
         return;
     }
-    m_batched->remove(m_transform, false);
+    m_batched->remove(m_transform, true);
 }
 
 void MeshRender::Init() {
@@ -68,16 +68,12 @@ std::ostream &MeshRender::Serialize(std::ostream &os) {
         return os;
     }
 
-    std::string mName;
+    auto size = m_materials.size();
+    os.write(reinterpret_cast<const char *>(&size), sizeof(std::size_t));
+
     for (auto &material : m_materials) {
-        mName += material.getName();
+        material->serialize(os);
     }
-
-    auto nSize = mName.size();
-    os.write(reinterpret_cast<const char *>(&nSize), sizeof(std::size_t));
-
-    os.write(mName.data(), nSize);
-
     return os;
 }
 
@@ -90,17 +86,15 @@ std::istream &MeshRender::Deserialize(std::istream &is) {
         return is;
     }
     
-    std::size_t nSize;
-    is.read(reinterpret_cast<char *>(&nSize), sizeof(std::size_t));
+    std::size_t size;
+    is.read(reinterpret_cast<char *>(&size), sizeof(std::size_t));
 
-    std::string name(nSize, '\0');
-    is.read(name.data(), nSize);
+    m_materials.clear();
+    m_materials.resize(size);
 
-    auto material = AssetsManager::FindMaterial(name);
-    if (!material) {
-        throw std::runtime_error(GetGameObject()->getName() + ": do not Deserialize MeshRender.");
+    for (auto &material : m_materials) {
+        material->deserialize(is);
     }
-    m_materials = *material;
 
     build();
 

@@ -9,6 +9,7 @@
 #include "script/camera.hpp"
 
 #include <gr-render/gVertexArray.h>
+#include <gr-render/gTexture.h>
 #include <gr-render/gShader.h>
 
 grr::gVertexArray *Skybox::m_vertexArray = nullptr;

@@ -21,6 +21,8 @@
 
 #include <cstring>
 
+#include <gr-render/gTexture.h>
+
 std::array<grr::gShader *, 4> RenderManager::m_shader = {nullptr, nullptr, nullptr, nullptr};
 
 bool RenderManager::bWireFrame = false;
@@ -29,21 +31,30 @@ Camera *RenderManager::m_camera = nullptr;
 
 bool RenderManager::bRender = false;
 
-void Teste(grr::gShader *shader) {}
-
 void RenderManager::Initialize() {
-    // if (!ScriptManager::GetShaders) {
-    //     return;
-    // }
-
-    // auto shaders = ScriptManager::GetShaders();
-
-    // AssetsManager::AddPostLoader(RenderManager::SetupShader);
-
-    // m_shader[ShaderType_Dynamic] = shaders[ShaderType_Dynamic];
-    // // m_shader[ShaderType_Dynamic_Anim] = shaders[ShaderType_Dynamic_Anim];
-    // m_shader[ShaderType_Dynamic_Multi_Model] = shaders[ShaderType_Dynamic_Multi_Model];
-    // m_shader[ShaderType_Static_Multi_Model] = shaders[ShaderType_Static_Multi_Model];
+    AssetsManager::LoadShader("dynamic_one_model",
+        File::GetAsset("/shader/model/dynamic_model.frag"),
+        File::GetAsset("/shader/model/dynamic_one_model.vert"),
+        &RenderManager::SetupShader, ShaderType_Dynamic
+    );
+    
+    AssetsManager::LoadShader("dynamic_anim",
+        File::GetAsset("/shader/model/dynamic_model.frag"),
+        File::GetAsset("/shader/model/dynamic_model_anim.vert"),
+        &RenderManager::SetupShader, ShaderType_Dynamic_Anim
+    );
+    
+    AssetsManager::LoadShader("dynamic_multi_model",
+        File::GetAsset("/shader/model/dynamic_model.frag"),
+        File::GetAsset("/shader/model/dynamic_multi_model.vert"),
+        &RenderManager::SetupShader, ShaderType_Dynamic_Multi_Model
+    );
+    
+    AssetsManager::LoadShader("static_multi_model",
+        File::GetAsset("/shader/model/dynamic_model.frag"),
+        File::GetAsset("/shader/model/static_multi_model.vert"),
+        &RenderManager::SetupShader, ShaderType_Static_Multi_Model
+    );
 }
 
 void RenderManager::Process() {
@@ -75,6 +86,8 @@ void RenderManager::Renderer() {
     if (!bRender || !m_camera) {
         return;
     }
+
+    
 
     // grr::gShader::Bind(m_shader[ShaderType_Static_Multi_Model]);
 
@@ -127,27 +140,16 @@ void RenderManager::SetupLight() {
     }
 }
 
-bool RenderManager::SetupShader(void *ptr, const std::string &path) {
-    auto shader = static_cast<grr::gShader *>(ptr);
-    if (m_shader[ShaderType_Dynamic] != shader &&
-        m_shader[ShaderType_Dynamic_Multi_Model] != shader &&
-        m_shader[ShaderType_Static_Multi_Model] != shader) {
-        return false;
-    }
+void RenderManager::SetupShader(ShaderType type, grr::gShader *shader) {
+    m_shader[type] = shader;
 
     grr::gShader::Bind(shader);
 
-    RegisterUniform(m_shader[ShaderType_Dynamic] == shader);
+    RegisterUniform(type == ShaderType_Dynamic);
 
     grr::gShader::Unbind();
 
-    Console::log(LogInfo::INFO, "Shader loaded successfully.");
-
-    bRender = m_shader[ShaderType_Dynamic]->isValid() &&
-        m_shader[ShaderType_Dynamic_Multi_Model]->isValid() &&
-        m_shader[ShaderType_Static_Multi_Model]->isValid();
-
-    return bRender;
+    bRender = true;
 }
 
 void RenderManager::RegisterUniform(bool model) {

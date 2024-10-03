@@ -33,7 +33,7 @@ public:
 
 class ShaderHandle {
 public:
-    ShaderHandle(std::function<void(grr::gShader *)> function, std::string name, std::string frag, std::string vert) : m_shader(nullptr), m_name(name), m_frag(frag), m_vert(vert) {
+    ShaderHandle(std::function<void(grr::gShader *)> function, std::string name, std::string frag, std::string vert) : m_name(name), m_frag(frag), m_vert(vert) {
         if (!function) {
             return;
         }
@@ -41,8 +41,6 @@ public:
     }
 
     std::vector<std::function<void(grr::gShader *)>> m_functions;
-
-    grr::gShader *m_shader;
 
     std::string m_name;
     
@@ -53,11 +51,9 @@ public:
 
 class TextureHandle {
 public:
-    TextureHandle(std::function<void(grr::gTexture *)> function, std::string path) : m_function(function), m_shader(nullptr), m_path(path) {}
+    TextureHandle(std::function<void(grr::gTexture *)> function, std::string path) : m_function(function), m_path(path) {}
 
     std::function<void(grr::gTexture *)> m_function;
-
-    grr::gTexture *m_shader;
 
     std::string m_path;
 };
@@ -99,8 +95,6 @@ public:
 
     static std::unordered_map<std::string, std::vector<Material>> &GetMaterialMap();
 
-    static void OnThread();
-
     static grm::u32 m_processCount;
 
     static grm::size GetMaterialCount();
@@ -130,9 +124,9 @@ private:
     static std::vector<std::function<bool(void *, const std::string &)>> m_functions;
 
     /***************** Texture *****************/
-    static std::unordered_map<std::string, std::unique_ptr<grr::gTexture>> s_textureList;
-    static std::list<TextureHandle> s_textureFromLoader;
-    static std::mutex s_textureMutex;
+    static std::unordered_map<std::string, std::unique_ptr<grr::gTexture>> m_textureMap;
+    static std::list<TextureHandle> m_textureHandle;
+    static std::mutex m_mutexTexture;
 
     /***************** Animation *****************/
     static std::unordered_map<std::string, std::unique_ptr<Animation>> s_animationList;
@@ -149,7 +143,7 @@ private:
     static std::mutex m_meshMutex;
     
     /***************** Material *****************/
-    static std::unordered_map<std::string, std::vector<Material>> m_materialMap;
+    // static std::unordered_map<std::string, std::vector<Material>> m_materialMap;
 
     static void SetupTexture(TextureHandle handle, int width, int height, int ch, void *pixels);
 
@@ -167,13 +161,15 @@ private:
 
     static void ProcessAnimation();
 
-    static void SetupGameObject(GameObjectHandle &handle, Transform *&out, gModel &model, Mesh *mesh, std::vector<gMaterial> &materials, Transform *parent);
+    static void SetupGameObject(std::condition_variable &cond, GameObjectHandle &handle, Transform *&out, gModel model, Mesh *mesh, std::vector<gMaterial> materials, Transform *parent);
 
-    static void doInBackgroundGameObject(GameObjectHandle &handle);
+    static void ReadChildren(Transform *transform, GameObjectHandle &handle);
+    
+    static void doInBackgroundGameObject(GameObjectHandle handle);
 
     static void ProcessBinary();
 
-    static void ReadChildren(Transform *transform, GameObjectHandle &handle);
+    static void SetupTextureMaterial(Material *material, int id, grr::gTexture *texture);
 };
 
 template <typename... Args>
@@ -217,6 +213,7 @@ inline Mesh *AssetsManager::AddMesh(const std::string &key, Args &&...args) {
 
 template <typename... Args>
 inline std::vector<Material> &AssetsManager::AddMaterial(const std::string &name, Args &&...args) {
-    auto &&[it, added] = m_materialMap.emplace(name, std::forward<Args>(args)...);
-    return it->second;
+    throw std::runtime_error(".");
+    // auto &&[it, added] = m_materialMap.emplace(name, std::forward<Args>(args)...);
+    // return it->second;
 }

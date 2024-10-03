@@ -1,6 +1,6 @@
 #include "core/geometry/material.hpp"
 
-Material::Material(const std::string &name, const Vector4 &albedo, float metallic, float roughness, float ao) : m_name(name), m_albedo(albedo), m_metallic(metallic), m_roughness(roughness), m_ao(ao), m_texture(10, nullptr) {}
+Material::Material(const std::string &name, const Color &albedo, float metallic, float roughness, float ao) : m_name(name), m_albedo(albedo), m_metallic(metallic), m_roughness(roughness), m_ao(ao), m_texture(10, nullptr) {}
 
 const std::string &Material::getName() const {
     return m_name;
@@ -12,3 +12,12 @@ void Material::setTexture(int idx, grr::gTexture *texture) {
     }
     m_texture[idx] = texture;
 }
+
+void Material::serialize(std::ostream &os) const {
+    throw std::runtime_error("function do not implemented.");
+}
+
+void Material::deserialize(std::istream &is) {
+    throw std::runtime_error("function do not implemented.");
+}
+

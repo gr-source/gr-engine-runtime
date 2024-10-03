@@ -35,7 +35,7 @@ public:
 
     static void SetupLight();
 
-    static bool SetupShader(void *shader, const std::string &path);
+    static void SetupShader(ShaderType type, grr::gShader *shader);
 
     static void RegisterUniform(bool model);
 };

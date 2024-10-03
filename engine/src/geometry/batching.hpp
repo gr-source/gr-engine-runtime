@@ -27,7 +27,7 @@ public:
 
     static void Renderer();
     
-    Batching(const std::string &name, std::vector<Material> *materials, Mesh *mesh, grr::gShader *shader, int flags);
+    Batching(const std::string &name, std::vector<std::shared_ptr<Material>> *materials, Mesh *mesh, grr::gShader *shader, int flags);
     ~Batching();
 
     void insert(Transform *transform);
@@ -52,7 +52,7 @@ private:
 
     static std::vector<Batching *> m_batched;
 
-    std::vector<Material> *m_materials;
+    std::vector<std::shared_ptr<Material>> *m_materials;
 
     std::vector<Transform *> m_models;
 

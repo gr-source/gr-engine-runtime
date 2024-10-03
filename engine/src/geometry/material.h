@@ -2,7 +2,7 @@
 
 #include <string>
 
-#include <gr-render/gTexture.h>
+#include <gr-render/gRender.h>
 
 class Material {
 public:
@@ -41,6 +41,6 @@ private:
 
     std::vector<grr::gTexture *> m_texture;
 
-    friend class Editor;
+    void setupTexture(int id, grr::gTexture *texture);
 };
 

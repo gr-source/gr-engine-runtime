@@ -11,10 +11,10 @@ class MeshRender : public Component {
 public:
     MeshRender() = delete;
 
-    std::vector<Material> &getMaterials();
+    std::vector<std::shared_ptr<Material>> &getMaterials();
 
     template <typename ...Args>
-    Material &addMaterial(Args &&...args);
+    Material *addMaterial(Args &&...args);
 
     void build();
 
@@ -25,7 +25,7 @@ public:
     const int &getFlags() const;
 
 private:
-    std::vector<Material> m_materials;
+    std::vector<std::shared_ptr<Material>> m_materials;
 
     int m_flags;
 
@@ -35,6 +35,6 @@ private:
 };
 
 template <typename... Args>
-inline Material &MeshRender::addMaterial(Args &&...args) {
-    return m_materials.emplace_back(std::forward<Args>(args)...);
+inline Material *MeshRender::addMaterial(Args &&...args) {
+    return &(*m_materials.emplace_back(std::make_shared<Material>(std::forward<Args>(args)...)));
 }

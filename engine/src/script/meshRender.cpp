@@ -7,7 +7,7 @@
 
 #include "core/assetsManager.hpp"
 
-std::vector<Material> &MeshRender::getMaterials() {
+std::vector<std::shared_ptr<Material>> &MeshRender::getMaterials() {
     return m_materials;
 }
 
@@ -35,17 +35,15 @@ void MeshRender::build() {
             throw std::runtime_error("Shader do not found.");
         }
 
-        std::string mName;
-        for (auto &material : m_materials) {
-            mName += material.getName();
-        }
+        // std::string mName;
+        // for (auto &material : m_materials) {
+        //     mName += material.getName();
+        // }
 
-        auto material = AssetsManager::FindMaterial(mName);
-        if (!material) {
-            material = &AssetsManager::AddMaterial(mName, m_materials);
-        } else {
-            m_materials = *material;
-        }
+        // auto material = AssetsManager::FindMaterial(mName);
+        // if (!material) {
+        //     material = &AssetsManager::AddMaterial(mName, m_materials);
+        // }
 
         m_batched = Batching::Find(getGameObject()->getName());
         if (!m_batched) {
@@ -56,6 +54,7 @@ void MeshRender::build() {
         return;
     }
 
+    /*
     std::string mName;
     for (auto &material : m_materials) {
         mName += material.getName();
@@ -92,6 +91,7 @@ void MeshRender::build() {
 
     m_batched = &Batching::Add(mName, material, mesh, shader, m_flags);
     m_batched->insert(m_transform);
+    */
 }
 
 Batching *MeshRender::getBatchGroup() {

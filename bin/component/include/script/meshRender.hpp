@@ -18,7 +18,7 @@ public:
     void Init() override;
 
     template <typename ...Args>
-    Material &addMaterial(Args &&...args);
+    Material *addMaterial(Args &&...args);
 
     void build();
 
@@ -33,7 +33,7 @@ public:
     std::istream &Deserialize(std::istream &is) override;
 
 private:
-    std::vector<Material> m_materials;
+    std::vector<std::shared_ptr<Material>> m_materials;
 
     int flags;
 
@@ -43,8 +43,8 @@ private:
 };
 
 template <typename... Args>
-inline Material &MeshRender::addMaterial(Args &&...args) {
-    return m_materials.emplace_back(std::forward<Args>(args)...);
+inline Material *MeshRender::addMaterial(Args &&...args) {
+    return &(*m_materials.emplace_back(std::make_shared<Material>(std::forward<Args>(args)...)));
 }
 
 REGISTER_COMPONENT(MeshRender);
