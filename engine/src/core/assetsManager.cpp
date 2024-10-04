@@ -670,7 +670,7 @@ void AssetsManager::SetGameObjectList(const std::string &path, std::function<voi
         s_gameObjectFromLoader.emplace_back(func, path);
     }
 
-    ThreadPool::AddTask(&AssetsManager::ProcessBinary);
+    Threadpool::AddTask(&AssetsManager::ProcessBinary);
 }
 
 // TODO: aicionar lista de callbacks a serem chamadas apos shader serem adicionado a thread
@@ -705,7 +705,7 @@ void AssetsManager::SetShaderList(const std::string &name, const std::string &fr
         s_shaderFromLoader.emplace_back(func, name, frag, vert);
     }
 
-    ThreadPool::AddTask(&AssetsManager::ProcessShader);
+    Threadpool::AddTask(&AssetsManager::ProcessShader);
 }
 
 void AssetsManager::SetTextureList(const std::string &path, std::function<void(grr::gTexture *)> func) {
@@ -732,7 +732,7 @@ void AssetsManager::SetTextureList(const std::string &path, std::function<void(g
         m_textureHandle.emplace_back(func, path);
     }
 
-    ThreadPool::AddTask(&AssetsManager::ProcessTexture);
+    Threadpool::AddTask(&AssetsManager::ProcessTexture);
 }
 
 grm::size AssetsManager::GetMaterialCount() {

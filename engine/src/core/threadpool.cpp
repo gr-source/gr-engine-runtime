@@ -1,22 +1,24 @@
 #include "threadpool.hpp"
 
-std::list<std::function<void()>> ThreadPool::m_task;
+std::list<std::function<void()>> Threadpool::m_task;
 
-std::vector<std::thread> ThreadPool::m_threads;
+std::vector<std::thread> Threadpool::m_threads;
 
-std::condition_variable ThreadPool::m_cv;
+std::condition_variable Threadpool::m_cv;
 
-std::mutex ThreadPool::m_mutex;
+std::size_t Threadpool::m_available = 0;
 
-bool ThreadPool::m_bStop = false;
+std::mutex Threadpool::m_mutex;
 
-void ThreadPool::Initialize(std::uint32_t maxThread) {
+bool Threadpool::m_bStop = false;
+
+void Threadpool::Initialize(std::uint32_t maxThread) {
     for (std::uint32_t i=0;i<maxThread;i++) {
-        m_threads.emplace_back(&ThreadPool::Update);
+        m_threads.emplace_back(&Threadpool::Update);
     }
 }
 
-void ThreadPool::Shutdown() {
+void Threadpool::Shutdown() {
     Stop();
 
     for (auto &thread : m_threads) {
@@ -26,7 +28,7 @@ void ThreadPool::Shutdown() {
     }
 }
 
-void ThreadPool::Stop() {
+void Threadpool::Stop() {
     {
         std::lock_guard<std::mutex> lock(m_mutex);
         m_bStop = true;
@@ -34,7 +36,15 @@ void ThreadPool::Stop() {
     m_cv.notify_all();
 }
 
-void ThreadPool::Update() {
+std::size_t Threadpool::GetThreadCount() {
+    return m_threads.size();
+}
+
+std::size_t Threadpool::GetThreadAvailable() {
+    return m_available;
+}
+
+void Threadpool::Update() {
     while (true) {
         std::unique_lock<std::mutex> lock(m_mutex);
         m_cv.wait(lock, [] {
@@ -44,11 +54,15 @@ void ThreadPool::Update() {
         if (m_bStop) {
             break;
         }
+        m_available++;
 
         auto task = m_task.front();
         m_task.pop_front();
         lock.unlock();
 
         task();
+
+        lock.lock();
+        m_available--;
     }
 }

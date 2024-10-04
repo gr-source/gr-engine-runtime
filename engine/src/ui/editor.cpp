@@ -138,7 +138,7 @@ void Editor::Initialize() {
     try {
         m_config->load();
     } catch (const std::runtime_error &e) {
-        Console::log(LogInfo::WARNING, e.what());
+        LOG_WARNIG(e.what());
     }
     
     bBuildDock = File::Exists("imgui.ini");
@@ -148,7 +148,7 @@ void Editor::Initialize() {
     try {
         ScriptManager::Initialize(File::GetFile("/.build/component/lib/libgr-component.so"));
     } catch (const std::exception &e) {
-        Console::log(LogInfo::ERROR, "Fatal error in script: " + std::string(e.what()));
+        LOG_ERROR("Fatal error in script: " + std::string(e.what()));
     }
 
     RenderManager::Initialize();
@@ -298,14 +298,14 @@ void WriteNode(const FbxScene *scene, const FbxNode &node) {
     // Escrever os dados das meshes no arquivo
     for (auto &mesh : meshes) {
         if (mesh.serialize() != 0) {
-            Console::log(LogInfo::ERROR, "Falied to write mesh: " + std::string(mesh.m_name));
+            LOG_ERROR("Falied to write mesh: " + std::string(mesh.m_name));
             continue;
         }
     }
 
     grm::u32 mSize = pMateials.size();
     if (!Stream::write(&mSize, 1)) {
-        return Console::log(LogInfo::ERROR, "Falied to material data ");
+        return LOG_ERROR("Falied to material data.");
     }
 
     for (auto &material : pMateials) {
@@ -468,7 +468,7 @@ void Editor::DropFile(const std::filesystem::path &path) {
         return ImportImage(path.string());
     }
 }
-
+ 
 void Editor::Import3DModel(const std::string &path) {
     LOG_INFO("[ Import ] Importing 3D model...");
     auto *filmbox = new Filmbox(path);
@@ -838,7 +838,7 @@ void Editor::ReadHierarchy(Transform *transform) {
             if (!name.empty()) {
                 auto target = GameObject::Find(name);
                 if (!target) {
-                    Console::log(LogInfo::ERROR, "GameObject do not found: " + name);
+                    LOG_ERROR("GameObject do not found: " + name);
                 } else {
                     auto ts = &target->getTransform();
                     if (ts != transform->getParent()) {
@@ -1117,7 +1117,7 @@ void Editor::RenderScene() {
             } else {
                 s_texturePlayGame = iconsUI[IconType::ICON_PLAY_GAME];
 
-                ThreadPool::AddTask(&Editor::BuildProject, File::GetUserFile("/project"));
+                Threadpool::AddTask(&Editor::BuildProject, File::GetUserFile("/project"));
 
                 bScriptReloaded = true;
             }
@@ -1498,43 +1498,40 @@ void Editor::RenderConsoleUI() {
     }
 
     if (flags & NavegationFlags_console) {
-
-        auto logs = Console::GetListLogs();
-
-        for (const auto& log : logs) {
-            ImVec4 color = {1.0f, 1.0f, 1.0f, 1.0f};
-            std::string type = "[ DEFAULT ]";
-
-            switch (log.type) {
-            case LogInfo::LogType::INFO:
-                color = {0.0f, 1.0f, 0.0f, 1.0f};
-                type = "[ INFO ]";
-                break;
-            case LogInfo::LogType::WARNING:
-                color = {1.0f, 1.0f, 0.0f, 1.0f};
-                type = "[ WARNING ]";
-                break;
-            case LogInfo::LogType::ERROR:
-                color = {1.0f, 0.0f, 0.0f, 1.0f};
-                type = "[ ERROR ]";
-                break;
-            default:
-                break;
-            }
-
-            ImGui::TextColored(color, "%s", type.c_str());
-            ImGui::SameLine();
-            ImGui::Text("%s", log.message.c_str());
-        }
-
-        if (Console::bChanged) {
-            ImGui::SetScrollHereY(1.0f);
-            Console::bChanged = false;
-        }
-    
+        RenderConsole();
     }
 
     ImGui::End();
+}
+
+void Editor::RenderConsole() {
+    auto logs = Console::GetListLogs();
+
+    std::for_each(logs.begin(), logs.end(), &Editor::RenderLog);
+    
+    if (Console::bChanged) {
+        ImGui::SetScrollHereY(1.0f);
+        Console::bChanged = false;
+    }
+}
+
+void Editor::RenderLog(LogInfo &info) {
+    ImVec4 color = {1.0f, 1.0f, 1.0f, 1.0f};
+    switch (info.type) {
+    case LogInfo::LogType::INFO:
+        color = {0.0f, 1.0f, 0.0f, 1.0f};
+        break;
+    case LogInfo::LogType::WARNING:
+        color = {1.0f, 1.0f, 0.0f, 1.0f};
+        break;
+    case LogInfo::LogType::ERROR:
+        color = {1.0f, 0.0f, 0.0f, 1.0f};
+        break;
+    default:
+        break;
+    }
+
+    ImGui::TextColored(color, "%s", info.message.c_str());
 }
 
 void Editor::RenderSettings() {
@@ -1642,7 +1639,10 @@ void Editor::RenderStatisticsMenu() {
     ImGui::Text("Material: %ld", AssetsManager::GetMaterialCount());
     ImGui::Text("Event: %ld", Event::GetCount());
 
-    ImGui::SeparatorText("FrameTime: ");
+    ImGui::SeparatorText("Threads");
+    ImGui::Text("Threads: %ld/%ld", Threadpool::GetThreadCount(), Threadpool::GetThreadAvailable());
+
+    ImGui::SeparatorText("FrameTime");
     ImGui::Text("MainThread:  %fms  | FPS: %.2f",  Statistics::m_threadFrame.delta,  (1.0f / Statistics::m_threadFrame.delta));
     ImGui::Text("Render:      %fms  | FPS: %.2f",  Statistics::m_sceneFrame.delta,   (1.0f / Statistics::m_sceneFrame.delta));
     ImGui::Text("GUI:         %fms  | FPS: %.2f",  Statistics::m_guiFrame.delta,     (1.0f / Statistics::m_guiFrame.delta));
@@ -1696,7 +1696,7 @@ void Editor::RenderGameObjectPropertiUI() {
 
             auto it = componentPool.find(name);
             if (it == componentPool.end()) {
-                Console::log(LogInfo::ERROR, "Invalid component: " + name);
+                LOG_ERROR("Invalid component: " + name);
                 ImGui::TreePop();
                 continue;
             }
@@ -2230,7 +2230,7 @@ void Editor::ReconfigScript() {
 
     LOG_INFO("[ BUILD ] building scipt...");
 
-    ThreadPool::AddTask(&Editor::BuildProject, path);
+    Threadpool::AddTask(&Editor::BuildProject, path);
 }
 
 void Editor::BuildProject(std::string path) {

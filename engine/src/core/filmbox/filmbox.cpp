@@ -22,7 +22,7 @@ void Filmbox::setPostProcess(std::function<void(const FbxScene *, Filmbox *)> fu
 }
 
 void Filmbox::load() {
-    ThreadPool::AddTask(&Filmbox::doInBackground, this, m_path);
+    Threadpool::AddTask(&Filmbox::doInBackground, this, m_path);
 }
 
 const bool Filmbox::isValid() const {

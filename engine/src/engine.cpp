@@ -54,7 +54,7 @@ void Engine::Reize(grm::u32 width, grm::u32 height) {
 void Engine::Initialize() {
     Memory::Initialize();
 
-    ThreadPool::Initialize();
+    Threadpool::Initialize();
 
     ImGuiRender::Initialize("#version 330 core");
 
@@ -141,7 +141,7 @@ void Engine::Shutdown() {
 
     AssetsManager::Shutdown();
 
-    ThreadPool::Shutdown();
+    Threadpool::Shutdown();
     
     Memory::Shutdown();
 }

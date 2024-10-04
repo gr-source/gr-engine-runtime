@@ -7,7 +7,7 @@
 #include <mutex>
 #include <list>
 
-class ThreadPool {
+class Threadpool {
 public:
     static void Initialize(std::uint32_t maxThread = std::thread::hardware_concurrency());
 
@@ -18,6 +18,10 @@ public:
 
     static void Stop();
 
+    static std::size_t GetThreadCount();
+
+    static std::size_t GetThreadAvailable();
+
 private:
     static std::list<std::function<void()>> m_task;
 
@@ -25,15 +29,18 @@ private:
 
     static std::condition_variable m_cv;
 
+    static std::size_t m_available;
+
     static std::mutex m_mutex;
 
     static bool m_bStop;
+
 
     static void Update();
 };
 
 template <typename... Args>
-inline void ThreadPool::AddTask(Args &&...args) {
+inline void Threadpool::AddTask(Args &&...args) {
     {
         std::lock_guard<std::mutex> lock(m_mutex);
         m_task.emplace_back(std::bind(std::forward<Args>(args)...));

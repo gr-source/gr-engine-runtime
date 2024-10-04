@@ -4,8 +4,10 @@
 
 #include "core/ecs/componentPool.hpp"
 
-#include "Global.h"
+
+#include "console.hpp"
 #include "renderer.h"
+#include "Global.h"
 
 #include "guizmo/ImGuizmo.h"
 
@@ -154,6 +156,10 @@ private:
     static void PopupCreateDirectory();
 
     static void RenderConsoleUI();
+
+    static void RenderConsole();
+
+    static void RenderLog(LogInfo &info);
 
     static void RenderSettings();
 
