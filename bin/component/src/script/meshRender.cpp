@@ -90,7 +90,7 @@ std::istream &MeshRender::Deserialize(std::istream &is) {
     is.read(reinterpret_cast<char *>(&size), sizeof(std::size_t));
 
     m_materials.clear();
-    m_materials.resize(size);
+    m_materials.resize(size, std::make_unique<Material>());
 
     for (auto &material : m_materials) {
         material->deserialize(is);

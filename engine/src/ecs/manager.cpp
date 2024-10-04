@@ -6,6 +6,7 @@
 
 #include "script/transform.hpp"
 
+#include "core/file/streaming.hpp"
 #include "core/file/stream.hpp"
 #include "core/file/file.hpp"
 
@@ -106,9 +107,13 @@ void Manager::Replay() {
             entity->getGameObject()->setTransform(dynamic_cast<Transform *>(component));
         }
 
-        Stream::open(File::GetCacheFile("/" + name + "_" + std::to_string(entity->getEntityID())), std::ios_base::in | std::ios_base::binary);
-        component->Deserialize(Stream::GetStream());
-        Stream::close();
+        Streaming stream(File::GetCacheFile("/" + name + "_" + std::to_string(entity->getEntityID())), std::ios_base::in | std::ios_base::binary);
+        if (!stream.is_open()) {
+            LOG_ERROR("[ Manager ] Falied to read component data: " + name);
+            continue;
+        }
+        component->Deserialize(stream);
+        stream.close();
     }
 
     m_vali.clear();
