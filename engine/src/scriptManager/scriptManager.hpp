@@ -39,6 +39,8 @@ public:
     static Component *(*CreateComponentWithName)(const std::string &name);
 
     static Component *(*CopyComponentWithName)(const std::string &name, const Component *component);
+
+    static bool CheckScriptLoaded(const std::string &name);
     
 private:
     static void RegisterApi();

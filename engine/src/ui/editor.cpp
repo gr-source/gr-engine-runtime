@@ -504,6 +504,10 @@ void Editor::LoadScript() {
         UnloadScript();
     }
 
+    if (ScriptManager::CheckScriptLoaded("libgr-component.so")) {
+        return LOG_ERROR("[ Script ] Fatal error data not unloaded.");
+    }
+
     try {
         ScriptManager::Initialize(File::GetFile("/.build/component/lib/libgr-component.so"));
     } catch (const std::runtime_error &e) {

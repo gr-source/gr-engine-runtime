@@ -93,6 +93,26 @@ bool ScriptManager::IsValid() {
 // TODO: Falta corrigir error de segmebt afult em memory hook
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpmf-conversions"
+
+bool ScriptManager::CheckScriptLoaded(const std::string &name) {
+    std::ifstream is("/proc/self/maps");
+    if (!is.is_open()) {
+        return false;
+    }
+    bool isValid = false;
+    
+    std::string line;
+    while (std::getline(is, line)) {
+        if (line.find(name) == std::string::npos) {
+            continue;
+        }
+        isValid = true;
+        break;
+    }
+    is.close();
+    return isValid;
+}
+
 void ScriptManager::RegisterApi() {
     // Console log
     m_script->replaceLibraryFunction("_ZN7Console3logEN7LogInfo7LogTypeERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE", reinterpret_cast<void *>(&Console::log));
