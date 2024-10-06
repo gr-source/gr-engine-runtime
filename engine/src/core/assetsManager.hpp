@@ -75,8 +75,6 @@ public:
 
     static Animation *LoadAnimation(const std::string &path);
 
-    static void AddPostLoader(std::function<bool(void *, const std::string &)> func);
-
     static grr::gShader *FindShader(const std::string &name);
 
     static Mesh *FindMesh(const std::string &name);
@@ -88,16 +86,7 @@ public:
 
     static std::unordered_map<std::string, std::unique_ptr<Mesh>> &GetMeshListMap();
 
-    static std::vector<Material> *FindMaterial(const std::string &name);
-
-    template <typename ...Args>
-    static std::vector<Material> &AddMaterial(const std::string &name, Args &&...args);
-
-    static std::unordered_map<std::string, std::vector<Material>> &GetMaterialMap();
-
     static grm::u32 m_processCount;
-
-    static grm::size GetMaterialCount();
 
     static grm::size GetTextureCount();
 
@@ -121,8 +110,6 @@ private:
     static std::list<ShaderHandle> s_shaderFromLoader;
     static std::mutex s_shaderMutex;
 
-    static std::vector<std::function<bool(void *, const std::string &)>> m_functions;
-
     /***************** Texture *****************/
     static std::unordered_map<std::string, std::unique_ptr<grr::gTexture>> m_textureMap;
     static std::list<TextureHandle> m_textureHandle;
@@ -135,7 +122,6 @@ private:
 
     /***************** GameObject *****************/
     static std::list<GameObjectHandle> s_gameObjectFromLoader;
-    // static std::list<std::tuple<std::string, Transform *>> s_gameObjectFromLoader;
     static std::mutex s_gameObjectMutex;
 
     /***************** Mesh *****************/
@@ -209,11 +195,4 @@ inline Mesh *AssetsManager::AddMesh(const std::string &key, Args &&...args) {
     auto mesh = &(*(*pair).second);
     lock.unlock();
     return mesh;
-}
-
-template <typename... Args>
-inline std::vector<Material> &AssetsManager::AddMaterial(const std::string &name, Args &&...args) {
-    throw std::runtime_error(".");
-    // auto &&[it, added] = m_materialMap.emplace(name, std::forward<Args>(args)...);
-    // return it->second;
 }

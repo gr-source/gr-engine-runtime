@@ -39,8 +39,6 @@ std::unordered_map<std::string, std::unique_ptr<grr::gShader>> AssetsManager::s_
 std::list<ShaderHandle> AssetsManager::s_shaderFromLoader;
 std::mutex AssetsManager::s_shaderMutex;
 
-std::vector<std::function<bool(void *, const std::string &)>> AssetsManager::m_functions;
-
 /***************** Texture *****************/
 std::unordered_map<std::string, std::unique_ptr<grr::gTexture>> AssetsManager::m_textureMap;
 std::list<TextureHandle> AssetsManager::m_textureHandle;
@@ -73,9 +71,6 @@ void AssetsManager::Shutdown() {
     /***************** Shader *****************/
     s_shaderList.clear();
     s_shaderFromLoader.clear();
-
-    /***************** Functions *****************/
-    m_functions.clear();
 
     /***************** Texture *****************/
     m_textureMap.clear();
@@ -123,10 +118,6 @@ Animation *AssetsManager::LoadAnimation(const std::string &path) {
     return animation;
 }
 
-void AssetsManager::AddPostLoader(std::function<bool(void *, const std::string &)> func) {
-    m_functions.push_back(func);
-}
-
 grr::gShader *AssetsManager::FindShader(const std::string &name) {
     auto it = s_shaderList.find(name);
     if (it == s_shaderList.end()) {
@@ -164,15 +155,6 @@ std::unordered_map<std::string, std::unique_ptr<Mesh>> &AssetsManager::GetMeshLi
     return s_meshList;
 }
 
-std::vector<Material> *AssetsManager::FindMaterial(const std::string &name) {
-    // auto it = m_materialMap.find(name);
-    // if (it == m_materialMap.end()) {
-    //     return nullptr;
-    // }
-    // return &it->second;
-    return nullptr;
-}
-
 /***************** Texture Process ****************/
 void AssetsManager::SetupTexture(TextureHandle handle, int width, int height, int ch, void *pixels) {
     auto it = m_textureMap.find(handle.m_path);
@@ -186,26 +168,30 @@ void AssetsManager::SetupTexture(TextureHandle handle, int width, int height, in
 
     grr::TextureFormat format;
 
-    switch (ch) {
-    case 1:
-        // return Texture::eRED;
-    case 2:
-        // return Texture::eRG;
-    case 3:
-        format = grr::TextureFormat_SRGB;
-        break;
-    case 4:
-        format = grr::TextureFormat_SRGBA;
-        break;
-    default:
-        assert(false && "[ Resources::getTextureType ] typo invalido");
-        break;
+    {
+        std::lock_guard<std::mutex> lock(m_mutexTexture);
+
+        switch (ch) {
+        case 1:
+            // return Texture::eRED;
+        case 2:
+            // return Texture::eRG;
+        case 3:
+            format = grr::TextureFormat_SRGB;
+            break;
+        case 4:
+            format = grr::TextureFormat_SRGBA;
+            break;
+        default:
+            assert(false && "[ Resources::getTextureType ] typo invalido");
+            break;
+        }
+
+        grr::gTexture::Bind(texture);
+        grr::gTexture::UpdateTexture(width, height, grr::gTextureFlags_MipMaps | grr::gTextureFlags_Filter_Bilinear, format, pixels);
+
+        stbi_image_free(pixels);
     }
-
-    grr::gTexture::Bind(texture);
-    grr::gTexture::UpdateTexture(width, height, grr::gTextureFlags_MipMaps | grr::gTextureFlags_Filter_Bilinear, format, pixels);
-
-    stbi_image_free(pixels);
 
     m_textureMap.emplace(handle.m_path, std::unique_ptr<grr::gTexture>(texture));
    
@@ -221,7 +207,6 @@ void AssetsManager::ProcessTexture() {
     while (!m_textureHandle.empty()) {
         auto handle = m_textureHandle.front();
         m_textureHandle.pop_front();
-        lock.unlock();
 
         auto path = handle.m_path;
 
@@ -233,8 +218,9 @@ void AssetsManager::ProcessTexture() {
             lock.lock();
             continue;
         }
+        lock.unlock();
 
-        Event::Add(AssetsManager::SetupTexture, handle, width, height, ch, (void *)pixels);
+        Event::Add(&AssetsManager::SetupTexture, handle, width, height, ch, (void *)pixels);
 
         lock.lock();
     }
@@ -655,11 +641,6 @@ void AssetsManager::SetupTextureMaterial(Material *material, int id, grr::gTextu
     material->setTexture(id, texture);
 }
 
-std::unordered_map<std::string, std::vector<Material>> &AssetsManager::GetMaterialMap() {
-    throw std::runtime_error(".");
-    // return m_materialMap;
-}
-
 void AssetsManager::SetGameObjectList(const std::string &path, std::function<void(GameObject *)> func) {
     if (!File::Exists(path)) {
         return LOG_ERROR("[ AssetsManager::GameObject ] File not found: " + path);
@@ -733,10 +714,6 @@ void AssetsManager::SetTextureList(const std::string &path, std::function<void(g
     }
 
     Threadpool::AddTask(&AssetsManager::ProcessTexture);
-}
-
-grm::size AssetsManager::GetMaterialCount() {
-    return 0;//m_materialMap.size();
 }
 
 grm::size AssetsManager::GetTextureCount() {

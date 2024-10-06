@@ -75,77 +75,77 @@ void Scene::load(const std::string &path) {
     Scene::Use(this);
     
     if (!File::Exists(path)) {
-        return Console::log(LogInfo::ERROR, "Falied to load scene, file do not found.");
+        return LOG_ERROR("[ SCENE ] Falied to load scene, file do not found.");
     }
 
     if (!Stream::open(path, std::ios_base::in | std::ios_base::binary)) {
-        return Console::log(LogInfo::ERROR, "Falied to load scene: " + path);
+        return LOG_ERROR("[ SCENE ] Falied to load scene: " + path);
     }
 
     gHeader header;
 
     if (!Stream::read(&header, 1)) {
         Stream::close();
-        return Console::log(LogInfo::ERROR, "Failed to read scene data RS(0)");
+        return LOG_ERROR("[ SCENE ] Failed to read scene data RS(0)");
     }
 
     if (header.signature[0] != 'g' && header.signature[1] != 'r' && header.signature[2] != 's' && header.signature[3] != 'c') {
         Stream::close();
-        return Console::log(LogInfo::ERROR, "Falied to loader, binary do not is of scene.");
+        return LOG_ERROR("[ SCENE ] Falied to loader, binary do not is of scene.");
     }
 
     std::size_t nSize;
     if (!Stream::read(&nSize, 1)) {
         Stream::close();
-        return Console::log(LogInfo::ERROR, "Failed to read scene data RS(1)");
+        return LOG_ERROR("[ SCENE ] Failed to read scene data RS(1)");
     }
 
     m_name.resize(nSize, '\0');
     if (!Stream::read(m_name.data(), nSize)) {
         Stream::close();
-        return Console::log(LogInfo::ERROR, "Failed to read scene data RS(2)");
+        return LOG_ERROR("[ SCENE ] Failed to read scene data RS(2)");
     }
 
     auto result = readScene();
     if (result != 0) {
         Stream::close();
-        return Console::log(LogInfo::ERROR, "Failed to read data err=" + std::to_string(result));
+        return LOG_ERROR("[ SCENE ] Failed to read data err=" + std::to_string(result));
     }
 
     Stream::close();
-    Console::log(LogInfo::INFO, "Scene loaded suceess full.");
+    LOG_INFO("[ Scene ] Scene loaded suceess full.");
 }
 
 void Scene::save() {
     if (!Stream::open(File::GetAsset("/scene/" + m_name + ".scn"), std::ios_base::out | std::ios_base::binary)) {
-        return Console::log(LogInfo::ERROR, "Falied to save scene: " + m_name);
+        return LOG_ERROR("[ SCENE ] Falied to save scene: " + m_name);
     }
 
     gHeader header{{'g', 'r', 's', 'c'}, 1.0f};
     if (!Stream::write(&header, 1)) {
         Stream::close();
-        return Console::log(LogInfo::ERROR, "Failed to write scene data WS(0)");
+        return LOG_ERROR("[ Scene ] Failed to write scene data WS(0)");
     }
 
     auto nSize = m_name.size();
     if (!Stream::write(&nSize, 1)) {
         Stream::close();
-        return Console::log(LogInfo::ERROR, "Failed to write scene data WS(1)");
+        return LOG_ERROR("[ Scene ] Failed to write scene data WS(1)");
     }
 
     if (!Stream::write(m_name.data(), nSize)) {
         Stream::close();
-        return Console::log(LogInfo::ERROR, "Failed to write scene data WS(2)");
+        return LOG_ERROR("[ Scene ] Failed to write scene data WS(2)");
     }
 
     if (auto err = writeScene() != 0) {
         Stream::close();
-        return Console::log(LogInfo::ERROR, "Failed to write scene data child(" + std::to_string(err));
+        return LOG_ERROR("[ SCENE ] Failed to write scene data child(" + std::to_string(err));
     }
 
     Stream::close();
 
-    Console::log(LogInfo::INFO, "Scene saved: " + m_name);
+    LOG_INFO("[ Scene ] Scene saved: " + m_name);
 }
 
 GameObject &Scene::CreateGameObject(const std::string &name, const std::string &tag) {
@@ -170,7 +170,7 @@ void Scene::Remove(GameObject *gameObject) {
 
 void Scene::Delete(GameObject *gameObject) {
     if (!gameObject) {
-        return Console::log(LogInfo::ERROR, "Failed to delete game object.");
+        return LOG_ERROR("[ SCENE ] Failed to delete game object.");
     }
     
     Scene::Remove(gameObject);
@@ -203,11 +203,6 @@ int Scene::writeScene() {
         return 1;
     }
 
-    // Material
-    if (writeMaterial() != 0) {
-        return 2;
-    }
-
     // Mesh
     if (writeMesh() != 0) {
         return 3;
@@ -230,27 +225,6 @@ int Scene::writeObject() {
     }
 
     std::for_each(s_objects.begin(), s_objects.end(), Scene::WriteGameObject);
-    return 0;
-}
-
-int Scene::writeMaterial() {
-    auto count = AssetsManager::GetMaterialCount();
-    auto &materials = AssetsManager::GetMaterialMap();
-
-    Stream::write(&count, 1);
-    for (auto &&[name, ptr] : materials) {
-        auto size = name.size();
-
-        Stream::write(&size, 1);
-        Stream::write(name.data(), size);
-
-        size = ptr.size();
-        Stream::write(&size, 1);
-
-        for (auto &material : ptr) {
-            material.serialize(Stream::GetStream());
-        }
-    }
     return 0;
 }
 
@@ -369,12 +343,6 @@ int Scene::readScene() {
         return 1;
     }
 
-    // material
-    result = readMaterial();
-    if (result != 0) {
-        return 2;
-    }
-
     // mesh
     result = readMesh();
     if (result != 0) {
@@ -405,39 +373,6 @@ int Scene::readObject() {
     }
 
     return result;
-}
-
-int Scene::readMaterial() {
-    grm::size count = 0;
-    if (!Stream::read(&count, 1)) {
-        return 1;
-    }
-
-    for (auto i=0;i<count;i++) {
-        std::size_t size;
-        if (!Stream::read(&size, 1)) {
-            return 2;
-        }
-
-        std::string name(size, '\0');
-        if (!Stream::read(name.data(), size)) {
-            return 3;
-        }
-
-        if (!Stream::read(&size, 1)) {
-            return 4;
-        }
-
-        // std::vector<Material> materials(size);
-        // for (auto &material : materials) {
-        //     material.deserialize(Stream::GetStream());
-        // }
-
-        // if (!name.empty() || !materials.empty() && !AssetsManager::FindMaterial(name)) {
-            // AssetsManager::AddMaterial(name, materials);
-        // }
-    }
-    return 0;
 }
 
 int Scene::readTexture() {

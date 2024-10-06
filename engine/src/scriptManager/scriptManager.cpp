@@ -138,9 +138,7 @@ void ScriptManager::RegisterApi() {
     // AssetManager
     m_script->replaceLibraryFunction("_ZN13AssetsManager14SetTextureListERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEESt8functionIFvPN3grr8gTextureEEE",      reinterpret_cast<void *>(&AssetsManager::SetTextureList));
     m_script->replaceLibraryFunction("_ZN13AssetsManager17SetGameObjectListERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEESt8functionIFvP10GameObjectEE",      reinterpret_cast<void *>(&AssetsManager::SetGameObjectList));
-    m_script->replaceLibraryFunction("_ZN13AssetsManager13AddPostLoaderESt8functionIFbPvRKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEEE",                     reinterpret_cast<void *>(&AssetsManager::AddPostLoader));
     m_script->replaceLibraryFunction("_ZN13AssetsManager8FindMeshERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE",                                             reinterpret_cast<void *>(&AssetsManager::FindMesh));
-    m_script->replaceLibraryFunction("_ZN13AssetsManager12FindMaterialERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE",                                        reinterpret_cast<void *>(&AssetsManager::FindMaterial));
     m_script->replaceLibraryFunction("_ZN13AssetsManager10FindShaderERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE",                                          reinterpret_cast<void *>(&AssetsManager::FindShader));
     m_script->replaceLibraryFunction("_ZN13AssetsManager13SetShaderListERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEES7_S7_St8functionIFvPN3grr7gShaderEEE",  reinterpret_cast<void *>(&AssetsManager::SetShaderList));
 
@@ -157,7 +155,7 @@ void ScriptManager::RegisterApi() {
 
     // Scene
     // m_script->replaceLibraryFunction("_ZN5Scene16CreateGameObjectERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEES7_", Scene::CreateGameObject);
-    // m_script->replaceLibraryFunction("_ZN5Scene6DeleteEP10GameObject", Scene::Delete);
+    m_script->replaceLibraryFunction("_ZN5Scene6DeleteEP10GameObject", reinterpret_cast<void *>(&Scene::Delete));
     // m_script->replaceLibraryFunction("_ZN5Scene6RemoveEP10GameObject", reinterpret_cast<void **>(&Scene::Remove));
 
     // Component Pool

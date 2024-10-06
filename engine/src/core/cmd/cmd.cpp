@@ -35,14 +35,14 @@ bool Command::exec(const std::vector<std::string> &list, std::function<void(std:
     }
     os.close();
 
-    auto file = popen(std::string("sh " + temp_file).c_str(), "r");
+    auto file = popen(std::string("sh " + temp_file + " 2>&1").c_str(), "r");
     if (!file) {
         return false;
     }
 
     if (out) {
-        char line[256] = {0};
-        while (fgets(line, 256, file)) {
+        char line[1024] = {0};
+        while (fgets(line, 1024, file)) {
             out(line);
         }
     }

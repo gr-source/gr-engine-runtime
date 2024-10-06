@@ -20,12 +20,24 @@ float Material::getMetallic() const {
     return m_metallic;
 }
 
+void Material::setMetallic(float value) {
+    m_metallic = value;
+}
+
 float Material::getRoughness() const {
     return m_roughness;
 }
 
+void Material::setRoughness(float value) {
+    m_roughness = value;
+}
+
 float Material::getAmbientOcclusion() const {
     return m_ao;
+}
+
+void Material::setAmbientOcclusion(float value) {
+    m_ao = value;
 }
 
 void Material::setTexture(int idx, grr::gTexture *texture) {

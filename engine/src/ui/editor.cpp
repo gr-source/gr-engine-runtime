@@ -746,6 +746,10 @@ void Editor::RenderScenesUI() {
         ImGui::OpenPopup("##popup_rename_gameobject");
     }
 
+    if (ImGui::IsKeyReleased(ImGuiKey_Escape) && ImGui::IsWindowHovered()) {
+        s_objectSelected = nullptr;
+    }
+
     if (!bOpenPopupOptionGameObject && ImGui::IsWindowHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
         ImGui::OpenPopup("##popup_menu_add");
     }
@@ -810,20 +814,13 @@ void Editor::ReadHierarchy(Transform *transform) {
 
     auto isOpen = ImGui::TreeNodeEx(name.c_str(), flags);
 
-    static int CountClick = 0;
-
-    if (ImGui::IsItemClicked(ImGuiMouseButton_Left) && s_objectSelected != gameObject) {
-        ++CountClick;
+    if (ImGui::IsItemClicked(ImGuiMouseButton_Left) && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
+        s_objectSelected = gameObject;
     }
 
     if (ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
         s_objectSelected = gameObject;
         bOpenPopupOptionGameObject = true;
-    }
-
-    if (CountClick >= 2) {
-        s_objectSelected = gameObject;
-        CountClick = 0;
     }
 
     if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceNoDisableHover | ImGuiDragDropFlags_SourceNoHoldToOpenOthers)) {
@@ -1378,7 +1375,7 @@ void Editor::PopupDirmanager() {
     bool bCreateDiretory = false;
     bool bCreateScript = false;
 
-    std::array<const char *, 3> item_list{"Delete", "Create Dir", "Create Script"};
+    std::array<const char *, 4> item_list{"Delete", "Rename", "Create directory", "Create script"};
 
     if (ImGui::ListBox("##DirManager", &idx, item_list.data(), item_list.size())) {
         switch (idx) {
@@ -1388,9 +1385,11 @@ void Editor::PopupDirmanager() {
             }
             break;
         case 1:
-            bCreateDiretory = true;
             break;
         case 2:
+            bCreateDiretory = true;
+            break;
+        case 3:
             bCreateScript = true;
             break;
         default:
@@ -1640,7 +1639,6 @@ void Editor::RenderStatisticsMenu() {
     ImGui::Text("Textures: %ld", AssetsManager::GetTextureCount());
     ImGui::Text("Shaders: %ld", AssetsManager::GetShaderCount());
     ImGui::Text("Mesh: %ld", AssetsManager::GetMeshCount());
-    ImGui::Text("Material: %ld", AssetsManager::GetMaterialCount());
     ImGui::Text("Event: %ld", Event::GetCount());
 
     ImGui::SeparatorText("Threads");
@@ -1822,7 +1820,31 @@ void Editor::OnPropertyTransform(Transform *transform) {
     ImGui::TreePop();
 }
 
-void Editor::OnPropertyMeshFilter(MeshFilter *MeshFilter) {
+void Editor::OnPropertyMeshFilter(MeshFilter *meshFilter) {
+    auto isOpen = ImGui::TreeNode("MeshFilter");
+    if (!isOpen) {
+        return;
+    }
+
+    RenderUVConfig(meshFilter);
+
+    ImGui::TreePop();
+}
+
+void Editor::RenderUVConfig(MeshFilter *meshFilter) {
+    auto mesh = meshFilter->getMesh();
+
+    auto isOpen = ImGui::TreeNode("UV");
+    if (!isOpen || !mesh) {
+        return;
+    }
+
+    Vector2 scale;
+    if (ImGui::DragFloat2("##meshFilter_uv_scale", reinterpret_cast<float *>(&scale))) {
+        //
+    }
+
+    ImGui::TreePop();
 }
 
 void Editor::OnPropertyMeshRender(MeshRender *meshRender) {
@@ -1858,38 +1880,47 @@ void Editor::OnPropertyMeshRender(MeshRender *meshRender) {
         // }
     }
 
-    // for (auto &material : meshRender->getMaterials()) {
-    //     auto isOpen = ImGui::TreeNode(material.getName().c_str());
-    //     if (!isOpen) {
-    //         continue;
-    //     }
+    for (auto &material : meshRender->getMaterials()) {
+        auto isOpen = ImGui::TreeNode(material->getName().c_str());
+        if (!isOpen) {
+            continue;
+        }
 
-    //     auto albedo = material.getAlbedo();
-    //     InsertTexture(material);
+        auto albedo = material->getAlbedo();
+        InsertTexture(&(*material));
 
-    //     if (View::PopupChangeColor("Albedo", albedo)) {
-    //         material.setAlbedo(albedo);
-    //     }
+        if (View::PopupChangeColor("Albedo", albedo)) {
+            material->setAlbedo(albedo);
+        }
 
-    //     // ImGui::Text("Roghness:");
-    //     // ImGui::DragFloat("##mesh_render_material_roughness", &material.m_roughness, 0.001f);
+        ImGui::Text("Roghness:");
+        auto roughness = material->getRoughness();
+        if (ImGui::DragFloat("##mesh_render_material_roughness", &roughness, 0.001f)) {
+            material->setRoughness(roughness);
+        }
 
-    //     // ImGui::Text("Mettallic:");
-    //     // ImGui::DragFloat("##mesh_render_material_metallic", &material.m_metallic, 0.001f);
+        ImGui::Text("Mettallic:");
+        auto metallic = material->getMetallic();
+        if (ImGui::DragFloat("##mesh_render_material_metallic", &metallic, 0.001f)) {
+            material->setMetallic(metallic);
+        }
 
-    //     // ImGui::Text("AO:");
-    //     // ImGui::DragFloat("##mesh_render_material_ao", &material.m_ao, 0.001f);
-    //     ImGui::TreePop();
-    // }
+        ImGui::Text("AO:");
+        auto ao = material->getAmbientOcclusion();
+        if (ImGui::DragFloat("##mesh_render_material_ao", &ao, 0.001f)) {
+            material->setAmbientOcclusion(ao);
+        }
+        ImGui::TreePop();
+    }
 
     ImGui::TreePop();
 }
 
-void Editor::InsertTexture(Material &material) {
-    auto color = material.getAlbedo();
+void Editor::InsertTexture(Material *material) {
+    auto color = material->getAlbedo();
     ImGui::SeparatorText("Albedo");
     
-    auto texture = material.getTexture(0);
+    auto texture = material->getTexture(0);
     if (!texture) {
         if (View::TextureInputUI(ImColor(color.r, color.g, color.b, color.a))) {
             ImGui::OpenPopup("#PopupChangeColorAlbedo");
@@ -1911,7 +1942,7 @@ void Editor::InsertTexture(Material &material) {
         LOG_ERROR("[ GUI ] Texture do not loaded, patg is empty.");
         return ImGui::EndDragDropTarget();
     }
-    AssetsManager::LoadTexture(path, &Editor::SetupTextureMaterial, std::ref(material), 0);
+    AssetsManager::LoadTexture(path, &Editor::SetupTextureMaterial, material, 0);
     ImGui::EndDragDropTarget();
 }
 
@@ -2128,8 +2159,8 @@ void Editor::PostLoadGameObject(GameObject *gameObject) {
     s_objectSelected = gameObject;
 }
 
-void Editor::SetupTextureMaterial(Material &material, int id, grr::gTexture *texture) {
-    material.setTexture(id, texture);
+void Editor::SetupTextureMaterial(Material *material, int id, grr::gTexture *texture) {
+    material->setTexture(id, texture);
 }
 
 std::string GenerateScriptHeader(const std::string& name) {
@@ -2190,6 +2221,17 @@ void Editor::PopupMenuSettings() {
     ImGui::NewLine();
 
     RenderSettings();
+
+    ImGui::EndPopup();
+}
+
+void Editor::PopupRenameFile() {
+    auto isOpen = ImGui::BeginPopup("##popup_rename_file");
+    if (!isOpen) {
+        return;
+    }
+
+    auto name = m_SelectedPath.filename().string();
 
     ImGui::EndPopup();
 }

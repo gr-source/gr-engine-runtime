@@ -60,8 +60,6 @@ private:
 
     int writeMesh();
 
-    int writeMaterial();
-
     int writeTexture();
 
     static void WriteGameObject(GameObject *gameObject);
@@ -69,8 +67,6 @@ private:
     int readScene();
 
     int readObject();
-
-    int readMaterial();
 
     int readTexture();
 

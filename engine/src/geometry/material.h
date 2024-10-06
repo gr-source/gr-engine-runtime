@@ -15,10 +15,16 @@ public:
     void setAlbedo(const Color &color);
 
     float getMetallic() const;
+
+    void setMetallic(float value);
     
     float getRoughness() const;
 
+    void setRoughness(float value);
+
     float getAmbientOcclusion() const;
+
+    void setAmbientOcclusion(float value);
 
     void setTexture(int idx, grr::gTexture *texture);
 

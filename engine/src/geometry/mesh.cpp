@@ -83,3 +83,4 @@ void Mesh::deserialize(std::istream &is) {
 
     is.read(reinterpret_cast<char *>(indices.data()), iSize * sizeof(int));
 }
+

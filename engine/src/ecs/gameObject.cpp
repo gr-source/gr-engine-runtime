@@ -8,6 +8,7 @@
 
 #include "core/scene.hpp"
 #include "core/event.hpp"
+#include "core/scene.hpp"
 
 #include "manager.hpp"
 #include "gameObject.h"
@@ -17,10 +18,10 @@ std::unordered_map<std::string, std::unique_ptr<GameObject>> GameObject::s_mapOb
 std::unordered_map<std::string, int> GameObject::s_names;
 
 GameObject &GameObject::Create(const std::string &name, const std::string &tag) {
-    auto newName = AddNameID(name);
+    auto newName = AddNameID(String::RemoveNumber(name));
 
     while (Find(newName)) {
-        newName = AddNameID(name);
+        newName = AddNameID(String::RemoveNumber(name));
     }
 
     auto &&[it, added] = s_mapObject.emplace(newName, std::make_unique<GameObject>(newName, tag));

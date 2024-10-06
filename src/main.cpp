@@ -1,6 +1,5 @@
 #include <settings.h>
 #include <engine.h>
-#include <input.h>
 
 #include <linux/input-event-codes.h>
 

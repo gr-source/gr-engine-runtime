@@ -187,10 +187,12 @@ private:
     static void OnPropertyTransform(Transform* transform);
     
     static void OnPropertyMeshFilter(MeshFilter* MeshFilter);
+
+    static void RenderUVConfig(MeshFilter *meshFilter);
     
     static void OnPropertyMeshRender(MeshRender* meshRender);
 
-    static void InsertTexture(Material &material);
+    static void InsertTexture(Material *material);
 
     static void OnPropertyAnimator(Animator* animator);
 
@@ -201,12 +203,14 @@ private:
     // Loader    
     static void PostLoadGameObject(GameObject *gameObject);
 
-    static void SetupTextureMaterial(Material &material, int id, grr::gTexture *texture);
+    static void SetupTextureMaterial(Material *material, int id, grr::gTexture *texture);
 
     static void CreateScriptTemplate(const std::string &path, const std::string &name);
 
     // PopupMenu
     static void PopupMenuSettings();
+
+    static void PopupRenameFile();
 
     // Script
     static void BuildScript();
