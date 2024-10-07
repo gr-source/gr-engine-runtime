@@ -82,8 +82,6 @@ ImGuiViewport *Editor::m_viewport = nullptr;
 
 grr::gTexture *Editor::s_texturePlayGame = nullptr;
 
-std::unordered_map<std::string, std::shared_ptr<Scene>> Editor::m_scenes;
-
 GameObject *Editor::s_objectSelected = nullptr;
 
 ImGuiIO* Editor::s_io = nullptr;
@@ -141,7 +139,7 @@ void Editor::Initialize() {
     } catch (const std::runtime_error &e) {
         LOG_WARNIG(e.what());
     }
-    
+
     bBuildDock = File::Exists("imgui.ini");
 
     LoadReources();
@@ -152,6 +150,17 @@ void Editor::Initialize() {
         LOG_ERROR("Fatal error in script: " + std::string(e.what()));
     }
 
+    auto lastCategory = m_config->getCategory();
+
+    m_config->setCategory("scene");
+    if (m_config->hasKey("main") && !Scene::HasScene()) {
+        Scene::LoadScene(File::GetAsset("/scene/" + m_config->getValue<std::string>("main") + ".scn"));
+    }
+
+    m_config->setCategory(lastCategory);
+
+    Scene::Initialize();
+
     RenderManager::Initialize();
 
     ScreenRender::Initialize();
@@ -160,12 +169,17 @@ void Editor::Initialize() {
 }
 
 void Editor::Shutdown() {
+    m_config->setCategory("scene");
+    if (Scene::HasScene()) {
+        m_config->setValue<std::string>("main", Scene::GetCurrentScene()->getName());
+    }
+
     if (m_config) {
         m_config->save();
         m_config = nullptr;
     }
 
-    m_scenes.clear();
+    Scene::Shutdown();
 
     RenderManager::Shutdown();
 
@@ -553,7 +567,7 @@ void Editor::RenderUI() {
     RenderPropertiUI();
 
     if (Camera::Current && s_io->KeyCtrl && ImGui::IsKeyReleased(ImGuiKey_S)) {
-        for (auto &&[name, scene] : m_scenes) {
+        for (auto &&[name, scene] : Scene::GetScenes()) {
             Event::Add(&Editor::SaveScene, name, &(*scene));
             /*
             Event::Add([&name, &ptr]{
@@ -958,7 +972,9 @@ void Editor::RenderViewportUI() {
     bViewPortFocused = ImGui::IsWindowFocused();
 
     if (ImGui::BeginTabBar("##SceneListTabBar")) {
-       for (auto it = m_scenes.begin(); it != m_scenes.end();) {
+        auto &scenes = Scene::GetScenes();
+
+        for (auto it = scenes.begin(); it != scenes.end();) {
             auto& [name, scene] = *it;
             
             bool isQuit = true;
@@ -972,7 +988,7 @@ void Editor::RenderViewportUI() {
                 s_objectSelected = nullptr;
                 Scene::Use(nullptr);
                 
-                it = m_scenes.erase(it);
+                it = scenes.erase(it);
             } else {
                 ++it;
             }
@@ -1004,16 +1020,7 @@ void Editor::DropSceneInViewport() {
     if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(IMGUI_PAYLOAD_FILE)) {
         std::string path((char*)payload->Data, payload->DataSize);
         if (!path.empty() && std::filesystem::path(path).filename().extension() == ".scn") {
-            auto ptr = std::make_shared<Scene>("NoName");
-            auto lastScene = Scene::GetCurrentScene();
-            ptr->load(path);
-            Scene::Use(lastScene);
-
-            auto it = m_scenes.find(ptr->getName());
-            if (it == m_scenes.end()) {
-                m_scenes.emplace(ptr->getName(), std::move(ptr));
-            }
-
+            Scene::LoadScene(path);
         }
     }
     ImGui::EndDragDropTarget();
@@ -1108,21 +1115,22 @@ void Editor::RenderScene() {
         ImGui::SetCursorPos(ImVec2(curSize.x / 2 - cursorPos.x, cursorY));
 
         if (ImGui::ImageButton(reinterpret_cast<ImTextureID>(s_texturePlayGame->getID()), ImVec2(16, 16))) {
-            Settings::IsGameRunning =! Settings::IsGameRunning;
+            Threadpool::AddTask(&Editor::BuildProject);
+            
+            // Settings::IsGameRunning =! Settings::IsGameRunning;
 
-            if (Settings::IsGameRunning) {
-                s_texturePlayGame = iconsUI[IconType::ICON_STOP_GAME];
+            // if (Settings::IsGameRunning) {
+            //     s_texturePlayGame = iconsUI[IconType::ICON_STOP_GAME];
 
-                UnloadScript();
+            //     UnloadScript();
 
-                s_objectSelected = nullptr;
-            } else {
-                s_texturePlayGame = iconsUI[IconType::ICON_PLAY_GAME];
+            //     s_objectSelected = nullptr;
+            // } else {
+            //     s_texturePlayGame = iconsUI[IconType::ICON_PLAY_GAME];
 
-                Threadpool::AddTask(&Editor::BuildProject, File::GetUserFile("/project"));
 
-                bScriptReloaded = true;
-            }
+            //     bScriptReloaded = true;
+            // }
         }
     }
 
@@ -1245,7 +1253,8 @@ void Editor::PopupMenuCreateScene() {
     if (ImGui::InputText("##input_scene_name", name, 256, ImGuiInputTextFlags_EnterReturnsTrue)) {
         std::string to_str = name;
         if (!to_str.empty()) {
-            m_scenes.emplace(name, std::shared_ptr<Scene>(Scene::Create(name)));
+            Scene::Create(name);
+            // m_scenes.emplace(name, std::shared_ptr<Scene>(Scene::Create(name)));
         }
         
         ImGui::CloseCurrentPopup();
@@ -1547,6 +1556,8 @@ void Editor::RenderSettings() {
 
     std::array<const char *, 3> editor_name{"None", "Visual Studio Code", "Sublime Text"};
 
+    m_config->setCategory("config");
+
     int item = m_config->hasKey("use_editor") ? m_config->getValue<int>("use_editor") : m_config->setValue<int>("use_editor", 0);
     if (ImGui::Combo("##render_settings_list_box", &item, editor_name.data(), editor_name.size())) {
         m_config->setValue<int>("use_editor", item);
@@ -1560,7 +1571,7 @@ void Editor::RenderSettings() {
 
     ImGui::SeparatorText("World");
 
-    auto bFpsLimited = (*m_config)["fps_limit"] ? m_config->getValue<bool>("fps_limit") : m_config->setValue<bool>("fps_limit", true);
+    auto bFpsLimited = m_config->hasKey("fps_limit") ? m_config->getValue<bool>("fps_limit") : m_config->setValue<bool>("fps_limit", true);
     if (ImGui::Checkbox("Fps Limited", &bFpsLimited)) {
         m_config->setValue<bool>("fps_limit", bFpsLimited);
     }
@@ -2134,8 +2145,9 @@ void Editor::SetupTexture(IconType type, grr::gTexture *texture) {
     }
 }
 
+// TODO: Corrigir
 float Editor::GetFps() {
-    if (!m_config || !(*m_config)["fps_limit"]) {
+    if (!m_config || !m_config->hasKey("fps_limit")) {
         return -1.0f;
     }
     return m_config->getValue<bool>("fps_limit") ? 60.0f : -1.0f;
@@ -2258,26 +2270,33 @@ void Editor::PopupRenameFile() {
     ImGui::EndPopup();
 }
 
-void Editor::BuildScript() {
-    LOG_INFO("Initilize build scipt");
+void Editor::BuildProject() {
+    LOG_INFO("[ Build ] Initialize");
 
-    auto build_script = File::GetFile("/script/build.sh", true);
-    if (!File::Exists(build_script)) {
-        return LOG_ERROR("Internal script not found.");
+    auto path = File::GetFile("/.build");
+    if (!File::Exists(path)) {
+        return LOG_ERROR("[ Build ] Falied to build project, internal data not found.");
     }
-   
-    std::vector<std::string> command {
-        "export" + build_script,
-        "chmod +x " + build_script,
-        "sh " + build_script
-    };
 
-    Command::exec(command, [](std::string line) {
-        LOG_WARNIG(line);
+    Threadpool::AddTask(&Editor::BuildScript, path, &Editor::PostBuildScriptFromProject);
+}
+
+void Editor::PostBuildScriptFromProject() {
+
+    Threadpool::AddTask([] {
+        std::vector<std::string> cmd = {
+            "/home/grsource/Documentos/gr-project/gr-engine-linux-project/bin/gr-engine-linux-project " +
+                File::GetFile("")
+        };
+        
+        Command::exec(cmd, [](std::string line) {
+            LOG_WARNIG(line);
+        });
     });
 }
 
 void Editor::ReconfigScript() {
+    throw std::runtime_error(".");
     LOG_INFO("[ BUILD ] Initialized reconfigation...");
 
     auto component = File::GetFile("/component", true);
@@ -2298,10 +2317,10 @@ void Editor::ReconfigScript() {
 
     LOG_INFO("[ BUILD ] building scipt...");
 
-    Threadpool::AddTask(&Editor::BuildProject, path);
+    // Threadpool::AddTask(&Editor::BuildScript, path);
 }
 
-void Editor::BuildProject(std::string path) {
+void Editor::BuildScript(std::string path, std::function<void()> func) {
     auto build = File::GetFile("/script/build.sh", true);
     if (!File::Exists(build)) {
         return LOG_ERROR("Build script do not found.");
@@ -2323,7 +2342,7 @@ void Editor::BuildProject(std::string path) {
         LOG_WARNIG(line);
     });
 
-    Event::Add(Editor::LoadScript);
+    Event::Add(func);
 }
 
 void Editor::SaveScene(const std::string &name, Scene *scene) {

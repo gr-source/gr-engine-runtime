@@ -32,6 +32,8 @@ private:
     Batching *m_batched;
 
     Transform *m_transform;
+
+    void SetupShader(Mesh *mesh, grr::gShader *shader);
 };
 
 template <typename... Args>

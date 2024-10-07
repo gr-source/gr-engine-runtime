@@ -32,66 +32,17 @@ void MeshRender::build() {
     if (m_flags == Batching::Batching_Flags_Dynamic) {
         auto shader = AssetsManager::FindShader("dynamic_one_model");
         if (!shader) {
-            throw std::runtime_error("Shader do not found.");
+            AssetsManager::LoadShader("dynamic_one_model",
+                File::GetAsset("/shader/model/dynamic_model.frag"),
+                File::GetAsset("/shader/model/dynamic_one_model.vert"),
+                &MeshRender::SetupShader, this, mesh
+            );
+            return;
         }
 
-        // std::string mName;
-        // for (auto &material : m_materials) {
-        //     mName += material.getName();
-        // }
-
-        // auto material = AssetsManager::FindMaterial(mName);
-        // if (!material) {
-        //     material = &AssetsManager::AddMaterial(mName, m_materials);
-        // }
-
-        m_batched = Batching::Find(getGameObject()->getName());
-        if (!m_batched) {
-            m_batched = &Batching::Add(getGameObject()->getName(), &m_materials, mesh, shader, Batching::Batching_Flags_Dynamic);
-        }
-        
-        m_batched->insert(m_transform);
+        SetupShader(mesh, shader);
         return;
     }
-
-    /*
-    std::string mName;
-    for (auto &material : m_materials) {
-        mName += material.getName();
-    }
-
-    m_batched = Batching::Find(mName);
-    if (m_batched) {
-        return m_batched->insert(m_transform);
-    }
-
-    auto material = AssetsManager::FindMaterial(mName);
-    if (!material) {
-        material = &AssetsManager::AddMaterial(mName, m_materials);
-    }
-
-    std::string name;
-    switch (m_flags) {
-    case Batching::Batching_Flags_Instanced_Static:
-    case Batching::Batching_Flags_Instanced_Dynamic:
-        name = "dynamic_multi_model";
-        break;
-    case Batching::Batching_Flags_Static_Mesh:
-        name = "static_multi_model";
-        break;
-    default:
-        throw std::runtime_error(".");
-        break;
-    }
-
-    auto shader = AssetsManager::FindShader(name);
-    if (!shader) {
-        throw std::runtime_error("Shader do not found.");
-    }
-
-    m_batched = &Batching::Add(mName, material, mesh, shader, m_flags);
-    m_batched->insert(m_transform);
-    */
 }
 
 Batching *MeshRender::getBatchGroup() {
@@ -119,6 +70,11 @@ const int &MeshRender::getFlags() const {
     return m_flags;
 }
 
-
-
-
+void MeshRender::SetupShader(Mesh *mesh, grr::gShader *shader) {
+    m_batched = Batching::Find(getGameObject()->getName());
+    if (!m_batched) {
+        m_batched = &Batching::Add(getGameObject()->getName(), &m_materials, mesh, shader, Batching::Batching_Flags_Dynamic);
+    }
+    
+    m_batched->insert(m_transform);
+}

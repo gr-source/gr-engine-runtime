@@ -67,8 +67,6 @@ private:
 
     static grr::gTexture *s_texturePlayGame;
 
-    static std::unordered_map<std::string, std::shared_ptr<Scene>> m_scenes;
-
     static GameObject *s_objectSelected;
 
     static ImGuiIO* s_io;
@@ -214,12 +212,15 @@ private:
 
     static void PopupRenameFile();
 
-    // Script
-    static void BuildScript();
+    // Project
+    static void BuildProject();
 
+    static void PostBuildScriptFromProject();
+
+    // Script
     static void ReconfigScript();
 
-    static void BuildProject(std::string path);
+    static void BuildScript(std::string path, std::function<void()> func);
 
     // Scene
     static void SaveScene(const std::string &name, Scene *scene);

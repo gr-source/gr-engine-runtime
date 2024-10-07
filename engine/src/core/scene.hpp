@@ -16,7 +16,13 @@ public:
 
     static void Use(Scene *scene);
     
+    static void Initialize();
+
+    static void Shutdown();
+
     static Scene *Create(const std::string &name);
+
+    static Scene *LoadScene(const std::string &path);
 
     Scene(const std::string &name);
     ~Scene();
@@ -39,7 +45,11 @@ public:
 
     void Clear();
 
+    static std::unordered_map<std::string, std::unique_ptr<Scene>> &GetScenes();
+
 private:
+    static std::unordered_map<std::string, std::unique_ptr<Scene>> m_scenes;
+
     static std::hash<std::string> hash;
 
     static Scene *m_current;

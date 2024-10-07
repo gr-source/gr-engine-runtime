@@ -17,6 +17,8 @@
 
 #include "ecs/entity.h"
 
+std::unordered_map<std::string, std::unique_ptr<Scene>> Scene::m_scenes;
+
 std::hash<std::string> Scene::hash;
 
 Scene *Scene::m_current = nullptr;
@@ -43,23 +45,51 @@ void Scene::Use(Scene *scene) {
     m_current = scene;
 }
 
-Scene *Scene::Create(const std::string &name) {
-    auto scene = new Scene(name);
+void Scene::Initialize() {
+}
 
-    Scene::Use(scene);
+void Scene::Shutdown() {
+    m_scenes.clear();
+
+    m_current = nullptr;
+}
+
+Scene *Scene::Create(const std::string &name) {
+    auto &&[it, added] = m_scenes.emplace(name, std::make_unique<Scene>(name));
+
+    Scene::Use(&(*it->second));
 
     try {
-        auto &camera = scene->CreateGameObject("MainCamera");
+        auto &camera = it->second->CreateGameObject("MainCamera");
         camera.addComponent<Camera>();
     } catch (std::runtime_error e) {
         LOG_ERROR("[ SCENE ] Falha ao adiconar uma camera na cena: " + std::string(e.what()));
     }
     
-    return scene;
+    return &(*it->second);
 }
 
-Scene::Scene(const std::string &name) : m_name(name), m_enable(true) {
+Scene *Scene::LoadScene(const std::string &path) {
+    std::unique_ptr<Scene> scene = std::make_unique<Scene>(path);
+    // auto &&[it, added] = m_scenes.emplace(name, std::make_unique<Scene>(name));
+
+    auto lastScene = Scene::GetCurrentScene();
+    try {
+        scene->load(path);
+    } catch (std::runtime_error e) {
+        LOG_ERROR("[ SCENE ] Falha ao adiconar uma camera na cena: " + std::string(e.what()));
+        Use(lastScene);
+        return nullptr;
+    }
+
+    Use(lastScene);
+
+    m_scenes.emplace(scene->getName(), std::move(scene));
+    
+    return &(*scene);
 }
+
+Scene::Scene(const std::string &name) : m_name(name), m_enable(true) {}
 
 Scene::~Scene() {
     for (auto &gameObject : s_objects) {
@@ -75,41 +105,41 @@ void Scene::load(const std::string &path) {
     Scene::Use(this);
     
     if (!File::Exists(path)) {
-        return LOG_ERROR("[ SCENE ] Falied to load scene, file do not found.");
+        throw std::runtime_error("[ SCENE ] Falied to load scene, file do not found.");
     }
 
     if (!Stream::open(path, std::ios_base::in | std::ios_base::binary)) {
-        return LOG_ERROR("[ SCENE ] Falied to load scene: " + path);
+        throw std::runtime_error("[ SCENE ] Falied to load scene: " + path);
     }
 
     gHeader header;
 
     if (!Stream::read(&header, 1)) {
         Stream::close();
-        return LOG_ERROR("[ SCENE ] Failed to read scene data RS(0)");
+        throw std::runtime_error("[ SCENE ] Failed to read scene data RS(0)");
     }
 
     if (header.signature[0] != 'g' && header.signature[1] != 'r' && header.signature[2] != 's' && header.signature[3] != 'c') {
         Stream::close();
-        return LOG_ERROR("[ SCENE ] Falied to loader, binary do not is of scene.");
+        throw std::runtime_error("[ SCENE ] Falied to loader, binary do not is of scene.");
     }
 
     std::size_t nSize;
     if (!Stream::read(&nSize, 1)) {
         Stream::close();
-        return LOG_ERROR("[ SCENE ] Failed to read scene data RS(1)");
+        throw std::runtime_error("[ SCENE ] Failed to read scene data RS(1)");
     }
 
     m_name.resize(nSize, '\0');
     if (!Stream::read(m_name.data(), nSize)) {
         Stream::close();
-        return LOG_ERROR("[ SCENE ] Failed to read scene data RS(2)");
+        throw std::runtime_error("[ SCENE ] Failed to read scene data RS(2)");
     }
 
     auto result = readScene();
     if (result != 0) {
         Stream::close();
-        return LOG_ERROR("[ SCENE ] Failed to read data err=" + std::to_string(result));
+        throw std::runtime_error("[ SCENE ] Failed to read data err=" + std::to_string(result));
     }
 
     Stream::close();
@@ -180,6 +210,10 @@ void Scene::Delete(GameObject *gameObject) {
 
 void Scene::Clear() {
     s_objects.clear();
+}
+
+std::unordered_map<std::string, std::unique_ptr<Scene>> &Scene::GetScenes() {
+    return m_scenes;
 }
 
 void Scene::setEnable(bool value) {
