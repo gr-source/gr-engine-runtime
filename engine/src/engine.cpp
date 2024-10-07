@@ -39,7 +39,7 @@ PostProcessing *Engine::ImGuiPostProcess = nullptr;
 
 PostProcessing *Engine::MainPostProcess = nullptr;
 
-Shadowbuffer* m_shadowbuffer = nullptr;
+Shadowbuffer *m_shadowbuffer = nullptr;
 
 void Engine::Reize(grm::u32 width, grm::u32 height) {
     Screen::SetResolution(width, height);

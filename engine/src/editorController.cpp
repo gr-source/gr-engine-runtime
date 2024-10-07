@@ -6,6 +6,7 @@
 #include "ui/ImGuiRender.h"
 
 #include "settings.h"
+#include "screen.h"
 #include "input.h"
 #include "timer.h"
 
@@ -19,8 +20,6 @@ Vector2 EditorController::lastMousePos = {0.0f, 0.0f};
 Vector2 EditorController::elapsed = {0.0f, 0.0f};
 
 void EditorController::Initialize() {
-    lastMousePos = Vector2::zero;
-
     m_io = ImGuiRender::GetIO();
     if (!m_io) {
         throw std::runtime_error("IO pointer do not is valid.");
@@ -69,9 +68,12 @@ void EditorController::Update() {
 }
 
 void EditorController::updateCursor() {
+    auto cursorPos = Input::GetCursorPos();
+    
     if (Input::IsMouseDown(MouseButton_Left) && lastMousePos == Vector2::zero) {
         lastMousePos = Input::GetCursorPos();
     }
+    
     if (Input::IsMouseReleased(MouseButton_Left)) {
         lastMousePos = Vector2::zero;
     }
@@ -83,15 +85,6 @@ void EditorController::updateCursor() {
             
         lastMousePos = Input::GetCursorPos();
     }
-
-    // // if (Math::magnitude(delta) > 0.005f)
-
-    // auto center = Settings::ViewportSize / 2;
-    // lastMousePos = {static_cast<float>(center.x), static_cast<float>(center.y)};
-
-    // if (!Input::IsMousePress(Input::BUTTON_MIDDLE)) {
-    //     Input::SetCursorPos(lastMousePos);
-    // }
 }
 
 void EditorController::ProcessMouse(const Vector2 &delta) {
@@ -106,6 +99,6 @@ void EditorController::ProcessMouse(const Vector2 &delta) {
 
     rotation = Math::slerp(m_transform->getLocalRotation(), rotation, 25.0f * TimeLast::deltaTime);
 
-    m_transform->setLocalRotation(Math::normalize(rotation));
+    m_transform->setLocalRotation(Math::normalize(rotation + m_transform->getLocalRotation()));
 }
 

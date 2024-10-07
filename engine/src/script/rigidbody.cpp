@@ -46,9 +46,9 @@ void Rigidbody::setup() {
 void Rigidbody::process() {
     if (m_bDinamic) {
         if (m_body->getLinearVelocity().length() < 0.01 && m_body->getAngularVelocity().length() < 0.01) {
-            m_body->setActivationState(DISABLE_DEACTIVATION); // Ativa o objeto
+            m_body->setActivationState(DISABLE_DEACTIVATION);
         } else {
-            m_body->forceActivationState(ACTIVE_TAG); // Mantém o objeto ativo
+            m_body->forceActivationState(ACTIVE_TAG);
         }
 	}
 
@@ -56,7 +56,7 @@ void Rigidbody::process() {
 		btTransform trans;
 		m_body->getMotionState()->getWorldTransform(trans);
 
-		m_transform->setLocalPosition({trans.getOrigin().getX(), trans.getOrigin().getY(), trans.getOrigin().getZ()});
+		m_transform->setLocalPosition((trans.getOrigin().getX(), trans.getOrigin().getY(), trans.getOrigin().getZ()));
 
 		m_transform->setLocalRotation({trans.getRotation().getW(), trans.getRotation().getX(), trans.getRotation().getY(), trans.getRotation().getZ()});
 	}
@@ -68,12 +68,13 @@ float Rigidbody::getMass() const {
 
 void Rigidbody::setMass(float value) {
     if (value <= 0.0f) {
-        // Pode desativar ou fazer algo apropriado
         return;
     }
 
-    m_body->clearForces();
-    m_body->activate(true); // Ativa o corpo
+    // m_body->forceActivationState(ACTIVE_TAG);
+
+    // m_body->clearForces();
+    // m_body->activate(true);
 
     // Calcular a inércia local e a massa
     btVector3 fallInertia(0.0f, 0.0f, 0.0f);
@@ -83,13 +84,7 @@ void Rigidbody::setMass(float value) {
     m_body->setMassProps(value, fallInertia);
     m_body->setInvInertiaDiagLocal(fallInertia);
     
-    // Garantir que o corpo está ativo
-    m_body->setActivationState(ACTIVE_TAG);
-    
-    // Aplique uma força para verificar o movimento
-    m_body->applyCentralForce(btVector3(0, 10, 0));
-    
-    m_mass = value; // Atualizar a massa armazenada
+    m_mass = value;
 }
 
 bool Rigidbody::getDinamic() {
