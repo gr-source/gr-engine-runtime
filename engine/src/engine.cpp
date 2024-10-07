@@ -17,7 +17,7 @@
 #include "core/event.hpp"
 #include "core/time.hpp"
 
-#include "physics/physicsScene.h"
+#include "physics/physicsScene.hpp"
 
 #include "renderManager.h"
 #include "screenRender.hpp"
@@ -72,6 +72,8 @@ void Engine::Initialize() {
 
     Input::Initialize();
 
+    PhysicsScene::Initialize();
+
     ProjectMenu::Initialize();
 
     EditorController::Initialize();
@@ -97,6 +99,8 @@ void Engine::Idle() {
 void Engine::Update() {
     Time time;
     time.end();
+
+    PhysicsScene::Update(TimeLast::deltaTime);
 
     EditorController::Update();
 
@@ -138,6 +142,8 @@ void Engine::Shutdown() {
     ProjectMenu::Shutdown();
 
     GameObject::Clear();
+
+    PhysicsScene::Shutdown();
 
     AssetsManager::Shutdown();
 

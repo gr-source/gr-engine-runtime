@@ -157,8 +157,11 @@ set(engine_src
     src/cubeFramebuffer.cpp
     src/editorController.cpp
 
+    src/script/meshCollider.cpp
+    src/script/boxCollider.cpp
     src/script/meshFilter.cpp
     src/script/meshRender.cpp
+    src/script/rigidbody.cpp
     src/script/transform.cpp
     src/script/animator.cpp
     src/script/camera.cpp
@@ -212,6 +215,8 @@ set(engine_hdr
     src/editorController.h
     src/cubeFramebuffer.hpp
     
+    src/script/meshCollider.hpp
+    src/script/boxCollider.hpp
     src/script/meshRender.hpp
     src/script/meshFilter.hpp
     src/script/transform.hpp
@@ -234,7 +239,7 @@ set(engine_hdr
 
     src/culling/frustum.h
     
-    src/physics/physicsScene.h
+    src/physics/physicsScene.hpp
 
     src/core/binary/gHeader.hpp
 )

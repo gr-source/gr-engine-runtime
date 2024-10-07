@@ -25,6 +25,11 @@ class Batching;
 class Mesh;
 
 
+class btDefaultMotionState;
+class btTriangleMeshShape;
+class btCollisionShape;
+class btTriangleMesh;
+class btRigidBody;
 
 
 

@@ -31,6 +31,7 @@
 #include "script/meshFilter.hpp"
 #include "script/meshRender.hpp"
 #include "script/transform.hpp"
+#include "script/rigidbody.hpp"
 #include "script/animator.hpp"
 #include "script/camera.hpp"
 #include "script/light.hpp"
@@ -1686,9 +1687,10 @@ void Editor::RenderGameObjectPropertiUI() {
         s_objectSelected->RenderProperty<MeshFilter>(Editor::OnPropertyMeshFilter);
         s_objectSelected->RenderProperty<MeshRender>(Editor::OnPropertyMeshRender);
         s_objectSelected->RenderProperty<Light>(Editor::OnPropertyLight);
+        s_objectSelected->RenderProperty<Rigidbody>(Editor::OnPropertyRigidbody);
 
         for (auto &&[name, ptr] : s_objectSelected->getEntity()->getComponents()) {
-            if (name == "Transform" || name == "Light" || name == "MeshRender" || name == "MeshFilter") {
+            if (name == "Transform" || name == "Light" || name == "MeshRender" || name == "MeshFilter" || name == "Rigidbody") {
                 continue;
             }
             auto isOpen = ImGui::TreeNodeEx(name.c_str());
@@ -2041,6 +2043,26 @@ void Editor::OnPropertyLight(Light *light) {
     if (ImGui::BeginPopup("##LightColorPopup")) {
         ImGui::ColorPicker4("#LightColorPick", light->m_color.data);
         ImGui::EndPopup();
+    }
+
+    ImGui::TreePop();
+}
+
+void Editor::OnPropertyRigidbody(Rigidbody *rigidbody) {
+    auto isOpen = ImGui::TreeNode("Rigidbody");
+    if (!isOpen) {
+        return;
+    }
+    auto mass = rigidbody->getMass();
+
+    ImGui::Text("Mass");
+    if (ImGui::DragFloat("##rigidbody_mass", &mass)) {
+        rigidbody->setMass(mass);
+    }
+
+    auto bDynamic = rigidbody->getDinamic();
+    if (ImGui::Checkbox("##rigidbody_dynamic", &bDynamic)) {
+        rigidbody->setDynamic(bDynamic);
     }
 
     ImGui::TreePop();

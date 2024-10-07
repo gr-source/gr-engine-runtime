@@ -17,10 +17,12 @@ set(ecs_src
 )
 
 set(script_src
+    src/script/meshCollider.cpp
+    src/script/boxCollider.cpp
     src/script/meshRender.cpp
     src/script/meshFilter.cpp
+    src/script/rigidbody.cpp
     src/script/transform.cpp
-    # src/script/animator.cpp
     src/script/camera.cpp
     src/script/light.cpp
 )

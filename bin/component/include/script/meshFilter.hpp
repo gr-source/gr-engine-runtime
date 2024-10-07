@@ -8,7 +8,7 @@
 class MeshFilter : public Component {
 public:
     MeshFilter();
-    // ~
+    
     void setMesh(Mesh *mesh);
 
     Mesh *getMesh();

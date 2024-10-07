@@ -198,6 +198,8 @@ private:
 
     static void OnPropertyLight(Light *light);
 
+    static void OnPropertyRigidbody(Rigidbody *rigidbody);
+
     static void TextureInfo(Texture*& texture);
 
     // Loader    

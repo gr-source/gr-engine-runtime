@@ -1,38 +1,48 @@
-#include "physicsScene.h"
+#include "physicsScene.hpp"
 
 Vector3 PhysicsScene::gravity = {0.0f, -9.8f, 0.0f};
 
-PhysicsScene& PhysicsScene::getInstance() {
-    static PhysicsScene pPhysicsScene;
-    return pPhysicsScene;
-}
+std::unique_ptr<btDefaultCollisionConfiguration> PhysicsScene::collisionConfiguration = nullptr;
 
-PhysicsScene::PhysicsScene() : broadphase(nullptr), collisionConfiguration(nullptr), dispatcher(nullptr), solver(nullptr), dynamicsWorld(nullptr) {
+std::unique_ptr<btSequentialImpulseConstraintSolver> PhysicsScene::solver = nullptr;
+
+std::unique_ptr<btDiscreteDynamicsWorld> PhysicsScene::dynamicsWorld = nullptr;
+
+std::unique_ptr<btBroadphaseInterface> PhysicsScene::broadphase = nullptr;
+
+std::unique_ptr<btCollisionDispatcher> PhysicsScene::dispatcher = nullptr;
+
+std::mutex PhysicsScene::m_mutex;
+
+void PhysicsScene::Initialize() {
     broadphase = std::make_unique<btDbvtBroadphase>();
 
     collisionConfiguration = std::make_unique<btDefaultCollisionConfiguration>();
 
-    dispatcher = std::make_unique<btCollisionDispatcher>(collisionConfiguration.get());
+    dispatcher = std::make_unique<btCollisionDispatcher>(&(*collisionConfiguration));
 
     solver = std::make_unique<btSequentialImpulseConstraintSolver>();
 
-    dynamicsWorld = std::make_unique<btDiscreteDynamicsWorld>(dispatcher.get(), broadphase.get(), solver.get(), collisionConfiguration.get());
+    dynamicsWorld = std::make_unique<btDiscreteDynamicsWorld>(&(*dispatcher), &(*broadphase), &(*solver), &(*collisionConfiguration));
 
     dynamicsWorld->setGravity(FROMVEC3(gravity));
 }
 
-void PhysicsScene::addRigidbody(btRigidBody* body) {
-    std::lock_guard<std::mutex> lock(m_mutex);
+void PhysicsScene::Shutdown() {
+}
+
+void PhysicsScene::AddRigidbody(btRigidBody* body) {
+    // std::lock_guard<std::mutex> lock(m_mutex);
     dynamicsWorld->addRigidBody(body);
 }
 
-void PhysicsScene::removeRigidbody(btRigidBody* body) {
-    std::lock_guard<std::mutex> lock(m_mutex);
+void PhysicsScene::RemoveRigidbody(btRigidBody* body) {
+    // std::lock_guard<std::mutex> lock(m_mutex);
     dynamicsWorld->removeRigidBody(body);
 }
 
-void PhysicsScene::Simulate(float dt) {
-    std::lock_guard<std::mutex> lock(m_mutex);
+void PhysicsScene::Update(float dt) {
+    // std::lock_guard<std::mutex> lock(m_mutex);
     dynamicsWorld->stepSimulation(dt);
 }
 

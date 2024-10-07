@@ -2,7 +2,9 @@
 
 #include "scriptLoader.hpp"
 
+#include "script/meshCollider.hpp"
 #include "script/meshRender.hpp"
+#include "script/rigidbody.hpp"
 #include "script/camera.hpp"
 
 #include "geometry/batching.hpp"
@@ -184,6 +186,13 @@ void ScriptManager::RegisterApi() {
     // Material
     m_script->replaceLibraryFunction("_ZNK8Material9serializeERSo", (void *)&Material::serialize);
     m_script->replaceLibraryFunction("_ZN8Material11deserializeERSi", (void *)&Material::deserialize);
+
+    // MeshCollider
+    m_script->replaceLibraryFunction("_ZN12MeshCollider5buildEP4Mesh", (void *)&MeshCollider::build);
+
+    // Rigidbody
+    m_script->replaceLibraryFunction("_ZN9Rigidbody7processEv", (void *)&Rigidbody::process);
+    m_script->replaceLibraryFunction("_ZN9Rigidbody5setupEv", (void *)&Rigidbody::setup);
 }
 #pragma GCC diagnostic pop
 

@@ -1,0 +1,43 @@
+#pragma once
+
+#include <memory>
+#include <mutex>
+
+#include <bullet/btBulletDynamicsCommon.h>
+
+#include "../renderer.h"
+
+#define FROMVEC3(vec) btVector3(vec.x, vec.y, vec.z)
+#define FROMQUAT(q) btQuaternion(q.x, q.y, q.z, q.w)
+
+class PhysicsScene {
+public:
+    PhysicsScene() = delete;
+    ~PhysicsScene() = delete;
+
+    static void Initialize();
+
+    static void Shutdown();
+
+    static void AddRigidbody(btRigidBody* body);
+
+    static void RemoveRigidbody(btRigidBody* body);
+
+    static void Update(float dt);
+
+    static Vector3 gravity;
+
+protected:
+    static std::unique_ptr<btDefaultCollisionConfiguration> collisionConfiguration;
+
+    static std::unique_ptr<btSequentialImpulseConstraintSolver> solver;
+
+    static std::unique_ptr<btDiscreteDynamicsWorld> dynamicsWorld;
+
+    static std::unique_ptr<btBroadphaseInterface> broadphase;
+
+    static std::unique_ptr<btCollisionDispatcher> dispatcher;
+
+    static std::mutex m_mutex;
+};
+

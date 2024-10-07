@@ -22,4 +22,8 @@ class Light;
 class Batching;
 class Mesh;
 
+class btDefaultMotionState;
+class btCollisionShape;
+class btTriangleMesh;
+class btRigidBody;
 
