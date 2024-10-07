@@ -16,21 +16,10 @@ std::unordered_map<int, grm::u32> m_keyMap = {
     {GLFW_KEY_D, KEY_D}
 };
 
-typedef GLFWwindow *Window;
-
-Window window = nullptr;
-
-Window CreateWindown(const char* name, int width, int height, Window share, bool isVisible) {
+GLFWwindow *CreateWindown(const char* name, int width, int height, GLFWwindow * share, bool isVisible) {
     glfwWindowHint(GLFW_VISIBLE, isVisible ? GL_TRUE : GL_FALSE);
 
     return glfwCreateWindow(width, height, name, nullptr, share);
-}
-
-void OnPreLoad() {
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    // glfwWindowHint(GLFW_SAMPLES, 4);
 }
 
 void GLFWframebuffersizefunCallback(GLFWwindow* window, int width, int height) {
@@ -66,7 +55,7 @@ void GLFWdropfunCallback(GLFWwindow* window, int path_count, const char* paths[]
     }
 }
 
-void glfwInstallCallback(Window window) {
+void glfwInstallCallback(GLFWwindow * window) {
     glfwSetFramebufferSizeCallback(window, GLFWframebuffersizefunCallback);
 
     glfwSetKeyCallback(window, GLFWkeyfunCallback);
@@ -78,44 +67,52 @@ void glfwInstallCallback(Window window) {
     glfwSetDropCallback(window, GLFWdropfunCallback);
 }
 
-int OnApplicationInit() {
-    /* iniicializa o glew */
+void error_callback(int error, const char* description) {
+    std::cout << "Error: " << description << std::endl;
+}
+
+int main(int argc, char *argv[]) {
+    glfwSetErrorCallback(error_callback);
+
     if (glfwInit() != GLFW_TRUE) {
-        return printf("GLFW do not created");
+        std::cout << "GLFW not initialized." << std::endl;
+        return 1;
     }
 
-    OnPreLoad();
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    /* cria o window principal */
-    window = CreateWindown("GR - GameEngine", SCREEN_WIDTH, SCREEN_HEIGHT, nullptr, true);
-    if (window == nullptr) {
-        return printf("Window do not created");
+    std::unique_ptr<GLFWwindow, decltype(&glfwDestroyWindow)> window(CreateWindown("GR - GameEngine", SCREEN_WIDTH, SCREEN_HEIGHT, nullptr, true), glfwDestroyWindow);
+    if (!window) {
+        std::cout << "Falied to create window." << std::endl;
+        return 2;
     }
 
-    glfwMakeContextCurrent(window);
+    glfwMakeContextCurrent(&(*window));
 
     glfwSwapInterval(0);
 
-    glfwInstallCallback(window);
+    glfwInstallCallback(&(*window));
 
-    glfwSetWindowPos(window, 0, 0);
+    glfwSetWindowPos(&(*window), 0, 0);
 
     if (!grr::gRender::Initialize()) {
-        glfwTerminate(); // Error?
-        if (window != nullptr) {
-            glfwDestroyWindow(window);
-        }
-        return printf("GLEW do not created");
+        window = nullptr;
+
+        glfwTerminate();
+        std::cout << "Falied to initialize opengl library." << std::endl;
+        return 3;
     }
 
     Settings::StartPlayEngine();
 
     Engine::HandleEvent(Engine::GR_INITIALIZE, nullptr);
 
-    GLFWframebuffersizefunCallback(window, SCREEN_WIDTH, SCREEN_HEIGHT);
+    GLFWframebuffersizefunCallback(&(*window), SCREEN_WIDTH, SCREEN_HEIGHT);
 
-    while (Settings::IsEngineRunning() && !glfwWindowShouldClose(window)) {
-        glfwSwapBuffers(window);
+    while (Settings::IsEngineRunning() && !glfwWindowShouldClose(&(*window))) {
+        glfwSwapBuffers(&(*window));
         glfwPollEvents();
 
         Engine::HandleEvent(Engine::GR_IDLE, nullptr);
@@ -125,16 +122,8 @@ int OnApplicationInit() {
 
     Engine::HandleEvent(Engine::GR_DESTROY, nullptr);
 
-    glfwTerminate(); // Error?
-    if (window != nullptr) {
-        glfwDestroyWindow(window);
-    }
-
-    return 0;
-}
-
-int main() {
-    return OnApplicationInit();
+    window = nullptr;
+    glfwTerminate();
 }
 
 
