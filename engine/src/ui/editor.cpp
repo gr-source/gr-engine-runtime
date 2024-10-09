@@ -917,17 +917,7 @@ void Editor::PopupOptionsGameObject() {
                 isOpenRename = true;
                 break;
             case 2:
-                {
-                    if (!cam) {
-                        break;
-                    }
-                    auto &transform = s_objectSelected->getTransform();
-
-                    auto dir = Math::normalize(cam->getPosition() - transform.getPosition());
-
-                    cam->lookIt(dir);
-                    break;
-                }
+                EditorController::LookAt(&s_objectSelected->getTransform());
             default:
                 break;
             }

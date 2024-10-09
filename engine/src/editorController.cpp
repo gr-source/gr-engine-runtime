@@ -64,10 +64,21 @@ void EditorController::Update() {
         transform->addLocalPosition(Math::normalize(diretion) * movementSpeed * TimeLast::deltaTime);
     }
 
-    updateCursor();
+    UpdateCursor(transform);
 }
 
-void EditorController::updateCursor() {
+void EditorController::LookAt(Transform *transform) {
+    auto dir = Math::normalize(m_mainCamera->getPosition() - transform->getPosition());
+
+    m_mainCamera->lookIt(dir);
+
+    elapsed = {
+        -Math::eulerAngles(m_mainCamera->getTransform()->getRotation()).y,
+        Math::eulerAngles(m_mainCamera->getTransform()->getRotation()).x
+    };
+}
+
+void EditorController::UpdateCursor(Transform *transform) {
     auto cursorPos = Input::GetCursorPos();
     
     if (Input::IsMouseDown(MouseButton_Left) && lastMousePos == Vector2::zero) {
@@ -81,24 +92,22 @@ void EditorController::updateCursor() {
     if (Math::magnitude(lastMousePos) > 1e-5f) {
         auto delta = Input::GetCursorPos() - lastMousePos;
 
-        ProcessMouse(delta);
+        ProcessMouse(delta, transform);
             
         lastMousePos = Input::GetCursorPos();
     }
 }
 
-void EditorController::ProcessMouse(const Vector2 &delta) {
+void EditorController::ProcessMouse(const Vector2 &delta, Transform *transform) {
     elapsed += delta * mouseSensitivity;
 
     elapsed.y = std::clamp(elapsed.y, -89.0f, 89.0f);
     elapsed.x = std::fmod(elapsed.x, 360.0f);
 
-    auto m_transform = m_mainCamera->getTransform();
-
     auto rotation = Math::euler({Math::rad(elapsed.y), Math::rad(-elapsed.x), 0.0f});
 
-    rotation = Math::slerp(m_transform->getLocalRotation(), rotation, 25.0f * TimeLast::deltaTime);
+    rotation = Math::slerp(transform->getLocalRotation(), rotation, 25.0f * TimeLast::deltaTime);
 
-    m_transform->setLocalRotation(Math::normalize(rotation + m_transform->getLocalRotation()));
+    transform->setLocalRotation(Math::normalize(rotation + transform->getLocalRotation()));
 }
 

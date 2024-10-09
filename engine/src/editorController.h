@@ -14,7 +14,7 @@ public:
 
     static void Update();
 
-    static void updateCursor();
+    static void LookAt(Transform *transform);
 
 private:
     static ImGuiIO *m_io;
@@ -27,7 +27,9 @@ private:
 
     static Vector2 start;
 
-    static void ProcessMouse(const Vector2 &delta);
+    static void UpdateCursor(Transform *transform);
+
+    static void ProcessMouse(const Vector2 &delta, Transform *transform);
 };
 
 
