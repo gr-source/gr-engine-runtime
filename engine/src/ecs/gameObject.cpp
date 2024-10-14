@@ -172,6 +172,10 @@ std::string GameObject::AddNameID(const std::string &name) {
     if (it == s_names.end()) {
         s_names.emplace(name, 0);
     }
+    if (s_names[name] == 0) {
+        s_names[name]++;
+        return name;
+    }
     return name + std::to_string(s_names[name]++);
 }
 

@@ -515,7 +515,6 @@ void Editor::KeyBoardUp(grm::u32 key) {
 
 void Editor::LoadScript() {
     if (ScriptManager::IsValid()) {
-        LOG_WARNIG("Script reloaded...");
         UnloadScript();
     }
 
@@ -543,11 +542,11 @@ void Editor::LoadScript() {
 void Editor::UnloadScript() {
     Manager::Stop();
 
-    ScriptManager::Shutdown();
-
     RenderManager::Shutdown();
 
     ScreenRender::Shutdown();
+
+    ScriptManager::Shutdown();
 }
 
 // ===================================== END =========================================================
@@ -569,34 +568,6 @@ void Editor::RenderUI() {
     if (Camera::Current && s_io->KeyCtrl && ImGui::IsKeyReleased(ImGuiKey_S)) {
         for (auto &&[name, scene] : Scene::GetScenes()) {
             Event::Add(&Editor::SaveScene, name, &(*scene));
-            /*
-            Event::Add([&name, &ptr]{
-                Scene::Use(&(*ptr));
-                
-                auto camera = Camera::Current();
-                if (!camera) {
-                    return;
-                }
-
-                auto lastApect = camera->getAspectRatio();
-
-
-                PostProcessing::Bind(Engine::ImGuiPostProcess);
-                auto &size = PostProcessing::GetSize();
-
-                camera->setAspectRatio(static_cast<float>(size.x) / static_cast<float>(size.y));
-
-                Engine::MainFramebuffer();
-
-                // grr::gRender::SetRenderState(grr::GR_FRAMEBUFFER_SRGB, grr::GR_TRUE);
-
-                camera->setAspectRatio(lastApect);
-
-                PostProcessing::Save(File::GetAsset("/texture/" + name + ".jpg"), Engine::ImGuiPostProcess);
-
-                ptr->save();
-            });
-            */
         }
     }
 
@@ -1105,22 +1076,7 @@ void Editor::RenderScene() {
         ImGui::SetCursorPos(ImVec2(curSize.x / 2 - cursorPos.x, cursorY));
 
         if (ImGui::ImageButton(reinterpret_cast<ImTextureID>(s_texturePlayGame->getID()), ImVec2(16, 16))) {
-            Threadpool::AddTask(&Editor::BuildProject);
-            
-            // Settings::IsGameRunning =! Settings::IsGameRunning;
-
-            // if (Settings::IsGameRunning) {
-            //     s_texturePlayGame = iconsUI[IconType::ICON_STOP_GAME];
-
-            //     UnloadScript();
-
-            //     s_objectSelected = nullptr;
-            // } else {
-            //     s_texturePlayGame = iconsUI[IconType::ICON_PLAY_GAME];
-
-
-            //     bScriptReloaded = true;
-            // }
+            Threadpool::AddTask(&Editor::BuildScript);
         }
     }
 
@@ -2268,7 +2224,7 @@ void Editor::BuildProject() {
         return LOG_ERROR("[ Build ] Falied to build project, internal data not found.");
     }
 
-    Threadpool::AddTask(&Editor::BuildScript, path, &Editor::PostBuildScriptFromProject);
+    Threadpool::AddTask(&Editor::CompileScript, path, &Editor::PostBuildScriptFromProject);
 }
 
 void Editor::PostBuildScriptFromProject() {
@@ -2286,7 +2242,6 @@ void Editor::PostBuildScriptFromProject() {
 }
 
 void Editor::ReconfigScript() {
-    throw std::runtime_error(".");
     LOG_INFO("[ BUILD ] Initialized reconfigation...");
 
     auto component = File::GetFile("/component", true);
@@ -2307,10 +2262,21 @@ void Editor::ReconfigScript() {
 
     LOG_INFO("[ BUILD ] building scipt...");
 
-    // Threadpool::AddTask(&Editor::BuildScript, path);
+    Threadpool::AddTask(&Editor::BuildScript);
 }
 
-void Editor::BuildScript(std::string path, std::function<void()> func) {
+void Editor::BuildScript() {
+    LOG_INFO("[ Build ] Initialize");
+
+    auto path = File::GetFile("/.build");
+    if (!File::Exists(path)) {
+        return LOG_ERROR("[ Build ] Falied to build project, internal data not found.");
+    }
+
+    Threadpool::AddTask(&Editor::CompileScript, path, &Editor::LoadScript);
+}
+
+void Editor::CompileScript(std::string path, std::function<void()> func) {
     auto build = File::GetFile("/script/build.sh", true);
     if (!File::Exists(build)) {
         return LOG_ERROR("Build script do not found.");
@@ -2332,11 +2298,12 @@ void Editor::BuildScript(std::string path, std::function<void()> func) {
         LOG_WARNIG(line);
     });
 
-    Event::Add(func);
+    if (func)
+        Event::Add(func);
 }
 
 void Editor::SaveScene(const std::string &name, Scene *scene) {
     Scene::Use(scene);
 
-    scene->save();
+    scene->save(File::GetAsset("/scene"));
 }

@@ -97,9 +97,6 @@ void Manager::Replay() {
             component = entity->addInternalComponent(name);
         } catch (const std::runtime_error &e) {
             Console::log(LogInfo::ERROR, "Fatal error: " + std::string(e.what()));
-        }
-
-        if (!component) {
             continue;
         }
 
@@ -122,12 +119,12 @@ void Manager::Replay() {
 
 void Manager::Stop() {
     for (auto &entity : m_entity) {
-        for (auto &&[name, ptr] : entity->getComponents()) {
+        for (auto &&[name, component] : entity->getComponents()) {
             m_vali.emplace_front(entity, name);
 
-            Stream::open(File::GetCacheFile("/" + name + "_" + std::to_string(entity->getEntityID())), std::ios_base::out | std::ios_base::binary);
-            ptr->Serialize(Stream::GetStream());
-            Stream::close();
+            Streaming stream(File::GetCacheFile("/" + name + "_" + std::to_string(entity->getEntityID())), std::ios_base::out | std::ios_base::binary);
+            component->Serialize(stream);
+            stream.close();
         }
 
         entity->clear();

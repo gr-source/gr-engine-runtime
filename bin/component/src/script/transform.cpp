@@ -143,7 +143,6 @@ std::istream &Transform::Deserialize(std::istream &is) {
     is.read(reinterpret_cast<char *>(&m_scale), sizeof(Vector3));
     is.read(reinterpret_cast<char *>(&m_rotation), sizeof(Quaternion));
     is.read(reinterpret_cast<char *>(&m_position), sizeof(Vector3));
-
     updateLocalMatrix();
     return is;
 }

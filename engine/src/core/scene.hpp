@@ -31,7 +31,7 @@ public:
     
     void load(const std::string &path);
 
-    void save();
+    void save(const std::string &path);
 
     GameObject &CreateGameObject(const std::string &name, const std::string &tag = "untagged");
 

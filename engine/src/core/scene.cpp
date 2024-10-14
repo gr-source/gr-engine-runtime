@@ -146,8 +146,8 @@ void Scene::load(const std::string &path) {
     LOG_INFO("[ Scene ] Scene loaded suceess full.");
 }
 
-void Scene::save() {
-    if (!Stream::open(File::GetAsset("/scene/" + m_name + ".scn"), std::ios_base::out | std::ios_base::binary)) {
+void Scene::save(const std::string &path) {
+    if (!Stream::open(path + "/" + m_name + ".scn", std::ios_base::out | std::ios_base::binary)) {
         return LOG_ERROR("[ SCENE ] Falied to save scene: " + m_name);
     }
 

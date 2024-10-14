@@ -157,7 +157,7 @@ void ScriptManager::RegisterApi() {
 
     // Scene
     // m_script->replaceLibraryFunction("_ZN5Scene16CreateGameObjectERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEES7_", Scene::CreateGameObject);
-    m_script->replaceLibraryFunction("_ZN5Scene6DeleteEP10GameObject", reinterpret_cast<void *>(&Scene::Delete));
+    // m_script->replaceLibraryFunction("_ZN5Scene6DeleteEP10GameObject", reinterpret_cast<void *>(&Scene::Delete));
     // m_script->replaceLibraryFunction("_ZN5Scene6RemoveEP10GameObject", reinterpret_cast<void **>(&Scene::Remove));
 
     // Component Pool

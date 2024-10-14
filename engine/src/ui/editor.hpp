@@ -220,7 +220,9 @@ private:
     // Script
     static void ReconfigScript();
 
-    static void BuildScript(std::string path, std::function<void()> func);
+    static void BuildScript();
+
+    static void CompileScript(std::string path, std::function<void()> func);
 
     // Scene
     static void SaveScene(const std::string &name, Scene *scene);
