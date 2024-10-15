@@ -2093,6 +2093,7 @@ void Editor::SetupTexture(IconType type, grr::gTexture *texture) {
 
 // TODO: Corrigir
 float Editor::GetFps() {
+    m_config->setCategory("config");
     if (!m_config || !m_config->hasKey("fps_limit")) {
         return -1.0f;
     }
