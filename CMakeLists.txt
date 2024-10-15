@@ -2,36 +2,43 @@ cmake_minimum_required(VERSION 3.22.1)
 
 project(gr-engine VERSION 0.1.0 LANGUAGES C CXX HOMEPAGE_URL https://github.com/gr-source/gr-engine.git)
 
-# Definindo diretórios de saída
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
 
-#defina a versão do c++
 set(CMAKE_CXX_STANDARD 17)
-
-# Set the CMAKE_CXX_FLAGS to include profiling flags
-# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pg")
-# set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pg")
-
-# Optional: Set the linker flags if needed
-# set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -pg")
-
-if(NOT CMAKE_CXX_STANDARD)
-    set(CMAKE_CXX_STANDARD 17)
-    message(WARNING "CMAKE_CXX_STANDARD não definido. Usando C++17 como padrão.")
-endif()
 
 # Adicionando o executável principal
 add_executable(${PROJECT_NAME} src/main.cpp)
 
 # Encontrando as bibliotecas necessárias
-find_package(glfw3 REQUIRED)
-find_package(GLEW REQUIRED)
+find_package(glfw3 QUIET)
+if(NOT glfw3_FOUND)
+    message(FATAL_ERROR "Please install libglfw3-dev")
+    return()
+endif()
+
+find_package(GLEW QUIET)
+if(NOT GLEW_FOUND)
+    message(FATAL_ERROR "Please install libglew-dev")
+    return()
+endif()
+
 find_package(OpenGL REQUIRED)
 find_package(gr-math REQUIRED)
 find_package(gr-render REQUIRED)
-find_package(Bullet REQUIRED)
+
+find_package(Bullet QUIET)
+if(NOT Bullet_FOUND)
+    message(FATAL_ERROR "Please install libbullet-dev")
+    return()
+endif()
+
+find_package(assimp QUIET)
+if(NOT assimp_FOUND)
+    message(FATAL_ERROR "Please install libassimp-dev")
+    return()
+endif()
 
 # Adicionando subdiretórios
 add_subdirectory(engine)
@@ -54,4 +61,3 @@ target_link_libraries(${PROJECT_NAME} PRIVATE engine glfw imgui assimp ${GLEW_LI
 
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
 set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})
-

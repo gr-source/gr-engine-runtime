@@ -1,4 +1,5 @@
-project("engine")
+project(engine VERSION 0.1.0 LANGUAGES C CXX)
+
 
 set(guizmo_src
     src/guizmo/ImGuizmo.cpp
@@ -249,4 +250,3 @@ add_library(${PROJECT_NAME} STATIC ${engine_src} ${engine_hdr})
 target_include_directories(${PROJECT_NAME} PRIVATE
     $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/${PROJECT_NAME}/src>
 )
-
