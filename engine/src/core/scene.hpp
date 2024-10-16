@@ -47,7 +47,9 @@ public:
 
     static std::unordered_map<std::string, std::unique_ptr<Scene>> &GetScenes();
 
-    static void ReloadObject();
+    static void DestroyObjects();
+
+    static void ReloadObjects();
 
 private:
     static std::unordered_map<std::string, std::unique_ptr<Scene>> m_scenes;

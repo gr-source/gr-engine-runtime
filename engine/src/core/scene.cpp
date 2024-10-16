@@ -158,7 +158,7 @@ std::unordered_map<std::string, std::unique_ptr<Scene>> &Scene::GetScenes() {
     return m_scenes;
 }
 
-void Scene::ReloadObject() {
+void Scene::DestroyObjects() {
     auto scene = GetCurrentScene();
     if (!scene) {
         return;
@@ -172,6 +172,13 @@ void Scene::ReloadObject() {
     }
 
     GameObject::Clear();
+}
+
+void Scene::ReloadObjects() {
+    auto scene = GetCurrentScene();
+    if (!scene) {
+        return;
+    }
 
     scene->load(scene->m_path, LoadFlags_Object);
 }
@@ -579,3 +586,8 @@ int Scene::readNode(Streaming *streaming, Transform *parent) {
 void Scene::remove(GameObject *gameObject) {
     s_objects.erase(std::remove(s_objects.begin(), s_objects.end(), gameObject), s_objects.end());
 }
+
+
+
+
+

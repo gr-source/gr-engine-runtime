@@ -93,8 +93,9 @@ void Manager::Replay() {
 
     for (auto &&[entity, name] : m_vali) {
         Component *component = nullptr;
+
         try {
-            component = entity->addInternalComponent(name);
+            component = entity->hasComponent(name) ? entity->getComponent(name) : entity->addInternalComponent(name);
         } catch (const std::runtime_error &e) {
             Console::log(LogInfo::ERROR, "Fatal error: " + std::string(e.what()));
             continue;
@@ -127,7 +128,7 @@ void Manager::Stop() {
             stream.close();
         }
 
-        entity->clear();
+        // entity->clear();
     }
     Manager::bPlayScript = false;
 }

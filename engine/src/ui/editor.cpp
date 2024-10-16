@@ -514,7 +514,7 @@ void Editor::KeyBoardUp(grm::u32 key) {
 }
 
 void Editor::LoadScript() {
-    Scene::ReloadObject();
+    Scene::DestroyObjects();
 
     if (ScriptManager::IsValid()) {
         UnloadScript();
@@ -526,6 +526,8 @@ void Editor::LoadScript() {
 
     try {
         ScriptManager::Initialize(File::GetFile("/.build/component/lib/libgr-component.so"));
+
+        Scene::ReloadObjects();
     } catch (const std::runtime_error &e) {
         LOG_ERROR(e.what());
     }
@@ -538,11 +540,11 @@ void Editor::LoadScript() {
 
     ScreenRender::Initialize();
 
-    Manager::Replay();
+    // Manager::Replay();
 }
 
 void Editor::UnloadScript() {
-    Manager::Stop();
+    // Manager::Stop();
 
     RenderManager::Shutdown();
 
