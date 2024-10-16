@@ -1,5 +1,7 @@
 #include "mesh.h"
 
+#include "core/file/streaming.hpp"
+
 Mesh::Mesh(const std::string &name) : m_name(name) {}
 
 void Mesh::setName(const std::string &name) {
@@ -36,51 +38,51 @@ const std::vector<BoneWeight> &Mesh::getBoneWeight() const {
     return m_boneWeight;
 }
 
-void Mesh::serialize(std::ostream &os) const {
+void Mesh::serialize(Streaming *streaming) const {
     auto &vertices = m_vertices;
     auto &indices = m_indices;
     auto &name = m_name;
 
     // Serialzie name
     auto nSize = name.size();
-    os.write(reinterpret_cast<const char *>(&nSize), sizeof(std::size_t));
+    streaming->writeS(&nSize, 1);
 
-    os.write(name.data(), nSize);
+    streaming->writeS(name.data(), nSize);
 
     // Serialize vertices
     auto vSize = vertices.size();
-    os.write(reinterpret_cast<const char *>(&vSize), sizeof(std::size_t));
-    os.write(reinterpret_cast<const char *>(vertices.data()), vSize * sizeof(Vertex3D));
+    streaming->writeS(&vSize, 1);
+    streaming->writeS(vertices.data(), vSize);
 
     // Serialize indices
     auto iSize = indices.size();
-    os.write(reinterpret_cast<const char *>(&iSize), sizeof(std::size_t));
-    os.write(reinterpret_cast<const char *>(indices.data()), iSize * sizeof(int));
+    streaming->writeS(&iSize, 1);
+    streaming->writeS(indices.data(), iSize);
 }
 
-void Mesh::deserialize(std::istream &is) {
+void Mesh::deserialize(Streaming *streaming) {
     auto &vertices = m_vertices;
     auto &indices = m_indices;
     auto &name = m_name;
 
     // Deserialize name
     std::size_t nSize;
-    is.read(reinterpret_cast<char *>(&nSize), sizeof(std::size_t));
+    streaming->readS(&nSize, 1);
     name.resize(nSize, '\0');
-    is.read(name.data(), nSize);
+    streaming->readS(name.data(), nSize);
 
     // Deserialize vertices
     std::size_t vSize;
-    is.read(reinterpret_cast<char *>(&vSize), sizeof(std::size_t));
+    streaming->readS(&vSize, 1);
     vertices.resize(vSize);
 
-    is.read(reinterpret_cast<char *>(vertices.data()), vSize * sizeof(Vertex3D));
+    streaming->readS(vertices.data(), vSize);
 
     // Deserialize indices
     std::size_t iSize;
-    is.read(reinterpret_cast<char *>(&iSize), sizeof(std::size_t));
+    streaming->readS(&iSize, 1);
     indices.resize(iSize);
 
-    is.read(reinterpret_cast<char *>(indices.data()), iSize * sizeof(int));
+    streaming->readS(indices.data(), iSize);
 }
 

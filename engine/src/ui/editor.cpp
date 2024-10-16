@@ -514,6 +514,8 @@ void Editor::KeyBoardUp(grm::u32 key) {
 }
 
 void Editor::LoadScript() {
+    Scene::ReloadObject();
+
     if (ScriptManager::IsValid()) {
         UnloadScript();
     }
@@ -759,7 +761,7 @@ void Editor::RenderHierarchi() {
         return;
     }
 
-    auto &list = Scene::GetCurrentScene()->GetGameObjects();
+    auto &list = Scene::GetCurrentScene()->getObjectList();
 
     if (m_currentPage > 0 && ImGui::Button("Before")) {
         --m_currentPage;
@@ -2093,6 +2095,9 @@ void Editor::SetupTexture(IconType type, grr::gTexture *texture) {
 
 // TODO: Corrigir
 float Editor::GetFps() {
+    if (!m_config) {
+        return -1.0f;
+    }
     m_config->setCategory("config");
     if (!m_config || !m_config->hasKey("fps_limit")) {
         return -1.0f;
@@ -2289,8 +2294,8 @@ void Editor::CompileScript(std::string path, std::function<void()> func) {
     }
 
     std::vector<std::string> command{
-        "export GR_ROOT_PROJECT_PATH=" + component,
-        "export GR_ROOT_ASSETS_PATH=" + File::GetAsset(""),
+        "export GR_ROOT_PROJECT_PATH='" + component + "'",
+        "export GR_ROOT_ASSETS_PATH='" + File::GetAsset("") + "'",
         "chmod +x " + build,
         "sh " + build,
     };

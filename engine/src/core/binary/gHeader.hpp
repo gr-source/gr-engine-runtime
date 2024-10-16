@@ -5,11 +5,30 @@
 #include <cstdint>
 #include <cstring>
 
-#include "core/file/stream.hpp"
+enum gHeaderType : int {
+    gHeaderType_None    = 0,
+    gHeaderType_Texture = 1,
+    gHeaderType_Mesh = 2,
+    gHeaderType_Object  = 3,
+};
+
+inline const char *struct_name[4] = {
+    "None",
+    "Texture",
+    "Mesh",
+    "Object",
+};
 
 struct gHeader {
     char signature[4];
     float version;
+    size_t sizeData;
+    char name[256];
+};
+
+struct gStructData {
+    gHeaderType type;
+    size_t sizeData;
 };
 
 enum gStructType {
@@ -18,11 +37,6 @@ enum gStructType {
     gStructType_Material = 1 << 2,
     gStructType_Mesh     = 1 << 3,
     gStructType_Node     = 1 << 4
-};
-
-struct gStructHeader {
-    gStructType type;
-    grm::size endOffset;
 };
 
 struct gVertex {

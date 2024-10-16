@@ -6,6 +6,8 @@
 
 #include <list>
 
+class Streaming;
+
 class Scene {
 public:
     static void SetCurrent(Scene *scene);
@@ -29,13 +31,11 @@ public:
 
     const std::string &getName() const;
     
-    void load(const std::string &path);
-
     void save(const std::string &path);
 
     GameObject &CreateGameObject(const std::string &name, const std::string &tag = "untagged");
 
-    std::vector<GameObject *> &GetGameObjects();
+    std::vector<GameObject *> &getObjectList();
 
     void Add(GameObject *gameObject);
     
@@ -46,6 +46,8 @@ public:
     void Clear();
 
     static std::unordered_map<std::string, std::unique_ptr<Scene>> &GetScenes();
+
+    static void ReloadObject();
 
 private:
     static std::unordered_map<std::string, std::unique_ptr<Scene>> m_scenes;
@@ -58,31 +60,39 @@ private:
 
     std::string m_name;
 
+    std::string m_path;
+
     bool m_enable;
+
+    enum LoadFlags : std::uint8_t {
+        LoadFlags_Mesh    = 1 << 1,
+        LoadFlags_Object  = 1 << 2,
+        LoadFlags_Texture = 1 << 3
+    };
+
+    void load(const std::string &path, std::uint8_t flags = LoadFlags_Mesh | LoadFlags_Object | LoadFlags_Texture);
 
     void setEnable(bool value);
 
     void setDisableEntity(Transform *transform, bool value);
 
-    int writeScene();
+    int writeScene(Streaming *streaming);
 
-    int writeObject();
+    int writeObject(Streaming *streaming);
 
-    int writeMesh();
+    int writeMesh(Streaming *streaming);
 
-    int writeTexture();
+    int writeTexture(Streaming *streaming);
 
-    static void WriteGameObject(GameObject *gameObject);
+    static void WriteGameObject(Streaming *streaming, GameObject *gameObject);
 
-    int readScene();
+    int readObject(Streaming *streaming);
 
-    int readObject();
+    int readTexture(Streaming *streaming);
 
-    int readTexture();
+    int readMesh(Streaming *streaming);
 
-    int readMesh();
-
-    int readNode(Transform *parent = nullptr);
+    int readNode(Streaming *streaming, Transform *parent = nullptr);
 
     void remove(GameObject *gameObject);
 };
