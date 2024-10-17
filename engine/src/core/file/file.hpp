@@ -42,6 +42,8 @@ public:
     static std::string getHomeDirectory();
 
     static std::string GetError();
+
+    static std::string GetTempFile(const std::string &path);
     
 private:
     static std::string m_currentPath;

@@ -36,12 +36,12 @@ bool ScriptLoader::isValid() const {
     return m_script != nullptr;
 }
 
-void ScriptLoader::replaceLibraryFunction(const std::string &name, void *ptr) {
+void ScriptLoader::replaceLibraryFunction(const std::string &name, void *ptr, void **out_origin) {
     auto symbol = FindSymbol(name);
     if (!symbol) {
         return;
     }
-    Memory::Hook(symbol, ptr);
+    Memory::hook(symbol, ptr, out_origin);
 }
 
 void ScriptLoader::replaceLibraryField(const std::string &name, void *ptr) {

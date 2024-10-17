@@ -93,7 +93,7 @@ inline T &GameObject::getComponent() {
 
 template <typename T>
 inline bool GameObject::hasComponent() const {
-    return m_entity->hasComponent<T>();
+    return m_entity ? m_entity->hasComponent<T>() : false;
 }
 
 template <typename T, typename... Args>

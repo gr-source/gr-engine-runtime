@@ -18,7 +18,8 @@ public:
 
     static void free(void* ptr) noexcept;
 
-    static void Hook(void *origFunc, void *newFunc);
+    static void hook(void *orig_func, void *new_func, void **out_orig);
+
 private:
     
     struct MemoryBlock {
@@ -28,12 +29,4 @@ private:
 
     static int s_handle;
 };
-
-void *operator new(std::size_t size);
-
-void *operator new[](std::size_t size);
-
-void operator delete(void* ptr) noexcept;
-
-void operator delete[](void* ptr) noexcept;
 

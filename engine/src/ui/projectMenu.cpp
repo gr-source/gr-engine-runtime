@@ -275,7 +275,7 @@ void ProjectMenu::CreateProjectAssets(const std::string &path) {
         std::cout << "Falied to create directory: " << fullPath << std::endl;
     }
 
-    if (!File::Copy(File::GetAsset("/shader", true), path + "/assets")) {
+    if (!File::Copy(File::GetAsset("shader", true), path + "/assets")) {
         LOG_ERROR("[ CreateProject ] " + File::GetError());
     }
 }

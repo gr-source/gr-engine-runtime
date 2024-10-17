@@ -22,8 +22,8 @@ void ScreenRender::Initialize() {
     if (!m_shader) {
         AssetsManager::LoadShader(
             "screen",
-            File::GetAsset("/shader/screen.frag"),
-            File::GetAsset("/shader/screen.vert"),
+            File::GetAsset("shader/screen.frag"),
+            File::GetAsset("shader/screen.vert"),
             &ScreenRender::RegisterShader
         );
     }

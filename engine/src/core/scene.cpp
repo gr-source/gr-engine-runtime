@@ -96,7 +96,7 @@ const std::string &Scene::getName() const {
 }
 
 void Scene::save(const std::string &path) {
-    Streaming stream(path + "/" + m_name + ".scn", std::ios_base::out | std::ios_base::binary);
+    Streaming stream(path, std::ios_base::out | std::ios_base::binary);
 
     // header data
     {
@@ -164,6 +164,8 @@ void Scene::DestroyObjects() {
         return;
     }
 
+    scene->save(File::GetTempFile(scene->getName() + ".scn.tmp"));
+
     auto &objectList = scene->getObjectList();
     for (auto it = objectList.begin();it != objectList.end();) {
         GameObject::Destroy(*it);
@@ -180,7 +182,7 @@ void Scene::ReloadObjects() {
         return;
     }
 
-    scene->load(scene->m_path, LoadFlags_Object);
+    scene->load(File::GetTempFile(scene->getName() + ".scn.tmp"), LoadFlags_Object);
 }
 
 void Scene::load(const std::string &path, std::uint8_t flags) {
@@ -188,11 +190,9 @@ void Scene::load(const std::string &path, std::uint8_t flags) {
         return LOG_ERROR("[ Scene ] Falied to load scene: " + path);
     }
 
-    m_path = path;
-
     Streaming stream(path, std::ios_base::in | std::ios_base::binary);
     if (!stream.is_open()) {
-        return LOG_ERROR("[ Scene ] Faleid to load scene: " + path);
+        return LOG_ERROR("[ Scene ] Faleid to open scene: " + path);
     }
 
     // read header data

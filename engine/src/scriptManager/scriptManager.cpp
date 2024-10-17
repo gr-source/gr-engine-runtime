@@ -115,9 +115,41 @@ bool ScriptManager::CheckScriptLoaded(const std::string &name) {
     return isValid;
 }
 
+void (*Consolelog)(LogInfo::LogType, const std::string &);
+void (*EventAddEvent)(std::function<void()>);
+
+void (*AssetsManagerSetTextureList)(const std::string &, std::function<void (grr::gTexture *)>);
+void (*AssetsManagerSetGameObjectList)(const std::string &, std::function<void (GameObject *)>);
+Mesh *(*AssetsManagerFindMesh)(const std::string &);
+grr::gShader *(*AssetsManagerFindShader)(const std::string &);
+void (*AssetsManagerSetShaderList)(const std::string &, const std::string &, const std::string &, std::function<void (grr::gShader *)>);
+
+bool (*InputIsKeyPress)(grm::u32);
+void (*InputSetCursorPos)(const Vector2 &);
+Vector2 (*InputGetCursorPos)();
+
+void (*Batchingremove)(Transform *, bool);
+void (*Batchinginsert)(Transform *);
+
+void (*MeshRenderbuild)();
+GameObject &(*GameObjectInstantiate)(GameObject *);
+GameObject &(*GameObjectCreate)(const std::string &, const std::string &);
+void (*GameObjectDestroy)(GameObject *);
+
+std::string (*FileGetFile)(const std::string &, bool);
+
+void (*Materialserialize)(std::ostream &);
+void (*Materialdeserialize)(std::istream &);
+
+void (*MeshColliderbuild)(Mesh *);
+
+void (*Rigidbodyprocess)();
+void (*Rigidbodysetup)();
+
+
 void ScriptManager::RegisterApi() {
     // Console log
-    m_script->replaceLibraryFunction("_ZN7Console3logEN7LogInfo7LogTypeERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE", reinterpret_cast<void *>(&Console::log));
+    m_script->replaceLibraryFunction("_ZN7Console3logEN7LogInfo7LogTypeERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE", reinterpret_cast<void *>(&Console::log), (void **)&Consolelog);
 
     // First function
     m_script->registerFunction("Initialize",   reinterpret_cast<void **>(&InitializeScript));
@@ -135,21 +167,21 @@ void ScriptManager::RegisterApi() {
     m_script->registerFunction("SetEnableCamera", reinterpret_cast<void **>(&Camera::SetEnable));
 
     // Event Manager
-    m_script->replaceLibraryFunction("_ZN5Event17AddEvent_InternalESt8functionIFvvEE", reinterpret_cast<void **>(&Event::AddEvent));
+    m_script->replaceLibraryFunction("_ZN5Event17AddEvent_InternalESt8functionIFvvEE", reinterpret_cast<void **>(&Event::AddEvent), (void **)&EventAddEvent);
 
     // AssetManager
-    m_script->replaceLibraryFunction("_ZN13AssetsManager14SetTextureListERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEESt8functionIFvPN3grr8gTextureEEE",      reinterpret_cast<void *>(&AssetsManager::SetTextureList));
-    m_script->replaceLibraryFunction("_ZN13AssetsManager17SetGameObjectListERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEESt8functionIFvP10GameObjectEE",      reinterpret_cast<void *>(&AssetsManager::SetGameObjectList));
-    m_script->replaceLibraryFunction("_ZN13AssetsManager8FindMeshERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE",                                             reinterpret_cast<void *>(&AssetsManager::FindMesh));
-    m_script->replaceLibraryFunction("_ZN13AssetsManager10FindShaderERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE",                                          reinterpret_cast<void *>(&AssetsManager::FindShader));
-    m_script->replaceLibraryFunction("_ZN13AssetsManager13SetShaderListERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEES7_S7_St8functionIFvPN3grr7gShaderEEE",  reinterpret_cast<void *>(&AssetsManager::SetShaderList));
+    m_script->replaceLibraryFunction("_ZN13AssetsManager14SetTextureListERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEESt8functionIFvPN3grr8gTextureEEE",      reinterpret_cast<void *>(&AssetsManager::SetTextureList), (void **)&AssetsManagerSetTextureList);
+    m_script->replaceLibraryFunction("_ZN13AssetsManager17SetGameObjectListERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEESt8functionIFvP10GameObjectEE",      reinterpret_cast<void *>(&AssetsManager::SetGameObjectList), (void **)&AssetsManagerSetGameObjectList);
+    m_script->replaceLibraryFunction("_ZN13AssetsManager8FindMeshERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE",                                             reinterpret_cast<void *>(&AssetsManager::FindMesh), (void **)&AssetsManagerFindMesh);
+    m_script->replaceLibraryFunction("_ZN13AssetsManager10FindShaderERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE",                                          reinterpret_cast<void *>(&AssetsManager::FindShader), (void **)&AssetsManagerFindShader);
+    m_script->replaceLibraryFunction("_ZN13AssetsManager13SetShaderListERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEES7_S7_St8functionIFvPN3grr7gShaderEEE",  reinterpret_cast<void *>(&AssetsManager::SetShaderList), (void **)&AssetsManagerSetShaderList);
 
     m_script->registerFunction("LoadAnimation", reinterpret_cast<void **>(&LoadAnimation));
 
     // Input
-    m_script->replaceLibraryFunction("InputIsKeyPress",    reinterpret_cast<void *>(&Input::IsKeyPress));
-    m_script->replaceLibraryFunction("InputSetCursourPos", reinterpret_cast<void *>(&Input::SetCursorPos));
-    m_script->replaceLibraryFunction("InputGetCursorPos",  reinterpret_cast<void *>(&Input::GetCursorPos));
+    m_script->replaceLibraryFunction("InputIsKeyPress",    reinterpret_cast<void *>(&Input::IsKeyPress), (void **)&InputIsKeyPress);
+    m_script->replaceLibraryFunction("InputSetCursourPos", reinterpret_cast<void *>(&Input::SetCursorPos), (void **)&InputSetCursorPos);
+    m_script->replaceLibraryFunction("InputGetCursorPos",  reinterpret_cast<void *>(&Input::GetCursorPos), (void **)&InputGetCursorPos);
     // m_script->replaceLibraryFunction("InputIsMousePress", Input::IsMousePress);
 
     // Screen
@@ -166,33 +198,33 @@ void ScriptManager::RegisterApi() {
     m_script->registerFunction("CopyComponentWithName",     reinterpret_cast<void **>(&ScriptManager::CopyComponentWithName));
 
     // Batching
-    m_script->replaceLibraryFunction("_ZN8Batching6removeEP9Transformb", (void *)&Batching::remove);
-    m_script->replaceLibraryFunction("_ZN8Batching6insertEP9Transform",  (void *)&Batching::insert);
+    m_script->replaceLibraryFunction("_ZN8Batching6removeEP9Transformb", (void *)&Batching::remove, (void **)&Batchingremove);
+    // m_script->replaceLibraryFunction("_ZN8Batching6insertEP9Transform",  (void *)&Batching::insert, (void **)&Batchinginsert);
 
     // Script
-    m_script->replaceLibraryFunction("_ZN10MeshRender5buildEv", (void *)&MeshRender::build);
+    m_script->replaceLibraryFunction("_ZN10MeshRender5buildEv", (void *)&MeshRender::build, (void **)&MeshRenderbuild);
 
     // GameObject
-    m_script->replaceLibraryFunction("_ZN10GameObject11InstantiateEPS_", reinterpret_cast<void *>(&GameObject::Instantiate));
-    m_script->replaceLibraryFunction("_ZN10GameObject6CreateERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEES7_", reinterpret_cast<void *>(&GameObject::Create));
-    m_script->replaceLibraryFunction("_ZN10GameObject7DestroyEPS_", reinterpret_cast<void *>(&GameObject::Destroy));
+    m_script->replaceLibraryFunction("_ZN10GameObject11InstantiateEPS_", reinterpret_cast<void *>(&GameObject::Instantiate), (void **)&GameObjectInstantiate);
+    m_script->replaceLibraryFunction("_ZN10GameObject6CreateERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEES7_", reinterpret_cast<void *>(&GameObject::Create), (void **)&GameObjectCreate);
+    m_script->replaceLibraryFunction("_ZN10GameObject7DestroyEPS_", reinterpret_cast<void *>(&GameObject::Destroy), (void **)&GameObjectDestroy);
 
     // File
-    m_script->replaceLibraryFunction("_ZN4File7GetFileERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb", reinterpret_cast<void *>(&File::GetFile));
+    m_script->replaceLibraryFunction("_ZN4File7GetFileERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb", reinterpret_cast<void *>(&File::GetFile), (void **)&FileGetFile);
 
     // Time
     // m_script->replaceLibraryField("_ZN4Time9deltaTimeE", reinterpret_cast<void *>(&TimeLast::deltaTime));
 
     // Material
-    m_script->replaceLibraryFunction("_ZNK8Material9serializeERSo", (void *)&Material::serialize);
-    m_script->replaceLibraryFunction("_ZN8Material11deserializeERSi", (void *)&Material::deserialize);
+    m_script->replaceLibraryFunction("_ZNK8Material9serializeERSo", (void *)&Material::serialize, (void **)&Materialserialize);
+    m_script->replaceLibraryFunction("_ZN8Material11deserializeERSi", (void *)&Material::deserialize, (void **)&Materialdeserialize);
 
     // MeshCollider
-    m_script->replaceLibraryFunction("_ZN12MeshCollider5buildEP4Mesh", (void *)&MeshCollider::build);
+    m_script->replaceLibraryFunction("_ZN12MeshCollider5buildEP4Mesh", (void *)&MeshCollider::build, (void **)&MeshColliderbuild);
 
     // Rigidbody
-    m_script->replaceLibraryFunction("_ZN9Rigidbody7processEv", (void *)&Rigidbody::process);
-    m_script->replaceLibraryFunction("_ZN9Rigidbody5setupEv", (void *)&Rigidbody::setup);
+    m_script->replaceLibraryFunction("_ZN9Rigidbody7processEv", (void *)&Rigidbody::process, (void **)&Rigidbodyprocess);
+    m_script->replaceLibraryFunction("_ZN9Rigidbody5setupEv", (void *)&Rigidbody::setup, (void **)&Rigidbodysetup);
 }
 #pragma GCC diagnostic pop
 

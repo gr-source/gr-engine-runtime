@@ -66,7 +66,7 @@ std::string File::GetFile(const std::string &path, bool internal) {
 }
 
 std::string File::GetAsset(const std::string &path, bool internal) {
-    return GetFile("/assets" + path, internal);
+    return GetFile("/assets/" + path, internal);
 }
 
 bool File::CreateDirectories(const std::string &path) {
@@ -136,4 +136,8 @@ std::string File::GetError() {
     auto temp = m_error.str();
     m_error.clear();
     return temp;
+}
+
+std::string File::GetTempFile(const std::string &path) {
+    return std::filesystem::temp_directory_path().string() + "/" + path;
 }

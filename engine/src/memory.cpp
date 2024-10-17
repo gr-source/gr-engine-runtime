@@ -95,9 +95,12 @@ void Memory::free(void *ptr) noexcept {
     std::free(ptr);
 }
 
-void Memory::Hook(void *origFunc, void *newFunc) {
+
+void Memory::hook(void *orig_func, void *new_func, void **out_orig) {
+    // DobbyHook(orig_func, new_func, out_orig);
+    // inline_hook(orig_func, new_func);
     auto pageSizeToProtect = sysconf(_SC_PAGESIZE);
-    auto start = reinterpret_cast<long>(origFunc);
+    auto start = reinterpret_cast<long>(orig_func);
     auto pageStart = start & ~(pageSizeToProtect - 1);
 
     if (mprotect(reinterpret_cast<void *>(pageStart), pageSizeToProtect, PROT_READ | PROT_WRITE | PROT_EXEC) == -1) {
@@ -107,12 +110,12 @@ void Memory::Hook(void *origFunc, void *newFunc) {
     uint8_t jumpInstruction[14] = {0};
     jumpInstruction[0] = 0x49; // REX prefix
     jumpInstruction[1] = 0xBB; // MOV r11, imm32
-    *reinterpret_cast<int64_t *>(jumpInstruction + 2) = reinterpret_cast<int64_t>(newFunc);
+    *reinterpret_cast<int64_t *>(jumpInstruction + 2) = reinterpret_cast<int64_t>(new_func);
     jumpInstruction[10] = 0x41; // REX prefix
     jumpInstruction[11] = 0xFF; // JMP r11
     jumpInstruction[12] = 0xE3; // RIP-Relative Jump
 
-    if (!memcpy(origFunc, jumpInstruction, sizeof(jumpInstruction))) {
+    if (!memcpy(orig_func, jumpInstruction, sizeof(jumpInstruction))) {
         throw std::runtime_error("Falied to copy instructions.");
     }
 
@@ -120,3 +123,4 @@ void Memory::Hook(void *origFunc, void *newFunc) {
         throw std::runtime_error("Failed to roll back page permissions in memory.");
     }
 }
+
