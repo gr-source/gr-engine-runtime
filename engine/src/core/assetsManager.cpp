@@ -41,6 +41,7 @@ std::mutex AssetsManager::s_shaderMutex;
 
 /***************** Texture *****************/
 std::unordered_map<std::string, std::unique_ptr<grr::gTexture>> AssetsManager::m_textureMap;
+std::unordered_map<std::string, TextureHandle *> AssetsManager::m_mapHandleTexture;
 std::list<TextureHandle> AssetsManager::m_textureHandle;
 std::mutex AssetsManager::m_mutexTexture;
 
@@ -74,6 +75,8 @@ void AssetsManager::Shutdown() {
 
     /***************** Texture *****************/
     m_textureMap.clear();
+    // multithread
+    m_mapHandleTexture.clear();
     m_textureHandle.clear();
 
     /***************** Animation *****************/
@@ -157,11 +160,10 @@ std::unordered_map<std::string, std::unique_ptr<Mesh>> &AssetsManager::GetMeshLi
 
 /***************** Texture Process ****************/
 void AssetsManager::SetupTexture(TextureHandle handle, int width, int height, int ch, void *pixels) {
+    std::unique_lock<std::mutex> lock(m_mutexTexture);
     auto it = m_textureMap.find(handle.m_path);
     if (it != m_textureMap.end()) {
-        if (handle.m_function) {
-            handle.m_function(&(*it->second));
-        }
+        handle.invoke(&(*it->second));
         return;
     }
     auto texture = grr::gTexture::Create();
@@ -169,7 +171,6 @@ void AssetsManager::SetupTexture(TextureHandle handle, int width, int height, in
     grr::TextureFormat format;
 
     {
-        std::lock_guard<std::mutex> lock(m_mutexTexture);
 
         switch (ch) {
         case 1:
@@ -195,9 +196,7 @@ void AssetsManager::SetupTexture(TextureHandle handle, int width, int height, in
 
     m_textureMap.emplace(handle.m_path, std::unique_ptr<grr::gTexture>(texture));
    
-    if (handle.m_function) {
-        handle.m_function(texture);
-    }
+    handle.invoke(texture);
 
     LOG_INFO("[ AssetsManager::Texture ] Texture loaded: " + handle.m_path);
 }
@@ -209,13 +208,12 @@ void AssetsManager::ProcessTexture() {
         m_textureHandle.pop_front();
 
         auto path = handle.m_path;
+        m_mapHandleTexture.erase(path);
 
         int width, height, ch;
         auto pixels = stbi_load(path.c_str(), &width, &height, &ch, 0);
         if (!pixels) {
             LOG_ERROR("[ AssetsManager::Texture ] Failed to load texture: " + path);
-
-            lock.lock();
             continue;
         }
         lock.unlock();
@@ -230,9 +228,7 @@ void AssetsManager::ProcessTexture() {
 void AssetsManager::SetupShader(ShaderHandle handle, const std::string &frag, const std::string &vert) {
     auto it = s_shaderList.find(handle.m_name);
     if (it != s_shaderList.end()) {
-        for (auto func : handle.m_functions) {
-            func(&(*it->second));
-        }
+        handle.invoke(&(*it->second));
         return;
     }
 
@@ -248,9 +244,7 @@ void AssetsManager::SetupShader(ShaderHandle handle, const std::string &frag, co
 
     s_shaderList.emplace(handle.m_name, std::unique_ptr<grr::gShader>(shader));
 
-    for (auto func : handle.m_functions) {
-        func(shader);
-    }
+    handle.invoke(shader);
 
     LOG_INFO("[ AssetsManager::Shader ] Shader loadedd sucessfull: " + handle.m_name);
 }
@@ -678,9 +672,7 @@ void AssetsManager::SetShaderList(const std::string &name, const std::string &fr
         });
         
         if (it != s_shaderFromLoader.end()) {
-            (*it).m_functions.push_back(func);
-            // throw std::runtime_error(".");
-            // std::cout << name << std::endl;
+            it->add(func);
             return;
         }
         s_shaderFromLoader.emplace_back(func, name, frag, vert);
@@ -694,23 +686,23 @@ void AssetsManager::SetTextureList(const std::string &path, std::function<void(g
         return LOG_ERROR("[ AssetsManager::Texture ] File not found: " + path);
     }
 
-    auto it = m_textureMap.find(path);
-    if (it != m_textureMap.end()) {
-        if (func) {
-            func(&(*it->second));
-        }
-        return;
-    }
-
     {
-        std::lock_guard<std::mutex> lock(m_mutexTexture);
-        auto it = std::find_if(m_textureHandle.begin(), m_textureHandle.end(), [path](const auto &handle) {
-            return handle.m_path == path;
-        });
-        if (it != m_textureHandle.end()) {
+        std::unique_lock<std::mutex> lock(m_mutexTexture);
+        auto map = m_textureMap.find(path);
+        if (map != m_textureMap.end()) {
+            if (func) {
+                func(&(*map->second));
+            }
             return;
         }
-        m_textureHandle.emplace_back(func, path);
+
+        auto it = m_mapHandleTexture.find(path);
+        if (it != m_mapHandleTexture.end()) {
+            it->second->add(func);
+            return;
+        }
+        auto &handle = m_textureHandle.emplace_back(func, path);
+        m_mapHandleTexture.emplace(path, &handle);
     }
 
     Threadpool::AddTask(&AssetsManager::ProcessTexture);
@@ -748,6 +740,42 @@ std::unordered_map<std::string, std::unique_ptr<grr::gTexture>> &AssetsManager::
     return m_textureMap;
 }
 
+TextureHandle::TextureHandle(std::function<void(grr::gTexture *)> function, std::string path) : m_path(path) {
+    if (!function) {
+        return;
+    }
+    m_functions.push_back(function);
+}
 
+void TextureHandle::invoke(grr::gTexture *texture) {
+    for (auto it = m_functions.begin(); it != m_functions.end();) {
+        if (*it) {
+            (*it)(texture);
+        }
+        it = m_functions.erase(it);
+    }
+}
 
+void TextureHandle::add(std::function<void(grr::gTexture *)> function) {
+    m_functions.push_back(function);
+}
 
+ShaderHandle::ShaderHandle(std::function<void(grr::gShader *)> function, std::string name, std::string frag, std::string vert) : m_name(name), m_frag(frag), m_vert(vert) {
+    if (!function) {
+        return;
+    }
+    m_functions.push_back(function);
+}
+
+void ShaderHandle::invoke(grr::gShader *shader) {
+    for (auto it = m_functions.begin(); it != m_functions.end();) {
+        if (*it) {
+            (*it)(shader);
+        }
+        it = m_functions.erase(it);
+    }
+}
+
+void ShaderHandle::add(std::function<void(grr::gShader *)> function) {
+    m_functions.push_back(function);
+}

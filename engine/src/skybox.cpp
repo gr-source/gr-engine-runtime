@@ -37,9 +37,6 @@ void Skybox::Initialize() {
     CreateCube();
 
     AssetsManager::LoadTexture(File::GetAsset("/texture/skybox/industrial_sunset_puresky_1k.hdr", true), &Skybox::SetupTexture);
-
-    
-    // AssetsManager::AddPostLoader(&Skybox::SetupTexture);
 }
 
 void Skybox::Shutdown() {
@@ -197,48 +194,9 @@ void Skybox::UploadShader() {
     );
 }
 
-/*
-bool Skybox::SetupShader(grr::gShader *shader, const std::string &path) {
-    if (shader == m_shader || shader == m_irradianceShader || shader == m_skyShader) {
-        grr::gShader::Bind((grr::gShader *)shader);
-        grr::gShader::Register("projection");
-        grr::gShader::Register("u_texture");
-        grr::gShader::Register("view");
-
-        if (shader == m_skyShader) {
-
-            CubeFramebuffer::Bind(m_cubeColor);
-            GenerateMap([](grm::u32 i) {
-                grr::gFramebufferFlags flags = grr::gFramebufferFlags_Cubemap;
-                switch (i) {
-                    case 0: flags = grr::gFramebufferFlags_Cubemap_Positive_X; break;
-                    case 1: flags = grr::gFramebufferFlags_Cubemap_Negative_X; break;
-                    case 2: flags = grr::gFramebufferFlags_Cubemap_Positive_Y; break;
-                    case 3: flags = grr::gFramebufferFlags_Cubemap_Negative_Y; break;
-                    case 4: flags = grr::gFramebufferFlags_Cubemap_Positive_Z; break;
-                    case 5: flags = grr::gFramebufferFlags_Cubemap_Negative_Z; break;
-                }
-                m_cubeColor->SetTexture(flags);
-            }, m_texture);
-            grr::gShader::Unbind();
-        }
-
-        if (shader == m_shader) {
-        }
-
-        auto isdelete = m_shader->isValid() && m_skyShader->isValid() && m_irradianceShader->isValid();
-
-        return isdelete;
-    }
-
-    return false;
-}
-*/
-
 void Skybox::GenerateMap(std::function<void(grm::u32)> func, grr::gTexture *texture) {
     auto projection = Math::perspective(Math::rad(90.0f), 1.0f, 0.1f, 10.0f);
 
-    // if (texture)
     grr::gTexture::Bind(texture, 0);
     grr::gShader::SetUniform("u_texture", 0);
 

@@ -33,29 +33,34 @@ public:
 
 class ShaderHandle {
 public:
-    ShaderHandle(std::function<void(grr::gShader *)> function, std::string name, std::string frag, std::string vert) : m_name(name), m_frag(frag), m_vert(vert) {
-        if (!function) {
-            return;
-        }
-        m_functions.push_back(function);
-    }
+    ShaderHandle(std::function<void(grr::gShader *)> function, std::string name, std::string frag, std::string vert);
 
-    std::vector<std::function<void(grr::gShader *)>> m_functions;
+    void invoke(grr::gShader *shader);
+
+    void add(std::function<void(grr::gShader *)> function);
 
     std::string m_name;
     
     std::string m_frag;
 
     std::string m_vert;
+
+private:
+    std::vector<std::function<void(grr::gShader *)>> m_functions;
 };
 
 class TextureHandle {
 public:
-    TextureHandle(std::function<void(grr::gTexture *)> function, std::string path) : m_function(function), m_path(path) {}
-
-    std::function<void(grr::gTexture *)> m_function;
-
     std::string m_path;
+
+    TextureHandle(std::function<void(grr::gTexture *)> function, std::string path);
+
+    void invoke(grr::gTexture *texture);
+
+    void add(std::function<void(grr::gTexture *)> function);
+
+private:
+    std::vector<std::function<void(grr::gTexture *)>> m_functions;
 };
 
 class AssetsManager {
@@ -112,6 +117,8 @@ private:
 
     /***************** Texture *****************/
     static std::unordered_map<std::string, std::unique_ptr<grr::gTexture>> m_textureMap;
+    // multithread
+    static std::unordered_map<std::string, TextureHandle *> m_mapHandleTexture;
     static std::list<TextureHandle> m_textureHandle;
     static std::mutex m_mutexTexture;
 

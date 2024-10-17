@@ -60,7 +60,8 @@ void Threadpool::Update() {
         m_task.pop_front();
         lock.unlock();
 
-        task();
+        if (task)
+            task();
 
         lock.lock();
         m_available--;

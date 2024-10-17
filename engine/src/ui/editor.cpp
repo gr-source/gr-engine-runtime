@@ -539,13 +539,9 @@ void Editor::LoadScript() {
     RenderManager::Initialize();
 
     ScreenRender::Initialize();
-
-    // Manager::Replay();
 }
 
 void Editor::UnloadScript() {
-    // Manager::Stop();
-
     RenderManager::Shutdown();
 
     ScreenRender::Shutdown();
@@ -1080,6 +1076,9 @@ void Editor::RenderScene() {
         ImGui::SetCursorPos(ImVec2(curSize.x / 2 - cursorPos.x, cursorY));
 
         if (ImGui::ImageButton(reinterpret_cast<ImTextureID>(s_texturePlayGame->getID()), ImVec2(16, 16))) {
+            for (auto &&[name, scene] : Scene::GetScenes()) {
+                scene->save(File::GetAsset("/scene/"));
+            }
             Threadpool::AddTask(&Editor::BuildScript);
         }
     }
