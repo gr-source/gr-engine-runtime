@@ -5,6 +5,8 @@
 #include <mutex>
 #include <list>
 
+#include "core/string.hpp"
+
 struct LogInfo {
     enum LogType {
         DEFAULT = 0,
@@ -27,6 +29,9 @@ public:
 
     static void Shutdown();
 
+    template <typename ...Args>
+    static void Message(LogInfo::LogType type, const std::string &format, Args &&...args);
+    
 private:
     static std::list<LogInfo> m_logs;
 
@@ -41,4 +46,7 @@ private:
 
 #define LOG_INFO(msg) Console::log(LogInfo::INFO, msg)
 
-
+template <typename... Args>
+inline void Console::Message(LogInfo::LogType type, const std::string &format, Args &&...args) {
+    return log(type, String::format(format, std::forward<Args>(args)...));
+}

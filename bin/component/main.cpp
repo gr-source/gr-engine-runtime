@@ -10,8 +10,8 @@
 std::unordered_map<int, grr::gShader *> shaderList;
 
 void Initialize() {
-    Console::log(LogInfo::LogType::DEFAULT, "KKKKKKKKKKKK");
-    std::cout << "mmmmmmmmmmmmmmm" << std::endl;
+    Console::Message(LogInfo::LogType::DEFAULT, "Initialized: %f - %d", 1.0f, 78);
+    std::cout << "Initialized" << std::endl;
 
     AssetsManager::LoadShader("dynamic_one_model",
         File::GetAsset("/shader/model/dynamic_model.frag"),

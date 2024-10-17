@@ -5,6 +5,7 @@
 
 #include "ui/ImGuiRender.h"
 
+#include "console.hpp"
 #include "settings.h"
 #include "screen.h"
 #include "input.h"
@@ -24,6 +25,7 @@ void EditorController::Initialize() {
     if (!m_io) {
         throw std::runtime_error("IO pointer do not is valid.");
     }
+    Console::Message(LogInfo::ERROR, "Health: %f - %d", 15.5f, 90);
 }
 
 void EditorController::Update() {
