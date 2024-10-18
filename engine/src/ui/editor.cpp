@@ -122,7 +122,7 @@ std::filesystem::path Editor::m_currentPath;
 
 std::filesystem::path Editor::m_SelectedPath;
 
-std::shared_ptr<Config> Editor::m_config;
+std::shared_ptr<Config> Editor::m_config = nullptr;
 
 void Editor::Initialize() {
     m_viewport = ImGui::GetMainViewport();
@@ -137,7 +137,7 @@ void Editor::Initialize() {
     try {
         m_config->load();
     } catch (const std::runtime_error &e) {
-        LOG_WARNIG(e.what());
+        LOG_WARNING(e.what());
     }
 
     bBuildDock = File::Exists("imgui.ini");
@@ -166,6 +166,8 @@ void Editor::Initialize() {
     ScreenRender::Initialize();
 
     Skybox::Initialize();
+
+    LOG_WARNING_ARGS("InitializedMain: %d - %f", 34, 0.5f);
 }
 
 void Editor::Shutdown() {
@@ -192,6 +194,8 @@ void Editor::Shutdown() {
     Console::Shutdown();
 
     iconsUI.clear();
+
+    File::Delete(File::GetTempFile("gr-engine"));
 }
 
 // ===================================== WARNING =========================================================
@@ -937,9 +941,16 @@ void Editor::RenderViewportUI() {
 
         for (auto it = scenes.begin(); it != scenes.end();) {
             auto& [name, scene] = *it;
+
+            ImGuiTabItemFlags flags = ImGuiTabItemFlags_None;
+
+            auto cache_scene = File::GetTempFile("gr-engine/" + name + ".scn.tmp");
+            if (File::Exists(cache_scene)) {
+                flags |= ImGuiTabItemFlags_UnsavedDocument;
+            }
             
             bool isQuit = true;
-            if (ImGui::BeginTabItem(name.c_str(), &isQuit)) {
+            if (ImGui::BeginTabItem(name.c_str(), &isQuit, flags)) {
                 Scene::Use(&(*scene));
                 RenderScene();
                 ImGui::EndTabItem();
@@ -950,9 +961,9 @@ void Editor::RenderViewportUI() {
                 Scene::Use(nullptr);
                 
                 it = scenes.erase(it);
-            } else {
-                ++it;
+                continue;
             }
+            ++it;
         }
 
         if (ImGui::TabItemButton("+")) {
@@ -1038,6 +1049,136 @@ Matrix4x4 InverseMatrix(const Matrix4x4 &matrix) {
     return result;
 }
 
+bool gluInvertMatrix(const float m[16], float invOut[16])
+{
+    double inv[16], det;
+    int i;
+
+    inv[0] = m[5]  * m[10] * m[15] - 
+             m[5]  * m[11] * m[14] - 
+             m[9]  * m[6]  * m[15] + 
+             m[9]  * m[7]  * m[14] +
+             m[13] * m[6]  * m[11] - 
+             m[13] * m[7]  * m[10];
+
+    inv[4] = -m[4]  * m[10] * m[15] + 
+              m[4]  * m[11] * m[14] + 
+              m[8]  * m[6]  * m[15] - 
+              m[8]  * m[7]  * m[14] - 
+              m[12] * m[6]  * m[11] + 
+              m[12] * m[7]  * m[10];
+
+    inv[8] = m[4]  * m[9] * m[15] - 
+             m[4]  * m[11] * m[13] - 
+             m[8]  * m[5] * m[15] + 
+             m[8]  * m[7] * m[13] + 
+             m[12] * m[5] * m[11] - 
+             m[12] * m[7] * m[9];
+
+    inv[12] = -m[4]  * m[9] * m[14] + 
+               m[4]  * m[10] * m[13] +
+               m[8]  * m[5] * m[14] - 
+               m[8]  * m[6] * m[13] - 
+               m[12] * m[5] * m[10] + 
+               m[12] * m[6] * m[9];
+
+    inv[1] = -m[1]  * m[10] * m[15] + 
+              m[1]  * m[11] * m[14] + 
+              m[9]  * m[2] * m[15] - 
+              m[9]  * m[3] * m[14] - 
+              m[13] * m[2] * m[11] + 
+              m[13] * m[3] * m[10];
+
+    inv[5] = m[0]  * m[10] * m[15] - 
+             m[0]  * m[11] * m[14] - 
+             m[8]  * m[2] * m[15] + 
+             m[8]  * m[3] * m[14] + 
+             m[12] * m[2] * m[11] - 
+             m[12] * m[3] * m[10];
+
+    inv[9] = -m[0]  * m[9] * m[15] + 
+              m[0]  * m[11] * m[13] + 
+              m[8]  * m[1] * m[15] - 
+              m[8]  * m[3] * m[13] - 
+              m[12] * m[1] * m[11] + 
+              m[12] * m[3] * m[9];
+
+    inv[13] = m[0]  * m[9] * m[14] - 
+              m[0]  * m[10] * m[13] - 
+              m[8]  * m[1] * m[14] + 
+              m[8]  * m[2] * m[13] + 
+              m[12] * m[1] * m[10] - 
+              m[12] * m[2] * m[9];
+
+    inv[2] = m[1]  * m[6] * m[15] - 
+             m[1]  * m[7] * m[14] - 
+             m[5]  * m[2] * m[15] + 
+             m[5]  * m[3] * m[14] + 
+             m[13] * m[2] * m[7] - 
+             m[13] * m[3] * m[6];
+
+    inv[6] = -m[0]  * m[6] * m[15] + 
+              m[0]  * m[7] * m[14] + 
+              m[4]  * m[2] * m[15] - 
+              m[4]  * m[3] * m[14] - 
+              m[12] * m[2] * m[7] + 
+              m[12] * m[3] * m[6];
+
+    inv[10] = m[0]  * m[5] * m[15] - 
+              m[0]  * m[7] * m[13] - 
+              m[4]  * m[1] * m[15] + 
+              m[4]  * m[3] * m[13] + 
+              m[12] * m[1] * m[7] - 
+              m[12] * m[3] * m[5];
+
+    inv[14] = -m[0]  * m[5] * m[14] + 
+               m[0]  * m[6] * m[13] + 
+               m[4]  * m[1] * m[14] - 
+               m[4]  * m[2] * m[13] - 
+               m[12] * m[1] * m[6] + 
+               m[12] * m[2] * m[5];
+
+    inv[3] = -m[1] * m[6] * m[11] + 
+              m[1] * m[7] * m[10] + 
+              m[5] * m[2] * m[11] - 
+              m[5] * m[3] * m[10] - 
+              m[9] * m[2] * m[7] + 
+              m[9] * m[3] * m[6];
+
+    inv[7] = m[0] * m[6] * m[11] - 
+             m[0] * m[7] * m[10] - 
+             m[4] * m[2] * m[11] + 
+             m[4] * m[3] * m[10] + 
+             m[8] * m[2] * m[7] - 
+             m[8] * m[3] * m[6];
+
+    inv[11] = -m[0] * m[5] * m[11] + 
+               m[0] * m[7] * m[9] + 
+               m[4] * m[1] * m[11] - 
+               m[4] * m[3] * m[9] - 
+               m[8] * m[1] * m[7] + 
+               m[8] * m[3] * m[5];
+
+    inv[15] = m[0] * m[5] * m[10] - 
+              m[0] * m[6] * m[9] - 
+              m[4] * m[1] * m[10] + 
+              m[4] * m[2] * m[9] + 
+              m[8] * m[1] * m[6] - 
+              m[8] * m[2] * m[5];
+
+    det = m[0] * inv[0] + m[1] * inv[4] + m[2] * inv[8] + m[3] * inv[12];
+
+    if (det == 0)
+        return false;
+
+    det = 1.0 / det;
+
+    for (i = 0; i < 16; i++)
+        invOut[i] = inv[i] * det;
+
+    return true;
+}
+
 void Editor::RenderScene() {
     auto cursorY = ImGui::GetCursorPosY();
     cursorY += 5.0f;
@@ -1110,21 +1251,25 @@ void Editor::RenderScene() {
         auto camera = Camera::Current();
 
         if (camera && ImGuizmo::Manipulate(camera->getViewmatrix().data, camera->getPerspesctive().data, m_guizmoOperation, m_guizmoManipulate, globalMatrix.data)) {
-            // auto localMatrix = globalMatrix;
-            // if (transform.hasParent()) {
-            //     auto inverseParent = InverseMatrix(transform.getParent()->getGlobalMatrix());
+            auto localMatrix = globalMatrix;
+            if (transform.hasParent()) {
+                auto parentMat = transform.getParent()->getGlobalMatrix();
+                Matrix4x4 m;
+                if (gluInvertMatrix(parentMat.data, m.data))
+                    localMatrix = m * localMatrix;
 
-            //     localMatrix = inverseParent * localMatrix;
-            //     // localMatrix = localMatrix.transpose();
+                // localMatrix = localMatrix.transpose();
+            }
+            // if (gluInvertMatrix(localMatrix.data, )) {
+                Vector3 s;
+                Quaternion r;
+                Vector3 t;
+                localMatrix.decompose(s, r, t);
+
+                transform.setLocalScale(s);
+                transform.setLocalRotation(r);
+                transform.setLocalPosition(t);
             // }
-            Vector3 s;
-            Quaternion r;
-            Vector3 t;
-            globalMatrix.decompose(s, r, t);
-
-            transform.setLocalScale(s);
-            transform.setLocalRotation(r);
-            transform.setLocalPosition(t);
         }
     }
 
@@ -1559,7 +1704,7 @@ void Editor::ConfigureVSCode() {
     os << source << std::endl;
     os.close();
 
-    LOG_WARNIG("Visual Studio Code has been configured.");
+    LOG_WARNING("Visual Studio Code has been configured.");
 }
 
 void Editor::RenderPropertiUI() {
@@ -2242,7 +2387,7 @@ void Editor::PostBuildScriptFromProject() {
         };
         
         Command::exec(cmd, [](std::string line) {
-            LOG_WARNIG(line);
+            LOG_WARNING(line);
         });
     });
 }
@@ -2301,7 +2446,7 @@ void Editor::CompileScript(std::string path, std::function<void()> func) {
     };
 
     Command::exec(command, [](std::string line) {
-        LOG_WARNIG(line);
+        LOG_WARNING(line);
     });
 
     if (func)

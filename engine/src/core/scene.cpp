@@ -62,7 +62,7 @@ Scene *Scene::Create(const std::string &name) {
         auto &camera = it-> second->CreateGameObject("MainCamera");
         camera.addComponent<Camera>();
     } catch (std::runtime_error e) {
-        LOG_ERROR("[ SCENE ] Falha ao adiconar uma camera na cena: " + std::string(e.what()));
+        LOG_ERROR_ARGS("[ SCENE ] Falha ao adiconar uma camera na cena: %s", e.what());
     }
     
     return &(*it->second);
@@ -106,7 +106,7 @@ void Scene::save(const std::string &path) {
     }
 
     if (auto err = writeScene(&stream) != 0) {
-        return LOG_ERROR("[ SCENE ] Failed to write scene segment: " + std::to_string(err));
+        return LOG_ERROR_ARGS("[ SCENE ] Failed to write scene segment: %d", err);
     }
 
     gStructData end{gHeaderType_None, 0};
@@ -114,7 +114,7 @@ void Scene::save(const std::string &path) {
         return LOG_ERROR("[ Scene ] Failed to write scene: 1");
     }
 
-    LOG_INFO("[ Scene ] Scene saved: " + m_name);
+    LOG_INFO_ARGS("[ Scene ] Scene saved: %s", m_name.c_str());
 }
 
 GameObject &Scene::CreateGameObject(const std::string &name, const std::string &tag) {
@@ -161,7 +161,12 @@ void Scene::DestroyObjects() {
         return;
     }
 
-    scene->save(File::GetTempFile(scene->getName() + ".scn.tmp"));
+    auto temp_dir = File::GetTempFile("gr-engine/");
+    if (!File::Exists(temp_dir)) {
+        File::CreateDirectory(temp_dir);
+    }
+
+    scene->save(temp_dir + scene->getName() + ".scn.tmp");
 
     auto &objectList = scene->getObjectList();
     for (auto it = objectList.begin();it != objectList.end();) {
@@ -179,7 +184,11 @@ void Scene::ReloadObjects() {
         return;
     }
 
-    scene->load(File::GetTempFile(scene->getName() + ".scn.tmp"), LoadFlags_Object | LoadFlags_Script);
+    auto temp_dir = File::GetTempFile("gr-engine/");
+    if (!File::Exists(temp_dir)) {
+        return;
+    }
+    scene->load(temp_dir + scene->getName() + ".scn.tmp", LoadFlags_Object | LoadFlags_Script);
 }
 
 bool Scene::load(const std::string &path, std::uint8_t flags) {
@@ -451,11 +460,13 @@ int Scene::writeGameObject(Streaming *streaming, GameObject *gameObject) {
 int Scene::readObject(Streaming *streaming) {
     // Objects node
     std::size_t objectCount;
-    if (!streaming->readS(&objectCount, 1)) {
-        return 1;
+    int result = 0;
+
+    result = streaming->readS(&objectCount, 1) ? 0 : 1;
+    if (result != 0) {
+        return result;
     }
 
-    int result = 0;
     for (auto i=0;i<objectCount;i++) {
         result = readNode(streaming);
         if (result != 0) {
@@ -468,20 +479,27 @@ int Scene::readObject(Streaming *streaming) {
 
 int Scene::readTexture(Streaming *streaming) {
     std::size_t size = 0;
-    if (!streaming->readS(&size, 1)) {
-        return 2;
+    int result = 0;
+
+    result = streaming->readS(&size, 1) ? 0 : 1;
+    if (result != 0) {
+        return result;
     }
 
     std::vector<std::string> pathList(size);
     for (auto &path : pathList) {
         std::size_t size;
-        if (!streaming->readS(&size, 1)) {
-            return 3;
+
+        result = streaming->readS(&size, 1) ? 0 : 2;
+        if (result != 0) {
+            break;
         }
 
         path.resize(size, '\0');
-        if (!streaming->readS(path.data(), size)) {
-            return 4;
+
+        result = streaming->readS(path.data(), size) ? 0 : 3;
+        if (result != 0) {
+            break;
         }
     }
     
@@ -565,40 +583,44 @@ int Scene::readScript(Streaming *streaming) {
 
 int Scene::readNode(Streaming *streaming, Transform *parent) {
     std::size_t nSize;
-    if (!streaming->readS(&nSize, 1)) {
-        return 1;
+    int result = 0;
+    
+    result = streaming->readS(&nSize, 1) ? 0 : 1;
+    if (result != 0) {
+        return result;
     }
 
     std::string name(nSize, '\0');
-    if (!streaming->readS(name.data(), nSize)) {
-        return 2;
+    result = streaming->readS(name.data(), nSize) ? 0 : 2;
+    if (result != 0) {
+        return result;
     }
 
     name = String::RemoveNumber(name);
 
     std::size_t tSize;
-    if (!streaming->readS(&tSize, 1)) {
-        return 3;
+    result = streaming->readS(&tSize, 1) ? 0 : 3;
+    if (result != 0) {
+        return result;
     }
 
     std::string tag(tSize, '\0');
-    if (!streaming->readS(tag.data(),  tSize)) {
-        return 4;
+    result = streaming->readS(tag.data(),  tSize) ? 0 : 4;
+    if (result != 0) {
+        return result;
     }
 
     bool active = true;
     bool enable = true;
-    if (!streaming->readS(&active,  1)) {
-        return 5;
-    }
-    if (!streaming->readS(&enable,  1)) {
-        return 6;
+    result = streaming->readS(&active,  1) ? 0 : 5;
+    if (result != 0) {
+        return result;
     }
 
-    // std::size_t cSize;
-    // if (!streaming->readS(&cSize, 1)) {
-    //     return 7;
-    // }
+    result = streaming->readS(&enable,  1) ? 0 : 6;
+    if (result != 0) {
+        return result;
+    }
 
     auto &gameObject = parent == nullptr ? CreateGameObject(name, tag) : GameObject::Create(name, tag);
     gameObject.setActive(active);
@@ -607,48 +629,12 @@ int Scene::readNode(Streaming *streaming, Transform *parent) {
     auto &transform = gameObject.getTransform();
     transform.setParent(parent);
 
-    auto entt = gameObject.getEntity();
-
-    // for (std::size_t j=0;j<cSize;j++) {
-        // if (!streaming->readS(&nSize, 1)) {
-        //     return 8;
-        // }
-
-        // name = std::string(nSize, '\0');
-        // if (!streaming->readS(name.data(), nSize)) {
-        //     return 9;
-        // }
-
-        // Component *component = nullptr;
-        // try {
-        //     component = entt->hasComponent(name) ? entt->getComponent(name) : entt->addComponent(name);
-        // } catch (const std::exception &e) {
-        //     LOG_ERROR("[ Scene ] " + std::string(e.what()));
-        //     continue;
-        // }
-        
-        // auto path = File::GetFile("/.build/temp");
-        // if (!File::Exists(path)) {
-        //     File::CreateDirectory(path);
-        // }
-
-        // std::string filename = gameObject.getName() + name;
-
-        // try {
-        //     Streaming s(path + "/" + std::to_string(hash(filename)) + ".dat", std::ios_base::in | std::ios_base::binary);
-        //     if (s.is_open())
-        //         component->Deserialize(s);
-        // } catch (const std::exception &e) {
-        //     LOG_ERROR("[ LoadScene ] Faltal error: " + std::string(e.what()));
-        // }
-    // }
-
     std::size_t cSize = 0;
-    if (!streaming->readS(&cSize, 1)) {
-        return 10;
+    result = streaming->readS(&cSize, 1) ? 0 : 7;
+    if (result != 0) {
+        return result;
     }
 
-    int result = 0;
     for (int i=0;i<cSize;i++) {
         result = readNode(streaming, &transform);
         if (result != 0) {

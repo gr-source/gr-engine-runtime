@@ -141,3 +141,13 @@ std::string File::GetError() {
 std::string File::GetTempFile(const std::string &path) {
     return std::filesystem::temp_directory_path().string() + "/" + path;
 }
+
+#include <sys/stat.h>
+
+std::time_t File::GetFileLastModification(const std::string &path) {
+    struct stat status;
+    if (stat(path.c_str(), &status) == -1) {
+        return 0;
+    }
+    return status.st_mtime;
+}

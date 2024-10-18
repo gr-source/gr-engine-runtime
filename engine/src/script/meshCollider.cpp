@@ -10,7 +10,7 @@
 
 void MeshCollider::build(Mesh *mesh) {
     if (!mesh) {
-        return LOG_ERROR("[ MeshCollider ] Game object do not has mesh.");;
+        return LOG_ERROR("[ MeshCollider ] Game object do not has mesh.");
     }
 
     auto &transform = entity->getComponent<Transform>();

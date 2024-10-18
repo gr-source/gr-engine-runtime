@@ -40,11 +40,18 @@ private:
     static int m_maxLog;
 };
 
-#define LOG_WARNIG(msg) Console::log(LogInfo::WARNING, msg)
+#define LOG_WARNING_ARGS(fmt, args...) Console::Message(LogInfo::WARNING, fmt, args)
+
+#define LOG_WARNING(msg) Console::log(LogInfo::WARNING, msg)
+
+#define LOG_ERROR_ARGS(fmt, args...) Console::Message(LogInfo::ERROR, fmt, args)
 
 #define LOG_ERROR(msg) Console::log(LogInfo::ERROR, msg)
 
+#define LOG_INFO_ARGS(fmt, args...) Console::Message(LogInfo::INFO, fmt, args)
+
 #define LOG_INFO(msg) Console::log(LogInfo::INFO, msg)
+
 
 template <typename... Args>
 inline void Console::Message(LogInfo::LogType type, const std::string &format, Args &&...args) {

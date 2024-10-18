@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <string>
+#include <ctime>
 
 class File {
 public:
@@ -44,6 +45,8 @@ public:
     static std::string GetError();
 
     static std::string GetTempFile(const std::string &path);
+
+    static std::time_t GetFileLastModification(const std::string &path);
     
 private:
     static std::string m_currentPath;
