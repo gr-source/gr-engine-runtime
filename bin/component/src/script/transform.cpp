@@ -2,6 +2,8 @@
 
 #include "ecs/gameObject.hpp"
 
+#include "core/stream.hpp"
+
 #include <algorithm>
 
 Transform::Transform() : m_scale(Vector3::one), m_rotation(Quaternion::identity), m_position(Vector3::zero), m_parent(nullptr), m_localMatrix(Matrix4x4::identityMatrix), m_globalMatrix(Matrix4x4::identityMatrix) {}
@@ -132,17 +134,17 @@ void Transform::updateGlobalMatrix() {
     }
 }
 
-std::ostream &Transform::Serialize(std::ostream &os) {
-    os.write(reinterpret_cast<const char *>(&m_scale), sizeof(Vector3));
-    os.write(reinterpret_cast<const char *>(&m_rotation), sizeof(Quaternion));
-    os.write(reinterpret_cast<const char *>(&m_position), sizeof(Vector3));
-    return os;
+bool Transform::Serialize(Stream *stream) {
+    stream->write(reinterpret_cast<const char *>(&m_scale), sizeof(Vector3));
+    stream->write(reinterpret_cast<const char *>(&m_rotation), sizeof(Quaternion));
+    stream->write(reinterpret_cast<const char *>(&m_position), sizeof(Vector3));
+    return true;
 }
 
-std::istream &Transform::Deserialize(std::istream &is) {
-    is.read(reinterpret_cast<char *>(&m_scale), sizeof(Vector3));
-    is.read(reinterpret_cast<char *>(&m_rotation), sizeof(Quaternion));
-    is.read(reinterpret_cast<char *>(&m_position), sizeof(Vector3));
+bool Transform::Deserialize(Stream *stream) {
+    stream->read(reinterpret_cast<char *>(&m_scale), sizeof(Vector3));
+    stream->read(reinterpret_cast<char *>(&m_rotation), sizeof(Quaternion));
+    stream->read(reinterpret_cast<char *>(&m_position), sizeof(Vector3));
     updateLocalMatrix();
-    return is;
+    return true;
 }

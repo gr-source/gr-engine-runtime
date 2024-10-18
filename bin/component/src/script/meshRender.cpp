@@ -10,6 +10,7 @@
 #include "ecs/gameObject.hpp"
 
 #include "core/assetsManager.hpp"
+#include "core/stream.hpp"
 
 MeshRender::MeshRender() : m_batched(nullptr), flags(Batching::Batching_Flags_Dynamic), m_transform(nullptr) {}
 
@@ -59,44 +60,44 @@ void MeshRender::Disable() {
     m_batched->remove(&GetComponent<Transform>(), false);
 }
 
-std::ostream &MeshRender::Serialize(std::ostream &os) {
+bool MeshRender::Serialize(Stream *stream) {
     bool hasMaterial = !m_materials.empty();
 
-    os.write(reinterpret_cast<const char *>(&hasMaterial), sizeof(bool));
+    stream->write(reinterpret_cast<const char *>(&hasMaterial), sizeof(bool));
 
     if (!hasMaterial) {
-        return os;
+        return true;
     }
 
     auto size = m_materials.size();
-    os.write(reinterpret_cast<const char *>(&size), sizeof(std::size_t));
+    stream->write(reinterpret_cast<const char *>(&size), sizeof(std::size_t));
 
     for (auto &material : m_materials) {
-        material->serialize(os);
+        material->serialize(stream);
     }
-    return os;
+    return true;
 }
 
-std::istream &MeshRender::Deserialize(std::istream &is) {
+bool MeshRender::Deserialize(Stream *stream) {
     bool hasMaterial;
 
-    is.read(reinterpret_cast<char *>(&hasMaterial), sizeof(bool));
+    stream->read(reinterpret_cast<char *>(&hasMaterial), sizeof(bool));
 
     if (!hasMaterial) {
-        return is;
+        return true;
     }
     
     std::size_t size;
-    is.read(reinterpret_cast<char *>(&size), sizeof(std::size_t));
+    stream->read(reinterpret_cast<char *>(&size), sizeof(std::size_t));
 
     m_materials.clear();
     m_materials.resize(size, std::make_unique<Material>());
 
     for (auto &material : m_materials) {
-        material->deserialize(is);
+        material->deserialize(stream);
     }
 
     build();
 
-    return is;
+    return true;
 }

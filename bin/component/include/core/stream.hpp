@@ -2,47 +2,19 @@
 
 #include <fstream>
 #include <string>
+#include <vector>
+#include <tuple>
 
-class Stream {
+class Stream : private std::fstream {
 public:
-	
-	static const bool open(const std::string& path, std::ios_base::openmode mode);
-	
-	template <typename T>
-	static std::istream& read(T* data, std::streamsize count);
-	
-	template <typename T>
-	static T read(std::streamsize count);
-	
-	template <typename T>
-	static void write(const T* data, std::streamsize count);
+	Stream(const std::string &path, std::ios_base::openmode mode = std::ios_base::in | std::ios_base::out | std::ios_base::binary);
+	Stream(const std::string &path);
 
-	static void seekg(std::streampos position);
+	bool write(const void *data, std::size_t size);
 
-	static std::istream& getline(std::string& line);
-	
-	static std::streampos tellg();
-	
-	static void close();
-	
-	static std::fstream stream;
+	bool read(void *data, std::size_t size);
+
+private:
+	std::vector<std::tuple<void *, std::streamsize>> m_data;
 };
-
-template <typename T>
-inline std::istream& Stream::read(T* data, std::streamsize count) {
-	return stream.read(reinterpret_cast<char*>(data), sizeof(T) * count);
-}
-	
-template <typename T>
-inline T Stream::read(std::streamsize count) {
-	T data;
-	stream.read(reinterpret_cast<char*>(&data), sizeof(T) * count);
-	return data;
-}
-	
-template <typename T>
-inline void Stream::write(const T* data, std::streamsize count) {
-	stream.write(reinterpret_cast<const char*>(data), sizeof(T) * count);
-}
-
 

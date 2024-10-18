@@ -28,9 +28,9 @@ public:
 
     void Disable() override;
     
-    std::ostream &Serialize(std::ostream &os) override;
+    bool Serialize(Stream *stream) override;
 
-    std::istream &Deserialize(std::istream &is) override;
+    bool Deserialize(Stream *stream) override;
 
 private:
     std::vector<std::shared_ptr<Material>> m_materials;

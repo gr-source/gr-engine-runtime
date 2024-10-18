@@ -8,15 +8,17 @@
 enum gHeaderType : int {
     gHeaderType_None    = 0,
     gHeaderType_Texture = 1,
-    gHeaderType_Mesh = 2,
+    gHeaderType_Mesh    = 2,
     gHeaderType_Object  = 3,
+    gHeaderType_Script  = 4,
 };
 
-inline const char *struct_name[4] = {
+inline const char *struct_name[5] = {
     "None",
     "Texture",
     "Mesh",
     "Object",
+    "Script",
 };
 
 struct gHeader {

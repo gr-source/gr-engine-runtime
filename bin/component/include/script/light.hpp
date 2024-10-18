@@ -25,9 +25,9 @@ public:
 
     void Disable() override;
 
-    std::ostream &Serialize(std::ostream &os) override;
+    bool Serialize(Stream *stream) override;
 
-    std::istream &Deserialize(std::istream &is) override;
+    bool Deserialize(Stream *stream) override;
 
 private:
     int m_type;

@@ -10,32 +10,32 @@
 std::unordered_map<int, grr::gShader *> shaderList;
 
 void Initialize() {
-    Console::Message(LogInfo::LogType::DEFAULT, "Initialized: %f - %d", 1.0f, 78);
-    std::cout << "Initialized" << std::endl;
+    Console::Message(LogInfo::LogType::DEFAULT, "Update 2: %f - %d", 1.5f, 80);
+    std::cout << "Update 2" << std::endl;
 
     AssetsManager::LoadShader("dynamic_one_model",
-        File::GetAsset("shader/model/dynamic_model.frag"),
-        File::GetAsset("shader/model/dynamic_one_model.vert")
+        File::GetAsset("/shader/model/dynamic_model.frag"),
+        File::GetAsset("/shader/model/dynamic_one_model.vert")
     );
     
     AssetsManager::LoadShader("dynamic_anim",
-        File::GetAsset("shader/model/dynamic_model.frag"),
-        File::GetAsset("shader/model/dynamic_model_anim.vert")
+        File::GetAsset("/shader/model/dynamic_model.frag"),
+        File::GetAsset("/shader/model/dynamic_model_anim.vert")
     );
     
     AssetsManager::LoadShader("dynamic_multi_model",
-        File::GetAsset("shader/model/dynamic_model.frag"),
-        File::GetAsset("shader/model/dynamic_multi_model.vert")
+        File::GetAsset("/shader/model/dynamic_model.frag"),
+        File::GetAsset("/shader/model/dynamic_multi_model.vert")
     );
     
     AssetsManager::LoadShader("static_multi_model",
-        File::GetAsset("shader/model/dynamic_model.frag"),
-        File::GetAsset("shader/model/static_multi_model.vert")
+        File::GetAsset("/shader/model/dynamic_model.frag"),
+        File::GetAsset("/shader/model/static_multi_model.vert")
     );
     
     AssetsManager::LoadShader("screen",
-        File::GetAsset("shader/screen.frag"),
-        File::GetAsset("shader/screen.vert")
+        File::GetAsset("/shader/screen.frag"),
+        File::GetAsset("/shader/screen.vert")
     );
 }
 

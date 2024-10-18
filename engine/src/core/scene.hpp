@@ -58,6 +58,8 @@ private:
 
     static Scene *m_current;
 
+    std::vector<std::tuple<std::string, std::string, Component *>> m_componentCache; 
+
     std::vector<GameObject *> s_objects;
 
     std::string m_name;
@@ -69,10 +71,11 @@ private:
     enum LoadFlags : std::uint8_t {
         LoadFlags_Mesh    = 1 << 1,
         LoadFlags_Object  = 1 << 2,
-        LoadFlags_Texture = 1 << 3
+        LoadFlags_Texture = 1 << 3,
+        LoadFlags_Script  = 1 << 4,
     };
 
-    void load(const std::string &path, std::uint8_t flags = LoadFlags_Mesh | LoadFlags_Object | LoadFlags_Texture);
+    bool load(const std::string &path, std::uint8_t flags = LoadFlags_Mesh | LoadFlags_Object | LoadFlags_Texture | LoadFlags_Script);
 
     void setEnable(bool value);
 
@@ -80,19 +83,23 @@ private:
 
     int writeScene(Streaming *streaming);
 
-    int writeObject(Streaming *streaming);
+    int writeTexture(Streaming *streaming);
 
     int writeMesh(Streaming *streaming);
 
-    int writeTexture(Streaming *streaming);
+    int writeObject(Streaming *streaming);
 
-    static void WriteGameObject(Streaming *streaming, GameObject *gameObject);
+    int writeScript(Streaming *streaming);
+
+    int writeGameObject(Streaming *streaming, GameObject *gameObject);
 
     int readObject(Streaming *streaming);
 
     int readTexture(Streaming *streaming);
 
     int readMesh(Streaming *streaming);
+
+    int readScript(Streaming *streaming);
 
     int readNode(Streaming *streaming, Transform *parent = nullptr);
 

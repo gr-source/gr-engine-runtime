@@ -25,3 +25,7 @@ inline std::string StringUTF::format(const std::string &fmt, Args &&...args) {
     snprintf(buffer.data(), buffer.size() + 1, fmt.c_str(), std::forward<Args>(args)...);
     return buffer;
 }
+
+
+
+

@@ -4,6 +4,8 @@
 
 #include <gr-render/gRender.h>
 
+class Streaming;
+
 class Material {
 public:
     Material(const std::string& name = "Material", const Color& albedo = Color::black, float metallic = 0.5f, float roughness = 0.5f, float ao = 0.5f);
@@ -30,9 +32,9 @@ public:
 
     grr::gTexture *getTexture(int idx) const;
 
-    void serialize(std::ostream &os) const;
+    void serialize(Streaming *stream) const;
 
-    void deserialize(std::istream &is);
+    void deserialize(Streaming *stream);
 
 private:
     std::string m_name;

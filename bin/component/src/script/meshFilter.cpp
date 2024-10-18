@@ -1,6 +1,7 @@
 #include "script/meshFilter.hpp"
 
 #include "core/assetsManager.hpp"
+#include "core/stream.hpp"
 
 MeshFilter::MeshFilter() : m_sharedMesh(nullptr) { }
 
@@ -26,36 +27,36 @@ Boundbox &MeshFilter::getBoundbox() {
     return m_boundbox;
 }
 
-std::ostream &MeshFilter::Serialize(std::ostream &os) {
+bool MeshFilter::Serialize(Stream *stream) {
     bool hasMesh = m_sharedMesh != nullptr;
-    os.write(reinterpret_cast<const char *>(&hasMesh), sizeof(bool));
+    stream->write(reinterpret_cast<const void *>(&hasMesh), sizeof(bool));
 
     if (!hasMesh) {
-        return os;
+        return true;
     }
     auto &name = m_sharedMesh->getName();
 
     auto nSize = name.size();
-    os.write(reinterpret_cast<const char *>(&nSize), sizeof(std::size_t));
-    os.write(name.data(), nSize);
-    return os;
+    stream->write(reinterpret_cast<const char *>(&nSize), sizeof(std::size_t));
+    stream->write(name.data(), nSize);
+    return true;
 }
 
-std::istream &MeshFilter::Deserialize(std::istream &is) {
+bool MeshFilter::Deserialize(Stream *stream) {
     bool hasMesh;
-    is.read(reinterpret_cast<char *>(&hasMesh), sizeof(bool));
+    stream->read(reinterpret_cast<char *>(&hasMesh), sizeof(bool));
 
     if (!hasMesh) {
-        return is;
+        return true;
     }
 
     std::size_t nSize;
-    is.read(reinterpret_cast<char *>(&nSize), sizeof(std::size_t));
+    stream->read(reinterpret_cast<char *>(&nSize), sizeof(std::size_t));
 
     std::string name(nSize, '\0');
-    is.read(name.data(), nSize);
+    stream->read(name.data(), nSize);
 
     m_sharedMesh = AssetsManager::FindMesh(name);
 
-    return is;
+    return true;
 }

@@ -13,11 +13,11 @@ void Material::setTexture(int idx, grr::gTexture *texture) {
     m_texture[idx] = texture;
 }
 
-void Material::serialize(std::ostream &os) const {
+void Material::serialize(Stream *stream) const {
     throw std::runtime_error("function do not implemented.");
 }
 
-void Material::deserialize(std::istream &is) {
+void Material::deserialize(Stream *stream) {
     throw std::runtime_error("function do not implemented.");
 }
 

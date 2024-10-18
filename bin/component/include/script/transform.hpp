@@ -49,9 +49,9 @@ public:
 
     Transform *getChildren(const std::string &name);
     
-    std::ostream &Serialize(std::ostream &os) override;
+    bool Serialize(Stream *stream) override;
 
-    std::istream &Deserialize(std::istream &is) override;
+    bool Deserialize(Stream *stream) override;
     
 private:
     Vector3 m_scale;

@@ -138,8 +138,8 @@ void (*GameObjectDestroy)(GameObject *);
 
 std::string (*FileGetFile)(const std::string &, bool);
 
-void (*Materialserialize)(std::ostream &);
-void (*Materialdeserialize)(std::istream &);
+const void (*Materialserialize)(Streaming *);
+void (*Materialdeserialize)(Streaming *);
 
 void (*MeshColliderbuild)(Mesh *);
 
@@ -216,8 +216,8 @@ void ScriptManager::RegisterApi() {
     // m_script->replaceLibraryField("_ZN4Time9deltaTimeE", reinterpret_cast<void *>(&TimeLast::deltaTime));
 
     // Material
-    m_script->replaceLibraryFunction("_ZNK8Material9serializeERSo", (void *)&Material::serialize, (void **)&Materialserialize);
-    m_script->replaceLibraryFunction("_ZN8Material11deserializeERSi", (void *)&Material::deserialize, (void **)&Materialdeserialize);
+    m_script->replaceLibraryFunction("_ZNK8Material9serializeEP6Stream", (void *)&Material::serialize, (void **)&Materialserialize);
+    m_script->replaceLibraryFunction("_ZN8Material11deserializeEP6Stream", (void *)&Material::deserialize, (void **)&Materialdeserialize);
 
     // MeshCollider
     m_script->replaceLibraryFunction("_ZN12MeshCollider5buildEP4Mesh", (void *)&MeshCollider::build, (void **)&MeshColliderbuild);

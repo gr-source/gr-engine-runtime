@@ -7,6 +7,7 @@
 
 class GameObject;
 class Entity;
+class Streaming;
 
 class Component {
 public:
@@ -22,9 +23,9 @@ public:
 
     virtual void Disable() {}
 
-    virtual std::ostream &Serialize(std::ostream &os) { return os; }
+    virtual bool Serialize(Streaming *streaming) { return false; }
 
-    virtual std::istream &Deserialize(std::istream &is) { return is; }
+    virtual bool Deserialize(Streaming *streaming) { return false; }
 
     virtual ~Component() {}
     

@@ -3,6 +3,7 @@
 #include <gr-math/gmath.h>
 
 class GameObject;
+class Stream;
 class Entity;
 
 class Component {
@@ -19,9 +20,9 @@ public:
 
     virtual void Disable() {}
 
-    virtual std::ostream &Serialize(std::ostream &os) { return os; }
+    virtual bool Serialize(Stream *stream) { return false; }
 
-    virtual std::istream &Deserialize(std::istream &is) { return is; }
+    virtual bool Deserialize(Stream *stream) { return false; }
 
     virtual ~Component() {}
     
