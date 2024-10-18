@@ -4,6 +4,7 @@
 
 #include "geometry/material.h"
 
+#include <condition_variable>
 #include <list>
 
 class Streaming;
@@ -24,7 +25,7 @@ public:
 
     static Scene *Create(const std::string &name);
 
-    static Scene *LoadScene(const std::string &path);
+    static void LoadScene(const std::string &path);
 
     Scene(const std::string &name);
     ~Scene();
@@ -56,6 +57,8 @@ private:
 
     static std::hash<std::string> hash;
 
+    static std::mutex m_mutex;
+
     static Scene *m_current;
 
     std::vector<std::tuple<std::string, std::string, Component *>> m_componentCache; 
@@ -75,7 +78,7 @@ private:
         LoadFlags_Script  = 1 << 4,
     };
 
-    bool load(const std::string &path, std::uint8_t flags = LoadFlags_Mesh | LoadFlags_Object | LoadFlags_Texture | LoadFlags_Script);
+    static void Load(const std::string &path, std::uint8_t flags = LoadFlags_Mesh | LoadFlags_Object | LoadFlags_Texture | LoadFlags_Script, Scene *scene = nullptr);
 
     void setEnable(bool value);
 
@@ -93,15 +96,21 @@ private:
 
     int writeGameObject(Streaming *streaming, GameObject *gameObject);
 
-    int readObject(Streaming *streaming);
+    static int readObject(Streaming *streaming, Scene *scene);
 
-    int readTexture(Streaming *streaming);
+    static int readTexture(Streaming *streaming);
 
-    int readMesh(Streaming *streaming);
+    static int readMesh(Streaming *streaming);
 
-    int readScript(Streaming *streaming);
+    static int readScript(Streaming *streaming);
 
-    int readNode(Streaming *streaming, Transform *parent = nullptr);
+    static int readNode(Streaming *streaming, Scene *scene, Transform *parent = nullptr);
 
     void remove(GameObject *gameObject);
+
+    static void SetupScene(Scene *scene);
+
+    static void SetupScript(std::string objectName, std::string name, std::condition_variable &cv, Component *&component);
+
+    static void ProcessScript(std::condition_variable &cv, Component *&component, Streaming *streaming);
 };

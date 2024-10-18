@@ -153,7 +153,9 @@ private:
 
     static void PopupCreateDirectory();
 
-    static void RenderConsoleUI();
+    static void RenderOtherUI();
+
+    static void RenderConsoleWindow();
 
     static void RenderConsole();
 

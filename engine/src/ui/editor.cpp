@@ -565,7 +565,9 @@ void Editor::RenderUI() {
 
     RenderScenesUI();
 
-    RenderConsoleUI();
+    RenderOtherUI();
+
+    RenderConsoleWindow();
 
     RenderPropertiUI();
 
@@ -589,7 +591,8 @@ void Editor::BuildDock(ImGuiID dockspace_id, ImGuiDockNodeFlags dockspace_flags)
 	auto dock_id_down = ImGui::DockBuilderSplitNode(dockspace_id, ImGuiDir_Down, 0.25f, nullptr, &dockspace_id);
 	auto dock_id_left = ImGui::DockBuilderSplitNode(dockspace_id, ImGuiDir_Left, 0.2f, nullptr, &dockspace_id);
 	auto dock_id_right = ImGui::DockBuilderSplitNode(dockspace_id, ImGuiDir_Right, 0.15f, nullptr, &dockspace_id);
-	auto dock_id_left_down = ImGui::DockBuilderSplitNode(dock_id_left, ImGuiDir_Down, 0.2f, nullptr, &dock_id_left);
+	auto dock_id_left_down = ImGui::DockBuilderSplitNode(dock_id_down, ImGuiDir_Down, 0.2f, nullptr, &dock_id_down);
+	auto dock_id_left_down_right = ImGui::DockBuilderSplitNode(dock_id_left_down, ImGuiDir_Right, 0.2f, nullptr, &dock_id_left_down);
 
     // Right
 	ImGui::DockBuilderDockWindow("Propriedades", dock_id_right);
@@ -597,6 +600,7 @@ void Editor::BuildDock(ImGuiID dockspace_id, ImGuiDockNodeFlags dockspace_flags)
     // Left
 	ImGui::DockBuilderDockWindow("Cenario", dock_id_left);
 	ImGui::DockBuilderDockWindow("Navegador", dock_id_left_down);
+	ImGui::DockBuilderDockWindow("Console", dock_id_left_down_right);
 
 	ImGui::DockBuilderDockWindow("Viewport", dockspace_id);
 
@@ -1049,8 +1053,7 @@ Matrix4x4 InverseMatrix(const Matrix4x4 &matrix) {
     return result;
 }
 
-bool gluInvertMatrix(const float m[16], float invOut[16])
-{
+bool gluInvertMatrix(const float m[16], float invOut[16]) {
     double inv[16], det;
     int i;
 
@@ -1578,7 +1581,7 @@ void Editor::PopupCreateDirectory() {
     ImGui::EndPopup();
 }
 
-void Editor::RenderConsoleUI() {
+void Editor::RenderOtherUI() {
     static NavegationFlags flags = NavegationFlags_console;
 
     ImGui::Begin("Navegador", nullptr, ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_AlwaysHorizontalScrollbar | ImGuiWindowFlags_AlwaysAutoResize);
@@ -1603,10 +1606,16 @@ void Editor::RenderConsoleUI() {
     if (flags & NavegationFlags_models) {
     }
 
-    if (flags & NavegationFlags_console) {
-        RenderConsole();
-    }
+    // if (flags & NavegationFlags_console) {
+    //     RenderConsole();
+    // }
 
+    ImGui::End();
+}
+
+void Editor::RenderConsoleWindow() {
+    ImGui::Begin("Console");
+    RenderConsole();
     ImGui::End();
 }
 

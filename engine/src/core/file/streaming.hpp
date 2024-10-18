@@ -9,6 +9,7 @@
 class Streaming : private std::fstream {
 public:
     Streaming(const std::string &path, std::ios_base::openmode mode = std::ios_base::in | std::ios_base::out | std::ios_base::binary);
+    Streaming();
     ~Streaming() override;
 
     template <typename T>
@@ -31,6 +32,7 @@ public:
 
     std::istream &seekg(std::streamoff position, std::ios_base::seekdir mode);
     
+    void clear();
 private:
     std::vector<std::tuple<void *, std::streamsize>> m_data;
 };

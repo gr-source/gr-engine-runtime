@@ -2,6 +2,8 @@
 
 Streaming::Streaming(const std::string &path, std::ios_base::openmode mode) : std::fstream(path, mode) {}
 
+Streaming::Streaming() : std::fstream() { }
+
 Streaming::~Streaming() {
     close();
 }
@@ -55,4 +57,11 @@ std::streampos Streaming::tellg() {
 
 std::istream &Streaming::seekg(std::streamoff position, std::ios_base::seekdir mode) {
     return std::fstream::seekg(position, mode);
+}
+
+void Streaming::clear() {
+    for (auto &&[data, size] : m_data) {
+        std::free(data);
+    }
+    m_data.clear();
 }
