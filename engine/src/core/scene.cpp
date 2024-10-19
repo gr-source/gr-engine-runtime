@@ -11,6 +11,7 @@
 #include "core/event.hpp"
 
 #include "console.hpp"
+#include "settings.h"
 
 #include "script/meshRender.hpp"
 #include "script/transform.hpp"
@@ -22,9 +23,13 @@ std::unordered_map<std::string, std::unique_ptr<Scene>> Scene::m_scenes;
 
 std::hash<std::string> Scene::hash;
 
+std::condition_variable Scene::cv;
+
 std::mutex Scene::m_mutex;
 
 Scene *Scene::m_current = nullptr;
+
+bool Scene::bQuit = false;
 
 void Scene::SetCurrent(Scene *scene) {
     m_current = scene;
@@ -55,6 +60,12 @@ void Scene::Shutdown() {
     m_scenes.clear();
 
     m_current = nullptr;
+
+    {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        bQuit = true;
+    }
+    cv.notify_all();
 }
 
 Scene *Scene::Create(const std::string &name) {
@@ -249,7 +260,7 @@ void Scene::Load(const std::string &path, std::uint8_t flags, Scene *scene) {
         }
 
         int result = -1;
-        switch (data.type){
+        switch (data.type) {
         case gHeaderType_Mesh:
             if (flags & LoadFlags_Mesh)
                 result = readMesh(&stream);
@@ -600,14 +611,16 @@ int Scene::readScript(Streaming *streaming) {
         }
 
         Component *component = nullptr;
-        std::condition_variable cv;
 
         Event::Add(&Scene::SetupScript, objectName, componentName, std::ref(cv), std::ref(component));
 
         std::unique_lock<std::mutex> lock(m_mutex);
         cv.wait(lock, [&component] {
-            return component;
+            return component || bQuit;
         });
+        if (bQuit) {
+            break;
+        }
         lock.unlock();
         
         if (data_size <= 0) {
@@ -702,7 +715,6 @@ int Scene::readNode(Streaming *streaming, Scene *scene, Transform *parent) {
     }
 
     Transform *transform = nullptr;
-    std::condition_variable cv;
 
     Event::Add(CrateGameObject, std::ref(transform), std::ref(cv), std::ref(m_mutex), std::ref(scene), parent, active, enable, name, tag);
 

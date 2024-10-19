@@ -56,7 +56,7 @@ if [ -f ${temp_file_source} ]; then
 
             filename=$(basename "$line")
 
-            sed -i "/#{GR_SRC_END}/i ${GR_ROOT_PROJECT_PATH}/source/$filename" "${GR_ROOT_PROJECT_PATH}/CMakeLists.txt"
+            sed -i "/#{GR_SRC_END}/i source/$filename" "${GR_ROOT_PROJECT_PATH}/CMakeLists.txt"
         fi
     done < ${temp_file_source}
 fi
@@ -69,7 +69,7 @@ if [ -f ${temp_file_header} ]; then
 
             filename=$(basename "$line")
 
-            sed -i "/#{GR_HDR_END}/i ${GR_ROOT_PROJECT_PATH}/source/$filename" "${GR_ROOT_PROJECT_PATH}/CMakeLists.txt"
+            sed -i "/#{GR_HDR_END}/i source/$filename" "${GR_ROOT_PROJECT_PATH}/CMakeLists.txt"
         fi
     done < ${temp_file_header}
 fi

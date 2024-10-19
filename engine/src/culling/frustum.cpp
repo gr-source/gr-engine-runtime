@@ -40,55 +40,55 @@ float Frustum::m_Frustum[6][4] {
 };
 
 void Frustum::CalculateFrustum(const Matrix4x4& vp) {    
-	// This will extract the RIGHT side of the frustum
-	m_Frustum[RIGHT][A] = vp[ 3] - vp[ 0];
-	m_Frustum[RIGHT][B] = vp[ 7] - vp[ 4];
-	m_Frustum[RIGHT][C] = vp[11] - vp[ 8];
-	m_Frustum[RIGHT][D] = vp[15] - vp[12];
+	// // This will extract the RIGHT side of the frustum
+	// m_Frustum[RIGHT][A] = vp[ 3] - vp[ 0];
+	// m_Frustum[RIGHT][B] = vp[ 7] - vp[ 4];
+	// m_Frustum[RIGHT][C] = vp[11] - vp[ 8];
+	// m_Frustum[RIGHT][D] = vp[15] - vp[12];
 
-	NormalizePlane(m_Frustum, RIGHT);
+	// NormalizePlane(m_Frustum, RIGHT);
 
-	// This will extract the LEFT side of the frustum
-	m_Frustum[LEFT][A] = vp[ 3] + vp[ 0];
-	m_Frustum[LEFT][B] = vp[ 7] + vp[ 4];
-	m_Frustum[LEFT][C] = vp[11] + vp[ 8];
-	m_Frustum[LEFT][D] = vp[15] + vp[12];
+	// // This will extract the LEFT side of the frustum
+	// m_Frustum[LEFT][A] = vp[ 3] + vp[ 0];
+	// m_Frustum[LEFT][B] = vp[ 7] + vp[ 4];
+	// m_Frustum[LEFT][C] = vp[11] + vp[ 8];
+	// m_Frustum[LEFT][D] = vp[15] + vp[12];
 
-	// Normalize the LEFT side
-	NormalizePlane(m_Frustum, LEFT);
+	// // Normalize the LEFT side
+	// NormalizePlane(m_Frustum, LEFT);
 
-	// This will extract the BOTTOM side of the frustum
-	m_Frustum[BOTTOM][A] = vp[ 3] + vp[ 1];
-	m_Frustum[BOTTOM][B] = vp[ 7] + vp[ 5];
-	m_Frustum[BOTTOM][C] = vp[11] + vp[ 9];
-	m_Frustum[BOTTOM][D] = vp[15] + vp[13];
+	// // This will extract the BOTTOM side of the frustum
+	// m_Frustum[BOTTOM][A] = vp[ 3] + vp[ 1];
+	// m_Frustum[BOTTOM][B] = vp[ 7] + vp[ 5];
+	// m_Frustum[BOTTOM][C] = vp[11] + vp[ 9];
+	// m_Frustum[BOTTOM][D] = vp[15] + vp[13];
 
-	// Normalize the BOTTOM side
-	NormalizePlane(m_Frustum, BOTTOM);
+	// // Normalize the BOTTOM side
+	// NormalizePlane(m_Frustum, BOTTOM);
 
-	// This will extract the TOP side of the frustum
-	m_Frustum[TOP][A] = vp[ 3] - vp[ 1];
-	m_Frustum[TOP][B] = vp[ 7] - vp[ 5];
-	m_Frustum[TOP][C] = vp[11] - vp[ 9];
-	m_Frustum[TOP][D] = vp[15] - vp[13];
+	// // This will extract the TOP side of the frustum
+	// m_Frustum[TOP][A] = vp[ 3] - vp[ 1];
+	// m_Frustum[TOP][B] = vp[ 7] - vp[ 5];
+	// m_Frustum[TOP][C] = vp[11] - vp[ 9];
+	// m_Frustum[TOP][D] = vp[15] - vp[13];
 
-	// Normalize the TOP side
-	NormalizePlane(m_Frustum, TOP);
+	// // Normalize the TOP side
+	// NormalizePlane(m_Frustum, TOP);
 
-	// This will extract the BACK side of the frustum
-	m_Frustum[BACK][A] = vp[ 3] - vp[ 2];
-	m_Frustum[BACK][B] = vp[ 7] - vp[ 6];
-	m_Frustum[BACK][C] = vp[11] - vp[10];
-	m_Frustum[BACK][D] = vp[15] - vp[14];
+	// // This will extract the BACK side of the frustum
+	// m_Frustum[BACK][A] = vp[ 3] - vp[ 2];
+	// m_Frustum[BACK][B] = vp[ 7] - vp[ 6];
+	// m_Frustum[BACK][C] = vp[11] - vp[10];
+	// m_Frustum[BACK][D] = vp[15] - vp[14];
 
-	// Normalize the BACK side
-	NormalizePlane(m_Frustum, BACK);
+	// // Normalize the BACK side
+	// NormalizePlane(m_Frustum, BACK);
 
-	// This will extract the FRONT side of the frustum
-	m_Frustum[FRONT][A] = vp[ 3] + vp[ 2];
-	m_Frustum[FRONT][B] = vp[ 7] + vp[ 6];
-	m_Frustum[FRONT][C] = vp[11] + vp[10];
-	m_Frustum[FRONT][D] = vp[15] + vp[14];
+	// // This will extract the FRONT side of the frustum
+	// m_Frustum[FRONT][A] = vp[ 3] + vp[ 2];
+	// m_Frustum[FRONT][B] = vp[ 7] + vp[ 6];
+	// m_Frustum[FRONT][C] = vp[11] + vp[10];
+	// m_Frustum[FRONT][D] = vp[15] + vp[14];
 
 	// Normalize the FRONT side
 	NormalizePlane(m_Frustum, FRONT);

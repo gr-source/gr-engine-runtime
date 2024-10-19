@@ -46,7 +46,7 @@ public:
     bool hasComponent() const;
 
     template <typename T, typename... Args>
-    void RenderProperty(Args&&... args);
+    bool RenderProperty(Args&&... args);
 
     Entity *getEntity();
 
@@ -97,8 +97,8 @@ inline bool GameObject::hasComponent() const {
 }
 
 template <typename T, typename... Args>
-inline void GameObject::RenderProperty(Args&&... args) {
-    if (!m_entity->hasComponent<T>()) return;
+inline bool GameObject::RenderProperty(Args&&... args) {
+    if (!m_entity->hasComponent<T>()) return false;
 
-    std::bind(std::forward<Args>(args)..., &m_entity->getComponent<T>())();
+    return std::invoke(std::bind(std::forward<Args>(args)..., &m_entity->getComponent<T>()));
 }

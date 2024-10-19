@@ -1002,59 +1002,8 @@ void Editor::DropSceneInViewport() {
     ImGui::EndDragDropTarget();
 }
 
-// TODO: falta resolver o problema da matrix inversa, para ser possivel escala, rotacionar e tranlata o filho
-Matrix4x4 InverseMatrix(const Matrix4x4 &matrix) {
-    float a = matrix.m00, b = matrix.m01, c = matrix.m02, d = matrix.m03;
-    float e = matrix.m10, f = matrix.m11, g = matrix.m12, h = matrix.m13;
-    float i = matrix.m20, j = matrix.m21, k = matrix.m22, l = matrix.m23;
-    float m = matrix.m30, n = matrix.m31, o = matrix.m32, p = matrix.m33;
-
-    float kp_lo = k * p - l * o;
-    float jp_ln = j * p - l * n;
-    float jo_kn = j * o - k * n;
-    float ip_lm = i * p - l * m;
-    float io_km = i * o - k * m;
-    float in_jm = i * n - j * m;
-
-    float a00 = +(f * kp_lo - g * jp_ln + h * jo_kn);
-    float a01 = -(e * kp_lo - g * ip_lm + h * io_km);
-    float a02 = +(e * jp_ln - f * ip_lm + h * in_jm);
-    float a03 = -(e * jo_kn - f * io_km + g * in_jm);
-
-    float det = a * a00 + b * a01 + c * a02 + d * a03;
-
-    if (std::abs(det) < 1e-6f) {
-        return Matrix4x4::identityMatrix;
-    }
-
-    float invDet = 1.0f / det;
-
-    Matrix4x4 result = Matrix4x4::identityMatrix;
-    result.m00 = a00 * invDet;
-    result.m01 = -(b * kp_lo - c * jp_ln + d * jo_kn) * invDet;
-    result.m02 = +(b * (g * p - h * o) - c * (f * p - h * n) + d * (f * o - g * n)) * invDet;
-    result.m03 = -(b * (g * l - h * k) - c * (f * l - h * j) + d * (f * k - g * j)) * invDet;
-
-    result.m10 = a01 * invDet;
-    result.m11 = +(a * kp_lo - c * ip_lm + d * io_km) * invDet;
-    result.m12 = -(a * (g * p - h * o) - c * (e * p - h * m) + d * (e * o - g * m)) * invDet;
-    result.m13 = +(a * (g * l - h * k) - c * (e * l - h * i) + d * (e * k - g * i)) * invDet;
-
-    result.m20 = a02 * invDet;
-    result.m21 = -(a * ip_lm - b * io_km + d * in_jm) * invDet;
-    result.m22 = +(a * (f * p - h * o) - b * (e * p - h * m) + d * (e * n - f * m)) * invDet;
-    result.m23 = -(a * (f * k - g * j) - b * (e * k - g * i) + d * (e * j - f * i)) * invDet;
-
-    result.m30 = a03 * invDet;
-    result.m31 = +(a * jo_kn - b * io_km + c * in_jm) * invDet;
-    result.m32 = -(a * (f * o - g * n) - b * (e * o - g * m) + c * (e * n - f * m)) * invDet;
-    result.m33 = +(a * (f * k - g * j) - b * (e * k - g * i) + c * (e * j - f * i)) * invDet;
-
-    return result;
-}
-
 bool gluInvertMatrix(const float m[16], float invOut[16]) {
-    double inv[16], det;
+    float inv[16], det;
     int i;
 
     inv[0] = m[5]  * m[10] * m[15] - 
@@ -1229,51 +1178,8 @@ void Editor::RenderScene() {
     ImGuizmo::SetDrawlist();
     ImGuizmo::SetRect(pos.x, pos.y + (cursorY - 5.0f), curSize.x, curSize.y);
 
-    if (s_objectSelected && Camera::Current && s_objectSelected->hasComponent<Transform>()) {
-        if (s_io->KeyCtrl && ImGui::IsKeyReleased(ImGuiKey_T)) {
-            m_guizmoOperation = ImGuizmo::TRANSLATE;
-        }
-        if (s_io->KeyCtrl && ImGui::IsKeyReleased(ImGuiKey_R)) {
-            m_guizmoOperation = ImGuizmo::ROTATE;
-        }
-        if (s_io->KeyCtrl && ImGui::IsKeyReleased(ImGuiKey_S)) {
-            m_guizmoOperation = ImGuizmo::SCALE;
-        }
-        if (s_io->KeyCtrl && ImGui::IsKeyReleased(ImGuiKey_Space)) {
-            if (m_guizmoManipulate == ImGuizmo::WORLD) {
-                m_guizmoManipulate = ImGuizmo::LOCAL;
-            } else if (m_guizmoManipulate == ImGuizmo::LOCAL) {
-                m_guizmoManipulate = ImGuizmo::WORLD;
-            }
-        }
-        
-        auto& transform = s_objectSelected->getTransform();
-
-        auto globalMatrix = transform.getGlobalMatrix();
-
-        auto camera = Camera::Current();
-
-        if (camera && ImGuizmo::Manipulate(camera->getViewmatrix().data, camera->getPerspesctive().data, m_guizmoOperation, m_guizmoManipulate, globalMatrix.data)) {
-            auto localMatrix = globalMatrix;
-            if (transform.hasParent()) {
-                auto parentMat = transform.getParent()->getGlobalMatrix();
-                Matrix4x4 m;
-                if (gluInvertMatrix(parentMat.data, m.data))
-                    localMatrix = m * localMatrix;
-
-                // localMatrix = localMatrix.transpose();
-            }
-            // if (gluInvertMatrix(localMatrix.data, )) {
-                Vector3 s;
-                Quaternion r;
-                Vector3 t;
-                localMatrix.decompose(s, r, t);
-
-                transform.setLocalScale(s);
-                transform.setLocalRotation(r);
-                transform.setLocalPosition(t);
-            // }
-        }
+    if (Camera::Current && s_objectSelected && s_objectSelected->hasComponent<Transform>()) {
+        RenderGuizmo();
     }
 
     if (TimeLast::FPS > 50) {
@@ -1319,6 +1225,50 @@ void Editor::RenderScene() {
     }
 }
 
+void Editor::RenderGuizmo() {
+    if (s_io->KeyCtrl && ImGui::IsKeyReleased(ImGuiKey_T)) {
+        m_guizmoOperation = ImGuizmo::TRANSLATE;
+    }
+    if (s_io->KeyCtrl && ImGui::IsKeyReleased(ImGuiKey_R)) {
+        m_guizmoOperation = ImGuizmo::ROTATE;
+    }
+    if (s_io->KeyCtrl && ImGui::IsKeyReleased(ImGuiKey_S)) {
+        m_guizmoOperation = ImGuizmo::SCALE;
+    }
+    if (s_io->KeyCtrl && ImGui::IsKeyReleased(ImGuiKey_Space)) {
+        if (m_guizmoManipulate == ImGuizmo::WORLD) {
+            m_guizmoManipulate = ImGuizmo::LOCAL;
+        } else if (m_guizmoManipulate == ImGuizmo::LOCAL) {
+            m_guizmoManipulate = ImGuizmo::WORLD;
+        }
+    }
+    
+    auto& transform = s_objectSelected->getTransform();
+
+    auto globalMatrix = transform.getGlobalMatrix();
+
+    auto camera = Camera::Current();
+
+    if (camera && ImGuizmo::Manipulate(camera->getViewmatrix().getData(), camera->getPerspesctive().getData(), m_guizmoOperation, m_guizmoManipulate, globalMatrix.getData())) {
+        auto localMatrix = globalMatrix;
+        if (transform.hasParent()) {
+            auto parentMat = transform.getParent()->getGlobalMatrix();
+            Matrix4x4 m = Matrix4x4::identityMatrix;
+
+            if (gluInvertMatrix(parentMat.getData(), m.getData()))
+                localMatrix = m * localMatrix;
+        }
+        Vector3 s;
+        Quaternion r;
+        Vector3 t;
+        localMatrix.decompose(s, r, t);
+
+        transform.setLocalScale(s);
+        transform.setLocalRotation(r);
+        transform.setLocalPosition(t);
+    }
+}
+
 void Editor::DropGameObjectInScene() {
     auto isOpen = ImGui::BeginDragDropTarget();
     if (!isOpen) {
@@ -1350,7 +1300,6 @@ void Editor::PopupMenuCreateScene() {
         std::string to_str = name;
         if (!to_str.empty()) {
             Scene::Create(name);
-            // m_scenes.emplace(name, std::shared_ptr<Scene>(Scene::Create(name)));
         }
         
         ImGui::CloseCurrentPopup();
@@ -1461,8 +1410,8 @@ void Editor::OpenFileDoubleClick(std::filesystem::path path) {
         return;
     }
 
-    Command::exec("code " + m_currentPath.string());
-    Command::exec("code " + path.string());
+    Command::exec("code '" + m_currentPath.string() + "'");
+    Command::exec("code '" + path.string() + "'");
 }
 
 void Editor::PopupDirmanager() {
@@ -1582,14 +1531,11 @@ void Editor::PopupCreateDirectory() {
 }
 
 void Editor::RenderOtherUI() {
-    static NavegationFlags flags = NavegationFlags_console;
+    static NavegationFlags flags = NavegationFlags_files;
 
     ImGui::Begin("Navegador", nullptr, ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_AlwaysHorizontalScrollbar | ImGuiWindowFlags_AlwaysAutoResize);
     
     if (ImGui::BeginMenuBar()) {
-        if (ImGui::MenuItem("Console")) {
-            flags = NavegationFlags_console;
-        }
         if (ImGui::MenuItem("Files")) {
             flags = NavegationFlags_files;
         }
@@ -1605,10 +1551,6 @@ void Editor::RenderOtherUI() {
 
     if (flags & NavegationFlags_models) {
     }
-
-    // if (flags & NavegationFlags_console) {
-    //     RenderConsole();
-    // }
 
     ImGui::End();
 }
@@ -1726,11 +1668,6 @@ void Editor::RenderPropertiUI() {
             RenderStatisticsMenu();
             ImGui::EndTabItem();
         }
-
-        // if (ImGui::BeginTabItem("Configuraçoes")) {
-        //     RenderSettings();
-        //     ImGui::EndTabItem();
-        // }
         ImGui::EndTabBar();
     }
     ImGui::End();
@@ -1778,10 +1715,9 @@ void Editor::RenderGameObjectPropertiUI() {
         return;
     }
 
-    auto &componentPool = ScriptManager::GetComponentPool();
+    auto entt = s_objectSelected->getEntity();
 
     auto isOpenPopup = false;
-    // ImGui::SetNextItemOpen(true, ImGuiCond_Appearing);
     if (ImGui::BeginTabItem("GameObject", nullptr)) {
         ImGui::Image(reinterpret_cast<ImTextureID>(iconsUI[IconType::ICON_GAMEOBJECT]->getID()), ImVec2(16, 16));
 
@@ -1797,33 +1733,30 @@ void Editor::RenderGameObjectPropertiUI() {
         }
 
         s_objectSelected->RenderProperty<Transform>(Editor::OnPropertyTransform);
-        s_objectSelected->RenderProperty<MeshFilter>(Editor::OnPropertyMeshFilter);
-        s_objectSelected->RenderProperty<MeshRender>(Editor::OnPropertyMeshRender);
-        s_objectSelected->RenderProperty<Light>(Editor::OnPropertyLight);
-        s_objectSelected->RenderProperty<Rigidbody>(Editor::OnPropertyRigidbody);
 
-        for (auto &&[name, ptr] : s_objectSelected->getEntity()->getComponents()) {
-            if (name == "Transform" || name == "Light" || name == "MeshRender" || name == "MeshFilter" || name == "Rigidbody") {
+        if (s_objectSelected->RenderProperty<MeshFilter>(Editor::OnPropertyMeshFilter)) {
+            entt->remove("MeshFilter");
+        }
+
+        if (s_objectSelected->RenderProperty<MeshRender>(Editor::OnPropertyMeshRender)) {
+            entt->remove("MeshRender");
+            entt->remove("MeshFilter");
+        }
+
+        if (s_objectSelected->RenderProperty<Light>(Editor::OnPropertyLight)) {
+            entt->remove("Light");
+        }
+
+        if (s_objectSelected->RenderProperty<Rigidbody>(Editor::OnPropertyRigidbody)) {
+            entt->remove("Rigidbody");
+        }
+
+        auto &components = s_objectSelected->getEntity()->getComponents();
+        for (auto &&[name, component] : components) {
+            if (!RenderComponents(name, component)) {
+                Event::Add(&Entity::remove, s_objectSelected->getEntity(), name);
                 continue;
             }
-            auto isOpen = ImGui::TreeNodeEx(name.c_str());
-            if (!isOpen) {
-                continue;
-            }
-
-            auto it = componentPool.find(name);
-            if (it == componentPool.end()) {
-                LOG_ERROR("Invalid component: " + name);
-                ImGui::TreePop();
-                continue;
-            }
-            auto &fieldList = it->second->getFields();
-
-            for (auto &field : fieldList) {
-                RenderField(field, &(*ptr));
-            }
-
-            ImGui::TreePop();
         }
 
         if (ImGui::SmallButton("AddComponent")) {
@@ -1837,6 +1770,39 @@ void Editor::RenderGameObjectPropertiUI() {
         ImGui::OpenPopup("##popup_add_component");
     }
     PopupAddComponent();
+}
+
+bool Editor::RenderComponents(const std::string &name, Component *component) {
+    if (name == "Transform" || name == "Light" || name == "MeshRender" || name == "MeshFilter" || name == "Rigidbody") {
+        return true;
+    }
+
+    auto &componentPool = ScriptManager::GetComponentPool();
+
+    auto isRender = true;
+
+    auto isOpen = ImGui::CollapsingHeader(name.c_str(), &isRender);
+    if (!isRender) {
+        return false;
+    }
+
+    if (!isOpen) {
+        return true;
+    }
+
+    auto it = componentPool.find(name);
+    if (it == componentPool.end()) {
+        LOG_ERROR("Invalid component: " + name);
+        return false;
+    }
+    
+    auto &fieldList = it->second->getFields();
+
+    for (auto &field : fieldList) {
+        RenderField(field, component);
+    }
+
+    return true;
 }
 
 void Editor::RenderField(Field &field, Component *component) {
@@ -1906,11 +1872,12 @@ void Editor::PopupAddComponent() {
 }
 
 /* ********** Propriedades ********** */
-void Editor::OnPropertyTransform(Transform *transform) {
-    auto isOpen = ImGui::TreeNode("Transform");
+bool Editor::OnPropertyTransform(Transform *transform) {
+    auto isOpen = ImGui::CollapsingHeader("Transform");
     if (!isOpen) {
-        return;
+        return false;
     }
+
     const char* text[] {"X", "Y", "Z"};
 
     auto position = transform->getLocalPosition();
@@ -1931,19 +1898,24 @@ void Editor::OnPropertyTransform(Transform *transform) {
     if (ImGui::DragFloatEx("##Rotacao", text, euler.data, 1.0f, -360.0f, 360.0f)) {
         transform->setLocalRotation(Math::normalize(Math::euler({Math::rad(euler.x), Math::rad(euler.y), Math::rad(euler.z)})));
     }
-
-    ImGui::TreePop();
+    return false;
 }
 
-void Editor::OnPropertyMeshFilter(MeshFilter *meshFilter) {
-    auto isOpen = ImGui::TreeNode("MeshFilter");
+bool Editor::OnPropertyMeshFilter(MeshFilter *meshFilter) {
+    auto bExists = true;
+
+    auto isOpen = ImGui::CollapsingHeader("MeshFilter", &bExists);
+    if (!bExists) {
+        return true;
+    }
+
     if (!isOpen) {
-        return;
+        return false;
     }
 
     RenderUVConfig(meshFilter);
 
-    ImGui::TreePop();
+    return false;
 }
 
 void Editor::RenderUVConfig(MeshFilter *meshFilter) {
@@ -1962,14 +1934,20 @@ void Editor::RenderUVConfig(MeshFilter *meshFilter) {
     ImGui::TreePop();
 }
 
-void Editor::OnPropertyMeshRender(MeshRender *meshRender) {
-    auto isOpen = ImGui::TreeNode("MeshRender");
+bool Editor::OnPropertyMeshRender(MeshRender *meshRender) {
+    auto bExists = true;
+
+    auto isOpen = ImGui::CollapsingHeader("MeshRender", &bExists);
+    if (!bExists) {
+        return true;
+    }
+    
     if (ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
         ImGui::OpenPopup("##game_object_component_menu");
     }
 
     if (!isOpen) {
-        return;
+        return false;
     }
 
     auto elem = meshRender->getFlags();
@@ -2028,7 +2006,7 @@ void Editor::OnPropertyMeshRender(MeshRender *meshRender) {
         ImGui::TreePop();
     }
 
-    ImGui::TreePop();
+    return false;
 }
 
 void Editor::InsertTexture(Material *material) {
@@ -2059,6 +2037,85 @@ void Editor::InsertTexture(Material *material) {
     }
     AssetsManager::LoadTexture(path, &Editor::SetupTextureMaterial, material, 0);
     ImGui::EndDragDropTarget();
+}
+
+bool Editor::OnPropertyLight(Light *light) {
+    auto bExists = true;
+
+    auto isOpen = ImGui::CollapsingHeader("Light", &bExists);
+    if (!bExists) {
+        return true;
+    }
+
+    if (!isOpen) {
+        return false;
+    }
+
+    int elem = light->getType();
+    
+    const char* elems_names[3] = {"Directional", "Point", "Spot"};
+    
+    const char* elem_name = (elem >= 0 && elem < 3) ? elems_names[elem] : "Unknown";
+
+    ImGui::Text("Type:");
+    if (ImGui::SliderInt("##LightType", &elem, 0, 3 - 1, elem_name)) {
+        light->setType(elem);
+    }
+    
+    ImGui::Text("Constante:");
+    ImGui::DragFloat("##constant", &light->m_attenuationConstant, 0.005f, 0.01f, 1.0f);
+
+    ImGui::Text("Linear:");
+    ImGui::DragFloat("##linear", &light->m_attenuationLinear, 0.005f, 0.01f, 1.0f);
+
+    ImGui::Text("Quadract:");
+    ImGui::DragFloat("##quadract", &light->m_attenuationQuadratic, 0.005f, 0.01f, 1.0f);
+
+    ImGui::Text("InConner:");
+    ImGui::DragFloat("##inconer", &light->m_angleInnerCone, 0.005f, 0.01f, 1.0f);
+
+    ImGui::Text("IuterConner:");
+    ImGui::DragFloat("##outerconner", &light->m_angleOuterCone, 0.005f, 0.01f, 1.0f);
+
+    ImGui::Text("Cor:");
+    ImVec4 color = {light->m_color.r, light->m_color.g, light->m_color.b, 1.0f};
+    
+    if (ImGui::ColorButton("##LightColor", color)) {
+        ImGui::OpenPopup("##LightColorPopup");
+    }
+    
+    if (ImGui::BeginPopup("##LightColorPopup")) {
+        ImGui::ColorPicker4("#LightColorPick", light->m_color.data);
+        ImGui::EndPopup();
+    }
+
+    return false;
+}
+
+bool Editor::OnPropertyRigidbody(Rigidbody *rigidbody) {
+    auto bExists = true;
+
+    auto isOpen = ImGui::CollapsingHeader("Rigidbody", &bExists);
+    if (!bExists) {
+        return true;
+    }
+    
+    if (!isOpen) {
+        return false;
+    }
+    auto mass = rigidbody->getMass();
+
+    ImGui::Text("Mass");
+    if (ImGui::DragFloat("##rigidbody_mass", &mass)) {
+        rigidbody->setMass(mass);
+    }
+
+    auto bDynamic = rigidbody->getDinamic();
+    if (ImGui::Checkbox("##rigidbody_dynamic", &bDynamic)) {
+        rigidbody->setDynamic(bDynamic);
+    }
+
+    return false;
 }
 
 void Editor::OnPropertyAnimator(Animator *animator) {
@@ -2115,70 +2172,6 @@ void Editor::OnPropertyAnimator(Animator *animator) {
         }
         ImGui::TreePop();
     }
-}
-
-void Editor::OnPropertyLight(Light *light) {
-    auto isOpen = ImGui::TreeNode("Light");
-    if (!isOpen) {
-        return;
-    }
-    int elem = light->getType();
-    
-    const char* elems_names[3] = {"Directional", "Point", "Spot"};
-    
-    const char* elem_name = (elem >= 0 && elem < 3) ? elems_names[elem] : "Unknown";
-
-    ImGui::Text("Type:");
-    if (ImGui::SliderInt("##LightType", &elem, 0, 3 - 1, elem_name)) {
-        light->setType(elem);
-    }
-    
-    ImGui::Text("Constante:");
-    ImGui::DragFloat("##constant", &light->m_attenuationConstant, 0.005f, 0.01f, 1.0f);
-
-    ImGui::Text("Linear:");
-    ImGui::DragFloat("##linear", &light->m_attenuationLinear, 0.005f, 0.01f, 1.0f);
-
-    ImGui::Text("Quadract:");
-    ImGui::DragFloat("##quadract", &light->m_attenuationQuadratic, 0.005f, 0.01f, 1.0f);
-
-    ImGui::Text("InConner:");
-    ImGui::DragFloat("##inconer", &light->m_angleInnerCone, 0.005f, 0.01f, 1.0f);
-
-    ImGui::Text("IuterConner:");
-    ImGui::DragFloat("##outerconner", &light->m_angleOuterCone, 0.005f, 0.01f, 1.0f);
-
-    ImGui::Text("Cor:");
-    ImVec4 color = {light->m_color.r, light->m_color.g, light->m_color.b, 1.0f};
-    if (ImGui::ColorButton("##LightColor", color)) {
-        ImGui::OpenPopup("##LightColorPopup");
-    }
-    if (ImGui::BeginPopup("##LightColorPopup")) {
-        ImGui::ColorPicker4("#LightColorPick", light->m_color.data);
-        ImGui::EndPopup();
-    }
-
-    ImGui::TreePop();
-}
-
-void Editor::OnPropertyRigidbody(Rigidbody *rigidbody) {
-    auto isOpen = ImGui::TreeNode("Rigidbody");
-    if (!isOpen) {
-        return;
-    }
-    auto mass = rigidbody->getMass();
-
-    ImGui::Text("Mass");
-    if (ImGui::DragFloat("##rigidbody_mass", &mass)) {
-        rigidbody->setMass(mass);
-    }
-
-    auto bDynamic = rigidbody->getDinamic();
-    if (ImGui::Checkbox("##rigidbody_dynamic", &bDynamic)) {
-        rigidbody->setDynamic(bDynamic);
-    }
-
-    ImGui::TreePop();
 }
 
 void Editor::TextureInfo(Texture *&texture) {

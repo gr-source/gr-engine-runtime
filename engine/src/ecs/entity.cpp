@@ -164,6 +164,27 @@ void Entity::clear() {
     m_components.clear();
 }
 
+void Entity::remove(const std::string &name) {
+    auto it = m_componentPtr.find(name);
+    if (it == m_componentPtr.end()) {
+        return;
+    }
+
+    auto component = it->second;
+
+    auto its = std::find_if(m_components.begin(), m_components.end(), [component = std::forward<Component *>(component)](auto &unique) {
+        return &(*unique) == component;
+    });
+
+    if (its == m_components.end()) {
+        return;
+    }
+
+    m_componentPtr.erase(it);
+    m_components.erase(its);
+    // m_components.erase(std::remove(m_components.begin(), m_components.end(), std::unique_ptr<Component>(ptr)), m_components.end());
+}
+
 Component *Entity::addInternalComponent(const std::string &name) {
     if (!ScriptManager::CreateComponentWithName) {
         return nullptr;

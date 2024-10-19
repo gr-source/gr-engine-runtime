@@ -61,6 +61,8 @@ public:
     void init();
 
     void clear();
+
+    void remove(const std::string &name);
     
 private:
     std::unordered_map<std::string, Component *> m_componentPtr;

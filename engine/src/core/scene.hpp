@@ -57,9 +57,13 @@ private:
 
     static std::hash<std::string> hash;
 
+    static std::condition_variable cv;
+
     static std::mutex m_mutex;
 
     static Scene *m_current;
+
+    static bool bQuit;
 
     std::vector<std::tuple<std::string, std::string, Component *>> m_componentCache; 
 

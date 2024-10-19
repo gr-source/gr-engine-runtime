@@ -135,6 +135,8 @@ private:
 
     static void RenderScene();
 
+    static void RenderGuizmo();
+
     static void DropGameObjectInScene();
 
     static void PopupMenuCreateScene();
@@ -171,6 +173,8 @@ private:
 
     static void RenderGameObjectPropertiUI();
 
+    static bool RenderComponents(const std::string &name, Component *component);
+
     static void RenderField(Field &field, Component *component);
 
     static void PopupAddComponent();
@@ -184,21 +188,21 @@ private:
         NavegationFlags_models  = 1 << 4,
     };
 
-    static void OnPropertyTransform(Transform* transform);
+    static bool OnPropertyTransform(Transform *transform);
     
-    static void OnPropertyMeshFilter(MeshFilter* MeshFilter);
+    static bool OnPropertyMeshFilter(MeshFilter *meshFilter);
 
     static void RenderUVConfig(MeshFilter *meshFilter);
     
-    static void OnPropertyMeshRender(MeshRender* meshRender);
+    static bool OnPropertyMeshRender(MeshRender *meshRender);
 
     static void InsertTexture(Material *material);
 
+    static bool OnPropertyLight(Light *light);
+
+    static bool OnPropertyRigidbody(Rigidbody *rigidbody);
+
     static void OnPropertyAnimator(Animator* animator);
-
-    static void OnPropertyLight(Light *light);
-
-    static void OnPropertyRigidbody(Rigidbody *rigidbody);
 
     static void TextureInfo(Texture*& texture);
 

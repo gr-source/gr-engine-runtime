@@ -93,10 +93,10 @@ void Animator::CalculateBlendedBoneTransform(
             
             auto blendedMat = Math::rotate<Matrix4x4>(finalRot);
 
-            blendedMat.m30 = (1.0f - blendFactor) * nodeTransform.m30 + layeredNodeTransform.m30 * blendFactor;
-            blendedMat.m31 = (1.0f - blendFactor) * nodeTransform.m31 + layeredNodeTransform.m31 * blendFactor;
-            blendedMat.m32 = (1.0f - blendFactor) * nodeTransform.m32 + layeredNodeTransform.m32 * blendFactor;
-            blendedMat.m33 = (1.0f - blendFactor) * nodeTransform.m33 + layeredNodeTransform.m33 * blendFactor;
+            blendedMat[3][0] = (1.0f - blendFactor) * nodeTransform[3][0] + layeredNodeTransform[3][0] * blendFactor;
+            blendedMat[3][1] = (1.0f - blendFactor) * nodeTransform[3][1] + layeredNodeTransform[3][1] * blendFactor;
+            blendedMat[3][2] = (1.0f - blendFactor) * nodeTransform[3][2] + layeredNodeTransform[3][2] * blendFactor;
+            blendedMat[3][3] = (1.0f - blendFactor) * nodeTransform[3][3] + layeredNodeTransform[3][3] * blendFactor;
 
             result *= blendedMat;
 
