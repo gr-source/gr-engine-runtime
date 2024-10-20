@@ -9,8 +9,6 @@
 
 #include "core/scene.hpp"
 
-// void (*Entity::Update)(Entity *);
-
 Entity::Entity(GameObject *gameObject, EntityID id) : m_gameObject(gameObject), m_entityID(id) {}
 
 GameObject *Entity::getGameObject() {
@@ -34,12 +32,9 @@ bool Entity::hasComponent(const std::string &name) const {
     return it != m_componentPtr.end();
 }
 
-std::unordered_map<std::string, Component *> &Entity::getComponents() {
+std::unordered_map<std::string, std::unique_ptr<Component>> &Entity::getComponents() {
     return m_componentPtr;
 }
-
-#include <list>
-#include <tuple>
 
 void Entity::copy(Entity *entity) {
     if (!entity) {
@@ -170,19 +165,10 @@ void Entity::remove(const std::string &name) {
         return;
     }
 
-    auto component = it->second;
+    auto component = &(*it->second);
 
-    auto its = std::find_if(m_components.begin(), m_components.end(), [component = std::forward<Component *>(component)](auto &unique) {
-        return &(*unique) == component;
-    });
-
-    if (its == m_components.end()) {
-        return;
-    }
-
+    m_components.erase(std::remove(m_components.begin(), m_components.end(), component), m_components.end());
     m_componentPtr.erase(it);
-    m_components.erase(its);
-    // m_components.erase(std::remove(m_components.begin(), m_components.end(), std::unique_ptr<Component>(ptr)), m_components.end());
 }
 
 Component *Entity::addInternalComponent(const std::string &name) {
@@ -206,7 +192,7 @@ Component *Entity::addInternalComponent(const std::string &name) {
 
     m_componentPtr.emplace(name, component);
 
-    m_components.emplace_back(component);
+    m_components.push_back(component);
 
     return component;
 }

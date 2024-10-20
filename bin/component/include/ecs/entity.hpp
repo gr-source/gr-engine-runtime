@@ -39,9 +39,9 @@ public:
     Component *addInternalComponent(const std::string &name);
     
 private:
-    std::unordered_map<std::string, Component *> m_componentPtr;
+    std::unordered_map<std::string, std::unique_ptr<Component>> m_componentPtr;
 
-    std::vector<std::unique_ptr<Component>> m_components;
+    std::vector<Component *> m_components;
 
     GameObject *m_gameObject;
 
@@ -72,7 +72,7 @@ inline T &Entity::getComponent() {
         throw std::runtime_error("Component type not found.");
     }
 
-    auto component = it->second;
+    auto component = &(*it->second);
     if (!component) {
         throw std::runtime_error("Component pointer is null.");
     }

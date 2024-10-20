@@ -100,7 +100,6 @@ void GameObject::Destroy(GameObject *target) {
 
     s_mapObject.erase(it);
 
-
     RemoveNameID(sname);
 }
 
@@ -189,3 +188,14 @@ void GameObject::RemoveNameID(const std::string &name) {
     }
     it->second--;
 }
+
+
+
+
+
+
+
+
+
+
+

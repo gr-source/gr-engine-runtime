@@ -16,10 +16,6 @@ public:
 
     static void Clear();
 
-    static void Replay();
-
-    static void Stop();
-
     static bool IsAvailable();
 
 private:

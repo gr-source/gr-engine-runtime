@@ -84,55 +84,6 @@ void Manager::Clear() {
     m_entityCount = 0;
 }
 
-std::list<std::tuple<Entity *, std::string>> m_vali;
-
-void Manager::Replay() {
-    // if (Manager::bPlayScript) {
-    //     return;
-    // }
-
-    // for (auto &&[entity, name] : m_vali) {
-    //     Component *component = nullptr;
-
-    //     try {
-    //         component = entity->hasComponent(name) ? entity->getComponent(name) : entity->addInternalComponent(name);
-    //     } catch (const std::runtime_error &e) {
-    //         Console::log(LogInfo::ERROR, "Fatal error: " + std::string(e.what()));
-    //         continue;
-    //     }
-
-    //     if (name == "Transform") {
-    //         entity->getGameObject()->setTransform(dynamic_cast<Transform *>(component));
-    //     }
-
-    //     Streaming stream(File::GetCacheFile("/" + name + "_" + std::to_string(entity->getEntityID())), std::ios_base::in | std::ios_base::binary);
-    //     if (!stream.is_open()) {
-    //         LOG_ERROR("[ Manager ] Falied to read component data: " + name);
-    //         continue;
-    //     }
-    //     component->Deserialize(stream);
-    //     stream.close();
-    // }
-
-    // m_vali.clear();
-    // Manager::bPlayScript = true;
-}
-
-void Manager::Stop() {
-    // for (auto &entity : m_entity) {
-    //     for (auto &&[name, component] : entity->getComponents()) {
-    //         m_vali.emplace_front(entity, name);
-
-    //         Streaming stream(File::GetCacheFile("/" + name + "_" + std::to_string(entity->getEntityID())), std::ios_base::out | std::ios_base::binary);
-    //         component->Serialize(stream);
-    //         stream.close();
-    //     }
-
-    //     // entity->clear();
-    // }
-    // Manager::bPlayScript = false;
-}
-
 bool Manager::IsAvailable() {
     return bPlayScript;
 }

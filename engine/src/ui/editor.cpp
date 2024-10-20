@@ -125,6 +125,7 @@ std::filesystem::path Editor::m_SelectedPath;
 std::shared_ptr<Config> Editor::m_config = nullptr;
 
 void Editor::Initialize() {
+    std::cout << sizeof(Entity) << std::endl;
     m_viewport = ImGui::GetMainViewport();
 
     s_io = &ImGui::GetIO();
@@ -1753,7 +1754,7 @@ void Editor::RenderGameObjectPropertiUI() {
 
         auto &components = s_objectSelected->getEntity()->getComponents();
         for (auto &&[name, component] : components) {
-            if (!RenderComponents(name, component)) {
+            if (!RenderComponents(name, &(*component))) {
                 Event::Add(&Entity::remove, s_objectSelected->getEntity(), name);
                 continue;
             }
