@@ -17,3 +17,7 @@ Vector2 Input::GetCursorPos() {
 bool Input::IsMousePress(InputKey key) {
     throw std::runtime_error("function do not implemented.");
 }
+
+
+
+

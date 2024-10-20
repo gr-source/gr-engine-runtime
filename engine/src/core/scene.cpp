@@ -210,6 +210,7 @@ void Scene::ReloadObjects() {
     // */
 }
 
+// TODO: Object, Script because thread dead lock
 void Scene::Load(const std::string &path, std::uint8_t flags, Scene *scene) {
     if (!File::Exists(path)) {
         LOG_ERROR("[ Scene ] File not found: " + path);
@@ -632,8 +633,11 @@ int Scene::readScript(Streaming *streaming) {
 
         lock.lock();
         cv.wait(lock, [&component] {
-            return !component;
+            return !component || bQuit;
         });
+        if (bQuit) {
+            break;
+        }
         lock.unlock();
 
 

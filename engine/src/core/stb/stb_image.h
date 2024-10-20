@@ -679,9 +679,9 @@ typedef unsigned char validate_uint32[sizeof(stbi__uint32)==4 ? 1 : -1];
 #include "../../memory.h"
 
 #ifndef STBI_MALLOC
-#define STBI_MALLOC(sz)           Memory::malloc(sz)
-#define STBI_REALLOC(p,newsz)     Memory::realloc(p,newsz)
-#define STBI_FREE(p)              Memory::free(p)
+#define STBI_MALLOC(sz)           std::malloc(sz)
+#define STBI_REALLOC(p,newsz)     std::realloc(p,newsz)
+#define STBI_FREE(p)              std::free(p)
 #endif
 
 #ifndef STBI_REALLOC_SIZED

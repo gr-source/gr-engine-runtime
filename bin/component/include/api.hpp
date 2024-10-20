@@ -33,15 +33,6 @@ grr::gShader *LoadShader(const std::string &frag, const std::string &vert);
 
 Animation *LoadAnimation(const std::string &path);
 
-// Input
-bool InputIsKeyPress(grm::u32 key);
-
-void InputSetCursourPos(const Vector2 &value);
-
-Vector2 InputGetCursorPos();
-
-bool InputIsMousePress(grm::u32 key);
-
 // Screen
 void SetScreenSize(const iVector2 &value);
 

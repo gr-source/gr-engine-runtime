@@ -125,12 +125,9 @@ std::filesystem::path Editor::m_SelectedPath;
 std::shared_ptr<Config> Editor::m_config = nullptr;
 
 void Editor::Initialize() {
-    std::cout << sizeof(Entity) << std::endl;
     m_viewport = ImGui::GetMainViewport();
 
     s_io = &ImGui::GetIO();
-
-    Settings::IsGameRunning = false;
 
     m_currentPath = File::GetAsset("");
 
@@ -544,6 +541,8 @@ void Editor::LoadScript() {
     RenderManager::Initialize();
 
     ScreenRender::Initialize();
+
+    Settings::bGameRunning = true;
 }
 
 void Editor::UnloadScript() {
@@ -1167,12 +1166,26 @@ void Editor::RenderScene() {
 
     // Play button
     if (s_texturePlayGame) {
+        s_texturePlayGame = iconsUI[ICON_PLAY_GAME];
+        if (Settings::bGameRunning) {
+            if (ImGui::IsKeyReleased(ImGuiKey_Escape) && ImGui::IsWindowHovered()) {
+                Settings::bGameRunning = false;
+            } else {
+                s_texturePlayGame = iconsUI[ICON_STOP_GAME];
+            }
+        }
+        
         ImGui::SetCursorPos(ImVec2(curSize.x / 2 - cursorPos.x, cursorY));
 
         if (ImGui::ImageButton(reinterpret_cast<ImTextureID>(s_texturePlayGame->getID()), ImVec2(16, 16))) {
-            s_objectSelected = nullptr;
+            if (!Settings::bGameRunning) {
+                s_objectSelected = nullptr;
 
-            Threadpool::AddTask(&Editor::BuildScript);
+                Threadpool::AddTask(&Editor::BuildScript);
+            } else {
+                Settings::bGameRunning = false;
+                Console::log(LogInfo::DEFAULT, "Game stoped.");
+            }
         }
     }
 
@@ -1680,7 +1693,7 @@ void Editor::RenderStatisticsMenu() {
     ImGui::Text("Entidades: %ld", Manager::GetEntityCount());
     ImGui::Text("GameObject: %ld", GameObject::GetGameObjectCount());
 
-    ImGui::Text("Memoria: %s", getfilesize(Memory::totalMemoryUsage).c_str());
+    // ImGui::Text("Memoria: %s", getfilesize(Memory::totalMemoryUsage).c_str());
 
     ImGui::SeparatorText("Cena");
     // ImGui::Text("Vertices: %d | %s", gameStatics.vertices, getfilesize(gameStatics.vertices * sizeof(Vertex3D)).c_str());

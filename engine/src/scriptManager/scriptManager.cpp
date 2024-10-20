@@ -179,10 +179,10 @@ void ScriptManager::RegisterApi() {
     m_script->registerFunction("LoadAnimation", reinterpret_cast<void **>(&LoadAnimation));
 
     // Input
-    m_script->replaceLibraryFunction("InputIsKeyPress",    reinterpret_cast<void *>(&Input::IsKeyPress), (void **)&InputIsKeyPress);
-    m_script->replaceLibraryFunction("InputSetCursourPos", reinterpret_cast<void *>(&Input::SetCursorPos), (void **)&InputSetCursorPos);
-    m_script->replaceLibraryFunction("InputGetCursorPos",  reinterpret_cast<void *>(&Input::GetCursorPos), (void **)&InputGetCursorPos);
-    // m_script->replaceLibraryFunction("InputIsMousePress", Input::IsMousePress);
+    // m_script->replaceLibraryFunction("_ZN5Input10IskeyPressE8InputKey",    reinterpret_cast<void *>(&Input::IsKeyPress), (void **)&InputIsKeyPress);
+    m_script->replaceLibraryFunction("_ZN5Input12SetCursorPosERK7Vector2", reinterpret_cast<void *>(&Input::SetCursorPos), (void **)&InputSetCursorPos);
+    m_script->replaceLibraryFunction("_ZN5Input12GetCursorPosEv",  reinterpret_cast<void *>(&Input::GetCursorPos), (void **)&InputGetCursorPos);
+    m_script->replaceLibraryFunction("_ZN5Input12IsMousePressE8InputKey", reinterpret_cast<void *>(&Input::IsMouseDown), nullptr);
 
     // Screen
     m_script->registerFunction("SetScreenSize", reinterpret_cast<void **>(&SetScreenSize));
@@ -199,7 +199,7 @@ void ScriptManager::RegisterApi() {
 
     // Batching
     m_script->replaceLibraryFunction("_ZN8Batching6removeEP9Transformb", (void *)&Batching::remove, (void **)&Batchingremove);
-    // m_script->replaceLibraryFunction("_ZN8Batching6insertEP9Transform",  (void *)&Batching::insert, (void **)&Batchinginsert);
+    m_script->replaceLibraryFunction("_ZN8Batching6insertEP9Transform",  (void *)&Batching::insert, (void **)&Batchinginsert);
 
     // Script
     m_script->replaceLibraryFunction("_ZN10MeshRender5buildEv", (void *)&MeshRender::build, (void **)&MeshRenderbuild);

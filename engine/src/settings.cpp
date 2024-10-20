@@ -2,7 +2,7 @@
 
 std::atomic<bool> Settings::m_bEngineRunning = true;
 
-std::atomic<bool> Settings::IsGameRunning = false;
+std::atomic<bool> Settings::bGameRunning = false;
 
 Vector2 Settings::GameGrapicQiality = {1920.0f, 1080.0f};
 

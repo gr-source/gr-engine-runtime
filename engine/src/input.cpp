@@ -11,20 +11,20 @@
 
 ImGuiKey get_key_to_glfw(grm::u32 key) {
     switch (key) {
-    case Input::KEY_W:
+    case Input::InputKey_W:
         return ImGuiKey_W;
-    case Input::KEY_A:
+    case Input::InputKey_A:
         return ImGuiKey_A;
-    case Input::KEY_S:
+    case Input::InputKey_S:
         return ImGuiKey_S;
-    case Input::KEY_D:
+    case Input::InputKey_D:
         return ImGuiKey_D;
-    case Input::KEY_SPACE:
-        return ImGuiKey_Space;
-    case Input::KEY_UP:
-        return ImGuiKey_UpArrow;
-    case Input::KEY_DOWN:
-        return ImGuiKey_DownArrow;
+    // case Input::InputKey_SPACE:
+    //     return ImGuiKey_Space;
+    // case Input::InputKey_UP:
+    //     return ImGuiKey_UpArrow;
+    // case Input::InputKey_DOWN:
+    //     return ImGuiKey_DownArrow;
     default:
         return ImGuiKey_0;
     }
@@ -40,13 +40,14 @@ Input::MouseData Input::m_mouseData;
 std::string Input::getKeyName(Key key) {
     #define GET_ENUM_NAME(e) case e: return #e;
     switch (key) {
-    GET_ENUM_NAME(KEY_A)
-    GET_ENUM_NAME(KEY_W)
-    GET_ENUM_NAME(KEY_S)
-    GET_ENUM_NAME(KEY_D)
-    GET_ENUM_NAME(KEY_SPACE)
+    GET_ENUM_NAME(InputKey_A)
+    GET_ENUM_NAME(InputKey_W)
+    GET_ENUM_NAME(InputKey_S)
+    GET_ENUM_NAME(InputKey_D)
+    // GET_ENUM_NAME(KEY_SPACE)
     default:
-        GET_ENUM_NAME(NONE)
+        return "";
+        // GET_ENUM_NAME(NONE)
     }
     #undef GET_ENUM_NAME
 }
@@ -63,21 +64,40 @@ bool Input::IsKeyPress(grm::u32 key) {
     return ImGui::IsKeyDown(get_key_to_glfw(key));//GET_INSTANCE_PRESS(get_key_to_glfw(key));
 }
 
-bool Input::IsMouseReleased(MouseButton button) {
-    return ImGui::IsMouseReleased(button == MouseButton_Left ? ImGuiMouseButton_Left : ImGuiMouseButton_Right);
+bool Input::IsMouseReleased(Key button) {
+    switch (button) {
+    case InputKey_Mouse_Left:
+        return ImGui::IsMouseReleased(ImGuiMouseButton_Left);
+    case InputKey_Mouse_Right:
+        return ImGui::IsMouseReleased(ImGuiMouseButton_Right);
+    case InputKey_Mouse_ButtonMiddle:
+        return ImGui::IsMouseReleased(ImGuiMouseButton_Middle);
+    default:
+        return false;
+    }
 }
 
-bool Input::IsMouseDown(MouseButton button) {
-    return ImGui::IsMouseDown(button == MouseButton_Left ? ImGuiMouseButton_Left : ImGuiMouseButton_Right);
+bool Input::IsMouseDown(Key button) {
+    switch (button) {
+    case InputKey_Mouse_Left:
+        return ImGui::IsMouseDown(ImGuiMouseButton_Left);
+    case InputKey_Mouse_Right:
+        return ImGui::IsMouseDown(ImGuiMouseButton_Right);
+    case InputKey_Mouse_ButtonMiddle:
+        return ImGui::IsMouseDown(ImGuiMouseButton_Middle);
+    default:
+        return false;
+    }
 }
 
 void Input::SetCursorPos(const Vector2& position) {
-    auto &io = ImGui::GetIO();
-    io.MousePos = {position.x, position.y};
+    glfwSetCursorPos(glfwGetCurrentContext(), static_cast<double>(position.x), static_cast<double>(position.y));
 }
 
 Vector2 Input::GetCursorPos() {
-    return {ImGui::GetMousePos().x, ImGui::GetMousePos().y};
+    double x, y;
+    glfwGetCursorPos(glfwGetCurrentContext(), &x, &y);
+    return {static_cast<float>(x), static_cast<float>(y)};
 }
 
 void Input::Initialize() {

@@ -34,21 +34,6 @@ grr::gShader *LoadShaderSTRSTR(const std::string &frag, const std::string &vert)
     return nullptr;
 }
 
-bool InputIsKeyPress(grm::u32 key) {
-    return false;
-}
-
-void InputSetCursourPos(const Vector2 &value) {
-}
-
-Vector2 InputGetCursorPos() {
-    return Vector2::zero;
-}
-
-bool InputIsMousePress(grm::u32 key) {
-    return false;
-}
-
 void SetScreenSize(const iVector2 &value) {
     Screen::ScreenSize = value;
 }

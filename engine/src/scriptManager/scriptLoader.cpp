@@ -36,12 +36,12 @@ bool ScriptLoader::isValid() const {
     return m_script != nullptr;
 }
 
-void ScriptLoader::replaceLibraryFunction(const std::string &name, void *ptr, void **out_origin) {
+bool ScriptLoader::replaceLibraryFunction(const std::string &name, void *ptr, void **out_origin) {
     auto symbol = FindSymbol(name);
     if (!symbol) {
-        return;
+        return false;
     }
-    Memory::hook(symbol, ptr, out_origin);
+    return Memory::hook(symbol, ptr, out_origin) == 0 ? true : false;
 }
 
 void ScriptLoader::replaceLibraryField(const std::string &name, void *ptr) {
@@ -52,12 +52,13 @@ void ScriptLoader::replaceLibraryField(const std::string &name, void *ptr) {
     symbol = ptr;
 }
 
-void ScriptLoader::registerFunction(const std::string &name, void **ptr) {
+bool ScriptLoader::registerFunction(const std::string &name, void **ptr) {
     auto symbol = FindSymbol(name);
     if (!symbol) {
-        return;
+        return false;
     }
     *m_funcMap.emplace_back(ptr) = symbol;
+    return true;
 }
 
 void ScriptLoader::close() {
@@ -78,7 +79,7 @@ void ScriptLoader::close() {
 Script ScriptLoader::FindSymbol(const std::string &name) {
     auto ptr = dlsym(m_script, name.c_str());
     if (!ptr) {
-        throw std::runtime_error("Symbol do not found: " + name);
+        return nullptr;
     }
     return ptr;
 }

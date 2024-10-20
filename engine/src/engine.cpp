@@ -100,11 +100,14 @@ void Engine::Update() {
     Time time;
     time.end();
 
-    PhysicsScene::Update(TimeLast::deltaTime);
+    if (Settings::bGameRunning) {
+        PhysicsScene::Update(TimeLast::deltaTime);
 
-    EditorController::Update();
+        Manager::Update();
+    } else {
+        EditorController::Update();
+    }
 
-    Manager::Update();
 
     Statistics::m_scriptFrame = {time.getFPS(), time.start()};
 }

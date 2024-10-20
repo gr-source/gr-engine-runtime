@@ -45,9 +45,9 @@ void Manager::DestroyEntity(Entity *entity) {
 
     m_available.push_back(id);
 
-    m_mapEntities[id] = nullptr;
+    m_mapEntities.erase(id);
 
-    m_entity.erase(std::remove(m_entity.begin(), m_entity.end(), entity));
+    m_entity.erase(std::remove(m_entity.begin(), m_entity.end(), entity), m_entity.end());
 }
 
 void Manager::Update() {

@@ -29,13 +29,13 @@ void EditorController::Initialize() {
 }
 
 void EditorController::Update() {
-    if (!Camera::Main && !Camera::Current) {
+    if (!Settings::bGameRunning && !Camera::Main && !Camera::Current) {
         return;
     }
 
     m_mainCamera = Camera::Main();
 
-    if (!m_mainCamera || m_mainCamera != Camera::Current() || !m_io->MouseDrawCursor || Settings::IsGameRunning) {
+    if (!m_mainCamera || m_mainCamera != Camera::Current() || !m_io->MouseDrawCursor || Settings::bGameRunning) {
         return;
     }
 
@@ -43,24 +43,24 @@ void EditorController::Update() {
 
     Vector3 diretion;
 
-    if (Input::IsKeyPress(Input::KEY_W)) {
+    if (Input::IsKeyPress(Input::InputKey_W)) {
         diretion += transform->getforward();
     }
-    if (Input::IsKeyPress(Input::KEY_S)) {
+    if (Input::IsKeyPress(Input::InputKey_S)) {
         diretion -= transform->getforward();
     }
-    if (Input::IsKeyPress(Input::KEY_A)) {
+    if (Input::IsKeyPress(Input::InputKey_A)) {
         diretion += transform->getright();
     }
-    if (Input::IsKeyPress(Input::KEY_D)) {
+    if (Input::IsKeyPress(Input::InputKey_D)) {
         diretion -= transform->getright();
     }
-    if (Input::IsKeyPress(Input::KEY_UP)) {
-        diretion.y += 1.0f;
-    }
-    if (Input::IsKeyPress(Input::KEY_DOWN)) {
-        diretion.y -= 1.0f;
-    }
+    // if (Input::IsKeyPress(Input::InputKey_UP)) {
+    //     diretion.y += 1.0f;
+    // }
+    // if (Input::IsKeyPress(Input::InputKey_DOWN)) {
+    //     diretion.y -= 1.0f;
+    // }
 
     if (Math::magnitude(diretion) > 0.0f) {
         transform->addLocalPosition(Math::normalize(diretion) * movementSpeed * TimeLast::deltaTime);
@@ -83,11 +83,11 @@ void EditorController::LookAt(Transform *transform) {
 void EditorController::UpdateCursor(Transform *transform) {
     auto cursorPos = Input::GetCursorPos();
     
-    if (Input::IsMouseDown(MouseButton_Left) && lastMousePos == Vector2::zero) {
+    if (Input::IsMouseDown(Input::InputKey_Mouse_Left) && lastMousePos == Vector2::zero) {
         lastMousePos = Input::GetCursorPos();
     }
     
-    if (Input::IsMouseReleased(MouseButton_Left)) {
+    if (Input::IsMouseReleased(Input::InputKey_Mouse_Left)) {
         lastMousePos = Vector2::zero;
     }
 
@@ -95,7 +95,7 @@ void EditorController::UpdateCursor(Transform *transform) {
         auto delta = Input::GetCursorPos() - lastMousePos;
 
         ProcessMouse(delta, transform);
-            
+        
         lastMousePos = Input::GetCursorPos();
     }
 }

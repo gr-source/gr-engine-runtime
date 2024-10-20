@@ -12,7 +12,7 @@ public:
 
     static void StopPlayEngine();
 
-    static std::atomic<bool> IsGameRunning;
+    static std::atomic<bool> bGameRunning;
 
     static Vector2 GameGrapicQiality;
 
