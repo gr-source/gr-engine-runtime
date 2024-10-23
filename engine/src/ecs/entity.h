@@ -22,7 +22,6 @@ class GameObject;
 /* Classe de entidades */
 class Entity {
 public:
-    // static void (*Update)(Entity *);
     
     Entity() = delete;
     Entity(GameObject *gameObject, EntityID id);

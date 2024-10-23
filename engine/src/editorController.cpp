@@ -74,10 +74,10 @@ void EditorController::LookAt(Transform *transform) {
 
     m_mainCamera->lookIt(dir);
 
-    elapsed = {
-        -Math::eulerAngles(m_mainCamera->getTransform()->getRotation()).y,
-        Math::eulerAngles(m_mainCamera->getTransform()->getRotation()).x
-    };
+    // elapsed = {
+    //     -Math::eulerAngles(m_mainCamera->getTransform()->getRotation()).y,
+    //     Math::eulerAngles(m_mainCamera->getTransform()->getRotation()).x
+    // };
 }
 
 void EditorController::UpdateCursor(Transform *transform) {

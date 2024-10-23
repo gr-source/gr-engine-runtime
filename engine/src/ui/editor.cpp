@@ -1169,7 +1169,7 @@ void Editor::RenderScene() {
         s_texturePlayGame = iconsUI[ICON_PLAY_GAME];
         if (Settings::bGameRunning) {
             if (ImGui::IsKeyReleased(ImGuiKey_Escape) && ImGui::IsWindowHovered()) {
-                Settings::bGameRunning = false;
+                StopRunningGame();
             } else {
                 s_texturePlayGame = iconsUI[ICON_STOP_GAME];
             }
@@ -1183,8 +1183,7 @@ void Editor::RenderScene() {
 
                 Threadpool::AddTask(&Editor::BuildScript);
             } else {
-                Settings::bGameRunning = false;
-                Console::log(LogInfo::DEFAULT, "Game stoped.");
+                StopRunningGame();
             }
         }
     }
@@ -1237,6 +1236,11 @@ void Editor::RenderScene() {
     if (s_objectSelected && !s_io->MouseDrawCursor && ImGui::IsWindowFocused() && s_io->KeyShift && ImGui::IsKeyReleased(ImGuiKey_D)) {
         s_objectSelected = &GameObject::Instantiate(s_objectSelected);
     }
+}
+
+void Editor::StopRunningGame() {
+    Settings::bGameRunning = false;
+    Console::log(LogInfo::DEFAULT, "Game stoped.");
 }
 
 void Editor::RenderGuizmo() {
@@ -1746,27 +1750,44 @@ void Editor::RenderGameObjectPropertiUI() {
             s_objectSelected->setActive(isActive);
         }
 
-        s_objectSelected->RenderProperty<Transform>(Editor::OnPropertyTransform);
-
-        if (s_objectSelected->RenderProperty<MeshFilter>(Editor::OnPropertyMeshFilter)) {
-            entt->remove("MeshFilter");
-        }
-
-        if (s_objectSelected->RenderProperty<MeshRender>(Editor::OnPropertyMeshRender)) {
-            entt->remove("MeshRender");
-            entt->remove("MeshFilter");
-        }
-
-        if (s_objectSelected->RenderProperty<Light>(Editor::OnPropertyLight)) {
-            entt->remove("Light");
-        }
-
-        if (s_objectSelected->RenderProperty<Rigidbody>(Editor::OnPropertyRigidbody)) {
-            entt->remove("Rigidbody");
-        }
 
         auto &components = s_objectSelected->getEntity()->getComponents();
         for (auto &&[name, component] : components) {
+            if (name == "Transform") {
+                s_objectSelected->RenderProperty<Transform>(Editor::OnPropertyTransform);
+                continue;
+            }
+            
+            if (name == "Light") {
+                if (s_objectSelected->RenderProperty<Light>(Editor::OnPropertyLight)) {
+                    Event::Add(&Entity::remove, s_objectSelected->getEntity(), name);
+                }
+                continue;
+            }
+
+            if (name == "MeshRender") {
+                if (s_objectSelected->RenderProperty<MeshRender>(Editor::OnPropertyMeshRender)) {
+                    Event::Add(&Entity::remove, s_objectSelected->getEntity(), name);
+                    Event::Add(&Entity::remove, s_objectSelected->getEntity(), "MeshFilter");
+                }
+                continue;
+            }
+
+            if (name == "MeshFilter") {
+                if (s_objectSelected->RenderProperty<MeshFilter>(Editor::OnPropertyMeshFilter)) {
+                    Event::Add(&Entity::remove, s_objectSelected->getEntity(), name);
+                }
+                continue;
+            }
+
+            if (name == "Rigidbody") {
+                if (s_objectSelected->RenderProperty<Rigidbody>(Editor::OnPropertyRigidbody)) {
+                    Event::Add(&Entity::remove, s_objectSelected->getEntity(), name);
+                }
+                continue;
+            }
+
+
             if (!RenderComponents(name, &(*component))) {
                 Event::Add(&Entity::remove, s_objectSelected->getEntity(), name);
                 continue;
@@ -1787,10 +1808,6 @@ void Editor::RenderGameObjectPropertiUI() {
 }
 
 bool Editor::RenderComponents(const std::string &name, Component *component) {
-    if (name == "Transform" || name == "Light" || name == "MeshRender" || name == "MeshFilter" || name == "Rigidbody") {
-        return true;
-    }
-
     auto &componentPool = ScriptManager::GetComponentPool();
 
     auto isRender = true;

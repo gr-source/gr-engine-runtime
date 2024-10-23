@@ -25,7 +25,7 @@ void AssetsManager::SetGameObjectList(const std::string &path, std::function<voi
 }
 
 void AssetsManager::SetShaderList(const std::string &name, const std::string &frag, const std::string &vert, std::function<void(grr::gShader *)> func) {
-    throw std::runtime_error("function do not implemented.");
+    AssetsManagerSetShaderList(name, frag, vert, func);
 }
 
 void AssetsManager::SetTextureList(const std::string &path, std::function<void(grr::gTexture *)> func) {

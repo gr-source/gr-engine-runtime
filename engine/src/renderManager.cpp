@@ -88,30 +88,14 @@ void RenderManager::Renderer() {
     }
 
     
-
-    // grr::gShader::Bind(m_shader[ShaderType_Static_Multi_Model]);
-
-    // if (bWireFrame) {
-        // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-    // }
-
-    // grr::gShader::SetUniform("u_animatior", static_cast<int>(false));
-    // grr::gShader::SetUniform("u_model", 1, Matrix4x4::identityMatrix);
-
     Batching::Renderer();
 
     for (int i=0;i<10;i++) {
         grr::gTexture::Bind(nullptr, i);
     }
-
-    // if (bWireFrame) {
-        // glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-    // }
 }
 
 void RenderManager::Shutdown() {
-    // bRender = false;
-    
     m_camera = nullptr;
     
     for (auto &shader : m_shader) {

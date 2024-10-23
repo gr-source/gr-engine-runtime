@@ -53,14 +53,14 @@ std::string Input::getKeyName(Key key) {
 }
 
 bool Input::IsKeyDown(Key key) {
-    return 0;
+    return false;
 }
 
 bool Input::IsKeyUp(Key key) {
-    return 0;
+    return false;
 }
 
-bool Input::IsKeyPress(grm::u32 key) {
+bool Input::IsKeyPress(Key key) {
     return ImGui::IsKeyDown(get_key_to_glfw(key));//GET_INSTANCE_PRESS(get_key_to_glfw(key));
 }
 
@@ -104,18 +104,18 @@ void Input::Initialize() {
 }
 
 void Input::Update() {
-    auto &io = ImGui::GetIO();
-    auto window = glfwGetCurrentContext();
+    // auto &io = ImGui::GetIO();
+    // auto window = glfwGetCurrentContext();
 
-    // m_mouseButtonState[MouseButton_Right] = ImGui::IsMouseDown(ImGuiMouseButton_Right);//glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS ? true : false;
-    // m_mouseButtonState[MouseButton_Left]  = ImGui::IsMouseDown(ImGuiMouseButton_Left);//glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS ? true : false;
+    // // m_mouseButtonState[MouseButton_Right] = ImGui::IsMouseDown(ImGuiMouseButton_Right);//glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS ? true : false;
+    // // m_mouseButtonState[MouseButton_Left]  = ImGui::IsMouseDown(ImGuiMouseButton_Left);//glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS ? true : false;
 
-    if (m_mouseData.want) {
-        glfwSetCursorPos(window, static_cast<double>(m_mouseData.pos.x), static_cast<double>(m_mouseData.pos.y));
-        m_mouseData.want = false;
-    }
-    double x, y;
-    glfwGetCursorPos(window, &x, &y);
+    // if (m_mouseData.want) {
+    //     glfwSetCursorPos(window, static_cast<double>(m_mouseData.pos.x), static_cast<double>(m_mouseData.pos.y));
+    //     m_mouseData.want = false;
+    // }
+    // double x, y;
+    // glfwGetCursorPos(window, &x, &y);
 
-    m_mouseData.pos = {static_cast<float>(x), static_cast<float>(y)};
+    // m_mouseData.pos = {static_cast<float>(x), static_cast<float>(y)};
 }

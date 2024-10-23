@@ -288,8 +288,7 @@ void Scene::Load(const std::string &path, std::uint8_t flags, Scene *scene) {
         stream.seekg(start_block_position + static_cast<std::streampos>(data.sizeData), std::ios_base::beg);
     }
 
-    if (!hasScene)
-        Event::Add(&Scene::SetupScene, std::move(scene));
+    Event::Add(&Scene::SetupScene, std::move(scene));
 }
 
 void Scene::setEnable(bool value) {
@@ -419,6 +418,7 @@ int Scene::writeScript(Streaming *streaming) {
     streaming->writeS(&size, 1);
 
     for (auto &&[objectName, componentName, ptr] : m_componentCache) {
+        
         // ObjectName
         size = objectName.size();
 
@@ -759,7 +759,15 @@ void Scene::remove(GameObject *gameObject) {
 }
 
 void Scene::SetupScene(Scene *scene) {
-    m_scenes.emplace(scene->getName(), std::unique_ptr<Scene>(scene));
+    auto it = m_scenes.find(scene->getName());
+    if (it == m_scenes.end())
+        m_scenes.emplace(scene->getName(), std::unique_ptr<Scene>(scene));
+
+    for (auto &object : scene->getObjectList()) {
+        auto entt = object->getEntity();
+
+        entt->init();
+    }
 }
 
 void Scene::SetupScript(std::string objectName, std::string name, std::condition_variable &cv, Component *&component) {
@@ -785,7 +793,11 @@ void Scene::SetupScript(std::string objectName, std::string name, std::condition
 void Scene::ProcessScript(std::condition_variable &cv, Component *&component, Streaming *streaming) {
     {
         std::lock_guard<std::mutex> lock(m_mutex);
-        component->Deserialize(streaming);
+        try {
+            component->Deserialize(streaming);
+        } catch (const std::exception &e) {
+            LOG_ERROR_ARGS("[ Scene ] %s", e.what());
+        }
         component = nullptr;
     }
     cv.notify_one();

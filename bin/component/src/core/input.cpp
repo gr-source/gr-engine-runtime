@@ -3,7 +3,7 @@
 #include "api.hpp"
 
 bool Input::IskeyPress(InputKey key) {
-    throw std::runtime_error("function do not implemented.");
+    return InputIsKeyPress(key);
 }
 
 void Input::SetCursorPos(const Vector2 &value) {

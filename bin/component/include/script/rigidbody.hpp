@@ -8,11 +8,15 @@ class Rigidbody : public Component {
     CLASS_FUNCTIONS
 public:
     Rigidbody();
+    ~Rigidbody();
 
     void Init() override;
 
     void Update() override;
 
+    bool Serialize(Stream *stream) override;
+
+    bool Deserialize(Stream *stream) override;
 
 private:
     std::shared_ptr<btDefaultMotionState> m_DefaultMotionState;
@@ -27,9 +31,11 @@ private:
 
     bool m_bDinamic;
 
-    void setup();
+    void initialize();
 
-    void process();
+    void update();
+
+    void shutdown();
 };
 
 REGISTER_COMPONENT(Rigidbody)

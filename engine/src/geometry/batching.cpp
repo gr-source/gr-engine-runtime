@@ -217,6 +217,9 @@ void Batching::compile() {
 }
 
 void Batching::buildDynamic() {
+    if (m_models.empty()) {
+        return;
+    }
     grr::gShader::SetUniform("u_model", 1, m_models[0]->getGlobalMatrix());
 
     m_type = bHasIndice ? DrawType_Elements : DrawType_Arrays;

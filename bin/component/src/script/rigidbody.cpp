@@ -2,22 +2,43 @@
 
 #include "script/transform.hpp"
 
-Rigidbody::Rigidbody() : m_DefaultMotionState(nullptr), m_body(nullptr), m_transform(nullptr), m_mass(0.0f), m_bDinamic(false) {}
+#include "core/stream.hpp"
+
+Rigidbody::Rigidbody() : m_collisionShape(nullptr), m_DefaultMotionState(nullptr), m_body(nullptr), m_transform(nullptr), m_mass(0.0f), m_bDinamic(false) {}
+
+Rigidbody::~Rigidbody() {
+    shutdown();
+}
 
 void Rigidbody::Init() {
     m_transform = &GetComponent<Transform>();
 
-    setup();
+    initialize();
 }
 
 void Rigidbody::Update() {
-    process();
+    update();
 }
 
-void Rigidbody::process() {
+bool Rigidbody::Serialize(Stream *stream) {
+    stream->write(&m_mass, sizeof(float));
+    stream->write(&m_bDinamic, sizeof(bool));
+    return true;
+}
+
+bool Rigidbody::Deserialize(Stream *stream) {
+    stream->read(&m_mass, sizeof(float));
+    stream->read(&m_bDinamic, sizeof(bool));
+    return true;
+}
+
+void Rigidbody::update() {
     throw std::runtime_error("function do not implemented.");
 }
 
-void Rigidbody::setup() {
+void Rigidbody::shutdown() {
+}
+
+void Rigidbody::initialize() {
     throw std::runtime_error("function do not implemented.");
 }

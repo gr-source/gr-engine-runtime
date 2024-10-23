@@ -2,6 +2,7 @@
 #include "meshFilter.hpp"
 #include "transform.hpp"
 #include "animator.hpp"
+#include "console.hpp"
 
 #include "geometry/mesh.h"
 
@@ -13,6 +14,10 @@ std::vector<std::shared_ptr<Material>> &MeshRender::getMaterials() {
 
 // TODO: falta orimizar e corrigir erros do material;
 void MeshRender::build() {
+    if (!m_transform) {
+        m_transform = &entity->getComponent<Transform>();
+    }
+
     if (!entity->hasComponent<MeshFilter>()) {
         throw std::runtime_error("MeshFilter component do not found.");
     }

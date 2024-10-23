@@ -3,6 +3,7 @@
 #include "scriptLoader.hpp"
 
 #include "script/meshCollider.hpp"
+#include "script/boxCollider.hpp"
 #include "script/meshRender.hpp"
 #include "script/rigidbody.hpp"
 #include "script/camera.hpp"
@@ -127,6 +128,7 @@ void (*AssetsManagerSetShaderList)(const std::string &, const std::string &, con
 bool (*InputIsKeyPress)(grm::u32);
 void (*InputSetCursorPos)(const Vector2 &);
 Vector2 (*InputGetCursorPos)();
+bool (*InputIsMouseDown)(Input::Key);
 
 void (*Batchingremove)(Transform *, bool);
 void (*Batchinginsert)(Transform *);
@@ -179,18 +181,13 @@ void ScriptManager::RegisterApi() {
     m_script->registerFunction("LoadAnimation", reinterpret_cast<void **>(&LoadAnimation));
 
     // Input
-    // m_script->replaceLibraryFunction("_ZN5Input10IskeyPressE8InputKey",    reinterpret_cast<void *>(&Input::IsKeyPress), (void **)&InputIsKeyPress);
+    m_script->replaceLibraryFunction("_ZN5Input10IskeyPressE8InputKey",    reinterpret_cast<void *>(&Input::IsKeyPress),    (void **)&InputIsKeyPress);
     m_script->replaceLibraryFunction("_ZN5Input12SetCursorPosERK7Vector2", reinterpret_cast<void *>(&Input::SetCursorPos), (void **)&InputSetCursorPos);
-    m_script->replaceLibraryFunction("_ZN5Input12GetCursorPosEv",  reinterpret_cast<void *>(&Input::GetCursorPos), (void **)&InputGetCursorPos);
-    m_script->replaceLibraryFunction("_ZN5Input12IsMousePressE8InputKey", reinterpret_cast<void *>(&Input::IsMouseDown), nullptr);
+    m_script->replaceLibraryFunction("_ZN5Input12GetCursorPosEv",          reinterpret_cast<void *>(&Input::GetCursorPos), (void **)&InputGetCursorPos);
+    m_script->replaceLibraryFunction("_ZN5Input12IsMousePressE8InputKey",  reinterpret_cast<void *>(&Input::IsMouseDown), (void **)&InputIsMouseDown);
 
     // Screen
     m_script->registerFunction("SetScreenSize", reinterpret_cast<void **>(&SetScreenSize));
-
-    // Scene
-    // m_script->replaceLibraryFunction("_ZN5Scene16CreateGameObjectERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEES7_", Scene::CreateGameObject);
-    // m_script->replaceLibraryFunction("_ZN5Scene6DeleteEP10GameObject", reinterpret_cast<void *>(&Scene::Delete));
-    // m_script->replaceLibraryFunction("_ZN5Scene6RemoveEP10GameObject", reinterpret_cast<void **>(&Scene::Remove));
 
     // Component Pool
     m_script->registerFunction("GetComponentPool", reinterpret_cast<void **>(&GetComponentPool));
@@ -212,19 +209,20 @@ void ScriptManager::RegisterApi() {
     // File
     m_script->replaceLibraryFunction("_ZN4File7GetFileERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb", reinterpret_cast<void *>(&File::GetFile), (void **)&FileGetFile);
 
-    // Time
-    // m_script->replaceLibraryField("_ZN4Time9deltaTimeE", reinterpret_cast<void *>(&TimeLast::deltaTime));
-
     // Material
     m_script->replaceLibraryFunction("_ZNK8Material9serializeEP6Stream", (void *)&Material::serialize, (void **)&Materialserialize);
     m_script->replaceLibraryFunction("_ZN8Material11deserializeEP6Stream", (void *)&Material::deserialize, (void **)&Materialdeserialize);
+
+    // BoxCollider
+    m_script->replaceLibraryFunction("_ZN11BoxCollider10buildShapeERK7Vector3", (void *)&BoxCollider::build, (void **)&MeshColliderbuild);
 
     // MeshCollider
     m_script->replaceLibraryFunction("_ZN12MeshCollider5buildEP4Mesh", (void *)&MeshCollider::build, (void **)&MeshColliderbuild);
 
     // Rigidbody
-    m_script->replaceLibraryFunction("_ZN9Rigidbody7processEv", (void *)&Rigidbody::process, (void **)&Rigidbodyprocess);
-    m_script->replaceLibraryFunction("_ZN9Rigidbody5setupEv", (void *)&Rigidbody::setup, (void **)&Rigidbodysetup);
+    m_script->replaceLibraryFunction("_ZN9Rigidbody10initializeEv", (void *)&Rigidbody::initialize, (void **)&Rigidbodysetup);
+    m_script->replaceLibraryFunction("_ZN9Rigidbody8shutdownEv", (void *)&Rigidbody::shutdown, (void **)&Rigidbodyprocess);
+    m_script->replaceLibraryFunction("_ZN9Rigidbody6updateEv", (void *)&Rigidbody::update, (void **)&Rigidbodyprocess);
 }
 #pragma GCC diagnostic pop
 

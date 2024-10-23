@@ -12,7 +12,7 @@ enum MouseButton {
 
 class Input {
 public:
-    enum Key {
+    enum Key : uint32_t {
         InputKey_W = 1 << 1,
         InputKey_A = 1 << 2,
         InputKey_S = 1 << 3,
@@ -29,7 +29,7 @@ public:
 
     static bool IsKeyUp(Key key);
 
-    static bool IsKeyPress(grm::u32 key);
+    static bool IsKeyPress(Key key);
 
     static bool IsMouseReleased(Key button);
 

@@ -20,10 +20,13 @@ class Camera;
 class Light;
 
 class Batching;
+class Material;
 class Mesh;
 
 class btDefaultMotionState;
 class btCollisionShape;
 class btTriangleMesh;
 class btRigidBody;
+
+class Stream;
 

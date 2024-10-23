@@ -37,6 +37,7 @@ std::unordered_map<std::string, std::unique_ptr<Component>> &Entity::getComponen
 }
 
 void Entity::copy(Entity *entity) {
+    throw std::runtime_error("Falta arrumar o init do script.");
     if (!entity) {
         throw std::runtime_error("Entity do not is valid.");
     }
@@ -141,22 +142,20 @@ void Entity::update() {
 }
 
 void Entity::init() {
-    auto pages = (m_components.size() + MAX_PAGES - 1) / MAX_PAGES;
-    for (auto i=0;i<pages;i++) {
-        auto start = i * MAX_PAGES;
-        auto end = std::min(start + MAX_PAGES, int(m_components.size()));
-
-        for (auto j=start;j<end;j++) {
-            if (m_components[j])
-                m_components[j]->Init();
-        }
+    std::list<std::tuple<std::string, Component *>> temp;
+    for (auto &&[name, component] : m_componentPtr) {
+        temp.emplace_front(name, &(*component));
     }
-}
+
+    for (auto &&[name, component] : temp) {
+        component->Init();
+    }
+} 
 
 void Entity::clear() {
-    m_componentPtr.clear();
-
     m_components.clear();
+
+    m_componentPtr.clear();
 }
 
 void Entity::remove(const std::string &name) {
@@ -188,7 +187,7 @@ Component *Entity::addInternalComponent(const std::string &name) {
     }
     
     component->entity = this;
-    component->Init();
+    // component->Init();
 
     m_componentPtr.emplace(name, component);
 

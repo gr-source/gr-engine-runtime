@@ -15,15 +15,15 @@ std::unique_ptr<btCollisionDispatcher> PhysicsScene::dispatcher = nullptr;
 std::mutex PhysicsScene::m_mutex;
 
 void PhysicsScene::Initialize() {
-    broadphase = std::make_unique<btDbvtBroadphase>();
+    broadphase             = std::make_unique<btDbvtBroadphase>();
 
     collisionConfiguration = std::make_unique<btDefaultCollisionConfiguration>();
 
-    dispatcher = std::make_unique<btCollisionDispatcher>(&(*collisionConfiguration));
+    dispatcher             = std::make_unique<btCollisionDispatcher>(&(*collisionConfiguration));
 
-    solver = std::make_unique<btSequentialImpulseConstraintSolver>();
+    solver                 = std::make_unique<btSequentialImpulseConstraintSolver>();
 
-    dynamicsWorld = std::make_unique<btDiscreteDynamicsWorld>(&(*dispatcher), &(*broadphase), &(*solver), &(*collisionConfiguration));
+    dynamicsWorld          = std::make_unique<btDiscreteDynamicsWorld>(&(*dispatcher), &(*broadphase), &(*solver), &(*collisionConfiguration));
 
     dynamicsWorld->setGravity(FROMVEC3(gravity));
 }
@@ -32,17 +32,14 @@ void PhysicsScene::Shutdown() {
 }
 
 void PhysicsScene::AddRigidbody(btRigidBody* body) {
-    // std::lock_guard<std::mutex> lock(m_mutex);
     dynamicsWorld->addRigidBody(body);
 }
 
 void PhysicsScene::RemoveRigidbody(btRigidBody* body) {
-    // std::lock_guard<std::mutex> lock(m_mutex);
     dynamicsWorld->removeRigidBody(body);
 }
 
 void PhysicsScene::Update(float dt) {
-    // std::lock_guard<std::mutex> lock(m_mutex);
     dynamicsWorld->stepSimulation(dt);
 }
 

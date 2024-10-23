@@ -8,15 +8,17 @@ class Rigidbody : public Component {
 public:
     Rigidbody() = delete;
 
-    void setup();
+    void initialize();
 
-    void process();
+    void shutdown();
+
+    void update();
 
     float getMass() const;
 
     void setMass(float value);
 
-    bool getDinamic();
+    bool getDinamic() const;
 
     void setDynamic(bool value);
 
