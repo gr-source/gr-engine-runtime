@@ -251,5 +251,4 @@ target_include_directories(${PROJECT_NAME} PRIVATE
     $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/${PROJECT_NAME}/src>
 )
 
-target_link_libraries(${PROJECT_NAME} PRIVATE /home/grdev/Downloads/dobby-linux/libdobby.so)
 

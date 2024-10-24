@@ -2,17 +2,21 @@
 
 #include "script/transform.hpp"
 
-BoxCollider::BoxCollider() : m_CollisionShape(nullptr) {
-    buildShape(Vector3::one);
+#include "core/stream.hpp"
+
+BoxCollider::BoxCollider() : m_CollisionShape(nullptr), boxSize(Vector3::one) {
+    buildShape(boxSize);
+}
+
+bool BoxCollider::Serialize(Stream *stream) {
+    stream->write(&boxSize, sizeof(Vector3));
+    return true;
+}
+
+bool BoxCollider::Deserialize(Stream *stream) {
+    stream->read(&boxSize, sizeof(Vector3));
+    return true;
 }
 
 void BoxCollider::buildShape(const Vector3 &size) {
 }
-
-
-
-
-
-
-
-

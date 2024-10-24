@@ -23,12 +23,14 @@ void Rigidbody::Update() {
 bool Rigidbody::Serialize(Stream *stream) {
     stream->write(&m_mass, sizeof(float));
     stream->write(&m_bDinamic, sizeof(bool));
+    stream->write(&m_lookRotation, sizeof(Vector3));
     return true;
 }
 
 bool Rigidbody::Deserialize(Stream *stream) {
     stream->read(&m_mass, sizeof(float));
     stream->read(&m_bDinamic, sizeof(bool));
+    stream->read(&m_lookRotation, sizeof(Vector3));
     return true;
 }
 

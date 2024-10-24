@@ -22,6 +22,10 @@ public:
 
     void setDynamic(bool value);
 
+    void setLookRotation(const Vector3 &value);
+
+    const Vector3 &getLookRotation() const;
+
 private:
     std::shared_ptr<btDefaultMotionState> m_DefaultMotionState;
 
@@ -34,6 +38,8 @@ private:
     float m_mass;
 
     bool m_bDinamic;
+
+    Vector3 m_lookRotation;
 };
 
 

@@ -10,8 +10,15 @@ class BoxCollider : public Component {
 public:
     BoxCollider();
 
+
+    bool Serialize(Stream *stream) override;
+
+    bool Deserialize(Stream *stream) override;
+
 private:
     std::shared_ptr<btCollisionShape> m_CollisionShape;
+
+    Vector3 boxSize;
 
     void buildShape(const Vector3 &size);
 };

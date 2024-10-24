@@ -28,6 +28,7 @@
 #include "core/scene.hpp"
 #include "core/event.hpp"
 
+#include "script/boxCollider.hpp"
 #include "script/meshFilter.hpp"
 #include "script/meshRender.hpp"
 #include "script/transform.hpp"
@@ -1780,6 +1781,13 @@ void Editor::RenderGameObjectPropertiUI() {
                 continue;
             }
 
+            if (name == "BoxCollider") {
+                if (s_objectSelected->RenderProperty<BoxCollider>(Editor::OnPropertyBoxCollider)) {
+                    Event::Add(&Entity::remove, s_objectSelected->getEntity(), name);
+                }
+                continue;
+            }
+
             if (name == "Rigidbody") {
                 if (s_objectSelected->RenderProperty<Rigidbody>(Editor::OnPropertyRigidbody)) {
                     Event::Add(&Entity::remove, s_objectSelected->getEntity(), name);
@@ -2123,6 +2131,30 @@ bool Editor::OnPropertyLight(Light *light) {
     return false;
 }
 
+bool Editor::OnPropertyBoxCollider(BoxCollider *boxCollider) {
+    auto bExists = true;
+
+    auto isOpen = ImGui::CollapsingHeader("BoxCollider", &bExists);
+    if (!bExists) {
+        return true;
+    }
+
+    if (!isOpen) {
+        return false;
+    }
+
+    const char* text[] {"X", "Y", "Z"};
+
+    auto size = boxCollider->getBoxSize();
+    ImGui::Text("Size");
+    if (ImGui::DragFloatEx("##boxcollider_size", text, reinterpret_cast<float *>(&size), 1.0f, 0.0f, 0.0f, "%.3f")) {
+        boxCollider->setBoxSize(size);
+    }
+
+
+    return false;
+}
+
 bool Editor::OnPropertyRigidbody(Rigidbody *rigidbody) {
     auto bExists = true;
 
@@ -2144,6 +2176,14 @@ bool Editor::OnPropertyRigidbody(Rigidbody *rigidbody) {
     auto bDynamic = rigidbody->getDinamic();
     if (ImGui::Checkbox("##rigidbody_dynamic", &bDynamic)) {
         rigidbody->setDynamic(bDynamic);
+    }
+
+    const char* text[] {"X", "Y", "Z"};
+
+    auto freese = rigidbody->getLookRotation();
+    ImGui::Text("Freeze");
+    if (ImGui::DragFloatEx("##rigidbody_freeze", text, reinterpret_cast<float *>(&freese), 1.0f, 0.0f, 0.0f, "%.3f")) {
+        rigidbody->setLookRotation(freese);
     }
 
     return false;

@@ -3,10 +3,22 @@
 #include "physics/physicsScene.hpp"
 
 void BoxCollider::build(const Vector3 &size) {
-    m_CollisionShape = std::make_shared<btBoxShape>(btVector3(1.0f, 1.0f, 1.0f));
+    if (!m_CollisionShape)
+        m_CollisionShape = std::make_shared<btBoxShape>(btVector3(1.0f, 1.0f, 1.0f));
+        
     m_CollisionShape->setLocalScaling(btVector3(size.x, size.y, size.z));
 }
 
 btCollisionShape *BoxCollider::getShape() {
     return &(*m_CollisionShape);
+}
+
+const Vector3 &BoxCollider::getBoxSize() const {
+    return boxSize;
+}
+
+void BoxCollider::setBoxSize(const Vector3 &value) {
+    boxSize = value;
+
+    build(value);
 }

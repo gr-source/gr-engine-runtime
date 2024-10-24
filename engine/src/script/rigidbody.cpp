@@ -42,8 +42,7 @@ void Rigidbody::initialize() {
     pRigidBodyConstructionInfo.m_restitution = 0.3f;
 
     m_body = std::make_shared<btRigidBody>(pRigidBodyConstructionInfo);
-    // m_body->activate(true);
-	// m_body->setAngularFactor(FROMVEC3(def.loockRotation));
+	m_body->setAngularFactor(FROMVEC3(m_lookRotation));
 
     PhysicsScene::AddRigidbody(&(*m_body));
 }
@@ -57,7 +56,7 @@ void Rigidbody::shutdown() {
 }
 
 void Rigidbody::update() {
-    if (!m_body) {
+    if (!m_body || !m_transform) {
         return;
     }
 
@@ -84,23 +83,6 @@ float Rigidbody::getMass() const {
 }
 
 void Rigidbody::setMass(float value) {
-    if (value <= 0.0f) {
-        return;
-    }
-
-    // m_body->forceActivationState(ACTIVE_TAG);
-
-    // m_body->clearForces();
-    // m_body->activate(true);
-
-    // Calcular a inércia local e a massa
-    btVector3 fallInertia(0.0f, 0.0f, 0.0f);
-    m_collisionShape->calculateLocalInertia(value, fallInertia);
-    
-    // Atualizar propriedades de massa e inércia
-    m_body->setMassProps(value, fallInertia);
-    m_body->setInvInertiaDiagLocal(fallInertia);
-    
     m_mass = value;
 }
 
@@ -112,4 +94,13 @@ void Rigidbody::setDynamic(bool value) {
     m_bDinamic = value;
 }
 
+void Rigidbody::setLookRotation(const Vector3 &value) {
+    m_lookRotation = value;
 
+    if (m_body)
+        m_body->setAngularFactor(FROMVEC3(value));
+}
+
+const Vector3 &Rigidbody::getLookRotation() const {
+    return m_lookRotation;
+}

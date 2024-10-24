@@ -202,6 +202,8 @@ private:
 
     static bool OnPropertyLight(Light *light);
 
+    static bool OnPropertyBoxCollider(BoxCollider *boxCollider);
+
     static bool OnPropertyRigidbody(Rigidbody *rigidbody);
 
     static void OnPropertyAnimator(Animator* animator);

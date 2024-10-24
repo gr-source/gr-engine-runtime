@@ -31,6 +31,8 @@ private:
 
     bool m_bDinamic;
 
+    Vector3 m_lookRotation;
+
     void initialize();
 
     void update();
