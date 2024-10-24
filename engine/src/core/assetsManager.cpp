@@ -1,6 +1,6 @@
 #include "assetsManager.hpp"
 
-#include "core/file/streaming.hpp"
+#include "core/file/stream.hpp"
 #include "core/file/file.hpp"
 
 #include "core/animation/animation.hpp"

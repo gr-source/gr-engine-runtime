@@ -8,7 +8,7 @@
 
 #include "core/filmbox/filmbox.hpp"
 
-#include "core/file/streaming.hpp"
+#include "core/file/stream.hpp"
 #include "core/file/file.hpp"
 
 void gModel3D::ImportFBX(const std::string &path) {

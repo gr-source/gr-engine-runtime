@@ -1,54 +1,70 @@
 #pragma once
 
 #include <fstream>
+#include <cstring>
 #include <string>
+#include <vector>
+#include <tuple>
 
-class Stream {
+class Streaming : private std::fstream {
 public:
-	
-	static bool open(const std::string& path, std::ios_base::openmode mode);
-	
-	template <typename T>
-	static std::istream& read(T* data, std::streamsize count);
-	
-	template <typename T>
-	static T read(std::streamsize count);
-	
-	template <typename T>
-	static std::ostream &write(const T* data, std::streamsize count);
+    Streaming(const std::string &path, std::ios_base::openmode mode = std::ios_base::in | std::ios_base::out | std::ios_base::binary);
+    Streaming();
+    ~Streaming() override;
 
-	static void seekg(std::streampos position);
+    template <typename T>
+    bool writeS(const T *data, std::streamsize count, bool bCache = true);
 
-	static std::istream& getline(std::string& line);
-	
-	static std::streampos tellg();
-	
-	static void close();
+    template <typename T>
+    bool readS(T *data, std::streamsize count);
 
-	static std::fstream &GetStream();
-	
+    std::streamsize getDataSize();
+
+    void flush();
+
+    bool write(const void *data, std::size_t size);
+
+	bool read(void *data, std::size_t size);
+
+    bool is_open() const;
+
+    std::streampos tellg();
+
+    std::istream &seekg(std::streamoff position, std::ios_base::seekdir mode);
+    
+    void clear();
 private:
-	static std::streamsize m_offset;
-	
-	static std::fstream stream;
+    std::vector<std::tuple<void *, std::streamsize>> m_data;
 };
 
 template <typename T>
-inline std::istream& Stream::read(T* data, std::streamsize count) {
-	return stream.read(reinterpret_cast<char*>(data), sizeof(T) * count);
+bool Streaming::writeS(const T *data, std::streamsize count, bool bCache) {
+    auto size = count * sizeof(T);
+    if (!bCache) {
+        if (std::fstream::write(reinterpret_cast<const char *>(data), size)) {
+            return true;
+        }
+        return false;
+    }
+    auto ptr = std::malloc(size);
+    if (!ptr) {
+        return false;
+    }
+
+    if (!std::memcpy(ptr, reinterpret_cast<const void *>(data), size)) {
+        std::free(ptr);
+        return false;
+    }
+
+    m_data.emplace_back(ptr, size);
+    return true;
 }
-	
+
 template <typename T>
-inline T Stream::read(std::streamsize count) {
-	T data;
-	stream.read(reinterpret_cast<char*>(&data), sizeof(T) * count);
-	return data;
+bool Streaming::readS(T *data, std::streamsize count) {
+    return read(reinterpret_cast<void *>(data), static_cast<std::size_t>(count * sizeof(T)));
 }
-	
-template <typename T>
-inline std::ostream &Stream::write(const T* data, std::streamsize count) {
-	return stream.write(reinterpret_cast<const char*>(data), sizeof(T) * count);
-}
+
 
 
 

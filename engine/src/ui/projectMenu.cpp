@@ -11,7 +11,6 @@
 #include "core/threadpool.hpp"
 #include "core/scene.hpp"
 
-#include "core/file/stream.hpp"
 #include "core/file/config.hpp"
 #include "core/file/file.hpp"
 

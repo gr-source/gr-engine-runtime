@@ -1,6 +1,6 @@
 #include "material.h"
 
-#include "core/file/streaming.hpp"
+#include "core/file/stream.hpp"
 
 #include "core/assetsManager.hpp"
 

@@ -1,30 +1,67 @@
 #include "stream.hpp"
 
-std::fstream Stream::stream;
+Streaming::Streaming(const std::string &path, std::ios_base::openmode mode) : std::fstream(path, mode) {}
 
-std::streamsize Stream::m_offset = 0;
+Streaming::Streaming() : std::fstream() { }
 
-bool Stream::open(const std::string& path, std::ios_base::openmode mode) {
-	stream.open(path, mode);
-	return stream.is_open();
+Streaming::~Streaming() {
+    close();
 }
 
-void Stream::seekg(std::streampos position) {
-    stream.seekg(position);
+std::streamsize Streaming::getDataSize() {
+    std::streamsize buffer_size = 0;
+    for (auto &&[data, size] : m_data) {
+        buffer_size += size;
+    }
+    return buffer_size;
 }
 
-std::istream& Stream::getline(std::string &line) {
-    return std::getline(stream, line);
+void Streaming::flush() {
+    for (auto &&[data, size] : m_data) {
+        std::fstream::write(reinterpret_cast<const char *>(data), size);
+
+        std::free(data);
+    }
+    m_data.clear();
 }
 
-std::streampos Stream::tellg() {
-	return stream.tellg();
-}
-	
-void Stream::close() {
-	stream.close();
+bool Streaming::write(const void *data, std::size_t size) {
+    if (!data || size <= 0) {
+        return false;
+    }
+    auto ptr = std::malloc(size);
+
+    if (!std::memcpy(ptr, data, size)) {
+        return false;
+    }
+
+    m_data.emplace_back(ptr, static_cast<std::streamsize>(size));
+
+    return true;
 }
 
-std::fstream &Stream::GetStream() {
-	return stream;
+bool Streaming::read(void *data, std::size_t size) {
+    if (std::fstream::read(reinterpret_cast<char *>(data), static_cast<std::streamsize>(size))) {
+        return true;
+    }
+    return false;
+}
+
+bool Streaming::is_open() const {
+    return std::fstream::is_open();
+}
+
+std::streampos Streaming::tellg() {
+    return std::fstream::tellg();
+}
+
+std::istream &Streaming::seekg(std::streamoff position, std::ios_base::seekdir mode) {
+    return std::fstream::seekg(position, mode);
+}
+
+void Streaming::clear() {
+    for (auto &&[data, size] : m_data) {
+        std::free(data);
+    }
+    m_data.clear();
 }

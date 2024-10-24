@@ -97,7 +97,7 @@ bool MeshRender::Deserialize(Stream *stream) {
         material->deserialize(stream);
     }
 
-    build();
+    // build();
 
     return true;
 }

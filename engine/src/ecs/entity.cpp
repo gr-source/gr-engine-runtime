@@ -37,17 +37,11 @@ std::unordered_map<std::string, std::unique_ptr<Component>> &Entity::getComponen
 }
 
 void Entity::copy(Entity *entity) {
-    throw std::runtime_error("Falta arrumar o init do script.");
     if (!entity) {
         throw std::runtime_error("Entity do not is valid.");
     }
 
-    std::list<std::tuple<std::string, Component *>> m_list;
     for (auto &&[name, ptr] : entity->m_componentPtr) {
-        m_list.emplace_front(name, &(*ptr));
-    }
-
-    for (auto &&[name, ptr] : m_list) {
         if (!ptr) {
             throw std::runtime_error("Component is not valid: " + name);
         }
@@ -56,21 +50,15 @@ void Entity::copy(Entity *entity) {
             continue;
         }
 
-        auto component = ScriptManager::CopyComponentWithName(name, ptr);
+        auto component = ScriptManager::CopyComponentWithName(name, &(*ptr));
         if (!component) {
             throw std::runtime_error("Falied to copy component: " + name);
         }
         component->entity = this;
-        component->Init();
 
-        m_componentPtr.emplace(name, component);
+        m_componentPtr.emplace(name, std::unique_ptr<Component>(component));
 
         m_components.emplace_back(component);
-
-        if (name == "MeshRender") {
-            auto meshRender = dynamic_cast<MeshRender *>(component);
-            meshRender->build();
-        }
     }
 
     auto targetGameObject = entity->getGameObject();
@@ -100,6 +88,12 @@ void Entity::copy(Entity *entity) {
         auto &clone = GameObject::Instantiate(objectPtr);
         auto &cTransform = clone.getTransform();
         cTransform.setParent(&localTransform);
+    }
+
+    init();
+
+    if (hasComponent<MeshRender>()) {
+        getComponent<MeshRender>().build();
     }
 }
 
@@ -187,7 +181,6 @@ Component *Entity::addInternalComponent(const std::string &name) {
     }
     
     component->entity = this;
-    // component->Init();
 
     m_componentPtr.emplace(name, component);
 

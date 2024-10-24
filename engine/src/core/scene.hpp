@@ -114,6 +114,8 @@ private:
 
     static void SetupScene(Scene *scene);
 
+    static void InitializeScript(GameObject *gameObject);
+
     static void SetupScript(std::string objectName, std::string name, std::condition_variable &cv, Component *&component);
 
     static void ProcessScript(std::condition_variable &cv, Component *&component, Streaming *streaming);

@@ -1,6 +1,6 @@
 #include "gHeader.hpp"
 
-#include "core/file/streaming.hpp"
+#include "core/file/stream.hpp"
 
 gMesh::gMesh() : m_hasBone(false), m_vertices(nullptr), m_verticeCount(0), m_indices(nullptr), m_indicesCount(0), m_bones(nullptr), m_boneCount(0) {}
 

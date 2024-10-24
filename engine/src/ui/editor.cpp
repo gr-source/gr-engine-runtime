@@ -21,7 +21,6 @@
 #include "core/cmd/cmd.hpp"
 
 #include "core/file/initialization.hpp"
-#include "core/file/stream.hpp"
 #include "core/file/config.hpp"
 #include "core/file/file.hpp"
 

@@ -2,7 +2,7 @@
 
 #include "../scriptManager/scriptManager.hpp"
 
-#include "core/file/streaming.hpp"
+#include "core/file/stream.hpp"
 #include "core/file/file.hpp"
 
 #include "core/binary/gHeader.hpp"
@@ -764,9 +764,20 @@ void Scene::SetupScene(Scene *scene) {
         m_scenes.emplace(scene->getName(), std::unique_ptr<Scene>(scene));
 
     for (auto &object : scene->getObjectList()) {
-        auto entt = object->getEntity();
+        InitializeScript(object);
+    }
+}
 
-        entt->init();
+void Scene::InitializeScript(GameObject *gameObject) {
+    auto entt = gameObject->getEntity();
+    entt->init();
+
+    if (gameObject->hasComponent<MeshRender>()) {
+        gameObject->getComponent<MeshRender>().build();
+    }
+
+    for (auto &child : gameObject->getTransform().getChildren()) {
+        InitializeScript(child->getGameObject());
     }
 }
 

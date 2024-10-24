@@ -6,7 +6,6 @@
 
 #include "script/transform.hpp"
 
-#include "core/file/streaming.hpp"
 #include "core/file/stream.hpp"
 #include "core/file/file.hpp"
 
