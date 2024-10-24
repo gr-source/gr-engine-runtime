@@ -3,7 +3,6 @@
 #include "core/file/file.hpp"
 
 #include "core/assetsManager.hpp"
-#include "core/threadpool.hpp"
 #include "core/event.hpp"
 
 #include "console.hpp"
@@ -15,21 +14,7 @@
 
 #define NORM(n) n > 6.0f ? n / 1e2f : n
 
-Filmbox::Filmbox(const std::string &path) : m_path(path) {}
-
-void Filmbox::setPostProcess(std::function<void(const FbxScene *, Filmbox *)> func) {
-    m_funcPost = func;
-}
-
-void Filmbox::load() {
-    Threadpool::AddTask(&Filmbox::doInBackground, this, m_path);
-}
-
-const bool Filmbox::isValid() const {
-    return File::Exists(m_path);
-}
-
-void Filmbox::doInBackground(const std::string &path) {
+void Filmbox::Load(const std::string &path, std::function<void(std::shared_ptr<FbxScene>)> func) {
     if (!File::Exists(path)) {
         return Console::log(LogInfo::ERROR, "falied to opennable .fbx: " + path);
     }
@@ -41,90 +26,93 @@ void Filmbox::doInBackground(const std::string &path) {
         throw std::runtime_error("Erro ao carregar o modelo FBX: " + std::string(importer.GetErrorString()));
     }
 
-    m_fbxScene = std::make_unique<FbxScene>(scene->mName.C_Str());
+    auto m_fbxScene = std::make_shared<FbxScene>(scene->mName.C_Str());
 
-    sceneLoader(scene);
+    SceneLoader(scene, &(*m_fbxScene));
 
     importer.FreeScene();
 
-    if (m_funcPost) {
-        Event::Add(m_funcPost, m_fbxScene.get(), this);
+    if (func) {
+        Event::Add(func, std::move(m_fbxScene));
     }
 }
 
-void Filmbox::sceneLoader(const aiScene *scene) {
+void Filmbox::SceneLoader(const aiScene *scene, FbxScene *fbxScene) {
     if (scene->HasMaterials()) {
         Console::log(LogInfo::WARNING, "Loading material...");
-        loadMaterial(scene);
+        LoadMaterial(scene, fbxScene);
     }
 
     if (scene->HasMeshes()) {
         Console::log(LogInfo::WARNING, "Loading Mesh...");
-        loadMesh(scene);
+        LoadMesh(scene, fbxScene);
     }
 
     if (scene->HasAnimations()) {
         Console::log(LogInfo::WARNING, "Loading Animations...");
-        loadAnimation(scene);
+        LoadAnimation(scene, fbxScene);
     }
 
     Console::log(LogInfo::WARNING, "Loading Node...");
 
     auto mRootNode = scene->mRootNode;
-    auto& fRootNode = m_fbxScene->m_rootNode;
+    auto& fRootNode = fbxScene->m_rootNode;
 
     for (auto i=0;i<mRootNode->mNumChildren;++i) {
-        processNode(mRootNode->mChildren[i], fRootNode, scene);
+        ProcessNode(mRootNode->mChildren[i], fRootNode, scene, fbxScene);
     }
 }
 
-void Filmbox::loadAnimation(const aiScene *scene) {
-    for (auto i=0;i<scene->mNumAnimations;i++) {
-        auto mAnimation = scene->mAnimations[i];
+void Filmbox::ProcessNode(aiNode *mNode, FbxNode& node, const aiScene *scene, FbxScene *fbxScene) {
+    auto name = mNode->mName;
 
-        auto name = mAnimation->mName;
-        auto duration = mAnimation->mDuration;
-        auto tick = mAnimation->mTicksPerSecond;
+    auto& newNode = node.addNode(name.C_Str(), nullptr);
 
-        auto &animation = m_fbxScene->addAnimation(name.C_Str(), duration, tick);
+    aiVector3D scale;
+    aiVector3D position;
+    aiQuaternion rotation;
+    mNode->mTransformation.Decompose(scale, rotation, position);
 
-        for (auto j=0;j<mAnimation->mNumChannels;j++) {
-            auto mChannel = mAnimation->mChannels[j];
+    NORMALIZE(scale)
 
-            auto cName = mChannel->mNodeName;
+    // magnitude = std::sqrt((position.x * position.x) + (position.y * position.y) + (position.z * position.z));
+    // if (magnitude > 1e-5f) {
+    //     position.x /= magnitude;
+    //     position.y /= magnitude;
+    //     position.z /= magnitude;
+    // }
 
-            auto &channel = animation.addChannel(cName.C_Str());
+    newNode.setPosition({position.x, position.y, position.z});
+    newNode.setScale({scale.x, scale.y, scale.z});
+    newNode.setRotation({rotation.w, rotation.x, rotation.y, rotation.z});
 
-            addKeys(mChannel, channel);
+    for (auto i=0;i<mNode->mNumMeshes;++i) {
+        auto name = scene->mMeshes[mNode->mMeshes[i]]->mName.C_Str();
+
+        auto mesh = fbxScene->findMesh(name);
+        if (!mesh) {
+            std::cout << "Mesh do not found: " << name << std::endl;
+            continue;
         }
+
+        newNode.addMesh(*mesh);
+    }
+
+    for (auto i=0;i<mNode->mNumChildren;++i) {
+        auto child = mNode->mChildren[i];
+
+        ProcessNode(child, newNode, scene, fbxScene);
     }
 }
 
-void Filmbox::addKeys(aiNodeAnim *mNodeAnim, FbxChannel &channel) {
-    for (auto i=0;i<mNodeAnim->mNumPositionKeys;++i) {
-        auto key = mNodeAnim->mPositionKeys[i];
-        channel.addKeyPosition(static_cast<float>(key.mTime), Vector3(key.mValue.x, key.mValue.y, key.mValue.z));
-    }
-
-    for (auto i=0;i<mNodeAnim->mNumScalingKeys;++i) {
-        auto key = mNodeAnim->mScalingKeys[i];
-        channel.addKeyScale(static_cast<float>(key.mTime), Vector3(key.mValue.x, key.mValue.y, key.mValue.z));
-    }
-
-    for (auto i=0;i<mNodeAnim->mNumRotationKeys;++i) {
-        auto key = mNodeAnim->mRotationKeys[i];
-        channel.addKeyRotation(static_cast<float>(key.mTime), Quaternion(key.mValue.w, key.mValue.x, key.mValue.y, key.mValue.z));
-    }
-}
-
-void Filmbox::loadMaterial(const aiScene *scene) {
+void Filmbox::LoadMaterial(const aiScene *scene, FbxScene *fbxScene) {
     for (auto i=0;i<scene->mNumMaterials;++i) {
         auto vMaterial = scene->mMaterials[i];
 
         auto name = vMaterial->GetName();
 
-        auto& material = m_fbxScene->addMaterial(name.C_Str());
-        processTexture(vMaterial, material);
+        auto& material = fbxScene->addMaterial(name.C_Str());
+        ProcessTexture(vMaterial, material);
 
         material.ao = 1.0f;
         
@@ -145,7 +133,7 @@ void Filmbox::loadMaterial(const aiScene *scene) {
     }
 }
 
-void Filmbox::processTexture(aiMaterial *iMaterial, FbxMaterial &material) {
+void Filmbox::ProcessTexture(aiMaterial *iMaterial, FbxMaterial &material) {
     auto count = iMaterial->GetTextureCount(aiTextureType_DIFFUSE);
     for (auto i=0;i<count;++i) {
         aiString path;
@@ -157,25 +145,25 @@ void Filmbox::processTexture(aiMaterial *iMaterial, FbxMaterial &material) {
     }
 }
 
-void Filmbox::loadMesh(const aiScene *scene) {
+void Filmbox::LoadMesh(const aiScene *scene, FbxScene *fbxScene) {
     for (auto i=0;i<scene->mNumMeshes;++i) {
-        processMesh(scene->mMeshes[i]);
+        ProcessMesh(scene->mMeshes[i], fbxScene);
     }
 }
 
-void Filmbox::processMesh(aiMesh *mMesh) {
+void Filmbox::ProcessMesh(aiMesh *mMesh, FbxScene *fbxScene) {
     auto name = std::string(mMesh->mName.C_Str());
 
-    auto mesh = m_fbxScene->findMesh(name);
+    auto mesh = fbxScene->findMesh(name);
     if (!mesh) {
-        mesh = &m_fbxScene->addMesh(name, name);
+        mesh = &fbxScene->addMesh(name, name);
     }
 
-    inserMesh(mesh, mMesh);
+    InserMesh(mesh, mMesh);
 }
 
 // TODO: falta corrigir o indice da mesh
-void Filmbox::inserMesh(FbxMesh *mesh, aiMesh *mMesh) {
+void Filmbox::InserMesh(FbxMesh *mesh, aiMesh *mMesh) {
     auto bHasPosition = mMesh->HasPositions();
     auto bHasNormal = mMesh->HasNormals();
     auto bHasTexCoord = mMesh->HasTextureCoords(0);
@@ -257,48 +245,44 @@ void Filmbox::inserMesh(FbxMesh *mesh, aiMesh *mMesh) {
     }
 }
 
-void Filmbox::processNode(aiNode *mNode, FbxNode& node, const aiScene *scene) {
-    auto name = mNode->mName;
+void Filmbox::LoadAnimation(const aiScene *scene, FbxScene *fbxScene) {
+    for (auto i=0;i<scene->mNumAnimations;i++) {
+        auto mAnimation = scene->mAnimations[i];
 
-    auto& newNode = node.addNode(name.C_Str(), nullptr);
+        auto name = mAnimation->mName;
+        auto duration = mAnimation->mDuration;
+        auto tick = mAnimation->mTicksPerSecond;
 
-    aiVector3D scale;
-    aiVector3D position;
-    aiQuaternion rotation;
-    mNode->mTransformation.Decompose(scale, rotation, position);
+        auto &animation = fbxScene->addAnimation(name.C_Str(), duration, tick);
 
-    NORMALIZE(scale)
+        for (auto j=0;j<mAnimation->mNumChannels;j++) {
+            auto mChannel = mAnimation->mChannels[j];
 
-    // magnitude = std::sqrt((position.x * position.x) + (position.y * position.y) + (position.z * position.z));
-    // if (magnitude > 1e-5f) {
-    //     position.x /= magnitude;
-    //     position.y /= magnitude;
-    //     position.z /= magnitude;
-    // }
+            auto cName = mChannel->mNodeName;
 
-    newNode.setPosition({position.x, position.y, position.z});
-    newNode.setScale({scale.x, scale.y, scale.z});
-    newNode.setRotation({rotation.w, rotation.x, rotation.y, rotation.z});
+            auto &channel = animation.addChannel(cName.C_Str());
 
-    for (auto i=0;i<mNode->mNumMeshes;++i) {
-        auto name = scene->mMeshes[mNode->mMeshes[i]]->mName.C_Str();
-
-        auto mesh = m_fbxScene->findMesh(name);
-        if (!mesh) {
-            std::cout << "Mesh do not found: " << name << std::endl;
-            continue;
+            AddKeys(mChannel, channel);
         }
-
-        newNode.addMesh(*mesh);
-    }
-
-    for (auto i=0;i<mNode->mNumChildren;++i) {
-        auto child = mNode->mChildren[i];
-
-        processNode(child, newNode, scene);
     }
 }
 
+void Filmbox::AddKeys(aiNodeAnim *mNodeAnim, FbxChannel &channel) {
+    for (auto i=0;i<mNodeAnim->mNumPositionKeys;++i) {
+        auto key = mNodeAnim->mPositionKeys[i];
+        channel.addKeyPosition(static_cast<float>(key.mTime), Vector3(key.mValue.x, key.mValue.y, key.mValue.z));
+    }
+
+    for (auto i=0;i<mNodeAnim->mNumScalingKeys;++i) {
+        auto key = mNodeAnim->mScalingKeys[i];
+        channel.addKeyScale(static_cast<float>(key.mTime), Vector3(key.mValue.x, key.mValue.y, key.mValue.z));
+    }
+
+    for (auto i=0;i<mNodeAnim->mNumRotationKeys;++i) {
+        auto key = mNodeAnim->mRotationKeys[i];
+        channel.addKeyRotation(static_cast<float>(key.mTime), Quaternion(key.mValue.w, key.mValue.x, key.mValue.y, key.mValue.z));
+    }
+}
 
 
 

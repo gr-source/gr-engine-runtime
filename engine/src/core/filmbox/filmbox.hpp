@@ -10,42 +10,29 @@
 
 class Filmbox {
 public:
-    Filmbox(const std::string &path);
+    Filmbox() = delete;
+    ~Filmbox() = delete;
 
-    void setPostProcess(std::function<void(const FbxScene *, Filmbox *)> func);
+    static void Load(const std::string &path, std::function<void(std::shared_ptr<FbxScene>)> func);
 
-    void load();
-
-    const bool isValid() const;
-    
 private:
-    void doInBackground(const std::string &path);
+    static void SceneLoader(const aiScene *scene, FbxScene *fbxScene);
 
-    void sceneLoader(const aiScene *scene);
+    static void ProcessNode(aiNode *mNode, FbxNode& node, const aiScene *scene, FbxScene *fbxScene);
 
-    void loadAnimation(const aiScene *scene);
+    static void LoadMaterial(const aiScene *scene, FbxScene *fbxScene);
 
-    void addKeys(aiNodeAnim *mNodeAnim, FbxChannel &channel);
+    static void ProcessTexture(aiMaterial *iMaterial, FbxMaterial& material);
 
-    void loadMaterial(const aiScene *scene);
+    static void LoadMesh(const aiScene *scene, FbxScene *fbxScene);
 
-    void processTexture(aiMaterial *iMaterial, FbxMaterial& material);
+    static void ProcessMesh(aiMesh *mMesh, FbxScene *fbxScene);
 
-    void loadMesh(const aiScene *scene);
+    static void InserMesh(FbxMesh *mesh, aiMesh *mMesh);
 
-    void processMesh(aiMesh *mMesh);
+    static void LoadAnimation(const aiScene *scene, FbxScene *fbxScene);
 
-    void inserMesh(FbxMesh *mesh, aiMesh *mMesh);
-
-    void processNode(aiNode *mNode, FbxNode& node, const aiScene *scene);
-
-    std::function<void(const FbxScene *, Filmbox *)> m_funcPost;
-
-    std::unique_ptr<FbxScene> m_fbxScene;
-
-    std::string m_path;
-
-    std::unordered_map<std::string, int> m_indexMaterial;
+    static void AddKeys(aiNodeAnim *mNodeAnim, FbxChannel &channel);
 };
 
 

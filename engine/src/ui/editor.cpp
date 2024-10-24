@@ -13,7 +13,10 @@
 #include "skybox.h"
 #include "timer.h"
 
+
 #include "core/filmbox/filmbox.hpp"
+
+#include "core/binary/gModel3D.hpp"
 
 #include "core/cmd/cmd.hpp"
 
@@ -76,8 +79,6 @@ std::string getfilesize(std::size_t sz) {
 }
 
 std::unordered_map<IconType, grr::gTexture *> iconsUI;
-
-std::vector<std::unique_ptr<Filmbox>> m_filmboxList;
 
 ImGuiViewport *Editor::m_viewport = nullptr;
 
@@ -197,288 +198,6 @@ void Editor::Shutdown() {
     File::Delete(File::GetTempFile("gr-engine"));
 }
 
-// ===================================== WARNING =========================================================
-#include "core/binary/gHeader.hpp"
-
-void WriteNode(const FbxScene *scene, const FbxNode &node) {
-    // Escreve os dados do modelo
-    gModel pModel;
-    pModel.m_scale = node.getScale();
-    pModel.m_rotation = node.getRotation();
-    pModel.m_position = node.getPosition();
-    std::strcpy(pModel.m_name, node.getName().c_str());
-
-    if (!Stream::write(&pModel, 1)) {
-        return;
-    }
-
-    auto &nodeMesh = node.getMeshes();
-
-    // escreve a quantidade de mesh
-    grm::u32 meshCount = static_cast<grm::u32>(nodeMesh.size());
-    if (!Stream::write(&meshCount, 1)) {
-        std::cerr << "Failed to write mesh count to file." << std::endl;
-        return;
-    }
-
-    // alloca as meshes na memória em forma de pilha (fácil acesso)
-    std::vector<gMesh> meshes(meshCount);
-    std::vector<gMaterial> pMateials;
-    std::unordered_map<std::string, int> m_map;
-    
-    for (grm::u32 i = 0; i < meshCount; ++i) {
-        auto &fbxMesh = nodeMesh[i];
-
-        for (auto &mIdx : fbxMesh.getMaterials()) {
-            auto& fbxMaterial = scene->getMaterial(mIdx);
-
-            auto it = m_map.find(fbxMaterial.getName());
-            if (it != m_map.end()) {
-                continue;
-            }
-            m_map.emplace(fbxMaterial.getName(), 0);
-
-            auto& m = pMateials.emplace_back();
-            std::strcpy(m.m_name, fbxMaterial.getName().c_str());
-            
-            m.m_color = fbxMaterial.getColor();
-            m.m_roughness = fbxMaterial.roughness;
-            m.m_metallic = fbxMaterial.metallic;
-            m.m_ambientOcclusion = fbxMaterial.ao;
-
-            auto &textures = fbxMaterial.getTextures();
-
-            m.m_textureCount = textures.size();
-            m.m_textures = new gTexture[m.m_textureCount];
-
-            int id = 0;
-            for (auto &&[type, path] : textures) {
-                auto &pTexture = m.m_textures[id];
-                pTexture.m_type = gTextureType_albedo;
-                std::strcpy(pTexture.m_path, path.c_str());
-                id++;
-            }
-        }
-
-        auto &vertices = fbxMesh.getVertices();
-        auto &indices = fbxMesh.getIndices();
-
-        auto &pMesh = meshes[i];
-        std::memcpy(pMesh.m_name, fbxMesh.getName().c_str(), 256);
-
-        pMesh.m_hasBone = fbxMesh.hasBone();
-        
-        pMesh.m_verticeCount = static_cast<grm::u32>(vertices.size());
-        pMesh.m_vertices = new gVertex[pMesh.m_verticeCount];
-        for (auto j=0;j<pMesh.m_verticeCount;++j) {
-            pMesh.m_vertices[j].position = vertices[j].position;
-            pMesh.m_vertices[j].normal   = vertices[j].normal;
-            pMesh.m_vertices[j].texCoord = vertices[j].texCoord;
-            pMesh.m_vertices[j].mIdx     = vertices[j].index;
-
-            for (auto k=0;k<4;++k) {
-                pMesh.m_vertices[j].weight[k]    = vertices[j].weight[k];
-                pMesh.m_vertices[j].boneIndex[k] = vertices[j].boneIndex[k];
-            }
-        }
-
-        pMesh.m_indicesCount = static_cast<grm::u32>(indices.size());
-        pMesh.m_indices = new grm::u32[pMesh.m_indicesCount];
-        for (int j=0;j<pMesh.m_indicesCount;++j) {
-            pMesh.m_indices[j] = indices[j];
-        }
-        
-        // Write bones from skeleton.
-        if (!pMesh.m_hasBone) {
-            continue;
-        }
-
-        auto &bones = fbxMesh.getBones();
-
-        pMesh.m_boneCount = static_cast<grm::u32>(bones.size());
-        pMesh.m_bones = new gBone[pMesh.m_boneCount];
-
-        for (auto j=0;j<pMesh.m_boneCount;++j) {
-            auto &fbxBone = bones[j];
-
-            auto &name = fbxBone.getName();
-
-            auto &pBone = pMesh.m_bones[j];
-            std::strcpy(pBone.m_name, name.c_str());
-            pBone.m_id = fbxBone.m_id;
-            
-            pBone.m_scale = fbxBone.getScale();
-            pBone.m_rotation = fbxBone.getRotation();
-            pBone.m_position = fbxBone.getPosition();
-        }
-    }
-
-    // Escrever os dados das meshes no arquivo
-    for (auto &mesh : meshes) {
-        if (mesh.serialize() != 0) {
-            LOG_ERROR("Falied to write mesh: " + std::string(mesh.m_name));
-            continue;
-        }
-    }
-
-    grm::u32 mSize = pMateials.size();
-    if (!Stream::write(&mSize, 1)) {
-        return LOG_ERROR("Falied to material data.");
-    }
-
-    for (auto &material : pMateials) {
-        Stream::write(material.m_name, 256);
-        Stream::write(&material.m_color, 1);
-        Stream::write(&material.m_roughness, 1);
-        Stream::write(&material.m_metallic, 1);
-        Stream::write(&material.m_ambientOcclusion, 1);
-
-        Stream::write(&material.m_textureCount, 1);
-        Stream::write(material.m_textures, material.m_textureCount);
-
-        delete[] material.m_textures;
-    }
-
-    auto &children = node.getChildren();
-
-    grm::u32 nSize = children.size();
-    Stream::write(&nSize, 1);
-
-    // escreve os filhos
-    for (const auto &child : children) {
-        WriteNode(scene, child);
-    }
-}
-
-void WriteAnimation(const FbxScene *fbxScene) {
-    auto &animations = fbxScene->getAnimations();
-
-    gHeader pHeader{{'g', 'r', 'a', 'n'}, 1.0f};
-
-    for (auto &animation : animations) {
-        auto name = animation.getName();
-
-        if (!Stream::open(File::GetAsset("animation/" + name + ".anm"), std::ios_base::out | std::ios_base::binary)) {
-            continue;
-        }
-        Stream::write<gHeader>(&pHeader, 1);
-
-        gAnimationHeader pAnimationHeader;
-        std::strcpy(pAnimationHeader.m_name, name.c_str());
-        pAnimationHeader.m_tick = animation.getTick();
-        pAnimationHeader.m_duration = animation.getDuration();
-
-        Stream::write<gAnimationHeader>(&pAnimationHeader, 1);
-
-        auto &channels = animation.getChannels();
-
-        grm::size sChannel = channels.size();
-        gChannel *pChannels = new gChannel[sChannel];
-
-        for (auto i=0;i<sChannel;++i) {
-            auto &channel = channels[i];
-
-            auto &name = channel.getName();
-            auto &keysScale = channel.getKeysScale();
-            auto &keysRotation = channel.getKeysRotation();
-            auto &keysPosition = channel.getKeysPosition();
-
-            auto &pChannel = pChannels[i];
-            std::strcpy(pChannel.m_name, name.c_str());
-
-            // gen key scale
-            pChannel.m_keyScaleCount = keysScale.size();
-            pChannel.m_keyScale = new gKeyScale[pChannel.m_keyScaleCount];
-            for (auto i=0;i<pChannel.m_keyScaleCount;++i) {
-                pChannel.m_keyScale[i].time = keysScale[i].time;
-                pChannel.m_keyScale[i].value = keysScale[i].value;
-            }
-
-            //gen key rotation
-            pChannel.m_keyRotationCount = keysRotation.size();
-            pChannel.m_keyRotation = new gKeyRotation[pChannel.m_keyRotationCount];
-            for (auto i=0;i<pChannel.m_keyRotationCount;++i) {
-                pChannel.m_keyRotation[i].time = keysRotation[i].time;
-                pChannel.m_keyRotation[i].value = keysRotation[i].value;
-            }
-
-            // gen key position
-            pChannel.m_keyPositionCount = keysPosition.size();
-            pChannel.m_keyPosition = new gKeyPosition[pChannel.m_keyPositionCount];
-            for (auto i=0;i<pChannel.m_keyPositionCount;++i) {
-                pChannel.m_keyPosition[i].time = keysPosition[i].time;
-                pChannel.m_keyPosition[i].value = keysPosition[i].value;
-            }
-        }
-        
-        Stream::write<grm::size>(&sChannel, 1);
-        for (auto i=0;i<sChannel;++i) {
-            auto &pChannel = pChannels[i];
-
-            // ame
-            Stream::write<char>(pChannel.m_name, 256);
-
-            // gen key scale
-            Stream::write<grm::size>(&pChannel.m_keyScaleCount, 1);
-            Stream::write<gKeyScale>(pChannel.m_keyScale, pChannel.m_keyScaleCount);
-
-            //gen key rotation
-            Stream::write<grm::size>(&pChannel.m_keyRotationCount, 1);
-            Stream::write<gKeyRotation>(pChannel.m_keyRotation, pChannel.m_keyRotationCount);
-
-            // gen key position
-            Stream::write<grm::size>(&pChannel.m_keyPositionCount, 1);
-            Stream::write<gKeyPosition>(pChannel.m_keyPosition, pChannel.m_keyPositionCount);
-        }
-        
-        // ========================= CLEAN =========================
-        for (auto i=0;i<sChannel;++i) {
-            auto &pChannel = pChannels[i];
-
-            // delete keys scale
-            delete[] pChannel.m_keyScale;
-
-            // delete keys rotation
-            delete[] pChannel.m_keyRotation;
-
-            // delete keys position
-            delete[] pChannel.m_keyPosition;
-        }
-        
-        delete[] pChannels;
-
-        Stream::close();
-    }
-}
-
-void WriteHeader(const FbxScene *scene, const FbxNode &node) {
-    LOG_INFO("Write 3D Mode: " + node.getName());
-
-    if (!Stream::open(File::GetAsset("model/" + node.getName() + ".gmd"), std::ios_base::out | std::ios_base::binary)) {
-        return LOG_ERROR("Failed to write the 3D model: " + node.getName());
-    }
-
-    gHeader pHeader {{'g', 'r', 'm', 'd'}, 1.0f};
-    if (!Stream::write(&pHeader, 1)) {
-        Stream::close();
-        return LOG_ERROR("Failed to write the 3D model (0)");
-    }
-
-    WriteNode(scene, node);
-
-    Stream::close();
-}
-
-void PostProcess(const FbxScene *scene, Filmbox *filmbox) {
-    WriteAnimation(scene);
-    
-    auto& fRootNode = scene->getRootNode();
-    for (const auto& node : fRootNode.getChildren()) {
-        WriteHeader(scene, node);
-    }
-    delete filmbox;
-}
-
 void Editor::DropFile(const std::filesystem::path &path) {
     if (path.extension() == ".fbx") {
         return Import3DModel(path.string());
@@ -488,10 +207,7 @@ void Editor::DropFile(const std::filesystem::path &path) {
 }
  
 void Editor::Import3DModel(const std::string &path) {
-    LOG_INFO("[ Import ] Importing 3D model...");
-    auto *filmbox = new Filmbox(path);
-    filmbox->setPostProcess(PostProcess);
-    filmbox->load();
+    gModel3D::ImportFBX(path);
 }
 
 void Editor::ImportImage(const std::string &path) {

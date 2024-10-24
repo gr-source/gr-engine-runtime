@@ -186,6 +186,7 @@ set(engine_src
 
     src/physics/physicsScene.cpp
 
+    src/core/binary/gModel3D.cpp
     src/core/binary/gHeader.cpp
 )
 
@@ -242,6 +243,7 @@ set(engine_hdr
     
     src/physics/physicsScene.hpp
 
+    src/core/binary/gModel3D.hpp
     src/core/binary/gHeader.hpp
 )
 
