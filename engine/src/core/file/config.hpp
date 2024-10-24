@@ -6,7 +6,7 @@
 class Config {
 public:
     Config(const std::string &path = "");
-
+    
     bool is_open() const;
 
     void load();

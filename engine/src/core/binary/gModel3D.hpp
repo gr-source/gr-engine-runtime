@@ -5,6 +5,8 @@
 
 #include "core/filmbox/default.hpp"
 
+class Streaming;
+
 class gModel3D {
 public:
     gModel3D() = delete;
@@ -17,7 +19,7 @@ private:
 
     static void WriteHeader(const FbxScene *scene, const FbxNode *node);
 
-    static void WriteNode(const FbxScene *scene, const FbxNode *node);
+    static void WriteNode(const FbxScene *scene, const FbxNode *node, Streaming *stream);
 };
 
 

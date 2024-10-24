@@ -11,8 +11,8 @@
 #include "core/threadpool.hpp"
 #include "core/scene.hpp"
 
-#include "core/file/initialization.hpp"
 #include "core/file/stream.hpp"
+#include "core/file/config.hpp"
 #include "core/file/file.hpp"
 
 #include "scriptManager/scriptManager.hpp"
@@ -256,9 +256,9 @@ void ProjectMenu::CreateProjectInfo(const std::string name, const std::string pa
 }
 
 void ProjectMenu::CreateProjectMetadata(const std::string &path, const std::string &name) {
-    Initialization ini(path + "/metadata.ini", std::ios_base::out);
-    ini.setValue("name", name);
-    ini.save();
+    Config config(path + "/metadata.ini");
+    config.setValue("name", name);
+    config.save();
 }
 
 void ProjectMenu::CreateProjectAssets(const std::string &path) {
@@ -282,6 +282,7 @@ void ProjectMenu::CreateProjectAssets(const std::string &path) {
 
 void ProjectMenu::ReadProjects() {
     auto path = GetCurrentDirProject();
+
     if (!File::Exists(path)) {
         return;
     }
@@ -290,24 +291,19 @@ void ProjectMenu::ReadProjects() {
         if (!entry.is_directory()) {
             continue;
         }
-        if (!Stream::open(entry.path().string() + "/metadata.ini", std::ios_base::in)) {
+
+        Config config(entry.path().string() + "/metadata.ini");
+        if (!config.is_open()) {
             continue;
         }
         
-        std::string line;
-        while (std::getline(Stream::GetStream(), line)) {
-            auto start = line.find('=');
-            if (start == std::string::npos) {
-                continue;
-            }
-            auto key = line.substr(0, start);
-            auto value = line.substr(start + 1, line.size());
-            if (key != "name") {
-                continue;
-            }
-            m_projects.push_back({value, entry.path().string()});
+        config.load();
+
+        if (!config.hasKey("name")) {
+            continue;
         }
-        Stream::close();
+
+        m_projects.push_back({config.getValue<std::string>("name"), entry.path().string()});
     }
 }
 
@@ -382,13 +378,10 @@ void ProjectMenu::DownloadConfig(const std::string &path) {
 }
 
 void ProjectMenu::SaveLastProject(Project &project) {
-    Initialization ini(File::GetFile("/config.ini", true), std::ios_base::out);
-    if (!ini.is_open()) {
-        return;
-    }
-    ini.setValue("name", project.getName());
-    ini.setValue("path", project.getPath());
-    ini.save();
+    Config config(File::GetFile("/config.ini", true));
+    config.setValue("name", project.getName());
+    config.setValue("path", project.getPath());
+    config.save();
 }
 
 bool ProjectMenu::ReadLastProject() {
@@ -397,22 +390,24 @@ bool ProjectMenu::ReadLastProject() {
         return false;
     }
 
-    Initialization ini(path, std::ios_base::in);
-    if (!ini.is_open()) {
+    Config config(path);
+    if (!config.is_open()) {
         return false;
     }
 
-    if (ini.empty() || !ini.hasKey("name") || !ini.hasKey("path")) {
+    config.load();
+
+    if (!config.hasKey("name") || !config.hasKey("path")) {
         return false;
     }
 
-    path = ini.getValue<std::string>("path");
+    path = config.getValue<std::string>("path");
 
     if (!File::Exists(path)) {
         return false;
     }
 
-    auto &project = m_projects.emplace_back(ini.getValue<std::string>("name"), path);
+    auto &project = m_projects.emplace_back(config.getValue<std::string>("name"), path);
 
     OpenProject(project);
     return true;

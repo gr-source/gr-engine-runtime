@@ -1,6 +1,6 @@
 #include "gHeader.hpp"
 
-#include "core/file/stream.hpp"
+#include "core/file/streaming.hpp"
 
 gMesh::gMesh() : m_hasBone(false), m_vertices(nullptr), m_verticeCount(0), m_indices(nullptr), m_indicesCount(0), m_bones(nullptr), m_boneCount(0) {}
 
@@ -16,7 +16,7 @@ gMesh::~gMesh() {
     }
 }
 
-int gMesh::serialize(grm::size *offset) {
+int gMesh::serialize(Streaming *stream, grm::size *offset) {
     if (offset) {
         *offset += sizeof(char)     * 256;
         *offset += sizeof(bool);
@@ -26,52 +26,52 @@ int gMesh::serialize(grm::size *offset) {
     }
 
     // metadata
-    if (!Stream::write(m_name, 256)) {
+    if (!stream->writeS(m_name, 256, false)) {
         return 1;
     }
-    if (!Stream::write(&m_hasBone, 1)) {
+    if (!stream->writeS(&m_hasBone, 1, false)) {
         return 2;
     }
 
     // data
-    if (!Stream::write(&m_verticeCount, 1)) {
+    if (!stream->writeS(&m_verticeCount, 1, false)) {
         return 3;
     }
-    if (!Stream::write(m_vertices, m_verticeCount)) {
+    if (!stream->writeS(m_vertices, m_verticeCount, false)) {
         return 4;
     }
     
-    if (!Stream::write(&m_indicesCount, 1)) {
+    if (!stream->writeS(&m_indicesCount, 1, false)) {
         return 5;
     }
-    if (!Stream::write(m_indices, m_indicesCount)) {
+    if (!stream->writeS(m_indices, m_indicesCount, false)) {
         return 6;
     }
 
     if (m_hasBone) {
-        if (!Stream::write(&m_boneCount, 1)) {
+        if (!stream->writeS(&m_boneCount, 1, false)) {
             return 7;
         }
-        if (!Stream::write(m_bones, m_boneCount)) {
+        if (!stream->writeS(m_bones, m_boneCount, false)) {
             return 8;
         }
     }
     return 0;
 }
 
-int gMesh::deserialize() {
+int gMesh::deserialize(Streaming *stream) {
     // metadata
-    if (!Stream::read(m_name, 256)) {
+    if (!stream->readS(m_name, 256)) {
         return 1;
     }
-    if (!Stream::read(&m_hasBone, 1)) {
+    if (!stream->readS(&m_hasBone, 1)) {
         return 2;
     }
 
     // data
     // vertice
     {
-        if (!Stream::read(&m_verticeCount, 1)) {
+        if (!stream->readS(&m_verticeCount, 1)) {
             return 3;
         }
         if (m_vertices) {
@@ -79,35 +79,35 @@ int gMesh::deserialize() {
         }
         m_vertices = new gVertex[m_verticeCount];
         
-        if (!Stream::read(m_vertices, m_verticeCount)) {
+        if (!stream->readS(m_vertices, m_verticeCount)) {
             return 4;
         }
     }
     
     // indices
     {
-        if (!Stream::read(&m_indicesCount, 1)) {
+        if (!stream->readS(&m_indicesCount, 1)) {
             return 5;
         }
         if (m_indices) {
             delete []m_indices;
         }
         m_indices = new grm::u32[m_indicesCount];
-        if (!Stream::read(m_indices, m_indicesCount)) {
+        if (!stream->readS(m_indices, m_indicesCount)) {
             return 6;
         }
     }
 
     // bone
     if (m_hasBone) {
-        if (!Stream::read(&m_boneCount, 1)) {
+        if (!stream->readS(&m_boneCount, 1)) {
             return 7;
         }
         if (m_bones) {
             delete []m_bones;
         }
         m_bones = new gBone[m_boneCount];
-        if (!Stream::read(m_bones, m_boneCount)) {
+        if (!stream->readS(m_bones, m_boneCount)) {
             return 8;
         }
     }

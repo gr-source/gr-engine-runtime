@@ -8,7 +8,7 @@
 
 #include "core/filmbox/filmbox.hpp"
 
-#include "core/file/stream.hpp"
+#include "core/file/streaming.hpp"
 #include "core/file/file.hpp"
 
 void gModel3D::ImportFBX(const std::string &path) {
@@ -25,22 +25,17 @@ void gModel3D::SetupScene(std::shared_ptr<FbxScene> scene) {
 void gModel3D::WriteHeader(const FbxScene *scene, const FbxNode *node) {
     LOG_INFO_ARGS("Write 3D Mode: %s", node->getName().c_str());
 
-    if (!Stream::open(File::GetAsset("model/" + node->getName() + ".gmd"), std::ios_base::out | std::ios_base::binary)) {
-        return LOG_ERROR_ARGS("Failed to write the 3D model: %s", node->getName().c_str());
-    }
+    Streaming stream(File::GetAsset("model/" + node->getName() + ".gmd"), std::ios_base::out | std::ios_base::binary);
 
     gHeader pHeader {{'g', 'r', 'm', 'd'}, 1.0f};
-    if (!Stream::write(&pHeader, 1)) {
-        Stream::close();
+    if (!stream.writeS(&pHeader, 1, false)) {
         return LOG_ERROR("Failed to write the 3D model (0)");
     }
 
-    WriteNode(scene, node);
-
-    Stream::close();
+    WriteNode(scene, node, &stream);
 }
 
-void gModel3D::WriteNode(const FbxScene *scene, const FbxNode *node) {
+void gModel3D::WriteNode(const FbxScene *scene, const FbxNode *node, Streaming *stream) {
     // Escreve os dados do modelo
     gModel pModel;
     pModel.m_scale = node->getScale();
@@ -48,7 +43,7 @@ void gModel3D::WriteNode(const FbxScene *scene, const FbxNode *node) {
     pModel.m_position = node->getPosition();
     std::strcpy(pModel.m_name, node->getName().c_str());
 
-    if (!Stream::write(&pModel, 1)) {
+    if (!stream->writeS(&pModel, 1, false)) {
         return;
     }
 
@@ -56,7 +51,7 @@ void gModel3D::WriteNode(const FbxScene *scene, const FbxNode *node) {
 
     // escreve a quantidade de mesh
     grm::u32 meshCount = static_cast<grm::u32>(nodeMesh.size());
-    if (!Stream::write(&meshCount, 1)) {
+    if (!stream->writeS(&meshCount, 1, false)) {
         std::cerr << "Failed to write mesh count to file." << std::endl;
         return;
     }
@@ -155,26 +150,26 @@ void gModel3D::WriteNode(const FbxScene *scene, const FbxNode *node) {
 
     // Escrever os dados das meshes no arquivo
     for (auto &mesh : meshes) {
-        if (mesh.serialize() != 0) {
+        if (mesh.serialize(stream) != 0) {
             LOG_ERROR("Falied to write mesh: " + std::string(mesh.m_name));
             continue;
         }
     }
 
     grm::u32 mSize = pMateials.size();
-    if (!Stream::write(&mSize, 1)) {
+    if (!stream->writeS(&mSize, 1, false)) {
         return LOG_ERROR("Falied to material data.");
     }
 
     for (auto &material : pMateials) {
-        Stream::write(material.m_name, 256);
-        Stream::write(&material.m_color, 1);
-        Stream::write(&material.m_roughness, 1);
-        Stream::write(&material.m_metallic, 1);
-        Stream::write(&material.m_ambientOcclusion, 1);
+        stream->writeS(material.m_name, 256, false);
+        stream->writeS(&material.m_color, 1, false);
+        stream->writeS(&material.m_roughness, 1, false);
+        stream->writeS(&material.m_metallic, 1, false);
+        stream->writeS(&material.m_ambientOcclusion, 1, false);
 
-        Stream::write(&material.m_textureCount, 1);
-        Stream::write(material.m_textures, material.m_textureCount);
+        stream->writeS(&material.m_textureCount, 1, false);
+        stream->writeS(material.m_textures, material.m_textureCount, false);
 
         delete[] material.m_textures;
     }
@@ -182,10 +177,10 @@ void gModel3D::WriteNode(const FbxScene *scene, const FbxNode *node) {
     auto &children = node->getChildren();
 
     grm::u32 nSize = children.size();
-    Stream::write(&nSize, 1);
+    stream->writeS(&nSize, 1, false);
 
     // escreve os filhos
     for (const auto &child : children) {
-        WriteNode(scene, &child);
+        WriteNode(scene, &child, stream);
     }
 }

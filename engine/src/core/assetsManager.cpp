@@ -1,6 +1,6 @@
 #include "assetsManager.hpp"
 
-#include "core/file/stream.hpp"
+#include "core/file/streaming.hpp"
 #include "core/file/file.hpp"
 
 #include "core/animation/animation.hpp"
@@ -326,7 +326,9 @@ void AssetsManager::SetupAnimation(const std::string &path, FbxAnimation *temp, 
 }
 
 void AssetsManager::doAnimationInBackground(const std::string &path, Animation *target) {
-    if (!Stream::open(path, std::ios_base::in | std::ios_base::binary)) {
+    /*
+    Streaming stream(path, std::ios_base::in | std::ios_base::binary);
+    if (!stream.is_open()) {
         Console::log(LogInfo::ERROR, "Falied to open animation: " + path);
         return;
     }
@@ -404,6 +406,7 @@ void AssetsManager::doAnimationInBackground(const std::string &path, Animation *
     Stream::close();
 
     Event::Add(&AssetsManager::SetupAnimation, path, fbxAnimation, target);
+    */
 }
 
 void AssetsManager::ProcessAnimation() {
@@ -469,21 +472,21 @@ void AssetsManager::SetupGameObject(std::condition_variable &cond, GameObjectHan
     cond.notify_one();
 }
 
-void AssetsManager::ReadChildren(Transform *parent, GameObjectHandle &handle) {
+void AssetsManager::ReadChildren(Transform *parent, GameObjectHandle &handle, Streaming *stream) {
     gModel pModel;
-    if (!Stream::read(&pModel, 1)) {
+    if (!stream->readS(&pModel, 1)) {
         return;
     }
 
     grm::u32 meshCount;
-    if (!Stream::read(&meshCount, 1)) {
+    if (!stream->readS(&meshCount, 1)) {
         Console::log(LogInfo::ERROR, "Failed to read mesh count to file.");
         return;
     }
 
     std::vector<gMesh> meshes(meshCount);
     for (auto &mesh : meshes) {
-        mesh.deserialize();
+        mesh.deserialize(stream);
     }
 
     Animator *m_animator = nullptr;
@@ -548,26 +551,26 @@ void AssetsManager::ReadChildren(Transform *parent, GameObjectHandle &handle) {
     }
 
     grm::u32 mSize;
-    if (!Stream::read(&mSize, 1)) {
+    if (!stream->readS(&mSize, 1)) {
         return;
     }
 
     std::vector<gMaterial> m_materials(mSize);
     for (auto &material : m_materials) {
-        Stream::read(material.m_name, 256);
-        Stream::read(&material.m_color, 1);
-        Stream::read(&material.m_roughness, 1);
-        Stream::read(&material.m_metallic, 1);
-        Stream::read(&material.m_ambientOcclusion, 1);
+        stream->readS(material.m_name, 256);
+        stream->readS(&material.m_color, 1);
+        stream->readS(&material.m_roughness, 1);
+        stream->readS(&material.m_metallic, 1);
+        stream->readS(&material.m_ambientOcclusion, 1);
 
-        Stream::read(&material.m_textureCount, 1);
+        stream->readS(&material.m_textureCount, 1);
 
         material.m_textures = new gTexture[material.m_textureCount];
-        Stream::read(material.m_textures, material.m_textureCount);
+        stream->readS(material.m_textures, material.m_textureCount);
     }
 
     grm::u32 nSize;
-    Stream::read(&nSize, 1);
+    stream->readS(&nSize, 1);
 
     Transform *transform = nullptr;
     std::condition_variable cond;
@@ -586,7 +589,7 @@ void AssetsManager::ReadChildren(Transform *parent, GameObjectHandle &handle) {
 
 
     for (int i=0;i<nSize;++i) {
-        ReadChildren(transform, handle);
+        ReadChildren(transform, handle, stream);
     }
     
     // lock.lock();
@@ -594,12 +597,13 @@ void AssetsManager::ReadChildren(Transform *parent, GameObjectHandle &handle) {
 }
 
 void AssetsManager::doInBackgroundGameObject(GameObjectHandle handle) {
-    if (!Stream::open(handle.m_path, std::ios_base::in | std::ios_base::binary)) {
+    Streaming stream(handle.m_path, std::ios_base::in | std::ios_base::binary);
+    if (!stream.is_open()) {
         return Console::log(LogInfo::ERROR, "Failed to load model. " + handle.m_path);
     }
 
     gHeader pHeader;
-    if (!Stream::read(&pHeader, 1)) {
+    if (!stream.readS(&pHeader, 1)) {
         return Console::log(LogInfo::ERROR, "Failed to read header to file.");
     }
 
@@ -607,9 +611,7 @@ void AssetsManager::doInBackgroundGameObject(GameObjectHandle handle) {
         return Console::log(LogInfo::ERROR, "Model invalid: " + handle.m_path);
     }
 
-    ReadChildren(nullptr, handle);
-
-    Stream::close();
+    ReadChildren(nullptr, handle, &stream);
 
     if (handle.m_function && handle.m_gameObject)
         Event::Add(handle.m_function, handle.m_gameObject);
