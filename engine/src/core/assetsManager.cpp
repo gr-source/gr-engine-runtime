@@ -433,14 +433,14 @@ void AssetsManager::SetupGameObject(std::condition_variable &cond, GameObjectHan
         }
     }
 
-    auto &transform = gameObject->getTransform();
+    auto transform = gameObject->getTransform();
 
-    transform.setLocalScale(model.m_scale);
-    transform.setLocalRotation(model.m_rotation);
-    transform.setLocalPosition(model.m_position);
+    transform->setLocalScale(model.m_scale);
+    transform->setLocalRotation(model.m_rotation);
+    transform->setLocalPosition(model.m_position);
 
     if (parent)
-        transform.setParent(parent);
+        transform->setParent(parent);
 
     if (mesh) {
         auto &meshFilter = gameObject->addComponent<MeshFilter>();
@@ -467,7 +467,7 @@ void AssetsManager::SetupGameObject(std::condition_variable &cond, GameObjectHan
 
     {
         std::lock_guard<std::mutex> lock(s_gameObjectMutex);
-        out = &transform;
+        out = transform;
     }
     cond.notify_one();
 }

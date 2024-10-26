@@ -232,8 +232,6 @@ void Editor::KeyBoardUp(grm::u32 key) {
 }
 
 void Editor::LoadScript() {
-    Scene::DestroyObjects();
-
     if (ScriptManager::IsValid()) {
         UnloadScript();
     }
@@ -433,8 +431,7 @@ void Editor::RenderScenesUI() {
                 if (!name.empty()) {
                     auto target = GameObject::Find(name);
 
-                    auto &ts = target->getTransform();
-                    ts.setParent(nullptr);
+                    target->getTransform()->setParent(nullptr);
                     
                     Scene::GetCurrentScene()->Add(target);
                 }
@@ -502,9 +499,9 @@ void Editor::RenderPage(std::vector<GameObject *> &list, int page) {
     int end = std::min(start + ITEMS_PER_PAGE, static_cast<int>(list.size()));
 
     for (int i = start; i < end; ++i) {
-        auto& transform = list[i]->getTransform();
+        auto transform = list[i]->getTransform();
 
-        ReadHierarchy(&transform);
+        ReadHierarchy(transform);
     }
 }
 
@@ -512,6 +509,9 @@ void Editor::ReadHierarchy(Transform *transform) {
     ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_Selected | ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanFullWidth;
 
     auto gameObject = transform->getGameObject();
+    if (!gameObject) {
+        return;
+    }
     auto name = gameObject->getName();
 
     if (s_objectSelected != gameObject) {
@@ -551,7 +551,7 @@ void Editor::ReadHierarchy(Transform *transform) {
                 if (!target) {
                     LOG_ERROR("GameObject do not found: " + name);
                 } else {
-                    auto ts = &target->getTransform();
+                    auto ts = target->getTransform();
                     if (ts != transform->getParent()) {
                         ts->setParent(transform);
                     
@@ -612,7 +612,7 @@ void Editor::PopupOptionsGameObject() {
                 isOpenRename = true;
                 break;
             case 2:
-                EditorController::LookAt(&s_objectSelected->getTransform());
+                EditorController::LookAt(s_objectSelected->getTransform());
             default:
                 break;
             }
@@ -671,7 +671,12 @@ void Editor::RenderViewportUI() {
             
             bool isQuit = true;
             if (ImGui::BeginTabItem(name.c_str(), &isQuit, flags)) {
-                Scene::Use(&(*scene));
+                if (Scene::GetCurrentScene() != &(*scene)) {
+                    Scene::Use(&(*scene));
+
+                    s_objectSelected = nullptr;
+                }
+                    
                 RenderScene();
                 ImGui::EndTabItem();
             }
@@ -885,21 +890,19 @@ void Editor::RenderScene() {
         s_texturePlayGame = iconsUI[ICON_PLAY_GAME];
         if (Settings::bGameRunning) {
             if (ImGui::IsKeyReleased(ImGuiKey_Escape) && ImGui::IsWindowHovered()) {
-                StopRunningGame();
+                StopGame();
             } else {
                 s_texturePlayGame = iconsUI[ICON_STOP_GAME];
             }
         }
         
-        ImGui::SetCursorPos(ImVec2(curSize.x / 2 - cursorPos.x, cursorY));
+        ImGui::SetCursorPos({curSize.x / 2 - cursorPos.x, cursorY});
 
         if (ImGui::ImageButton(reinterpret_cast<ImTextureID>(s_texturePlayGame->getID()), ImVec2(16, 16))) {
             if (!Settings::bGameRunning) {
-                s_objectSelected = nullptr;
-
-                Threadpool::AddTask(&Editor::BuildScript);
+                PlayGame();
             } else {
-                StopRunningGame();
+                StopGame();
             }
         }
     }
@@ -954,8 +957,22 @@ void Editor::RenderScene() {
     }
 }
 
-void Editor::StopRunningGame() {
+void Editor::PlayGame() {
+    s_objectSelected = nullptr;
+
+    Scene::DestroyObjects();
+
+    Threadpool::AddTask(&Editor::BuildScript);
+
+    Console::log(LogInfo::DEFAULT, "Game playing.");
+}
+
+// Falta recarregar os scripts anteriores.
+void Editor::StopGame() {
     Settings::bGameRunning = false;
+
+    // Scene::ReloadObjects();
+
     Console::log(LogInfo::DEFAULT, "Game stoped.");
 }
 
@@ -977,16 +994,16 @@ void Editor::RenderGuizmo() {
         }
     }
     
-    auto& transform = s_objectSelected->getTransform();
+    auto transform = s_objectSelected->getTransform();
 
-    auto globalMatrix = transform.getGlobalMatrix();
+    auto globalMatrix = transform->getGlobalMatrix();
 
     auto camera = Camera::Current();
 
     if (camera && ImGuizmo::Manipulate(camera->getViewmatrix().getData(), camera->getPerspesctive().getData(), m_guizmoOperation, m_guizmoManipulate, globalMatrix.getData())) {
         auto localMatrix = globalMatrix;
-        if (transform.hasParent()) {
-            auto parentMat = transform.getParent()->getGlobalMatrix();
+        if (transform->hasParent()) {
+            auto parentMat = transform->getParent()->getGlobalMatrix();
             Matrix4x4 m = Matrix4x4::identityMatrix;
 
             if (gluInvertMatrix(parentMat.getData(), m.getData()))
@@ -997,9 +1014,9 @@ void Editor::RenderGuizmo() {
         Vector3 t;
         localMatrix.decompose(s, r, t);
 
-        transform.setLocalScale(s);
-        transform.setLocalRotation(r);
-        transform.setLocalPosition(t);
+        transform->setLocalScale(s);
+        transform->setLocalRotation(r);
+        transform->setLocalPosition(t);
     }
 }
 
@@ -2063,17 +2080,16 @@ void Editor::PostLoadGameObject(GameObject *gameObject) {
     if (!Camera::Current || !gameObject) {
         return;
     }
-    std::cout << "Ok" << std::endl;
     
     auto camera = Camera::Current();
     if (!camera) {
         return;
     }
     
-    auto camTransform = camera->getTransform();
+    // auto camTransform = camera->getTransform();
 
-    auto &transform = gameObject->getTransform();
-    transform.setLocalPosition(camera->getPosition() + (camTransform->getforward() * 5.5f));
+    // auto transform = gameObject->getTransform();
+    // transform->setLocalPosition(camera->getPosition() + (camTransform->getforward() * 5.5f));
 
     s_objectSelected = gameObject;
 }

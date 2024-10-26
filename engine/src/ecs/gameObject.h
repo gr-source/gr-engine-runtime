@@ -34,7 +34,7 @@ public:
 
     void setTransform(Transform *transform);
 
-    Transform &getTransform();
+    Transform *getTransform();
 
     template <typename T>
     T &addComponent();

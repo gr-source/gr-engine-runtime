@@ -74,8 +74,10 @@ Scene *Scene::Create(const std::string &name) {
     Scene::Use(&(*it->second));
 
     try {
-        auto &camera = it-> second->CreateGameObject("MainCamera");
+        auto &camera = it->second->CreateGameObject("MainCamera");
         camera.addComponent<Camera>();
+
+        InitializeScript(&camera);
     } catch (std::runtime_error e) {
         LOG_ERROR_ARGS("[ SCENE ] Falha ao adiconar uma camera na cena: %s", e.what());
     }
@@ -98,7 +100,7 @@ void Scene::LoadScene(const std::string &path) {
 Scene::Scene(const std::string &name) : m_name(name), m_enable(true) {}
 
 Scene::~Scene() {
-    for (auto &gameObject : s_objects) {
+    for (auto &gameObject : m_objects) {
         GameObject::Destroy(gameObject);
     }
 }
@@ -133,19 +135,19 @@ void Scene::save(const std::string &path) {
 }
 
 GameObject &Scene::CreateGameObject(const std::string &name, const std::string &tag) {
-    return *s_objects.emplace_back(&GameObject::Create(name, tag));
+    return *m_objects.emplace_back(&GameObject::Create(name, tag));
 }
 
 std::vector<GameObject *> &Scene::getObjectList() {
-    return s_objects;
+    return m_objects;
 }
 
 void Scene::Add(GameObject *gameObject) {
-    auto it = std::find(s_objects.begin(), s_objects.end(), gameObject);
-    if (it != s_objects.end()) {
+    auto it = std::find(m_objects.begin(), m_objects.end(), gameObject);
+    if (it != m_objects.end()) {
         return;
     }
-    s_objects.push_back(gameObject);
+    m_objects.push_back(gameObject);
 }
 
 void Scene::Remove(GameObject *gameObject) {
@@ -163,7 +165,7 @@ void Scene::Delete(GameObject *gameObject) {
 }
 
 void Scene::Clear() {
-    s_objects.clear();
+    m_objects.clear();
 }
 
 std::unordered_map<std::string, std::unique_ptr<Scene>> &Scene::GetScenes() {
@@ -194,7 +196,6 @@ void Scene::DestroyObjects() {
 }
 
 void Scene::ReloadObjects() {
-    // /*
     auto scene = GetCurrentScene();
     if (!scene) {
         return;
@@ -204,10 +205,8 @@ void Scene::ReloadObjects() {
     if (!File::Exists(temp_dir)) {
         return;
     }
-    Threadpool::AddTask(&Scene::Load, temp_dir + scene->getName() + ".scn.tmp", LoadFlags_Object | LoadFlags_Script, scene);
 
-    // scene->load(temp_dir + scene->getName() + ".scn.tmp", LoadFlags_Object | LoadFlags_Script);
-    // */
+    Threadpool::AddTask(&Scene::Load, temp_dir + scene->getName() + ".scn.tmp", LoadFlags_Object | LoadFlags_Script, scene);
 }
 
 // TODO: Object, Script because thread dead lock
@@ -292,8 +291,8 @@ void Scene::Load(const std::string &path, std::uint8_t flags, Scene *scene) {
 }
 
 void Scene::setEnable(bool value) {
-    for (auto &gameObject : s_objects) {
-        setDisableEntity(&gameObject->getTransform(), value);
+    for (auto &gameObject : m_objects) {
+        setDisableEntity(gameObject->getTransform(), value);
     }
     m_enable = value;
 }
@@ -399,7 +398,7 @@ int Scene::writeMesh(Streaming *streaming) {
 }
 
 int Scene::writeObject(Streaming *streaming) {
-    auto objectCount = s_objects.size();
+    auto objectCount = m_objects.size();
 
     if (!streaming->writeS(&objectCount, 1)) {
         return 1;
@@ -408,7 +407,7 @@ int Scene::writeObject(Streaming *streaming) {
     std::function<void(GameObject *)> func = std::bind(&Scene::writeGameObject, this, streaming, std::placeholders::_1);
 
     if (func)
-        std::for_each(s_objects.begin(), s_objects.end(), func);
+        std::for_each(m_objects.begin(), m_objects.end(), func);
     return 0;
 }
 
@@ -478,8 +477,8 @@ int Scene::writeGameObject(Streaming *streaming, GameObject *gameObject) {
         m_componentCache.emplace_back(gameObject->getName(), name, ptr);
     }
 
-    auto &transform = gameObject->getTransform();
-    auto &children = transform.getChildren();
+    auto transform = gameObject->getTransform();
+    auto &children = transform->getChildren();
 
     auto cSize = children.size();
     streaming->writeS(&cSize, 1);
@@ -612,14 +611,14 @@ int Scene::readScript(Streaming *streaming) {
         }
 
         Component *component = nullptr;
-
-        Event::Add(&Scene::SetupScript, objectName, componentName, std::ref(cv), std::ref(component));
+        int result = -1;
+        Event::Add(&Scene::SetupScript, objectName, componentName, std::ref(cv), std::ref(component), std::ref(result));
 
         std::unique_lock<std::mutex> lock(m_mutex);
-        cv.wait(lock, [&component] {
-            return component || bQuit;
+        cv.wait(lock, [&component, &result] {
+            return component || bQuit || result >= 0;
         });
-        if (bQuit) {
+        if (bQuit) { // hhhhhhhhhhhhhhhhhhhhhhhhhh
             break;
         }
         lock.unlock();
@@ -627,33 +626,29 @@ int Scene::readScript(Streaming *streaming) {
         if (data_size <= 0) {
             continue;
         }
-        auto position = streaming->tellg() + static_cast<std::streampos>(data_size);
 
-        Event::Add(&Scene::ProcessScript, std::ref(cv), std::ref(component), streaming);
+        auto position = streaming->tellg() + static_cast<std::streampos>(data_size);
+        if (result != 0) {
+            LOG_ERROR_ARGS("Falied to load object: %s, %s", objectName.c_str(), componentName.c_str());
+            
+            streaming->seekg(position, std::ios_base::beg);
+            continue;
+        }
+        result = -1;
+
+        Event::Add(&Scene::ProcessScript, std::ref(cv), component, streaming, std::ref(result));
 
         lock.lock();
-        cv.wait(lock, [&component] {
-            return !component || bQuit;
+        cv.wait(lock, [&component, &result] {
+            return bQuit || result >= 0;
         });
         if (bQuit) {
             break;
         }
         lock.unlock();
 
-
         // jump to end script buffer
         streaming->seekg(position, std::ios_base::beg);
-
-        /*
-        auto gameObject = GameObject::Find(objectName);
-        if (!gameObject) {
-            continue;
-        }
-
-        auto component = gameObject->getEntity()->hasComponent(componentName) ? gameObject->getEntity()->getComponent(componentName) : gameObject->getEntity()->addComponent(componentName);
-        if (component)
-            component->Deserialize(streaming);
-        */
     }
     return result;
 }
@@ -662,7 +657,16 @@ void CrateGameObject(Transform *&transform, std::condition_variable &cv, std::mu
     GameObject *gameObject = nullptr;
     {
         std::lock_guard<std::mutex> lock(mutex);
-        gameObject = parent == nullptr ? &scene->CreateGameObject(name, tag) : &GameObject::Create(name, tag);
+        
+        gameObject = GameObject::Find(name);
+        if (!gameObject)
+            gameObject = parent == nullptr ? &scene->CreateGameObject(name, tag) : &GameObject::Create(name, tag);
+        
+        gameObject->getEntity()->clear();
+
+        if (!gameObject->hasComponent<Transform>()) {
+            gameObject->addComponent<Transform>();
+        }
     }
     
     gameObject->setActive(active);
@@ -670,7 +674,7 @@ void CrateGameObject(Transform *&transform, std::condition_variable &cv, std::mu
 
     {
         std::lock_guard<std::mutex> lock(mutex);
-        transform = &gameObject->getTransform();
+        transform = gameObject->getTransform();
         transform->setParent(parent);
     }
 
@@ -691,8 +695,6 @@ int Scene::readNode(Streaming *streaming, Scene *scene, Transform *parent) {
     if (result != 0) {
         return result;
     }
-
-    name = String::RemoveNumber(name);
 
     std::size_t tSize;
     result = streaming->readS(&tSize, 1) ? 0 : 3;
@@ -724,18 +726,12 @@ int Scene::readNode(Streaming *streaming, Scene *scene, Transform *parent) {
 
     std::unique_lock<std::mutex> lock(m_mutex);
     cv.wait(lock, [&transform] {
-        return transform;
+        return transform || bQuit;
     });
+    if (bQuit) {
+        return 1;
+    }
     lock.unlock();
-
-    /*
-    auto &gameObject = parent == nullptr ? CreateGameObject(name, tag) : GameObject::Create(name, tag);
-    gameObject.setActive(active);
-    gameObject.setEnable(enable);
-
-    auto &transform = gameObject.getTransform();
-    transform.setParent(parent);
-    */
 
     std::size_t cSize = 0;
     result = streaming->readS(&cSize, 1) ? 0 : 7;
@@ -755,7 +751,7 @@ int Scene::readNode(Streaming *streaming, Scene *scene, Transform *parent) {
 }
 
 void Scene::remove(GameObject *gameObject) {
-    s_objects.erase(std::remove(s_objects.begin(), s_objects.end(), gameObject), s_objects.end());
+    m_objects.erase(std::remove(m_objects.begin(), m_objects.end(), gameObject), m_objects.end());
 }
 
 void Scene::SetupScene(Scene *scene) {
@@ -776,19 +772,34 @@ void Scene::InitializeScript(GameObject *gameObject) {
         gameObject->getComponent<MeshRender>().build();
     }
 
-    for (auto &child : gameObject->getTransform().getChildren()) {
+    for (auto &child : gameObject->getTransform()->getChildren()) {
         InitializeScript(child->getGameObject());
     }
 }
 
-void Scene::SetupScript(std::string objectName, std::string name, std::condition_variable &cv, Component *&component) {
+void Scene::SetupScript(std::string objectName, std::string name, std::condition_variable &cv, Component *&component, int &result) {
+    {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        result = 0;
+    }
+
     auto gameObject = GameObject::Find(objectName);
     if (!gameObject) {
+        {
+            std::lock_guard<std::mutex> lock(m_mutex);
+            result = 1;
+        }
+        cv.notify_one();
         return;
     }
 
     auto entt = gameObject->getEntity();
     if (!entt) {
+        {
+            std::lock_guard<std::mutex> lock(m_mutex);
+            result = 2;
+        }
+        cv.notify_one();
         return;
     }
 
@@ -797,19 +808,23 @@ void Scene::SetupScript(std::string objectName, std::string name, std::condition
         component = entt->hasComponent(name) ? entt->getComponent(name) : entt->addComponent(name);
     } catch (const std::exception &e) {
         LOG_ERROR_ARGS("[ Scene ] %s", e.what());
+        std::lock_guard<std::mutex> lock(m_mutex);
+        result = 3;
     }
     cv.notify_one();
 }
 
-void Scene::ProcessScript(std::condition_variable &cv, Component *&component, Streaming *streaming) {
+void Scene::ProcessScript(std::condition_variable &cv, Component *component, Streaming *streaming, int &result) {
     {
         std::lock_guard<std::mutex> lock(m_mutex);
+        result = 0;
+
         try {
             component->Deserialize(streaming);
         } catch (const std::exception &e) {
             LOG_ERROR_ARGS("[ Scene ] %s", e.what());
+            result = 1;
         }
-        component = nullptr;
     }
     cv.notify_one();
 }

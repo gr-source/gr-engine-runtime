@@ -135,7 +135,9 @@ private:
 
     static void RenderScene();
 
-    static void StopRunningGame();
+    static void PlayGame();
+
+    static void StopGame();
 
     static void RenderGuizmo();
 

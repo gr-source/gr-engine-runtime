@@ -9,6 +9,7 @@
 
 class Streaming;
 
+// TODO: Causando crash quando d aplya na cena e para o jogo, motivo esta nos objetos que nao foram reacceragdos das cenas
 class Scene {
 public:
     static void SetCurrent(Scene *scene);
@@ -67,7 +68,7 @@ private:
 
     std::vector<std::tuple<std::string, std::string, Component *>> m_componentCache; 
 
-    std::vector<GameObject *> s_objects;
+    std::vector<GameObject *> m_objects;
 
     std::string m_name;
 
@@ -116,7 +117,7 @@ private:
 
     static void InitializeScript(GameObject *gameObject);
 
-    static void SetupScript(std::string objectName, std::string name, std::condition_variable &cv, Component *&component);
+    static void SetupScript(std::string objectName, std::string name, std::condition_variable &cv, Component *&component, int &result);
 
-    static void ProcessScript(std::condition_variable &cv, Component *&component, Streaming *streaming);
+    static void ProcessScript(std::condition_variable &cv, Component *component, Streaming *streaming, int &result);
 };

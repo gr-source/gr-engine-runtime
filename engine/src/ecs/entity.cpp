@@ -66,28 +66,28 @@ void Entity::copy(Entity *entity) {
         throw std::runtime_error("GameObject is invalid");
     }
 
-    auto &localTransform = m_gameObject->getTransform();
+    auto localTransform = m_gameObject->getTransform();
 
-    auto &transform = targetGameObject->getTransform();
-    localTransform.setLocalScale(transform.getLocalScale());
-    localTransform.setLocalRotation(transform.getLocalRotation());
-    localTransform.setLocalPosition(transform.getLocalPosition());
+    auto transform = targetGameObject->getTransform();
+    localTransform->setLocalScale(transform->getLocalScale());
+    localTransform->setLocalRotation(transform->getLocalRotation());
+    localTransform->setLocalPosition(transform->getLocalPosition());
 
-    if (!transform.hasParent()) {
+    if (!transform->hasParent()) {
         Scene::GetCurrentScene()->Add(getGameObject());
     } else {
-        localTransform.setParent(transform.getParent());
+        localTransform->setParent(transform->getParent());
     }
 
-    for (auto &child : transform.getChildren()) {
+    for (auto &child : transform->getChildren()) {
         auto objectPtr = child->getGameObject();
         if (!objectPtr) {
             throw std::runtime_error("Child do not is valid of: " + targetGameObject->getName());
         }
 
         auto &clone = GameObject::Instantiate(objectPtr);
-        auto &cTransform = clone.getTransform();
-        cTransform.setParent(&localTransform);
+        auto cTransform = clone.getTransform();
+        cTransform->setParent(localTransform);
     }
 
     init();

@@ -10,7 +10,7 @@ void Animator::UpdateAnim() {
         return;
     }
 
-    auto &parent = m_armature->getTransform();
+    auto parent = m_armature->getTransform();
 
     /*
     if (m_animation != nullptr && m_nextAnimation != nullptr) {
@@ -41,7 +41,7 @@ void Animator::UpdateAnim() {
     }
 
     if (m_animation)
-        hierarchy(&parent, Matrix4x4::identityMatrix);
+        hierarchy(parent, Matrix4x4::identityMatrix);
 }
 
 void Animator::insert(Animation *animation) {

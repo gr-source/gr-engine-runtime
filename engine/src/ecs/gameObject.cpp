@@ -18,11 +18,11 @@ std::unordered_map<std::string, std::unique_ptr<GameObject>> GameObject::s_mapOb
 std::unordered_map<std::string, int> GameObject::s_names;
 
 GameObject &GameObject::Create(const std::string &name, const std::string &tag) {
-    auto newName = AddNameID(String::RemoveNumber(name));
+    auto newName = AddNameID(name);
 
-    while (Find(newName)) {
-        newName = AddNameID(String::RemoveNumber(name));
-    }
+    // while (Find(newName)) {
+    //     newName = AddNameID(String::RemoveNumber(name));
+    // }
 
     auto &&[it, added] = s_mapObject.emplace(newName, std::make_unique<GameObject>(newName, tag));
     if (!added) {
@@ -37,7 +37,7 @@ GameObject &GameObject::Create(const std::string &name, const std::string &tag) 
 }
 
 GameObject &GameObject::Instantiate(GameObject *target) {
-    auto &gameObject = GameObject::Create(String::RemoveNumber(target->m_name), target->m_tag);
+    auto &gameObject = GameObject::Create(target->m_name, target->m_tag);
     gameObject.m_bEnable = target->m_bEnable;
     gameObject.m_bActive = target->m_bActive;
 
@@ -60,7 +60,7 @@ void GameObject::Rename(GameObject *gameObject, std::string name) {
         return;
     }
 
-    name = AddNameID(String::RemoveNumber(name));
+    name = AddNameID(name);
 
     auto ptr = std::move(it->second);
 
@@ -76,18 +76,18 @@ void GameObject::Destroy(GameObject *target) {
         throw std::runtime_error("GameObject not is valid.");
     }
 
-    auto sname = String::RemoveNumber(target->getName());
+    auto sname = target->getName();
 
     auto it = s_mapObject.find(target->getName());
     if (it == s_mapObject.end()) {
         return;
     }
 
-    auto &transform = target->getTransform();
+    auto transform = target->getTransform();
     // remove o objeto pai do objeto altual e se o pai me ter como filho me remove do objeto pai.
-    transform.setParent(nullptr);
+    transform->setParent(nullptr);
 
-    auto& children = transform.getChildren();
+    auto& children = transform->getChildren();
 
     for (auto &child : children) {
         // como o objeto pai ja foi removido diz, aos filhos que não tem mais parent.
@@ -146,8 +146,8 @@ void GameObject::setTransform(Transform *transform) {
     m_transform = transform;
 }
 
-Transform &GameObject::getTransform() {
-    return *m_transform;
+Transform *GameObject::getTransform() {
+    return m_transform;
 }
 
 Entity *GameObject::getEntity() {
@@ -183,8 +183,10 @@ void GameObject::RemoveNameID(const std::string &name) {
     if (it == s_names.end()) {
         return;
     }
+    
     if (it->second <= 0) {
         s_names.erase(it);
+        return;
     }
     it->second--;
 }
