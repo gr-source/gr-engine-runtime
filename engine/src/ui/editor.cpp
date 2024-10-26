@@ -971,7 +971,7 @@ void Editor::PlayGame() {
 void Editor::StopGame() {
     Settings::bGameRunning = false;
 
-    // Scene::ReloadObjects();
+    Scene::ReloadObjects();
 
     Console::log(LogInfo::DEFAULT, "Game stoped.");
 }

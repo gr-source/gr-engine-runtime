@@ -665,7 +665,7 @@ void CrateGameObject(Transform *&transform, std::condition_variable &cv, std::mu
         gameObject->getEntity()->clear();
 
         if (!gameObject->hasComponent<Transform>()) {
-            gameObject->addComponent<Transform>();
+            gameObject->setTransform(&gameObject->addComponent<Transform>());
         }
     }
     
