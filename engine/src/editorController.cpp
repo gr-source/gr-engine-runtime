@@ -41,7 +41,7 @@ void EditorController::Update() {
 
     auto transform = m_mainCamera->getTransform();
 
-    Vector3 diretion;
+    Vector3 diretion = Vector3::zero;
 
     if (Input::IsKeyPress(Input::InputKey_W)) {
         diretion += transform->getforward();

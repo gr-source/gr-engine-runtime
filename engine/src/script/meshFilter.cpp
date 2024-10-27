@@ -9,8 +9,8 @@ Mesh *MeshFilter::getMesh() {
 }
 
 void MeshFilter::processBoundbox() {
-    m_boundbox.min = Vector3(std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), std::numeric_limits<float>::max());
-    m_boundbox.max = Vector3(std::numeric_limits<float>::min(), std::numeric_limits<float>::min(), std::numeric_limits<float>::min());
+    m_boundbox.min = {std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), std::numeric_limits<float>::max()};
+    m_boundbox.max = {std::numeric_limits<float>::min(), std::numeric_limits<float>::min(), std::numeric_limits<float>::min()};
     
     for (const auto& vertex : m_sharedMesh->getVertices()) {
         m_boundbox.min = Math::min(m_boundbox.min, vertex.position);

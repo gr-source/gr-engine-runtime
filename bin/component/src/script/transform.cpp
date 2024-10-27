@@ -49,7 +49,7 @@ void Transform::addLocalPosition(const Vector3 &value) {
 
 const Vector3 Transform::getPosition() const {
     if (m_parent) {
-        return Vector3(m_parent->getGlobalMatrix() * Vector4(m_position, 1.0f));
+        return Vector3(m_parent->getGlobalMatrix() * Vector4({m_position.x, m_position.y, m_position.z, 1.0f}));
     }
     return m_position;
 }

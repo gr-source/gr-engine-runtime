@@ -185,8 +185,8 @@ void Batching::build(Mesh *mesh) {
     m_vertexArray->unbind();
 
     // process boundbox
-    m_boundbox.min = Vector3(std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), std::numeric_limits<float>::max());
-    m_boundbox.max = Vector3(std::numeric_limits<float>::min(), std::numeric_limits<float>::min(), std::numeric_limits<float>::min());
+    m_boundbox.min = {std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), std::numeric_limits<float>::max()};
+    m_boundbox.max = {std::numeric_limits<float>::min(), std::numeric_limits<float>::min(), std::numeric_limits<float>::min()};
     
     for (const auto& vertex : mesh->getVertices()) {
         m_boundbox.min = Math::min(m_boundbox.min, vertex.position);
@@ -280,9 +280,12 @@ void Batching::buildStaticMesh() {
         auto &model = transform->getGlobalMatrix();
 
         for (auto &vertice : m_mesh->getVertices()) {
+            Vector4 position = {vertice.position.x, vertice.position.y, vertice.position.z, 1.0f};
+            Vector4 normal = {vertice.normal.x, vertice.normal.y, vertice.normal.z, 0.0f};
+
             mesh.addVertex(
-                Vector3(model * Vector4(vertice.position, 1.0f)),
-                Vector3(model * Vector4(vertice.normal, 0.0f)),
+                Vector3(model * position),
+                Vector3(model * normal),
                 vertice.texCoord,
                 vertice.mIdx
             );
@@ -323,7 +326,7 @@ void Batching::setupMaterial() {
         grr::gShader::SetUniform<int>("m_activate", 10, (const int *)idxEn);
 
         grr::gShader::SetUniform("m_material[" + std::to_string(i) + "].albedo", material->getAlbedo());
-        grr::gShader::SetUniform("m_material[" + std::to_string(i) + "].params", Vector3(material->getRoughness(), material->getMetallic(), material->getAmbientOcclusion()));
+        grr::gShader::SetUniform("m_material[" + std::to_string(i) + "].params", Vector3({material->getRoughness(), material->getMetallic(), material->getAmbientOcclusion()}));
     }
 }
 

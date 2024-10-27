@@ -45,14 +45,14 @@ const bool Octree::contais(const Vector3 &position) const {
 std::vector<GameObject*> Octree::render(const Frustum& frustum) {
 
     Vector3 vertices[8];
-    vertices[0] = m_position + Vector3(-m_scale.x, -m_scale.y, -m_scale.z) / 2.0f;
-    vertices[1] = m_position + Vector3( m_scale.x, -m_scale.y, -m_scale.z) / 2.0f;
-    vertices[2] = m_position + Vector3( m_scale.x,  m_scale.y, -m_scale.z) / 2.0f;
-    vertices[3] = m_position + Vector3(-m_scale.x,  m_scale.y, -m_scale.z) / 2.0f;
-    vertices[4] = m_position + Vector3(-m_scale.x, -m_scale.y,  m_scale.z) / 2.0f;
-    vertices[5] = m_position + Vector3( m_scale.x, -m_scale.y,  m_scale.z) / 2.0f;
-    vertices[6] = m_position + Vector3( m_scale.x,  m_scale.y,  m_scale.z) / 2.0f;
-    vertices[7] = m_position + Vector3(-m_scale.x,  m_scale.y,  m_scale.z) / 2.0f;
+    vertices[0] = m_position + Vector3({-m_scale.x, -m_scale.y, -m_scale.z}) / 2.0f;
+    vertices[1] = m_position + Vector3({ m_scale.x, -m_scale.y, -m_scale.z}) / 2.0f;
+    vertices[2] = m_position + Vector3({ m_scale.x,  m_scale.y, -m_scale.z}) / 2.0f;
+    vertices[3] = m_position + Vector3({-m_scale.x,  m_scale.y, -m_scale.z}) / 2.0f;
+    vertices[4] = m_position + Vector3({-m_scale.x, -m_scale.y,  m_scale.z}) / 2.0f;
+    vertices[5] = m_position + Vector3({ m_scale.x, -m_scale.y,  m_scale.z}) / 2.0f;
+    vertices[6] = m_position + Vector3({ m_scale.x,  m_scale.y,  m_scale.z}) / 2.0f;
+    vertices[7] = m_position + Vector3({-m_scale.x,  m_scale.y,  m_scale.z}) / 2.0f;
 
     // if (!frustum.IsCubeInFrustum(vertices)) {
     //     return std::vector<GameObject*>();
@@ -109,14 +109,14 @@ void Octree::subdivid() {
     Vector3 halfScale = m_scale / 2.0f;
 
     Vector3 centers[8];
-    centers[0] = m_position + Vector3(-halfScale.x, -halfScale.y, -halfScale.z) / 2.0f;
-    centers[1] = m_position + Vector3( halfScale.x, -halfScale.y, -halfScale.z) / 2.0f;
-    centers[2] = m_position + Vector3( halfScale.x,  halfScale.y, -halfScale.z) / 2.0f;
-    centers[3] = m_position + Vector3(-halfScale.x,  halfScale.y, -halfScale.z) / 2.0f;
-    centers[4] = m_position + Vector3(-halfScale.x, -halfScale.y,  halfScale.z) / 2.0f;
-    centers[5] = m_position + Vector3( halfScale.x, -halfScale.y,  halfScale.z) / 2.0f;
-    centers[6] = m_position + Vector3( halfScale.x,  halfScale.y,  halfScale.z) / 2.0f;
-    centers[7] = m_position + Vector3(-halfScale.x,  halfScale.y,  halfScale.z) / 2.0f;
+    centers[0] = m_position + Vector3({-halfScale.x, -halfScale.y, -halfScale.z}) / 2.0f;
+    centers[1] = m_position + Vector3({ halfScale.x, -halfScale.y, -halfScale.z}) / 2.0f;
+    centers[2] = m_position + Vector3({ halfScale.x,  halfScale.y, -halfScale.z}) / 2.0f;
+    centers[3] = m_position + Vector3({-halfScale.x,  halfScale.y, -halfScale.z}) / 2.0f;
+    centers[4] = m_position + Vector3({-halfScale.x, -halfScale.y,  halfScale.z}) / 2.0f;
+    centers[5] = m_position + Vector3({ halfScale.x, -halfScale.y,  halfScale.z}) / 2.0f;
+    centers[6] = m_position + Vector3({ halfScale.x,  halfScale.y,  halfScale.z}) / 2.0f;
+    centers[7] = m_position + Vector3({-halfScale.x,  halfScale.y,  halfScale.z}) / 2.0f;
 
     for (int i = 0; i < MAX_OCTREE_CHILD; ++i) {
         if (m_childrent[i] == nullptr)

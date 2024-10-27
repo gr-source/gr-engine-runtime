@@ -270,12 +270,12 @@ void Filmbox::LoadAnimation(const aiScene *scene, FbxScene *fbxScene) {
 void Filmbox::AddKeys(aiNodeAnim *mNodeAnim, FbxChannel &channel) {
     for (auto i=0;i<mNodeAnim->mNumPositionKeys;++i) {
         auto key = mNodeAnim->mPositionKeys[i];
-        channel.addKeyPosition(static_cast<float>(key.mTime), Vector3(key.mValue.x, key.mValue.y, key.mValue.z));
+        channel.addKeyPosition(static_cast<float>(key.mTime), Vector3({key.mValue.x, key.mValue.y, key.mValue.z}));
     }
 
     for (auto i=0;i<mNodeAnim->mNumScalingKeys;++i) {
         auto key = mNodeAnim->mScalingKeys[i];
-        channel.addKeyScale(static_cast<float>(key.mTime), Vector3(key.mValue.x, key.mValue.y, key.mValue.z));
+        channel.addKeyScale(static_cast<float>(key.mTime), Vector3({key.mValue.x, key.mValue.y, key.mValue.z}));
     }
 
     for (auto i=0;i<mNodeAnim->mNumRotationKeys;++i) {

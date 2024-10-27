@@ -977,16 +977,17 @@ void Editor::StopGame() {
 }
 
 void Editor::RenderGuizmo() {
-    if (s_io->KeyCtrl && ImGui::IsKeyReleased(ImGuiKey_T)) {
+    if (!s_io->KeyCtrl && ImGui::IsKeyReleased(ImGuiKey_G) && ImGui::IsWindowHovered()) {
         m_guizmoOperation = ImGuizmo::TRANSLATE;
     }
-    if (s_io->KeyCtrl && ImGui::IsKeyReleased(ImGuiKey_R)) {
+    if (!s_io->KeyCtrl && ImGui::IsKeyReleased(ImGuiKey_R) && ImGui::IsWindowHovered()) {
         m_guizmoOperation = ImGuizmo::ROTATE;
     }
-    if (s_io->KeyCtrl && ImGui::IsKeyReleased(ImGuiKey_S)) {
+    if (!s_io->KeyCtrl && ImGui::IsKeyReleased(ImGuiKey_S) && ImGui::IsWindowHovered()) {
         m_guizmoOperation = ImGuizmo::SCALE;
     }
-    if (s_io->KeyCtrl && ImGui::IsKeyReleased(ImGuiKey_Space)) {
+
+    if (s_io->KeyCtrl && ImGui::IsKeyReleased(ImGuiKey_Space) && ImGui::IsWindowHovered()) {
         if (m_guizmoManipulate == ImGuizmo::WORLD) {
             m_guizmoManipulate = ImGuizmo::LOCAL;
         } else if (m_guizmoManipulate == ImGuizmo::LOCAL) {

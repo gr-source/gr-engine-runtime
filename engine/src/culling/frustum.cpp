@@ -103,15 +103,15 @@ bool Frustum::IsPointInFrustum(const Vector3 &point, int planeIndex) {
 
 bool Frustum::IsCubeInFrustumOOBB(const Vector3 &min, const Vector3 &max, const Matrix4x4 &model) {
     Vector3 points[8] {
-        Vector3(model * Vector4(min.x, min.y, min.z, 1.0f)),
-        Vector3(model * Vector4(max.x, min.y, min.z, 1.0f)),
-        Vector3(model * Vector4(max.x, max.y, min.z, 1.0f)),
-        Vector3(model * Vector4(min.x, max.y, min.z, 1.0f)),
+        // Vector3(model * Vector4(min.x, min.y, min.z, 1.0f)),
+        // Vector3(model * Vector4(max.x, min.y, min.z, 1.0f)),
+        // Vector3(model * Vector4(max.x, max.y, min.z, 1.0f)),
+        // Vector3(model * Vector4(min.x, max.y, min.z, 1.0f)),
 
-        Vector3(model * Vector4(min.x, min.y, max.z, 1.0f)),
-        Vector3(model * Vector4(max.x, min.y, max.z, 1.0f)),
-        Vector3(model * Vector4(max.x, max.y, max.z, 1.0f)),
-        Vector3(model * Vector4(min.x, max.y, max.z, 1.0f))
+        // Vector3(model * Vector4(min.x, min.y, max.z, 1.0f)),
+        // Vector3(model * Vector4(max.x, min.y, max.z, 1.0f)),
+        // Vector3(model * Vector4(max.x, max.y, max.z, 1.0f)),
+        // Vector3(model * Vector4(min.x, max.y, max.z, 1.0f))
     };
 
     if (DebugDraw::bDebugMode) {
