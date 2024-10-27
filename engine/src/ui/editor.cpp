@@ -1667,9 +1667,29 @@ bool Editor::OnPropertyTransform(Transform *transform) {
     auto euler = Math::eulerAngles(transform->getLocalRotation());
 
     ImGui::Text("Rotação:");
-    if (ImGui::DragFloatEx("##Rotacao", text, euler.data, 1.0f, -360.0f, 360.0f)) {
+
+    ImGui::BeginGroup();
+
+    ImGui::PushMultiItemsWidths(3, ImGui::CalcItemWidth());
+
+    if (ImGui::DragFloat("##rotacao_x", &euler.x, 1.0f, -360.0f, 360.0f, "X: %.2f")) {
         transform->setLocalRotation(Math::normalize(Math::euler({Math::rad(euler.x), Math::rad(euler.y), Math::rad(euler.z)})));
     }
+    ImGui::PopItemWidth();
+
+    ImGui::SameLine();
+    if (ImGui::DragFloat("##rotacao_y", &euler.y, 1.0f, -89.0f, 89.0f, "Y: %.2f")) {
+        transform->setLocalRotation(Math::normalize(Math::euler({Math::rad(euler.x), Math::rad(euler.y), Math::rad(euler.z)})));
+    }
+    ImGui::PopItemWidth();
+    
+    ImGui::SameLine();
+    if (ImGui::DragFloat("##rotacao_z", &euler.z, 1.0f, -360.0f, 360.0f, "Z: %.2f")) {
+        transform->setLocalRotation(Math::normalize(Math::euler({Math::rad(euler.x), Math::rad(euler.y), Math::rad(euler.z)})));
+    }
+    ImGui::PopItemWidth();
+
+    ImGui::EndGroup();
     return false;
 }
 
