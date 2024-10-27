@@ -1,4 +1,4 @@
-#include "screen.h"
+#include "screen.hpp"
 
 int Screen::width = 0.0f;
 int Screen::height = 0.0f;

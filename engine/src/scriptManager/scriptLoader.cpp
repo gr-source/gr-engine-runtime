@@ -1,7 +1,7 @@
 #include "scriptLoader.hpp"
 
 #include "core/file/file.hpp"
-#include "console.hpp"
+#include "core/console.hpp"
 
 #include "../memory.h"
 

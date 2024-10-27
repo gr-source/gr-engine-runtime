@@ -2,8 +2,9 @@
 
 #include "transform.hpp"
 
+#include "core/timer.hpp"
+
 #include "../renderer.h"
-#include "../timer.h"
 
 void Animator::UpdateAnim() {
     if (!m_armature) {

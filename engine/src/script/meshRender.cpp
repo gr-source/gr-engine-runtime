@@ -2,11 +2,11 @@
 #include "meshFilter.hpp"
 #include "transform.hpp"
 #include "animator.hpp"
-#include "console.hpp"
 
 #include "geometry/mesh.h"
 
 #include "core/assetsManager.hpp"
+#include "core/console.hpp"
 
 std::vector<std::shared_ptr<Material>> &MeshRender::getMaterials() {
     return m_materials;

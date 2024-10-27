@@ -13,14 +13,13 @@
 #include "core/assetsManager.hpp"
 #include "core/scene.hpp"
 #include "core/event.hpp"
+#include "core/input.hpp"
 
 #include "../ecs/entity.h"
 
-#include "../input.h"
 #include "../memory.h"
 
 #include "settings.h"
-// #include "Game.h"
 
 #include <iostream>
 #include <fstream>
@@ -90,8 +89,6 @@ void ScriptManager::Shutdown() {
 bool ScriptManager::IsValid() {
     return m_script && m_script->isValid();
 }
-
-#include "timer.h"
 
 // TODO: Falta corrigir error de segmebt afult em memory hook
 #pragma GCC diagnostic push

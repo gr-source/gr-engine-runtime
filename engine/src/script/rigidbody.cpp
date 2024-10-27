@@ -7,7 +7,7 @@
 #include "script/boxCollider.hpp"
 #include "script/transform.hpp"
 
-#include "console.hpp"
+#include "core/console.hpp"
 
 #define FROMVEC3(vec) btVector3(vec.x, vec.y, vec.z)
 #define FROMQUAT(q) btQuaternion(q.x, q.y, q.z, q.w)

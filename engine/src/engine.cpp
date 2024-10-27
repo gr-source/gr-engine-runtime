@@ -2,8 +2,6 @@
 
 #include "editorController.h"
 #include "postProcessing.hpp"
-#include "screen.h"
-#include "input.h"
 
 #include "script/meshRender.hpp"
 #include "script/camera.hpp"
@@ -14,7 +12,10 @@
 #include "core/assetsManager.hpp"
 #include "core/threadpool.hpp"
 #include "core/statistics.hpp"
+#include "core/screen.hpp"
 #include "core/event.hpp"
+#include "core/input.hpp"
+#include "core/timer.hpp"
 #include "core/time.hpp"
 
 #include "physics/physicsScene.hpp"
@@ -25,7 +26,6 @@
 #include "renderer.h"
 #include "skybox.h"
 #include "Global.h"
-#include "timer.h"
 
 #include "scriptManager/scriptManager.hpp"
 #include "memory.h"

@@ -1,13 +1,14 @@
 #include "manager.hpp"
 
 #include "gameObject.h"
-#include "console.hpp"
 #include "settings.h"
 
 #include "script/transform.hpp"
 
 #include "core/file/stream.hpp"
 #include "core/file/file.hpp"
+
+#include "core/console.hpp"
 
 std::unordered_map<EntityID, std::unique_ptr<Entity>> Manager::m_mapEntities;
 

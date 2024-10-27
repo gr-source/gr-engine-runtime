@@ -4,8 +4,8 @@
 
 #include "core/ecs/componentPool.hpp"
 
+#include "core/console.hpp"
 
-#include "console.hpp"
 #include "renderer.h"
 #include "Global.h"
 

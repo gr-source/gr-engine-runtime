@@ -1,7 +1,5 @@
 #include "renderManager.h"
 
-#include "console.hpp"
-
 #include "script/meshRender.hpp"
 #include "script/meshFilter.hpp"
 #include "script/transform.hpp"
@@ -12,6 +10,7 @@
 #include "core/file/file.hpp"
 
 #include "core/assetsManager.hpp"
+#include "core/console.hpp"
 
 #include "scriptManager/scriptManager.hpp"
 

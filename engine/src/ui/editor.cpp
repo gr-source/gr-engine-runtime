@@ -4,15 +4,11 @@
 #include "editorController.h"
 #include "renderManager.h"
 #include "screenRender.hpp"
-#include "console.hpp"
 #include "renderer.h"
 #include "settings.h"
-#include "screen.h"
 #include "engine.h"
 #include "memory.h"
 #include "skybox.h"
-#include "timer.h"
-
 
 #include "core/filmbox/filmbox.hpp"
 
@@ -27,8 +23,11 @@
 #include "core/assetsManager.hpp"
 #include "core/threadpool.hpp"
 #include "core/statistics.hpp"
+#include "core/console.hpp"
+#include "core/screen.hpp"
 #include "core/scene.hpp"
 #include "core/event.hpp"
+#include "core/timer.hpp"
 
 #include "script/boxCollider.hpp"
 #include "script/meshFilter.hpp"

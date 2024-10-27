@@ -1,4 +1,5 @@
-#include "timer.h"
+#include "timer.hpp"
+
 #include "Global.h"
 
 #include <thread>

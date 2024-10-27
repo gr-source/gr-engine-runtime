@@ -45,20 +45,28 @@ set(core_src
     src/core/assetsManager.cpp
     src/core/statistics.cpp
     src/core/threadpool.cpp
+    src/core/console.cpp
     src/core/string.cpp
+    src/core/screen.cpp
     src/core/event.cpp
     src/core/scene.cpp
+    src/core/input.cpp
     src/core/time.cpp
+    src/core/timer.cpp
 )
 
 set(core_hdr
     src/core/assetsManager.hpp
     src/core/statistics.hpp
     src/core/threadpool.hpp
-    src/core/event.hpp
+    src/core/console.hpp
     src/core/string.hpp
+    src/core/screen.hpp
+    src/core/event.hpp
     src/core/scene.hpp
+    src/core/input.hpp
     src/core/time.hpp
+    src/core/timer.hpp
 )
 
 set(filmbox_src
@@ -140,14 +148,10 @@ set(engine_src
     ${simplexNoise_src}
     ${scriptManager_cpp}
     
-    src/input.cpp
-    src/timer.cpp
     src/engine.cpp
     src/memory.cpp
     src/Global.cpp
     src/skybox.cpp
-    src/screen.cpp
-    src/console.cpp
     src/renderer.cpp
     src/settings.cpp
     src/screenRender.cpp
@@ -199,14 +203,10 @@ set(engine_hdr
     ${core_file_hdr}
     ${scriptManager_hdr}
 
-    src/timer.h
-    src/input.h
     src/engine.h
     src/memory.h
     src/Global.h
     src/skybox.h
-    src/screen.h
-    src/console.hpp
     src/renderer.h
     src/settings.h
     src/screenRender.hpp

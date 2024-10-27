@@ -2,8 +2,6 @@
 
 #include "../ecs/gameObject.h"
 
-#include "../timer.h"
-
 void Transform::setLocalScale(const Vector3 &value) {
     m_scale = value;
 

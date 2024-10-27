@@ -3,12 +3,12 @@
 
 #include "screenRender.hpp"
 #include "renderManager.h"
-#include "console.hpp"
 #include "skybox.h"
 
 #include "core/cmd/cmd.hpp"
 
 #include "core/threadpool.hpp"
+#include "core/console.hpp"
 #include "core/scene.hpp"
 
 #include "core/file/config.hpp"

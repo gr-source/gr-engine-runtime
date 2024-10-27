@@ -5,11 +5,12 @@
 
 #include "ui/ImGuiRender.h"
 
-#include "console.hpp"
+#include "core/console.hpp"
+#include "core/screen.hpp"
+#include "core/input.hpp"
+#include "core/timer.hpp"
+
 #include "settings.h"
-#include "screen.h"
-#include "input.h"
-#include "timer.h"
 
 Camera *EditorController::m_mainCamera = nullptr;
 ImGuiIO *EditorController::m_io = nullptr;

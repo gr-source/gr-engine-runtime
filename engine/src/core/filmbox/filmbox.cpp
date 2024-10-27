@@ -3,9 +3,8 @@
 #include "core/file/file.hpp"
 
 #include "core/assetsManager.hpp"
+#include "core/console.hpp"
 #include "core/event.hpp"
-
-#include "console.hpp"
 
 #include <assimp/postprocess.h>
 #include <assimp/Importer.hpp>

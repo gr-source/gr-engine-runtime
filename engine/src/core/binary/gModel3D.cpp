@@ -2,9 +2,8 @@
 
 #include "gHeader.hpp"
 
-#include "console.hpp"
-
 #include "core/threadpool.hpp"
+#include "core/console.hpp"
 
 #include "core/filmbox/filmbox.hpp"
 

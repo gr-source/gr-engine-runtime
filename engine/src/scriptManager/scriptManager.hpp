@@ -2,12 +2,13 @@
 
 #include "scriptLoader.hpp"
 
-#include "../ecs/gameObject.h"
+#include "ecs/gameObject.h"
 
-#include "console.hpp"
 #include "default.hpp"
 
 #include "core/ecs/componentPool.hpp"
+
+#include "core/console.hpp"
 
 #include <gr-render/gShader.h>
 

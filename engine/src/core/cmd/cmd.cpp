@@ -1,6 +1,6 @@
 #include "cmd.hpp"
 
-#include "console.hpp"
+#include "core/console.hpp"
 
 #include <stdio.h>
 

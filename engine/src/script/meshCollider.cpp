@@ -6,7 +6,7 @@
 
 #include "geometry/mesh.h"
 
-#include "console.hpp"
+#include "core/console.hpp"
 
 void MeshCollider::build(Mesh *mesh) {
     if (!mesh) {
