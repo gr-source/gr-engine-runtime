@@ -287,7 +287,7 @@ void Scene::Load(const std::string &path, std::uint8_t flags, Scene *scene) {
         stream.seekg(start_block_position + static_cast<std::streampos>(data.sizeData), std::ios_base::beg);
     }
 
-    Event::Add(&Scene::SetupScene, std::move(scene));
+    Event::Add(&Scene::SetupScene, scene);
 }
 
 void Scene::setEnable(bool value) {
@@ -816,7 +816,7 @@ void Scene::SetupScript(std::string objectName, std::string name, std::condition
 
 void Scene::ProcessScript(std::condition_variable &cv, Component *component, Streaming *streaming, int &result) {
     {
-        std::lock_guard<std::mutex> lock(m_mutex);
+        std::unique_lock<std::mutex> lock(m_mutex);
         result = 0;
 
         try {

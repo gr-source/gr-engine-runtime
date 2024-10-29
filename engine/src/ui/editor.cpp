@@ -42,7 +42,7 @@
 
 #include "ui/ImGuiRender.h"
 #include "ui/project.hpp"
-#include "ui/View.h"
+#include "ui/view.hpp"
 
 #include "scriptManager/scriptManager.hpp"
 
@@ -1649,46 +1649,27 @@ bool Editor::OnPropertyTransform(Transform *transform) {
         return false;
     }
 
-    const char* text[] {"X", "Y", "Z"};
-
+    const char *data[3] = {"X:", "Y:", "Z:"};
+    
     auto position = transform->getLocalPosition();
-    ImGui::Text("Posição:");
-    if (ImGui::DragFloatEx("##Posicao", text, position.data, 1.0f, 0.0f, 0.0f, "%.3f")) {
+    ImGui::Text("Position");
+    if (View::DragScalarEx(data, (float *)&position, 3, 1.0f, 0.0f, 0.0f)) {
         transform->setLocalPosition(position);
     }
-
+    
     auto scale = transform->getLocalScale();
-    ImGui::Text("Escala:");
-    if (ImGui::DragFloatEx("##Escala", text, scale.data, 1.0f, 1.0f, 0.0f, "%.3f")) {
+    ImGui::Text("Scale");
+    if (View::DragScalarEx(data, (float *)&scale, 3, 1.0f, 0.0f, 0.0f)) {
         transform->setLocalScale(scale);
     }
 
     auto euler = Math::eulerAngles(transform->getLocalRotation());
+    ImGui::Text("Rotation");
+    if (View::DragScalarEx(data, (float *)&euler, 3, 1.0f, -360.0f, 360.0f)) {
+        euler.y = std::clamp(euler.y, -89.0f, 89.0f);
 
-    ImGui::Text("Rotação:");
-
-    ImGui::BeginGroup();
-
-    ImGui::PushMultiItemsWidths(3, ImGui::CalcItemWidth());
-
-    if (ImGui::DragFloat("##rotacao_x", &euler.x, 1.0f, -360.0f, 360.0f, "X: %.2f")) {
-        transform->setLocalRotation(Math::normalize(Math::euler({Math::rad(euler.x), Math::rad(euler.y), Math::rad(euler.z)})));
+        transform->setLocalRotation(Math::normalize(Math::euler({Math::rad(euler)})));
     }
-    ImGui::PopItemWidth();
-
-    ImGui::SameLine();
-    if (ImGui::DragFloat("##rotacao_y", &euler.y, 1.0f, -89.0f, 89.0f, "Y: %.2f")) {
-        transform->setLocalRotation(Math::normalize(Math::euler({Math::rad(euler.x), Math::rad(euler.y), Math::rad(euler.z)})));
-    }
-    ImGui::PopItemWidth();
-    
-    ImGui::SameLine();
-    if (ImGui::DragFloat("##rotacao_z", &euler.z, 1.0f, -360.0f, 360.0f, "Z: %.2f")) {
-        transform->setLocalRotation(Math::normalize(Math::euler({Math::rad(euler.x), Math::rad(euler.y), Math::rad(euler.z)})));
-    }
-    ImGui::PopItemWidth();
-
-    ImGui::EndGroup();
     return false;
 }
 

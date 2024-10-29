@@ -1,4 +1,4 @@
-#include "View.h"
+#include "view.hpp"
 
 const bool View::TextureInputUI(const ImColor& color) {
     ImDrawList* drawList = ImGui::GetWindowDrawList();
@@ -23,8 +23,34 @@ const bool View::PopupChangeColor(const std::string& name, Color& color) {
     return false;
 }
 
-const bool View::DragScalarEx(const char* id, const char* label[], ImGuiDataType data_type, void* p_data, int components, float v_speed, const void* p_min, const void* p_max, const char* format, ImGuiSliderFlags flags) {
-    return false;
+bool View::DragScalarEx(const char *name[], float *data, int size, float v_speed, float p_min, float p_max) {
+    bool value_changed = false;
+
+    ImGui::BeginGroup();
+    ImGui::PushID(data);
+
+    ImGui::PushMultiItemsWidths(size, ImGui::CalcItemWidth());
+    for (int i=0;i<size;i++) {
+        char buffer[256];
+        sprintf(buffer, "##%s_%d", name[i], i);
+
+        ImGui::PushID(i);
+
+        ImGui::Text("%s", name[i]);
+
+        ImGui::SameLine();
+
+        value_changed |= ImGui::DragFloat(buffer, &data[i], v_speed, p_min, p_max);
+
+        ImGui::PopItemWidth();
+
+        ImGui::SameLine();
+
+        ImGui::PopID();
+    }
+    ImGui::PopID();
+    ImGui::EndGroup();
+    return value_changed;
 }
 
 bool View::ImageTreeNode(ImTextureID textureID, const char *name) {

@@ -15,14 +15,15 @@
 
 void Filmbox::Load(const std::string &path, std::function<void(std::shared_ptr<FbxScene>)> func) {
     if (!File::Exists(path)) {
-        return Console::log(LogInfo::ERROR, "falied to opennable .fbx: " + path);
+        return LOG_ERROR_ARGS("[ Filmbox ] Falied open file: %s", path);
     }
+
     Assimp::Importer importer;
 
-    const aiScene* scene = importer.ReadFile(path.c_str(), aiProcess_Triangulate | aiProcess_CalcTangentSpace | aiProcess_PopulateArmatureData | aiProcess_Triangulate);
+    auto scene = importer.ReadFile(path.c_str(), aiProcess_Triangulate | aiProcess_CalcTangentSpace | aiProcess_PopulateArmatureData | aiProcess_Triangulate);
 
     if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
-        throw std::runtime_error("Erro ao carregar o modelo FBX: " + std::string(importer.GetErrorString()));
+        return LOG_ERROR_ARGS("[ Filmbox ] Falied to load scene: %s", importer.GetErrorString());
     }
 
     auto m_fbxScene = std::make_shared<FbxScene>(scene->mName.C_Str());
@@ -30,6 +31,8 @@ void Filmbox::Load(const std::string &path, std::function<void(std::shared_ptr<F
     SceneLoader(scene, &(*m_fbxScene));
 
     importer.FreeScene();
+
+    LOG_INFO("[ Filmbox ] loaded sucess full.");
 
     if (func) {
         Event::Add(func, std::move(m_fbxScene));

@@ -178,7 +178,7 @@ set(engine_src
     
     ${ecs_src}
 
-    src/ui/View.cpp
+    src/ui/view.cpp
     src/ui/editor.cpp
     src/ui/project.cpp
     src/ui/ImGuiRender.cpp
@@ -231,7 +231,7 @@ set(engine_hdr
     
     ${ecs_hdr}
     
-    src/ui/View.h
+    src/ui/view.hpp
     src/ui/editor.hpp
     src/ui/project.hpp
     src/ui/ImGuiRender.h
