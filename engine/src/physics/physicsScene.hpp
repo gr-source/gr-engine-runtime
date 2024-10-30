@@ -25,6 +25,8 @@ public:
 
     static void Update(float dt);
 
+    static bool Raycast(const Vector3 &rayStart, const Vector3 &rayEnd);
+
     static Vector3 gravity;
 
 protected:

@@ -1,6 +1,8 @@
 #include "core/event.hpp"
 
+#include "api.hpp"
+
 void Event::AddEvent_Internal(std::function<void()> func) {
-    throw std::runtime_error("function do not implemented.");
+    EventAddEvent_Internal(func);
 }
 

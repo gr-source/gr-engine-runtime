@@ -2,8 +2,10 @@
 
 #include "script/transform.hpp"
 
+#include "api.hpp"
+
 GameObject &GameObject::Create(const std::string &name, const std::string &tag) {
-    throw std::runtime_error("Function added in engine.");
+    return GameObjectCreate(name, tag);
 }
 
 GameObject &GameObject::Instantiate(GameObject *target) {

@@ -31,7 +31,11 @@ GameObject &GameObject::Create(const std::string &name, const std::string &tag) 
 
     auto &gameObject = it->second;
 
-    gameObject->m_transform = &gameObject->addComponent<Transform>();
+    try {
+        gameObject->m_transform = &gameObject->addComponent<Transform>();
+    } catch (const std::exception &e) {
+        LOG_ERROR_ARGS("[ GameObject ] Falied to create GameObject: %s", e.what());
+    }
 
     return *gameObject;
 }
@@ -72,6 +76,8 @@ void GameObject::Rename(GameObject *gameObject, std::string name) {
 }
 
 void GameObject::Destroy(GameObject *target) {
+    // Scene::Remove(target);
+
     auto sname = target->getName();
 
     auto it = s_mapObject.find(target->getName());

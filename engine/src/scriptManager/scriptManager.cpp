@@ -15,6 +15,8 @@
 #include "core/event.hpp"
 #include "core/input.hpp"
 
+#include "physics/physicsScene.hpp"
+
 #include "../ecs/entity.h"
 
 #include "../memory.h"
@@ -125,7 +127,7 @@ void (*AssetsManagerSetShaderList)(const std::string &, const std::string &, con
 bool (*InputIsKeyPress)(grm::u32);
 void (*InputSetCursorPos)(const Vector2 &);
 Vector2 (*InputGetCursorPos)();
-bool (*InputIsMouseDown)(Input::Key);
+bool (*InputIsMouseDown)(InputKey);
 
 void (*Batchingremove)(Transform *, bool);
 void (*Batchinginsert)(Transform *);
@@ -190,6 +192,7 @@ void ScriptManager::RegisterApi() {
     m_script->registerFunction("GetComponentPool", reinterpret_cast<void **>(&GetComponentPool));
     m_script->registerFunction("CreateComponentWithName",   reinterpret_cast<void **>(&ScriptManager::CreateComponentWithName));
     m_script->registerFunction("CopyComponentWithName",     reinterpret_cast<void **>(&ScriptManager::CopyComponentWithName));
+    m_script->replaceLibraryFunction("_ZN6Entity20addInternalComponentERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE", (void *)&Entity::addInternalComponent, (void **)&Batchingremove);
 
     // Batching
     m_script->replaceLibraryFunction("_ZN8Batching6removeEP9Transformb", (void *)&Batching::remove, (void **)&Batchingremove);
@@ -220,6 +223,9 @@ void ScriptManager::RegisterApi() {
     m_script->replaceLibraryFunction("_ZN9Rigidbody10initializeEv", (void *)&Rigidbody::initialize, (void **)&Rigidbodysetup);
     m_script->replaceLibraryFunction("_ZN9Rigidbody8shutdownEv", (void *)&Rigidbody::shutdown, (void **)&Rigidbodyprocess);
     m_script->replaceLibraryFunction("_ZN9Rigidbody6updateEv", (void *)&Rigidbody::update, (void **)&Rigidbodyprocess);
+
+    // Raycast
+    m_script->replaceLibraryFunction("_ZN7Raycast7RayCastERK7Vector3S2_", (void *)&PhysicsScene::Raycast, (void **)&Rigidbodyprocess);
 }
 #pragma GCC diagnostic pop
 

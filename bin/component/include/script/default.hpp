@@ -12,9 +12,12 @@ class GameObject;
 
 class Animation;
 
+class MeshCollider;
+class BoxCollider;
 class MeshFilter;
 class MeshRender;
 class Transform;
+class Rigidbody;
 class Animator;
 class Camera;
 class Light;

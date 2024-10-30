@@ -29,6 +29,7 @@ set(script_src
 set(core_src
     src/core/assetsManager.cpp
     src/core/console.cpp
+    src/core/raycast.cpp
     src/core/stream.cpp
     src/core/screen.cpp
     src/core/string.cpp
@@ -68,11 +69,17 @@ set(source_hdr
 
 find_package(gr-math REQUIRED)
 
+find_package(Bullet QUIET)
+if(NOT Bullet_FOUND)
+    message(FATAL_ERROR "Please install libbullet-dev")
+    return()
+endif()
+
 add_library(${PROJECT_NAME} SHARED main.cpp src/api.cpp ${ecs_src} ${script_src} ${source_src} ${core_src} ${animation_src} ${geometry_src})
 
-target_link_libraries(${PROJECT_NAME} PRIVATE ${GRMATH_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} PRIVATE ${GRMATH_LIBRARIES} ${BULLET_LIBRARIES})
 
-target_include_directories(${PROJECT_NAME} PUBLIC
+target_include_directories(${PROJECT_NAME} PUBLIC ${BULLET_INCLUDE_DIRS}
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
 )
 

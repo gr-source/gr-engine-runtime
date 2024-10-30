@@ -5,35 +5,64 @@
 
 #include <gr-math/gmath.h>
 
-enum MouseButton {
-    MouseButton_Right = 1 << 1,
-    MouseButton_Left = 1 << 2,
+enum InputKey : int {
+    InputKey_A,
+    InputKey_B,
+    InputKey_C,
+    InputKey_D,
+    InputKey_E,
+    InputKey_F,
+    InputKey_G,
+    InputKey_H,
+    InputKey_I,
+    InputKey_J,
+    InputKey_K,
+    InputKey_L,
+    InputKey_M,
+    InputKey_N,
+    InputKey_O,
+    InputKey_P,
+    InputKey_Q,
+    InputKey_R,
+    InputKey_S,
+    InputKey_T,
+    InputKey_U,
+    InputKey_V,
+    InputKey_W,
+    InputKey_X,
+    InputKey_Y,
+    InputKey_Z,
+    InputKey_Space,
+    InputKey_Enter,
+    InputKey_Escape,
+    InputKey_Arrow_Up,
+    InputKey_Arrow_Down,
+    InputKey_Arrow_Left,
+    InputKey_Arrow_Right,
+    InputKey_Mouse_Left,
+    InputKey_Mouse_Right,
+    InputKey_Mouse_ButtonMiddle,
+    InputKey_LeftCtrl,
+    InputKey_RightCtrl,
+    InputKey_LeftShift,
+    InputKey_RightShift,
+    InputKey_LeftAlt,
+    InputKey_RightAlt
 };
 
 class Input {
 public:
-    enum Key : uint32_t {
-        InputKey_W = 1 << 1,
-        InputKey_A = 1 << 2,
-        InputKey_S = 1 << 3,
-        InputKey_D = 1 << 4,
-        InputKey_Space = 1 << 7,
-        InputKey_Mouse_Left = 1 << 8,
-        InputKey_Mouse_Right = 1 << 9,
-        InputKey_Mouse_ButtonMiddle = 1 << 10,
-    };
+    static std::string getKeyName(InputKey key);
 
-    static std::string getKeyName(Key key);
+    static bool IsKeyDown(InputKey key);
 
-    static bool IsKeyDown(Key key);
+    static bool IsKeyUp(InputKey key);
 
-    static bool IsKeyUp(Key key);
+    static bool IsKeyPress(InputKey key);
 
-    static bool IsKeyPress(Key key);
+    static bool IsMouseReleased(InputKey button);
 
-    static bool IsMouseReleased(Key button);
-
-    static bool IsMouseDown(Key button);
+    static bool IsMouseDown(InputKey button);
 
     static void SetCursorPos(const Vector2& position);
 
@@ -49,7 +78,7 @@ private:
         bool want;
     };
 
-    static std::unordered_map<MouseButton, bool> m_mouseButtonState;
+    static std::unordered_map<InputKey, int> m_keyMap;
 
     static MouseData m_mouseData;
 };

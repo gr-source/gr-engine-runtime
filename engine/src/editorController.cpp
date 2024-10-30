@@ -44,16 +44,16 @@ void EditorController::Update() {
 
     Vector3 diretion = Vector3::zero;
 
-    if (Input::IsKeyPress(Input::InputKey_W)) {
+    if (Input::IsKeyPress(InputKey_W)) {
         diretion += transform->getforward();
     }
-    if (Input::IsKeyPress(Input::InputKey_S)) {
+    if (Input::IsKeyPress(InputKey_S)) {
         diretion -= transform->getforward();
     }
-    if (Input::IsKeyPress(Input::InputKey_A)) {
+    if (Input::IsKeyPress(InputKey_A)) {
         diretion += transform->getright();
     }
-    if (Input::IsKeyPress(Input::InputKey_D)) {
+    if (Input::IsKeyPress(InputKey_D)) {
         diretion -= transform->getright();
     }
     // if (Input::IsKeyPress(Input::InputKey_UP)) {
@@ -84,11 +84,11 @@ void EditorController::LookAt(Transform *transform) {
 void EditorController::UpdateCursor(Transform *transform) {
     auto cursorPos = Input::GetCursorPos();
     
-    if (Input::IsMouseDown(Input::InputKey_Mouse_Left) && lastMousePos == Vector2::zero) {
+    if (Input::IsMouseDown(InputKey_Mouse_Left) && lastMousePos == Vector2::zero) {
         lastMousePos = Input::GetCursorPos();
     }
     
-    if (Input::IsMouseReleased(Input::InputKey_Mouse_Left)) {
+    if (Input::IsMouseReleased(InputKey_Mouse_Left)) {
         lastMousePos = Vector2::zero;
     }
 

@@ -14,3 +14,5 @@ EntityID Entity::getEntityID() const {
 Component *Entity::addInternalComponent(const std::string &name) {
     return nullptr;
 }
+
+

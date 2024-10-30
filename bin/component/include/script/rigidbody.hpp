@@ -18,6 +18,12 @@ public:
 
     bool Deserialize(Stream *stream) override;
 
+    Vector3 getLinearVelocity() const;
+
+    void setLinearVelocity(const Vector3 &value);
+
+    void applyCentralImpulse(const Vector3 &value);
+
 private:
     std::shared_ptr<btDefaultMotionState> m_DefaultMotionState;
 

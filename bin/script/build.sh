@@ -91,4 +91,4 @@ if ! [ -d "${GR_ROOT_PROJECT_PATH}/build" ]; then
 fi
 
 # # building project
-cmake --build "${GR_ROOT_PROJECT_PATH}/build"
+cmake --build "${GR_ROOT_PROJECT_PATH}/build" -j4
