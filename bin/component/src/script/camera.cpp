@@ -56,7 +56,9 @@ const Vector3 Camera::getPosition() const {
 }
 
 void Camera::Enable() {
-    s_camera.push_back(this);
+    auto it = std::find(s_camera.begin(), s_camera.end(), this);
+    if (it == s_camera.end())
+        s_camera.push_back(this);
 
     if (!s_current) {
         s_current = this;

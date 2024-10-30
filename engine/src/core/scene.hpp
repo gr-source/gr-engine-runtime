@@ -119,5 +119,5 @@ private:
 
     static void SetupScript(std::string objectName, std::string name, std::condition_variable &cv, Component *&component, int &result);
 
-    static void ProcessScript(std::condition_variable &cv, Component *component, Streaming *streaming, int &result);
+    static void ProcessScript(Component *component, std::string path, std::streampos position);
 };

@@ -281,7 +281,7 @@ void Scene::Load(const std::string &path, std::uint8_t flags, Scene *scene) {
             break;
         }
 
-        if (result != 0) {
+        if (result != 0 && result != -1) {
             LOG_ERROR("[ Scene ] Falied to read segment data: " + std::string(block_name) + " Code: " + std::to_string(result));
         }
         stream.seekg(start_block_position + static_cast<std::streampos>(data.sizeData), std::ios_base::beg);
@@ -618,7 +618,7 @@ int Scene::readScript(Streaming *streaming) {
         cv.wait(lock, [&component, &result] {
             return component || bQuit || result >= 0;
         });
-        if (bQuit) { // hhhhhhhhhhhhhhhhhhhhhhhhhh
+        if (bQuit) {
             break;
         }
         lock.unlock();
@@ -636,16 +636,7 @@ int Scene::readScript(Streaming *streaming) {
         }
         result = -1;
 
-        Event::Add(&Scene::ProcessScript, std::ref(cv), component, streaming, std::ref(result));
-
-        lock.lock();
-        cv.wait(lock, [&component, &result] {
-            return bQuit || result >= 0;
-        });
-        if (bQuit) {
-            break;
-        }
-        lock.unlock();
+        Threadpool::AddTask(&Scene::ProcessScript, component, streaming->getPath(), streaming->tellg());
 
         // jump to end script buffer
         streaming->seekg(position, std::ios_base::beg);
@@ -814,17 +805,29 @@ void Scene::SetupScript(std::string objectName, std::string name, std::condition
     cv.notify_one();
 }
 
-void Scene::ProcessScript(std::condition_variable &cv, Component *component, Streaming *streaming, int &result) {
-    {
-        std::unique_lock<std::mutex> lock(m_mutex);
-        result = 0;
-
-        try {
-            component->Deserialize(streaming);
-        } catch (const std::exception &e) {
-            LOG_ERROR_ARGS("[ Scene ] %s", e.what());
-            result = 1;
-        }
+void Scene::ProcessScript(Component *component, std::string path, std::streampos position) {
+    Streaming stream(path, std::ios_base::in | std::ios_base::binary);
+    if (!stream.is_open()) {
+        LOG_ERROR_ARGS("[ Scene ] Falied to load binary: ", path.c_str());
+        return;
     }
-    cv.notify_one();
+
+    stream.seekg(position, std::ios_base::beg);
+
+    try {
+        component->Deserialize(&stream);
+    } catch (const std::exception &e) {
+        LOG_ERROR_ARGS("[ Scene ] %s", e.what());
+    }
 }
+
+
+
+
+
+
+
+
+
+
+

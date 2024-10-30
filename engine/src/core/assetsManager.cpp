@@ -160,7 +160,7 @@ std::unordered_map<std::string, std::unique_ptr<Mesh>> &AssetsManager::GetMeshLi
 
 /***************** Texture Process ****************/
 void AssetsManager::SetupTexture(TextureHandle handle, int width, int height, int ch, void *pixels) {
-    std::unique_lock<std::mutex> lock(m_mutexTexture);
+    std::lock_guard<std::mutex> lock(m_mutexTexture);
     auto it = m_textureMap.find(handle.m_path);
     if (it != m_textureMap.end()) {
         handle.invoke(&(*it->second));
@@ -689,7 +689,7 @@ void AssetsManager::SetTextureList(const std::string &path, std::function<void(g
     }
 
     {
-        std::unique_lock<std::mutex> lock(m_mutexTexture);
+        std::lock_guard<std::mutex> lock(m_mutexTexture);
         auto map = m_textureMap.find(path);
         if (map != m_textureMap.end()) {
             if (func) {

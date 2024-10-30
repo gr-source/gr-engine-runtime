@@ -1,6 +1,6 @@
 #include "stream.hpp"
 
-Streaming::Streaming(const std::string &path, std::ios_base::openmode mode) : std::fstream(path, mode) {}
+Streaming::Streaming(const std::string &path, std::ios_base::openmode mode) : m_path(path), std::fstream(path, mode) {}
 
 Streaming::Streaming() : std::fstream() { }
 
@@ -64,4 +64,8 @@ void Streaming::clear() {
         std::free(data);
     }
     m_data.clear();
+}
+
+std::string Streaming::getPath() const {
+    return m_path;
 }

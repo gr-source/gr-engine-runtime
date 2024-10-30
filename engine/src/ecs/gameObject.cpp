@@ -72,10 +72,6 @@ void GameObject::Rename(GameObject *gameObject, std::string name) {
 }
 
 void GameObject::Destroy(GameObject *target) {
-    if (!target) {
-        throw std::runtime_error("GameObject not is valid.");
-    }
-
     auto sname = target->getName();
 
     auto it = s_mapObject.find(target->getName());

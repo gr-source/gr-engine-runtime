@@ -43,10 +43,10 @@ void Entity::copy(Entity *entity) {
 
     for (auto &&[name, ptr] : entity->m_componentPtr) {
         if (!ptr) {
-            throw std::runtime_error("Component is not valid: " + name);
+            throw std::runtime_error("Compo nent is not valid: " + name);
         }
         
-        if (name == "Transform") {
+        if (hasComponent(name)) {
             continue;
         }
 

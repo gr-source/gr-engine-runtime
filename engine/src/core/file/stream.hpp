@@ -33,8 +33,13 @@ public:
     std::istream &seekg(std::streamoff position, std::ios_base::seekdir mode);
     
     void clear();
+
+    std::string getPath() const;
+    
 private:
     std::vector<std::tuple<void *, std::streamsize>> m_data;
+
+    std::string m_path;
 };
 
 template <typename T>

@@ -3,9 +3,9 @@
 
 #include <cstring>
 
-Stream::Stream(const std::string &path) : std::fstream(path) {}
+Stream::Stream(const std::string &path) : m_path(path), std::fstream(path) {}
 
-Stream::Stream(const std::string &path, std::ios_base::openmode mode) : std::fstream(path, mode) {}
+Stream::Stream(const std::string &path, std::ios_base::openmode mode) : m_path(path), std::fstream(path, mode) {}
 
 bool Stream::write(const void *data, std::size_t size) {
     if (!data || size <= 0) {

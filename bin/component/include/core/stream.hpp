@@ -16,5 +16,7 @@ public:
 
 private:
 	std::vector<std::tuple<void *, std::streamsize>> m_data;
+	
+	std::string m_path;
 };
 
