@@ -30,10 +30,6 @@ void Rigidbody::initialize() {
 		)
 	);
 
-    // if (m_mass <= 0.0f) {
-    //     m_mass = 1.0f;
-    // }
-
     btVector3 fallInertia(0.0f, 0.0f, 0.0f);
     m_collisionShape->calculateLocalInertia(m_mass, fallInertia);
 

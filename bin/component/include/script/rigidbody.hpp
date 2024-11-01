@@ -24,6 +24,12 @@ public:
 
     void applyCentralImpulse(const Vector3 &value);
 
+    float getMass() const;
+
+    void setMass(float value);
+
+    void setDynamic(bool value);
+
 private:
     std::shared_ptr<btDefaultMotionState> m_DefaultMotionState;
 

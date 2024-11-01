@@ -807,6 +807,7 @@ void Scene::SetupScript(std::string objectName, std::string name, std::condition
 
     auto gameObject = GameObject::Find(objectName);
     if (!gameObject) {
+        LOG_ERROR_ARGS("[ Scene ] GameObject do not found: %s", objectName.c_str());
         {
             std::lock_guard<std::mutex> lock(m_mutex);
             result = 1;

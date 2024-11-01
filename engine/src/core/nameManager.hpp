@@ -5,6 +5,8 @@
 
 class NameManager {
 public:
+    static void Shutdown();
+
     static std::string GenerateName(std::string name);
 
 private:

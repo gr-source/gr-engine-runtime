@@ -4,6 +4,10 @@ static const char delimiter = '&';
 
 std::unordered_map<std::string, int> NameManager::m_nameID;
 
+void NameManager::Shutdown() {
+    m_nameID.clear();
+}
+
 std::string NameManager::GenerateName(std::string name) {
     auto lastPosition = FindDelimiter(delimiter, name);
 

@@ -204,7 +204,7 @@ void ScriptManager::RegisterApi() {
     // GameObject
     m_script->replaceLibraryFunction("_ZN10GameObject11InstantiateEPS_", reinterpret_cast<void *>(&GameObject::Instantiate), (void **)&GameObjectInstantiate);
     m_script->replaceLibraryFunction("_ZN10GameObject6CreateERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEES7_", reinterpret_cast<void *>(&GameObject::Create), (void **)&GameObjectCreate);
-    m_script->replaceLibraryFunction("_ZN10GameObject7DestroyEPS_", reinterpret_cast<void *>(&GameObject::Destroy), (void **)&GameObjectDestroy);
+    m_script->replaceLibraryFunction("_ZN10GameObject7DestroyEPS_", reinterpret_cast<void *>(&Scene::Delete), (void **)&GameObjectDestroy);
 
     // File
     m_script->replaceLibraryFunction("_ZN4File7GetFileERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb", reinterpret_cast<void *>(&File::GetFile), (void **)&FileGetFile);

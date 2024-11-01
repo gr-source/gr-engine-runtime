@@ -48,6 +48,37 @@ void Rigidbody::applyCentralImpulse(const Vector3 &value) {
     m_body->applyCentralImpulse({value.x, value.y, value.z});
 }
 
+float Rigidbody::getMass() const {
+    return m_mass;
+}
+
+void Rigidbody::setMass(float value) {
+    // if (!m_collisionShape || m_body) {
+    //     return;
+    // }
+
+    // btVector3 localInertia(0, 0, 0);
+    // if (value != 0.0f) {
+    //     m_collisionShape->calculateLocalInertia(value, localInertia);
+    // }
+    
+    // m_body->setMassProps(value, localInertia);
+    // m_body->updateInertiaTensor();
+
+    // if (value > 0.0f) {
+    //     if (m_body->isActive() == false) {
+    //         m_body->setActivationState(ACTIVE_TAG);
+    //     }
+    //     m_body->activate();
+    // }
+
+    m_mass = value;
+}
+
+void Rigidbody::setDynamic(bool value) {
+    m_bDinamic = value;
+}
+
 void Rigidbody::update() {
     throw std::runtime_error("function do not implemented.");
 }

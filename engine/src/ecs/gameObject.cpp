@@ -79,8 +79,6 @@ void GameObject::Rename(GameObject *gameObject, std::string name) {
 }
 
 void GameObject::Destroy(GameObject *target) {
-    // Scene::Remove(target);
-
     auto sname = target->getName();
 
     auto it = s_mapObject.find(target->getName());
@@ -112,6 +110,8 @@ grm::size GameObject::GetGameObjectCount() {
 
 void GameObject::Clear() {
     s_mapObject.clear();
+
+    NameManager::Shutdown();
 }
 
 GameObject::GameObject(const std::string &name, const std::string &tag) : m_name(name), m_tag(tag), m_entity(&Manager::CreateEntity(this)), m_bActive(true), m_bEnable(true) {}
