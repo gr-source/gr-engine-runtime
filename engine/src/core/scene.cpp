@@ -73,14 +73,18 @@ Scene *Scene::Create(const std::string &name) {
 
     Scene::Use(&(*it->second));
 
-    try {
-        auto &camera = it->second->CreateGameObject("MainCamera");
-        camera.addComponent<Camera>();
+    auto camera = it->second->CreateGameObject("MainCamera");
+    if (!camera) {
+        m_scenes.erase(it);
 
-        InitializeScript(&camera);
-    } catch (std::runtime_error e) {
-        LOG_ERROR_ARGS("[ SCENE ] Falha ao adiconar uma camera na cena: %s", e.what());
+        Scene::Use(nullptr);
+        LOG_ERROR("[ Scene ] Falied to create scene, Camera do not created.");
+        return nullptr;
     }
+
+    camera->addComponent<Camera>();
+
+    InitializeScript(camera);
     
     return &(*it->second);
 }
@@ -134,8 +138,15 @@ void Scene::save(const std::string &path) {
     LOG_INFO_ARGS("[ Scene ] Scene saved: %s", m_name.c_str());
 }
 
-GameObject &Scene::CreateGameObject(const std::string &name, const std::string &tag) {
-    return *m_objects.emplace_back(&GameObject::Create(name, tag));
+GameObject *Scene::CreateGameObject(const std::string &name, const std::string &tag) {
+    auto gameObject = GameObject::Create(name, tag);
+    if (!gameObject) {
+        return nullptr;
+    }
+
+    m_objects.push_back(gameObject);
+
+    return gameObject;
 }
 
 std::vector<GameObject *> &Scene::getObjectList() {
@@ -206,6 +217,15 @@ void Scene::ReloadObjects() {
         return;
     }
 
+    auto &objectList = scene->getObjectList();
+    for (auto it = objectList.begin();it != objectList.end();) {
+        GameObject::Destroy(*it);
+
+        it = objectList.erase(it);
+    }
+
+    GameObject::Clear();
+    
     Threadpool::AddTask(&Scene::Load, temp_dir + scene->getName() + ".scn.tmp", LoadFlags_Object | LoadFlags_Script, scene);
 }
 
@@ -644,19 +664,26 @@ int Scene::readScript(Streaming *streaming) {
     return result;
 }
 
-void CrateGameObject(Transform *&transform, std::condition_variable &cv, std::mutex &mutex, Scene *scene, Transform *parent, bool active, bool enable, std::string name, std::string tag) {
+void CrateGameObject(Transform *&transform, std::condition_variable &cv, std::mutex &mutex, Scene *scene, Transform *parent, bool active, bool enable, std::string name, std::string tag, int &result) {
     GameObject *gameObject = nullptr;
     {
         std::lock_guard<std::mutex> lock(mutex);
+        result = 0;
         
         gameObject = GameObject::Find(name);
         if (!gameObject)
-            gameObject = parent == nullptr ? &scene->CreateGameObject(name, tag) : &GameObject::Create(name, tag);
+            gameObject = parent == nullptr ? scene->CreateGameObject(name, tag) : GameObject::Create(name, tag);
         
+        if (!gameObject) {
+            result = 1;
+            cv.notify_one();
+            return;
+        }
+
         gameObject->getEntity()->clear();
 
         if (!gameObject->hasComponent<Transform>()) {
-            gameObject->setTransform(&gameObject->addComponent<Transform>());
+            gameObject->setTransform(gameObject->addComponent<Transform>());
         }
     }
     
@@ -712,13 +739,17 @@ int Scene::readNode(Streaming *streaming, Scene *scene, Transform *parent) {
     }
 
     Transform *transform = nullptr;
+    int presult = -1;
 
-    Event::Add(CrateGameObject, std::ref(transform), std::ref(cv), std::ref(m_mutex), std::ref(scene), parent, active, enable, name, tag);
+    Event::Add(CrateGameObject, std::ref(transform), std::ref(cv), std::ref(m_mutex), std::ref(scene), parent, active, enable, name, tag, std::ref(presult));
 
     std::unique_lock<std::mutex> lock(m_mutex);
-    cv.wait(lock, [&transform] {
-        return transform || bQuit;
+    cv.wait(lock, [&transform, &presult] {
+        return transform || bQuit || presult >= 0;
     });
+    if (presult != 0) {
+        return 2;
+    }
     if (bQuit) {
         return 1;
     }
@@ -760,7 +791,7 @@ void Scene::InitializeScript(GameObject *gameObject) {
     entt->init();
 
     if (gameObject->hasComponent<MeshRender>()) {
-        gameObject->getComponent<MeshRender>().build();
+        gameObject->getComponent<MeshRender>()->build();
     }
 
     for (auto &child : gameObject->getTransform()->getChildren()) {

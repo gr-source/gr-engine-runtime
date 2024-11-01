@@ -13,7 +13,7 @@ Rigidbody::~Rigidbody() {
 }
 
 void Rigidbody::Init() {
-    m_transform = &GetComponent<Transform>();
+    m_transform = GetComponent<Transform>();
 
     initialize();
 }

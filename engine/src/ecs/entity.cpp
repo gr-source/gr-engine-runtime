@@ -85,15 +85,19 @@ void Entity::copy(Entity *entity) {
             throw std::runtime_error("Child do not is valid of: " + targetGameObject->getName());
         }
 
-        auto &clone = GameObject::Instantiate(objectPtr);
-        auto cTransform = clone.getTransform();
+        auto clone = GameObject::Instantiate(objectPtr);
+        if (!clone) {
+            continue;
+        }
+        
+        auto cTransform = clone->getTransform();
         cTransform->setParent(localTransform);
     }
 
     init();
 
     if (hasComponent<MeshRender>()) {
-        getComponent<MeshRender>().build();
+        getComponent<MeshRender>()->build();
     }
 }
 
@@ -169,15 +173,10 @@ Component *Entity::addInternalComponent(const std::string &name) {
         return nullptr;
     }
 
-    Component *component = nullptr;
-    try {
-        component = ScriptManager::CreateComponentWithName(name);
-    } catch (const std::exception &e) {
-        throw;
-    }
+    auto component = ScriptManager::CreateComponentWithName(name);
 
     if (!component) {
-        throw std::runtime_error("Failed to generate component for name: " + name);
+        return nullptr;
     }
     
     component->entity = this;

@@ -15,16 +15,16 @@ std::vector<std::shared_ptr<Material>> &MeshRender::getMaterials() {
 // TODO: falta orimizar e corrigir erros do material;
 void MeshRender::build() {
     if (!m_transform) {
-        m_transform = &entity->getComponent<Transform>();
+        m_transform = entity->getComponent<Transform>();
     }
 
     if (!entity->hasComponent<MeshFilter>()) {
         throw std::runtime_error("MeshFilter component do not found.");
     }
     
-    auto &meshFilter = entity->getComponent<MeshFilter>();
+    auto meshFilter = entity->getComponent<MeshFilter>();
     
-    auto mesh = meshFilter.getMesh();
+    auto mesh = meshFilter->getMesh();
     if (!mesh) {
         throw std::runtime_error("Object do not has mesh.");
     }
@@ -59,15 +59,15 @@ void MeshRender::setMeshOptimize(int value) {
 
     build();
 
-    auto &transform = entity->getComponent<Transform>();
-    for (auto &child : transform.getChildren()) {
+    auto transform = entity->getComponent<Transform>();
+    for (auto &child : transform->getChildren()) {
         auto gameObject = child->getGameObject();
 
         if (!gameObject->hasComponent<MeshRender>()) {
             continue;
         }
-        auto &meshRender = gameObject->getComponent<MeshRender>();
-        meshRender.setMeshOptimize(value);
+        auto meshRender = gameObject->getComponent<MeshRender>();
+        meshRender->setMeshOptimize(value);
     }
 }
 

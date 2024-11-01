@@ -581,7 +581,7 @@ void Editor::PopupMenuAdd() {
     ImGui::Text("Add Object");
     if (ImGui::ListBox("##ListBoxOptionsGame", &id, item_name, 1)) {
         if (id == 0) {
-            s_objectSelected = &Scene::GetCurrentScene()->CreateGameObject("Empty");
+            s_objectSelected = Scene::GetCurrentScene()->CreateGameObject("Empty");
         }
         ImGui::CloseCurrentPopup();
     }
@@ -952,7 +952,7 @@ void Editor::RenderScene() {
     ImGui::PopStyleColor();
 
     if (s_objectSelected && !s_io->MouseDrawCursor && ImGui::IsWindowFocused() && s_io->KeyShift && ImGui::IsKeyReleased(ImGuiKey_D)) {
-        s_objectSelected = &GameObject::Instantiate(s_objectSelected);
+        s_objectSelected = GameObject::Instantiate(s_objectSelected);
     }
 }
 

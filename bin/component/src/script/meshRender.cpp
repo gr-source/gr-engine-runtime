@@ -23,7 +23,7 @@ MeshRender::~MeshRender() {
 }
 
 void MeshRender::Init() {
-    m_transform = &GetComponent<Transform>();
+    m_transform = GetComponent<Transform>();
 }
 
 void MeshRender::build() {
@@ -34,15 +34,16 @@ void MeshRender::setMeshOptimize(int value) {
 
     build();
 
-    auto &transform = GetComponent<Transform>();
-    for (auto &child : transform.getChildren()) {
+    auto transform = GetComponent<Transform>();
+    for (auto &child : transform->getChildren()) {
         auto gameObject = child->getGameObject();
 
         if (!gameObject->hasComponent<MeshRender>()) {
             continue;
         }
-        auto &meshRender = gameObject->getComponent<MeshRender>();
-        meshRender.setMeshOptimize(value);
+
+        auto meshRender = gameObject->getComponent<MeshRender>();
+        meshRender->setMeshOptimize(value);
     }
 }
 
@@ -50,14 +51,14 @@ void MeshRender::Enable() {
     if (!m_batched) {
         return;
     }
-    m_batched->insert(&GetComponent<Transform>());
+    m_batched->insert(GetComponent<Transform>());
 }
 
 void MeshRender::Disable() {
     if (!m_batched) {
         return;
     }
-    m_batched->remove(&GetComponent<Transform>(), false);
+    m_batched->remove(GetComponent<Transform>(), false);
 }
 
 bool MeshRender::Serialize(Stream *stream) {

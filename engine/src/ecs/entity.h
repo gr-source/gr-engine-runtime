@@ -27,10 +27,10 @@ public:
     Entity(GameObject *gameObject, EntityID id);
 
     template <typename T>
-    T &addComponent();
+    T *addComponent();
 
     template <typename T>
-    T& getComponent();
+    T *getComponent();
     
     template <typename T>
     bool hasComponent() const;
@@ -76,16 +76,16 @@ private:
 #include "core/string.hpp"
 
 template <typename T>
-inline T &Entity::addComponent() {
+inline T *Entity::addComponent() {
     auto component = addInternalComponent(String::RemoveNumber(typeid(T).name()));
     if (!component) {
-        throw std::runtime_error("Component is null.");
+        return nullptr;
     }
-    return *dynamic_cast<T *>(component);
+    return dynamic_cast<T *>(component);
 }
 
 template <typename T>
-inline T &Entity::getComponent() {
+inline T *Entity::getComponent() {
     auto typeName = String::RemoveNumber(typeid(T).name());
     
     auto it = m_componentPtr.find(typeName);
@@ -103,7 +103,7 @@ inline T &Entity::getComponent() {
         throw std::runtime_error("Component cast failed.");
     }
 
-    return *typedComponent;
+    return typedComponent;
 }
 
 template <typename T>

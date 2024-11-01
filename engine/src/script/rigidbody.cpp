@@ -14,9 +14,9 @@
 
 void Rigidbody::initialize() {
     if (entity->hasComponent<MeshCollider>()) {
-        m_collisionShape = entity->getComponent<MeshCollider>().getShape();
+        m_collisionShape = entity->getComponent<MeshCollider>()->getShape();
     } else if (entity->hasComponent<BoxCollider>()) {
-        m_collisionShape = entity->getComponent<BoxCollider>().getShape();
+        m_collisionShape = entity->getComponent<BoxCollider>()->getShape();
     }
 
     if (!m_collisionShape) {

@@ -427,7 +427,7 @@ void AssetsManager::SetupGameObject(std::condition_variable &cond, GameObjectHan
     GameObject *gameObject = nullptr;
     {
         std::lock_guard<std::mutex> lock(s_gameObjectMutex);
-        gameObject = (handle.m_gameObject != nullptr ? &GameObject::Create(model.m_name, "unttaged") : &Scene::GetCurrentScene()->CreateGameObject(model.m_name, "unttaged"));
+        gameObject = (handle.m_gameObject != nullptr ? GameObject::Create(model.m_name, "unttaged") : (Scene::HasScene() ? Scene::GetCurrentScene()->CreateGameObject(model.m_name, "unttaged") : GameObject::Create(model.m_name, "unttaged")));
         if (!handle.m_gameObject) {
             handle.m_gameObject = gameObject;
         }
@@ -443,17 +443,17 @@ void AssetsManager::SetupGameObject(std::condition_variable &cond, GameObjectHan
         transform->setParent(parent);
 
     if (mesh) {
-        auto &meshFilter = gameObject->addComponent<MeshFilter>();
-        meshFilter.setMesh(mesh);
+        auto meshFilter = gameObject->addComponent<MeshFilter>();
+        meshFilter->setMesh(mesh);
 
-        auto &meshRender = gameObject->addComponent<MeshRender>();
+        auto meshRender = gameObject->addComponent<MeshRender>();
 
         for (auto &material : materials) {
             if (!material.m_textures) {
                 throw std::runtime_error("Texture ptr is invalid.");
             }
             
-            auto material_ptr = meshRender.addMaterial(material.m_name, material.m_color);
+            auto material_ptr = meshRender->addMaterial(material.m_name, material.m_color);
 
             for (int i=0;i<material.m_textureCount;++i) { 
                 auto& texture = material.m_textures[i];
@@ -462,7 +462,7 @@ void AssetsManager::SetupGameObject(std::condition_variable &cond, GameObjectHan
             }
         }
 
-        meshRender.build();
+        meshRender->build();
     }
 
     {

@@ -13,7 +13,7 @@ Light::~Light() {
 }
 
 void Light::Init() {
-    m_transform = &entity->getComponent<Transform>();
+    m_transform = entity->getComponent<Transform>();
     
     m_lights.push_back(this);
 }

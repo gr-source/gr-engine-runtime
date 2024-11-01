@@ -13,7 +13,7 @@ void MeshCollider::build(Mesh *mesh) {
         return LOG_ERROR("[ MeshCollider ] Game object do not has mesh.");
     }
 
-    auto &transform = entity->getComponent<Transform>();
+    auto transform = entity->getComponent<Transform>();
     m_triangleMesh = std::make_shared<btTriangleMesh>();
 
     const auto &indices = mesh->getIndices();
@@ -24,7 +24,7 @@ void MeshCollider::build(Mesh *mesh) {
     } else if (!vertices.empty()) {
         buildWithVertice(vertices);
 
-        return setup(&transform);
+        return setup(transform);
     }
 
     if (indices.size() % 3 != 0) {
@@ -37,7 +37,7 @@ void MeshCollider::build(Mesh *mesh) {
         return LOG_ERROR("[ MeshCollider ] triangle ptr invalid.");
     }
 
-    setup(&transform);
+    setup(transform);
 }
 
 btCollisionShape *MeshCollider::getShape() {

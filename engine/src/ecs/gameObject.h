@@ -4,9 +4,9 @@
 
 class GameObject {
 public:
-    static GameObject& Create(const std::string& name, const std::string& tag = "unttaged");
+    static GameObject *Create(const std::string& name, const std::string& tag = "unttaged");
 
-    static GameObject &Instantiate(GameObject *target);
+    static GameObject *Instantiate(GameObject *target);
 
     static GameObject *Find(const std::string &name);
 
@@ -37,10 +37,10 @@ public:
     Transform *getTransform();
 
     template <typename T>
-    T &addComponent();
+    T *addComponent();
 
     template <typename T>
-    T& getComponent();
+    T *getComponent();
 
     template <typename T>
     bool hasComponent() const;
@@ -71,23 +71,17 @@ private:
 
 protected:
     static std::unordered_map<std::string, std::unique_ptr<GameObject>> s_mapObject;
-
-    static std::unordered_map<std::string, int> s_names;
-
-    static std::string AddNameID(const std::string &name);
-
-    static void RemoveNameID(const std::string &name);
 };
 
 #include "entity.h"
 
 template <typename T>
-inline T &GameObject::addComponent() {
+inline T *GameObject::addComponent() {
     return m_entity->addComponent<T>();
 }
 
 template <typename T>
-inline T &GameObject::getComponent() {
+inline T *GameObject::getComponent() {
     return m_entity->getComponent<T>();
 }
 
@@ -100,5 +94,5 @@ template <typename T, typename... Args>
 inline bool GameObject::RenderProperty(Args&&... args) {
     if (!m_entity->hasComponent<T>()) return false;
 
-    return std::invoke(std::bind(std::forward<Args>(args)..., &m_entity->getComponent<T>()));
+    return std::invoke(std::bind(std::forward<Args>(args)..., m_entity->getComponent<T>()));
 }

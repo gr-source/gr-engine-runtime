@@ -26,10 +26,10 @@ public:
     bool isActive() const;
 
     template <typename T>
-    T& addComponent();
+    T *addComponent();
 
     template <typename T>
-    T& getComponent();
+    T *getComponent();
 
     template <typename T>
     bool hasComponent() const;
@@ -57,12 +57,12 @@ private:
 #include "entity.hpp"
 
 template <typename T>
-inline T &GameObject::addComponent() {
+inline T *GameObject::addComponent() {
     return m_entity->addComponent<T>();
 }
 
 template <typename T>
-inline T &GameObject::getComponent() {
+inline T *GameObject::getComponent() {
     return m_entity->getComponent<T>();
 }
 

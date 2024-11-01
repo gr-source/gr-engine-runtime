@@ -43,6 +43,7 @@ set(scriptManager_hdr
 
 set(core_src
     src/core/assetsManager.cpp
+    src/core/nameManager.cpp
     src/core/statistics.cpp
     src/core/threadpool.cpp
     src/core/console.cpp
@@ -57,6 +58,7 @@ set(core_src
 
 set(core_hdr
     src/core/assetsManager.hpp
+    src/core/nameManager.hpp
     src/core/statistics.hpp
     src/core/threadpool.hpp
     src/core/console.hpp

@@ -10,10 +10,10 @@ void MeshCollider::Init() {
     if (!HasComponent<MeshFilter>()) {
         return;
     }
-    auto &meshFilter = GetComponent<MeshFilter>();
+    auto meshFilter = GetComponent<MeshFilter>();
     
     try {
-        build(meshFilter.getMesh());
+        build(meshFilter->getMesh());
     } catch (const std::exception &e) {
         Console::log(LogInfo::ERROR, "[ MeshCollider ] " + std::string(e.what()));
     }

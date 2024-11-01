@@ -34,16 +34,16 @@ public:
 
 #define CLASS_FUNCTIONS \
     template <typename T> \
-    inline T &GetComponent() { \
+    inline T *AddComponent() { \
+        return entity->addComponent<T>(); \
+    } \
+    template <typename T> \
+    inline T *GetComponent() { \
         return entity->getComponent<T>(); \
     } \
     template <typename T> \
     inline bool HasComponent() const { \
         return entity->hasComponent<T>(); \
-    } \
-    template <typename T> \
-    inline T &AddComponent() { \
-        return entity->addComponent<T>(); \
     } \
     inline GameObject *GetGameObject() { \
         return entity->getGameObject(); \

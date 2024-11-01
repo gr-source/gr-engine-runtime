@@ -35,7 +35,7 @@ public:
     
     void save(const std::string &path);
 
-    GameObject &CreateGameObject(const std::string &name, const std::string &tag = "untagged");
+    GameObject *CreateGameObject(const std::string &name, const std::string &tag = "untagged");
 
     std::vector<GameObject *> &getObjectList();
 

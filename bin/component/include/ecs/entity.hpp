@@ -24,10 +24,10 @@ public:
     ~Entity() = delete;
 
     template <typename T>
-    T &addComponent();
+    T *addComponent();
 
     template <typename T>
-    T &getComponent();
+    T *getComponent();
     
     template <typename T>
     bool hasComponent() const;
@@ -49,7 +49,7 @@ private:
 };
 
 template <typename T>
-inline T &Entity::addComponent() {
+inline T *Entity::addComponent() {
     auto component = addInternalComponent(StringUTF::RemoveNumber(typeid(T).name()));
     if (!component) {
         throw std::runtime_error("Component is null.");
@@ -60,11 +60,11 @@ inline T &Entity::addComponent() {
         throw std::runtime_error("Component cast failed.");
     }
 
-    return *typedComponent;
+    return typedComponent;
 }
 
 template <typename T>
-inline T &Entity::getComponent() {
+inline T *Entity::getComponent() {
     auto typeName = StringUTF::RemoveNumber(typeid(T).name());
     
     auto it = m_componentPtr.find(typeName);
@@ -82,7 +82,7 @@ inline T &Entity::getComponent() {
         throw std::runtime_error("Component cast failed.");
     }
 
-    return *typedComponent;
+    return typedComponent;
 }
 
 template <typename T>

@@ -36,7 +36,7 @@ Camera::~Camera() {
 }
 
 void Camera::Init() {
-    m_transform = &entity-> getComponent<Transform>();
+    m_transform = entity->getComponent<Transform>();
 
     auto it = std::find(s_camera.begin(), s_camera.end(), this);
     if (it == s_camera.end())
