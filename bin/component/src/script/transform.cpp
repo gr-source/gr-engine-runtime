@@ -4,8 +4,6 @@
 
 #include "core/stream.hpp"
 
-#include <algorithm>
-
 Transform::Transform() : m_scale(Vector3::one), m_rotation(Quaternion::identity), m_position(Vector3::zero), m_parent(nullptr), m_localMatrix(Matrix4x4::identityMatrix), m_globalMatrix(Matrix4x4::identityMatrix) {}
 
 void Transform::setLocalScale(const Vector3 &value) {
@@ -14,17 +12,21 @@ void Transform::setLocalScale(const Vector3 &value) {
     updateLocalMatrix();
 }
 
+Vector3 Transform::getLocalScale() const {
+    return m_scale;
+}
+
 void Transform::setLocalRotation(const Quaternion &value) {
     m_rotation = value;
 
     updateLocalMatrix();
 }
 
-const Quaternion Transform::getLocalRotation() const {
+Quaternion Transform::getLocalRotation() const {
     return m_rotation;
 }
 
-const Quaternion Transform::getRotation() const {
+Quaternion Transform::getRotation() const {
     if (m_parent) {
         return m_parent->m_rotation * m_rotation;
     }
@@ -37,7 +39,7 @@ void Transform::setLocalPosition(const Vector3 &value) {
     updateLocalMatrix();
 }
 
-const Vector3 Transform::getLocalPosition() const {
+Vector3 Transform::getLocalPosition() const {
     return m_position;
 }
 
@@ -47,26 +49,26 @@ void Transform::addLocalPosition(const Vector3 &value) {
     updateLocalMatrix();
 }
 
-const Vector3 Transform::getPosition() const {
+Vector3 Transform::getPosition() const {
     if (m_parent) {
         return Vector3(m_parent->getGlobalMatrix() * Vector4({m_position.x, m_position.y, m_position.z, 1.0f}));
     }
     return m_position;
 }
 
-const Vector3 Transform::getLocalForward() const {
+Vector3 Transform::getLocalForward() const {
     return m_rotation * Vector3::forward;
 }
 
-const Vector3 Transform::getForward() const {
+Vector3 Transform::getForward() const {
     return getRotation() * Vector3::forward;
 }
 
-const Vector3 Transform::getRight() const {
+Vector3 Transform::getRight() const {
     return getRotation() * Vector3::right;
 }
 
-const Vector3 Transform::getUp() const {
+Vector3 Transform::getUp() const {
     return getRotation() * Vector3::up;
 }
 
@@ -102,14 +104,13 @@ void Transform::addChildren(Transform *child) {
     m_children.push_back(child);
 }
 
-Transform *Transform::getChildren(const std::string &name) {
-    auto it = std::find_if(m_children.begin(), m_children.end(), [name] (Transform *transform) {
-        return transform->getGameObject()->getName() == name;
-    });
-    if (it == m_children.end()) {
+Transform *Transform::findChildren(const std::string &name) {
+    auto gameObject = GameObject::Find(name);
+    if (!gameObject) {
         return nullptr;
     }
-    return (*it);
+
+    return findChild(gameObject->getTransform());
 }
 
 std::vector<Transform *> &Transform::getChildren() {
@@ -132,6 +133,21 @@ void Transform::updateGlobalMatrix() {
     for (auto & child : m_children) {
         child->updateLocalMatrix();
     }
+}
+
+Transform *Transform::findChild(Transform *transform) {
+    Transform *result = nullptr;
+    for (auto &child : m_children) {
+        if (child == transform) {
+            result = child;
+            break;
+        }
+        result = child->findChild(transform);
+        if (result) {
+            break;
+        }
+    }
+    return result;
 }
 
 bool Transform::Serialize(Stream *stream) {

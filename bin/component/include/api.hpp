@@ -52,7 +52,7 @@ void AssetsManagerSetShaderList(const std::string &name, const std::string &frag
 
 void MaterialSerialize(Stream *stream);
 
-GameObject &GameObjectCreate(const std::string &name, const std::string &tag);
+GameObject *GameObjectCreate(const std::string &name, const std::string &tag);
 
 void EventAddEvent_Internal(std::function<void()> func);
 

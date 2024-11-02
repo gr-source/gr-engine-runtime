@@ -10,6 +10,7 @@ set(guizmo_hdr
 )
 
 set(ecs_src
+    src/ecs/componentPool.cpp
     src/ecs/gameObject.cpp
     src/ecs/component.cpp
     src/ecs/manager.cpp
@@ -17,6 +18,7 @@ set(ecs_src
 )
 
 set(ecs_hdr
+    src/ecs/componentPool.hpp
     src/ecs/gameObject.h
     src/ecs/component.h
     src/ecs/manager.hpp
@@ -108,14 +110,6 @@ set(animation_hdr
     src/core/animation/bone.cpp
 )
 
-set(core_ecs_src
-    src/core/ecs/componentPool.cpp
-)
-
-set(core_ecs_hdr
-    src/core/ecs/componentPool.hpp
-)
-
 set(core_file_src
     src/core/file/initialization.cpp
     src/core/file/stream.cpp
@@ -143,7 +137,6 @@ set(engine_src
     ${guizmo_src}
     ${octree_src}
     ${filmbox_src}
-    ${core_ecs_src}
     ${core_cmd_src}
     ${animation_src}
     ${core_file_src}
@@ -199,7 +192,6 @@ set(engine_hdr
     ${guizmo_hdr}
     ${octree_hdr}
     ${filmbox_hdr}
-    ${core_ecs_hdr}
     ${core_cmd_hdr}
     ${animation_hdr}
     ${core_file_hdr}

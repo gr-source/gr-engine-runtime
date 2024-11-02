@@ -152,7 +152,7 @@ void Editor::Initialize() {
 
     m_config->setCategory("scene");
     if (m_config->hasKey("main") && !Scene::HasScene()) {
-        Scene::LoadScene(File::GetAsset("scene/" + m_config->getValue<std::string>("main") + ".scn"));
+        Scene::LoadScene(File::GetAsset("/scene/" + m_config->getValue<std::string>("main") + ".scn"));
     }
 
     m_config->setCategory(lastCategory);
@@ -209,7 +209,7 @@ void Editor::Import3DModel(const std::string &path) {
 }
 
 void Editor::ImportImage(const std::string &path) {
-    auto assets_texture = File::GetAsset("texture");
+    auto assets_texture = File::GetAsset("/texture");
     if (!File::Exists(assets_texture)) {
         return LOG_ERROR("[ Import ] Assets data project do not loaded.");
     }
@@ -448,7 +448,7 @@ void Editor::RenderScenesUI() {
         s_objectSelected = nullptr;
     }
     
-    if (ImGui::IsKeyReleased(ImGuiKey_F2)) {
+    if (ImGui::IsKeyReleased(ImGuiKey_F2) && ImGui::IsWindowHovered() && s_objectSelected) {
         ImGui::OpenPopup("##popup_rename_gameobject");
     }
 
@@ -620,7 +620,7 @@ void Editor::PopupOptionsGameObject() {
         ImGui::EndPopup();
     }
 
-    if (isOpenRename) {
+    if (isOpenRename && s_objectSelected) {
         ImGui::OpenPopup("##popup_rename_gameobject");
     }
 }
@@ -641,6 +641,8 @@ void Editor::PopupRenameGameObject() {
     }
     
     if (ImGui::InputText("##input_new_name_gameobject", name.data(), name.size(), ImGuiInputTextFlags_EnterReturnsTrue)) {
+        name.erase(std::remove(name.begin(), name.end(), '\0'), name.end());
+
         GameObject::Rename(s_objectSelected, name);
 
         ImGui::CloseCurrentPopup();
@@ -876,7 +878,21 @@ void Editor::RenderScene() {
 
     auto texture = PostProcessing::GetTextureColor(Engine::ImGuiPostProcess);
     if (texture) {
-        ImGui::Image(reinterpret_cast<ImTextureID>(texture->getID()), curSize, ImVec2(0, 1), ImVec2(1, 0));
+        ImVec2 imageSize = curSize;
+        ImVec2 imageUVMin(0, 1);
+        ImVec2 imageUVMax(1, 0);
+
+        ImGui::Image(reinterpret_cast<ImTextureID>(texture->getID()), imageSize, imageUVMin, imageUVMax);
+
+        if (ImGui::IsWindowHovered()) {
+            ImVec2 mousePos = ImGui::GetMousePos();
+            ImVec2 windowPos = ImGui::GetWindowPos();
+            ImVec2 localMousePos = ImVec2(mousePos.x - windowPos.x, mousePos.y - windowPos.y);
+
+            if (localMousePos.x >= 0 && localMousePos.x <= imageSize.x &&
+                localMousePos.y >= 0 && localMousePos.y <= imageSize.y) {
+            }
+        }
 
         DropGameObjectInScene();
     }
@@ -1060,14 +1076,8 @@ void Editor::PopupMenuCreateScene() {
 }
 
 void Editor::RenderFilesUI() {
-    for (auto &entry : std::filesystem::directory_iterator(m_currentPath)) {
-        auto path = entry.path();
-        
-        if (path.filename().string()[0] == '.') {
-            continue;
-        }
-        RenderTreeNodeFile(path);
-    }
+    ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
+    RenderTreeNodeFile(m_currentPath);
 
     if (pPopupFileManager) {
         ImGui::OpenPopup("##popup_dir_manager");
@@ -1079,9 +1089,14 @@ void Editor::RenderFilesUI() {
     PopupCreateDirectory();
 
     PopupCreateScript();
+
+    PopupRenameFile();
 }
 
 void Editor::RenderTreeNodeFile(std::filesystem::path path) {
+    if (path.filename().string()[0] == '.') {
+        return;
+    }
     ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_Leaf;
     flags |= ImGuiTreeNodeFlags_SpanFullWidth;
     flags |= ImGuiTreeNodeFlags_SpanAvailWidth;
@@ -1122,16 +1137,30 @@ void Editor::RenderTreeNodeFile(std::filesystem::path path) {
         fLisDirSelected.emplace(path, true);
     }
 
-    if (!isOpen) {
-        return;
+    if (ImGui::BeginDragDropTarget()) {
+        ImGuiDragDropFlags target_flags = 0;
+        // target_flags |= ImGuiDragDropFlags_AcceptBeforeDelivery;
+        // target_flags |= ImGuiDragDropFlags_SourceAllowNullID;
+
+        if (auto payload = ImGui::AcceptDragDropPayload(IMGUI_PAYLOAD_FILE, target_flags)) {
+            std::filesystem::path from = std::string((char*)payload->Data, payload->DataSize);
+            if (!from.empty() && (path.string() + "/" + from.filename().string()) != from.string()) {
+                File::Move(from, path);
+            }
+        }
+        ImGui::EndDragDropTarget();
     }
 
-    if (!bDirectory && ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceNoDisableHover | ImGuiDragDropFlags_SourceNoHoldToOpenOthers)) {
+    if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceNoDisableHover | ImGuiDragDropFlags_SourceNoHoldToOpenOthers)) {
         auto str = path.string();
 
         ImGui::Text("%s", str.c_str());
         ImGui::SetDragDropPayload(IMGUI_PAYLOAD_FILE, str.data(), str.size());
         ImGui::EndDragDropSource();
+    }
+
+    if (!isOpen) {
+        return;
     }
 
     if (!bDirectory) {
@@ -1180,6 +1209,7 @@ void Editor::PopupDirmanager() {
     auto idx = 0;
     bool bCreateDiretory = false;
     bool bCreateScript = false;
+    bool bRenameFile = false;
 
     std::array<const char *, 4> item_list{"Delete", "Rename", "Create directory", "Create script"};
 
@@ -1191,6 +1221,7 @@ void Editor::PopupDirmanager() {
             }
             break;
         case 1:
+            bRenameFile = true;
             break;
         case 2:
             bCreateDiretory = true;
@@ -1205,6 +1236,10 @@ void Editor::PopupDirmanager() {
         ImGui::CloseCurrentPopup();
     }
     ImGui::EndPopup();
+
+    if (bRenameFile) {
+        ImGui::OpenPopup("##popup_rename_file");
+    }
 
     if (bCreateDiretory) {
         ImGui::OpenPopup("##popup_create_new_dir");
@@ -1393,7 +1428,7 @@ void Editor::ConfigureVSCode() {
 
     source = String::replace_all(source, "${header_internal_script}", header);
 
-    auto dest_vscode = File::GetAsset(".vscode");
+    auto dest_vscode = File::GetAsset("/.vscode");
     if (File::Exists(dest_vscode)) {
         File::Delete(dest_vscode);
     }
@@ -1402,7 +1437,7 @@ void Editor::ConfigureVSCode() {
         return LOG_ERROR("Falied to create config in project.");
     }
 
-    std::ofstream os(File::GetAsset(".vscode/c_cpp_properties.json"));
+    std::ofstream os(File::GetAsset("/.vscode/c_cpp_properties.json"));
     os << source << std::endl;
     os.close();
 
@@ -2016,24 +2051,24 @@ void Editor::TextureInfo(Texture *&texture) {
 }
 
 void Editor::LoadReources() {
-    AssetsManager::LoadTexture(File::GetAsset("icon/icons8-file-30.png", true),                    &Editor::SetupTexture, IconType::ICON_FILE);
-    AssetsManager::LoadTexture(File::GetAsset("icon/icons8-folder-50.png", true),                  &Editor::SetupTexture, IconType::ICON_FOLDER);
-    AssetsManager::LoadTexture(File::GetAsset("icon/icons8-go-back-50.png", true),                 &Editor::SetupTexture, IconType::ICON_BACK_FILE);
-    AssetsManager::LoadTexture(File::GetAsset("icon/icons8-3d-object-50.png", true),               &Editor::SetupTexture, IconType::ICON_GAMEOBJECT);
-    AssetsManager::LoadTexture(File::GetAsset("icon/icons8-lápis-30.png", true),                   &Editor::SetupTexture, IconType::ICON_PENCIL);
-    AssetsManager::LoadTexture(File::GetAsset("icon/icons8-lâmpada-globular-64.png", true),        &Editor::SetupTexture, IconType::ICON_LIGHT);
-    AssetsManager::LoadTexture(File::GetAsset("icon/icons8-textura-de-renderização-32.png", true), &Editor::SetupTexture, IconType::ICON_TEXTURE);
-    AssetsManager::LoadTexture(File::GetAsset("icon/icons8-png-24.png", true),                     &Editor::SetupTexture, IconType::ICON_PNG);
-    AssetsManager::LoadTexture(File::GetAsset("icon/icons8-reproduzir-30.png", true),              &Editor::SetupTexture, IconType::ICON_PLAY_GAME);
-    AssetsManager::LoadTexture(File::GetAsset("icon/icons8-parar-50.png", true),                   &Editor::SetupTexture, IconType::ICON_STOP_GAME);
-    AssetsManager::LoadTexture(File::GetAsset("icon/icons8-resíduos-50.png", true),                &Editor::SetupTexture, IconType::ICON_BIN);
-    AssetsManager::LoadTexture(File::GetAsset("icon/icons8-importar-50.png", true),                &Editor::SetupTexture, IconType::ICON_IMPORT);
-    AssetsManager::LoadTexture(File::GetAsset("icon/icons8-ordenar-para-a-direita-50.png", true),  &Editor::SetupTexture, IconType::ICON_ASCENDENTE);
-    AssetsManager::LoadTexture(File::GetAsset("icon/icons8-ordem-descendente-50.png", true),       &Editor::SetupTexture, IconType::ICON_DESCENDENTE);
-    AssetsManager::LoadTexture(File::GetAsset("icon/icons8-editar-24.png", true),                  &Editor::SetupTexture, IconType::ICON_EDIT);
-    AssetsManager::LoadTexture(File::GetAsset("icon/motion-graphics.png", true),                   &Editor::SetupTexture, IconType::ICON_ANIMATION);
-    AssetsManager::LoadTexture(File::GetAsset("icon/shade.png", true),                             &Editor::SetupTexture, IconType::ICON_SHADER);
-    AssetsManager::LoadTexture(File::GetAsset("icon/studio-set.png", true),                        &Editor::SetupTexture, IconType::ICON_SCENE);
+    AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-file-30.png", true),                    &Editor::SetupTexture, IconType::ICON_FILE);
+    AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-folder-50.png", true),                  &Editor::SetupTexture, IconType::ICON_FOLDER);
+    AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-go-back-50.png", true),                 &Editor::SetupTexture, IconType::ICON_BACK_FILE);
+    AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-3d-object-50.png", true),               &Editor::SetupTexture, IconType::ICON_GAMEOBJECT);
+    AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-lápis-30.png", true),                   &Editor::SetupTexture, IconType::ICON_PENCIL);
+    AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-lâmpada-globular-64.png", true),        &Editor::SetupTexture, IconType::ICON_LIGHT);
+    AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-textura-de-renderização-32.png", true), &Editor::SetupTexture, IconType::ICON_TEXTURE);
+    AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-png-24.png", true),                     &Editor::SetupTexture, IconType::ICON_PNG);
+    AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-reproduzir-30.png", true),              &Editor::SetupTexture, IconType::ICON_PLAY_GAME);
+    AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-parar-50.png", true),                   &Editor::SetupTexture, IconType::ICON_STOP_GAME);
+    AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-resíduos-50.png", true),                &Editor::SetupTexture, IconType::ICON_BIN);
+    AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-importar-50.png", true),                &Editor::SetupTexture, IconType::ICON_IMPORT);
+    AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-ordenar-para-a-direita-50.png", true),  &Editor::SetupTexture, IconType::ICON_ASCENDENTE);
+    AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-ordem-descendente-50.png", true),       &Editor::SetupTexture, IconType::ICON_DESCENDENTE);
+    AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-editar-24.png", true),                  &Editor::SetupTexture, IconType::ICON_EDIT);
+    AssetsManager::LoadTexture(File::GetAsset("/icon/motion-graphics.png", true),                   &Editor::SetupTexture, IconType::ICON_ANIMATION);
+    AssetsManager::LoadTexture(File::GetAsset("/icon/shade.png", true),                             &Editor::SetupTexture, IconType::ICON_SHADER);
+    AssetsManager::LoadTexture(File::GetAsset("/icon/studio-set.png", true),                        &Editor::SetupTexture, IconType::ICON_SCENE);
 }
 
 void Editor::SetupTexture(IconType type, grr::gTexture *texture) {
@@ -2167,7 +2202,24 @@ void Editor::PopupRenameFile() {
         return;
     }
 
+    ImGui::Text("Rename");
+    if (!ImGui::IsAnyItemActive() && !ImGui::IsMouseClicked(0))
+        ImGui::SetKeyboardFocusHere(0);
+
+    auto path = m_SelectedPath.string();
+
     auto name = m_SelectedPath.filename().string();
+    if (name.size() < 256) {
+        name.resize(256, '\0');
+    }
+
+    if (ImGui::InputText("##popup_rename_file", name.data(), name.size(), ImGuiInputTextFlags_EnterReturnsTrue)) {
+        name.erase(std::remove(name.begin(), name.end(), '\0'), name.end());
+
+        File::rename(path, m_SelectedPath.replace_filename(name));
+
+        ImGui::CloseCurrentPopup();
+    }
 
     ImGui::EndPopup();
 }
@@ -2243,7 +2295,7 @@ void Editor::CompileScript(std::string path, std::function<void()> func) {
         return LOG_ERROR("Component library do not found. [1]");
     }
 
-    std::vector<std::string> command{
+    std::vector<std::string> command {
         "export GR_ROOT_PROJECT_PATH='" + component + "'",
         "export GR_ROOT_ASSETS_PATH='" + File::GetAsset("") + "'",
         "chmod +x " + build,
@@ -2261,5 +2313,15 @@ void Editor::CompileScript(std::string path, std::function<void()> func) {
 void Editor::SaveScene(const std::string &name, Scene *scene) {
     Scene::Use(scene);
 
-    scene->save(File::GetAsset("scene/") + name + ".scn");
+    scene->save(File::GetAsset("/scene/") + name + ".scn");
 }
+
+
+
+
+
+
+
+
+
+

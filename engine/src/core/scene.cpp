@@ -169,8 +169,9 @@ void Scene::Delete(GameObject *gameObject) {
     if (!gameObject) {
         return LOG_ERROR("[ SCENE ] Failed to delete game object.");
     }
-    
-    Scene::Remove(gameObject);
+
+    if (HasScene())
+        Remove(gameObject);
 
     GameObject::Destroy(gameObject);
 }

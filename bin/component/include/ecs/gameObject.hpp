@@ -4,9 +4,11 @@
 
 class GameObject {
 public:
-    static GameObject &Create(const std::string &name, const std::string &tag);
+    static GameObject *Create(const std::string &name, const std::string &tag);
     
-    static GameObject &Instantiate(GameObject *target);
+    static GameObject *Instantiate(GameObject *target);
+
+    static GameObject *Find(const std::string &name);
 
     static void Destroy(GameObject *target);
 

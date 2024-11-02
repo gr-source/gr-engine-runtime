@@ -22,7 +22,23 @@ public:
 
     void setLinearVelocity(const Vector3 &value);
 
+    void applyCentralForce(const Vector3 &value);
+
     void applyCentralImpulse(const Vector3 &value);
+
+    void applyCentralPushImpulse(const Vector3 &value);
+
+    void applyForce(const Vector3 &force, const Vector3 &pos);
+
+    void applyImpulse(const Vector3 &impulse, const Vector3 &pos);
+
+    void applyPushImpulse(const Vector3 &impulse, const Vector3 &pos);
+
+    void applyTorque(const Vector3 &value);
+
+    void applyTorqueImpulse(const Vector3 &value);
+
+    void applyTorqueTurnImpulse(const Vector3 &value);
 
     float getMass() const;
 

@@ -21,12 +21,14 @@ public:
 
     static const iVector2 &GetSize();
 
+    static Vector3 GetPixelInfo(PostProcessing *target);
+
 private:
     static PostProcessing *m_current;
 
-    grr::gTexture *m_texture;
+    grr::gTexture *m_colorTexture;
 
-    grm::u32 m_rbo;
+    grr::gTexture *m_depthTexture;
 
     grm::u32 m_fbo;
 

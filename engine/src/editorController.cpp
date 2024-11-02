@@ -111,6 +111,6 @@ void EditorController::ProcessMouse(const Vector2 &delta, Transform *transform) 
 
     rotation = Math::slerp(transform->getLocalRotation(), rotation, 25.0f * TimeLast::deltaTime);
 
-    transform->setLocalRotation(Math::normalize(rotation + transform->getLocalRotation()));
+    transform->setLocalRotation(Math::normalize(rotation));
 }
 

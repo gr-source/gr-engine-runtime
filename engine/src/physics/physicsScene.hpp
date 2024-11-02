@@ -7,8 +7,8 @@
 
 #include "../renderer.h"
 
-#define FROMVEC3(vec) btVector3(vec.x, vec.y, vec.z)
-#define FROMQUAT(q) btQuaternion(q.x, q.y, q.z, q.w)
+#define VEC3_TO_BTVEC3(vec) btVector3(vec.x, vec.y, vec.z)
+#define QUAT_TO_BTQUAT(q) btQuaternion(q.x, q.y, q.z, q.w)
 
 class PhysicsScene {
 public:

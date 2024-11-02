@@ -9,9 +9,6 @@
 
 #include "core/console.hpp"
 
-#define FROMVEC3(vec) btVector3(vec.x, vec.y, vec.z)
-#define FROMQUAT(q) btQuaternion(q.x, q.y, q.z, q.w)
-
 void Rigidbody::initialize() {
     if (entity->hasComponent<MeshCollider>()) {
         m_collisionShape = entity->getComponent<MeshCollider>()->getShape();
@@ -25,8 +22,8 @@ void Rigidbody::initialize() {
 
     m_DefaultMotionState = std::make_shared<btDefaultMotionState>(
 		btTransform(
-			FROMQUAT(m_transform->getLocalRotation()),
-			FROMVEC3(m_transform->getLocalPosition())
+			QUAT_TO_BTQUAT(m_transform->getRotation()),
+			VEC3_TO_BTVEC3(m_transform->getPosition())
 		)
 	);
 
@@ -34,11 +31,13 @@ void Rigidbody::initialize() {
     m_collisionShape->calculateLocalInertia(m_mass, fallInertia);
 
     btRigidBody::btRigidBodyConstructionInfo pRigidBodyConstructionInfo(m_mass, &(*m_DefaultMotionState), m_collisionShape, fallInertia);
-    pRigidBodyConstructionInfo.m_friction = 1.0f;
-    pRigidBodyConstructionInfo.m_restitution = 0.3f;
+    pRigidBodyConstructionInfo.m_friction = 0.5f;
+    pRigidBodyConstructionInfo.m_restitution = 0.1f;
 
     m_body = std::make_shared<btRigidBody>(pRigidBodyConstructionInfo);
-	m_body->setAngularFactor(FROMVEC3(m_lookRotation));
+	m_body->setAngularFactor(VEC3_TO_BTVEC3(m_lookRotation));
+    // m_body->setCcdMotionThreshold(0.1f); // Ativar CCD
+    // m_body->setCcdSweptSphereRadius(0.1f); // Configuração de CCD
 
     PhysicsScene::AddRigidbody(&(*m_body));
 }
@@ -94,7 +93,7 @@ void Rigidbody::setLookRotation(const Vector3 &value) {
     m_lookRotation = value;
 
     if (m_body)
-        m_body->setAngularFactor(FROMVEC3(value));
+        m_body->setAngularFactor(VEC3_TO_BTVEC3(value));
 }
 
 const Vector3 &Rigidbody::getLookRotation() const {

@@ -71,7 +71,7 @@ void AssetsManagerSetShaderList(const std::string &name, const std::string &frag
 void MaterialSerialize(Stream *stream) {
 }
 
-GameObject &GameObjectCreate(const std::string &name, const std::string &tag) {
+GameObject *GameObjectCreate(const std::string &name, const std::string &tag) {
     throw std::runtime_error("Function do not implemented.");
 }
 

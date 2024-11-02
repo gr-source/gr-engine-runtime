@@ -4,12 +4,16 @@
 
 #include "api.hpp"
 
-GameObject &GameObject::Create(const std::string &name, const std::string &tag) {
+GameObject *GameObject::Create(const std::string &name, const std::string &tag) {
     return GameObjectCreate(name, tag);
 }
 
-GameObject &GameObject::Instantiate(GameObject *target) {
+GameObject *GameObject::Instantiate(GameObject *target) {
     throw std::runtime_error("Function added in engine.");
+}
+
+GameObject *GameObject::Find(const std::string &name) {
+    return nullptr;
 }
 
 void GameObject::Destroy(GameObject *target) {}

@@ -10,6 +10,8 @@
 
 class Field {
 public:
+    Field() = delete;
+    
     const std::string &getName() const;
 
     const std::string &getType() const;

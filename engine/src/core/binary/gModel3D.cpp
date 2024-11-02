@@ -24,7 +24,7 @@ void gModel3D::SetupScene(std::shared_ptr<FbxScene> scene) {
 void gModel3D::WriteHeader(const FbxScene *scene, const FbxNode *node) {
     LOG_INFO_ARGS("Write 3D Mode: %s", node->getName().c_str());
 
-    Streaming stream(File::GetAsset("model/" + node->getName() + ".gmd"), std::ios_base::out | std::ios_base::binary);
+    Streaming stream(File::GetAsset("/model/" + node->getName() + ".gmd"), std::ios_base::out | std::ios_base::binary);
 
     gHeader pHeader {{'g', 'r', 'm', 'd'}, 1.0f};
     if (!stream.writeS(&pHeader, 1, false)) {

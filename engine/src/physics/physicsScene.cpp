@@ -25,7 +25,7 @@ void PhysicsScene::Initialize() {
 
     dynamicsWorld          = std::make_unique<btDiscreteDynamicsWorld>(&(*dispatcher), &(*broadphase), &(*solver), &(*collisionConfiguration));
 
-    dynamicsWorld->setGravity(FROMVEC3(gravity));
+    dynamicsWorld->setGravity(VEC3_TO_BTVEC3(gravity));
 }
 
 void PhysicsScene::Shutdown() {

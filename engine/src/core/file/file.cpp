@@ -66,7 +66,7 @@ std::string File::GetFile(const std::string &path, bool internal) {
 }
 
 std::string File::GetAsset(const std::string &path, bool internal) {
-    return GetFile("/assets/" + path, internal);
+    return GetFile("/assets" + path, internal);
 }
 
 bool File::CreateDirectories(const std::string &path) {
@@ -77,16 +77,24 @@ bool File::CreateDirectory(const std::string &path) {
     return std::filesystem::create_directory(path);
 }
 
-void File::Delete(const std::string &path) {
+bool File::Delete(const std::string &path) {
     if (!std::filesystem::exists(path)) {
-        return;
+        return false;
     }
     std::filesystem::remove_all(path);
+    return true;
 }
 
-void File::Move(const std::string &from, const std::string &to) {
-    Copy(from, to);
-    Delete(from);
+bool File::Move(const std::string &from, const std::string &to) {
+    if (!Copy(from, to)) {
+        return false;
+    }
+    
+    if (!Delete(from)) {
+        return false;
+    }
+
+    return true;
 }
 
 bool File::Copy(const std::string &from, const std::string &to) {
@@ -142,12 +150,10 @@ std::string File::GetTempFile(const std::string &path) {
     return std::filesystem::temp_directory_path().string() + "/" + path;
 }
 
-#include <sys/stat.h>
-
-std::time_t File::GetFileLastModification(const std::string &path) {
-    struct stat status;
-    if (stat(path.c_str(), &status) == -1) {
-        return 0;
-    }
-    return status.st_mtime;
+void File::rename(const std::string &from, const std::string &to) {
+    std::filesystem::rename(from, to);
 }
+
+
+
+

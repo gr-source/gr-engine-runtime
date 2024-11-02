@@ -2,11 +2,10 @@
 
 #include "scriptLoader.hpp"
 
+#include "ecs/componentPool.hpp"
 #include "ecs/gameObject.h"
 
 #include "default.hpp"
-
-#include "core/ecs/componentPool.hpp"
 
 #include "core/console.hpp"
 

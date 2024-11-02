@@ -44,8 +44,40 @@ void Rigidbody::setLinearVelocity(const Vector3 &value) {
     m_body->setLinearVelocity({value.x, value.y, value.z});
 }
 
+void Rigidbody::applyCentralForce(const Vector3 &value) {
+    m_body->applyCentralForce({value.x, value.y, value.z});
+}
+
 void Rigidbody::applyCentralImpulse(const Vector3 &value) {
     m_body->applyCentralImpulse({value.x, value.y, value.z});
+}
+
+void Rigidbody::applyCentralPushImpulse(const Vector3 &value) {
+    m_body->applyCentralPushImpulse({value.x, value.y, value.z});
+}
+
+void Rigidbody::applyForce(const Vector3 &force, const Vector3 &pos) {
+    m_body->applyForce({force.x, force.y, force.z}, {pos.x, pos.y, pos.z});
+}
+
+void Rigidbody::applyImpulse(const Vector3 &impulse, const Vector3 &pos) {
+    m_body->applyImpulse({impulse.x, impulse.y, impulse.z}, {pos.x, pos.y, pos.z});
+}
+
+void Rigidbody::applyPushImpulse(const Vector3 &impulse, const Vector3 &pos) {
+    m_body->applyPushImpulse({impulse.x, impulse.y, impulse.z}, {pos.x, pos.y, pos.z});
+}
+
+void Rigidbody::applyTorque(const Vector3 &value) {
+    m_body->applyTorque({value.x, value.y, value.z});
+}
+
+void Rigidbody::applyTorqueImpulse(const Vector3 &value) {
+    m_body->applyTorqueImpulse({value.x, value.y, value.z});
+}
+
+void Rigidbody::applyTorqueTurnImpulse(const Vector3 &value) {
+    m_body->applyTorqueTurnImpulse({value.x, value.y, value.z});
 }
 
 float Rigidbody::getMass() const {
@@ -53,25 +85,6 @@ float Rigidbody::getMass() const {
 }
 
 void Rigidbody::setMass(float value) {
-    // if (!m_collisionShape || m_body) {
-    //     return;
-    // }
-
-    // btVector3 localInertia(0, 0, 0);
-    // if (value != 0.0f) {
-    //     m_collisionShape->calculateLocalInertia(value, localInertia);
-    // }
-    
-    // m_body->setMassProps(value, localInertia);
-    // m_body->updateInertiaTensor();
-
-    // if (value > 0.0f) {
-    //     if (m_body->isActive() == false) {
-    //         m_body->setActivationState(ACTIVE_TAG);
-    //     }
-    //     m_body->activate();
-    // }
-
     m_mass = value;
 }
 

@@ -36,7 +36,7 @@ void Skybox::Initialize() {
 
     CreateCube();
 
-    AssetsManager::LoadTexture(File::GetAsset("texture/skybox/industrial_sunset_puresky_1k.hdr", true), &Skybox::SetupTexture);
+    AssetsManager::LoadTexture(File::GetAsset("/texture/skybox/industrial_sunset_puresky_1k.hdr", true), &Skybox::SetupTexture);
 }
 
 void Skybox::Shutdown() {
@@ -176,20 +176,20 @@ void Skybox::RegisterSky(grr::gShader **out, grr::gShader *shader) {
 
 void Skybox::UploadShader() {
     AssetsManager::LoadShader("SkyboxIrradianceShader",
-        File::GetAsset("shader/skybox/Irradiance.frag"),
-        File::GetAsset("shader/skybox/Irradiance.vert"),
+        File::GetAsset("/shader/skybox/Irradiance.frag"),
+        File::GetAsset("/shader/skybox/Irradiance.vert"),
         RegisterDeafult, &m_irradianceShader
     );
 
     AssetsManager::LoadShader("SkyBoxShader",
-        File::GetAsset("shader/skybox/Skybox.frag"),
-        File::GetAsset("shader/skybox/Skybox.vert"),
+        File::GetAsset("/shader/skybox/Skybox.frag"),
+        File::GetAsset("/shader/skybox/Skybox.vert"),
         Skybox::RegisterSky, &m_skyShader
     );
 
     AssetsManager::LoadShader("SkyboxBackgroundShader",
-        File::GetAsset("shader/skybox/Background.frag"),
-        File::GetAsset("shader/skybox/Background.vert"),
+        File::GetAsset("/shader/skybox/Background.frag"),
+        File::GetAsset("/shader/skybox/Background.vert"),
         RegisterDeafult, &m_shader
     );
 }

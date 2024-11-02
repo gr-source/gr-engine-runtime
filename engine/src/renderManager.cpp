@@ -32,26 +32,26 @@ bool RenderManager::bRender = false;
 
 void RenderManager::Initialize() {
     AssetsManager::LoadShader("dynamic_one_model",
-        File::GetAsset("shader/model/dynamic_model.frag"),
-        File::GetAsset("shader/model/dynamic_one_model.vert"),
+        File::GetAsset("/shader/model/dynamic_model.frag"),
+        File::GetAsset("/shader/model/dynamic_one_model.vert"),
         &RenderManager::SetupShader, ShaderType_Dynamic
     );
     
     AssetsManager::LoadShader("dynamic_anim",
-        File::GetAsset("shader/model/dynamic_model.frag"),
-        File::GetAsset("shader/model/dynamic_model_anim.vert"),
+        File::GetAsset("/shader/model/dynamic_model.frag"),
+        File::GetAsset("/shader/model/dynamic_model_anim.vert"),
         &RenderManager::SetupShader, ShaderType_Dynamic_Anim
     );
     
     AssetsManager::LoadShader("dynamic_multi_model",
-        File::GetAsset("shader/model/dynamic_model.frag"),
-        File::GetAsset("shader/model/dynamic_multi_model.vert"),
+        File::GetAsset("/shader/model/dynamic_model.frag"),
+        File::GetAsset("/shader/model/dynamic_multi_model.vert"),
         &RenderManager::SetupShader, ShaderType_Dynamic_Multi_Model
     );
     
     AssetsManager::LoadShader("static_multi_model",
-        File::GetAsset("shader/model/dynamic_model.frag"),
-        File::GetAsset("shader/model/static_multi_model.vert"),
+        File::GetAsset("/shader/model/dynamic_model.frag"),
+        File::GetAsset("/shader/model/static_multi_model.vert"),
         &RenderManager::SetupShader, ShaderType_Static_Multi_Model
     );
 }

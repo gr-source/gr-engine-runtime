@@ -11,28 +11,30 @@ public:
     Transform();
 
     void setLocalScale(const Vector3 &value);
+
+    Vector3 getLocalScale() const;
     
     void setLocalRotation(const Quaternion &value);
 
-    const Quaternion getLocalRotation() const;
+    Quaternion getLocalRotation() const;
 
-    const Quaternion getRotation() const;
+    Quaternion getRotation() const;
 
     void setLocalPosition(const Vector3 &value);
 
-    const Vector3 getLocalPosition() const;
+    Vector3 getLocalPosition() const;
 
     void addLocalPosition(const Vector3 &value);
     
-    const Vector3 getPosition() const;
+    Vector3 getPosition() const;
 
-    const Vector3 getLocalForward() const;
+    Vector3 getLocalForward() const;
 
-    const Vector3 getForward() const;
+    Vector3 getForward() const;
 
-    const Vector3 getRight() const;
+    Vector3 getRight() const;
 
-    const Vector3 getUp() const;
+    Vector3 getUp() const;
 
     const Matrix4x4 &getGlobalMatrix() const;
 
@@ -47,7 +49,7 @@ public:
 
     void addChildren(Transform *child);
 
-    Transform *getChildren(const std::string &name);
+    Transform *findChildren(const std::string &name);
     
     bool Serialize(Stream *stream) override;
 
@@ -72,6 +74,7 @@ private:
 
     void updateGlobalMatrix();
 
+    Transform *findChild(Transform *transform);
 };
 
 REGISTER_COMPONENT(Transform)

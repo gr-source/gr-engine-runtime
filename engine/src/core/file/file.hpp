@@ -34,9 +34,9 @@ public:
 
     static bool CreateDirectory(const std::string &path);
 
-    static void Delete(const std::string &path);
+    static bool Delete(const std::string &path);
 
-    static void Move(const std::string &from, const std::string &to);
+    static bool Move(const std::string &from, const std::string &to);
 
     static bool Copy(const std::string &from, const std::string &to);
 
@@ -46,7 +46,7 @@ public:
 
     static std::string GetTempFile(const std::string &path);
 
-    static std::time_t GetFileLastModification(const std::string &path);
+    static void rename(const std::string &path, const std::string &name);
     
 private:
     static std::string m_currentPath;
