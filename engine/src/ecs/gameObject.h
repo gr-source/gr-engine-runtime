@@ -22,6 +22,8 @@ public:
     GameObject(const std::string& name, const std::string& tag = "unttaged");
     ~GameObject();
 
+    void initialize();
+
     const std::string &getName();
 
     void setName(const std::string &name);
@@ -70,7 +72,7 @@ private:
     bool m_bEnable;
 
 protected:
-    static std::unordered_map<std::string, std::unique_ptr<GameObject>> s_mapObject;
+    static std::unordered_map<std::string, std::unique_ptr<GameObject>> m_dataObject;
 };
 
 #include "entity.h"

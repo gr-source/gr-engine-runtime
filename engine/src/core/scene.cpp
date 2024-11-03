@@ -84,7 +84,7 @@ Scene *Scene::Create(const std::string &name) {
 
     camera->addComponent<Camera>();
 
-    InitializeScript(camera);
+    camera->initialize();
     
     return &(*it->second);
 }
@@ -153,7 +153,7 @@ std::vector<GameObject *> &Scene::getObjectList() {
     return m_objects;
 }
 
-void Scene::Add(GameObject *gameObject) {
+void Scene::insert(GameObject *gameObject) {
     auto it = std::find(m_objects.begin(), m_objects.end(), gameObject);
     if (it != m_objects.end()) {
         return;
@@ -783,20 +783,7 @@ void Scene::SetupScene(Scene *scene) {
         m_scenes.emplace(scene->getName(), std::unique_ptr<Scene>(scene));
 
     for (auto &object : scene->getObjectList()) {
-        InitializeScript(object);
-    }
-}
-
-void Scene::InitializeScript(GameObject *gameObject) {
-    auto entt = gameObject->getEntity();
-    entt->init();
-
-    if (gameObject->hasComponent<MeshRender>()) {
-        gameObject->getComponent<MeshRender>()->build();
-    }
-
-    for (auto &child : gameObject->getTransform()->getChildren()) {
-        InitializeScript(child->getGameObject());
+        object->initialize();
     }
 }
 

@@ -4,6 +4,7 @@
 
 #include "../scriptManager/scriptManager.hpp"
 
+#include "script/meshRender.hpp"
 #include "script/transform.hpp"
 
 #include "core/nameManager.hpp"
@@ -14,7 +15,7 @@
 #include "manager.hpp"
 #include "gameObject.h"
 
-std::unordered_map<std::string, std::unique_ptr<GameObject>> GameObject::s_mapObject;
+std::unordered_map<std::string, std::unique_ptr<GameObject>> GameObject::m_dataObject;
 
 GameObject *GameObject::Create(const std::string &name, const std::string &tag) {
     auto newName = NameManager::GenerateName(name);
@@ -23,7 +24,7 @@ GameObject *GameObject::Create(const std::string &name, const std::string &tag) 
         newName = NameManager::GenerateName(newName);
     }
 
-    auto &&[it, added] = s_mapObject.emplace(newName, std::make_unique<GameObject>(newName, tag));
+    auto &&[it, added] = m_dataObject.emplace(newName, std::make_unique<GameObject>(newName, tag));
     if (!added) {
         throw std::runtime_error("GameObject has been replaced: " + newName);
     }
@@ -32,7 +33,7 @@ GameObject *GameObject::Create(const std::string &name, const std::string &tag) 
 
     gameObject->m_transform = gameObject->addComponent<Transform>();
     if (!gameObject->m_transform) {
-        s_mapObject.erase(it);
+        m_dataObject.erase(it);
         return nullptr;
     }
 
@@ -54,16 +55,16 @@ GameObject *GameObject::Instantiate(GameObject *target) {
 }
 
 GameObject *GameObject::Find(const std::string &name) {
-    auto it = s_mapObject.find(name);
-    if (it == s_mapObject.end()) {
+    auto it = m_dataObject.find(name);
+    if (it == m_dataObject.end()) {
         return nullptr;
     }
     return &(*it->second);
 }
 
 void GameObject::Rename(GameObject *gameObject, std::string name) {
-    auto it = s_mapObject.find(gameObject->getName());
-    if (it == s_mapObject.end()) {
+    auto it = m_dataObject.find(gameObject->getName());
+    if (it == m_dataObject.end()) {
         return;
     }
 
@@ -71,9 +72,9 @@ void GameObject::Rename(GameObject *gameObject, std::string name) {
 
     auto ptr = std::move(it->second);
 
-    s_mapObject.erase(it);
+    m_dataObject.erase(it);
 
-    s_mapObject.emplace(name, std::move(ptr));
+    m_dataObject.emplace(name, std::move(ptr));
     
     gameObject->setName(name);
 }
@@ -81,8 +82,8 @@ void GameObject::Rename(GameObject *gameObject, std::string name) {
 void GameObject::Destroy(GameObject *target) {
     auto sname = target->getName();
 
-    auto it = s_mapObject.find(target->getName());
-    if (it == s_mapObject.end()) {
+    auto it = m_dataObject.find(target->getName());
+    if (it == m_dataObject.end()) {
         return;
     }
 
@@ -101,15 +102,15 @@ void GameObject::Destroy(GameObject *target) {
         GameObject::Destroy(gameObject);
     }
 
-    s_mapObject.erase(it);
+    m_dataObject.erase(it);
 }
 
 grm::size GameObject::GetGameObjectCount() {
-    return s_mapObject.size();
+    return m_dataObject.size();
 }
 
 void GameObject::Clear() {
-    s_mapObject.clear();
+    m_dataObject.clear();
 
     NameManager::Shutdown();
 }
@@ -118,6 +119,21 @@ GameObject::GameObject(const std::string &name, const std::string &tag) : m_name
 
 GameObject::~GameObject() {
     Manager::DestroyEntity(m_entity);
+}
+
+void GameObject::initialize() {
+    if (!m_entity || !m_transform) {
+        return LOG_ERROR_ARGS("[ GameObject ] Falied to initialize object: %s", m_name.c_str());
+    }
+    m_entity->init();
+
+    if (hasComponent<MeshRender>()) {
+        getComponent<MeshRender>()->build();
+    }
+
+    for (auto &child : m_transform->getChildren()) {
+        child->getGameObject()->initialize();
+    }
 }
 
 const std::string &GameObject::getName() {

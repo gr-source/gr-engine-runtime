@@ -427,7 +427,7 @@ void AssetsManager::SetupGameObject(std::condition_variable &cond, GameObjectHan
     GameObject *gameObject = nullptr;
     {
         std::lock_guard<std::mutex> lock(s_gameObjectMutex);
-        gameObject = (handle.m_gameObject != nullptr ? GameObject::Create(model.m_name, "unttaged") : (Scene::HasScene() ? Scene::GetCurrentScene()->CreateGameObject(model.m_name, "unttaged") : GameObject::Create(model.m_name, "unttaged")));
+        gameObject = GameObject::Create(model.m_name, "unttaged");
         if (!handle.m_gameObject) {
             handle.m_gameObject = gameObject;
         }
@@ -461,8 +461,6 @@ void AssetsManager::SetupGameObject(std::condition_variable &cond, GameObjectHan
                 AssetsManager::LoadTexture(texture.m_path, &AssetsManager::SetupTextureMaterial, material_ptr, i);
             }
         }
-
-        meshRender->build();
     }
 
     {

@@ -74,7 +74,7 @@ void Entity::copy(Entity *entity) {
     localTransform->setLocalPosition(transform->getLocalPosition());
 
     if (!transform->hasParent()) {
-        Scene::GetCurrentScene()->Add(getGameObject());
+        Scene::GetCurrentScene()->insert(getGameObject());
     } else {
         localTransform->setParent(transform->getParent());
     }

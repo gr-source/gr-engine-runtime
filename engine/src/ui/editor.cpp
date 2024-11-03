@@ -432,7 +432,7 @@ void Editor::RenderScenesUI() {
 
                     target->getTransform()->setParent(nullptr);
                     
-                    Scene::GetCurrentScene()->Add(target);
+                    Scene::GetCurrentScene()->insert(target);
                 }
             }
             ImGui::EndDragDropTarget();
@@ -2247,11 +2247,11 @@ void Editor::PostLoadGameObject(GameObject *gameObject) {
     if (!camera) {
         return;
     }
-    
-    // auto camTransform = camera->getTransform();
 
-    // auto transform = gameObject->getTransform();
-    // transform->setLocalPosition(camera->getPosition() + (camTransform->getforward() * 5.5f));
+    if (Scene::HasScene())
+        Scene::GetCurrentScene()->insert(gameObject);
+    
+    gameObject->initialize();
 
     s_objectSelected = gameObject;
 }

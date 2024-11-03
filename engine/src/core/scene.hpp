@@ -39,7 +39,7 @@ public:
 
     std::vector<GameObject *> &getObjectList();
 
-    void Add(GameObject *gameObject);
+    void insert(GameObject *gameObject);
     
     static void Remove(GameObject *gameObject);
 
@@ -114,8 +114,6 @@ private:
     void remove(GameObject *gameObject);
 
     static void SetupScene(Scene *scene);
-
-    static void InitializeScript(GameObject *gameObject);
 
     static void SetupScript(std::string objectName, std::string name, std::condition_variable &cv, Component *&component, int &result);
 
