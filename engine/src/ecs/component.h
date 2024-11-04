@@ -7,7 +7,7 @@
 
 class GameObject;
 class Entity;
-class Streaming;
+class Stream;
 
 class Component {
 public:
@@ -23,9 +23,9 @@ public:
 
     virtual void Disable() {}
 
-    virtual bool Serialize(Streaming *streaming) { return false; }
+    virtual bool Serialize(Stream *streaming) { return false; }
 
-    virtual bool Deserialize(Streaming *streaming) { return false; }
+    virtual bool Deserialize(Stream *streaming) { return false; }
 
     virtual ~Component() {}
     

@@ -1170,8 +1170,12 @@ void Editor::DropGameObjectInScene() {
 
     if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(IMGUI_PAYLOAD_FILE)) {
         std::string path((char*)payload->Data, payload->DataSize);
-        if (!path.empty() && std::filesystem::path(path).filename().extension() == ".gmd") {
-            AssetsManager::LoadGameObject(path, &Editor::PostLoadGameObject);
+        if (!path.empty()) {
+            if (std::filesystem::path(path).filename().extension() == ".gmd") {
+                AssetsManager::LoadGameObject(path, &Editor::PostLoadGameObject);
+            } else if (std::filesystem::path(path).filename().extension() == ".gmdx") {
+                gModel3D::ImportGRMX(path);
+            }
         }
     }
     ImGui::EndDragDropTarget();
@@ -1223,6 +1227,7 @@ void Editor::RenderTreeNodeFile(std::filesystem::path path) {
     if (path.filename().string()[0] == '.') {
         return;
     }
+    
     ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_Leaf;
     flags |= ImGuiTreeNodeFlags_SpanFullWidth;
     flags |= ImGuiTreeNodeFlags_SpanAvailWidth;
@@ -1262,6 +1267,8 @@ void Editor::RenderTreeNodeFile(std::filesystem::path path) {
         fLisDirSelected.clear();
         fLisDirSelected.emplace(path, true);
     }
+
+    DropTargetGameObjectInFile(path.string());
 
     if (ImGui::BeginDragDropTarget()) {
         ImGuiDragDropFlags target_flags = 0;
@@ -1309,6 +1316,29 @@ void Editor::RenderTreeNodeFile(std::filesystem::path path) {
         RenderTreeNodeFile(file);
     }
     ImGui::TreePop();
+}
+
+void Editor::DropTargetGameObjectInFile(const std::string &path) {
+    if (!ImGui::BeginDragDropTarget()) {
+        return;
+    }
+    auto payload = ImGui::AcceptDragDropPayload(IMGUI_PAYLOAD_GAMEOBJECT);
+    if (!payload) {
+        return ImGui::EndDragDropTarget();
+    }
+    std::string name((char*)payload->Data, payload->DataSize);
+    if (name.empty()) {
+        return ImGui::EndDragDropTarget();
+    }
+    auto target = GameObject::Find(name);
+    if (!target) {
+        LOG_ERROR_ARGS("GameObject do not found: %s", name.c_str());
+
+        return ImGui::EndDragDropTarget();
+    }
+    gModel3D::ExportGRMX(path, target);
+    
+    ImGui::EndDragDropTarget();
 }
 
 void Editor::OpenFileDoubleClick(std::filesystem::path path) {

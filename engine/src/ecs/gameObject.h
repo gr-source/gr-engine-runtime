@@ -2,6 +2,9 @@
 
 #include "default.hpp"
 
+#include <unordered_map>
+#include <memory>
+
 class GameObject {
 public:
     static GameObject *Create(const std::string& name, const std::string& tag = "unttaged");
@@ -24,11 +27,11 @@ public:
 
     void initialize();
 
-    const std::string &getName();
+    std::string getName() const;
 
     void setName(const std::string &name);
 
-    const std::string &getTag();
+    std::string getTag() const;
 
     void setActive(bool value);
     
@@ -36,7 +39,7 @@ public:
 
     void setTransform(Transform *transform);
 
-    Transform *getTransform();
+    Transform *getTransform() const;
 
     template <typename T>
     T *addComponent();
@@ -50,7 +53,7 @@ public:
     template <typename T, typename... Args>
     bool RenderProperty(Args&&... args);
 
-    Entity *getEntity();
+    Entity *getEntity() const;
 
     void setEnable(bool value);
 

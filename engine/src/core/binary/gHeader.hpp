@@ -5,7 +5,7 @@
 #include <cstdint>
 #include <cstring>
 
-class Streaming;
+class Stream;
 
 enum gHeaderType : int {
     gHeaderType_None    = 0,
@@ -82,9 +82,9 @@ struct gMesh {
     gMesh();
     ~gMesh();
 
-    int serialize(Streaming *stream, grm::size *offset = nullptr);
+    int serialize(Stream *stream, grm::size *offset = nullptr);
 
-    int deserialize(Streaming *stream);
+    int deserialize(Stream *stream);
 };
 
 enum gTextureType {

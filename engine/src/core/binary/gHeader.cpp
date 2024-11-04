@@ -16,7 +16,7 @@ gMesh::~gMesh() {
     }
 }
 
-int gMesh::serialize(Streaming *stream, grm::size *offset) {
+int gMesh::serialize(Stream *stream, grm::size *offset) {
     if (offset) {
         *offset += sizeof(char)     * 256;
         *offset += sizeof(bool);
@@ -59,7 +59,7 @@ int gMesh::serialize(Streaming *stream, grm::size *offset) {
     return 0;
 }
 
-int gMesh::deserialize(Streaming *stream) {
+int gMesh::deserialize(Stream *stream) {
     // metadata
     if (!stream->readS(m_name, 256)) {
         return 1;

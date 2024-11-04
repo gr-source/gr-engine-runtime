@@ -136,7 +136,7 @@ void GameObject::initialize() {
     }
 }
 
-const std::string &GameObject::getName() {
+std::string GameObject::getName() const {
     return m_name;
 }
 
@@ -144,7 +144,7 @@ void GameObject::setName(const std::string &name) {
     m_name = name;
 }
 
-const std::string &GameObject::getTag() {
+std::string GameObject::getTag() const {
     return m_tag;
 }
 
@@ -164,11 +164,11 @@ void GameObject::setTransform(Transform *transform) {
     m_transform = transform;
 }
 
-Transform *GameObject::getTransform() {
+Transform *GameObject::getTransform() const {
     return m_transform;
 }
 
-Entity *GameObject::getEntity() {
+Entity *GameObject::getEntity() const {
     return m_entity;
 }
 

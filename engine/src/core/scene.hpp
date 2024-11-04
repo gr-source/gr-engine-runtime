@@ -7,7 +7,7 @@
 #include <condition_variable>
 #include <list>
 
-class Streaming;
+class Stream;
 
 // TODO: Causando crash quando d aplya na cena e para o jogo, motivo esta nos objetos que nao foram reacceragdos das cenas
 class Scene {
@@ -89,27 +89,27 @@ private:
 
     void setDisableEntity(Transform *transform, bool value);
 
-    int writeScene(Streaming *streaming);
+    int writeScene(Stream *streaming);
 
-    int writeTexture(Streaming *streaming);
+    int writeTexture(Stream *streaming);
 
-    int writeMesh(Streaming *streaming);
+    int writeMesh(Stream *streaming);
 
-    int writeObject(Streaming *streaming);
+    int writeObject(Stream *streaming);
 
-    int writeScript(Streaming *streaming);
+    int writeScript(Stream *streaming);
 
-    int writeGameObject(Streaming *streaming, GameObject *gameObject);
+    int writeGameObject(Stream *streaming, GameObject *gameObject);
 
-    static int readObject(Streaming *streaming, Scene *scene);
+    static int readObject(Stream *streaming, Scene *scene);
 
-    static int readTexture(Streaming *streaming);
+    static int readTexture(Stream *streaming);
 
-    static int readMesh(Streaming *streaming);
+    static int readMesh(Stream *streaming);
 
-    static int readScript(Streaming *streaming);
+    static int readScript(Stream *streaming);
 
-    static int readNode(Streaming *streaming, Scene *scene, Transform *parent = nullptr);
+    static int readNode(Stream *streaming, Scene *scene, Transform *parent = nullptr);
 
     void remove(GameObject *gameObject);
 

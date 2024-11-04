@@ -149,6 +149,8 @@ private:
 
     static void RenderTreeNodeFile(std::filesystem::path path);
 
+    static void DropTargetGameObjectInFile(const std::string &path);
+
     static void OpenFileDoubleClick(std::filesystem::path path);
 
     static void PopupDirmanager();

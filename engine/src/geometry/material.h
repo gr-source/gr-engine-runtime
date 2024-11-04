@@ -4,7 +4,7 @@
 
 #include <gr-render/gRender.h>
 
-class Streaming;
+class Stream;
 
 class Material {
 public:
@@ -32,9 +32,9 @@ public:
 
     grr::gTexture *getTexture(int idx) const;
 
-    void serialize(Streaming *stream) const;
+    void serialize(Stream *stream) const;
 
-    void deserialize(Streaming *stream);
+    void deserialize(Stream *stream);
 
 private:
     std::string m_name;

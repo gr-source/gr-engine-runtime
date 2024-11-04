@@ -6,11 +6,11 @@
 #include <vector>
 #include <tuple>
 
-class Streaming : private std::fstream {
+class Stream : private std::fstream {
 public:
-    Streaming(const std::string &path, std::ios_base::openmode mode = std::ios_base::in | std::ios_base::out | std::ios_base::binary);
-    Streaming();
-    ~Streaming() override;
+    Stream(const std::string &path, std::ios_base::openmode mode = std::ios_base::in | std::ios_base::out | std::ios_base::binary);
+    Stream();
+    ~Stream() override;
 
     template <typename T>
     bool writeS(const T *data, std::streamsize count, bool bCache = true);
@@ -43,7 +43,7 @@ private:
 };
 
 template <typename T>
-bool Streaming::writeS(const T *data, std::streamsize count, bool bCache) {
+bool Stream::writeS(const T *data, std::streamsize count, bool bCache) {
     auto size = count * sizeof(T);
     if (!bCache) {
         if (std::fstream::write(reinterpret_cast<const char *>(data), size)) {
@@ -66,7 +66,7 @@ bool Streaming::writeS(const T *data, std::streamsize count, bool bCache) {
 }
 
 template <typename T>
-bool Streaming::readS(T *data, std::streamsize count) {
+bool Stream::readS(T *data, std::streamsize count) {
     return read(reinterpret_cast<void *>(data), static_cast<std::size_t>(count * sizeof(T)));
 }
 

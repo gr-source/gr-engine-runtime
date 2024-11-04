@@ -4,18 +4,382 @@
 
 #include "core/threadpool.hpp"
 #include "core/console.hpp"
-
-#include "core/filmbox/filmbox.hpp"
+#include "core/scene.hpp"
 
 #include "core/file/stream.hpp"
 #include "core/file/file.hpp"
+
+#include "core/filmbox/filmbox.hpp"
+
+#include "ecs/gameObject.h"
+
+#include "script/transform.hpp"
+
+std::list<std::tuple<std::string, std::string, Component *>> gModel3D::m_componentTemp;
+
+std::unordered_map<std::string, GameObject *> gModel3D::m_gameObjectTemp;
 
 void gModel3D::ImportFBX(const std::string &path) {
     Threadpool::AddTask(&Filmbox::Load, path, &gModel3D::SetupScene);
 }
 
+void gModel3D::ExportGRMX(const std::string &path, const GameObject *gameObject) {
+    auto name = gameObject->getName();
+
+    LOG_INFO_ARGS("[ gModel3D ] Writing GameObject: %s", name.c_str());
+
+    Stream stream(path + "/" + name + ".gmdx", std::ios_base::out | std::ios_base::binary);
+
+    // Header file
+    {
+        gHeader header{{'g', 'r', 'm', 'x'}, 1.0f, 0};
+        stream.writeS(&header, 1, false);
+    }
+
+    // data
+    WriteData(&stream, gameObject);
+
+    LOG_INFO_ARGS("[ gModel3D ] Write GameObject(%s) sucessfull.", name.c_str());
+}
+
+void gModel3D::ImportGRMX(const std::string &path) {
+    Stream stream(path, std::ios_base::in | std::ios_base::binary);
+    if (!stream.is_open()) {
+        return LOG_ERROR_ARGS("[ gModel3D ] Falied to open file: %s", path.c_str());
+    }
+
+    gHeader header;
+    if (!stream.readS(&header, 1)) {
+        return LOG_ERROR("[ gModel3D ] Falied to read header binary.");
+    }
+    
+    if (header.signature[0] != 'g' && header.signature[1] != 'r' && header.signature[2] != 'm' && header.signature[3] != 'x') {
+        return LOG_ERROR("[ gModel3D ] Invalid binary type.");
+    }
+
+    LOG_INFO("[ gModel3D ] GRMX loading model.");
+
+    ReadData(&stream);
+
+    LOG_INFO("[ gModel3D ] Scene loaded sucess full.");
+}
+
+int gModel3D::ReadData(Stream *stream) {
+    GameObject *gameObject = nullptr;
+
+    while (true) {
+        gStructData segment;
+        if (!stream->readS(&segment, 1)) {
+            break;
+        }
+
+        if (segment.type == gHeaderType_None && segment.sizeData == 0) {
+            break;
+        }
+
+        auto next_position = stream->tellg() + static_cast<std::streampos>(segment.sizeData);
+
+        auto result = -1;
+        switch (segment.type) {
+        case gHeaderType_Object:
+            result = ReadGameObject(stream, nullptr, &gameObject);
+            break;
+        case gHeaderType_Script:
+            result = ReadScript(stream);
+            break;
+        default:
+            break;
+        }
+
+        if (stream->tellg() != next_position)
+            stream->seekg(next_position, std::ios_base::beg);
+    }
+
+    if (gameObject) {
+        Scene::GetCurrentScene()->insert(gameObject);
+
+        gameObject->initialize();
+    }
+    
+    return 0;
+}
+
+int gModel3D::ReadGameObject(Stream *stream, Transform *parent, GameObject **out) {
+    std::size_t nsize = 0;
+
+    // write-name
+    if (!stream->readS(&nsize, 1)) {
+        return 1;
+    }
+
+    std::string name(nsize, '\0');
+    if (!stream->readS(name.data(), nsize)) {
+        return 2;
+    }
+
+    // write-tag
+    if (!stream->readS(&nsize, 1)) {
+        return 3;
+    }
+
+    std::string tag(nsize, '\0');
+    if (!stream->readS(tag.data(), nsize)) {
+        return 4;
+    }
+
+    auto bActive = false;
+    auto bEnable = false;
+
+    // write-status
+    {
+        if (!stream->readS(&bActive, 1)) {
+            return 5;
+        }
+
+        if (!stream->readS(&bEnable, 1)) {
+            return 6;
+        }
+    }
+
+    auto gameObject = GameObject::Create(name, tag);
+    if (!(*out)) {
+        *out = gameObject;
+    }
+    m_gameObjectTemp.emplace(name, gameObject);
+
+    gameObject->setActive(bActive);
+    gameObject->setEnable(bEnable);
+
+    auto transform = gameObject->getTransform();
+    if (parent) {
+        transform->setParent(parent);
+    }
+
+    std::size_t children_size = 0;
+    if (!stream->readS(&children_size, 1)) {
+        return 7;
+    }
+    
+    int result = 0;
+    for (int i=0;i<children_size;i++) {
+        result = ReadGameObject(stream, transform, out);
+        if (result != 0) {
+            break;
+        }
+    }
+    return result;
+}
+
+int gModel3D::ReadScript(Stream *stream) {
+    std::size_t size = 0;
+
+    if (!stream->readS(&size, 1)) {
+        return 1;
+    }
+
+    for (std::size_t i=0;i<size;i++) {
+        std::size_t nsize = 0;
+
+        // GameObject - name
+        if (!stream->readS(&nsize, 1)) {
+            return 2;
+        }
+        
+        std::string objectName(nsize, '\0');
+        if (!stream->readS(objectName.data(), nsize)) {
+            return 3;
+        }
+
+        // GameObject - ScriptName
+        if (!stream->readS(&nsize, 1)) {
+            return 4;
+        }
+        
+        std::string componentName(nsize, '\0');
+        if (!stream->readS(componentName.data(), nsize)) {
+            return 5;
+        }
+
+        std::size_t stream_size = 0;
+        if (!stream->readS(&stream_size, 1)) {
+            return 6;
+        }
+        auto nextPosition = stream->tellg() + static_cast<std::streampos>(stream_size);
+
+        // deserialize
+        auto it = m_gameObjectTemp.find(objectName);
+        if (it != m_gameObjectTemp.end()) {
+            auto gameObject = it->second;
+
+            auto entt = gameObject->getEntity();
+
+            auto component = entt->hasComponent(componentName) ? entt->getComponent(componentName) : entt->addComponent(componentName);
+            if (component) {
+                component->Deserialize(stream);
+            }
+        }
+
+        if (stream->tellg() != nextPosition)
+            stream->seekg(nextPosition, std::ios_base::beg);
+    }
+    return 0;
+}
+
+int gModel3D::WriteData(Stream *stream, const GameObject *gameObject) {
+    int result = 0;
+    gStructData segment = {gHeaderType_None, 0};
+
+    // GameObject - Node
+    {
+        result = WriteGameObject(stream, gameObject);
+        if (result != 0) {
+            return 1;
+        }
+
+        segment = {gHeaderType_Object, static_cast<std::size_t>(stream->getDataSize())};
+        if (!stream->writeS(&segment, 1, false)) {
+            return 2;
+        }
+        stream->flush();
+    }
+
+    // Scripts
+    {
+        result = WriteScript(stream);
+        if (result != 0) {
+            return 3;
+        }
+
+        segment = {gHeaderType_Script, static_cast<std::size_t>(stream->getDataSize())};
+        if (!stream->writeS(&segment, 1, false)) {
+            return 2;
+        }
+        stream->flush();
+    }
+
+    segment = {gHeaderType_None, 0};
+    if (!stream->writeS(&segment, 1, false)) {
+        return 3;
+    }
+    
+    return result;
+}
+
+int gModel3D::WriteGameObject(Stream *stream, const GameObject *gameObject) {
+    auto name = gameObject->getName();
+    auto nsize = name.size();
+
+    // write-name
+    {
+        stream->writeS(&nsize, 1);
+
+        stream->writeS(name.data(), name.size());
+    }
+    name = gameObject->getTag();
+    nsize = name.size();
+
+    // write-tag
+    {
+        stream->writeS(&nsize, 1);
+
+        stream->writeS(name.data(), name.size());
+    }
+
+    auto bActive = gameObject->getActive();
+    auto bEnable = gameObject->getEnable();
+
+    // write-status
+    {
+        stream->writeS(&bActive, 1);
+        stream->writeS(&bEnable, 1);
+    }
+
+    // Temp
+    auto entt = gameObject->getEntity();
+
+    for (auto &&[cname, ptr] : entt->getComponents()) {
+        m_componentTemp.emplace_front(gameObject->getName(), cname, &(*ptr));
+    }
+
+    /*
+    auto csize = m_temp.size();
+    stream->writeS(&csize, 1);
+
+    for (auto &&[cname, ptr] : m_temp) {
+        auto cnsize = cname.size(); 
+        
+        stream->writeS(&cnsize, 1);
+        stream->writeS(cname.data(), cnsize);
+
+        ptr->Serialize(stream);
+    }
+    */
+
+    auto children = gameObject->getTransform()->getChildren();
+    auto children_size = children.size();
+
+    stream->writeS(&children_size, 1);
+    
+    for (auto &child : children) {
+        gameObject = child->getGameObject();
+
+        WriteGameObject(stream, gameObject);
+    }
+    return 0;
+}
+
+int gModel3D::WriteScript(Stream *stream) {
+    auto size = m_componentTemp.size();
+
+    if (!stream->writeS(&size, 1)) {
+        return 1;
+    }
+
+    for (auto &&[object, component, ptr] : m_componentTemp) {
+        auto nsize = object.size();
+
+        // GameObject - name
+        {
+            if (!stream->writeS(&nsize, 1)) {
+                return 2;
+            }
+            
+            if (!stream->writeS(object.data(), nsize)) {
+                return 3;
+            }
+        }
+
+        // GameObject - ScriptName
+        {
+            nsize = component.size();
+            if (!stream->writeS(&nsize, 1)) {
+                return 4;
+            }
+            
+            if (!stream->writeS(component.data(), nsize)) {
+                return 5;
+            }
+        }
+
+        Stream temp;
+        ptr->Serialize(&temp);
+
+        std::size_t data_size = temp.getDataSize();
+
+        if (!stream->writeS(&data_size, 1)) {
+            temp.clear();
+            return 6;
+        }
+        ptr->Serialize(stream);
+
+        temp.clear();
+    }
+    return 0;
+}
+
 void gModel3D::SetupScene(std::shared_ptr<FbxScene> scene) {
     auto& fRootNode = scene->getRootNode();
+    
     for (const auto& node : fRootNode.getChildren()) {
         WriteHeader(&(*scene), &node);
     }
@@ -24,7 +388,7 @@ void gModel3D::SetupScene(std::shared_ptr<FbxScene> scene) {
 void gModel3D::WriteHeader(const FbxScene *scene, const FbxNode *node) {
     LOG_INFO_ARGS("Write 3D Mode: %s", node->getName().c_str());
 
-    Streaming stream(File::GetAsset("/model/" + node->getName() + ".gmd"), std::ios_base::out | std::ios_base::binary);
+    Stream stream(File::GetAsset("/model/" + node->getName() + ".gmd"), std::ios_base::out | std::ios_base::binary);
 
     gHeader pHeader {{'g', 'r', 'm', 'd'}, 1.0f};
     if (!stream.writeS(&pHeader, 1, false)) {
@@ -34,7 +398,15 @@ void gModel3D::WriteHeader(const FbxScene *scene, const FbxNode *node) {
     WriteNode(scene, node, &stream);
 }
 
-void gModel3D::WriteNode(const FbxScene *scene, const FbxNode *node, Streaming *stream) {
+/*
+* BinStruct:
+* FileHeader->
+*               Structs:
+*                   GameObject
+*                   Script
+*/
+
+void gModel3D::WriteNode(const FbxScene *scene, const FbxNode *node, Stream *stream) {
     // Escreve os dados do modelo
     gModel pModel;
     pModel.m_scale = node->getScale();
@@ -183,3 +555,5 @@ void gModel3D::WriteNode(const FbxScene *scene, const FbxNode *node, Streaming *
         WriteNode(scene, &child, stream);
     }
 }
+
+

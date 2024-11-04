@@ -38,7 +38,7 @@ const std::vector<BoneWeight> &Mesh::getBoneWeight() const {
     return m_boneWeight;
 }
 
-void Mesh::serialize(Streaming *streaming) const {
+void Mesh::serialize(Stream *streaming) const {
     auto &vertices = m_vertices;
     auto &indices = m_indices;
     auto &name = m_name;
@@ -60,7 +60,7 @@ void Mesh::serialize(Streaming *streaming) const {
     streaming->writeS(indices.data(), iSize);
 }
 
-void Mesh::deserialize(Streaming *streaming) {
+void Mesh::deserialize(Stream *streaming) {
     auto &vertices = m_vertices;
     auto &indices = m_indices;
     auto &name = m_name;

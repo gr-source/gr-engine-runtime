@@ -139,8 +139,8 @@ void (*GameObjectDestroy)(GameObject *);
 
 std::string (*FileGetFile)(const std::string &, bool);
 
-const void (*Materialserialize)(Streaming *);
-void (*Materialdeserialize)(Streaming *);
+const void (*Materialserialize)(Stream *);
+void (*Materialdeserialize)(Stream *);
 
 void (*MeshColliderbuild)(Mesh *);
 

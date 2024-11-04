@@ -56,7 +56,7 @@ grr::gTexture *Material::getTexture(int idx) const {
     return m_texture[idx];
 }
 
-void Material::serialize(Streaming *stream) const {
+void Material::serialize(Stream *stream) const {
     // serialize name
     auto nSize = m_name.size();
     stream->write(reinterpret_cast<const char *>(&nSize), sizeof(std::size_t));
@@ -87,7 +87,7 @@ void Material::serialize(Streaming *stream) const {
     }
 }
 
-void Material::deserialize(Streaming *stream) {
+void Material::deserialize(Stream *stream) {
     // deserialize name
     std::size_t nSize;
     stream->read(reinterpret_cast<char *>(&nSize), sizeof(std::size_t));

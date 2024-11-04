@@ -156,7 +156,7 @@ private:
 
     static void SetupGameObject(std::condition_variable &cond, GameObjectHandle &handle, Transform *&out, gModel model, Mesh *mesh, std::vector<gMaterial> materials, Transform *parent);
 
-    static void ReadChildren(Transform *transform, GameObjectHandle &handle, Streaming *stream);
+    static void ReadChildren(Transform *transform, GameObjectHandle &handle, Stream *stream);
     
     static void doInBackgroundGameObject(GameObjectHandle handle);
 

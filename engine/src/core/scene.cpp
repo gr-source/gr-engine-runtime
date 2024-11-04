@@ -17,6 +17,7 @@
 #include "script/transform.hpp"
 #include "script/camera.hpp"
 
+#include "ecs/gameObject.h"
 #include "ecs/entity.h"
 
 std::unordered_map<std::string, std::unique_ptr<Scene>> Scene::m_scenes;
@@ -114,7 +115,7 @@ const std::string &Scene::getName() const {
 }
 
 void Scene::save(const std::string &path) {
-    Streaming stream(path, std::ios_base::out | std::ios_base::binary);
+    Stream stream(path, std::ios_base::out | std::ios_base::binary);
 
     // header data
     {
@@ -237,7 +238,7 @@ void Scene::Load(const std::string &path, std::uint8_t flags, Scene *scene) {
         return;
     }
 
-    Streaming stream(path, std::ios_base::in | std::ios_base::binary);
+    Stream stream(path, std::ios_base::in | std::ios_base::binary);
     if (!stream.is_open()) {
         LOG_ERROR("[ Scene ] Faleid to open scene: " + path);
         return;
@@ -326,7 +327,7 @@ void Scene::setDisableEntity(Transform *transform, bool value) {
     }
 }
 
-int Scene::writeScene(Streaming *streaming) {
+int Scene::writeScene(Stream *streaming) {
     gStructData segment = {gHeaderType_None, 0};
 
     // textures
@@ -379,7 +380,7 @@ int Scene::writeScene(Streaming *streaming) {
     return 0;
 }
 
-int Scene::writeTexture(Streaming *streaming) {
+int Scene::writeTexture(Stream *streaming) {
     auto &textureMap = AssetsManager::GetTextureMap();
     auto count = AssetsManager::GetTextureCount();
 
@@ -402,7 +403,7 @@ int Scene::writeTexture(Streaming *streaming) {
     return 0;
 }
 
-int Scene::writeMesh(Streaming *streaming) {
+int Scene::writeMesh(Stream *streaming) {
     auto meshCount = AssetsManager::GetMeshCount();
 
     streaming->writeS(&meshCount, 1);
@@ -418,7 +419,7 @@ int Scene::writeMesh(Streaming *streaming) {
     return 0;
 }
 
-int Scene::writeObject(Streaming *streaming) {
+int Scene::writeObject(Stream *streaming) {
     auto objectCount = m_objects.size();
 
     if (!streaming->writeS(&objectCount, 1)) {
@@ -432,7 +433,7 @@ int Scene::writeObject(Streaming *streaming) {
     return 0;
 }
 
-int Scene::writeScript(Streaming *streaming) {
+int Scene::writeScript(Stream *streaming) {
     auto size = m_componentCache.size();
 
     streaming->writeS(&size, 1);
@@ -451,7 +452,7 @@ int Scene::writeScript(Streaming *streaming) {
         streaming->writeS(&size, 1);
         streaming->writeS(componentName.data(), size);
 
-        Streaming temp;
+        Stream temp;
         ptr->Serialize(&temp);
         std::size_t data_size = temp.getDataSize();
 
@@ -464,7 +465,7 @@ int Scene::writeScript(Streaming *streaming) {
     return 0;
 }
 
-int Scene::writeGameObject(Streaming *streaming, GameObject *gameObject) {
+int Scene::writeGameObject(Stream *streaming, GameObject *gameObject) {
     auto name = gameObject->getName();
     auto nSize = name.size();
 
@@ -512,7 +513,7 @@ int Scene::writeGameObject(Streaming *streaming, GameObject *gameObject) {
     return 0;
 }
 
-int Scene::readObject(Streaming *streaming, Scene *scene) {
+int Scene::readObject(Stream *streaming, Scene *scene) {
     // Objects node
     std::size_t objectCount;
     int result = 0;
@@ -532,7 +533,7 @@ int Scene::readObject(Streaming *streaming, Scene *scene) {
     return result;
 }
 
-int Scene::readTexture(Streaming *streaming) {
+int Scene::readTexture(Stream *streaming) {
     std::size_t size = 0;
     int result = 0;
 
@@ -565,7 +566,7 @@ int Scene::readTexture(Streaming *streaming) {
 }
 
 // TODO: pode gerarr erro, por favor corrija
-int Scene::readMesh(Streaming *streaming) {
+int Scene::readMesh(Stream *streaming) {
     grm::size meshCount = 0;
     if (!streaming->readS(&meshCount, 1)) {
         return 1;
@@ -588,7 +589,7 @@ int Scene::readMesh(Streaming *streaming) {
     return 0;
 }
 
-int Scene::readScript(Streaming *streaming) {
+int Scene::readScript(Stream *streaming) {
     std::size_t nsize = 0;
     std::size_t size = 0;
     int result = 0;
@@ -700,7 +701,7 @@ void CrateGameObject(Transform *&transform, std::condition_variable &cv, std::mu
     cv.notify_one();
 }
 
-int Scene::readNode(Streaming *streaming, Scene *scene, Transform *parent) {
+int Scene::readNode(Stream *streaming, Scene *scene, Transform *parent) {
     std::size_t nSize;
     int result = 0;
     
@@ -826,7 +827,7 @@ void Scene::SetupScript(std::string objectName, std::string name, std::condition
 }
 
 void Scene::ProcessScript(Component *component, std::string path, std::streampos position) {
-    Streaming stream(path, std::ios_base::in | std::ios_base::binary);
+    Stream stream(path, std::ios_base::in | std::ios_base::binary);
     if (!stream.is_open()) {
         LOG_ERROR_ARGS("[ Scene ] Falied to load binary: ", path.c_str());
         return;

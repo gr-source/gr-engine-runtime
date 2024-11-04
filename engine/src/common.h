@@ -23,7 +23,7 @@ class Animator;
 /* framebuffer */
 class Shadowbuffer;
 
-class Streaming;
+class Stream;
 
 
 

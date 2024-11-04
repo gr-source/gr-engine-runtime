@@ -470,7 +470,7 @@ void AssetsManager::SetupGameObject(std::condition_variable &cond, GameObjectHan
     cond.notify_one();
 }
 
-void AssetsManager::ReadChildren(Transform *parent, GameObjectHandle &handle, Streaming *stream) {
+void AssetsManager::ReadChildren(Transform *parent, GameObjectHandle &handle, Stream *stream) {
     gModel pModel;
     if (!stream->readS(&pModel, 1)) {
         return;
@@ -595,7 +595,7 @@ void AssetsManager::ReadChildren(Transform *parent, GameObjectHandle &handle, St
 }
 
 void AssetsManager::doInBackgroundGameObject(GameObjectHandle handle) {
-    Streaming stream(handle.m_path, std::ios_base::in | std::ios_base::binary);
+    Stream stream(handle.m_path, std::ios_base::in | std::ios_base::binary);
     if (!stream.is_open()) {
         return Console::log(LogInfo::ERROR, "Failed to load model. " + handle.m_path);
     }

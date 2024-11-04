@@ -1,14 +1,14 @@
 #include "stream.hpp"
 
-Streaming::Streaming(const std::string &path, std::ios_base::openmode mode) : m_path(path), std::fstream(path, mode) {}
+Stream::Stream(const std::string &path, std::ios_base::openmode mode) : m_path(path), std::fstream(path, mode) {}
 
-Streaming::Streaming() : std::fstream() { }
+Stream::Stream() : std::fstream() { }
 
-Streaming::~Streaming() {
+Stream::~Stream() {
     close();
 }
 
-std::streamsize Streaming::getDataSize() {
+std::streamsize Stream::getDataSize() {
     std::streamsize buffer_size = 0;
     for (auto &&[data, size] : m_data) {
         buffer_size += size;
@@ -16,7 +16,7 @@ std::streamsize Streaming::getDataSize() {
     return buffer_size;
 }
 
-void Streaming::flush() {
+void Stream::flush() {
     for (auto &&[data, size] : m_data) {
         std::fstream::write(reinterpret_cast<const char *>(data), size);
 
@@ -25,7 +25,7 @@ void Streaming::flush() {
     m_data.clear();
 }
 
-bool Streaming::write(const void *data, std::size_t size) {
+bool Stream::write(const void *data, std::size_t size) {
     if (!data || size <= 0) {
         return false;
     }
@@ -40,32 +40,32 @@ bool Streaming::write(const void *data, std::size_t size) {
     return true;
 }
 
-bool Streaming::read(void *data, std::size_t size) {
+bool Stream::read(void *data, std::size_t size) {
     if (std::fstream::read(reinterpret_cast<char *>(data), static_cast<std::streamsize>(size))) {
         return true;
     }
     return false;
 }
 
-bool Streaming::is_open() const {
+bool Stream::is_open() const {
     return std::fstream::is_open();
 }
 
-std::streampos Streaming::tellg() {
+std::streampos Stream::tellg() {
     return std::fstream::tellg();
 }
 
-std::istream &Streaming::seekg(std::streamoff position, std::ios_base::seekdir mode) {
+std::istream &Stream::seekg(std::streamoff position, std::ios_base::seekdir mode) {
     return std::fstream::seekg(position, mode);
 }
 
-void Streaming::clear() {
+void Stream::clear() {
     for (auto &&[data, size] : m_data) {
         std::free(data);
     }
     m_data.clear();
 }
 
-std::string Streaming::getPath() const {
+std::string Stream::getPath() const {
     return m_path;
 }
