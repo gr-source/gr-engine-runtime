@@ -218,6 +218,7 @@ void AssetsManager::ProcessTexture() {
         auto pixels = stbi_load(path.c_str(), &width, &height, &ch, 0);
         if (!pixels) {
             LOG_ERROR("[ AssetsManager::Texture ] Failed to load texture: " + path);
+            handle.invoke(nullptr);
             continue;
         }
         lock.unlock();
@@ -606,7 +607,7 @@ void AssetsManager::doInBackgroundGameObject(GameObjectHandle handle) {
         return Console::log(LogInfo::ERROR, "Failed to load model. " + handle.m_path);
     }
 
-    gHeader pHeader;
+    FileHeader pHeader;
     if (!stream.readS(&pHeader, 1)) {
         return Console::log(LogInfo::ERROR, "Failed to read header to file.");
     }

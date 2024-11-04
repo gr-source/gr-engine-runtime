@@ -23,14 +23,14 @@ inline const char *struct_name[5] = {
     "Script",
 };
 
-struct gHeader {
+struct FileHeader {
     char signature[4];
     float version;
     size_t sizeData;
     char name[256];
 };
 
-struct gStructData {
+struct DataSegment {
     gHeaderType type;
     size_t sizeData;
 };

@@ -38,7 +38,7 @@ void SetScreenSize(const iVector2 &value) {
     Screen::ScreenSize = value;
 }
 
-std::unordered_map<std::string, std::unique_ptr<Pool>> &GetComponentPool() {
+std::unordered_map<std::string, Pool *> GetComponentPool() {
     return ComponentRegistry::GetPool();
 }
 

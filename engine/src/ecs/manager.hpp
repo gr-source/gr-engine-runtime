@@ -2,11 +2,13 @@
 
 #include "entity.h"
 
+#include <mutex>
+
 class Manager {
 public:
     Manager() = delete;
     
-    static Entity& CreateEntity(GameObject *gameObject);
+    static Entity *CreateEntity(GameObject *gameObject);
 
     static void DestroyEntity(Entity *entity);
 
@@ -23,9 +25,11 @@ private:
 
     static std::vector<EntityID> m_available;
 
-    static std::vector<Entity *> m_entity;
+    static std::vector<Entity *> m_entities;
 
     static grm::size m_entityCount;
+
+    static std::mutex m_mutex;
 
     static bool bPlayScript;
 

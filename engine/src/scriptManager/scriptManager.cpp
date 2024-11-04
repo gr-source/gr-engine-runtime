@@ -53,7 +53,7 @@ std::unique_ptr<Animation> (*ScriptManager::LoadAnimation)(const std::string &);
 void (*ScriptManager::SetScreenSize)(const iVector2 &);
 
 // ComponentPool
-std::unordered_map<std::string, std::unique_ptr<Pool>> &(*ScriptManager::GetComponentPool)();
+std::unordered_map<std::string, Pool *> (*ScriptManager::GetComponentPool)();
 
 Component *(*ScriptManager::CreateComponentWithName)(const std::string &name);
 

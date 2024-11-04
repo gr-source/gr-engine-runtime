@@ -6,15 +6,15 @@ ComponentRegistry &ComponentRegistry::getInstance() {
 }
 
 Pool *ComponentRegistry::Find(const std::string &name) {
-    auto it = getInstance().m_poolComponent.find(name);
-    if (it == getInstance().m_poolComponent.end()) {
+    auto it = getInstance().m_poolMap.find(name);
+    if (it == getInstance().m_poolMap.end()) {
         return nullptr;
     }
     return &(*it->second);
 }
 
-std::unordered_map<std::string, std::unique_ptr<Pool>> &ComponentRegistry::GetPool() {
-    return getInstance().m_poolComponent;
+std::unordered_map<std::string, Pool *> ComponentRegistry::GetPool() {
+    return getInstance().m_poolMap;
 }
 
 

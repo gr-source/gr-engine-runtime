@@ -13,7 +13,7 @@
 
 #define NORM(n) n > 6.0f ? n / 1e2f : n
 
-void Filmbox::Load(const std::string &path, std::function<void(std::shared_ptr<FbxScene>)> func) {
+void Filmbox::Load(const std::string &path, std::function<void(std::shared_ptr<FbxScene>)> func, bool bCallInMainThread) {
     if (!File::Exists(path)) {
         return LOG_ERROR_ARGS("[ Filmbox ] Falied open file: %s", path);
     }
@@ -34,9 +34,14 @@ void Filmbox::Load(const std::string &path, std::function<void(std::shared_ptr<F
 
     LOG_INFO("[ Filmbox ] loaded sucess full.");
 
-    if (func) {
-        Event::Add(func, std::move(m_fbxScene));
+    if (!func) {
+        return LOG_WARNING("[ Filmbox ] Callfunction is not valid.");
     }
+
+    if (bCallInMainThread)
+        return Event::Add(func, std::move(m_fbxScene));
+
+    func(std::move(m_fbxScene));
 }
 
 void Filmbox::SceneLoader(const aiScene *scene, FbxScene *fbxScene) {

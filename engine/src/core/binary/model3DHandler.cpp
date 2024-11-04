@@ -1,0 +1,515 @@
+#include "model3DHandler.hpp"
+
+#include "gHeader.hpp"
+
+#include "core/assetsManager.hpp"
+#include "core/threadpool.hpp"
+#include "core/console.hpp"
+#include "core/scene.hpp"
+
+#include "core/file/stream.hpp"
+#include "core/file/file.hpp"
+
+#include "core/filmbox/filmbox.hpp"
+
+#include "ecs/gameObject.h"
+
+#include "script/meshRender.hpp"
+#include "script/meshFilter.hpp"
+#include "script/transform.hpp"
+
+void Model3DHandler::ImportFBX(const std::string &path) {
+    Threadpool::AddTask(&Filmbox::Load, path, &Model3DHandler::SetupScene, true);
+}
+
+void Model3DHandler::ExportGRMX(const std::string &path, const GameObject *gameObject) {
+    auto name = gameObject->getName();
+
+    LOG_INFO_ARGS("[ gModel3D ] Writing GameObject: %s", name.c_str());
+
+    Stream stream(path + "/" + name + ".gmdx", std::ios_base::out | std::ios_base::binary);
+
+    // Header file
+    {
+        FileHeader header{{'g', 'r', 'm', 'x'}, 1.0f, 0};
+        stream.writeS(&header, 1, false);
+    }
+
+    // data
+    auto result = WriteData(&stream, gameObject);
+    if (result != 0) {
+        return LOG_ERROR_ARGS("[ Model3DHandler ] Falied to write data: %d", result);
+    }
+    LOG_INFO_ARGS("[ gModel3D ] Write GameObject(%s) sucessfull.", name.c_str());
+}
+
+void Model3DHandler::ImportGRMX(const std::string &path) {
+    Stream stream(path, std::ios_base::in | std::ios_base::binary);
+    if (!stream.is_open()) {
+        return LOG_ERROR_ARGS("[ gModel3D ] Falied to open file: %s", path.c_str());
+    }
+
+    FileHeader header;
+    if (!stream.readS(&header, 1)) {
+        return LOG_ERROR("[ gModel3D ] Falied to read header binary.");
+    }
+    
+    if (header.signature[0] != 'g' && header.signature[1] != 'r' && header.signature[2] != 'm' && header.signature[3] != 'x') {
+        return LOG_ERROR("[ gModel3D ] Invalid binary type.");
+    }
+
+    LOG_INFO("[ gModel3D ] GRMX loading model.");
+
+    ReadData(&stream);
+
+    LOG_INFO("[ gModel3D ] Scene loaded sucess full.");
+}
+
+int Model3DHandler::ReadData(Stream *stream) {
+    GameObject *gameObject = nullptr;
+    std::unordered_map<std::string, GameObject *> m_gameObjectTemp;
+
+    while (true) {
+        DataSegment segment;
+        if (!stream->readS(&segment, 1)) {
+            break;
+        }
+
+        if (segment.type == gHeaderType_None && segment.sizeData == 0) {
+            break;
+        }
+
+        auto next_position = stream->tellg() + static_cast<std::streampos>(segment.sizeData);
+
+        auto result = -1;
+        switch (segment.type) {
+        case gHeaderType_Object:
+            result = ReadGameObject(stream, nullptr, &gameObject, m_gameObjectTemp);
+            break;
+        case gHeaderType_Script:
+            result = ReadScript(stream, m_gameObjectTemp);
+            break;
+        default:
+            break;
+        }
+
+        if (stream->tellg() != next_position)
+            stream->seekg(next_position, std::ios_base::beg);
+    }
+
+    if (gameObject) {
+        Scene::GetCurrentScene()->insert(gameObject);
+
+        gameObject->initialize();
+    }
+
+    return 0;
+}
+
+int Model3DHandler::ReadGameObject(Stream *stream, Transform *parent, GameObject **out, std::unordered_map<std::string, GameObject *> &tempList) {
+    std::size_t nsize = 0;
+
+    // write-name
+    if (!stream->readS(&nsize, 1)) {
+        return 1;
+    }
+
+    std::string name(nsize, '\0');
+    if (!stream->readS(name.data(), nsize)) {
+        return 2;
+    }
+
+    // write-tag
+    if (!stream->readS(&nsize, 1)) {
+        return 3;
+    }
+
+    std::string tag(nsize, '\0');
+    if (!stream->readS(tag.data(), nsize)) {
+        return 4;
+    }
+
+    auto bActive = false;
+    auto bEnable = false;
+
+    // write-status
+    {
+        if (!stream->readS(&bActive, 1)) {
+            return 5;
+        }
+
+        if (!stream->readS(&bEnable, 1)) {
+            return 6;
+        }
+    }
+
+    auto gameObject = GameObject::Create(name, tag);
+    if (!(*out)) {
+        *out = gameObject;
+    }
+    tempList.emplace(name, gameObject);
+
+    gameObject->setActive(bActive);
+    gameObject->setEnable(bEnable);
+
+    auto transform = gameObject->getTransform();
+    if (parent) {
+        transform->setParent(parent);
+    }
+
+    std::size_t children_size = 0;
+    if (!stream->readS(&children_size, 1)) {
+        return 7;
+    }
+    
+    int result = 0;
+    for (int i=0;i<children_size;i++) {
+        result = ReadGameObject(stream, transform, out, tempList);
+        if (result != 0) {
+            break;
+        }
+    }
+    return result;
+}
+
+int Model3DHandler::ReadScript(Stream *stream, std::unordered_map<std::string, GameObject *> &tempList) {
+    std::size_t size = 0;
+
+    if (!stream->readS(&size, 1)) {
+        return 1;
+    }
+
+    for (std::size_t i=0;i<size;i++) {
+        std::size_t nsize = 0;
+
+        // GameObject - name
+        if (!stream->readS(&nsize, 1)) {
+            return 2;
+        }
+        
+        std::string objectName(nsize, '\0');
+        if (!stream->readS(objectName.data(), nsize)) {
+            return 3;
+        }
+
+        // GameObject - ScriptName
+        if (!stream->readS(&nsize, 1)) {
+            return 4;
+        }
+        
+        std::string componentName(nsize, '\0');
+        if (!stream->readS(componentName.data(), nsize)) {
+            return 5;
+        }
+
+        std::size_t stream_size = 0;
+        if (!stream->readS(&stream_size, 1)) {
+            return 6;
+        }
+        if (stream_size <= 0) {
+            continue;
+        }
+        auto nextPosition = stream->tellg() + static_cast<std::streampos>(stream_size);
+
+        // deserialize
+        auto it = tempList.find(objectName);
+        if (it != tempList.end()) {
+            auto gameObject = it->second;
+
+            auto entt = gameObject->getEntity();
+
+            auto component = entt->hasComponent(componentName) ? entt->getComponent(componentName) : entt->addComponent(componentName);
+            if (component) {
+                component->Deserialize(stream);
+            }
+        }
+
+        if (stream->tellg() != nextPosition)
+            stream->seekg(nextPosition, std::ios_base::beg);
+    }
+    return 0;
+}
+
+int Model3DHandler::WriteData(Stream *stream, const GameObject *gameObject) {
+    int result = 0;
+    DataSegment segment = {gHeaderType_None, 0};
+
+    std::list<std::tuple<std::string, std::string, Component *>> m_componentTemp;
+
+    // GameObject - Node
+    {
+        result = WriteGameObject(stream, gameObject, m_componentTemp);
+        if (result != 0) {
+            return 1;
+        }
+
+        segment = {gHeaderType_Object, static_cast<std::size_t>(stream->getDataSize())};
+        if (!stream->writeS(&segment, 1, false)) {
+            return 2;
+        }
+        stream->flush();
+    }
+
+    // Scripts
+    {
+        result = WriteScript(stream, m_componentTemp);
+        if (result != 0) {
+            return 3;
+        }
+
+        segment = {gHeaderType_Script, static_cast<std::size_t>(stream->getDataSize())};
+        if (!stream->writeS(&segment, 1, false)) {
+            return 2;
+        }
+        stream->flush();
+    }
+
+    segment = {gHeaderType_None, 0};
+    if (!stream->writeS(&segment, 1, false)) {
+        return 3;
+    }
+    
+    return result;
+}
+
+int Model3DHandler::WriteGameObject(Stream *stream, const GameObject *gameObject, std::list<std::tuple<std::string, std::string, Component *>> &tempList) {
+    // write-name
+    {
+        auto name = gameObject->getName();
+
+        auto nsize = name.size();
+        if (!stream->writeS(&nsize, 1)) {
+            return 1;
+        }
+
+        if (!stream->writeS(name.data(), name.size())) {
+            return 2;
+        }
+    }
+    
+    // write-tag
+    {
+        auto tag = gameObject->getTag();
+
+        auto nsize = tag.size();
+        if (!stream->writeS(&nsize, 1)) {
+            return 3;
+        }
+
+        if (!stream->writeS(tag.data(), tag.size())) {
+            return 4;
+        }
+    }
+
+
+    // write-status
+    {
+        auto bActive = gameObject->getActive();
+        if (!stream->writeS(&bActive, 1)) {
+            return 5;
+        }
+
+        auto bEnable = gameObject->getEnable();
+        if (!stream->writeS(&bEnable, 1)) {
+            return 6;
+        }
+    }
+
+    // Temp
+    auto entt = gameObject->getEntity();
+
+    for (auto &&[cname, ptr] : entt->getComponents()) {
+        tempList.emplace_front(gameObject->getName(), cname, &(*ptr));
+    }
+
+    auto children = gameObject->getTransform()->getChildren();
+    auto children_size = children.size();
+
+    if (!stream->writeS(&children_size, 1)) {
+        return 7;
+    }
+
+    int result = 0;
+    for (auto &child : children) {
+        result = WriteGameObject(stream, child->getGameObject(), tempList);
+        if (result != 0) {
+            break;
+        }
+    }
+    return result != 0 ? (8 + result) : 0;
+}
+
+int Model3DHandler::WriteScript(Stream *stream, std::list<std::tuple<std::string, std::string, Component *>> &tempList) {
+    auto size = tempList.size();
+
+    if (!stream->writeS(&size, 1)) {
+        return 1;
+    }
+
+    for (auto &&[object, component, ptr] : tempList) {
+        auto nsize = object.size();
+
+        // GameObject - name
+        {
+            if (!stream->writeS(&nsize, 1)) {
+                return 2;
+            }
+            
+            if (!stream->writeS(object.data(), nsize)) {
+                return 3;
+            }
+        }
+
+        // GameObject - ScriptName
+        {
+            nsize = component.size();
+            if (!stream->writeS(&nsize, 1)) {
+                return 4;
+            }
+            
+            if (!stream->writeS(component.data(), nsize)) {
+                return 5;
+            }
+        }
+
+        // get stream size
+        std::size_t stream_size = 0;
+        {
+            Stream temp; // 
+            ptr->Serialize(&temp);
+    
+            stream_size = temp.getDataSize();
+        }
+
+        if (!stream->writeS(&stream_size, 1)) {
+            return 6;
+        }
+        if (stream_size <= 0) {
+            continue;
+        }
+        ptr->Serialize(stream);
+    }
+    return 0;
+}
+
+void Model3DHandler::SetupScene(std::shared_ptr<FbxScene> scene) {
+    auto& fRootNode = scene->getRootNode();
+    
+    for (const auto& node : fRootNode.getChildren()) {
+        Threadpool::AddTask(&Model3DHandler::ConvertToGameObject, scene, node);
+    }
+}
+
+void Model3DHandler::ConvertToGameObject(std::shared_ptr<FbxScene> scene, const FbxNode node) {
+    std::vector<std::unique_ptr<GameObject>> m_tempObject;
+    GameObject *gameObject = nullptr;
+    
+    CreateObjects(&(*scene), &node, nullptr, &gameObject, m_tempObject);
+    if (!gameObject) {
+        return LOG_ERROR("[ gModel3D ] Falied to convert fbx model to grmx.");
+    }
+
+    ExportGRMX(File::GetAsset("/model"), gameObject);
+}
+
+void Model3DHandler::CreateObjects(const FbxScene *scene, const FbxNode *node, Transform *parent, GameObject **out, std::vector<std::unique_ptr<GameObject>> &tempObject) {
+    auto gameObject = &(*tempObject.emplace_back(std::make_unique<GameObject>(node->getName())));
+    if (!(*out)) {
+        *out = gameObject;
+    }
+
+    gameObject->setTransform(gameObject->addComponent<Transform>());
+
+    auto transform = gameObject->getTransform();
+    transform->setLocalPosition(node->getPosition());
+    transform->setLocalRotation(node->getRotation());
+    transform->setLocalScale(node->getScale());
+
+    if (parent) {
+        transform->setParent(parent);
+    }
+
+    auto &meshes = node->getMeshes();
+    if (!meshes.empty()) {
+        std::vector<FbxMaterial> m_materials;
+        grm::u32 verticeCount = 0;
+        std::string meshName;
+        Mesh m_tempMesh;
+
+        for (auto &fbxMesh : meshes) {
+            meshName += fbxMesh.getName();
+
+            for (auto &mIdx : fbxMesh.getMaterials()) {
+                m_materials.emplace_back(scene->getMaterial(mIdx));
+            }
+            
+            auto &vertices = fbxMesh.getVertices();
+
+            for (auto &vertice : vertices) {
+                m_tempMesh.addVertex(vertice.position, vertice.normal, vertice.texCoord, vertice.index);
+
+                if (!fbxMesh.hasBone()) {
+                    continue;
+                }
+                
+                auto& boneWeight = m_tempMesh.addBoneWeight();
+
+                float norm = vertice.weight[0] + vertice.weight[1] + vertice.weight[2] + vertice.weight[3];
+
+                for (auto k=0;k<4;++k) {
+                    boneWeight.insert<int>(k, vertice.boneIndex[k]);
+                    boneWeight.insert<float>(k, norm > 0.0f ? vertice.weight[k] / norm : vertice.weight[k]);
+                }
+            }
+
+            for (auto &indice : fbxMesh.getIndices()) {
+                m_tempMesh.addIndice(verticeCount + indice);
+            }
+
+            verticeCount += vertices.size();
+        }
+
+        auto m_mesh = AssetsManager::FindMesh(meshName);
+        if (!m_mesh) {
+            m_tempMesh.setName(meshName);
+
+            m_mesh = AssetsManager::CreateMesh(meshName, m_tempMesh);
+        }
+
+        auto meshFilter = gameObject->addComponent<MeshFilter>();
+        if (!meshFilter) {
+            return;
+        }
+        meshFilter->setMesh(m_mesh);
+
+        auto meshRender = gameObject->addComponent<MeshRender>();
+        if (!meshRender) {
+            return;
+        }
+
+        for (auto &fbxMaterial : m_materials) {
+            auto material = meshRender->addMaterial(fbxMaterial.getName(), fbxMaterial.getColor());
+
+            int textureID = 0;
+            for (auto &&[type, path] : fbxMaterial.getTextures()) {
+                if (type != TextureType_Albedo) {
+                    continue;
+                }
+                AssetsManager::LoadTexture(path, &Model3DHandler::SetupTextureMaterial, material, textureID++);
+            }
+        }
+    }
+
+    // escreve os filhos
+    for (const auto &child : node->getChildren()) {
+        CreateObjects(scene, &child, transform, out, tempObject);
+    }
+}
+
+void Model3DHandler::SetupTextureMaterial(Material *material, int id, grr::gTexture *texture) {
+    if (!material) {
+        return;
+    }
+    material->setTexture(id, texture);
+}
+

@@ -32,7 +32,7 @@ public:
 
     std::istream &seekg(std::streamoff position, std::ios_base::seekdir mode);
     
-    void clear();
+    void close();
 
     std::string getPath() const;
     

@@ -5,7 +5,7 @@ Stream::Stream(const std::string &path, std::ios_base::openmode mode) : m_path(p
 Stream::Stream() : std::fstream() { }
 
 Stream::~Stream() {
-    close();
+    Stream::close();
 }
 
 std::streamsize Stream::getDataSize() {
@@ -59,11 +59,14 @@ std::istream &Stream::seekg(std::streamoff position, std::ios_base::seekdir mode
     return std::fstream::seekg(position, mode);
 }
 
-void Stream::clear() {
+void Stream::close() {
     for (auto &&[data, size] : m_data) {
         std::free(data);
     }
+    
     m_data.clear();
+
+    std::fstream::close();
 }
 
 std::string Stream::getPath() const {

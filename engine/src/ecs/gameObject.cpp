@@ -115,7 +115,7 @@ void GameObject::Clear() {
     NameManager::Shutdown();
 }
 
-GameObject::GameObject(const std::string &name, const std::string &tag) : m_name(name), m_tag(tag), m_entity(&Manager::CreateEntity(this)), m_bActive(true), m_bEnable(true) {}
+GameObject::GameObject(const std::string &name, const std::string &tag) : m_name(name), m_tag(tag), m_entity(Manager::CreateEntity(this)), m_bActive(true), m_bEnable(true) {}
 
 GameObject::~GameObject() {
     Manager::DestroyEntity(m_entity);

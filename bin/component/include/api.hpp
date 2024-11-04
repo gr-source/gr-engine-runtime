@@ -13,6 +13,8 @@
 extern "C" {
 #endif
 
+void Consolelog(LogInfo::LogType type, const std::string &msg);
+
 // [ Initialzie ]
 void Initialize();
 
@@ -38,7 +40,7 @@ void SetScreenSize(const iVector2 &value);
 
 // Component
 
-std::unordered_map<std::string, std::unique_ptr<Pool>> &GetComponentPool();
+std::unordered_map<std::string, Pool *> GetComponentPool();
 
 Component *CreateComponentWithName(const std::string &name);
 

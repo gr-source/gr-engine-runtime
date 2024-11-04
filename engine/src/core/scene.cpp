@@ -119,7 +119,7 @@ void Scene::save(const std::string &path) {
 
     // header data
     {
-        gHeader header{{'g', 'r', 's', 'c'}, 1.0f, static_cast<std::size_t>(stream.getDataSize())};
+        FileHeader header{{'g', 'r', 's', 'c'}, 1.0f, static_cast<std::size_t>(stream.getDataSize())};
         std::strncpy(header.name, m_name.data(), 256);
 
         if (!stream.writeS(&header, 1, false)) {
@@ -131,7 +131,7 @@ void Scene::save(const std::string &path) {
         return LOG_ERROR_ARGS("[ SCENE ] Failed to write scene segment: %d", err);
     }
 
-    gStructData end{gHeaderType_None, 0};
+    DataSegment end{gHeaderType_None, 0};
     if (!stream.writeS(&end, 1, false)) {
         return LOG_ERROR("[ Scene ] Failed to write scene: 1");
     }
@@ -248,7 +248,7 @@ void Scene::Load(const std::string &path, std::uint8_t flags, Scene *scene) {
 
     // read header data
     {
-        gHeader header;
+        FileHeader header;
         if (!stream.readS(&header, 1)) {
             LOG_ERROR("[ Scene ] Failed to read binary header: " + path);
             return;
@@ -264,7 +264,7 @@ void Scene::Load(const std::string &path, std::uint8_t flags, Scene *scene) {
 
     // read segment
     while (true) {
-        gStructData data;
+        DataSegment data;
         if (!stream.readS(&data, 1)) {
             break;
         }
@@ -328,7 +328,7 @@ void Scene::setDisableEntity(Transform *transform, bool value) {
 }
 
 int Scene::writeScene(Stream *streaming) {
-    gStructData segment = {gHeaderType_None, 0};
+    DataSegment segment = {gHeaderType_None, 0};
 
     // textures
     if (writeTexture(streaming) != 0) {
@@ -471,7 +471,7 @@ int Scene::writeScript(Stream *streaming) {
         streaming->writeS(&data_size, 1);
         ptr->Serialize(streaming);
 
-        temp.clear();
+        temp.close();
     }
     m_componentCache.clear();
     return 0;

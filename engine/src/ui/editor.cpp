@@ -12,7 +12,7 @@
 
 #include "core/filmbox/filmbox.hpp"
 
-#include "core/binary/gModel3D.hpp"
+#include "core/binary/model3DHandler.hpp"
 
 #include "core/cmd/cmd.hpp"
 
@@ -205,7 +205,7 @@ void Editor::DropFile(const std::filesystem::path &path) {
 }
  
 void Editor::Import3DModel(const std::string &path) {
-    gModel3D::ImportFBX(path);
+    Model3DHandler::ImportFBX(path);
 }
 
 void Editor::ImportImage(const std::string &path) {
@@ -1174,7 +1174,7 @@ void Editor::DropGameObjectInScene() {
             if (std::filesystem::path(path).filename().extension() == ".gmd") {
                 AssetsManager::LoadGameObject(path, &Editor::PostLoadGameObject);
             } else if (std::filesystem::path(path).filename().extension() == ".gmdx") {
-                gModel3D::ImportGRMX(path);
+                Model3DHandler::ImportGRMX(path);
             }
         }
     }
@@ -1336,7 +1336,7 @@ void Editor::DropTargetGameObjectInFile(const std::string &path) {
 
         return ImGui::EndDragDropTarget();
     }
-    gModel3D::ExportGRMX(path, target);
+    Model3DHandler::ExportGRMX(path, target);
     
     ImGui::EndDragDropTarget();
 }
@@ -1739,7 +1739,7 @@ void Editor::RenderGameObjectPropertiUI() {
 }
 
 bool Editor::RenderComponents(const std::string &name, Component *component) {
-    auto &componentPool = ScriptManager::GetComponentPool();
+    auto componentPool = ScriptManager::GetComponentPool();
 
     auto isRender = true;
 
@@ -1811,10 +1811,10 @@ void Editor::PopupAddComponent() {
     if (!isOpen) {
         return;
     }
-    auto &componentPool = ScriptManager::GetComponentPool();
+    auto componentPool = ScriptManager::GetComponentPool();
 
     std::vector<std::string> m_componentName;
-    for (auto &&[name, pool] : componentPool) {
+    for (auto [name, pool] : componentPool) {
         m_componentName.push_back(name);
     }
 

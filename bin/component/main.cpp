@@ -9,7 +9,12 @@
 
 std::unordered_map<int, grr::gShader *> shaderList;
 
-void Initialize() {
+void Consolelog(LogInfo::LogType type, const std::string &msg) {
+    throw std::runtime_error("Function do not implemented.");
+}
+
+void Initialize()
+{
     Console::Message(LogInfo::LogType::DEFAULT, "Update 2: %f - %d", 1.5f, 80);
     std::cout << "Update 2" << std::endl;
 

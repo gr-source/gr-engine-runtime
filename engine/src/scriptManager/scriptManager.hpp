@@ -34,7 +34,7 @@ public:
     static void (*SetScreenSize)(const iVector2 &);
 
     // Component Pool
-    static std::unordered_map<std::string, std::unique_ptr<Pool>> &(*GetComponentPool)();
+    static std::unordered_map<std::string, Pool *> (*GetComponentPool)();
 
     static Component *(*CreateComponentWithName)(const std::string &name);
 
