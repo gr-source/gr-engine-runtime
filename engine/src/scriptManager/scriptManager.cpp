@@ -176,6 +176,7 @@ void ScriptManager::RegisterApi() {
     m_script->replaceLibraryFunction("_ZN13AssetsManager8FindMeshERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE",                                             reinterpret_cast<void *>(&AssetsManager::FindMesh), (void **)&AssetsManagerFindMesh);
     m_script->replaceLibraryFunction("_ZN13AssetsManager10FindShaderERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE",                                          reinterpret_cast<void *>(&AssetsManager::FindShader), (void **)&AssetsManagerFindShader);
     m_script->replaceLibraryFunction("_ZN13AssetsManager13SetShaderListERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEES7_S7_St8functionIFvPN3grr7gShaderEEE",  reinterpret_cast<void *>(&AssetsManager::SetShaderList), (void **)&AssetsManagerSetShaderList);
+    m_script->replaceLibraryFunction("_ZN13AssetsManager10CreateMeshERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEES7_",  reinterpret_cast<void *>(&AssetsManager::CreateMesh<std::string>), (void **)&AssetsManagerSetShaderList);
 
     m_script->registerFunction("LoadAnimation", reinterpret_cast<void **>(&LoadAnimation));
 
@@ -226,6 +227,10 @@ void ScriptManager::RegisterApi() {
 
     // Raycast
     m_script->replaceLibraryFunction("_ZN7Raycast7RayCastERK7Vector3S2_", (void *)&PhysicsScene::Raycast, (void **)&Rigidbodyprocess);
+
+    // Mesh
+    m_script->replaceLibraryFunction("_ZNK4Mesh9serializeEP6Stream", (void *)&Mesh::serialize, (void **)&Rigidbodyprocess);
+    m_script->replaceLibraryFunction("_ZN4Mesh11deserializeEP6Stream", (void *)&Mesh::deserialize, (void **)&Rigidbodyprocess);
 }
 #pragma GCC diagnostic pop
 

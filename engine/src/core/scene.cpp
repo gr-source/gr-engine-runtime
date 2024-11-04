@@ -343,16 +343,18 @@ int Scene::writeScene(Stream *streaming) {
     streaming->flush();
 
     // Mesh
-    if (writeMesh(streaming) != 0) {
-        return 3;
-    }
+    {
+        // if (writeMesh(streaming) != 0) {
+        //     return 3;
+        // }
 
-    segment = {gHeaderType_Mesh, static_cast<std::size_t>(streaming->getDataSize())};
-    if (!streaming->writeS(&segment, 1, false)) {
-        return 3;
-    }
+        // segment = {gHeaderType_Mesh, static_cast<std::size_t>(streaming->getDataSize())};
+        // if (!streaming->writeS(&segment, 1, false)) {
+        //     return 3;
+        // }
 
-    streaming->flush();
+        // streaming->flush();
+    }
     
     // Objects
     if (writeObject(streaming) != 0) {
@@ -406,15 +408,25 @@ int Scene::writeTexture(Stream *streaming) {
 int Scene::writeMesh(Stream *streaming) {
     auto meshCount = AssetsManager::GetMeshCount();
 
-    streaming->writeS(&meshCount, 1);
+    if (!streaming->writeS(&meshCount, 1)) {
+        return 1;
+    }
 
     for (auto &&[name, mesh] : AssetsManager::GetMeshListMap()) {
         auto size = name.size();
 
-        streaming->writeS(&size, 1);
-        streaming->writeS(name.data(), size);
+        if (!streaming->writeS(&size, 1)) {
+            return 2;
+        }
 
-        mesh->serialize(streaming);
+        if (!streaming->writeS(name.data(), size)) {
+            return 3;
+        }
+
+        auto result = mesh->serialize(streaming);
+        if (result != 0) {
+            return 4 + result;
+        }
     }
     return 0;
 }
@@ -583,8 +595,12 @@ int Scene::readMesh(Stream *streaming) {
             return 3;
         }
 
-        auto mesh = AssetsManager::AddMesh(name, name);
-        mesh->deserialize(streaming);
+        auto mesh = AssetsManager::CreateMesh(name, name);
+        
+        auto result = mesh->deserialize(streaming);
+        if (result != 0) {
+            return 4 + result;
+        }
     }
     return 0;
 }

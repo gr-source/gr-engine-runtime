@@ -29,35 +29,57 @@ Boundbox &MeshFilter::getBoundbox() {
 
 bool MeshFilter::Serialize(Stream *stream) {
     bool hasMesh = m_sharedMesh != nullptr;
-    stream->write(reinterpret_cast<const void *>(&hasMesh), sizeof(bool));
+    if (!stream->write(reinterpret_cast<const void *>(&hasMesh), sizeof(bool))) {
+        return false;
+    }
 
     if (!hasMesh) {
         return true;
     }
-    auto &name = m_sharedMesh->getName();
+    auto name = m_sharedMesh->getName();
 
     auto nSize = name.size();
-    stream->write(reinterpret_cast<const char *>(&nSize), sizeof(std::size_t));
-    stream->write(name.data(), nSize);
+    if (!stream->write(reinterpret_cast<const char *>(&nSize), sizeof(std::size_t))) {
+        return false;
+    }
+
+    if (!stream->write(name.data(), nSize)) {
+        return false;
+    }
+
+    m_sharedMesh->serialize(stream);
+
     return true;
 }
 
 bool MeshFilter::Deserialize(Stream *stream) {
     bool hasMesh;
-    stream->read(reinterpret_cast<char *>(&hasMesh), sizeof(bool));
+    if (!stream->read(reinterpret_cast<char *>(&hasMesh), sizeof(bool))) {
+        return false;
+    }
 
     if (!hasMesh) {
         return true;
     }
 
     std::size_t nSize;
-    stream->read(reinterpret_cast<char *>(&nSize), sizeof(std::size_t));
+    if (!stream->read(reinterpret_cast<char *>(&nSize), sizeof(std::size_t))) {
+        return false;
+    }
 
     std::string name(nSize, '\0');
-    stream->read(name.data(), nSize);
+    if (!stream->read(name.data(), nSize)) {
+        return false;
+    }
 
     m_sharedMesh = AssetsManager::FindMesh(name);
-
+    if (!m_sharedMesh) {
+        m_sharedMesh = AssetsManager::CreateMesh(name, name);
+        if (!m_sharedMesh) {
+            return false;
+        }
+        m_sharedMesh->deserialize(stream);
+    }
     return true;
 }
 

@@ -34,9 +34,9 @@ public:
 
     const std::vector<BoneWeight> &getBoneWeight() const;
 
-    void serialize(Stream *streaming) const;
+    int serialize(Stream *streaming) const;
 
-    void deserialize(Stream *streaming);
+    int deserialize(Stream *streaming);
 
 private:
     std::vector<Vertex3D> m_vertices;

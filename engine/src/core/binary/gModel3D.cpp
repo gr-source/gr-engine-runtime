@@ -100,6 +100,8 @@ int gModel3D::ReadData(Stream *stream) {
 
         gameObject->initialize();
     }
+
+    m_gameObjectTemp.clear();
     
     return 0;
 }

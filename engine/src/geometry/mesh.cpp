@@ -38,51 +38,76 @@ const std::vector<BoneWeight> &Mesh::getBoneWeight() const {
     return m_boneWeight;
 }
 
-void Mesh::serialize(Stream *streaming) const {
+int Mesh::serialize(Stream *streaming) const {
     auto &vertices = m_vertices;
     auto &indices = m_indices;
     auto &name = m_name;
 
     // Serialzie name
     auto nSize = name.size();
-    streaming->writeS(&nSize, 1);
+    if (!streaming->writeS(&nSize, 1)) {
+        return 1;
+    }
 
-    streaming->writeS(name.data(), nSize);
+    if (!streaming->writeS(name.data(), nSize)) {
+        return 2;
+    }
 
     // Serialize vertices
     auto vSize = vertices.size();
-    streaming->writeS(&vSize, 1);
-    streaming->writeS(vertices.data(), vSize);
+    if (!streaming->writeS(&vSize, 1)) {
+        return 3;
+    }
+
+    if (!streaming->writeS(vertices.data(), vSize)) {
+        return 4;
+    }
 
     // Serialize indices
     auto iSize = indices.size();
-    streaming->writeS(&iSize, 1);
-    streaming->writeS(indices.data(), iSize);
+    if (!streaming->writeS(&iSize, 1)) {
+        return 5;
+    }
+
+    if (!streaming->writeS(indices.data(), iSize)) {
+        return 6;
+    }
+    return 0;
 }
 
-void Mesh::deserialize(Stream *streaming) {
-    auto &vertices = m_vertices;
-    auto &indices = m_indices;
-    auto &name = m_name;
-
+int Mesh::deserialize(Stream *streaming) {
     // Deserialize name
     std::size_t nSize;
-    streaming->readS(&nSize, 1);
-    name.resize(nSize, '\0');
-    streaming->readS(name.data(), nSize);
+    if (!streaming->readS(&nSize, 1)) {
+        return 1;
+    }
+
+    m_name.resize(nSize, '\0');
+    if (!streaming->readS(m_name.data(), nSize)) {
+        return 2;
+    }
 
     // Deserialize vertices
     std::size_t vSize;
-    streaming->readS(&vSize, 1);
-    vertices.resize(vSize);
+    if (!streaming->readS(&vSize, 1)) {
+        return 3;
+    }
 
-    streaming->readS(vertices.data(), vSize);
+    m_vertices.resize(vSize);
+    if (!streaming->readS(m_vertices.data(), vSize)) {
+        return 4;
+    }
 
     // Deserialize indices
     std::size_t iSize;
-    streaming->readS(&iSize, 1);
-    indices.resize(iSize);
+    if (!streaming->readS(&iSize, 1)) {
+        return 5;
+    }
 
-    streaming->readS(indices.data(), iSize);
+    m_indices.resize(iSize, 0);
+    if (!streaming->readS(m_indices.data(), iSize)) {
+        return 6;
+    }
+    return 0;
 }
 

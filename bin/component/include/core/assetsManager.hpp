@@ -19,9 +19,8 @@ public:
     template <typename ...Args>
     static void LoadShader(const std::string &name, const std::string &frag, const std::string &vert, Args &&...args);
 
-    static void AddPostLoader(std::function<bool(void *, const std::string &)> func);
-
-    static std::vector<Material> *FindMaterial(const std::string &name);
+    // ********** Mesh ********** //
+    static Mesh *CreateMesh(const std::string &key, const std::string &name);
 
     static Mesh *FindMesh(const std::string &name);
 

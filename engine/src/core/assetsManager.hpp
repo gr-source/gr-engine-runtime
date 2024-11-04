@@ -82,10 +82,11 @@ public:
 
     static grr::gShader *FindShader(const std::string &name);
 
-    static Mesh *FindMesh(const std::string &name);
-
+    // ********** Mesh ********** //
     template <typename ...Args>
-    static Mesh *AddMesh(const std::string &key, Args &&...args);
+    static Mesh *CreateMesh(const std::string &key, Args &&...args);
+
+    static Mesh *FindMesh(const std::string &name);
 
     static void DeleteMesh(Mesh *target);
 
@@ -196,10 +197,12 @@ inline void AssetsManager::LoadShader(const std::string &name, const std::string
 }
 
 template <typename... Args>
-inline Mesh *AssetsManager::AddMesh(const std::string &key, Args &&...args) {
-    std::unique_lock<std::mutex> lock(m_meshMutex);
-    auto &&[pair, added] = s_meshList.emplace(key, std::make_unique<Mesh>(std::forward<Args>(args)...));
-    auto mesh = &(*(*pair).second);
-    lock.unlock();
-    return mesh;
+inline Mesh *AssetsManager::CreateMesh(const std::string &key, Args &&...args) {
+    Mesh *m_mesh = nullptr;
+    {
+        std::lock_guard<std::mutex> lock(m_meshMutex);
+        auto &&[pair, added] = s_meshList.emplace(key, std::make_unique<Mesh>(std::forward<Args>(args)...));
+        m_mesh = &(*(*pair).second);
+    }
+    return m_mesh;
 }

@@ -129,15 +129,19 @@ grr::gShader *AssetsManager::FindShader(const std::string &name) {
     return &(*it->second);
 }
 
+// ********** Mesh ********** //
+
 Mesh *AssetsManager::FindMesh(const std::string &name) {
-    std::unique_lock<std::mutex> lock(m_meshMutex);
-    auto it = s_meshList.find(name);
-    if (it == s_meshList.end()) {
-        return nullptr;
+    Mesh *m_mesh = nullptr;
+    {
+        std::lock_guard<std::mutex> lock(m_meshMutex);
+        auto it = s_meshList.find(name);
+        if (it == s_meshList.end()) {
+            return nullptr;
+        }
+        m_mesh = &(*it->second);
     }
-    auto mesh = &(*(*it).second);
-    lock.unlock();
-    return mesh;
+    return m_mesh;
 }
 
 void AssetsManager::DeleteMesh(Mesh *target) {
@@ -540,11 +544,13 @@ void AssetsManager::ReadChildren(Transform *parent, GameObjectHandle &handle, St
 
         }
 
-        m_mesh = AssetsManager::FindMesh(meshName);
-        if (!m_mesh) {
-            mesh.setName(meshName);
+        {
+            m_mesh = AssetsManager::FindMesh(meshName);
+            if (!m_mesh) {
+                mesh.setName(meshName);
 
-            m_mesh = AssetsManager::AddMesh(meshName, mesh);
+                m_mesh = AssetsManager::CreateMesh(meshName, mesh);
+            }
         }
     }
 

@@ -4,13 +4,16 @@
 
 #include "core/animation/boneWeight.hpp"
 
+#include "core/default.hpp"
+
 #include <vector>
 
 class Mesh {
 public:
-    Mesh(const std::string &name = "default");
+    Mesh() = delete;
+    ~Mesh() = delete;
 
-    std::string &getName();
+    std::string getName() const;
 
     template <typename ...Args>
     Vertex3D &addVertex(Args &&...args);
@@ -21,16 +24,21 @@ public:
 
     void addIndice(int t0);
 
-    const bool hasIndices() const;
+    bool hasIndices() const;
 
     std::vector<int> &getIndices();
 
     template <typename ...Args>
     BoneWeight &addBoneWeight(Args &&...args);
 
-    const std::vector<BoneWeight> &getBoneWeight() const;
+    std::vector<BoneWeight> getBoneWeight() const;
+
+    void serialize(Stream *stream) const;
+
+    void deserialize(Stream *stream);
 
     void clear();
+    
 private:
     std::vector<Vertex3D> m_vertices;
 

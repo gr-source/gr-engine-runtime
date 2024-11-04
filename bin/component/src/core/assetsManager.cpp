@@ -8,8 +8,9 @@
 
 #include "api.hpp"
 
-void AssetsManager::AddPostLoader(std::function<bool(void *, const std::string &)> func) {
-    throw std::runtime_error("function do not implemented.");
+// ********** Mesh ********** //
+Mesh *AssetsManager::CreateMesh(const std::string &key, const std::string &name) {
+    return nullptr;
 }
 
 Mesh *AssetsManager::FindMesh(const std::string &name) {
@@ -32,6 +33,8 @@ void AssetsManager::SetTextureList(const std::string &path, std::function<void(g
     throw std::runtime_error("function do not implemented.");
 }
 
-std::vector<Material> *AssetsManager::FindMaterial(const std::string &name) {
-    throw std::runtime_error("function do not implemented.");
-}
+
+
+
+
+

@@ -1,8 +1,6 @@
 #include "core/geometry/mesh.hpp"
 
-Mesh::Mesh(const std::string &name) : m_name(name) {}
-
-std::string &Mesh::getName() {
+std::string Mesh::getName() const {
     return m_name;
 }
 
@@ -20,7 +18,7 @@ void Mesh::addIndice(int t0) {
     m_indices.push_back(t0);
 }
 
-const bool Mesh::hasIndices() const {
+bool Mesh::hasIndices() const {
     return !m_indices.empty();
 }
 
@@ -28,8 +26,16 @@ std::vector<int> &Mesh::getIndices() {
     return m_indices;
 }
 
-const std::vector<BoneWeight> &Mesh::getBoneWeight() const {
+std::vector<BoneWeight> Mesh::getBoneWeight() const {
     return m_boneWeight;
+}
+
+void Mesh::serialize(Stream *stream) const {
+    throw std::runtime_error("Function do not implemented.");
+}
+
+void Mesh::deserialize(Stream *stream) {
+    throw std::runtime_error("Function do not implemented.");
 }
 
 void Mesh::clear() {
