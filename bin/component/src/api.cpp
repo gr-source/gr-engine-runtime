@@ -58,26 +58,6 @@ Component *CopyComponentWithName(const std::string &name, const Component *compo
     return pool->CreateInstanceFrom(component);
 }
 
-bool InputIsKeyPress(grm::u32 key) {
-    return false;
-}
-
-void MaterialDeserialize(Material *instance, Stream *stream) {
-}
-
-void AssetsManagerSetShaderList(const std::string &name, const std::string &frag, const std::string &vert, std::function<void(grr::gShader *)> func) {
-}
-
-void MaterialSerialize(Stream *stream) {
-}
-
-GameObject *GameObjectCreate(const std::string &name, const std::string &tag) {
-    throw std::runtime_error("Function do not implemented.");
-}
-
-void EventAddEvent_Internal(std::function<void()> func) {
-}
-
 void SetDeltaTime(float deltaTime) {
     Time::deltaTime = deltaTime;
 }

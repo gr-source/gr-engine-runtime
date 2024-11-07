@@ -2,21 +2,19 @@
 
 #include "script/transform.hpp"
 
-#include "api.hpp"
+#include "core/function.hpp"
 
-GameObject *GameObject::Create(const std::string &name, const std::string &tag) {
-    return GameObjectCreate(name, tag);
-}
+GameObject *(*GameObject::Create)(const std::string &name, const std::string &tag);
+INSERT_FUNCTION(0, GameObject::Create)
 
-GameObject *GameObject::Instantiate(GameObject *target) {
-    throw std::runtime_error("Function added in engine.");
-}
+GameObject *(*GameObject::Instantiate)(GameObject *target);
+INSERT_FUNCTION(1, GameObject::Instantiate)
 
-GameObject *GameObject::Find(const std::string &name) {
-    return nullptr;
-}
+GameObject *(*GameObject::Find)(const std::string &name);
+INSERT_FUNCTION(2, GameObject::Find)
 
-void GameObject::Destroy(GameObject *target) {}
+void (*GameObject::Destroy)(GameObject *target);
+INSERT_FUNCTION(3, GameObject::Destroy)
 
 void GameObject::setName(const std::string &name) {
     m_name = name;

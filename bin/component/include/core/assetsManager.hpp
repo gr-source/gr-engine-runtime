@@ -20,18 +20,17 @@ public:
     static void LoadShader(const std::string &name, const std::string &frag, const std::string &vert, Args &&...args);
 
     // ********** Mesh ********** //
-    static Mesh *CreateMesh(const std::string &key, const std::string &name);
+    static Mesh *(*CreateMesh)(const std::string &key, const std::string &name);
 
-    static Mesh *FindMesh(const std::string &name);
+    static Mesh *(*FindMesh)(const std::string &name);
 
-    static grr::gShader *FindShader(const std::string &name);
+    static grr::gShader *(*FindShader)(const std::string &name);
 
-private:
-    static void SetGameObjectList(const std::string &path, std::function<void(GameObject *)> func);
+    static void (*SetGameObjectList)(const std::string &path, std::function<void(GameObject *)> func);
 
-    static void SetShaderList(const std::string &name, const std::string &frag, const std::string &vert, std::function<void(grr::gShader *)> func);
+    static void (*SetShaderList)(const std::string &name, const std::string &frag, const std::string &vert, std::function<void(grr::gShader *)> func);
 
-    static void SetTextureList(const std::string &path, std::function<void(grr::gTexture *)> func);
+    static void (*SetTextureList)(const std::string &path, std::function<void(grr::gTexture *)> func);
 };
 
 template <typename... Args>

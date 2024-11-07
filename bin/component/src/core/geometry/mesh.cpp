@@ -1,5 +1,7 @@
 #include "core/geometry/mesh.hpp"
 
+#include "core/function.hpp"
+
 std::string Mesh::getName() const {
     return m_name;
 }
@@ -30,12 +32,18 @@ std::vector<BoneWeight> Mesh::getBoneWeight() const {
     return m_boneWeight;
 }
 
+static void (*Meshserialize)(const Mesh *, Stream *);
+INSERT_FUNCTION(0, Meshserialize);
+
+static void (*Meshdeserialize)(Mesh *, Stream *);
+INSERT_FUNCTION(1, Meshdeserialize);
+
 void Mesh::serialize(Stream *stream) const {
-    throw std::runtime_error("Function do not implemented.");
+    return Meshserialize(this, stream);
 }
 
 void Mesh::deserialize(Stream *stream) {
-    throw std::runtime_error("Function do not implemented.");
+    return Meshdeserialize(this, stream);
 }
 
 void Mesh::clear() {

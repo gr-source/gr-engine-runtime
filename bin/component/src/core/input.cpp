@@ -1,22 +1,17 @@
 #include "core/input.hpp"
+#include "core/function.hpp"
 
-#include "api.hpp"
+bool (*Input::IskeyPress)(InputKey key);
+INSERT_FUNCTION(1, Input::IskeyPress);
 
-bool Input::IskeyPress(InputKey key) {
-    return InputIsKeyPress(key);
-}
+void (*Input::SetCursorPos)(const Vector2 &value);
+INSERT_FUNCTION(2, Input::SetCursorPos);
 
-void Input::SetCursorPos(const Vector2 &value) {
-    throw std::runtime_error("function do not implemented.");
-}
+Vector2 (*Input::GetCursorPos)();
+INSERT_FUNCTION(3, Input::GetCursorPos);
 
-Vector2 Input::GetCursorPos() {
-    throw std::runtime_error("function do not implemented.");
-}
-
-bool Input::IsMousePress(InputKey key) {
-    throw std::runtime_error("function do not implemented.");
-}
+bool (*Input::IsMousePress)(InputKey key);
+INSERT_FUNCTION(4, Input::IsMousePress);
 
 
 

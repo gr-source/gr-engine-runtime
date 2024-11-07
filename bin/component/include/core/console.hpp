@@ -19,7 +19,7 @@ struct LogInfo {
 
 class Console {
 public:
-    static void log(LogInfo::LogType type, const std::string &msg);
+    static void (*log)(LogInfo::LogType type, const std::string &msg);
 
     template <typename ...Args>
     static void Message(LogInfo::LogType type, const std::string &fmt, Args &&...args);
@@ -29,4 +29,5 @@ template <typename... Args>
 inline void Console::Message(LogInfo::LogType type, const std::string &fmt, Args &&...args) {
     log(type, StringUTF::format(fmt, std::forward<Args>(args)...));
 }
+
 

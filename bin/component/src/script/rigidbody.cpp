@@ -2,24 +2,34 @@
 
 #include "script/transform.hpp"
 
+#include "core/function.hpp"
 #include "core/stream.hpp"
 
 #include <bullet/btBulletDynamicsCommon.h>
 
+static void (*RigidbodyInitialize)(Rigidbody *instance);
+INSERT_FUNCTION(0, RigidbodyInitialize)
+
+static void (*RigidbodyUpdate)(Rigidbody *instance);
+INSERT_FUNCTION(1, RigidbodyUpdate)
+
+static void (*RigidbodyShutdown)(Rigidbody *instance);
+INSERT_FUNCTION(2, RigidbodyShutdown)
+
 Rigidbody::Rigidbody() : m_collisionShape(nullptr), m_DefaultMotionState(nullptr), m_body(nullptr), m_transform(nullptr), m_mass(0.0f), m_bDinamic(false), m_lookRotation(Vector3::one) {}
 
 Rigidbody::~Rigidbody() {
-    shutdown();
+    RigidbodyShutdown(this);
 }
 
 void Rigidbody::Init() {
     m_transform = GetComponent<Transform>();
 
-    initialize();
+    RigidbodyInitialize(this);
 }
 
 void Rigidbody::Update() {
-    update();
+    RigidbodyUpdate(this);
 }
 
 bool Rigidbody::Serialize(Stream *stream) {
@@ -92,13 +102,9 @@ void Rigidbody::setDynamic(bool value) {
     m_bDinamic = value;
 }
 
-void Rigidbody::update() {
-    throw std::runtime_error("function do not implemented.");
-}
 
-void Rigidbody::shutdown() {
-}
 
-void Rigidbody::initialize() {
-    throw std::runtime_error("function do not implemented.");
-}
+
+
+
+

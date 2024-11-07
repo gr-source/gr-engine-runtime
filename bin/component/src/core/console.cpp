@@ -1,8 +1,8 @@
 #include "core/console.hpp"
 
-#include "api.hpp"
+#include "core/function.hpp"
 
-void Console::log(LogInfo::LogType type, const std::string &msg) {
-    return Consolelog(type, msg);
-}
+void (*Console::log)(LogInfo::LogType type, const std::string &msg) = nullptr;
+INSERT_FUNCTION(7, Console::log)
+
 

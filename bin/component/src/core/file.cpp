@@ -1,5 +1,7 @@
 #include "core/file.hpp"
 
+#include "core/function.hpp"
+
 #include <filesystem>
 #include <fstream>
 
@@ -23,9 +25,8 @@ std::string File::GetFileName(const std::string &path) {
 }
 
 std::string File::GetAsset(const std::string &path) {
-    return GetFile("/assets/" + path);
+    return GetFile("/assets/" + path, false);
 }
 
-std::string File::GetFile(const std::string &path, bool internal) {
-    throw std::runtime_error("function do not implemented.");
-}
+std::string (*File::GetFile)(const std::string &path, bool internal);
+INSERT_FUNCTION(0, File::GetFile);

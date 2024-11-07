@@ -9,14 +9,9 @@
 
 std::unordered_map<int, grr::gShader *> shaderList;
 
-void Consolelog(LogInfo::LogType type, const std::string &msg) {
-    throw std::runtime_error("Function do not implemented.");
-}
-
-void Initialize()
-{
-    Console::Message(LogInfo::LogType::DEFAULT, "Update 2: %f - %d", 1.5f, 80);
-    std::cout << "Update 2" << std::endl;
+void Initialize() {
+    Console::Message(LogInfo::LogType::DEFAULT, "Update 3 XXXXXXXXXXXXXXXXXX: %f - %d", 1.5f, 80);
+    std::cout << "Update 3 XXXXXXXXXXXXXXXXXX" << std::endl;
 
     AssetsManager::LoadShader("dynamic_one_model",
         File::GetAsset("/shader/model/dynamic_model.frag"),

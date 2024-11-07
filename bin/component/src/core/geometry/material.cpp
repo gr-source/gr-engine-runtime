@@ -1,6 +1,6 @@
 #include "core/geometry/material.hpp"
 
-#include "api.hpp"
+#include "core/function.hpp"
 
 Material::Material(const std::string &name, const Color &albedo, float metallic, float roughness, float ao) : m_name(name), m_albedo(albedo), m_metallic(metallic), m_roughness(roughness), m_ao(ao), m_texture(10, nullptr) {}
 
@@ -15,11 +15,17 @@ void Material::setTexture(int idx, grr::gTexture *texture) {
     m_texture[idx] = texture;
 }
 
+static void (*Materialserialize)(const Material *, Stream *);
+INSERT_FUNCTION(0, Materialserialize);
+
+static void (*Materialdeserialize)(Material *, Stream *);
+INSERT_FUNCTION(1, Materialdeserialize);
+
 void Material::serialize(Stream *stream) const {
-    MaterialSerialize(stream);
+    return Materialserialize(this, stream);
 }
 
 void Material::deserialize(Stream *stream) {
-    MaterialDeserialize(this, stream);
+    return Materialdeserialize(this, stream);
 }
 

@@ -28,6 +28,7 @@ set(script_src
 
 set(core_src
     src/core/assetsManager.cpp
+    src/core/function.cpp
     src/core/console.cpp
     src/core/raycast.cpp
     src/core/stream.cpp

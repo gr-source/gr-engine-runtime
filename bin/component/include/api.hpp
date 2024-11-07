@@ -13,8 +13,6 @@
 extern "C" {
 #endif
 
-void Consolelog(LogInfo::LogType type, const std::string &msg);
-
 // [ Initialzie ]
 void Initialize();
 
@@ -45,18 +43,6 @@ std::unordered_map<std::string, Pool *> GetComponentPool();
 Component *CreateComponentWithName(const std::string &name);
 
 Component *CopyComponentWithName(const std::string &name, const Component *component);
-
-bool InputIsKeyPress(grm::u32 key);
-
-void MaterialDeserialize(Material *instance, Stream *stream);
-
-void AssetsManagerSetShaderList(const std::string &name, const std::string &frag, const std::string &vert, std::function<void(grr::gShader *)> func);
-
-void MaterialSerialize(Stream *stream);
-
-GameObject *GameObjectCreate(const std::string &name, const std::string &tag);
-
-void EventAddEvent_Internal(std::function<void()> func);
 
 #ifdef __cplusplus
 }

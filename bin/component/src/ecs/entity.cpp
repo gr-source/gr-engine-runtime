@@ -1,7 +1,10 @@
 #include "ecs/entity.hpp"
 #include "ecs/gameObject.hpp"
 
-#include "api.hpp"
+#include "core/function.hpp"
+
+Component *(*Entity::addInternalComponent)(Entity *instance, const std::string &name);
+INSERT_FUNCTION(0, Entity::addInternalComponent)
 
 GameObject *Entity::getGameObject() {
     return m_gameObject;
@@ -11,8 +14,6 @@ EntityID Entity::getEntityID() const {
     return m_entityID;
 }
 
-Component *Entity::addInternalComponent(const std::string &name) {
-    return nullptr;
-}
+
 
 

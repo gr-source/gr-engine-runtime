@@ -1,8 +1,8 @@
 #include "core/event.hpp"
+#include "core/function.hpp"
 
-#include "api.hpp"
+void (*Event::AddInternalEvent)(std::function<void()> func);
+INSERT_FUNCTION(0, Event::AddInternalEvent)
 
-void Event::AddEvent_Internal(std::function<void()> func) {
-    EventAddEvent_Internal(func);
-}
+
 

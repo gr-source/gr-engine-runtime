@@ -14,8 +14,6 @@ public:
 
     bool isValid() const;
 
-    bool replaceLibraryFunction(const std::string &name, void *ptr, void **out_origin);
-    
     void replaceLibraryField(const std::string &name, void *ptr);
 
     bool registerFunction(const std::string &name, void **ptr);

@@ -11,6 +11,7 @@
 
 #include "core/assetsManager.hpp"
 #include "core/stream.hpp"
+#include "core/function.hpp"
 
 MeshRender::MeshRender() : m_batched(nullptr), flags(Batching::Batching_Flags_Dynamic), m_transform(nullptr) {}
 
@@ -26,7 +27,11 @@ void MeshRender::Init() {
     m_transform = GetComponent<Transform>();
 }
 
+static void (*MeshRenderbuild)(MeshRender *);
+INSERT_FUNCTION(0, MeshRenderbuild);
+
 void MeshRender::build() {
+    return MeshRenderbuild(this);
 }
 
 void MeshRender::setMeshOptimize(int value) {

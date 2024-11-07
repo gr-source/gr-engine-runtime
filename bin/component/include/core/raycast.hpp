@@ -4,7 +4,7 @@
 
 class Raycast {
 public:
-    static bool RayCast(const Vector3 &rayStart, const Vector3 &rayEnd);
+    static bool (*RayCast)(const Vector3 &rayStart, const Vector3 &rayEnd);
 };
 
 

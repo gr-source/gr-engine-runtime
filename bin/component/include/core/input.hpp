@@ -49,13 +49,13 @@ enum InputKey : int {
 
 class Input {
 public:
-    static bool IskeyPress(InputKey key);
+    static bool (*IskeyPress)(InputKey key);
 
-    static void SetCursorPos(const Vector2 &value);
+    static void (*SetCursorPos)(const Vector2 &value);
 
-    static Vector2 GetCursorPos();
+    static Vector2 (*GetCursorPos)();
 
-    static bool IsMousePress(InputKey key);
+    static bool (*IsMousePress)(InputKey key);
 };
 
 

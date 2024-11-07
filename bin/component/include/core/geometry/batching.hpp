@@ -16,6 +16,10 @@ public:
         Batching_Flags_Instanced_Static  = 3
     };
     
+    static void (*InsertInternal)(Batching *instance, Transform *transform);
+
+    static void (*RemoveInternal)(Batching *instance, Transform *transform, bool bDelete);
+
     void insert(Transform *transform);
 
     void remove(Transform *transform, bool bDelete = true);

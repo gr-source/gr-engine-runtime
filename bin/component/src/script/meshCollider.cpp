@@ -2,6 +2,7 @@
 
 #include "script/meshFilter.hpp"
 
+#include "core/function.hpp"
 #include "core/console.hpp"
 
 MeshCollider::MeshCollider() : m_triangleMesh(nullptr), m_shape(nullptr) {}
@@ -19,8 +20,11 @@ void MeshCollider::Init() {
     }
 }
 
+void (*MeshColliderbuild)(MeshCollider *, Mesh *);
+INSERT_FUNCTION(0, MeshColliderbuild)
+
 void MeshCollider::build(Mesh *mesh) {
-    throw std::runtime_error("function do not implemented.");
+    return MeshColliderbuild(this, mesh);
 }
 
 

@@ -85,7 +85,7 @@ if ! [ -d "${GR_ROOT_PROJECT_PATH}/build" ]; then
 
     cd "${GR_ROOT_PROJECT_PATH}/build"
 
-    cmake ..
+    cmake -DCMAKE_BUILD_TYPE=Debug ..
     
     cd "${current_path}"
 fi

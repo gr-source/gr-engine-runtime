@@ -23,6 +23,8 @@ public:
     Entity() = delete;
     ~Entity() = delete;
 
+    static Component *(*addInternalComponent)(Entity *instance, const std::string &name);
+
     template <typename T>
     T *addComponent();
 
@@ -36,8 +38,6 @@ public:
 
     EntityID getEntityID() const;
 
-    Component *addInternalComponent(const std::string &name);
-    
 private:
     std::unordered_map<std::string, std::unique_ptr<Component>> m_componentPtr;
 
@@ -50,7 +50,7 @@ private:
 
 template <typename T>
 inline T *Entity::addComponent() {
-    auto component = addInternalComponent(StringUTF::RemoveNumber(typeid(T).name()));
+    auto component = addInternalComponent(this, StringUTF::RemoveNumber(typeid(T).name()));
     if (!component) {
         throw std::runtime_error("Component is null.");
     }

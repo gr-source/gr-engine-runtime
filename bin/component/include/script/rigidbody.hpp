@@ -60,12 +60,6 @@ private:
     bool m_bDinamic;
 
     Vector3 m_lookRotation;
-
-    void initialize();
-
-    void update();
-
-    void shutdown();
 };
 
 REGISTER_COMPONENT(Rigidbody)
