@@ -15,7 +15,7 @@
 
 void Filmbox::Load(const std::string &path, std::function<void(std::shared_ptr<FbxScene>)> func, bool bCallInMainThread) {
     if (!File::Exists(path)) {
-        return LOG_ERROR_ARGS("[ Filmbox ] Falied open file: %s", path);
+        return Console::LogError("[ Filmbox ] Falied open file: %s", path);
     }
 
     Assimp::Importer importer;
@@ -23,7 +23,7 @@ void Filmbox::Load(const std::string &path, std::function<void(std::shared_ptr<F
     auto scene = importer.ReadFile(path.c_str(), aiProcess_Triangulate | aiProcess_CalcTangentSpace | aiProcess_PopulateArmatureData | aiProcess_Triangulate);
 
     if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
-        return LOG_ERROR_ARGS("[ Filmbox ] Falied to load scene: %s", importer.GetErrorString());
+        return Console::LogError("[ Filmbox ] Falied to load scene: %s", importer.GetErrorString());
     }
 
     auto m_fbxScene = std::make_shared<FbxScene>(scene->mName.C_Str());
@@ -32,10 +32,10 @@ void Filmbox::Load(const std::string &path, std::function<void(std::shared_ptr<F
 
     importer.FreeScene();
 
-    LOG_INFO("[ Filmbox ] loaded sucess full.");
+    Console::LogInfo("[ Filmbox ] loaded sucess full.");
 
     if (!func) {
-        return LOG_WARNING("[ Filmbox ] Callfunction is not valid.");
+        return Console::LogWarning("[ Filmbox ] Callfunction is not valid.");
     }
 
     if (bCallInMainThread)
@@ -46,21 +46,21 @@ void Filmbox::Load(const std::string &path, std::function<void(std::shared_ptr<F
 
 void Filmbox::SceneLoader(const aiScene *scene, FbxScene *fbxScene) {
     if (scene->HasMaterials()) {
-        Console::log(LogInfo::WARNING, "Loading material...");
+        Console::log(Log::WARNING, "Loading material...");
         LoadMaterial(scene, fbxScene);
     }
 
     if (scene->HasMeshes()) {
-        Console::log(LogInfo::WARNING, "Loading Mesh...");
+        Console::log(Log::WARNING, "Loading Mesh...");
         LoadMesh(scene, fbxScene);
     }
 
     if (scene->HasAnimations()) {
-        Console::log(LogInfo::WARNING, "Loading Animations...");
+        Console::log(Log::WARNING, "Loading Animations...");
         LoadAnimation(scene, fbxScene);
     }
 
-    Console::log(LogInfo::WARNING, "Loading Node...");
+    Console::log(Log::WARNING, "Loading Node...");
 
     auto mRootNode = scene->mRootNode;
     auto& fRootNode = fbxScene->m_rootNode;

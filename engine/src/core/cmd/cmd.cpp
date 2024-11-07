@@ -12,7 +12,7 @@ bool Command::exec(const std::string &cmd) {
     }
     char line[256] = {0};
     while (fgets(line, 256, file)) {
-        Console::log(LogInfo::WARNING, line);
+        Console::log(Log::WARNING, line);
     }
     int status = pclose(file);
     if (status == -1) {

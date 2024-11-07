@@ -17,17 +17,17 @@ ScriptLoader::~ScriptLoader() {
 
 bool ScriptLoader::open(const std::string &path) {
     if (!File::Exists(path)) {
-        Console::log(LogInfo::ERROR, "Falied to open script file do not found: " + path);
+        Console::log(Log::ERROR, "Falied to open script file do not found: " + path);
         return false;
     }
 
     m_script = dlopen(path.c_str(), RTLD_LAZY);
     if (!m_script) {
-        Console::log(LogInfo::ERROR, "Falied to load script: " + std::string(dlerror()));
+        Console::log(Log::ERROR, "Falied to load script: " + std::string(dlerror()));
         return false;
     }
 
-    Console::log(LogInfo::INFO, "Script laoded sucess full.");
+    Console::log(Log::INFO, "Script laoded sucess full.");
 
     return true;
 }
@@ -63,7 +63,7 @@ void ScriptLoader::close() {
     m_funcMap.clear();
 
     if (dlclose(m_script) != 0) {
-        Console::log(LogInfo::ERROR, "Falied to close script: " + std::string(dlerror()));
+        Console::log(Log::ERROR, "Falied to close script: " + std::string(dlerror()));
     }
     m_script = nullptr;
 }

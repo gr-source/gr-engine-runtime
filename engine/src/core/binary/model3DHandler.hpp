@@ -23,6 +23,8 @@ public:
     static void ImportGRMX(const std::string &path);
 
 private:
+    static void LoadGRMX(const std::string &path);
+    
     static int ReadData(Stream *stream);
 
     static int ReadGameObject(Stream *stream, Transform *parent, GameObject **gameObject, std::unordered_map<std::string, GameObject *> &tempList);

@@ -86,6 +86,9 @@ bool File::Delete(const std::string &path) {
 }
 
 bool File::Move(const std::string &from, const std::string &to) {
+    if (!std::filesystem::is_directory(to)) {
+        return false;
+    }
     if (!Copy(from, to)) {
         return false;
     }

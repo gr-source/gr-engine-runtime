@@ -19,14 +19,14 @@ void MeshRender::build() {
     }
 
     if (!entity->hasComponent<MeshFilter>()) {
-        return LOG_ERROR("[ MeshRender ] MeshFilter component fo not found.");
+        return Console::LogError("[ MeshRender ] MeshFilter component fo not found.");
     }
     
     auto meshFilter = entity->getComponent<MeshFilter>();
     
     auto mesh = meshFilter->getMesh();
     if (!mesh) {
-        return LOG_ERROR("[ MeshRender ] Object do not has mesh.");
+        return Console::LogError("[ MeshRender ] Object do not has mesh.");
     }
 
     if (m_batched) {

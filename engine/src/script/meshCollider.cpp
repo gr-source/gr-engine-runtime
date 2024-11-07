@@ -10,7 +10,7 @@
 
 void MeshCollider::build(Mesh *mesh) {
     if (!mesh) {
-        return LOG_ERROR("[ MeshCollider ] Game object do not has mesh.");
+        return Console::LogError("[ MeshCollider ] Game object do not has mesh.");
     }
 
     auto transform = entity->getComponent<Transform>();
@@ -20,7 +20,7 @@ void MeshCollider::build(Mesh *mesh) {
     const auto &vertices = mesh->getVertices();
 
     if (indices.empty() && vertices.empty()) {
-        return LOG_ERROR("[ MeshCollider ] Mesh has no data.");
+        return Console::LogError("[ MeshCollider ] Mesh has no data.");
     } else if (!vertices.empty()) {
         buildWithVertice(vertices);
 
@@ -28,13 +28,13 @@ void MeshCollider::build(Mesh *mesh) {
     }
 
     if (indices.size() % 3 != 0) {
-        return LOG_ERROR("[ MeshCollider ] Indices size is not a multiple of 3.");
+        return Console::LogError("[ MeshCollider ] Indices size is not a multiple of 3.");
     }
 
     buildWithIndice(indices, vertices);
 
     if (!m_triangleMesh) {
-        return LOG_ERROR("[ MeshCollider ] triangle ptr invalid.");
+        return Console::LogError("[ MeshCollider ] triangle ptr invalid.");
     }
 
     setup(transform);
@@ -47,7 +47,7 @@ btCollisionShape *MeshCollider::getShape() {
 void MeshCollider::buildWithIndice(const std::vector<int> &indices, const std::vector<Vertex3D> &vertices) {
     for (grm::u32 i = 0; i < indices.size(); i += 3) {
         if (i + 2 >= indices.size()) {
-            return LOG_ERROR("[ MeshCollider ] Index access out of bounds.");
+            return Console::LogError("[ MeshCollider ] Index access out of bounds.");
         }
 
         auto &vertex1 = vertices[indices[i]];

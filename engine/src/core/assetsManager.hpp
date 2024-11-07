@@ -198,11 +198,17 @@ inline void AssetsManager::LoadShader(const std::string &name, const std::string
 
 template <typename... Args>
 inline Mesh *AssetsManager::CreateMesh(const std::string &key, Args &&...args) {
-    Mesh *m_mesh = nullptr;
-    {
-        std::lock_guard<std::mutex> lock(m_meshMutex);
-        auto &&[pair, added] = s_meshList.emplace(key, std::make_unique<Mesh>(std::forward<Args>(args)...));
-        m_mesh = &(*(*pair).second);
+    std::lock_guard<std::mutex> lock(m_meshMutex);
+    auto it = s_meshList.find(key);
+    if (it != s_meshList.end()) {
+        return &(*it->second);
     }
-    return m_mesh;
+    s_meshList.emplace(key, std::make_unique<Mesh>(std::forward<Args>(args)...));
+
+    return &(*s_meshList[key]);
 }
+
+
+
+
+

@@ -123,7 +123,7 @@ GameObject::~GameObject() {
 
 void GameObject::initialize() {
     if (!m_entity || !m_transform) {
-        return LOG_ERROR_ARGS("[ GameObject ] Falied to initialize object: %s", m_name.c_str());
+        return Console::LogError("[ GameObject ] Falied to initialize object: %s", m_name.c_str());
     }
     m_entity->init();
 

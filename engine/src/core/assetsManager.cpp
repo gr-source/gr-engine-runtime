@@ -88,14 +88,11 @@ void AssetsManager::Shutdown() {
 
     /***************** Mesh *****************/
     s_meshList.clear();
-
-    /***************** Material *****************/
-    // m_materialMap.clear();
 }
 
 Animation *AssetsManager::LoadAnimation(const std::string &path) {
     if (!File::Exists(path)) {
-        Console::log(LogInfo::ERROR, "Falied to open animation: " + path);
+        Console::log(Log::ERROR, "Falied to open animation: " + path);
         return nullptr;
     }
     auto it = s_animationList.find(path);
@@ -132,30 +129,21 @@ grr::gShader *AssetsManager::FindShader(const std::string &name) {
 // ********** Mesh ********** //
 
 Mesh *AssetsManager::FindMesh(const std::string &name) {
-    Mesh *m_mesh = nullptr;
-    {
-        std::lock_guard<std::mutex> lock(m_meshMutex);
-        auto it = s_meshList.find(name);
-        if (it == s_meshList.end()) {
-            return nullptr;
-        }
-        m_mesh = &(*it->second);
+    std::lock_guard<std::mutex> lock(m_meshMutex);
+    auto it = s_meshList.find(name);
+    if (it == s_meshList.end()) {
+        return nullptr;
     }
-    return m_mesh;
+    return &(*it->second);
 }
 
 void AssetsManager::DeleteMesh(Mesh *target) {
-    if (!target) {
-        return;
-    }
-    
-    std::unique_lock<std::mutex> lock(m_meshMutex);
+    std::lock_guard<std::mutex> lock(m_meshMutex);
     auto it = s_meshList.find(target->getName());
     if (it == s_meshList.end()) {
         return;
     }
     s_meshList.erase(it);
-    lock.unlock();
 }
 
 std::unordered_map<std::string, std::unique_ptr<Mesh>> &AssetsManager::GetMeshListMap() {
@@ -202,7 +190,7 @@ void AssetsManager::SetupTexture(TextureHandle handle, int width, int height, in
    
     handle.invoke(texture);
 
-    LOG_INFO("[ AssetsManager::Texture ] Texture loaded: " + handle.m_path);
+    Console::LogInfo("[ AssetsManager::Texture ] Texture loaded: " + handle.m_path);
 }
 
 void AssetsManager::ProcessTexture() {
@@ -217,7 +205,7 @@ void AssetsManager::ProcessTexture() {
         int width, height, ch;
         auto pixels = stbi_load(path.c_str(), &width, &height, &ch, 0);
         if (!pixels) {
-            LOG_ERROR("[ AssetsManager::Texture ] Failed to load texture: " + path);
+            Console::LogError("[ AssetsManager::Texture ] Failed to load texture: " + path);
             handle.invoke(nullptr);
             continue;
         }
@@ -251,7 +239,7 @@ void AssetsManager::SetupShader(ShaderHandle handle, const std::string &frag, co
 
     handle.invoke(shader);
 
-    LOG_INFO("[ AssetsManager::Shader ] Shader loadedd sucessfull: " + handle.m_name);
+    Console::LogInfo("[ AssetsManager::Shader ] Shader loadedd sucessfull: " + handle.m_name);
 }
 
 bool AssetsManager::CheckShaderError(grr::gShader *shader, const std::string &name) {
@@ -261,10 +249,10 @@ bool AssetsManager::CheckShaderError(grr::gShader *shader, const std::string &na
 
     std::stringstream iss(grr::gError::GetError());
 
-    Console::log(LogInfo::ERROR, "Shader error: " + name);
+    Console::log(Log::ERROR, "Shader error: " + name);
     std::string line;
     while (std::getline(iss, line)) {
-        Console::log(LogInfo::ERROR, line);
+        Console::log(Log::ERROR, line);
     }
 
     return true;
@@ -280,7 +268,7 @@ void AssetsManager::ProcessShader() {
         // Processing shader
         auto fragSource = File::GetFileContent(handle.m_frag);
         if (fragSource.empty()) {
-            Console::log(LogInfo::ERROR, "Falied to shader: " + handle.m_name + " Fragment: " + handle.m_frag);
+            Console::log(Log::ERROR, "Falied to shader: " + handle.m_name + " Fragment: " + handle.m_frag);
 
             lock.lock();
             continue;
@@ -289,7 +277,7 @@ void AssetsManager::ProcessShader() {
         // Loading vertex shader
         auto vertSource = File::GetFileContent(handle.m_vert);
         if (vertSource.empty()) {
-            Console::log(LogInfo::ERROR, "Falied to shader: " + handle.m_name + " Vertex: " + handle.m_vert);
+            Console::log(Log::ERROR, "Falied to shader: " + handle.m_name + " Vertex: " + handle.m_vert);
 
             lock.lock();
             continue;
@@ -483,7 +471,7 @@ void AssetsManager::ReadChildren(Transform *parent, GameObjectHandle &handle, St
 
     grm::u32 meshCount;
     if (!stream->readS(&meshCount, 1)) {
-        Console::log(LogInfo::ERROR, "Failed to read mesh count to file.");
+        Console::log(Log::ERROR, "Failed to read mesh count to file.");
         return;
     }
 
@@ -604,16 +592,16 @@ void AssetsManager::ReadChildren(Transform *parent, GameObjectHandle &handle, St
 void AssetsManager::doInBackgroundGameObject(GameObjectHandle handle) {
     Stream stream(handle.m_path, std::ios_base::in | std::ios_base::binary);
     if (!stream.is_open()) {
-        return Console::log(LogInfo::ERROR, "Failed to load model. " + handle.m_path);
+        return Console::log(Log::ERROR, "Failed to load model. " + handle.m_path);
     }
 
     FileHeader pHeader;
     if (!stream.readS(&pHeader, 1)) {
-        return Console::log(LogInfo::ERROR, "Failed to read header to file.");
+        return Console::log(Log::ERROR, "Failed to read header to file.");
     }
 
     if (std::string(pHeader.signature) != "grmd") {
-        return Console::log(LogInfo::ERROR, "Model invalid: " + handle.m_path);
+        return Console::log(Log::ERROR, "Model invalid: " + handle.m_path);
     }
 
     ReadChildren(nullptr, handle, &stream);
@@ -644,7 +632,7 @@ void AssetsManager::SetupTextureMaterial(Material *material, int id, grr::gTextu
 
 void AssetsManager::SetGameObjectList(const std::string &path, std::function<void(GameObject *)> func) {
     if (!File::Exists(path)) {
-        return LOG_ERROR("[ AssetsManager::GameObject ] File not found: " + path);
+        return Console::LogError("[ AssetsManager::GameObject ] File not found: " + path);
     }
 
     {
@@ -658,11 +646,11 @@ void AssetsManager::SetGameObjectList(const std::string &path, std::function<voi
 // TODO: aicionar lista de callbacks a serem chamadas apos shader serem adicionado a thread
 void AssetsManager::SetShaderList(const std::string &name, const std::string &frag, const std::string &vert, std::function<void(grr::gShader *)> func) {
     if (!File::Exists(frag)) {
-        return LOG_ERROR("[ AssetsManager-Shader ] File do not exists: " + frag);
+        return Console::LogError("[ AssetsManager-Shader ] File do not exists: " + frag);
     }
 
     if (!File::Exists(vert)) {
-        return LOG_ERROR("[ AssetsManager-Shader ] File do not exists: " + vert);
+        return Console::LogError("[ AssetsManager-Shader ] File do not exists: " + vert);
     }
 
     auto it = s_shaderList.find(name);
@@ -690,7 +678,7 @@ void AssetsManager::SetShaderList(const std::string &name, const std::string &fr
 
 void AssetsManager::SetTextureList(const std::string &path, std::function<void(grr::gTexture *)> func) {
     if (!File::Exists(path)) {
-        return LOG_ERROR("[ AssetsManager::Texture ] File not found: " + path);
+        return Console::LogError("[ AssetsManager::Texture ] File not found: " + path);
     }
 
     {

@@ -124,15 +124,15 @@ void ProjectMenu::RenderWindowInstalling() {
         std::string type = "[ DEFAULT ]";
 
         switch (log.type) {
-        case LogInfo::LogType::INFO:
+        case Log::LogType::INFO:
             color = {0.0f, 1.0f, 0.0f, 1.0f};
             type = "[ INFO ]";
             break;
-        case LogInfo::LogType::WARNING:
+        case Log::LogType::WARNING:
             color = {1.0f, 1.0f, 0.0f, 1.0f};
             type = "[ WARNING ]";
             break;
-        case LogInfo::LogType::ERROR:
+        case Log::LogType::ERROR:
             color = {1.0f, 0.0f, 0.0f, 1.0f};
             type = "[ ERROR ]";
             break;
@@ -275,7 +275,7 @@ void ProjectMenu::CreateProjectAssets(const std::string &path) {
     }
 
     if (!File::Copy(File::GetAsset("/shader", true), path + "/assets")) {
-        LOG_ERROR("[ CreateProject ] " + File::GetError());
+        Console::LogError("[ CreateProject ] " + File::GetError());
     }
 }
 
@@ -330,47 +330,47 @@ void ProjectMenu::InstallConfig(const std::string &config) {
     File::SetCachePath(cache);
     File::SetUserPath(user);
 
-    LOG_INFO("Initializing the installation...");
+    Console::LogInfo("Initializing the installation...");
 
-    LOG_INFO("Creating cache data...");
+    Console::LogInfo("Creating cache data...");
     File::CreateDirectories(cache);
 
-    LOG_INFO("Creating user data...");
+    Console::LogInfo("Creating user data...");
     File::CreateDirectories(user);
 
-    LOG_INFO("Installing the base configuration...");
+    Console::LogInfo("Installing the base configuration...");
     if (File::CreateDirectories(config)) {
         DownloadConfig(config);
     }
 }
 
 void ProjectMenu::DownloadConfig(const std::string &path) {
-    LOG_INFO("Importing rendering data...");
+    Console::LogInfo("Importing rendering data...");
     if (!File::Copy("./assets", path)) {
-        LOG_ERROR("Falied to import data: " + File::GetError());
+        Console::LogError("Falied to import data: " + File::GetError());
         return;
     }
 
-    LOG_INFO("Importing config data...");
+    Console::LogInfo("Importing config data...");
     if (!File::Copy("./config", path)) {
-        LOG_ERROR("Falied to import data: " + File::GetError());
+        Console::LogError("Falied to import data: " + File::GetError());
         return;
     }
 
-    LOG_INFO("Importing script data...");
+    Console::LogInfo("Importing script data...");
     if (!File::Copy("./script", path)) {
-        LOG_ERROR("Falied to import data: " + File::GetError());
+        Console::LogError("Falied to import data: " + File::GetError());
         return;
     }
 
-    LOG_INFO("Importing component data...");
+    Console::LogInfo("Importing component data...");
     if (!File::Copy("./component", path)) {
-        LOG_ERROR("Falied to import data: " + File::GetError());
+        Console::LogError("Falied to import data: " + File::GetError());
     }
 
-    LOG_INFO("Importing example data...");
+    Console::LogInfo("Importing example data...");
     if (!File::Copy("./example", path)) {
-        LOG_ERROR("Falied to import data: " + File::GetError());
+        Console::LogError("Falied to import data: " + File::GetError());
     }
 
     ThreadJoin();

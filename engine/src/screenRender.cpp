@@ -71,12 +71,12 @@ void ScreenRender::CreateMesh() {
 
     m_vbo = grr::gVertexArray::CreateBuffer(grr::BufferType_VBO);
     if (!m_vbo) {
-        return Console::log(LogInfo::ERROR, "[ ScreenRender ] Falied to create vbo.");
+        return Console::log(Log::ERROR, "[ ScreenRender ] Falied to create vbo.");
     }
 
     m_vertexArray = grr::gVertexArray::Create();
     if (!m_vertexArray) {
-        return Console::log(LogInfo::ERROR, "[ ScreenRender ] Falied to create vao.");
+        return Console::log(Log::ERROR, "[ ScreenRender ] Falied to create vao.");
     }
 
     m_vertexArray->bind();

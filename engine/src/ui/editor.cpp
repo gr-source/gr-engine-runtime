@@ -135,7 +135,7 @@ void Editor::Initialize() {
     try {
         m_config->load();
     } catch (const std::runtime_error &e) {
-        LOG_WARNING(e.what());
+        Console::LogWarning(e.what());
     }
 
     bBuildDock = File::Exists("imgui.ini");
@@ -145,7 +145,7 @@ void Editor::Initialize() {
     try {
         ScriptManager::Initialize(File::GetFile("/.build/component/lib/libgr-component.so"));
     } catch (const std::exception &e) {
-        LOG_ERROR("Fatal error in script: " + std::string(e.what()));
+        Console::LogError("Fatal error in script: " + std::string(e.what()));
     }
 
     auto lastCategory = m_config->getCategory();
@@ -165,7 +165,7 @@ void Editor::Initialize() {
 
     Skybox::Initialize();
 
-    LOG_WARNING_ARGS("InitializedMain: %d - %f", 34, 0.5f);
+    Console::LogWarning("InitializedMain: %d - %f", 34, 0.5f);
 }
 
 void Editor::Shutdown() {
@@ -211,14 +211,14 @@ void Editor::Import3DModel(const std::string &path) {
 void Editor::ImportImage(const std::string &path) {
     auto assets_texture = File::GetAsset("/texture");
     if (!File::Exists(assets_texture)) {
-        return LOG_ERROR("[ Import ] Assets data project do not loaded.");
+        return Console::LogError("[ Import ] Assets data project do not loaded.");
     }
-    LOG_INFO("[ Import ] Importing texture...");
+    Console::LogInfo("[ Import ] Importing texture...");
 
     if (!File::Copy(path, assets_texture)) {
-        return LOG_ERROR("[ Import ] " + File::GetError());
+        return Console::LogError("[ Import ] " + File::GetError());
     }
-    LOG_INFO("[ Import ] Texture imported.");
+    Console::LogInfo("[ Import ] Texture imported.");
 }
 
 void Editor::KeyBoardUp(grm::u32 key) {
@@ -236,7 +236,7 @@ void Editor::LoadScript() {
     }
 
     if (ScriptManager::CheckScriptLoaded("libgr-component.so")) {
-        return LOG_ERROR("[ Script ] Fatal error data not unloaded.");
+        return Console::LogError("[ Script ] Fatal error data not unloaded.");
     }
 
     try {
@@ -244,7 +244,7 @@ void Editor::LoadScript() {
 
         Scene::ReloadObjects();
     } catch (const std::runtime_error &e) {
-        LOG_ERROR(e.what());
+        Console::LogError(e.what());
     }
 
     if (ScriptManager::SetScreenSize) {
@@ -548,7 +548,7 @@ void Editor::ReadHierarchy(Transform *transform) {
             if (!name.empty()) {
                 auto target = GameObject::Find(name);
                 if (!target) {
-                    LOG_ERROR("GameObject do not found: " + name);
+                    Console::LogError("GameObject do not found: " + name);
                 } else {
                     auto ts = target->getTransform();
                     if (ts != transform->getParent()) {
@@ -1105,7 +1105,7 @@ void Editor::PlayGame() {
 
     Threadpool::AddTask(&Editor::BuildScript);
 
-    Console::log(LogInfo::DEFAULT, "Game playing.");
+    Console::log(Log::DEFAULT, "Game playing.");
 }
 
 // Falta recarregar os scripts anteriores.
@@ -1114,7 +1114,7 @@ void Editor::StopGame() {
 
     Scene::ReloadObjects();
 
-    Console::log(LogInfo::DEFAULT, "Game stoped.");
+    Console::log(Log::DEFAULT, "Game stoped.");
 }
 
 void Editor::RenderGuizmo() {
@@ -1332,7 +1332,7 @@ void Editor::DropTargetGameObjectInFile(const std::string &path) {
     }
     auto target = GameObject::Find(name);
     if (!target) {
-        LOG_ERROR_ARGS("GameObject do not found: %s", name.c_str());
+        Console::LogError("GameObject do not found: %s", name.c_str());
 
         return ImGui::EndDragDropTarget();
     }
@@ -1514,16 +1514,16 @@ void Editor::RenderConsole() {
     }
 }
 
-void Editor::RenderLog(LogInfo &info) {
+void Editor::RenderLog(Log &info) {
     ImVec4 color = {1.0f, 1.0f, 1.0f, 1.0f};
     switch (info.type) {
-    case LogInfo::LogType::INFO:
+    case Log::LogType::INFO:
         color = {0.0f, 1.0f, 0.0f, 1.0f};
         break;
-    case LogInfo::LogType::WARNING:
+    case Log::LogType::WARNING:
         color = {1.0f, 1.0f, 0.0f, 1.0f};
         break;
-    case LogInfo::LogType::ERROR:
+    case Log::LogType::ERROR:
         color = {1.0f, 0.0f, 0.0f, 1.0f};
         break;
     default:
@@ -1565,21 +1565,21 @@ void Editor::RenderSettings() {
 
 // TODO: adicionar suporte ao vs code
 void Editor::ConfigureVSCode() {
-    LOG_INFO("Initializing Visual Studio Code Setup...");
+    Console::LogInfo("Initializing Visual Studio Code Setup...");
     
     auto internal_vscode = File::GetFile("/config/vscode/c_cpp_properties.json", true);
     if (!File::Exists(internal_vscode)) {
-        return LOG_ERROR("Falied to load internal data config.");
+        return Console::LogError("Falied to load internal data config.");
     }
 
     auto header = File::GetFile("/.build/component/include");
     if (!File::Exists(header)) {
-        return LOG_ERROR("Project do not configured.");
+        return Console::LogError("Project do not configured.");
     }
 
     auto source = File::GetFileContent(internal_vscode);
     if (source.empty()) {
-        return LOG_ERROR("Falied to read internal data.");
+        return Console::LogError("Falied to read internal data.");
     }
 
     source = String::replace_all(source, "${header_internal_script}", header);
@@ -1590,14 +1590,14 @@ void Editor::ConfigureVSCode() {
     }
 
     if (!File::CreateDirectory(dest_vscode)) {
-        return LOG_ERROR("Falied to create config in project.");
+        return Console::LogError("Falied to create config in project.");
     }
 
     std::ofstream os(File::GetAsset("/.vscode/c_cpp_properties.json"));
     os << source << std::endl;
     os.close();
 
-    LOG_WARNING("Visual Studio Code has been configured.");
+    Console::LogWarning("Visual Studio Code has been configured.");
 }
 
 void Editor::RenderPropertiUI() {
@@ -1754,7 +1754,7 @@ bool Editor::RenderComponents(const std::string &name, Component *component) {
 
     auto it = componentPool.find(name);
     if (it == componentPool.end()) {
-        LOG_ERROR("Invalid component: " + name);
+        Console::LogError("Invalid component: " + name);
         return false;
     }
     
@@ -1995,7 +1995,7 @@ void Editor::InsertTexture(Material *material) {
 
     std::string path((char*)data->Data, data->DataSize);
     if (path.empty()) {
-        LOG_ERROR("[ GUI ] Texture do not loaded, patg is empty.");
+        Console::LogError("[ GUI ] Texture do not loaded, patg is empty.");
         return ImGui::EndDragDropTarget();
     }
     AssetsManager::LoadTexture(path, &Editor::SetupTextureMaterial, material, 0);
@@ -2293,7 +2293,7 @@ void Editor::SetupTextureMaterial(Material *material, int id, grr::gTexture *tex
 std::string GenerateScriptHeader(const std::string& name) {
     auto source = File::GetFileContent(File::GetFile("/example/script.hpp", true));
     if (source.empty()) {
-        LOG_ERROR("[ SCRIPT ] falied to generate source file.");
+        Console::LogError("[ SCRIPT ] falied to generate source file.");
         return "";
     }
     source = String::replace_all(source, "#name", name);
@@ -2303,7 +2303,7 @@ std::string GenerateScriptHeader(const std::string& name) {
 std::string GenerateScriptSource(const std::string& name) {
     auto source = File::GetFileContent(File::GetFile("/example/script.cpp", true));
     if (source.empty()) {
-        LOG_ERROR("[ SCRIPT ] falied to generate source file.");
+        Console::LogError("[ SCRIPT ] falied to generate source file.");
         return "";
     }
     source = String::replace_all(source, "#name", name);
@@ -2381,11 +2381,11 @@ void Editor::PopupRenameFile() {
 }
 
 void Editor::BuildProject() {
-    LOG_INFO("[ Build ] Initialize");
+    Console::LogInfo("[ Build ] Initialize");
 
     auto path = File::GetFile("/.build");
     if (!File::Exists(path)) {
-        return LOG_ERROR("[ Build ] Falied to build project, internal data not found.");
+        return Console::LogError("[ Build ] Falied to build project, internal data not found.");
     }
 
     Threadpool::AddTask(&Editor::CompileScript, path, &Editor::PostBuildScriptFromProject);
@@ -2400,17 +2400,17 @@ void Editor::PostBuildScriptFromProject() {
         };
         
         Command::exec(cmd, [](std::string line) {
-            LOG_WARNING(line);
+            Console::LogWarning(line);
         });
     });
 }
 
 void Editor::ReconfigScript() {
-    LOG_INFO("[ BUILD ] Initialized reconfigation...");
+    Console::LogInfo("[ BUILD ] Initialized reconfigation...");
 
     auto component = File::GetFile("/component", true);
     if (!File::Exists(component)) {
-        return LOG_ERROR("[ BULD ] Falied to load internal data component.");
+        return Console::LogError("[ BULD ] Falied to load internal data component.");
     }
 
     auto path = File::GetFile("/.build");
@@ -2421,20 +2421,20 @@ void Editor::ReconfigScript() {
     File::CreateDirectory(path);
 
     if (!File::Copy(component, path)) {
-        return LOG_ERROR("[ BULD ]" + File::GetError());
+        return Console::LogError("[ BULD ]" + File::GetError());
     }
 
-    LOG_INFO("[ BUILD ] building scipt...");
+    Console::LogInfo("[ BUILD ] building scipt...");
 
     Threadpool::AddTask(&Editor::BuildScript);
 }
 
 void Editor::BuildScript() {
-    LOG_INFO("[ Build ] Initialize");
+    Console::LogInfo("[ Build ] Initialize");
 
     auto path = File::GetFile("/.build");
     if (!File::Exists(path)) {
-        return LOG_ERROR("[ Build ] Falied to build project, internal data not found.");
+        return Console::LogError("[ Build ] Falied to build project, internal data not found.");
     }
 
     Threadpool::AddTask(&Editor::CompileScript, path, &Editor::LoadScript);
@@ -2443,12 +2443,12 @@ void Editor::BuildScript() {
 void Editor::CompileScript(std::string path, std::function<void()> func) {
     auto build = File::GetFile("/script/build.sh", true);
     if (!File::Exists(build)) {
-        return LOG_ERROR("Build script do not found.");
+        return Console::LogError("Build script do not found.");
     }
 
     auto component = File::GetFile("/.build/component");
     if (!File::Exists(component)) {
-        return LOG_ERROR("Component library do not found. [1]");
+        return Console::LogError("Component library do not found. [1]");
     }
 
     std::vector<std::string> command {
@@ -2459,7 +2459,7 @@ void Editor::CompileScript(std::string path, std::function<void()> func) {
     };
 
     Command::exec(command, [](std::string line) {
-        LOG_WARNING(line);
+        Console::LogWarning(line);
     });
 
     if (func)

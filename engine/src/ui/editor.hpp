@@ -167,7 +167,7 @@ private:
 
     static void RenderConsole();
 
-    static void RenderLog(LogInfo &info);
+    static void RenderLog(Log &info);
 
     static void RenderSettings();
 

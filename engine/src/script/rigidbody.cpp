@@ -17,7 +17,7 @@ void Rigidbody::initialize() {
     }
 
     if (!m_collisionShape) {
-        return LOG_ERROR("[ Rigidbody ] Shape not found.");
+        return Console::LogError("[ Rigidbody ] Shape not found.");
     }
 
     m_DefaultMotionState = std::make_shared<btDefaultMotionState>(

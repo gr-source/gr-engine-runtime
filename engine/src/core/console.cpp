@@ -1,6 +1,6 @@
 #include "console.hpp"
 
-std::list<LogInfo> Console::m_logs;
+std::list<Log> Console::m_logs;
 
 bool Console::bChanged = false;
 
@@ -8,7 +8,7 @@ int Console::m_maxLog = 500;
 
 std::mutex Console::m_mutex;
 
-void Console::log(LogInfo::LogType type, const std::string &msg) {
+void Console::log(Log::LogType type, const std::string &msg) {
     std::lock_guard<std::mutex> lock(m_mutex);
     m_logs.push_back({type, msg});
 
@@ -18,16 +18,13 @@ void Console::log(LogInfo::LogType type, const std::string &msg) {
     Console::bChanged = true;
 }
 
-std::list<LogInfo> Console::GetListLogs() {
-    std::list<LogInfo> logs;
-    {
-        std::lock_guard<std::mutex> lock(m_mutex);
-        logs = m_logs;
-    }
-    return logs;
+std::list<Log> Console::GetListLogs() {
+    std::lock_guard<std::mutex> lock(m_mutex);
+    return m_logs;
 }
 
 void Console::Shutdown() {
+    std::lock_guard<std::mutex> lock(m_mutex);
     bChanged = false;
 
     m_logs.clear();

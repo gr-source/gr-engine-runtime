@@ -26,7 +26,7 @@ void EditorController::Initialize() {
     if (!m_io) {
         throw std::runtime_error("IO pointer do not is valid.");
     }
-    Console::Message(LogInfo::ERROR, "Health: %f - %d", 15.5f, 90);
+    Console::Message(Log::ERROR, "Health: %f - %d", 15.5f, 90);
 }
 
 void EditorController::Update() {

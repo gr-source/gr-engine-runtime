@@ -25,7 +25,7 @@ void Model3DHandler::ImportFBX(const std::string &path) {
 void Model3DHandler::ExportGRMX(const std::string &path, const GameObject *gameObject) {
     auto name = gameObject->getName();
 
-    LOG_INFO_ARGS("[ gModel3D ] Writing GameObject: %s", name.c_str());
+    Console::LogInfo("[ Model3DHandler ] Writing GameObject: %s", name.c_str());
 
     Stream stream(path + "/" + name + ".gmdx", std::ios_base::out | std::ios_base::binary);
 
@@ -38,31 +38,35 @@ void Model3DHandler::ExportGRMX(const std::string &path, const GameObject *gameO
     // data
     auto result = WriteData(&stream, gameObject);
     if (result != 0) {
-        return LOG_ERROR_ARGS("[ Model3DHandler ] Falied to write data: %d", result);
+        return Console::LogError("[ Model3DHandler ] Falied to write data: %d", result);
     }
-    LOG_INFO_ARGS("[ gModel3D ] Write GameObject(%s) sucessfull.", name.c_str());
+    Console::LogInfo("[ Model3DHandler ] Write GameObject(%s) sucessfull.", name.c_str());
 }
 
 void Model3DHandler::ImportGRMX(const std::string &path) {
+    return Threadpool::AddTask(&Model3DHandler::LoadGRMX, path);
+}
+
+void Model3DHandler::LoadGRMX(const std::string &path) {
     Stream stream(path, std::ios_base::in | std::ios_base::binary);
     if (!stream.is_open()) {
-        return LOG_ERROR_ARGS("[ gModel3D ] Falied to open file: %s", path.c_str());
+        return Console::LogError("[ Model3DHandler ] Falied to open file: %s", path.c_str());
     }
 
     FileHeader header;
     if (!stream.readS(&header, 1)) {
-        return LOG_ERROR("[ gModel3D ] Falied to read header binary.");
+        return Console::LogError("[ Model3DHandler ] Falied to read header binary.");
     }
     
     if (header.signature[0] != 'g' && header.signature[1] != 'r' && header.signature[2] != 'm' && header.signature[3] != 'x') {
-        return LOG_ERROR("[ gModel3D ] Invalid binary type.");
+        return Console::LogError("[ Model3DHandler ] Invalid binary type.");
     }
 
-    LOG_INFO("[ gModel3D ] GRMX loading model.");
+    Console::LogInfo("[ Model3DHandler ] GRMX loading model.");
 
     ReadData(&stream);
 
-    LOG_INFO("[ gModel3D ] Scene loaded sucess full.");
+    Console::LogInfo("[ Model3DHandler ] Scene loaded sucess full.");
 }
 
 int Model3DHandler::ReadData(Stream *stream) {
@@ -91,6 +95,10 @@ int Model3DHandler::ReadData(Stream *stream) {
             break;
         default:
             break;
+        }
+
+        if (result != 0) {
+            Console::LogError("[ Model3DHandler ] Falied to load segment: %s code: %d", struct_name[segment.type], result);
         }
 
         if (stream->tellg() != next_position)
@@ -169,7 +177,7 @@ int Model3DHandler::ReadGameObject(Stream *stream, Transform *parent, GameObject
             break;
         }
     }
-    return result;
+    return result != 0 ? (7 + result) : 0;
 }
 
 int Model3DHandler::ReadScript(Stream *stream, std::unordered_map<std::string, GameObject *> &tempList) {
@@ -406,7 +414,7 @@ void Model3DHandler::ConvertToGameObject(std::shared_ptr<FbxScene> scene, const 
     
     CreateObjects(&(*scene), &node, nullptr, &gameObject, m_tempObject);
     if (!gameObject) {
-        return LOG_ERROR("[ gModel3D ] Falied to convert fbx model to grmx.");
+        return Console::LogError("[ Model3DHandler ] Falied to convert fbx model to grmx.");
     }
 
     ExportGRMX(File::GetAsset("/model"), gameObject);
@@ -512,4 +520,11 @@ void Model3DHandler::SetupTextureMaterial(Material *material, int id, grr::gText
     }
     material->setTexture(id, texture);
 }
+
+
+
+
+
+
+
 

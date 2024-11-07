@@ -73,13 +73,13 @@ void ScriptManager::Initialize(const std::string &path) {
     RegisterApi();
 
     if (InitializeScript) {
-        Console::log(LogInfo::INFO, "Script initialized.");
+        Console::log(Log::INFO, "Script initialized.");
         InitializeScript();
     }
 }
 
 void ScriptManager::Shutdown() {
-    Console::log(LogInfo::INFO, "Script destoyed.");
+    Console::log(Log::INFO, "Script destoyed.");
 
     if (Destroy) {
         Destroy();
@@ -115,7 +115,7 @@ bool ScriptManager::CheckScriptLoaded(const std::string &name) {
     return isValid;
 }
 
-void (*Consolelog)(LogInfo::LogType, const std::string &);
+void (*Consolelog)(Log::LogType, const std::string &);
 void (*EventAddEvent)(std::function<void()>);
 
 void (*AssetsManagerSetTextureList)(const std::string &, std::function<void (grr::gTexture *)>);
@@ -152,7 +152,7 @@ std::unordered_map<std::string, void **> (*GetFunctionsReference)();
 void ScriptManager::RegisterApi() {
     // Functions Pointer
     if (!m_script->registerFunction("_ZN8Function19GetFunctionRefrenceB5cxx11Ev", reinterpret_cast<void **>(&GetFunctionsReference))) {
-        return LOG_ERROR("Falied to register library functions.");
+        return Console::LogError("Falied to register library functions.");
     }
 
     auto function = GetFunctionsReference();

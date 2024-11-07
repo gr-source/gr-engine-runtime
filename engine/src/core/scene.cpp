@@ -79,7 +79,7 @@ Scene *Scene::Create(const std::string &name) {
         m_scenes.erase(it);
 
         Scene::Use(nullptr);
-        LOG_ERROR("[ Scene ] Falied to create scene, Camera do not created.");
+        Console::LogError("[ Scene ] Falied to create scene, Camera do not created.");
         return nullptr;
     }
 
@@ -123,20 +123,20 @@ void Scene::save(const std::string &path) {
         std::strncpy(header.name, m_name.data(), 256);
 
         if (!stream.writeS(&header, 1, false)) {
-            return LOG_ERROR("[ Scene ] Failed to write scene: 0");
+            return Console::LogError("[ Scene ] Failed to write scene: 0");
         }
     }
 
     if (auto err = writeScene(&stream) != 0) {
-        return LOG_ERROR_ARGS("[ SCENE ] Failed to write scene segment: %d", err);
+        return Console::LogError("[ SCENE ] Failed to write scene segment: %d", err);
     }
 
     DataSegment end{gHeaderType_None, 0};
     if (!stream.writeS(&end, 1, false)) {
-        return LOG_ERROR("[ Scene ] Failed to write scene: 1");
+        return Console::LogError("[ Scene ] Failed to write scene: 1");
     }
 
-    LOG_INFO_ARGS("[ Scene ] Scene saved: %s", m_name.c_str());
+    Console::LogInfo("[ Scene ] Scene saved: %s", m_name.c_str());
 }
 
 GameObject *Scene::CreateGameObject(const std::string &name, const std::string &tag) {
@@ -168,7 +168,7 @@ void Scene::Remove(GameObject *gameObject) {
 
 void Scene::Delete(GameObject *gameObject) {
     if (!gameObject) {
-        return LOG_ERROR("[ SCENE ] Failed to delete game object.");
+        return Console::LogError("[ SCENE ] Failed to delete game object.");
     }
 
     if (HasScene())
@@ -234,13 +234,13 @@ void Scene::ReloadObjects() {
 // TODO: Object, Script because thread dead lock
 void Scene::Load(const std::string &path, std::uint8_t flags, Scene *scene) {
     if (!File::Exists(path)) {
-        LOG_ERROR("[ Scene ] File not found: " + path);
+        Console::LogError("[ Scene ] File not found: " + path);
         return;
     }
 
     Stream stream(path, std::ios_base::in | std::ios_base::binary);
     if (!stream.is_open()) {
-        LOG_ERROR("[ Scene ] Faleid to open scene: " + path);
+        Console::LogError("[ Scene ] Faleid to open scene: " + path);
         return;
     }
 
@@ -250,12 +250,12 @@ void Scene::Load(const std::string &path, std::uint8_t flags, Scene *scene) {
     {
         FileHeader header;
         if (!stream.readS(&header, 1)) {
-            LOG_ERROR("[ Scene ] Failed to read binary header: " + path);
+            Console::LogError("[ Scene ] Failed to read binary header: " + path);
             return;
         }
         name = header.name;
 
-        LOG_INFO("[ Scene ] loading scene: " + name + " - Version: " + std::to_string(header.version));
+        Console::LogInfo("[ Scene ] loading scene: " + name + " - Version: " + std::to_string(header.version));
     }
 
     auto hasScene = scene != nullptr;
@@ -304,7 +304,7 @@ void Scene::Load(const std::string &path, std::uint8_t flags, Scene *scene) {
         }
 
         if (result != 0 && result != -1) {
-            LOG_ERROR("[ Scene ] Falied to read segment data: " + std::string(block_name) + " Code: " + std::to_string(result));
+            Console::LogError("[ Scene ] Falied to read segment data: " + std::string(block_name) + " Code: " + std::to_string(result));
         }
         stream.seekg(start_block_position + static_cast<std::streampos>(data.sizeData), std::ios_base::beg);
     }
@@ -667,7 +667,7 @@ int Scene::readScript(Stream *streaming) {
 
         auto position = streaming->tellg() + static_cast<std::streampos>(data_size);
         if (result != 0) {
-            LOG_ERROR_ARGS("Falied to load object: %s, %s", objectName.c_str(), componentName.c_str());
+            Console::LogError("Falied to load object: %s, %s", objectName.c_str(), componentName.c_str());
             
             streaming->seekg(position, std::ios_base::beg);
             continue;
@@ -812,7 +812,7 @@ void Scene::SetupScript(std::string objectName, std::string name, std::condition
 
     auto gameObject = GameObject::Find(objectName);
     if (!gameObject) {
-        LOG_ERROR_ARGS("[ Scene ] GameObject do not found: %s", objectName.c_str());
+        Console::LogError("[ Scene ] GameObject do not found: %s", objectName.c_str());
         {
             std::lock_guard<std::mutex> lock(m_mutex);
             result = 1;
@@ -835,7 +835,7 @@ void Scene::SetupScript(std::string objectName, std::string name, std::condition
         std::lock_guard<std::mutex> lock(m_mutex);
         component = entt->hasComponent(name) ? entt->getComponent(name) : entt->addComponent(name);
     } catch (const std::exception &e) {
-        LOG_ERROR_ARGS("[ Scene ] %s", e.what());
+        Console::LogError("[ Scene ] %s", e.what());
         std::lock_guard<std::mutex> lock(m_mutex);
         result = 3;
     }
@@ -845,7 +845,7 @@ void Scene::SetupScript(std::string objectName, std::string name, std::condition
 void Scene::ProcessScript(Component *component, std::string path, std::streampos position) {
     Stream stream(path, std::ios_base::in | std::ios_base::binary);
     if (!stream.is_open()) {
-        LOG_ERROR_ARGS("[ Scene ] Falied to load binary: ", path.c_str());
+        Console::LogError("[ Scene ] Falied to load binary: ", path.c_str());
         return;
     }
 
@@ -854,7 +854,7 @@ void Scene::ProcessScript(Component *component, std::string path, std::streampos
     try {
         component->Deserialize(&stream);
     } catch (const std::exception &e) {
-        LOG_ERROR_ARGS("[ Scene ] %s", e.what());
+        Console::LogError("[ Scene ] %s", e.what());
     }
 }
 
