@@ -22,6 +22,7 @@ public:
 
     static std::size_t GetThreadAvailable();
 
+    static void CreateInternalTask(std::function<void()> func);
 private:
     static std::list<std::function<void()>> m_task;
 
@@ -35,15 +36,17 @@ private:
 
     static bool m_bStop;
 
-
     static void Update();
 };
 
 template <typename... Args>
 inline void Threadpool::AddTask(Args &&...args) {
-    {
-        std::lock_guard<std::mutex> lock(m_mutex);
-        m_task.emplace_back(std::bind(std::forward<Args>(args)...));
-    }
-    m_cv.notify_all();
+    return CreateInternalTask(std::bind(std::forward<Args>(args)...));
 }
+
+
+
+
+
+
+

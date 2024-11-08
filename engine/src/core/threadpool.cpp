@@ -46,6 +46,14 @@ std::size_t Threadpool::GetThreadAvailable() {
     return m_available;
 }
 
+void Threadpool::CreateInternalTask(std::function<void()> func) {
+    {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        m_task.emplace_back(func);
+    }
+    m_cv.notify_all();
+}
+
 void Threadpool::Update() {
     while (true) {
         std::unique_lock<std::mutex> lock(m_mutex);

@@ -7,7 +7,9 @@ class NameManager {
 public:
     static void Shutdown();
 
-    static std::string GenerateName(std::string name);
+    static std::string GenerateNameID(std::string name);
+
+    static void RemoveNameID(std::string name);
 
 private:
     static std::unordered_map<std::string, int> m_nameID;

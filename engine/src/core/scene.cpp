@@ -262,6 +262,8 @@ void Scene::Load(const std::string &path, std::uint8_t flags, Scene *scene) {
 
     scene = (hasScene ? scene : new Scene(name));
 
+    std::unordered_map<std::string, GameObject *> m_tempObject;
+
     // read segment
     while (true) {
         DataSegment data;
@@ -293,11 +295,11 @@ void Scene::Load(const std::string &path, std::uint8_t flags, Scene *scene) {
             break;
         case gHeaderType_Object:
             if (flags & LoadFlags_Object)
-                result = readObject(&stream, &(*scene));
+                result = readObject(&stream, &(*scene), m_tempObject);
             break;
         case gHeaderType_Script:
             if (flags & LoadFlags_Script)
-                result = readScript(&stream);
+                result = readScript(&stream, m_tempObject);
             break;
         default:
             break;
@@ -525,7 +527,7 @@ int Scene::writeGameObject(Stream *streaming, GameObject *gameObject) {
     return 0;
 }
 
-int Scene::readObject(Stream *streaming, Scene *scene) {
+int Scene::readObject(Stream *streaming, Scene *scene, std::unordered_map<std::string, GameObject *> &tempObject) {
     // Objects node
     std::size_t objectCount;
     int result = 0;
@@ -536,7 +538,7 @@ int Scene::readObject(Stream *streaming, Scene *scene) {
     }
 
     for (auto i=0;i<objectCount;i++) {
-        result = readNode(streaming, scene);
+        result = readNode(streaming, scene, nullptr, tempObject);
         if (result != 0) {
             break;
         }
@@ -605,7 +607,7 @@ int Scene::readMesh(Stream *streaming) {
     return 0;
 }
 
-int Scene::readScript(Stream *streaming) {
+int Scene::readScript(Stream *streaming, std::unordered_map<std::string, GameObject *> &tempObject) {
     std::size_t nsize = 0;
     std::size_t size = 0;
     int result = 0;
@@ -648,9 +650,17 @@ int Scene::readScript(Stream *streaming) {
             break;
         }
 
+        auto position = streaming->tellg() + static_cast<std::streampos>(data_size);
+    
         Component *component = nullptr;
         int result = -1;
-        Event::Add(&Scene::SetupScript, objectName, componentName, std::ref(cv), std::ref(component), std::ref(result));
+
+        auto it = tempObject.find(objectName);
+        if (it == tempObject.end()) {
+            streaming->seekg(position, std::ios_base::beg);
+            continue;
+        }
+        Event::Add(&Scene::SetupScript, it->second, componentName, std::ref(cv), std::ref(component), std::ref(result));
 
         std::unique_lock<std::mutex> lock(m_mutex);
         cv.wait(lock, [&component, &result] {
@@ -665,7 +675,6 @@ int Scene::readScript(Stream *streaming) {
             continue;
         }
 
-        auto position = streaming->tellg() + static_cast<std::streampos>(data_size);
         if (result != 0) {
             Console::LogError("Falied to load object: %s, %s", objectName.c_str(), componentName.c_str());
             
@@ -717,7 +726,7 @@ void CrateGameObject(Transform *&transform, std::condition_variable &cv, std::mu
     cv.notify_one();
 }
 
-int Scene::readNode(Stream *streaming, Scene *scene, Transform *parent) {
+int Scene::readNode(Stream *streaming, Scene *scene, Transform *parent, std::unordered_map<std::string, GameObject *> &tempObject) {
     std::size_t nSize;
     int result = 0;
     
@@ -765,6 +774,8 @@ int Scene::readNode(Stream *streaming, Scene *scene, Transform *parent) {
     cv.wait(lock, [&transform, &presult] {
         return transform || bQuit || presult >= 0;
     });
+    if (transform)
+        tempObject.emplace(name, transform->getGameObject());
     if (presult != 0) {
         return 2;
     }
@@ -780,7 +791,7 @@ int Scene::readNode(Stream *streaming, Scene *scene, Transform *parent) {
     }
 
     for (int i=0;i<cSize;i++) {
-        result = readNode(streaming, scene, transform);
+        result = readNode(streaming, scene, transform, tempObject);
         if (result != 0) {
             break;
         }
@@ -804,21 +815,10 @@ void Scene::SetupScene(Scene *scene) {
     }
 }
 
-void Scene::SetupScript(std::string objectName, std::string name, std::condition_variable &cv, Component *&component, int &result) {
+void Scene::SetupScript(GameObject *gameObject, std::string name, std::condition_variable &cv, Component *&component, int &result) {
     {
         std::lock_guard<std::mutex> lock(m_mutex);
         result = 0;
-    }
-
-    auto gameObject = GameObject::Find(objectName);
-    if (!gameObject) {
-        Console::LogError("[ Scene ] GameObject do not found: %s", objectName.c_str());
-        {
-            std::lock_guard<std::mutex> lock(m_mutex);
-            result = 1;
-        }
-        cv.notify_one();
-        return;
     }
 
     auto entt = gameObject->getEntity();

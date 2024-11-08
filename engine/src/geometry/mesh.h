@@ -2,11 +2,11 @@
 
 #include <vector>
 
-#include "../common.h"
-
 #include "vertex3D.h"
 
-#include "../core/animation/boneWeight.hpp"
+#include "core/animation/boneWeight.hpp"
+
+#include "core/default.hpp"
 
 class Mesh {
 public:

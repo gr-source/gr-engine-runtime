@@ -18,6 +18,8 @@
 #include "geometry/material.h"
 #include "geometry/mesh.h"
 
+#include "ecs/default.hpp"
+
 class FbxAnimation;
 
 class GameObjectHandle {
@@ -155,11 +157,17 @@ private:
 
     static void ProcessAnimation();
 
-    static void SetupGameObject(std::condition_variable &cond, GameObjectHandle &handle, Transform *&out, gModel model, Mesh *mesh, std::vector<gMaterial> materials, Transform *parent);
-
-    static void ReadChildren(Transform *transform, GameObjectHandle &handle, Stream *stream);
-    
     static void doInBackgroundGameObject(GameObjectHandle handle);
+
+    static void ReadData(Stream *stream, GameObjectHandle handle);
+
+    static void SetupScript(GameObject *gameObject, std::string path, std::streampos position, std::string componentName);
+
+    static int ReadScript(Stream *stream, std::unordered_map<std::string, GameObject *> &tempList);
+
+    static void CreateGameObject(std::string name, std::string tag, bool enable, bool active, Transform *parent, Transform *&out, std::condition_variable &cv, std::mutex &mutex, GameObject **gameOut);
+
+    static int ReadGameObject(Stream *stream, Transform *parent, GameObject **out, std::unordered_map<std::string, GameObject *> &tempList);
 
     static void ProcessBinary();
 

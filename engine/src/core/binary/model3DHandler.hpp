@@ -23,6 +23,8 @@ public:
     static void ImportGRMX(const std::string &path);
 
 private:
+    static std::mutex m_mutex;
+    
     static void LoadGRMX(const std::string &path);
     
     static int ReadData(Stream *stream);
@@ -44,11 +46,6 @@ private:
     static void CreateObjects(const FbxScene *scene, const FbxNode *node, Transform *parent, GameObject **gameObject, std::vector<std::unique_ptr<GameObject>> &tempObject);
 
     static void SetupTextureMaterial(Material *material, int id, grr::gTexture *texture);
-
-    class Loader {
-    public:
-
-    };
 };
 
 

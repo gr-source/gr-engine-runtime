@@ -415,199 +415,223 @@ void AssetsManager::ProcessAnimation() {
     }
 }
 
-void AssetsManager::SetupGameObject(std::condition_variable &cond, GameObjectHandle &handle, Transform *&out, gModel model, Mesh *mesh, std::vector<gMaterial> materials, Transform *parent) {
-    // transformaçoes
-    GameObject *gameObject = nullptr;
-    {
-        std::lock_guard<std::mutex> lock(s_gameObjectMutex);
-        gameObject = GameObject::Create(model.m_name, "unttaged");
-        if (!handle.m_gameObject) {
-            handle.m_gameObject = gameObject;
-        }
-    }
-
-    auto transform = gameObject->getTransform();
-
-    transform->setLocalScale(model.m_scale);
-    transform->setLocalRotation(model.m_rotation);
-    transform->setLocalPosition(model.m_position);
-
-    if (parent)
-        transform->setParent(parent);
-
-    if (mesh) {
-        auto meshFilter = gameObject->addComponent<MeshFilter>();
-        meshFilter->setMesh(mesh);
-
-        auto meshRender = gameObject->addComponent<MeshRender>();
-
-        for (auto &material : materials) {
-            if (!material.m_textures) {
-                throw std::runtime_error("Texture ptr is invalid.");
-            }
-            
-            auto material_ptr = meshRender->addMaterial(material.m_name, material.m_color);
-
-            for (int i=0;i<material.m_textureCount;++i) { 
-                auto& texture = material.m_textures[i];
-                
-                AssetsManager::LoadTexture(texture.m_path, &AssetsManager::SetupTextureMaterial, material_ptr, i);
-            }
-        }
-    }
-
-    {
-        std::lock_guard<std::mutex> lock(s_gameObjectMutex);
-        out = transform;
-    }
-    cond.notify_one();
-}
-
-void AssetsManager::ReadChildren(Transform *parent, GameObjectHandle &handle, Stream *stream) {
-    gModel pModel;
-    if (!stream->readS(&pModel, 1)) {
-        return;
-    }
-
-    grm::u32 meshCount;
-    if (!stream->readS(&meshCount, 1)) {
-        Console::log(Log::ERROR, "Failed to read mesh count to file.");
-        return;
-    }
-
-    std::vector<gMesh> meshes(meshCount);
-    for (auto &mesh : meshes) {
-        mesh.deserialize(stream);
-    }
-
-    Animator *m_animator = nullptr;
-    Mesh *m_mesh = nullptr;
-
-    // adiciona o mesh componenet
-    if (!meshes.empty()) {
-        Mesh mesh;
-
-        std::string meshName;
-
-        grm::u32 verticeCount = 0;
-        for (auto &pMesh : meshes) {
-            meshName += pMesh.m_name;
-
-            for (int i=0;i<pMesh.m_verticeCount;i++) {
-                auto &vertice = pMesh.m_vertices[i];
-
-                mesh.addVertex(vertice.position, vertice.normal, vertice.texCoord, vertice.mIdx);
-
-                if (!pMesh.m_hasBone) {
-                    continue;
-                }
-                
-                auto& boneWeight = mesh.addBoneWeight();
-
-                float norm = vertice.weight[0] + vertice.weight[1] + vertice.weight[2] + vertice.weight[3];
-
-                for (auto k=0;k<4;++k) {
-                    boneWeight.insert<int>(k, vertice.boneIndex[k]);
-                    boneWeight.insert<float>(k, norm > 0.0f ? vertice.weight[k] / norm : vertice.weight[k]);
-                }
-            }
-
-            for (int i=0;i<pMesh.m_indicesCount;i++) {
-                mesh.addIndice(verticeCount + pMesh.m_indices[i]);
-            }
-            verticeCount += pMesh.m_verticeCount;
-
-            if (!pMesh.m_hasBone) {
-                continue;
-            }
-
-            if (!m_animator) {
-                // m_animator = &gameObject->addComponent<Animator>();
-            }
-
-            for (auto i=0;i<pMesh.m_boneCount;++i) {
-                auto &pBone = pMesh.m_bones[i];
-
-                m_animator->addBone(pBone.m_name, Bone{pBone.m_name, pBone.m_position, pBone.m_scale, pBone.m_rotation, pBone.m_id});
-            }
-
-        }
-
-        {
-            m_mesh = AssetsManager::FindMesh(meshName);
-            if (!m_mesh) {
-                mesh.setName(meshName);
-
-                m_mesh = AssetsManager::CreateMesh(meshName, mesh);
-            }
-        }
-    }
-
-    grm::u32 mSize;
-    if (!stream->readS(&mSize, 1)) {
-        return;
-    }
-
-    std::vector<gMaterial> m_materials(mSize);
-    for (auto &material : m_materials) {
-        stream->readS(material.m_name, 256);
-        stream->readS(&material.m_color, 1);
-        stream->readS(&material.m_roughness, 1);
-        stream->readS(&material.m_metallic, 1);
-        stream->readS(&material.m_ambientOcclusion, 1);
-
-        stream->readS(&material.m_textureCount, 1);
-
-        material.m_textures = new gTexture[material.m_textureCount];
-        stream->readS(material.m_textures, material.m_textureCount);
-    }
-
-    grm::u32 nSize;
-    stream->readS(&nSize, 1);
-
-    Transform *transform = nullptr;
-    std::condition_variable cond;
-
-    Event::Add(&AssetsManager::SetupGameObject, std::ref(cond), std::ref(handle), std::ref(transform), pModel, m_mesh, m_materials, parent);
-
-    std::unique_lock<std::mutex> lock(s_gameObjectMutex);
-    cond.wait(lock, [&transform] {
-        return transform;
-    });
-    lock.unlock();
-
-    for (auto &material : m_materials) {
-        delete[] material.m_textures;
-    }
-
-
-    for (int i=0;i<nSize;++i) {
-        ReadChildren(transform, handle, stream);
-    }
-    
-    // lock.lock();
-    transform = nullptr;
-}
-
 void AssetsManager::doInBackgroundGameObject(GameObjectHandle handle) {
     Stream stream(handle.m_path, std::ios_base::in | std::ios_base::binary);
     if (!stream.is_open()) {
-        return Console::log(Log::ERROR, "Failed to load model. " + handle.m_path);
+        return Console::LogError("[ Model3DHandler ] Falied to open file: %s", handle.m_path.c_str());
     }
 
-    FileHeader pHeader;
-    if (!stream.readS(&pHeader, 1)) {
-        return Console::log(Log::ERROR, "Failed to read header to file.");
+    FileHeader header;
+    if (!stream.readS(&header, 1)) {
+        return Console::LogError("[ Model3DHandler ] Falied to read header binary.");
+    }
+    
+    if (header.signature[0] != 'g' && header.signature[1] != 'r' && header.signature[2] != 'm' && header.signature[3] != 'x') {
+        return Console::LogError("[ Model3DHandler ] Invalid binary type.");
     }
 
-    if (std::string(pHeader.signature) != "grmd") {
-        return Console::log(Log::ERROR, "Model invalid: " + handle.m_path);
+    Console::LogInfo("[ Model3DHandler ] GRMX loading model.");
+
+    ReadData(&stream, handle);
+
+    Console::LogInfo("[ Model3DHandler ] Scene loaded sucess full.");
+}
+
+void AssetsManager::ReadData(Stream *stream, GameObjectHandle handle) {
+    GameObject *gameObject = nullptr;
+    std::unordered_map<std::string, GameObject *> m_gameObjectTemp;
+
+    while (true) {
+        DataSegment segment;
+        if (!stream->readS(&segment, 1)) {
+            break;
+        }
+
+        if (segment.type == gHeaderType_None && segment.sizeData == 0) {
+            break;
+        }
+
+        auto next_position = stream->tellg() + static_cast<std::streampos>(segment.sizeData);
+
+        auto result = -1;
+        switch (segment.type) {
+        case gHeaderType_Object:
+            result = ReadGameObject(stream, nullptr, &gameObject, m_gameObjectTemp);
+            break;
+        case gHeaderType_Script:
+            result = ReadScript(stream, m_gameObjectTemp);
+            break;
+        default:
+            break;
+        }
+
+        if (result != 0) {
+            Console::LogError("[ Model3DHandler ] Falied to load segment: %s code: %d", struct_name[segment.type], result);
+        }
+
+        if (stream->tellg() != next_position)
+            stream->seekg(next_position, std::ios_base::beg);
     }
 
-    ReadChildren(nullptr, handle, &stream);
+    Event::Add(handle.m_function, gameObject);
+}
 
-    if (handle.m_function && handle.m_gameObject)
-        Event::Add(handle.m_function, handle.m_gameObject);
+void AssetsManager::SetupScript(GameObject *gameObject, std::string path, std::streampos position, std::string componentName) {
+    auto entt = gameObject->getEntity();
+
+    auto component = entt->hasComponent(componentName) ? entt->getComponent(componentName) : entt->addComponent(componentName);
+    if (!component) {
+        return;
+    }
+
+    Stream stream(path, std::ios_base::in | std::ios_base::out);
+    stream.seekg(position, std::ios_base::beg);
+
+    component->Deserialize(&stream);
+}
+
+int AssetsManager::ReadScript(Stream *stream, std::unordered_map<std::string, GameObject *> &tempList) {
+    std::size_t size = 0;
+
+    if (!stream->readS(&size, 1)) {
+        return 1;
+    }
+
+    for (std::size_t i=0;i<size;i++) {
+        std::size_t nsize = 0;
+
+        // GameObject - name
+        if (!stream->readS(&nsize, 1)) {
+            return 2;
+        }
+        
+        std::string objectName(nsize, '\0');
+        if (!stream->readS(objectName.data(), nsize)) {
+            return 3;
+        }
+
+        // GameObject - ScriptName
+        if (!stream->readS(&nsize, 1)) {
+            return 4;
+        }
+        
+        std::string componentName(nsize, '\0');
+        if (!stream->readS(componentName.data(), nsize)) {
+            return 5;
+        }
+
+        std::size_t stream_size = 0;
+        if (!stream->readS(&stream_size, 1)) {
+            return 6;
+        }
+        if (stream_size <= 0) {
+            continue;
+        }
+        auto nextPosition = stream->tellg() + static_cast<std::streampos>(stream_size);
+
+        // deserialize
+        auto it = tempList.find(objectName);
+        if (it != tempList.end()) {
+            auto gameObject = it->second;
+
+
+            Event::Add(&AssetsManager::SetupScript, gameObject, stream->getPath(), stream->tellg(), componentName);
+        }
+
+        if (stream->tellg() != nextPosition)
+            stream->seekg(nextPosition, std::ios_base::beg);
+    }
+    return 0;
+}
+
+void AssetsManager::CreateGameObject(std::string name, std::string tag, bool enable, bool active, Transform *parent, Transform *&out, std::condition_variable &cv, std::mutex &mutex, GameObject **gameOut) {
+    auto gameObject = GameObject::Create(name, tag);
+    if (!gameObject) {
+        return;
+    }
+    if (!(*gameOut)) {
+        *gameOut = gameObject;
+    }
+
+    gameObject->setEnable(active);
+    gameObject->setActive(active);
+
+    auto transform = gameObject->getTransform();
+    if (parent) {
+        transform->setParent(parent);
+    }
+
+    {
+        std::lock_guard<std::mutex> lock(mutex);
+        out = transform;
+    }
+    cv.notify_one();
+}
+
+int AssetsManager::ReadGameObject(Stream *stream, Transform *parent, GameObject **out, std::unordered_map<std::string, GameObject *> &tempList) {
+    std::size_t nsize = 0;
+
+    // write-name
+    if (!stream->readS(&nsize, 1)) {
+        return 1;
+    }
+
+    std::string name(nsize, '\0');
+    if (!stream->readS(name.data(), nsize)) {
+        return 2;
+    }
+
+    // write-tag
+    if (!stream->readS(&nsize, 1)) {
+        return 3;
+    }
+
+    std::string tag(nsize, '\0');
+    if (!stream->readS(tag.data(), nsize)) {
+        return 4;
+    }
+
+    auto bActive = false;
+    auto bEnable = false;
+
+    // write-status
+    {
+        if (!stream->readS(&bActive, 1)) {
+            return 5;
+        }
+
+        if (!stream->readS(&bEnable, 1)) {
+            return 6;
+        }
+    }
+
+    Transform *transform = nullptr;
+    std::condition_variable cv;
+
+    Event::Add(&AssetsManager::CreateGameObject, name, tag, bEnable, bActive, parent, std::ref(transform), std::ref(cv), std::ref(s_gameObjectMutex), out);
+
+    std::unique_lock<std::mutex> lock(s_gameObjectMutex);
+    cv.wait(lock, [&transform] {
+        return transform != nullptr;
+    });
+    tempList.emplace(name, transform->getGameObject());
+    lock.unlock();
+
+    std::size_t children_size = 0;
+    if (!stream->readS(&children_size, 1)) {
+        return 7;
+    }
+    
+    int result = 0;
+    for (int i=0;i<children_size;i++) {
+        result = ReadGameObject(stream, transform, out, tempList);
+        if (result != 0) {
+            break;
+        }
+    }
+    transform = nullptr;
+
+    return result != 0 ? (7 + result) : 0;
 }
 
 void AssetsManager::ProcessBinary() {

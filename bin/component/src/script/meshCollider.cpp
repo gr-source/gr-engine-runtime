@@ -20,7 +20,7 @@ void MeshCollider::Init() {
     }
 }
 
-void (*MeshColliderbuild)(MeshCollider *, Mesh *);
+static void (*MeshColliderbuild)(MeshCollider *, Mesh *);
 INSERT_FUNCTION(0, MeshColliderbuild)
 
 void MeshCollider::build(Mesh *mesh) {

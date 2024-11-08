@@ -62,13 +62,13 @@ bool MeshFilter::Deserialize(Stream *stream) {
         return true;
     }
 
-    std::size_t nSize;
-    if (!stream->read(reinterpret_cast<char *>(&nSize), sizeof(std::size_t))) {
+    std::size_t nsize = 0;
+    if (!stream->read(reinterpret_cast<char *>(&nsize), sizeof(std::size_t))) {
         return false;
     }
 
-    std::string name(nSize, '\0');
-    if (!stream->read(name.data(), nSize)) {
+    std::string name(nsize, '\0');
+    if (!stream->read(name.data(), nsize)) {
         return false;
     }
 

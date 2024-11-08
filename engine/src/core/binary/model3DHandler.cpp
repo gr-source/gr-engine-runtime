@@ -5,6 +5,7 @@
 #include "core/assetsManager.hpp"
 #include "core/threadpool.hpp"
 #include "core/console.hpp"
+#include "core/event.hpp"
 #include "core/scene.hpp"
 
 #include "core/file/stream.hpp"
@@ -17,6 +18,8 @@
 #include "script/meshRender.hpp"
 #include "script/meshFilter.hpp"
 #include "script/transform.hpp"
+
+std::mutex Model3DHandler::m_mutex;
 
 void Model3DHandler::ImportFBX(const std::string &path) {
     Threadpool::AddTask(&Filmbox::Load, path, &Model3DHandler::SetupScene, true);
@@ -69,6 +72,15 @@ void Model3DHandler::LoadGRMX(const std::string &path) {
     Console::LogInfo("[ Model3DHandler ] Scene loaded sucess full.");
 }
 
+void InstantiateObject(GameObject *gameObject) {
+    if (!gameObject) {
+        return Console::LogError("[ Model3DHandler ] GameObject invalid pointer.");
+    }
+    Scene::GetCurrentScene()->insert(gameObject);
+
+    gameObject->initialize();
+}
+
 int Model3DHandler::ReadData(Stream *stream) {
     GameObject *gameObject = nullptr;
     std::unordered_map<std::string, GameObject *> m_gameObjectTemp;
@@ -105,13 +117,33 @@ int Model3DHandler::ReadData(Stream *stream) {
             stream->seekg(next_position, std::ios_base::beg);
     }
 
-    if (gameObject) {
-        Scene::GetCurrentScene()->insert(gameObject);
-
-        gameObject->initialize();
-    }
+    Event::Add(&InstantiateObject, gameObject);
 
     return 0;
+}
+
+void CreateGameObject(std::string name, std::string tag, bool enable, bool active, Transform *parent, Transform *&out, std::condition_variable &cv, std::mutex &mutex, GameObject **gameOut) {
+    auto gameObject = GameObject::Create(name, tag);
+    if (!gameObject) {
+        return;
+    }
+    if (!(*gameOut)) {
+        *gameOut = gameObject;
+    }
+
+    gameObject->setEnable(active);
+    gameObject->setActive(active);
+
+    auto transform = gameObject->getTransform();
+    if (parent) {
+        transform->setParent(parent);
+    }
+
+    {
+        std::lock_guard<std::mutex> lock(mutex);
+        out = transform;
+    }
+    cv.notify_one();
 }
 
 int Model3DHandler::ReadGameObject(Stream *stream, Transform *parent, GameObject **out, std::unordered_map<std::string, GameObject *> &tempList) {
@@ -151,19 +183,17 @@ int Model3DHandler::ReadGameObject(Stream *stream, Transform *parent, GameObject
         }
     }
 
-    auto gameObject = GameObject::Create(name, tag);
-    if (!(*out)) {
-        *out = gameObject;
-    }
-    tempList.emplace(name, gameObject);
+    Transform *transform = nullptr;
+    std::condition_variable cv;
 
-    gameObject->setActive(bActive);
-    gameObject->setEnable(bEnable);
+    Event::Add(&CreateGameObject, name, tag, bEnable, bActive, parent, std::ref(transform), std::ref(cv), std::ref(m_mutex), out);
 
-    auto transform = gameObject->getTransform();
-    if (parent) {
-        transform->setParent(parent);
-    }
+    std::unique_lock<std::mutex> lock(m_mutex);
+    cv.wait(lock, [&transform] {
+        return transform != nullptr;
+    });
+    tempList.emplace(name, transform->getGameObject());
+    lock.unlock();
 
     std::size_t children_size = 0;
     if (!stream->readS(&children_size, 1)) {
@@ -177,7 +207,23 @@ int Model3DHandler::ReadGameObject(Stream *stream, Transform *parent, GameObject
             break;
         }
     }
+    transform = nullptr;
+
     return result != 0 ? (7 + result) : 0;
+}
+
+void SetupScript(GameObject *gameObject, std::string path, std::streampos position, std::string componentName) {
+    auto entt = gameObject->getEntity();
+
+    auto component = entt->hasComponent(componentName) ? entt->getComponent(componentName) : entt->addComponent(componentName);
+    if (!component) {
+        return;
+    }
+
+    Stream stream(path, std::ios_base::in | std::ios_base::out);
+    stream.seekg(position, std::ios_base::beg);
+
+    component->Deserialize(&stream);
 }
 
 int Model3DHandler::ReadScript(Stream *stream, std::unordered_map<std::string, GameObject *> &tempList) {
@@ -224,12 +270,15 @@ int Model3DHandler::ReadScript(Stream *stream, std::unordered_map<std::string, G
         if (it != tempList.end()) {
             auto gameObject = it->second;
 
-            auto entt = gameObject->getEntity();
 
-            auto component = entt->hasComponent(componentName) ? entt->getComponent(componentName) : entt->addComponent(componentName);
-            if (component) {
-                component->Deserialize(stream);
-            }
+            Event::Add(&SetupScript, gameObject, stream->getPath(), stream->tellg(), componentName);
+
+            // auto entt = gameObject->getEntity();
+
+            // auto component = entt->hasComponent(componentName) ? entt->getComponent(componentName) : entt->addComponent(componentName);
+            // if (component) {
+            //     component->Deserialize(stream);
+            // }
         }
 
         if (stream->tellg() != nextPosition)

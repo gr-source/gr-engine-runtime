@@ -101,21 +101,21 @@ private:
 
     int writeGameObject(Stream *streaming, GameObject *gameObject);
 
-    static int readObject(Stream *streaming, Scene *scene);
+    static int readObject(Stream *streaming, Scene *scene, std::unordered_map<std::string, GameObject *> &tempObject);
 
     static int readTexture(Stream *streaming);
 
     static int readMesh(Stream *streaming);
 
-    static int readScript(Stream *streaming);
+    static int readScript(Stream *streaming, std::unordered_map<std::string, GameObject *> &tempObject);
 
-    static int readNode(Stream *streaming, Scene *scene, Transform *parent = nullptr);
+    static int readNode(Stream *streaming, Scene *scene, Transform *parent, std::unordered_map<std::string, GameObject *> &tempObject);
 
     void remove(GameObject *gameObject);
 
     static void SetupScene(Scene *scene);
 
-    static void SetupScript(std::string objectName, std::string name, std::condition_variable &cv, Component *&component, int &result);
+    static void SetupScript(GameObject *gameObject, std::string name, std::condition_variable &cv, Component *&component, int &result);
 
     static void ProcessScript(Component *component, std::string path, std::streampos position);
 };

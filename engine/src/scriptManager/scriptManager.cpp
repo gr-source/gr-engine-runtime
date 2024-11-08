@@ -11,6 +11,7 @@
 #include "geometry/batching.hpp"
 
 #include "core/assetsManager.hpp"
+#include "core/threadpool.hpp"
 #include "core/scene.hpp"
 #include "core/event.hpp"
 #include "core/input.hpp"
@@ -158,6 +159,7 @@ void ScriptManager::RegisterApi() {
     auto function = GetFunctionsReference();
 
     *function["Console::log"] = reinterpret_cast<void *>(&Console::log);
+    *function["Threadpool::CreateInternalTask"] = reinterpret_cast<void *>(&Threadpool::CreateInternalTask);
 
     // First function
     m_script->registerFunction("Initialize",   reinterpret_cast<void **>(&InitializeScript));

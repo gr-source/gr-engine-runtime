@@ -18,10 +18,10 @@
 std::unordered_map<std::string, std::unique_ptr<GameObject>> GameObject::m_dataObject;
 
 GameObject *GameObject::Create(const std::string &name, const std::string &tag) {
-    auto newName = NameManager::GenerateName(name);
+    auto newName = NameManager::GenerateNameID(name);
 
     while (Find(newName)) {
-        newName = NameManager::GenerateName(newName);
+        newName = NameManager::GenerateNameID(newName);
     }
 
     auto &&[it, added] = m_dataObject.emplace(newName, std::make_unique<GameObject>(newName, tag));
@@ -68,7 +68,7 @@ void GameObject::Rename(GameObject *gameObject, std::string name) {
         return;
     }
 
-    name = NameManager::GenerateName(name);
+    name = NameManager::GenerateNameID(name);
 
     auto ptr = std::move(it->second);
 
@@ -81,6 +81,8 @@ void GameObject::Rename(GameObject *gameObject, std::string name) {
 
 void GameObject::Destroy(GameObject *target) {
     auto sname = target->getName();
+
+    NameManager::RemoveNameID(sname);
 
     auto it = m_dataObject.find(target->getName());
     if (it == m_dataObject.end()) {
