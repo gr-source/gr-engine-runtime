@@ -152,7 +152,7 @@ std::unordered_map<std::string, std::unique_ptr<Mesh>> &AssetsManager::GetMeshLi
 
 /***************** Texture Process ****************/
 void AssetsManager::SetupTexture(TextureHandle handle, int width, int height, int ch, void *pixels) {
-    std::lock_guard<std::mutex> lock(m_mutexTexture);
+    std::unique_lock<std::mutex> lock(m_mutexTexture);
     auto it = m_textureMap.find(handle.m_path);
     if (it != m_textureMap.end()) {
         handle.invoke(&(*it->second));
@@ -190,6 +190,8 @@ void AssetsManager::SetupTexture(TextureHandle handle, int width, int height, in
    
     handle.invoke(texture);
 
+    lock.unlock();
+
     Console::LogInfo("[ AssetsManager::Texture ] Texture loaded: " + handle.m_path);
 }
 
@@ -203,7 +205,7 @@ void AssetsManager::ProcessTexture() {
         m_mapHandleTexture.erase(path);
 
         int width, height, ch;
-        auto pixels = stbi_load(path.c_str(), &width, &height, &ch, 0);
+        auto pixels = static_cast<void *>(stbi_load(path.c_str(), &width, &height, &ch, 0));
         if (!pixels) {
             Console::LogError("[ AssetsManager::Texture ] Failed to load texture: " + path);
             handle.invoke(nullptr);
@@ -211,7 +213,7 @@ void AssetsManager::ProcessTexture() {
         }
         lock.unlock();
 
-        Event::Add(&AssetsManager::SetupTexture, handle, width, height, ch, (void *)pixels);
+        Event::Add(&AssetsManager::SetupTexture, handle, width, height, ch, pixels);
 
         lock.lock();
     }
@@ -524,6 +526,7 @@ int AssetsManager::ReadScript(Stream *stream, std::unordered_map<std::string, Ga
         if (!stream->readS(&stream_size, 1)) {
             return 6;
         }
+        
         if (stream_size <= 0) {
             continue;
         }
@@ -531,12 +534,13 @@ int AssetsManager::ReadScript(Stream *stream, std::unordered_map<std::string, Ga
 
         // deserialize
         auto it = tempList.find(objectName);
-        if (it != tempList.end()) {
-            auto gameObject = it->second;
-
-
-            Event::Add(&AssetsManager::SetupScript, gameObject, stream->getPath(), stream->tellg(), componentName);
+        if (it == tempList.end()) {
+            stream->seekg(nextPosition, std::ios_base::beg);
         }
+
+        auto gameObject = it->second;
+
+        Event::Add(&AssetsManager::SetupScript, gameObject, stream->getPath(), stream->tellg(), componentName);
 
         if (stream->tellg() != nextPosition)
             stream->seekg(nextPosition, std::ios_base::beg);
@@ -614,7 +618,9 @@ int AssetsManager::ReadGameObject(Stream *stream, Transform *parent, GameObject 
     cv.wait(lock, [&transform] {
         return transform != nullptr;
     });
-    tempList.emplace(name, transform->getGameObject());
+    if (transform)
+        tempList.emplace(name, transform->getGameObject());
+        
     lock.unlock();
 
     std::size_t children_size = 0;
@@ -798,3 +804,11 @@ void ShaderHandle::invoke(grr::gShader *shader) {
 void ShaderHandle::add(std::function<void(grr::gShader *)> function) {
     m_functions.push_back(function);
 }
+
+
+
+
+
+
+
+

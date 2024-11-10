@@ -119,8 +119,7 @@ Vector2 Input::GetCursorPos() {
     return {static_cast<float>(x), static_cast<float>(y)};
 }
 
-void Input::Initialize() {
-}
+void Input::Initialize() {}
 
 void Input::Update() {
     // auto &io = ImGui::GetIO();

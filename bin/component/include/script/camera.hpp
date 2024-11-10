@@ -41,6 +41,8 @@ private:
     float m_fov;
 
     static Camera *s_current;
+
+    void updateProjection();
 };
 
 REGISTER_COMPONENT(Camera);

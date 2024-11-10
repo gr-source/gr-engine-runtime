@@ -3,8 +3,6 @@
 
 #include <cstring>
 
-Stream::Stream(const std::string &path) : m_path(path), std::fstream(path) {}
-
 Stream::Stream(const std::string &path, std::ios_base::openmode mode) : m_path(path), std::fstream(path, mode) {}
 
 bool Stream::write(const void *data, std::size_t size) {
@@ -29,5 +27,14 @@ bool Stream::read(void *data, std::size_t size) {
     return false;
 }
 
+void Stream::seekg(std::streampos pos, std::ios_base::seekdir seek) {
+    std::fstream::seekg(pos, seek);
+}
 
+std::streampos Stream::tellg() {
+    return std::fstream::tellg();
+}
 
+std::string Stream::getPath() const {
+    return m_path;
+}

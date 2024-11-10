@@ -564,7 +564,7 @@ void Model3DHandler::CreateObjects(const FbxScene *scene, const FbxNode *node, T
 }
 
 void Model3DHandler::SetupTextureMaterial(Material *material, int id, grr::gTexture *texture) {
-    if (!material) {
+    if (!material || texture) {
         return;
     }
     material->setTexture(id, texture);

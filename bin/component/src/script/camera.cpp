@@ -25,7 +25,9 @@ void Camera::SetEnable(Camera *camera) {
 }
 
 Camera::Camera() : m_transform(nullptr), m_fov(45.0f), m_aspect(1.0f), m_farPlane(1000.0f), m_nearPlane(0.001f), m_projection(Matrix4x4::identityMatrix) {
-    m_projection = Math::perspective(Math::rad(m_fov), static_cast<float>(Screen::ScreenSize.x) / static_cast<float>(Screen::ScreenSize.y), m_farPlane, m_nearPlane);
+    m_aspect = static_cast<float>(Screen::ScreenSize.x) / static_cast<float>(Screen::ScreenSize.y);
+    
+    updateProjection();
 }
 
 Camera::~Camera() {
@@ -64,6 +66,7 @@ void Camera::Enable() {
         s_current = this;
     }
     m_aspect = static_cast<float>(Screen::ScreenSize.x) / static_cast<float>(Screen::ScreenSize.y);
+    updateProjection();
 }
 
 void Camera::Disable() {
@@ -71,4 +74,8 @@ void Camera::Disable() {
         s_current = nullptr;
     }
     s_camera.erase(std::remove(s_camera.begin(), s_camera.end(), this), s_camera.end());
+}
+
+void Camera::updateProjection() {
+    m_projection = Math::perspective(Math::rad(m_fov), m_aspect, m_farPlane, m_nearPlane);
 }

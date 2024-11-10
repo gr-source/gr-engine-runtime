@@ -1,7 +1,9 @@
 #include "script/meshFilter.hpp"
 
 #include "core/assetsManager.hpp"
+#include "core/threadpool.hpp"
 #include "core/stream.hpp"
+#include "core/event.hpp"
 
 MeshFilter::MeshFilter() : m_sharedMesh(nullptr) { }
 
@@ -52,6 +54,20 @@ bool MeshFilter::Serialize(Stream *stream) {
     return true;
 }
 
+void Setupmesh(Mesh *mesh, Mesh temp) {
+    *mesh = temp;
+}
+
+void MeshFilterDeserializeMesh(std::streampos pos, std::string path, Mesh *mesh) {
+    Stream stream(path, std::ios_base::in | std::ios_base::binary);
+    stream.seekg(pos, std::ios_base::beg);
+
+    Mesh tempMesh;
+    tempMesh.deserialize(&stream);
+
+    Event::AddEvent(&Setupmesh, mesh, tempMesh);
+}
+
 bool MeshFilter::Deserialize(Stream *stream) {
     bool hasMesh;
     if (!stream->read(reinterpret_cast<char *>(&hasMesh), sizeof(bool))) {
@@ -78,6 +94,7 @@ bool MeshFilter::Deserialize(Stream *stream) {
         if (!m_sharedMesh) {
             return false;
         }
+        // Threadpool::AddTask(&MeshFilterDeserializeMesh, stream->tellg(), stream->getPath(), m_sharedMesh);
         m_sharedMesh->deserialize(stream);
     }
     return true;

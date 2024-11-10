@@ -10,9 +10,6 @@
 
 class Mesh {
 public:
-    Mesh() = delete;
-    ~Mesh() = delete;
-
     std::string getName() const;
 
     template <typename ...Args>

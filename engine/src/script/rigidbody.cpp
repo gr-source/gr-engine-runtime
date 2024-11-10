@@ -99,3 +99,8 @@ void Rigidbody::setLookRotation(const Vector3 &value) {
 const Vector3 &Rigidbody::getLookRotation() const {
     return m_lookRotation;
 }
+
+
+
+
+

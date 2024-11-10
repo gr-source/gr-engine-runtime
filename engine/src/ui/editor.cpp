@@ -1168,19 +1168,20 @@ void Editor::DropGameObjectInScene() {
         return;
     }
 
-    if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(IMGUI_PAYLOAD_FILE)) {
-        std::string path((char*)payload->Data, payload->DataSize);
-        if (!path.empty()) {
-            if (std::filesystem::path(path).filename().extension() == ".gmdx") {
-                AssetsManager::LoadGameObject(path, &Editor::PostLoadGameObject);
-            }
-            /*
-            else if (std::filesystem::path(path).filename().extension() == ".gmdx") {
-                Model3DHandler::ImportGRMX(path);
-            }
-            */
-        }
+    auto payload = ImGui::AcceptDragDropPayload(IMGUI_PAYLOAD_FILE);
+    if (!payload) {
+        return ImGui::EndDragDropTarget();
     }
+
+    std::string path(reinterpret_cast<char *>(payload->Data), payload->DataSize);
+    if (path.empty()) {
+        return ImGui::EndDragDropTarget();
+    }
+    
+    if (std::filesystem::path(path).filename().extension() == ".gmdx") {
+        AssetsManager::LoadGameObject(path, &Editor::PostLoadGameObject);
+    }
+    
     ImGui::EndDragDropTarget();
 }
 
