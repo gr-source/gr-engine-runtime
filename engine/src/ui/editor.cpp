@@ -1113,7 +1113,7 @@ void Editor::PlayGame() {
     s_objectSelected = nullptr;
 
     if (m_cameraObject) {
-        Model3DHandler::ExportGRMX(File::GetFile("/", true), m_cameraObject);
+        Model3DHandler::ExportGRMX(File::GetFile("/MainEngineCamera.gmdx", true), m_cameraObject);
 
         GameObject::Destroy(m_cameraObject);
 
@@ -1151,13 +1151,13 @@ void Editor::loadCamera(GameObject *gameObject) {
 }
 
 void Editor::RenderGuizmo() {
-    if (!s_io->KeyCtrl && ImGui::IsKeyReleased(ImGuiKey_G) && ImGui::IsWindowHovered()) {
+    if (!s_io->MouseDrawCursor && !s_io->KeyShift && !s_io->KeyCtrl && ImGui::IsKeyReleased(ImGuiKey_G) && ImGui::IsWindowHovered()) {
         m_guizmoOperation = ImGuizmo::TRANSLATE;
     }
-    if (!s_io->KeyCtrl && ImGui::IsKeyReleased(ImGuiKey_R) && ImGui::IsWindowHovered()) {
+    if (!s_io->MouseDrawCursor && !s_io->KeyShift && !s_io->KeyCtrl && ImGui::IsKeyReleased(ImGuiKey_R) && ImGui::IsWindowHovered()) {
         m_guizmoOperation = ImGuizmo::ROTATE;
     }
-    if (!s_io->KeyCtrl && ImGui::IsKeyReleased(ImGuiKey_S) && ImGui::IsWindowHovered()) {
+    if (!s_io->MouseDrawCursor && !s_io->KeyShift && !s_io->KeyCtrl && ImGui::IsKeyReleased(ImGuiKey_S) && ImGui::IsWindowHovered()) {
         m_guizmoOperation = ImGuizmo::SCALE;
     }
 
@@ -1222,15 +1222,18 @@ void Editor::PopupMenuCreateScene() {
         return;
     }
 
-    ImGui::Text("Input scene name: ");
+    ImGui::Text("Input scene name");
 
     if (!ImGui::IsAnyItemActive() && !ImGui::IsMouseClicked(0))
         ImGui::SetKeyboardFocusHere(0);
 
-    char name[256] = {0};
-    if (ImGui::InputText("##input_scene_name", name, 256, ImGuiInputTextFlags_EnterReturnsTrue)) {
-        std::string to_str = name;
-        if (!to_str.empty()) {
+    std::string name(256, '\0');
+    if (ImGui::InputText("##input_scene_name", name.data(), name.size(), ImGuiInputTextFlags_EnterReturnsTrue)) {
+        name.erase(std::remove(name.begin(), name.end(), '\0'), name.end());
+
+        std::cout << name.size() << std::endl;
+        
+        if (!name.empty()) {
             Scene::Create(name);
         }
         
@@ -1353,25 +1356,31 @@ void Editor::RenderTreeNodeFile(std::filesystem::path path) {
     ImGui::TreePop();
 }
 
-void Editor::DropTargetGameObjectInFile(const std::string &path) {
+void Editor::DropTargetGameObjectInFile(std::string path) {
     if (!ImGui::BeginDragDropTarget()) {
         return;
     }
+    
     auto payload = ImGui::AcceptDragDropPayload(IMGUI_PAYLOAD_GAMEOBJECT);
     if (!payload) {
         return ImGui::EndDragDropTarget();
     }
-    std::string name((char*)payload->Data, payload->DataSize);
+
+    std::string name(static_cast<char *>(payload->Data), payload->DataSize);
     if (name.empty()) {
         return ImGui::EndDragDropTarget();
     }
+    
     auto target = GameObject::Find(name);
     if (!target) {
         Console::LogError("GameObject do not found: %s", name.c_str());
 
         return ImGui::EndDragDropTarget();
     }
-    Model3DHandler::ExportGRMX(path, target);
+
+    path = path[0] == '/' ? path : path + "/";
+
+    Model3DHandler::ExportGRMX(path + name + ".gmdx", target);
     
     ImGui::EndDragDropTarget();
 }

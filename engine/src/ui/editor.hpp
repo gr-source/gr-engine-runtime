@@ -148,6 +148,8 @@ private:
 
     void StopGame();
 
+    void LoadSceneCamera(Scene *scene);
+
     void loadCamera(GameObject *camera);
 
     void RenderGuizmo();
@@ -160,7 +162,7 @@ private:
 
     void RenderTreeNodeFile(std::filesystem::path path);
 
-    void DropTargetGameObjectInFile(const std::string &path);
+    void DropTargetGameObjectInFile(std::string path);
 
     void OpenFileDoubleClick(std::filesystem::path path);
 

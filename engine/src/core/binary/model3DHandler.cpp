@@ -30,7 +30,7 @@ void Model3DHandler::ExportGRMX(const std::string &path, const GameObject *gameO
 
     Console::LogInfo("[ Model3DHandler ] Writing GameObject: %s", name.c_str());
 
-    Stream stream(path + "/" + name + ".gmdx", std::ios_base::out | std::ios_base::binary);
+    Stream stream(path, std::ios_base::out | std::ios_base::binary);
 
     // Header file
     {

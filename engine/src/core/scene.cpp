@@ -92,15 +92,8 @@ Scene *Scene::Create(const std::string &name) {
 }
 
 #include "core/threadpool.hpp"
-void Scene::LoadScene(const std::string &path) {
-    Threadpool::AddTask(&Scene::Load, path, LoadFlags_Mesh | LoadFlags_Object | LoadFlags_Texture | LoadFlags_Script, nullptr);
-    // std::unique_ptr<Scene> scene = std::make_unique<Scene>(path);
-
-    // if (!scene->load(path)) {
-    //     return;
-    // }
-
-    // m_scenes.emplace(scene->getName(), std::move(scene));
+void Scene::LoadScene(const std::string &path, std::function<void(Scene *)> func) {
+    Threadpool::AddTask(&Scene::Load, path, LoadFlags_Mesh | LoadFlags_Object | LoadFlags_Texture | LoadFlags_Script, func, nullptr);
 }
 
 Scene::Scene(const std::string &name) : m_name(name), m_enable(true) {}
@@ -229,11 +222,11 @@ void Scene::ReloadObjects() {
 
     GameObject::Clear();
     
-    Threadpool::AddTask(&Scene::Load, temp_dir + scene->getName() + ".scn.tmp", LoadFlags_Object | LoadFlags_Script, scene);
+    Threadpool::AddTask(&Scene::Load, temp_dir + scene->getName() + ".scn.tmp", LoadFlags_Object | LoadFlags_Script, nullptr, scene);
 }
 
 // TODO: Object, Script because thread dead lock
-void Scene::Load(const std::string &path, std::uint8_t flags, Scene *scene) {
+void Scene::Load(const std::string &path, std::uint8_t flags, std::function<void(Scene *)> func, Scene *scene) {
     if (!File::Exists(path)) {
         Console::LogError("[ Scene ] File not found: " + path);
         return;
@@ -313,6 +306,9 @@ void Scene::Load(const std::string &path, std::uint8_t flags, Scene *scene) {
     }
 
     Event::Add(&Scene::SetupScene, scene);
+    
+    if (func)
+        Event::Add(func, scene);
 }
 
 void Scene::setEnable(bool value) {
@@ -698,10 +694,7 @@ void CrateGameObject(Transform *&transform, std::condition_variable &cv, std::mu
         std::lock_guard<std::mutex> lock(mutex);
         result = 0;
         
-        gameObject = GameObject::Find(name);
-        if (!gameObject)
-            gameObject = parent == nullptr ? scene->CreateGameObject(name, tag) : GameObject::Create(name, tag);
-        
+        gameObject = parent == nullptr ? scene->CreateGameObject(name, tag) : GameObject::Create(name, tag);
         if (!gameObject) {
             result = 1;
             cv.notify_one();

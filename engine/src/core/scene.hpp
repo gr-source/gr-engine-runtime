@@ -26,7 +26,7 @@ public:
 
     static Scene *Create(const std::string &name);
 
-    static void LoadScene(const std::string &path);
+    static void LoadScene(const std::string &path, std::function<void(Scene *)> func = nullptr);
 
     Scene(const std::string &name);
     ~Scene();
@@ -83,7 +83,7 @@ private:
         LoadFlags_Script  = 1 << 4,
     };
 
-    static void Load(const std::string &path, std::uint8_t flags = LoadFlags_Mesh | LoadFlags_Object | LoadFlags_Texture | LoadFlags_Script, Scene *scene = nullptr);
+    static void Load(const std::string &path, std::uint8_t flags = LoadFlags_Mesh | LoadFlags_Object | LoadFlags_Texture | LoadFlags_Script, std::function<void(Scene *)> func = nullptr, Scene *scene = nullptr);
 
     void setEnable(bool value);
 
