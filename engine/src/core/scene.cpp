@@ -48,6 +48,7 @@ void Scene::Use(Scene *scene) {
     if (m_current && m_current != scene && m_current->m_enable) {
         m_current->setEnable(false);
     }
+    
     if (scene && scene != m_current && !scene->m_enable) {
         scene->setEnable(true);
     }

@@ -146,9 +146,13 @@ Editor::Editor() : m_viewport(ImGui::GetMainViewport()), s_io(&ImGui::GetIO()), 
 
     m_config->setCategory(lastCategory);
 
-    m_cameraObject = createEditorCamera();
-    if (m_cameraObject) {
-        m_mainCamera = m_cameraObject->getComponent<Camera>();
+    if (!File::Exists(File::GetFile("/MainEngineCamera.gmdx", true))) {
+        m_cameraObject = createEditorCamera();
+        if (m_cameraObject) {
+            m_mainCamera = m_cameraObject->getComponent<Camera>();
+        }
+    } else {
+        AssetsManager::LoadGameObject(File::GetFile("/MainEngineCamera.gmdx", true), &Editor::loadCamera, this);
     }
 
     Scene::Initialize();
@@ -179,6 +183,8 @@ Editor::~Editor() {
     Skybox::Shutdown();
 
     ScreenRender::Shutdown();
+
+    GameObject::Clear();
 
     ScriptManager::Shutdown();
 
@@ -1107,7 +1113,7 @@ void Editor::PlayGame() {
     s_objectSelected = nullptr;
 
     if (m_cameraObject) {
-        Model3DHandler::ExportGRMX(File::GetTempFile(""), m_cameraObject);
+        Model3DHandler::ExportGRMX(File::GetFile("/", true), m_cameraObject);
 
         GameObject::Destroy(m_cameraObject);
 
@@ -1128,7 +1134,7 @@ void Editor::StopGame() {
 
     Scene::ReloadObjects();
 
-    AssetsManager::LoadGameObject(File::GetTempFile("MainEngineCamera.gmdx"), &Editor::loadCamera, this);
+    AssetsManager::LoadGameObject(File::GetFile("/MainEngineCamera.gmdx", true), &Editor::loadCamera, this);
 
     Console::log(Log::DEFAULT, "Game stoped.");
 }

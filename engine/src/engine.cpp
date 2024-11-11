@@ -148,8 +148,6 @@ void Engine::Shutdown() {
 
     ProjectMenu::Shutdown();
 
-    GameObject::Clear();
-
     PhysicsScene::Shutdown();
 
     AssetsManager::Shutdown();
