@@ -23,7 +23,7 @@ public:
     Entity() = delete;
     ~Entity() = delete;
 
-    static Component *(*addInternalComponent)(Entity *instance, const std::string &name);
+    static Component *(*addInternalComponent)(Entity *instance, const std::string &name, const Component *component);
 
     template <typename T>
     T *addComponent();
@@ -50,7 +50,7 @@ private:
 
 template <typename T>
 inline T *Entity::addComponent() {
-    auto component = addInternalComponent(this, StringUTF::RemoveNumber(typeid(T).name()));
+    auto component = addInternalComponent(this, StringUTF::RemoveNumber(typeid(T).name()), nullptr);
     if (!component) {
         throw std::runtime_error("Component is null.");
     }
