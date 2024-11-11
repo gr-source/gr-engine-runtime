@@ -92,7 +92,7 @@ void ProjectMenu::CloseProject() {
 }
 
 Editor *ProjectMenu::GetEditor() {
-    return &(*m_editor);
+    return m_editor != nullptr ? &(*m_editor) : nullptr;
 }
 
 void ProjectMenu::InitProject() {

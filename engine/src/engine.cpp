@@ -243,8 +243,13 @@ void Engine::HandleEvent(EngineEvent event, const void* data) {
 }
 
 void Engine::MainFramebuffer() {
+    auto editor = ProjectMenu::GetEditor();
+    if (!editor) {
+        return;
+    }
+    
     // Seleção de modelos para renderizar
-    RenderManager::Process(ProjectMenu::GetEditor()->getCamera());
+    RenderManager::Process(editor->getCamera());
 
     // Pos processamento
     PostProcessing::Bind(MainPostProcess);
