@@ -15,8 +15,8 @@ GameObject *Entity::getGameObject() {
     return m_gameObject;
 }
 
-Component *Entity::addComponent(const std::string &name) {
-    return addInternalComponent(name);
+Component *Entity::addComponent(const std::string &name, const Component *instance) {
+    return addInternalComponent(name, instance);
 }
 
 Component *Entity::getComponent(const std::string &name) {
@@ -42,23 +42,11 @@ void Entity::copy(Entity *entity) {
     }
 
     for (auto &&[name, ptr] : entity->m_componentPtr) {
-        if (!ptr) {
-            throw std::runtime_error("Compo nent is not valid: " + name);
-        }
-        
         if (hasComponent(name)) {
             continue;
         }
 
-        auto component = ScriptManager::CopyComponentWithName(name, &(*ptr));
-        if (!component) {
-            throw std::runtime_error("Falied to copy component: " + name);
-        }
-        component->entity = this;
-
-        m_componentPtr.emplace(name, std::unique_ptr<Component>(component));
-
-        m_components.emplace_back(component);
+        addComponent(name, &(*ptr));
     }
 
     auto targetGameObject = entity->getGameObject();
@@ -168,12 +156,12 @@ void Entity::remove(const std::string &name) {
     m_componentPtr.erase(it);
 }
 
-Component *Entity::addInternalComponent(const std::string &name) {
+Component *Entity::addInternalComponent(const std::string &name, const Component *instance) {
     if (!ScriptManager::CreateComponentWithName) {
         return nullptr;
     }
 
-    auto component = ScriptManager::CreateComponentWithName(name);
+    auto component = instance == nullptr ? ScriptManager::CreateComponentWithName(name) : ScriptManager::CopyComponentWithName(name, instance);
 
     if (!component) {
         return nullptr;

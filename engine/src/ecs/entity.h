@@ -34,13 +34,13 @@ public:
     template <typename T>
     bool hasComponent() const;
 
-    Component *addComponent(const std::string &name);
+    Component *addComponent(const std::string &name, const Component *instance = nullptr);
 
     Component *getComponent(const std::string &name);
     
     bool hasComponent(const std::string &name) const;
 
-    Component *addInternalComponent(const std::string &name);
+    Component *addInternalComponent(const std::string &name, const Component *instance = nullptr);
     
     GameObject *getGameObject();
 
