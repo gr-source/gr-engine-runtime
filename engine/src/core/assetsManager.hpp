@@ -161,6 +161,8 @@ private:
 
     static void ReadData(Stream *stream, GameObjectHandle handle);
 
+    static void CreateComponent(GameObject *gameObject, std::string componentName);
+
     static void SetupScript(GameObject *gameObject, std::string path, std::streampos position, std::string componentName);
 
     static int ReadScript(Stream *stream, std::unordered_map<std::string, GameObject *> &tempList);

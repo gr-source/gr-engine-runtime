@@ -66,6 +66,7 @@ void DebugDraw::AddLine(const Vector3& start, const Vector3& end, const Color& c
 }
 
 void DebugDraw::Renderer() {
+    /*
     if (!Camera::Current || !m_shader || !m_shader->isValid()) {
         return;
     }
@@ -82,6 +83,7 @@ void DebugDraw::Renderer() {
     if (!m_lines.empty()) {
         DebugDraw::DrawLines();
     }
+    */
 }
 
 void DebugDraw::DrawLines() {

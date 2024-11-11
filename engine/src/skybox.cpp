@@ -56,11 +56,7 @@ void Skybox::Shutdown() {
     m_ebo = 0;
 }
 
-void Skybox::Renderer() {
-    if (!Camera::Current) {
-        return;
-    }
-    auto camera = Camera::Current();
+void Skybox::Renderer(Camera *camera) {
     if (!camera || !m_shader || !m_shader->isValid()) {
         return;
     }

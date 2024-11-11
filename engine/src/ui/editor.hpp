@@ -61,7 +61,15 @@ public:
 
     float GetFps();
 
+    Camera *getCamera();
+
 private:
+    std::unordered_map<IconType, grr::gTexture *> iconsUI;
+    
+    GameObject *m_cameraObject;
+
+    Camera *m_mainCamera;
+
     ImGuiViewport *m_viewport;
 
     grr::gTexture *s_texturePlayGame;
@@ -108,6 +116,8 @@ private:
 
     std::shared_ptr<Config> m_config;
 
+    GameObject *createEditorCamera();
+
     void BuildDock(ImGuiID dockspace_id, ImGuiDockNodeFlags dockspace_flags);
 
     void PopupComponentMenu();
@@ -137,6 +147,8 @@ private:
     void PlayGame();
 
     void StopGame();
+
+    void loadCamera(GameObject *camera);
 
     void RenderGuizmo();
 

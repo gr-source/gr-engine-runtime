@@ -478,12 +478,21 @@ void AssetsManager::ReadData(Stream *stream, GameObjectHandle handle) {
     Event::Add(handle.m_function, gameObject);
 }
 
+void AssetsManager::CreateComponent(GameObject *gameObject, std::string componentName) {
+    auto entt = gameObject->getEntity();
+
+    auto component = entt->hasComponent(componentName) ? entt->getComponent(componentName) : entt->addComponent(componentName);
+    if (!component) {
+        return Console::LogError("[ Assetsmanager.GameObject ] Falied to serialize component: %s, %s - Invalid componnet.", gameObject->getName().c_str(), componentName.c_str());
+    }
+}
+
 void AssetsManager::SetupScript(GameObject *gameObject, std::string path, std::streampos position, std::string componentName) {
     auto entt = gameObject->getEntity();
 
     auto component = entt->hasComponent(componentName) ? entt->getComponent(componentName) : entt->addComponent(componentName);
     if (!component) {
-        return;
+        return Console::LogError("[ Assetsmanager.GameObject ] Falied to serialize component: %s, %s - Invalid componnet.", gameObject->getName().c_str(), componentName.c_str());
     }
 
     Stream stream(path, std::ios_base::in | std::ios_base::out);
@@ -527,9 +536,6 @@ int AssetsManager::ReadScript(Stream *stream, std::unordered_map<std::string, Ga
             return 6;
         }
         
-        if (stream_size <= 0) {
-            continue;
-        }
         auto nextPosition = stream->tellg() + static_cast<std::streampos>(stream_size);
 
         // deserialize
@@ -539,6 +545,11 @@ int AssetsManager::ReadScript(Stream *stream, std::unordered_map<std::string, Ga
         }
 
         auto gameObject = it->second;
+
+        if (stream_size <= 0) {
+            Event::Add(&AssetsManager::CreateComponent, gameObject, componentName);
+            continue;
+        }
 
         Event::Add(&AssetsManager::SetupScript, gameObject, stream->getPath(), stream->tellg(), componentName);
 
@@ -662,6 +673,7 @@ void AssetsManager::SetupTextureMaterial(Material *material, int id, grr::gTextu
 
 void AssetsManager::SetGameObjectList(const std::string &path, std::function<void(GameObject *)> func) {
     if (!File::Exists(path)) {
+        func(nullptr);
         return Console::LogError("[ AssetsManager::GameObject ] File not found: " + path);
     }
 

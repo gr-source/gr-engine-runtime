@@ -56,11 +56,8 @@ void RenderManager::Initialize() {
     );
 }
 
-void RenderManager::Process() {
-    if (!Camera::Current) {
-        return;
-    }
-    m_camera = Camera::Current();
+void RenderManager::Process(Camera *camera) {
+    m_camera = camera;
     if (!bRender || !m_camera) {
         return;
     }

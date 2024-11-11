@@ -1,5 +1,7 @@
 #pragma once
 
+#include "script/default.hpp"
+
 #include <gr-render/gRender.h>
 
 #include <functional>
@@ -12,7 +14,7 @@ public:
 
     static void Shutdown();
 
-    static void Renderer();
+    static void Renderer(Camera *camera);
 
     static grr::gTexture *GetTextureCubemap();
 

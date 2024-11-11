@@ -29,14 +29,10 @@ void EditorController::Initialize() {
     Console::Message(Log::ERROR, "Health: %f - %d", 15.5f, 90);
 }
 
-void EditorController::Update() {
-    if (!Settings::bGameRunning && !Camera::Main && !Camera::Current) {
-        return;
-    }
+void EditorController::Update(Camera *camera) {
+    m_mainCamera = camera;
 
-    m_mainCamera = Camera::Main();
-
-    if (!m_mainCamera || m_mainCamera != Camera::Current() || !m_io->MouseDrawCursor || Settings::bGameRunning) {
+    if (!m_mainCamera || !m_io->MouseDrawCursor || Settings::bGameRunning) {
         return;
     }
 

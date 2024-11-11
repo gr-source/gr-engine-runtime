@@ -105,7 +105,11 @@ void Engine::Update() {
 
         Manager::Update();
     } else {
-        EditorController::Update();
+        auto editor = ProjectMenu::GetEditor();
+
+        if (editor) {
+            EditorController::Update(editor->getCamera());
+        }
     }
 
 
@@ -242,7 +246,7 @@ void Engine::HandleEvent(EngineEvent event, const void* data) {
 
 void Engine::MainFramebuffer() {
     // Seleção de modelos para renderizar
-    RenderManager::Process();
+    RenderManager::Process(ProjectMenu::GetEditor()->getCamera());
 
     // Pos processamento
     PostProcessing::Bind(MainPostProcess);
@@ -278,7 +282,7 @@ void Engine::RenderScene() {
     DebugDraw::Renderer();
 
     grr::gRender::SetRenderState(grr::GR_DEPTH_FUNC, grr::GR_DEPTH_LEQUAL);
-    Skybox::Renderer();
+    Skybox::Renderer(ProjectMenu::GetEditor()->getCamera());
 }
 
 void Engine::UIFramebuffer() {

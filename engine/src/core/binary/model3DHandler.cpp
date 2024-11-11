@@ -358,7 +358,6 @@ int Model3DHandler::WriteGameObject(Stream *stream, const GameObject *gameObject
         }
     }
 
-
     // write-status
     {
         auto bActive = gameObject->getActive();

@@ -12,7 +12,7 @@ public:
 
     static void Initialize();
 
-    static void Update();
+    static void Update(Camera *camera);
 
     static void LookAt(Transform *transform);
 
