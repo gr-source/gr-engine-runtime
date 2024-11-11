@@ -80,7 +80,7 @@ void Engine::Initialize() {
 }
 
 void Engine::Idle() {
-    auto fps = Editor::GetFps();
+    auto fps = 60.0f;
     static Time time;
     Statistics::m_threadFrame = {time.getFPS(), (fps > 0.0f ? time.sleep(fps) : time.start())};
     TimeLast::deltaTime = Statistics::m_threadFrame.delta;
@@ -156,7 +156,9 @@ void Engine::Shutdown() {
 }
 
 void Engine::GRKeyboardDown(grm::u32 key) {
-    Editor::KeyBoardUp(key);
+    auto editor = ProjectMenu::GetEditor();
+    if (editor)
+        editor->KeyBoardUp(key);
 }
 
 void Engine::GRKeyboardUp(grm::u32 key) {}
@@ -172,7 +174,9 @@ void Engine::GRCursorScrool(float xoffset, float yoffset) {
 }
 
 void Engine::GRDropFunc(const char *path) {
-    Editor::DropFile(path);
+    auto editor = ProjectMenu::GetEditor();
+    if (editor)
+        editor->DropFile(path);
 }
 
 void Engine::OnPhysics() {

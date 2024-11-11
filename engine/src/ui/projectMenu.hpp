@@ -4,9 +4,12 @@
 #include <string>
 #include <atomic>
 #include <array>
+#include <memory>
 
 #include "ImGuiRender.h"
 #include "project.hpp"
+
+class Editor;
 
 class ProjectMenu {
 public:
@@ -17,6 +20,8 @@ public:
     static void Render();
 
     static void CloseProject();
+
+    static Editor *GetEditor();
 
 private:
     static std::array<const std::string, 6> m_assetsFile;
@@ -30,6 +35,8 @@ private:
     static bool bInstalling;
 
     static ImGuiIO *m_io;
+
+    static std::shared_ptr<Editor> m_editor;
 
     static void InitProject();
 
@@ -62,10 +69,6 @@ private:
     static bool ReadLastProject();
 
     static std::string GetCurrentDirProject();
-
-    static void InitInstallThread(const std::string &path);
-
-    static void InstallThread(std::string path);
 
     static void ThreadJoin();
 };

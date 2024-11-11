@@ -4,7 +4,7 @@ const std::string & Field::getName() const {
     return m_name;
 }
 
-const std::string &Field::getType() const {
+FieldType Field::getType() const {
     return m_type;
 }
 

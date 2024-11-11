@@ -57,6 +57,6 @@ public:
 
 #define REGISTER_FIELD(cls, type, field) \
     static bool is_register_##cls##_##type##_##field = \
-        (ComponentRegistry::getInstance().GetComponentPool<cls>()->RegisterField(#field, #type, reinterpret_cast<std::size_t>(&reinterpret_cast<cls *>(0)->field)), false);
+        (ComponentRegistry::getInstance().GetComponentPool<cls>()->RegisterField(#field, FieldType_ ##type, reinterpret_cast<std::size_t>(&reinterpret_cast<cls *>(0)->field)), false);
 
 

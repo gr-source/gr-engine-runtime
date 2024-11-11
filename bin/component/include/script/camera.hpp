@@ -47,3 +47,8 @@ private:
 
 REGISTER_COMPONENT(Camera);
 
+
+
+
+
+

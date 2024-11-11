@@ -39,6 +39,8 @@ bool ProjectMenu::bInstalling = false;
 
 ImGuiIO *ProjectMenu::m_io = nullptr;
 
+std::shared_ptr<Editor> ProjectMenu::m_editor = nullptr;
+
 void ProjectMenu::Initialize() {
     m_mainViewport = ImGui::GetMainViewport();
 
@@ -57,7 +59,7 @@ void ProjectMenu::Initialize() {
 }
 
 void ProjectMenu::Shutdown() {
-    Editor::Shutdown();
+    m_editor = nullptr;
 }
 
 void ProjectMenu::Render() {
@@ -67,7 +69,7 @@ void ProjectMenu::Render() {
     }
 
     if (Project::GetCurrent()) {
-        return Editor::RenderUI();
+        return m_editor->RenderUI();
     }
     RenderMainMenu();
 }
@@ -78,7 +80,7 @@ void ProjectMenu::CloseProject() {
         File::Delete(path);
     }
 
-    Editor::Shutdown();
+    m_editor = nullptr;
 
     Scene::SetCurrent(nullptr);
 
@@ -87,6 +89,10 @@ void ProjectMenu::CloseProject() {
     m_projects.clear();
 
     ReadProjects();
+}
+
+Editor *ProjectMenu::GetEditor() {
+    return &(*m_editor);
 }
 
 void ProjectMenu::InitProject() {
@@ -102,7 +108,7 @@ void ProjectMenu::InitProject() {
     }
 
     if (!ReadLastProject()) {
-        ReadProjects();
+        return ReadProjects();
     }
 }
 
@@ -309,9 +315,9 @@ void ProjectMenu::ReadProjects() {
 void ProjectMenu::OpenProject(Project &project) {
     File::SetCurrentProject(project.getPath());
 
-    Project::SetCurrent(&project);
+    m_editor = std::make_shared<Editor>();
 
-    Editor::Initialize();
+    Project::SetCurrent(&project);
 
     SaveLastProject(project);
 }

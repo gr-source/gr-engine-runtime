@@ -78,59 +78,8 @@ std::string getfilesize(std::size_t sz) {
 
 std::unordered_map<IconType, grr::gTexture *> iconsUI;
 
-ImGuiViewport *Editor::m_viewport = nullptr;
 
-grr::gTexture *Editor::s_texturePlayGame = nullptr;
-
-GameObject *Editor::s_objectSelected = nullptr;
-
-ImGuiIO* Editor::s_io = nullptr;
-
-bool Editor::bFileDoubleClick = false;
-
-bool Editor::bCutAllFile = false;
-
-bool Editor::bCopyAllFile = false;
-
-bool Editor::bViewPortFocused = false;
-
-bool Editor::bOpenPopupInfoDir = false;
-
-bool Editor::bScriptReloaded = false;
-
-bool Editor::bOpenPopupOptionGameObject = false;
-
-bool Editor::pPopupFileManager = false;
-
-bool Editor::bBuildDock = false;
-
-ImVec4 Editor::FPSColor = {255, 255, 255, 255};
-
-ImVec2 Editor::m_lastViewportSize = {0.0f, 0.0f};
-
-ImGuizmo::OPERATION Editor::m_guizmoOperation = ImGuizmo::TRANSLATE;
-
-ImGuizmo::MODE Editor::m_guizmoManipulate = ImGuizmo::WORLD;
-
-grm::u32 Editor::s_maxProgress = 0;
-
-grm::u8 Editor::m_currentPage = 0;
-
-std::unordered_map<std::filesystem::path, bool> Editor::fLisDirSelected;
-
-std::filesystem::path Editor::m_currentPath;
-
-std::filesystem::path Editor::m_SelectedPath;
-
-std::shared_ptr<Config> Editor::m_config = nullptr;
-
-void Editor::Initialize() {
-    m_viewport = ImGui::GetMainViewport();
-
-    s_io = &ImGui::GetIO();
-
-    m_currentPath = File::GetAsset("");
-
+Editor::Editor() : m_viewport(ImGui::GetMainViewport()), s_io(&ImGui::GetIO()), m_currentPath(File::GetAsset("")) {
     m_config = std::make_shared<Config>(File::GetFile("/config.ini"));
     try {
         m_config->load();
@@ -151,7 +100,7 @@ void Editor::Initialize() {
     auto lastCategory = m_config->getCategory();
 
     m_config->setCategory("scene");
-    if (m_config->hasKey("main") && !Scene::HasScene()) {
+    if (m_config->hasKey("main") && m_config->getValue<std::string>("main") != "default" && !Scene::HasScene()) {
         Scene::LoadScene(File::GetAsset("/scene/" + m_config->getValue<std::string>("main") + ".scn"));
     }
 
@@ -164,15 +113,11 @@ void Editor::Initialize() {
     ScreenRender::Initialize();
 
     Skybox::Initialize();
-
-    Console::LogWarning("InitializedMain: %d - %f", 34, 0.5f);
 }
 
-void Editor::Shutdown() {
+Editor::~Editor() {
     m_config->setCategory("scene");
-    if (Scene::HasScene()) {
-        m_config->setValue<std::string>("main", Scene::GetCurrentScene()->getName());
-    }
+    m_config->setValue<std::string>("main", Scene::HasScene() ?  Scene::GetCurrentScene()->getName() : "default");
 
     if (m_config) {
         m_config->save();
@@ -286,7 +231,7 @@ void Editor::RenderUI() {
 
     if (Camera::Current && s_io->KeyCtrl && ImGui::IsKeyReleased(ImGuiKey_S)) {
         for (auto &&[name, scene] : Scene::GetScenes()) {
-            Event::Add(&Editor::SaveScene, name, &(*scene));
+            Event::Add(&Editor::SaveScene, this, name, &(*scene));
         }
     }
 
@@ -1103,7 +1048,7 @@ void Editor::PlayGame() {
 
     Scene::DestroyObjects();
 
-    Threadpool::AddTask(&Editor::BuildScript);
+    Threadpool::AddTask(&Editor::BuildScript, this);
 
     Console::log(Log::DEFAULT, "Game playing.");
 }
@@ -1179,7 +1124,7 @@ void Editor::DropGameObjectInScene() {
     }
     
     if (std::filesystem::path(path).filename().extension() == ".gmdx") {
-        AssetsManager::LoadGameObject(path, &Editor::PostLoadGameObject);
+        AssetsManager::LoadGameObject(path, &Editor::PostLoadGameObject, this);
     }
     
     ImGui::EndDragDropTarget();
@@ -1510,7 +1455,7 @@ void Editor::RenderConsoleWindow() {
 void Editor::RenderConsole() {
     auto logs = Console::GetListLogs();
 
-    std::for_each(logs.begin(), logs.end(), &Editor::RenderLog);
+    std::for_each(logs.begin(), logs.end(), std::bind(&Editor::RenderLog, this, std::placeholders::_1));
     
     if (Console::bChanged) {
         ImGui::SetScrollHereY(1.0f);
@@ -1567,7 +1512,6 @@ void Editor::RenderSettings() {
     }
 }
 
-// TODO: adicionar suporte ao vs code
 void Editor::ConfigureVSCode() {
     Console::LogInfo("Initializing Visual Studio Code Setup...");
     
@@ -1621,16 +1565,8 @@ void Editor::RenderPropertiUI() {
 
 void Editor::RenderStatisticsMenu() {
     ImGui::SeparatorText("Scripts");
-            
     ImGui::Text("Entidades: %ld", Manager::GetEntityCount());
     ImGui::Text("GameObject: %ld", GameObject::GetGameObjectCount());
-
-    // ImGui::Text("Memoria: %s", getfilesize(Memory::totalMemoryUsage).c_str());
-
-    ImGui::SeparatorText("Cena");
-    // ImGui::Text("Vertices: %d | %s", gameStatics.vertices, getfilesize(gameStatics.vertices * sizeof(Vertex3D)).c_str());
-    // ImGui::Text("Indice: %d | %s", gameStatics.indices, getfilesize(gameStatics.indices * sizeof(grm::u32)).c_str());
-    // ImGui::Text("Triangulos: %.2f", (gameStatics.indices / 3.0f));
 
     ImGui::SeparatorText("AssetsManager");
     ImGui::Text("Textures: %ld", AssetsManager::GetTextureCount());
@@ -1648,7 +1584,6 @@ void Editor::RenderStatisticsMenu() {
     ImGui::Text("Script:      %fms  | FPS: %.2f",  Statistics::m_scriptFrame.delta,  (1.0f / Statistics::m_scriptFrame.delta));
 
     ImGui::SeparatorText("Renderização");
-    // ImGui::Text("Cameras: %ld",   Camera::Get.size());
     if (ScriptManager::GetListLight)
         ImGui::Text("Luzes: %ld",     ScriptManager::GetListLight().size());
     ImGui::Text("Draw Call Count: %ld", Statistics::m_drawCallCount);
@@ -1664,82 +1599,87 @@ void Editor::RenderGameObjectPropertiUI() {
     auto entt = s_objectSelected->getEntity();
 
     auto isOpenPopup = false;
-    if (ImGui::BeginTabItem("GameObject", nullptr)) {
-        ImGui::Image(reinterpret_cast<ImTextureID>(iconsUI[IconType::ICON_GAMEOBJECT]->getID()), ImVec2(16, 16));
-
-        ImGui::SameLine();
-
-        ImGui::Text("[ %s - %s ]", s_objectSelected->getName().c_str(), s_objectSelected->getTag().c_str());
-
-        ImGui::SameLine();
-
-        auto isActive = s_objectSelected->isActive();
-        if (ImGui::Checkbox("##check_box_is_active", &isActive)) {
-            s_objectSelected->setActive(isActive);
-        }
-
-
-        auto &components = s_objectSelected->getEntity()->getComponents();
-        for (auto &&[name, component] : components) {
-            if (name == "Transform") {
-                s_objectSelected->RenderProperty<Transform>(Editor::OnPropertyTransform);
-                continue;
-            }
-            
-            if (name == "Light") {
-                if (s_objectSelected->RenderProperty<Light>(Editor::OnPropertyLight)) {
-                    Event::Add(&Entity::remove, s_objectSelected->getEntity(), name);
-                }
-                continue;
-            }
-
-            if (name == "MeshRender") {
-                if (s_objectSelected->RenderProperty<MeshRender>(Editor::OnPropertyMeshRender)) {
-                    Event::Add(&Entity::remove, s_objectSelected->getEntity(), name);
-                    Event::Add(&Entity::remove, s_objectSelected->getEntity(), "MeshFilter");
-                }
-                continue;
-            }
-
-            if (name == "MeshFilter") {
-                if (s_objectSelected->RenderProperty<MeshFilter>(Editor::OnPropertyMeshFilter)) {
-                    Event::Add(&Entity::remove, s_objectSelected->getEntity(), name);
-                }
-                continue;
-            }
-
-            if (name == "BoxCollider") {
-                if (s_objectSelected->RenderProperty<BoxCollider>(Editor::OnPropertyBoxCollider)) {
-                    Event::Add(&Entity::remove, s_objectSelected->getEntity(), name);
-                }
-                continue;
-            }
-
-            if (name == "Rigidbody") {
-                if (s_objectSelected->RenderProperty<Rigidbody>(Editor::OnPropertyRigidbody)) {
-                    Event::Add(&Entity::remove, s_objectSelected->getEntity(), name);
-                }
-                continue;
-            }
-
-
-            if (!RenderComponents(name, &(*component))) {
-                Event::Add(&Entity::remove, s_objectSelected->getEntity(), name);
-                continue;
-            }
-        }
-
-        if (ImGui::SmallButton("AddComponent")) {
-            isOpenPopup = true;
-        }
-
-        ImGui::EndTabItem();
-    }
-
+    rTabObjectInfo(isOpenPopup);
+    
     if (isOpenPopup) {
         ImGui::OpenPopup("##popup_add_component");
     }
     PopupAddComponent();
+}
+
+void Editor::rTabObjectInfo(bool &isOpenPopup) {
+    auto isOpen = ImGui::BeginTabItem("GameObject", nullptr);
+    if (!isOpen) {
+        return;
+    }
+    ImGui::Image(reinterpret_cast<ImTextureID>(iconsUI[IconType::ICON_GAMEOBJECT]->getID()), ImVec2(16, 16));
+
+    ImGui::SameLine();
+
+    ImGui::Text("[ %s - %s ]", s_objectSelected->getName().c_str(), s_objectSelected->getTag().c_str());
+
+    ImGui::SameLine();
+
+    auto isActive = s_objectSelected->isActive();
+    if (ImGui::Checkbox("##check_box_is_active", &isActive)) {
+        s_objectSelected->setActive(isActive);
+    }
+
+    auto &components = s_objectSelected->getEntity()->getComponents();
+    for (auto &&[name, component] : components) {
+        if (name == "Transform") {
+            s_objectSelected->RenderProperty<Transform>(&Editor::OnPropertyTransform, this);
+            continue;
+        }
+        
+        if (name == "Light") {
+            if (s_objectSelected->RenderProperty<Light>(&Editor::OnPropertyLight, this)) {
+                Event::Add(&Entity::remove, s_objectSelected->getEntity(), name);
+            }
+            continue;
+        }
+
+        if (name == "MeshRender") {
+            if (s_objectSelected->RenderProperty<MeshRender>(&Editor::OnPropertyMeshRender, this)) {
+                Event::Add(&Entity::remove, s_objectSelected->getEntity(), name);
+                Event::Add(&Entity::remove, s_objectSelected->getEntity(), "MeshFilter");
+            }
+            continue;
+        }
+
+        if (name == "MeshFilter") {
+            if (s_objectSelected->RenderProperty<MeshFilter>(&Editor::OnPropertyMeshFilter, this)) {
+                Event::Add(&Entity::remove, s_objectSelected->getEntity(), name);
+            }
+            continue;
+        }
+
+        if (name == "BoxCollider") {
+            if (s_objectSelected->RenderProperty<BoxCollider>(&Editor::OnPropertyBoxCollider, this)) {
+                Event::Add(&Entity::remove, s_objectSelected->getEntity(), name);
+            }
+            continue;
+        }
+
+        if (name == "Rigidbody") {
+            if (s_objectSelected->RenderProperty<Rigidbody>(&Editor::OnPropertyRigidbody, this)) {
+                Event::Add(&Entity::remove, s_objectSelected->getEntity(), name);
+            }
+            continue;
+        }
+
+
+        if (!RenderComponents(name, &(*component))) {
+            Event::Add(&Entity::remove, s_objectSelected->getEntity(), name);
+            continue;
+        }
+    }
+
+    if (ImGui::SmallButton("AddComponent")) {
+        isOpenPopup = true;
+    }
+
+    ImGui::EndTabItem();
 }
 
 bool Editor::RenderComponents(const std::string &name, Component *component) {
@@ -1775,34 +1715,36 @@ void Editor::RenderField(Field &field, Component *component) {
     auto name = field.getName();
     auto type = field.getType();
 
-    if (type == "bool") {
-        auto data = Field::GetFieldData<bool>(component, field);
-
-        ImGui::PushStyleColor(ImGuiCol_Button, {0.0f, 0.0f, 0.0f, 1.0f});
-        *data = ImGui::Button(name.c_str());
-        ImGui::PopStyleColor();
-        return;
-    }
-
     ImGui::Text("%s:", name.c_str());
     name = "##" + name;
     
-    if (type == "float") {
+    switch (type) {
+    case FieldType_float: {
         auto data = Field::GetFieldData<float>(component, field);
 
         ImGui::DragFloat(name.c_str(), data);
-    } else if (type == "int") {
+        break;
+    }
+    case FieldType_int: {
         auto data = Field::GetFieldData<int>(component, field);
 
         ImGui::DragInt(name.c_str(), data);
-    } else if (type == "bool") {
+        break;
+    }
+    case FieldType_bool: {
         auto data = Field::GetFieldData<bool>(component, field);
 
         ImGui::Checkbox(name.c_str(), data);
-    } else if (type == "Vector3") {
+        break;
+    }
+    case FieldType_Vector3: {
         auto data = Field::GetFieldData<Vector3>(component, field);
 
-        ImGui::DragFloat3(name.c_str(), (float *)data);
+        ImGui::DragFloat3(name.c_str(), reinterpret_cast<float *>(&data));
+        break;
+    }
+    default:
+        break;
     }
 }
 
@@ -2002,7 +1944,7 @@ void Editor::InsertTexture(Material *material) {
         Console::LogError("[ GUI ] Texture do not loaded, patg is empty.");
         return ImGui::EndDragDropTarget();
     }
-    AssetsManager::LoadTexture(path, &Editor::SetupTextureMaterial, material, 0);
+    AssetsManager::LoadTexture(path, &Editor::SetupTextureMaterial, this, material, 0);
     ImGui::EndDragDropTarget();
 }
 
@@ -2211,24 +2153,24 @@ void Editor::TextureInfo(Texture *&texture) {
 }
 
 void Editor::LoadReources() {
-    AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-file-30.png", true),                    &Editor::SetupTexture, IconType::ICON_FILE);
-    AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-folder-50.png", true),                  &Editor::SetupTexture, IconType::ICON_FOLDER);
-    AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-go-back-50.png", true),                 &Editor::SetupTexture, IconType::ICON_BACK_FILE);
-    AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-3d-object-50.png", true),               &Editor::SetupTexture, IconType::ICON_GAMEOBJECT);
-    AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-lápis-30.png", true),                   &Editor::SetupTexture, IconType::ICON_PENCIL);
-    AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-lâmpada-globular-64.png", true),        &Editor::SetupTexture, IconType::ICON_LIGHT);
-    AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-textura-de-renderização-32.png", true), &Editor::SetupTexture, IconType::ICON_TEXTURE);
-    AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-png-24.png", true),                     &Editor::SetupTexture, IconType::ICON_PNG);
-    AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-reproduzir-30.png", true),              &Editor::SetupTexture, IconType::ICON_PLAY_GAME);
-    AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-parar-50.png", true),                   &Editor::SetupTexture, IconType::ICON_STOP_GAME);
-    AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-resíduos-50.png", true),                &Editor::SetupTexture, IconType::ICON_BIN);
-    AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-importar-50.png", true),                &Editor::SetupTexture, IconType::ICON_IMPORT);
-    AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-ordenar-para-a-direita-50.png", true),  &Editor::SetupTexture, IconType::ICON_ASCENDENTE);
-    AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-ordem-descendente-50.png", true),       &Editor::SetupTexture, IconType::ICON_DESCENDENTE);
-    AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-editar-24.png", true),                  &Editor::SetupTexture, IconType::ICON_EDIT);
-    AssetsManager::LoadTexture(File::GetAsset("/icon/motion-graphics.png", true),                   &Editor::SetupTexture, IconType::ICON_ANIMATION);
-    AssetsManager::LoadTexture(File::GetAsset("/icon/shade.png", true),                             &Editor::SetupTexture, IconType::ICON_SHADER);
-    AssetsManager::LoadTexture(File::GetAsset("/icon/studio-set.png", true),                        &Editor::SetupTexture, IconType::ICON_SCENE);
+    AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-file-30.png", true),                    &Editor::SetupTexture, this, IconType::ICON_FILE);
+    AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-folder-50.png", true),                  &Editor::SetupTexture, this, IconType::ICON_FOLDER);
+    AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-go-back-50.png", true),                 &Editor::SetupTexture, this, IconType::ICON_BACK_FILE);
+    AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-3d-object-50.png", true),               &Editor::SetupTexture, this, IconType::ICON_GAMEOBJECT);
+    AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-lápis-30.png", true),                   &Editor::SetupTexture, this, IconType::ICON_PENCIL);
+    AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-lâmpada-globular-64.png", true),        &Editor::SetupTexture, this, IconType::ICON_LIGHT);
+    AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-textura-de-renderização-32.png", true), &Editor::SetupTexture, this, IconType::ICON_TEXTURE);
+    AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-png-24.png", true),                     &Editor::SetupTexture, this, IconType::ICON_PNG);
+    AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-reproduzir-30.png", true),              &Editor::SetupTexture, this, IconType::ICON_PLAY_GAME);
+    AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-parar-50.png", true),                   &Editor::SetupTexture, this, IconType::ICON_STOP_GAME);
+    AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-resíduos-50.png", true),                &Editor::SetupTexture, this, IconType::ICON_BIN);
+    AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-importar-50.png", true),                &Editor::SetupTexture, this, IconType::ICON_IMPORT);
+    AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-ordenar-para-a-direita-50.png", true),  &Editor::SetupTexture, this, IconType::ICON_ASCENDENTE);
+    AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-ordem-descendente-50.png", true),       &Editor::SetupTexture, this, IconType::ICON_DESCENDENTE);
+    AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-editar-24.png", true),                  &Editor::SetupTexture, this, IconType::ICON_EDIT);
+    AssetsManager::LoadTexture(File::GetAsset("/icon/motion-graphics.png", true),                   &Editor::SetupTexture, this, IconType::ICON_ANIMATION);
+    AssetsManager::LoadTexture(File::GetAsset("/icon/shade.png", true),                             &Editor::SetupTexture, this, IconType::ICON_SHADER);
+    AssetsManager::LoadTexture(File::GetAsset("/icon/studio-set.png", true),                        &Editor::SetupTexture, this, IconType::ICON_SCENE);
 }
 
 void Editor::SetupTexture(IconType type, grr::gTexture *texture) {
@@ -2392,7 +2334,10 @@ void Editor::BuildProject() {
         return Console::LogError("[ Build ] Falied to build project, internal data not found.");
     }
 
-    Threadpool::AddTask(&Editor::CompileScript, path, &Editor::PostBuildScriptFromProject);
+    std::function<void()> func = std::bind(&Editor::PostBuildScriptFromProject, this);
+
+    if (func)
+        Threadpool::AddTask(&Editor::CompileScript, this, path, func);
 }
 
 void Editor::PostBuildScriptFromProject() {
@@ -2430,9 +2375,10 @@ void Editor::ReconfigScript() {
 
     Console::LogInfo("[ BUILD ] building scipt...");
 
-    Threadpool::AddTask(&Editor::BuildScript);
+    Threadpool::AddTask(&Editor::BuildScript, this);
 }
 
+// TODO: Faltaa arrumar aqui
 void Editor::BuildScript() {
     Console::LogInfo("[ Build ] Initialize");
 
@@ -2441,7 +2387,10 @@ void Editor::BuildScript() {
         return Console::LogError("[ Build ] Falied to build project, internal data not found.");
     }
 
-    Threadpool::AddTask(&Editor::CompileScript, path, &Editor::LoadScript);
+    std::function<void()> func = std::bind(&Editor::LoadScript, this);
+    
+    if (func)
+        Threadpool::AddTask(&Editor::CompileScript, this, path, func);
 }
 
 void Editor::CompileScript(std::string path, std::function<void()> func) {
