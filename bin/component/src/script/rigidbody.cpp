@@ -16,7 +16,7 @@ INSERT_FUNCTION(1, RigidbodyUpdate)
 static void (*RigidbodyShutdown)(Rigidbody *instance);
 INSERT_FUNCTION(2, RigidbodyShutdown)
 
-Rigidbody::Rigidbody() : m_collisionShape(nullptr), m_DefaultMotionState(nullptr), m_body(nullptr), m_transform(nullptr), m_mass(0.0f), m_bDinamic(false), m_lookRotation(Vector3::one) {}
+Rigidbody::Rigidbody() : m_collisionShape(nullptr), m_DefaultMotionState(nullptr), m_body(nullptr), m_transform(nullptr), m_mass(0.0f), m_bDinamic(false), m_lookRotation(Vector3::one), fMotionThreshold(0.0f), fSweptSphereRadius(0.0f) {}
 
 Rigidbody::~Rigidbody() {
     RigidbodyShutdown(this);
@@ -36,6 +36,8 @@ bool Rigidbody::Serialize(Stream *stream) {
     stream->write(&m_mass, sizeof(float));
     stream->write(&m_bDinamic, sizeof(bool));
     stream->write(&m_lookRotation, sizeof(Vector3));
+    stream->write(&fMotionThreshold, sizeof(float));
+    stream->write(&fSweptSphereRadius, sizeof(float));
     return true;
 }
 
@@ -43,6 +45,8 @@ bool Rigidbody::Deserialize(Stream *stream) {
     stream->read(&m_mass, sizeof(float));
     stream->read(&m_bDinamic, sizeof(bool));
     stream->read(&m_lookRotation, sizeof(Vector3));
+    stream->read(&fMotionThreshold, sizeof(float));
+    stream->read(&fSweptSphereRadius, sizeof(float));
     return true;
 }
 
@@ -105,3 +109,28 @@ void Rigidbody::setDynamic(bool value) {
 btRigidBody *Rigidbody::getBody() const {
     return &(*m_body);
 }
+
+float Rigidbody::getMotionThreshold() const {
+    return fMotionThreshold;
+}
+
+void Rigidbody::setMotionThreshold(float value) {
+    fMotionThreshold = value;
+}
+
+float Rigidbody::getSweptSphereRadius() const {
+    return fSweptSphereRadius;
+}
+
+void Rigidbody::setSweptSphereRadius(float value) {
+    fSweptSphereRadius = value;
+}
+
+
+
+
+
+
+
+
+

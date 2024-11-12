@@ -36,8 +36,12 @@ void Rigidbody::initialize() {
 
     m_body = std::make_shared<btRigidBody>(pRigidBodyConstructionInfo);
 	m_body->setAngularFactor(VEC3_TO_BTVEC3(m_lookRotation));
-    // m_body->setCcdMotionThreshold(0.1f); // Ativar CCD
-    // m_body->setCcdSweptSphereRadius(0.1f); // Configuração de CCD
+    
+    if (fMotionThreshold > 0.0f)
+        m_body->setCcdMotionThreshold(fMotionThreshold);
+
+    if (fSweptSphereRadius > 0.0f)
+        m_body->setCcdSweptSphereRadius(fSweptSphereRadius); // Configuração de CCD
 
     PhysicsScene::AddRigidbody(&(*m_body));
 }
@@ -100,7 +104,18 @@ const Vector3 &Rigidbody::getLookRotation() const {
     return m_lookRotation;
 }
 
+float Rigidbody::getMotionThreshold() const {
+    return fMotionThreshold;
+}
 
+void Rigidbody::setMotionThreshold(float value) {
+    fMotionThreshold = value;
+}
 
+float Rigidbody::getSweptSphereRadius() const {
+    return fSweptSphereRadius;
+}
 
-
+void Rigidbody::setSweptSphereRadius(float value) {
+    fSweptSphereRadius = value;
+}

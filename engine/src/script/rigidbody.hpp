@@ -26,6 +26,14 @@ public:
 
     const Vector3 &getLookRotation() const;
 
+    float getMotionThreshold() const;
+
+    void setMotionThreshold(float value);
+
+    float getSweptSphereRadius() const;
+
+    void setSweptSphereRadius(float value);
+
 private:
     std::shared_ptr<btDefaultMotionState> m_DefaultMotionState;
 
@@ -40,6 +48,10 @@ private:
     bool m_bDinamic;
 
     Vector3 m_lookRotation;
+
+    float fMotionThreshold;
+
+    float fSweptSphereRadius;
 };
 
 

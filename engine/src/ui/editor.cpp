@@ -1878,8 +1878,10 @@ void Editor::PopupAddComponent() {
 
     for (auto &name : m_componentName) {
         if (ImGui::SmallButton(name.c_str())) {
-            s_objectSelected->getEntity()->addComponent(name);
-
+            auto component = s_objectSelected->getEntity()->addComponent(name);
+            if (component && name == "Light") {
+                component->Init();
+            }
             // AddComponentForAll(s_objectSelected, name);
 
             ImGui::CloseCurrentPopup();
@@ -2161,9 +2163,23 @@ bool Editor::OnPropertyRigidbody(Rigidbody *rigidbody) {
     const char* text[] {"X", "Y", "Z"};
 
     auto freese = rigidbody->getLookRotation();
-    ImGui::Text("Freeze");
+    ImGui::Text("Freeze Rotation");
     if (ImGui::DragFloatEx("##rigidbody_freeze", text, reinterpret_cast<float *>(&freese), 1.0f, 0.0f, 0.0f, "%.3f")) {
         rigidbody->setLookRotation(freese);
+    }
+
+    ImGui::SeparatorText("Continuous Collision Detection");
+
+    auto fMotionThreshold = rigidbody->getMotionThreshold();
+    ImGui::Text("Distance");
+    if (ImGui::DragFloat("##rigidbody_ccd_distance", &fMotionThreshold, 0.4f, 0.0f, 5.0f)) {
+        rigidbody->setMotionThreshold(fMotionThreshold);
+    }
+
+    auto fSweptSphereRadius = rigidbody->getSweptSphereRadius();
+    ImGui::Text("Sphere Radius");
+    if (ImGui::DragFloat("##rigidbody_ccd_sphereradius", &fSweptSphereRadius, 0.4f, 0.0f, 5.0f)) {
+        rigidbody->setSweptSphereRadius(fSweptSphereRadius);
     }
 
     return false;

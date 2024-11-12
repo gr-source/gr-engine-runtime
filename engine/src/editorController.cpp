@@ -26,7 +26,6 @@ void EditorController::Initialize() {
     if (!m_io) {
         throw std::runtime_error("IO pointer do not is valid.");
     }
-    Console::Message(Log::ERROR, "Health: %f - %d", 15.5f, 90);
 }
 
 void EditorController::Update(Camera *camera) {
@@ -71,10 +70,15 @@ void EditorController::LookAt(Transform *transform) {
 
     m_mainCamera->lookIt(dir);
 
-    // elapsed = {
-    //     -Math::eulerAngles(m_mainCamera->getTransform()->getRotation()).y,
-    //     Math::eulerAngles(m_mainCamera->getTransform()->getRotation()).x
-    // };
+    auto euler = Math::eulerAngles(m_mainCamera->getTransform()->getLocalRotation());
+
+    elapsed = {
+        -euler.y,
+        euler.x
+    };
+
+    elapsed.y = std::clamp(elapsed.y, -89.0f, 89.0f);
+    elapsed.x = std::fmod(elapsed.x, 360.0f);
 }
 
 void EditorController::UpdateCursor(Transform *transform) {

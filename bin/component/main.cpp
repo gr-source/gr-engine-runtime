@@ -10,9 +10,6 @@
 std::unordered_map<int, grr::gShader *> shaderList;
 
 void Initialize() {
-    Console::Message(LogInfo::LogType::DEFAULT, "Update 3 XXXXXXXXXXXXXXXXXX: %f - %d", 1.5f, 80);
-    std::cout << "Update 3 XXXXXXXXXXXXXXXXXX" << std::endl;
-
     AssetsManager::LoadShader("dynamic_one_model",
         File::GetAsset("/shader/model/dynamic_model.frag"),
         File::GetAsset("/shader/model/dynamic_one_model.vert")
@@ -39,9 +36,7 @@ void Initialize() {
     );
 }
 
-void Destroy() {
-    std::cout << "shutdowm" << std::endl;
-}
+void Destroy() {}
 
 
 
