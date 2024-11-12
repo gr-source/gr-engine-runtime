@@ -27,6 +27,8 @@ public:
 
     static bool Raycast(const Vector3 &rayStart, const Vector3 &rayEnd);
 
+    static void contactTest(btCollisionObject *colObj, btCollisionWorld::ContactResultCallback &resultCallback);
+
     static Vector3 gravity;
 
 protected:

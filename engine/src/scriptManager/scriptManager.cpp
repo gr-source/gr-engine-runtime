@@ -238,6 +238,9 @@ void ScriptManager::RegisterApi() {
     // Raycast
     *function["Raycast::RayCast"] = reinterpret_cast<void *>(&PhysicsScene::Raycast);
 
+    // Phys
+    *function["PhysicsScene::contactTest"] = reinterpret_cast<void *>(&PhysicsScene::contactTest);
+
     // Mesh
     *function["Meshserialize"] = (void *)&Mesh::serialize;
     *function["Meshdeserialize"] = (void *)&Mesh::deserialize;

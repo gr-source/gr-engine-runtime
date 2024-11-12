@@ -46,6 +46,8 @@ public:
 
     void setDynamic(bool value);
 
+    btRigidBody *getBody() const;
+
 private:
     std::shared_ptr<btDefaultMotionState> m_DefaultMotionState;
 

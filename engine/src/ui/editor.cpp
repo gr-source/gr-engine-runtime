@@ -1378,7 +1378,7 @@ void Editor::DropTargetGameObjectInFile(std::string path) {
         return ImGui::EndDragDropTarget();
     }
 
-    path = path[0] == '/' ? path : path + "/";
+    path = path[path.size()] == '/' ? path : path + "/";
 
     Model3DHandler::ExportGRMX(path + name + ".gmdx", target);
     
@@ -1843,6 +1843,19 @@ void Editor::RenderField(Field &field, Component *component) {
     }
 }
 
+void AddComponentForAll(GameObject *gameObject, std::string name) {
+    auto entt = gameObject->getEntity();
+
+    if (!entt->hasComponent(name)) {
+        entt->addComponent(name);
+    }
+
+    auto transform = gameObject->getTransform();
+    for (auto &child : transform->getChildren()) {
+        AddComponentForAll(child->getGameObject(), name);
+    }
+}
+
 void Editor::PopupAddComponent() {
     if (!ScriptManager::GetComponentPool && !s_objectSelected) {
         return;
@@ -1866,6 +1879,8 @@ void Editor::PopupAddComponent() {
     for (auto &name : m_componentName) {
         if (ImGui::SmallButton(name.c_str())) {
             s_objectSelected->getEntity()->addComponent(name);
+
+            // AddComponentForAll(s_objectSelected, name);
 
             ImGui::CloseCurrentPopup();
         }

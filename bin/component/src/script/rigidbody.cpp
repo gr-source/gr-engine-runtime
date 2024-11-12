@@ -102,9 +102,6 @@ void Rigidbody::setDynamic(bool value) {
     m_bDinamic = value;
 }
 
-
-
-
-
-
-
+btRigidBody *Rigidbody::getBody() const {
+    return &(*m_body);
+}

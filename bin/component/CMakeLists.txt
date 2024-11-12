@@ -28,6 +28,7 @@ set(script_src
 
 set(core_src
     src/core/assetsManager.cpp
+    src/core/physicsScene.cpp
     src/core/threadpool.cpp
     src/core/function.cpp
     src/core/console.cpp

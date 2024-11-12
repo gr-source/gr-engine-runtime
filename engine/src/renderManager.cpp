@@ -83,7 +83,6 @@ void RenderManager::Renderer() {
         return;
     }
 
-    
     Batching::Renderer();
 
     for (int i=0;i<10;i++) {

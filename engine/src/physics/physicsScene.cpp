@@ -49,3 +49,7 @@ bool PhysicsScene::Raycast(const Vector3 &rayStart, const Vector3 &rayEnd) {
     
     return rayCallback.hasHit();
 }
+
+void PhysicsScene::contactTest(btCollisionObject *colObj, btCollisionWorld::ContactResultCallback &resultCallback) {
+    return dynamicsWorld->contactTest(colObj, resultCallback);
+}
