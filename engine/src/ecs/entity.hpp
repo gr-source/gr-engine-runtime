@@ -37,11 +37,11 @@ public:
 
     Component *addInternalComponent(const std::string &name, const Component *instance = nullptr);
     
-    GameObject *getGameObject();
+    GameObject *getGameObject() const;
 
     std::unordered_map<std::string, std::unique_ptr<Component>> &getComponents();
 
-    void copy(Entity *entity);
+    void copy(const Entity *entity);
 
     EntityID getEntityID() const;
 

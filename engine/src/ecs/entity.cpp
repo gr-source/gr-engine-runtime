@@ -13,7 +13,7 @@
 
 Entity::Entity(GameObject *gameObject, EntityID id) : m_gameObject(gameObject), m_entityID(id) {}
 
-GameObject *Entity::getGameObject() {
+GameObject *Entity::getGameObject() const {
     return m_gameObject;
 }
 
@@ -38,50 +38,60 @@ std::unordered_map<std::string, std::unique_ptr<Component>> &Entity::getComponen
     return m_componentPtr;
 }
 
-void Entity::copy(Entity *entity) {
+void Entity::copy(const Entity *entity) {
     if (!entity) {
-        throw std::runtime_error("Entity do not is valid.");
+        Console::LogError("[ Entity ] Source entity is null.");
+        return;
     }
 
-    for (auto &&[name, ptr] : entity->m_componentPtr) {
+    for (const auto& [name, component] : entity->m_componentPtr) {
         if (hasComponent(name)) {
             continue;
         }
 
-        addComponent(name, &(*ptr));
+        addComponent(name, component.get());
     }
 
     auto targetGameObject = entity->getGameObject();
     if (!targetGameObject) {
-        throw std::runtime_error("GameObject is invalid");
+        Console::LogError("[ Entity ] Failed to get game object pointer.");
+        return;
     }
 
+    auto targetTransform = targetGameObject->getTransform();
     auto localTransform = m_gameObject->getTransform();
 
-    auto transform = targetGameObject->getTransform();
-    localTransform->setLocalScale(transform->getLocalScale());
-    localTransform->setLocalRotation(transform->getLocalRotation());
-    localTransform->setLocalPosition(transform->getLocalPosition());
+    if (targetTransform) {
+        localTransform->setLocalScale(targetTransform->getLocalScale());
+        localTransform->setLocalRotation(targetTransform->getLocalRotation());
+        localTransform->setLocalPosition(targetTransform->getLocalPosition());
 
-    if (!transform->hasParent()) {
-        Scene::GetCurrentScene()->insert(getGameObject());
+        if (!targetTransform->hasParent()) {
+            Scene::GetCurrentScene()->insert(getGameObject());
+        } else {
+            localTransform->setParent(targetTransform->getParent());
+        }
+
+        for (const auto& child : targetTransform->getChildren()) {
+            if (!child) {
+                Console::LogError("[ Entity ] Failed to copy child of %s, child pointer is invalid.", targetGameObject->getName().c_str());
+                continue;
+            }
+
+            auto childGameObject = child->getGameObject();
+            auto clonedObject = GameObject::Instantiate(childGameObject);
+            if (!clonedObject) {
+                Console::LogError("[ Entity ] Failed to create child object %s->%s.", targetGameObject->getName().c_str(), childGameObject->getName().c_str());
+                continue;
+            }
+
+            auto clonedTransform = clonedObject->getTransform();
+            if (clonedTransform) {
+                clonedTransform->setParent(localTransform);
+            }
+        }
     } else {
-        localTransform->setParent(transform->getParent());
-    }
-
-    for (auto &child : transform->getChildren()) {
-        auto objectPtr = child->getGameObject();
-        if (!objectPtr) {
-            throw std::runtime_error("Child do not is valid of: " + targetGameObject->getName());
-        }
-
-        auto clone = GameObject::Instantiate(objectPtr);
-        if (!clone) {
-            continue;
-        }
-        
-        auto cTransform = clone->getTransform();
-        cTransform->setParent(localTransform);
+        Console::LogError("[ Entity ] Target game object does not have a transform.");
     }
 
     init();
@@ -90,6 +100,7 @@ void Entity::copy(Entity *entity) {
         getComponent<MeshRender>()->build();
     }
 }
+
 
 EntityID Entity::getEntityID() const {
     return m_entityID;
