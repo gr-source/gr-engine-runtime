@@ -510,7 +510,7 @@ int Scene::writeGameObject(Stream *streaming, GameObject *gameObject) {
     }
 
     auto transform = gameObject->getTransform();
-    auto &children = transform->getChildren();
+    auto children = transform->getChildren();
 
     auto cSize = children.size();
     streaming->writeS(&cSize, 1);
@@ -687,14 +687,12 @@ int Scene::readScript(Stream *streaming, std::unordered_map<std::string, GameObj
     return result;
 }
 
-void CrateGameObject(Transform *&transform, std::condition_variable &cv, std::mutex &mutex, Scene *scene, Transform *parent, bool active, bool enable, std::string name, std::string tag, int &result) {
+void CrateGameObject(Transform *&outTransform, GameObject *&outObject, std::condition_variable &cv, std::mutex &mutex, Scene *scene, Transform *parent, bool active, bool enable, std::string name, std::string tag, int &result) {
     GameObject *gameObject = nullptr;
     {
-        std::lock_guard<std::mutex> lock(mutex);
-        result = 0;
-        
         gameObject = parent == nullptr ? scene->CreateGameObject(name, tag) : GameObject::Create(name, tag);
         if (!gameObject) {
+            std::lock_guard<std::mutex> lock(mutex);
             result = 1;
             cv.notify_one();
             return;
@@ -710,10 +708,15 @@ void CrateGameObject(Transform *&transform, std::condition_variable &cv, std::mu
     gameObject->setActive(active);
     gameObject->setEnable(enable);
 
+    auto transform = gameObject->getTransform();
+    transform->setParent(parent);
+
     {
         std::lock_guard<std::mutex> lock(mutex);
-        transform = gameObject->getTransform();
-        transform->setParent(parent);
+        outTransform = transform;
+        outObject = gameObject;
+
+        result = 0;
     }
 
     cv.notify_one();
@@ -747,31 +750,36 @@ int Scene::readNode(Stream *streaming, Scene *scene, Transform *parent, std::uno
     }
 
     bool active = true;
-    bool enable = true;
     result = streaming->readS(&active,  1) ? 0 : 5;
     if (result != 0) {
         return result;
     }
 
+    bool enable = true;
     result = streaming->readS(&enable,  1) ? 0 : 6;
     if (result != 0) {
         return result;
     }
 
+    GameObject *gameObject = nullptr;
     Transform *transform = nullptr;
+
     int presult = -1;
 
-    Event::Add(CrateGameObject, std::ref(transform), std::ref(cv), std::ref(m_mutex), std::ref(scene), parent, active, enable, name, tag, std::ref(presult));
+    Event::Add(CrateGameObject, std::ref(transform), std::ref(gameObject), std::ref(cv), std::ref(m_mutex), std::ref(scene), parent, active, enable, name, tag, std::ref(presult));
 
     std::unique_lock<std::mutex> lock(m_mutex);
     cv.wait(lock, [&transform, &presult] {
         return transform || bQuit || presult >= 0;
     });
+
     if (transform)
-        tempObject.emplace(name, transform->getGameObject());
+        tempObject.emplace(name, gameObject);
+        
     if (presult != 0) {
         return 2;
     }
+    
     if (bQuit) {
         return 1;
     }
@@ -789,7 +797,9 @@ int Scene::readNode(Stream *streaming, Scene *scene, Transform *parent, std::uno
             break;
         }
     }
+
     transform = nullptr;
+    gameObject = nullptr;
 
     return 0;
 }

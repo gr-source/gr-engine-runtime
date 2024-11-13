@@ -1131,7 +1131,6 @@ void Editor::PlayGame() {
     Console::log(Log::DEFAULT, "Game playing.");
 }
 
-// Falta recarregar os scripts anteriores.
 void Editor::StopGame() {
     Settings::bGameRunning = false;
 
@@ -1835,10 +1834,22 @@ void Editor::RenderField(Field &field, Component *component) {
         ImGui::Checkbox(name.c_str(), data);
         break;
     }
+    case FieldType_Vector2: {
+        auto data = Field::GetFieldData<Vector3>(component, field);
+
+        ImGui::DragFloat2(name.c_str(), reinterpret_cast<float *>(data));
+        break;
+    }
     case FieldType_Vector3: {
         auto data = Field::GetFieldData<Vector3>(component, field);
 
-        ImGui::DragFloat3(name.c_str(), reinterpret_cast<float *>(&data));
+        ImGui::DragFloat3(name.c_str(), reinterpret_cast<float *>(data));
+        break;
+    }
+    case FieldType_Vector4: {
+        auto data = Field::GetFieldData<Vector3>(component, field);
+
+        ImGui::DragFloat4(name.c_str(), reinterpret_cast<float *>(data));
         break;
     }
     default:
@@ -2080,39 +2091,60 @@ bool Editor::OnPropertyLight(Light *light) {
     const char* elems_names[3] = {"Directional", "Point", "Spot"};
     
     const char* elem_name = (elem >= 0 && elem < 3) ? elems_names[elem] : "Unknown";
-    /*
-    ImGui::Text("Type:");
-    if (ImGui::SliderInt("##LightType", &elem, 0, 3 - 1, elem_name)) {
+
+    ImGui::Text("Type");
+    if (ImGui::SliderInt("##light_type", &elem, 0, 3 - 1, elem_name)) {
         light->setType(elem);
     }
     
-    ImGui::Text("Constante:");
-    ImGui::DragFloat("##constant", &light->m_attenuationConstant, 0.005f, 0.01f, 1.0f);
+    auto value = light->getAttenuationConstant();
+    ImGui::Text("Constante");
+    if (ImGui::DragFloat("##light_constant", &value, 0.005f, 0.01f, 1.0f)) {
+        light->setAttenuationConstant(value);
+    }
+
+    value = light->getAttenuationLinear();
 
     ImGui::Text("Linear:");
-    ImGui::DragFloat("##linear", &light->m_attenuationLinear, 0.005f, 0.01f, 1.0f);
+    if (ImGui::DragFloat("##light_linear", &value, 0.005f, 0.01f, 1.0f)) {
+        light->setAttenuationLinear(value);
+    }
+
+    value = light->getAttenuationQuadractc();
 
     ImGui::Text("Quadract:");
-    ImGui::DragFloat("##quadract", &light->m_attenuationQuadratic, 0.005f, 0.01f, 1.0f);
+    if (ImGui::DragFloat("##light_quadract", &value, 0.005f, 0.01f, 1.0f)) {
+        light->setAttenuationQuadractc(value);
+    }
+
+    value = light->getInnecone();
 
     ImGui::Text("InConner:");
-    ImGui::DragFloat("##inconer", &light->m_angleInnerCone, 0.005f, 0.01f, 1.0f);
+    if (ImGui::DragFloat("##light_inconer", &value, 0.005f, 0.01f, 1.0f)) {
+        light->setInnecone(value);
+    }
+
+    value = light->getOutercone();
 
     ImGui::Text("IuterConner:");
-    ImGui::DragFloat("##outerconner", &light->m_angleOuterCone, 0.005f, 0.01f, 1.0f);
+    if (ImGui::DragFloat("##light_outerconner", &value, 0.005f, 0.01f, 1.0f)) {
+        light->setOutercone(value);
+    }
 
-    ImGui::Text("Cor:");
-    ImVec4 color = {light->m_color.r, light->m_color.g, light->m_color.b, 1.0f};
+    ImGui::Text("Color");
     
-    if (ImGui::ColorButton("##LightColor", color)) {
-        ImGui::OpenPopup("##LightColorPopup");
+    auto color = light->getcolor();
+    if (ImGui::ColorButton("##light_color", *reinterpret_cast<ImVec4 *>(&color))) {
+        ImGui::OpenPopup("##light_color_popup");
     }
     
-    if (ImGui::BeginPopup("##LightColorPopup")) {
-        ImGui::ColorPicker4("#LightColorPick", light->m_color.data);
+    if (ImGui::BeginPopup("##light_color_popup")) {
+        if (ImGui::ColorPicker4("#light_color_pick", reinterpret_cast<float *>(&color))) {
+            light->setcolor(color);
+        }
         ImGui::EndPopup();
     }
-    */
+
     return false;
 }
 

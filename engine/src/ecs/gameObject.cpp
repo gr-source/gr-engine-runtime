@@ -92,9 +92,9 @@ void GameObject::Destroy(GameObject *target) {
     // remove o objeto pai do objeto altual e se o pai me ter como filho me remove do objeto pai.
     transform->setParent(nullptr);
 
-    auto& children = transform->getChildren();
+    auto children = transform->getChildren();
 
-    for (auto &child : children) {
+    for (auto child : children) {
         // como o objeto pai ja foi removido diz, aos filhos que não tem mais parent.
         child->setParent(nullptr, false);
 

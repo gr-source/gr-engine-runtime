@@ -277,7 +277,7 @@ void Batching::buildStaticMesh() {
 
     grm::size verticeCount = 0;
     for (auto &transform : m_models) {
-        auto &model = transform->getGlobalMatrix();
+        auto model = transform->getGlobalMatrix();
 
         for (auto &vertice : m_mesh->getVertices()) {
             Vector4 position = {vertice.position.x, vertice.position.y, vertice.position.z, 1.0f};

@@ -1,14 +1,12 @@
 #include "transform.hpp"
 
-// #include "../ecs/gameObject.h"
-
 void Transform::setLocalScale(const Vector3 &value) {
     m_scale = value;
 
     updateLocalMatrix();
 }
 
-const Vector3 Transform::getLocalScale() const {
+Vector3 Transform::getLocalScale() const {
     return m_scale;
 }
 
@@ -18,14 +16,12 @@ void Transform::setLocalRotation(const Quaternion &value) {
     updateLocalMatrix();
 }
 
-const Quaternion Transform::getLocalRotation() const {
+Quaternion Transform::getLocalRotation() const {
     return m_rotation;
 }
 
-const Quaternion Transform::getRotation() const {
-    if (m_parent)
-        return (m_parent->m_rotation * m_rotation);
-    return m_rotation;
+Quaternion Transform::getRotation() const {
+    return m_parent != nullptr ? (m_parent->m_rotation * m_rotation) : m_rotation;
 }
 
 void Transform::setLocalPosition(const Vector3 &value) {
@@ -40,26 +36,26 @@ void Transform::addLocalPosition(const Vector3 &value) {
     updateLocalMatrix();
 }
 
-const Vector3 &Transform::getLocalPosition() const {
+Vector3 Transform::getLocalPosition() const {
     return m_position;
 }
 
-const Vector3 Transform::getPosition() const {
+Vector3 Transform::getPosition() const {
     if (m_parent) {
         return Vector3(m_parent->getGlobalMatrix() * Vector4({m_position.x, m_position.y, m_position.z, 1.0f}));
     }
     return m_position;
 }
 
-const Vector3 Transform::getright() const {
+Vector3 Transform::getright() const {
     return getRotation() * Vector3::right;
 }
 
-const Vector3 Transform::getup() const {
+Vector3 Transform::getup() const {
     return getRotation() * Vector3::up;
 }
 
-const Vector3 Transform::getforward() const {
+Vector3 Transform::getforward() const {
     return getRotation() * Vector3::forward;
 }
 
@@ -71,15 +67,15 @@ void Transform::setGlobalMatrix(const Matrix4x4 &matrix) {
     }
 }
 
-const Matrix4x4 &Transform::getGlobalMatrix() const {
+Matrix4x4 Transform::getGlobalMatrix() const {
     return m_globalMatrix;
 }
 
-const Matrix4x4 &Transform::getLocalMatrix() const {
+Matrix4x4 Transform::getLocalMatrix() const {
     return m_localMatrix;
 }
 
-const bool Transform::hasParent() const {
+bool Transform::hasParent() const {
     return m_parent != nullptr;
 }
 
@@ -95,7 +91,7 @@ void Transform::setParent(Transform *transform, bool remove) {
     updateLocalMatrix();
 }
 
-Transform *Transform::getParent() {
+Transform *Transform::getParent() const {
     return m_parent;
 }
 
@@ -107,16 +103,16 @@ void Transform::addChildren(Transform *transform) {
     m_children.push_back(transform);
 }
 
-std::vector<Transform *> &Transform::getChildren() {
+std::vector<Transform *> Transform::getChildren() const {
     return m_children;
 }
 
-const bool Transform::hasChildren() const {
+bool Transform::hasChildren() const {
     return !m_children.empty();
 }
 
 void Transform::updateLocalMatrix() {
-    m_localMatrix = Math::CreateTRS(m_scale, m_rotation, m_position);//Math::translate<Matrix4x4>(m_position) * Math::rotate<Matrix4x4>(m_rotation) * Math::scale<Matrix4x4>(m_scale);
+    m_localMatrix = Math::CreateTRS(m_scale, m_rotation, m_position);
 
     updateGlobalMatrix();
 }

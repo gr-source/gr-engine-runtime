@@ -10,7 +10,7 @@ Vector3 Light::getForward() const {
     return m_transform->getforward();
 }
 
-const Color &Light::getcolor() const {
+Color Light::getcolor() const {
     return m_color;
 }
 
@@ -26,24 +26,42 @@ int Light::getType() const {
     return m_type;
 }
 
-const float &Light::getattenuationconstant() {
+void Light::setAttenuationConstant(float value) {
+    m_attenuationConstant = value;
+}
+
+float Light::getAttenuationConstant() const {
     return m_attenuationConstant;
 }
 
-const float &Light::getattenuationlinear() {
+float Light::getAttenuationLinear() const {
     return m_attenuationLinear;
 }
 
-const float &Light::getattenuationquadractc() {
+void Light::setAttenuationLinear(float value) {
+    m_attenuationLinear = value;
+}
+
+float Light::getAttenuationQuadractc() const {
     return m_attenuationQuadratic;
 }
 
-const float &Light::getinnecone() {
+void Light::setAttenuationQuadractc(float value) {
+    m_attenuationQuadratic = value;
+}
+
+float Light::getInnecone() const {
     return m_angleInnerCone;
 }
 
-const float &Light::getoutercone() {
+void Light::setInnecone(float value) {
+    m_angleInnerCone = value;
+}
+
+float Light::getOutercone() const {
     return m_angleOuterCone;
 }
 
-
+void Light::setOutercone(float value) {
+    m_angleOuterCone = value;
+}

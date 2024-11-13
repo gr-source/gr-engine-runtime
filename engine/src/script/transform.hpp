@@ -10,45 +10,45 @@ public:
 
     void setLocalScale(const Vector3 &value);
 
-    const Vector3 getLocalScale() const;
+    Vector3 getLocalScale() const;
 
     void setLocalRotation(const Quaternion &value);
 
-    const Quaternion getLocalRotation() const;
+    Quaternion getLocalRotation() const;
 
-    const Quaternion getRotation() const;
+    Quaternion getRotation() const;
 
     void setLocalPosition(const Vector3 &value);
 
     void addLocalPosition(const Vector3 &value);
 
-    const Vector3 getPosition() const;
+    Vector3 getPosition() const;
 
-    const Vector3 &getLocalPosition() const;
+    Vector3 getLocalPosition() const;
 
-    const Vector3 getright() const;
+    Vector3 getright() const;
 
-    const Vector3 getup() const;
+    Vector3 getup() const;
 
-    const Vector3 getforward() const;
+    Vector3 getforward() const;
 
     void setGlobalMatrix(const Matrix4x4 &matrix);
 
-    const Matrix4x4 &getGlobalMatrix() const;
+    Matrix4x4 getGlobalMatrix() const;
 
-    const Matrix4x4 &getLocalMatrix() const;
+    Matrix4x4 getLocalMatrix() const;
 
-    const bool hasParent() const;
+    bool hasParent() const;
 
     void setParent(Transform* transform, bool remove = true);
 
-    Transform *getParent();
+    Transform *getParent() const;
 
     void addChildren(Transform *transform);
 
-    std::vector<Transform *> &getChildren();
+    std::vector<Transform *> getChildren() const;
 
-    const bool hasChildren() const;
+    bool hasChildren() const;
 
 private:
     Vector3 m_scale;

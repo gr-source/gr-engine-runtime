@@ -39,11 +39,6 @@ std::unordered_map<std::string, std::unique_ptr<Component>> &Entity::getComponen
 }
 
 void Entity::copy(const Entity *entity) {
-    if (!entity) {
-        Console::LogError("[ Entity ] Source entity is null.");
-        return;
-    }
-
     for (const auto& [name, component] : entity->m_componentPtr) {
         if (hasComponent(name)) {
             continue;

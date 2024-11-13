@@ -18,7 +18,7 @@ public:
 
     Vector3 getForward() const;
 
-    const Color& getcolor() const;
+    Color getcolor() const;
 
     void setcolor(const Color& color);
 
@@ -26,15 +26,25 @@ public:
 
     int getType() const;
 
-    const float& getattenuationconstant();
+    float getAttenuationConstant() const;
 
-    const float& getattenuationlinear();
+    void setAttenuationConstant(float value);
+
+    float getAttenuationLinear() const;
+
+    void setAttenuationLinear(float value);
     
-    const float& getattenuationquadractc();
+    float getAttenuationQuadractc() const;
 
-    const float& getinnecone();
+    void setAttenuationQuadractc(float value);
 
-    const float& getoutercone();
+    float getInnecone() const;
+
+    void setInnecone(float value);
+
+    float getOutercone() const;
+
+    void setOutercone(float value);
 
 private:
     int m_type;
