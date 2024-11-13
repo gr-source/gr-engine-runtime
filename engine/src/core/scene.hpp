@@ -52,7 +52,7 @@ public:
 
     static void DestroyObjects();
 
-    static void ReloadObjects();
+    static void ReloadObjects(std::function<void(Scene *)> func);
 
 private:
     static std::unordered_map<std::string, std::unique_ptr<Scene>> m_scenes;

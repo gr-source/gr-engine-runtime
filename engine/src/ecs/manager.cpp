@@ -20,8 +20,6 @@ std::vector<Entity *> Manager::m_entities;
 
 grm::size Manager::m_entityCount = 0;
 
-bool Manager::bPlayScript = true;
-
 std::mutex Manager::m_mutex;
 
 Entity *Manager::CreateEntity(GameObject * gameObject) {
@@ -58,10 +56,6 @@ void Manager::DestroyEntity(Entity *entity) {
 }
 
 void Manager::Update() {
-    if (!Manager::bPlayScript) {
-        return;
-    }
-    
     auto pages = (m_entities.size() + MAX_PAGES - 1) / MAX_PAGES;
     for (auto i=0;i<pages;i++) {
         auto start = i * MAX_PAGES;
@@ -91,10 +85,6 @@ void Manager::Clear() {
     m_entities.clear();
 
     m_entityCount = 0;
-}
-
-bool Manager::IsAvailable() {
-    return bPlayScript;
 }
 
 bool Manager::IsValid(EntityID id) {

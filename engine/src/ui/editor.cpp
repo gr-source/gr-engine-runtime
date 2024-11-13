@@ -242,7 +242,6 @@ void Editor::LoadScript() {
     try {
         ScriptManager::Initialize(File::GetFile("/.build/component/lib/libgr-component.so"));
 
-        Scene::ReloadObjects();
     } catch (const std::runtime_error &e) {
         Console::LogError(e.what());
     }
@@ -255,7 +254,9 @@ void Editor::LoadScript() {
 
     ScreenRender::Initialize();
 
-    Settings::bGameRunning = true;
+    Scene::ReloadObjects([](Scene *scene){
+        Settings::bGameRunning = true;
+    });
 }
 
 void Editor::UnloadScript() {
@@ -504,8 +505,7 @@ void Editor::RenderHierarchi() {
         --m_currentPage;
     }
     
-    if (Manager::IsAvailable())
-        RenderPage(list, m_currentPage);
+    RenderPage(list, m_currentPage);
     
     if (list.size() >= m_currentPage && ImGui::Button("Next")) {
         ++m_currentPage;
@@ -1134,7 +1134,7 @@ void Editor::PlayGame() {
 void Editor::StopGame() {
     Settings::bGameRunning = false;
 
-    Scene::ReloadObjects();
+    Scene::ReloadObjects(nullptr);
 
     AssetsManager::LoadGameObject(File::GetFile("/MainEngineCamera.gmdx", true), &Editor::loadCamera, this);
 

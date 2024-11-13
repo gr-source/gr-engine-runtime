@@ -72,11 +72,11 @@ Vector3 Transform::getUp() const {
     return getRotation() * Vector3::up;
 }
 
-const Matrix4x4 &Transform::getGlobalMatrix() const {
+Matrix4x4 Transform::getGlobalMatrix() const {
     return m_globalMatrix;
 }
 
-const Matrix4x4 &Transform::getLocalMatrix() const {
+Matrix4x4 Transform::getLocalMatrix() const {
     return m_localMatrix;
 }
 
@@ -92,7 +92,7 @@ void Transform::setParent(Transform *transform) {
     updateLocalMatrix();
 }
 
-Transform *Transform::getParent() {
+Transform *Transform::getParent() const {
     return m_parent;
 }
 
@@ -104,7 +104,7 @@ void Transform::addChildren(Transform *child) {
     m_children.push_back(child);
 }
 
-Transform *Transform::findChildren(const std::string &name) {
+Transform *Transform::findChildren(const std::string &name) const {
     auto gameObject = GameObject::Find(name);
     if (!gameObject) {
         return nullptr;
@@ -113,7 +113,7 @@ Transform *Transform::findChildren(const std::string &name) {
     return findChild(gameObject->getTransform());
 }
 
-std::vector<Transform *> &Transform::getChildren() {
+std::vector<Transform *> Transform::getChildren() const {
     return m_children;
 }
 
@@ -135,13 +135,14 @@ void Transform::updateGlobalMatrix() {
     }
 }
 
-Transform *Transform::findChild(Transform *transform) {
+Transform *Transform::findChild(Transform *transform) const {
     Transform *result = nullptr;
     for (auto &child : m_children) {
         if (child == transform) {
             result = child;
             break;
         }
+        
         result = child->findChild(transform);
         if (result) {
             break;

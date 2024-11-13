@@ -23,8 +23,6 @@ public:
 
     static void Clear();
 
-    static bool IsAvailable();
-
 private:
     static std::unordered_map<EntityID, std::shared_ptr<Entity>> m_mapEntities;
 
@@ -35,8 +33,6 @@ private:
     static grm::size m_entityCount;
 
     static std::mutex m_mutex;
-
-    static bool bPlayScript;
 
     static bool IsValid(EntityID id);
 

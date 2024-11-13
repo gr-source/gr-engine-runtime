@@ -36,20 +36,20 @@ public:
 
     Vector3 getUp() const;
 
-    const Matrix4x4 &getGlobalMatrix() const;
+    Matrix4x4 getGlobalMatrix() const;
 
-    const Matrix4x4 &getLocalMatrix() const;
+    Matrix4x4 getLocalMatrix() const;
 
     // define o pai do objeto atual
     void setParent(Transform *transform);
 
-    Transform *getParent();
+    Transform *getParent() const;
 
-    std::vector<Transform *> &getChildren();
+    std::vector<Transform *> getChildren() const;
 
     void addChildren(Transform *child);
 
-    Transform *findChildren(const std::string &name);
+    Transform *findChildren(const std::string &name) const;
     
     bool Serialize(Stream *stream) override;
 
@@ -74,7 +74,7 @@ private:
 
     void updateGlobalMatrix();
 
-    Transform *findChild(Transform *transform);
+    Transform *findChild(Transform *transform) const;
 };
 
 REGISTER_COMPONENT(Transform)

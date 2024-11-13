@@ -201,7 +201,7 @@ void Scene::DestroyObjects() {
     GameObject::Clear();
 }
 
-void Scene::ReloadObjects() {
+void Scene::ReloadObjects(std::function<void(Scene *)> func) {
     auto scene = GetCurrentScene();
     if (!scene) {
         return;
@@ -221,7 +221,7 @@ void Scene::ReloadObjects() {
 
     GameObject::Clear();
     
-    Threadpool::AddTask(&Scene::Load, temp_dir + scene->getName() + ".scn.tmp", LoadFlags_Object | LoadFlags_Script, nullptr, scene);
+    Threadpool::AddTask(&Scene::Load, temp_dir + scene->getName() + ".scn.tmp", LoadFlags_Object | LoadFlags_Script, func, scene);
 }
 
 // TODO: Object, Script because thread dead lock
