@@ -8,6 +8,8 @@
 
 #include "core/console.hpp"
 
+#include "ecs/entity.hpp"
+
 void MeshCollider::build(Mesh *mesh) {
     if (!mesh) {
         return Console::LogError("[ MeshCollider ] Game object do not has mesh.");

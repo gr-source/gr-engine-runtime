@@ -2,6 +2,8 @@
 
 #include "default.hpp"
 
+#include "script/default.hpp"
+
 #include <unordered_map>
 #include <memory>
 
@@ -78,7 +80,7 @@ protected:
     static std::unordered_map<std::string, std::unique_ptr<GameObject>> m_dataObject;
 };
 
-#include "entity.h"
+#include "entity.hpp"
 
 template <typename T>
 inline T *GameObject::addComponent() {

@@ -4,6 +4,8 @@
 
 #include "core/timer.hpp"
 
+#include "ecs/gameObject.hpp"
+
 #include "../renderer.h"
 
 void Animator::UpdateAnim() {

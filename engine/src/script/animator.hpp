@@ -1,11 +1,11 @@
 #pragma once
 
-#include "../ecs/gameObject.h"
-
 #include "../core/animation/animation.hpp"
 #include "../core/animation/bone.hpp"
 
 #include "default.hpp"
+
+#include "ecs/component.hpp"
 
 class Animator : public Component {
 public:

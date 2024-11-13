@@ -56,6 +56,10 @@ public:
 
     void setSweptSphereRadius(float value);
 
+    void setRotation(Quaternion q);
+
+    Quaternion getRotation() const;
+
 private:
     std::shared_ptr<btDefaultMotionState> m_DefaultMotionState;
 

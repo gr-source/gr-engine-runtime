@@ -2,8 +2,11 @@
 
 #include <string>
 #include <memory>
+#include <mutex>
 
 #include "core/filmbox/default.hpp"
+
+#include "script/default.hpp"
 #include "ecs/default.hpp"
 
 #include <gr-render/gRender.h>

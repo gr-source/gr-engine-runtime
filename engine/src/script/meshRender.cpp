@@ -8,6 +8,8 @@
 #include "core/assetsManager.hpp"
 #include "core/console.hpp"
 
+#include "ecs/gameObject.hpp"
+
 std::vector<std::shared_ptr<Material>> &MeshRender::getMaterials() {
     return m_materials;
 }

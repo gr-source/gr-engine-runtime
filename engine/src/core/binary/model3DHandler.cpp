@@ -13,7 +13,7 @@
 
 #include "core/filmbox/filmbox.hpp"
 
-#include "ecs/gameObject.h"
+#include "ecs/gameObject.hpp"
 
 #include "script/meshRender.hpp"
 #include "script/meshFilter.hpp"
@@ -465,7 +465,7 @@ void Model3DHandler::ConvertToGameObject(std::shared_ptr<FbxScene> scene, const 
         return Console::LogError("[ Model3DHandler ] Falied to convert fbx model to grmx.");
     }
 
-    ExportGRMX(File::GetAsset("/model"), gameObject);
+    ExportGRMX(File::GetAsset("/model/" + gameObject->getName() + ".gmdx"), gameObject);
 }
 
 void Model3DHandler::CreateObjects(const FbxScene *scene, const FbxNode *node, Transform *parent, GameObject **out, std::vector<std::unique_ptr<GameObject>> &tempObject) {
@@ -563,7 +563,7 @@ void Model3DHandler::CreateObjects(const FbxScene *scene, const FbxNode *node, T
 }
 
 void Model3DHandler::SetupTextureMaterial(Material *material, int id, grr::gTexture *texture) {
-    if (!material || texture) {
+    if (!material || !texture) {
         return;
     }
     material->setTexture(id, texture);

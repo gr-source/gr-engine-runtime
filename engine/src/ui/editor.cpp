@@ -48,6 +48,7 @@
 
 #include "geometry/batching.hpp"
 
+#include "ecs/gameObject.hpp"
 #include "ecs/manager.hpp"
 
 #include <linux/input-event-codes.h>
@@ -118,6 +119,8 @@ Editor::Editor() : m_viewport(ImGui::GetMainViewport()), s_io(&ImGui::GetIO()), 
     m_SelectedPath = "";
 
     m_config = nullptr;
+
+    mLastTransform = {Vector3::zero, Quaternion::identity, Vector3::one};
 
 
     m_config = std::make_shared<Config>(File::GetFile("/config.ini"));
@@ -2077,7 +2080,7 @@ bool Editor::OnPropertyLight(Light *light) {
     const char* elems_names[3] = {"Directional", "Point", "Spot"};
     
     const char* elem_name = (elem >= 0 && elem < 3) ? elems_names[elem] : "Unknown";
-
+    /*
     ImGui::Text("Type:");
     if (ImGui::SliderInt("##LightType", &elem, 0, 3 - 1, elem_name)) {
         light->setType(elem);
@@ -2109,7 +2112,7 @@ bool Editor::OnPropertyLight(Light *light) {
         ImGui::ColorPicker4("#LightColorPick", light->m_color.data);
         ImGui::EndPopup();
     }
-
+    */
     return false;
 }
 

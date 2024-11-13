@@ -9,17 +9,12 @@
 #include <bitset>
 #include <array>
 
-#include "component.h"
+#include "default.hpp"
+#include "component.hpp"
 
 #define MAX_COMPONENT 16
 #define MAX_PAGES 10
 
-using ComponentID = std::size_t;
-using EntityID = grm::size;
-
-class GameObject;
-
-/* Classe de entidades */
 class Entity {
 public:
     Entity() = delete;

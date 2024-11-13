@@ -1,6 +1,8 @@
 #include "manager.hpp"
 
-#include "gameObject.h"
+#include "gameObject.hpp"
+#include "entity.hpp"
+
 #include "settings.h"
 
 #include "script/transform.hpp"
@@ -10,7 +12,7 @@
 
 #include "core/console.hpp"
 
-std::unordered_map<EntityID, std::unique_ptr<Entity>> Manager::m_mapEntities;
+std::unordered_map<EntityID, std::shared_ptr<Entity>> Manager::m_mapEntities;
 
 std::vector<EntityID> Manager::m_available;
 

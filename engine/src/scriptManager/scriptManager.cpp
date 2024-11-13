@@ -18,7 +18,8 @@
 
 #include "physics/physicsScene.hpp"
 
-#include "../ecs/entity.h"
+#include "ecs/gameObject.hpp"
+#include "ecs/entity.hpp"
 
 #include "../memory.h"
 
@@ -215,6 +216,7 @@ void ScriptManager::RegisterApi() {
     // GameObject
     *function["GameObject::Instantiate"] = reinterpret_cast<void *>(&GameObject::Instantiate);
     *function["GameObject::Create"] = reinterpret_cast<void *>(&GameObject::Create);
+    *function["GameObject::Find"] = reinterpret_cast<void *>(&GameObject::Find);
     *function["GameObject::Destroy"] = reinterpret_cast<void *>(&Scene::Delete);
 
     // File

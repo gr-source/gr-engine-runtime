@@ -1,9 +1,10 @@
 #pragma once
 
-#include "ecs/entity.h"
+#include "default.hpp"
 
 #include "geometry/vertex3D.h"
-#include "default.hpp"
+
+#include "ecs/component.hpp"
 
 class MeshCollider : public Component {
 public:

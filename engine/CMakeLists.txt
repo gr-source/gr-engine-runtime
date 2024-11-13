@@ -19,10 +19,10 @@ set(ecs_src
 
 set(ecs_hdr
     src/ecs/componentPool.hpp
-    src/ecs/gameObject.h
-    src/ecs/component.h
+    # src/ecs/gameObject.h
+    # src/ecs/component.h
     src/ecs/manager.hpp
-    src/ecs/entity.h
+    # src/ecs/entity.h
 )
 
 set(octree_src

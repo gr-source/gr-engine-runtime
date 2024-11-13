@@ -1,6 +1,6 @@
 #include "octree.h"
 
-#include "../ecs/gameObject.h"
+#include "ecs/gameObject.hpp"
 
 #include "script/meshRender.hpp"
 #include "script/transform.hpp"

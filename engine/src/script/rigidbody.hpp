@@ -1,8 +1,8 @@
 #pragma once
 
-#include "../ecs/component.h"
-
 #include "default.hpp"
+
+#include "ecs/component.hpp"
 
 class Rigidbody : public Component {
 public:

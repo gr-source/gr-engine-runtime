@@ -1,6 +1,6 @@
 #include "transform.hpp"
 
-#include "../ecs/gameObject.h"
+// #include "../ecs/gameObject.h"
 
 void Transform::setLocalScale(const Vector3 &value) {
     m_scale = value;

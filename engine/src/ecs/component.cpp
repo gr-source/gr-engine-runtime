@@ -1,6 +1,6 @@
-#include "component.h"
+#include "component.hpp"
 
-#include "entity.h"
+#include "entity.hpp"
 
 Component::Component() : entity(nullptr) {}
 

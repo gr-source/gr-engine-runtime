@@ -17,8 +17,7 @@
 #include "script/transform.hpp"
 #include "script/camera.hpp"
 
-#include "ecs/gameObject.h"
-#include "ecs/entity.h"
+#include "ecs/gameObject.hpp"
 
 std::unordered_map<std::string, std::unique_ptr<Scene>> Scene::m_scenes;
 

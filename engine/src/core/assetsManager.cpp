@@ -8,7 +8,7 @@
 #include "core/threadpool.hpp"
 #include "core/scene.hpp"
 
-#include "ecs/gameObject.h"
+#include "ecs/gameObject.hpp"
 
 #include "script/meshFilter.hpp"
 #include "script/meshRender.hpp"

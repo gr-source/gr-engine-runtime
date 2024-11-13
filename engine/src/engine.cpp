@@ -30,7 +30,7 @@
 #include "scriptManager/scriptManager.hpp"
 #include "memory.h"
 
-#include "ecs/gameObject.h"
+#include "ecs/gameObject.hpp"
 #include "ecs/manager.hpp"
 
 #include <filesystem>

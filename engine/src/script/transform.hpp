@@ -1,7 +1,8 @@
 #pragma once
 
-#include "../ecs/entity.h"
 #include "../Global.h"
+
+#include "ecs/component.hpp"
 
 class Transform : public Component {
 public:

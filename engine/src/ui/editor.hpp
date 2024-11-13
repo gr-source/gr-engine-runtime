@@ -116,6 +116,12 @@ private:
 
     std::shared_ptr<Config> m_config;
 
+    struct LastTransform {
+        Vector3 position;
+        Quaternion rotation;
+        Vector3 scale;
+    } mLastTransform;
+
     GameObject *createEditorCamera();
 
     void BuildDock(ImGuiID dockspace_id, ImGuiDockNodeFlags dockspace_flags);
@@ -255,4 +261,5 @@ private:
 
     // Scene
     void SaveScene(const std::string &name, Scene *scene);
+
 };

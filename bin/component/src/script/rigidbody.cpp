@@ -126,11 +126,13 @@ void Rigidbody::setSweptSphereRadius(float value) {
     fSweptSphereRadius = value;
 }
 
+void Rigidbody::setRotation(Quaternion q) {
+    auto &transform = m_body->getWorldTransform();
+    transform.setRotation({q.x, q.y, q.z, q.w});
+}
 
+Quaternion Rigidbody::getRotation() const {
+    auto &transform = m_body->getWorldTransform();
 
-
-
-
-
-
-
+    return {transform.getRotation().getW(), transform.getRotation().getX(), transform.getRotation().getY(), transform.getRotation().getZ()};
+}

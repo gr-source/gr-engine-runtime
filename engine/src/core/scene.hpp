@@ -1,6 +1,7 @@
 #pragma once
 
-#include "../ecs/gameObject.h"
+#include "script/default.hpp"
+#include "ecs/default.hpp"
 
 #include "geometry/material.h"
 

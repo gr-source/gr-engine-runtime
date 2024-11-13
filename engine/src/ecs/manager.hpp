@@ -1,7 +1,12 @@
 #pragma once
 
-#include "entity.h"
+#include "default.hpp"
 
+#include <gr-math/gmath.h>
+
+#include <unordered_map>
+#include <vector>
+#include <memory>
 #include <mutex>
 
 class Manager {
@@ -21,7 +26,7 @@ public:
     static bool IsAvailable();
 
 private:
-    static std::unordered_map<EntityID, std::unique_ptr<Entity>> m_mapEntities;
+    static std::unordered_map<EntityID, std::shared_ptr<Entity>> m_mapEntities;
 
     static std::vector<EntityID> m_available;
 

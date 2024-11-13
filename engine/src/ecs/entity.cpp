@@ -1,4 +1,6 @@
-#include "entity.h"
+#include "entity.hpp"
+
+#include "gameObject.hpp"
 
 #include "../scriptManager/scriptManager.hpp"
 

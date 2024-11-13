@@ -6,7 +6,7 @@
 
 #include <gr-math/gmath.h>
 
-#include "ecs/component.h"
+#include "ecs/default.hpp"
 
 enum FieldType {
     FieldType_none       = 1 << 0,

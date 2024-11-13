@@ -1,6 +1,6 @@
-#include "gameObject.h"
+#include "gameObject.hpp"
 
-#include "entity.h"
+#include "entity.hpp"
 
 #include "../scriptManager/scriptManager.hpp"
 
@@ -13,7 +13,6 @@
 #include "core/scene.hpp"
 
 #include "manager.hpp"
-#include "gameObject.h"
 
 std::unordered_map<std::string, std::unique_ptr<GameObject>> GameObject::m_dataObject;
 

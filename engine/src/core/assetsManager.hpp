@@ -18,6 +18,7 @@
 #include "geometry/material.h"
 #include "geometry/mesh.h"
 
+#include "script/default.hpp"
 #include "ecs/default.hpp"
 
 class FbxAnimation;

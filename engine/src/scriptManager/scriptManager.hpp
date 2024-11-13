@@ -3,7 +3,6 @@
 #include "scriptLoader.hpp"
 
 #include "ecs/componentPool.hpp"
-#include "ecs/gameObject.h"
 
 #include "default.hpp"
 

@@ -1,8 +1,8 @@
 #pragma once
 
-#include "../ecs/entity.h"
-
 #include "../common.h"
+
+#include "ecs/component.hpp"
 
 class Light : public Component {
 public:
@@ -52,8 +52,6 @@ private:
     float m_angleInnerCone;
 
     float m_angleOuterCone;
-
-    friend class Editor;
 };
 
 

@@ -9,6 +9,8 @@
 
 #include "core/console.hpp"
 
+#include "ecs/entity.hpp"
+
 void Rigidbody::initialize() {
     if (entity->hasComponent<MeshCollider>()) {
         m_collisionShape = entity->getComponent<MeshCollider>()->getShape();

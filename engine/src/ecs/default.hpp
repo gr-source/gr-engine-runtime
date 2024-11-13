@@ -1,12 +1,12 @@
 #pragma once
 
-#include <string>
+#include <cstdlib>
 
-#include <gr-math/gmath.h>
-
-#include "script/default.hpp"
+using ComponentID = std::size_t;
+using EntityID = std::size_t;
 
 class GameObject;
+class Component;
 class Entity;
 
 

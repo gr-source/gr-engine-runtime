@@ -1,9 +1,9 @@
 #pragma once
 
-#include "../ecs/component.h"
-
 #include "../geometry/mesh.h"
 #include "../geometry/boundbox.h"
+
+#include "ecs/component.hpp"
 
 class MeshFilter : public Component {
 public:

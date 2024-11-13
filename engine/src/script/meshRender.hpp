@@ -1,11 +1,12 @@
 #pragma once
 
-#include "../ecs/entity.h"
 
 #include "geometry/batching.hpp"
 #include "geometry/material.h"
 
 #include "default.hpp"
+
+#include "ecs/component.hpp"
 
 class MeshRender : public Component {
 public:
