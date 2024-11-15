@@ -150,6 +150,7 @@ set(engine_src
     src/renderer.cpp
     src/settings.cpp
     src/screenRender.cpp
+    src/shadowMap.cpp
     src/renderManager.cpp
     src/postProcessing.cpp
     src/cubeFramebuffer.cpp

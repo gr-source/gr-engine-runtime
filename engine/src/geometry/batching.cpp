@@ -3,14 +3,16 @@
 #include "renderManager.h"
 #include "mesh.h"
 
+#include "core/assetsManager.hpp"
 #include "core/statistics.hpp"
 #include "core/event.hpp"
 
 #include "script/transform.hpp"
+#include "script/light.hpp"
 
 #include "culling/frustum.h"
 
-#include <cstring>
+#include "scriptManager/scriptManager.hpp"
 
 #include <gr-render/gVertexArray.h>
 #include <gr-render/gTexture.h>
@@ -19,6 +21,42 @@
 std::unordered_map<std::string, std::unique_ptr<Batching>> Batching::m_batchedMap;
 
 std::vector<Batching *> Batching::m_batched;
+
+grr::gShader *Batching::m_shaderShadow = nullptr;
+
+void Batching::Initialize() {
+    AssetsManager::LoadShader("shadow", File::GetAsset("/shader/shadow/shadow.frag"), File::GetAsset("/shader/shadow/shadow.vert"), &Batching::RegisterShaderShadow);
+}
+
+// TODO: falta descarregar o shader
+void Batching::Shutdown() {
+    if (m_shaderShadow) {
+        m_shaderShadow = nullptr;
+    }
+}
+
+void Batching::RenderShadow() {
+    if (!m_shaderShadow || !ScriptManager::GetListLight) {
+        return;
+    }
+
+    auto& lights = ScriptManager::GetListLight();
+    if (lights.empty()) { return; }
+
+    grr::gShader::Bind(m_shaderShadow);
+
+    grr::gShader::SetUniform("u_light", 1, lights[0]->getProjetion());
+
+    for (auto &batching : m_batched) {
+        if (!batching || !batching->hasModel()) {
+            continue;
+        }
+        
+        batching->draw(m_shaderShadow, false);
+    }
+
+    grr::gShader::Unbind();
+}
 
 grm::size Batching::GetBatchedCount() {
     return m_batched.size();
@@ -48,11 +86,19 @@ void Batching::Renderer() {
     Statistics::m_drawCallCount = 0;
     Statistics::m_totalRender = 0;
 
-    std::for_each(m_batched.begin(), m_batched.end(), &Batching::Draw);
+    for (auto &batching : m_batched) {
+        if (!batching || !batching->hasModel()) {
+            continue;
+        }
+        
+        batching->draw();
+    
+        Statistics::m_drawCallCount++;
+    }
 }
 
 Batching::Batching(const std::string &name, std::vector<std::shared_ptr<Material>> *materials, Mesh *mesh, grr::gShader *shader, int flags) : m_shader(shader), m_flags(flags), m_mesh(mesh), m_name(name), m_materials(materials), m_vertexArray(nullptr), m_indiceCount(0), m_primCount(0), m_VBO(0), m_EBO(0), m_PBO(0), bHasIndice(false), m_type(DrawType_Elements) {
-    if (flags != Batching_Flags_Static_Mesh)
+    if (flags != BatchingType_Static_Mesh)
         build(mesh);
 }
 
@@ -86,16 +132,19 @@ void Batching::remove(Transform *transform, bool bDelete) {
     }
 }
 
-void Batching::draw() {
-    grr::gShader::Bind(m_shader);
+void Batching::draw(grr::gShader *shader, bool bSetMaterial) {
+    shader = shader != nullptr ? shader : m_shader;
+    
+    grr::gShader::Bind(shader);
 
     compile();
     
-    if (!m_vertexArray || !m_shader || !m_vertexArray->isValid() || !m_shader->isValid()) {
+    if (!m_vertexArray || !shader || !m_vertexArray->isValid() || !shader->isValid()) {
         return;
     }
 
-    setupMaterial();
+    if (bSetMaterial)
+        setupMaterial();
 
     m_vertexArray->bind();
 
@@ -113,19 +162,8 @@ void Batching::draw() {
         grr::gVertexArray::DrawArrays(grr::PrimitiveType_Triangles, m_indiceCount);
         break;
     default:
-        throw std::runtime_error("Draw type invalid.");
         break;
     }
-}
-
-void Batching::Draw(Batching *batching) {
-    if (!batching->hasModel()) {
-        return;
-    }
-    
-    batching->draw();
-
-    Statistics::m_drawCallCount++;
 }
 
 void Batching::build(Mesh *mesh) {
@@ -139,7 +177,7 @@ void Batching::build(Mesh *mesh) {
         m_VBO = grr::gVertexArray::CreateBuffer(grr::BufferType_VBO);
     }
 
-    if (!m_PBO && m_flags == Batching_Flags_Instanced_Dynamic || m_flags == Batching_Flags_Instanced_Static) {
+    if (!m_PBO && m_flags == BatchingType_Instanced_Dynamic || m_flags == BatchingType_Instanced_Static) {
         m_PBO = grr::gVertexArray::CreateBuffer(grr::BufferType_PBO);
     }
     
@@ -174,7 +212,7 @@ void Batching::build(Mesh *mesh) {
     grr::gVertexArray::SetAttrib(2, 2, sizeof(Vertex3D), reinterpret_cast<const void*>(offsetof(Vertex3D, texCoord)));
     grr::gVertexArray::SetAttrib(3, 1, sizeof(Vertex3D), reinterpret_cast<const void*>(offsetof(Vertex3D, mIdx)));
 
-    if (m_flags == Batching_Flags_Instanced_Dynamic || m_flags == Batching_Flags_Instanced_Static) {
+    if (m_flags == BatchingType_Instanced_Dynamic || m_flags == BatchingType_Instanced_Static) {
         grr::gVertexArray::Bind(m_PBO);
         for (int i=0;i<4;i++) {
             grr::gVertexArray::SetAttrib(4 + i, 4, sizeof(Matrix4x4), reinterpret_cast<const void*>(i * sizeof(Vector4)));
@@ -196,20 +234,19 @@ void Batching::build(Mesh *mesh) {
 
 void Batching::compile() {
     switch (m_flags) {
-    case Batching_Flags_Static_Mesh:
+    case BatchingType_Static_Mesh:
         buildStaticMesh();
         break;
-    case Batching_Flags_Instanced_Static:
+    case BatchingType_Instanced_Static:
         buildStaticInstanced();
         break;
-    case Batching_Flags_Instanced_Dynamic:
+    case BatchingType_Instanced_Dynamic:
         buildDynamicInstanced();
         break;
-    case Batching_Flags_Dynamic:
+    case BatchingType_Dynamic:
         buildDynamic();
         break;
     default:
-        throw std::runtime_error(".");
         break;
     }
 
@@ -220,6 +257,7 @@ void Batching::buildDynamic() {
     if (m_models.empty()) {
         return;
     }
+
     grr::gShader::SetUniform("u_model", 1, m_models[0]->getGlobalMatrix());
 
     m_type = bHasIndice ? DrawType_Elements : DrawType_Arrays;
@@ -328,6 +366,21 @@ void Batching::setupMaterial() {
         grr::gShader::SetUniform("m_material[" + std::to_string(i) + "].albedo", material->getAlbedo());
         grr::gShader::SetUniform("m_material[" + std::to_string(i) + "].params", Vector3({material->getRoughness(), material->getMetallic(), material->getAmbientOcclusion()}));
     }
+}
+
+void Batching::RegisterShaderShadow(grr::gShader *shader) {
+    if (!shader) {
+        return;
+    }
+
+    grr::gShader::Bind(shader);
+
+    grr::gShader::Register("u_model");
+    grr::gShader::Register("u_light");
+
+    grr::gShader::Unbind();
+    
+    m_shaderShadow = shader;
 }
 
 bool Batching::hasModel() const {

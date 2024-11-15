@@ -58,7 +58,7 @@ struct LightComponent {
     vec3 attenuation; // (x - constant) (y - linear) (z - quadract)
     vec3 direction;
     vec3 params; // (x - angleInCone) (y - angleOutCone) (z - type)
-    mat4 vp;
+    mat4 model;
 };
 
 uniform LightComponent m_light[10];
@@ -67,92 +67,115 @@ uniform sampler2D m_texture[10];
 uniform bool m_activate[10];
 uniform int m_lightcount;
 uniform vec3 m_eye;
+uniform sampler2D m_shadowMap;
+
+float ShadowCalculation(vec4 fragPosLightSpace) {
+    // perform perspective divide
+    vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
+    // transform to [0,1] range
+    projCoords = projCoords * 0.5 + 0.5;
+    // get closest depth value from light's perspective (using [0,1] range fragPosLight as coords)
+    float closestDepth = texture(m_shadowMap, projCoords.xy).r; 
+    // get depth of current fragment from light's perspective
+    float currentDepth = projCoords.z;
+    // check whether current frag pos is in shadow
+    float shadow = currentDepth > closestDepth  ? 1.0 : 0.0;
+
+    return shadow;
+}  
 
 vec3 CreatePointLight(LightComponent light, vec3 V, vec3 N, vec3 F0, vec3 fragPos, vec3 albedo, float roughness, float metallic, float ao) {
-    // Calcula o vetor de luz e o vetor de meia direção
+    // Calculate the light direction and half vector
     vec3 L = normalize(light.position - fragPos);
     vec3 H = normalize(V + L);
 
-    // Calcula os produtos de ponto entre vetores
+    // Compute dot products
     float NdotL = max(0.0, dot(N, L));
     float NdotV = max(0.001, dot(N, V));
-    float HdotV = max(0.001, dot(H, V));
     float NdotH = max(0.001, dot(N, H));
 
-    // Calcula a atenuação da luz
+    // Attenuation
     float d = length(light.position - fragPos);
     float attenuation = 1.0 / (light.attenuation.x + light.attenuation.y * d + light.attenuation.z * d * d);
 
-    // Calcula a radiância da luz
+    // Radiance
     vec3 radiance = light.color.xyz * attenuation;
-    
-    // Calcula os componentes do modelo de reflexão
-    float NDF = DistributionGGX(NdotH, roughness); // Função de distribuição
-    float G   = GeometrySmith(N, V, L, roughness); // Fator de geometria
-    vec3 F    = fresnelSchlick(HdotV, F0); // Fator de Fresnel
-    
-    // Calcula os coeficientes de reflexão especular e difuso
+
+    // Shadow calculation (assuming a point light's shadow map is set up)
+    vec4 fragPosLightSpace = light.model * vec4(fragPos, 1.0);
+    float shadow = ShadowCalculation(fragPosLightSpace);
+
+    // Cook-Torrance BRDF calculations
+    float NDF = DistributionGGX(NdotH, roughness);
+    float G = GeometrySmith(N, V, L, roughness);
+    vec3 F = fresnelSchlick(max(dot(H, V), 0.0), F0);
+
+    // Reflection coefficients
     vec3 kS = F;
     vec3 kD = vec3(1.0) - kS;
     kD *= 1.0 - metallic;
-    
-    // Calcula a contribuição especular
-    vec3 numerator    = NDF * G * F;
-    float denominator = 4.0 * NdotV * NdotL + 0.0001; // Adicionando uma pequena quantidade para evitar divisão por zero
-    vec3 specular     = numerator / denominator;
-        
-    // Combina os componentes especulares e difusos e aplica à radiância de saída (Lo)
-    return (kD * albedo / PI + specular) * radiance * NdotL;
+
+    // Specular reflection
+    vec3 numerator = NDF * G * F;
+    float denominator = 4.0 * NdotV * NdotL + 0.0001;
+    vec3 specular = numerator / denominator;
+
+    // Final lighting result considering shadow
+    return ((kD * albedo / PI + specular) * radiance * NdotL) * (1.0 - shadow); // Apply shadow attenuation
 }
 
 vec3 CreateSpotLight(LightComponent light, vec3 V, vec3 N, vec3 F0, vec3 fragPos, vec3 albedo, float roughness, float metallic, float ao) {
-    // Calculate per-light radiance
+    // Light direction and half vector
     vec3 L = normalize(light.position - fragPos);
     vec3 H = normalize(V + L);
 
-    // Calcula os produtos de ponto entre vetores
+    // Dot products
     float NdotL = max(0.0, dot(N, L));
     float NdotV = max(0.001, dot(N, V));
-    // float HdotV = max(0.001, dot(H, V));
     float NdotH = max(0.001, dot(N, H));
 
+    // Spotlight cone intensity
     float theta = dot(L, normalize(-light.direction));
-
-    float intensity = 0.0001;
-
     float epsilon = light.params.x - light.params.y;
-    if (light.params.y > light.params.x) {
-        epsilon = light.params.y - light.params.x;
-    }
-    intensity = clamp((theta - light.params.y) / epsilon, 0.0, 1.0);
+    float intensity = clamp((theta - light.params.y) / epsilon, 0.0, 1.0);
 
+    // Attenuation
     float d = length(light.position - fragPos);
     float attenuation = 1.0 / (light.attenuation.x + light.attenuation.y * d + light.attenuation.z * (d * d));
 
+    // Radiance
     vec3 radiance = light.color.xyz * attenuation * intensity;
-    
+
+    // Shadow calculation
+    vec4 fragPosLightSpace = light.model * vec4(fragPos, 1.0);
+    float shadow = ShadowCalculation(fragPosLightSpace);
+
     // Cook-Torrance BRDF
     float NDF = DistributionGGX(NdotH, roughness);
-    float G   = GeometrySmith(N, V, L, roughness);
-    vec3 F    = fresnelSchlick(max(dot(H, V), 0.0), F0);
-    
+    float G = GeometrySmith(N, V, L, roughness);
+    vec3 F = fresnelSchlick(max(dot(H, V), 0.0), F0);
+
+    // Reflection coefficients
     vec3 kS = F;
     vec3 kD = vec3(1.0) - kS;
     kD *= 1.0 - metallic;
-    
-    vec3 numerator    = NDF * G * F;
-    float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0) + 0.0001; // Ensure denominator is not zero
-    vec3 specular     = numerator / denominator;
-        
-    // Add to outgoing radiance Lo
-    return (kD * albedo / PI + specular) * radiance * NdotL;
+
+    // Specular reflection
+    vec3 numerator = NDF * G * F;
+    float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0) + 0.0001;
+    vec3 specular = numerator / denominator;
+
+    // Final lighting result considering shadow
+    return ((kD * albedo / PI + specular) * radiance * NdotL) * (1.0 - shadow); // Apply shadow attenuation
 }
+
 
 vec3 CreateDirectLight(LightComponent light, vec3 fragPos, vec3 V, vec3 N, vec3 F0, vec3 albedo, float roughness, float metallic) {
     // A direção da luz deve ser normalizada e não deve usar a posição da luz.
     vec3 L = normalize(-light.direction); // A luz direcional vem de uma direção constante, por isso é -light.direction
 
-    vec3 H = normalize(L + V);  // Vetor de meio (half-vector)
+    // Calculando o vetor meio (half-vector) entre a direção da luz e o vetor visual
+    vec3 H = normalize(L + V);  // Meio vetor (half-vector)
     vec3 R = reflect(-V, N);    // Vetor refletido (para efeitos especulares)
 
     // Calcula os produtos de ponto entre vetores
@@ -161,13 +184,13 @@ vec3 CreateDirectLight(LightComponent light, vec3 fragPos, vec3 V, vec3 N, vec3 
     float HdotV = max(1e-5, dot(H, V));   // Produto escalar meio-vetor - vetor visual
     float NdotH = max(1e-5, dot(N, H));   // Produto escalar normal - meio-vetor
 
-    // Fresnel Schlick Approximation
+    // Aproximação de Fresnel Schlick
     vec3 F = fresnelSchlick(HdotV, F0);
 
-    // Termo de distribuição (NDF - Normal Distribution Function)
+    // Função de distribuição (NDF - Normal Distribution Function)
     float D = DistributionGGX(NdotH, roughness);
 
-    // Termo de sombreamento (G - Geometry term)
+    // Termo de geometria (G - Geometry term)
     float G = GeometrySmith(N, V, L, roughness);
 
     // Cálculo do termo especular
@@ -177,14 +200,23 @@ vec3 CreateDirectLight(LightComponent light, vec3 fragPos, vec3 V, vec3 N, vec3 
 
     // Cálculo do termo difuso
     vec3 kS = F;
-    vec3 kD = vec3(1.0) - kS;
-    
+    vec3 kD = vec3(1.0) - kS;  // Difuso é 1 menos a reflexão especular
+
     // Atenuação do metal
     kD *= 1.0 - metallic;
 
-    // Retorno do resultado da iluminação difusa e especular
-    return (kD * albedo / PI + specular) * light.color.rgb * NdotL;
+    // Calcular a contribuição difusa e especular da luz
+    // Radiância da luz (cor da luz multiplicada pela intensidade)
+    vec3 radiance = light.color.rgb;
+
+    // Calcular a profundidade do fragmento no espaço da luz para sombra
+    vec4 fragPosLightSpace = light.model * vec4(fragPos, 1.0); // Transformando a posição do fragmento no espaço da luz
+    float shadow = ShadowCalculation(fragPosLightSpace);  // Verificando a sombra para este fragmento
+
+    // O resultado final de iluminação leva em conta a sombra (atenuando a luz)
+    return ((kD * albedo / PI + specular) * radiance * NdotL) * (1.0 - shadow); // Aplicando a atenuação de sombra
 }
+
 
 vec3 BaseColor(vec3 eye, vec3 fragPos, vec3 albedo, float roughness, float metallic, float ao, vec3 normal) {
     vec3 N = normalize(normal);
@@ -214,7 +246,6 @@ vec3 BaseColor(vec3 eye, vec3 fragPos, vec3 albedo, float roughness, float metal
     // Combinando a iluminação ambiente com a iluminação direta
     return ambient + Lo;
 }
-
 
 void main() {
     vec4 albedo = m_material[u_index].albedo;

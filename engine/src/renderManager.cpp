@@ -1,5 +1,7 @@
 #include "renderManager.h"
 
+#include "shadowMap.hpp"
+
 #include "script/meshRender.hpp"
 #include "script/meshFilter.hpp"
 #include "script/transform.hpp"
@@ -56,7 +58,7 @@ void RenderManager::Initialize() {
     );
 }
 
-void RenderManager::Process(Camera *camera) {
+void RenderManager::Process(Camera *camera, ShadowMap *shadowMap) {
     m_camera = camera;
     if (!bRender || !m_camera) {
         return;
@@ -72,6 +74,9 @@ void RenderManager::Process(Camera *camera) {
         grr::gShader::SetUniform("u_projection", 1, m_camera->getPerspesctive());
         grr::gShader::SetUniform("u_view", 1, m_camera->getViewmatrix());
         grr::gShader::SetUniform("m_eye", 1, m_camera->getPosition());
+
+        shadowMap->bindTexture(8);
+        grr::gShader::SetUniform("m_shadowMap", 8);
 
         SetupLight();
     }
@@ -116,6 +121,7 @@ void RenderManager::SetupLight() {
         grr::gShader::SetUniform("m_light[" + std::to_string(i) + "].attenuation", Vector3({light->getAttenuationConstant(), light->getAttenuationLinear(), light->getAttenuationQuadractc()}));
         grr::gShader::SetUniform("m_light[" + std::to_string(i) + "].direction",   light->getForward());
         grr::gShader::SetUniform("m_light[" + std::to_string(i) + "].params",      Vector3({light->getInnecone(), light->getOutercone(), (float)light->getType()}));
+        grr::gShader::SetUniform("m_light[" + std::to_string(i) + "].model", 1, light->getProjetion());
     }
 }
 
@@ -142,6 +148,7 @@ void RenderManager::RegisterUniform(bool model) {
 
     // FragmentShader
     grr::gShader::Register("m_eye");
+    grr::gShader::Register("m_shadowMap");
     grr::gShader::Register("m_lightcount");
 
     grr::gShader::Register("m_texture");
@@ -158,6 +165,6 @@ void RenderManager::RegisterUniform(bool model) {
         grr::gShader::Register("m_light[" + std::to_string(i) + "].attenuation");
         grr::gShader::Register("m_light[" + std::to_string(i) + "].direction");
         grr::gShader::Register("m_light[" + std::to_string(i) + "].params");
-        grr::gShader::Register("m_light[" + std::to_string(i) + "].vp");
+        grr::gShader::Register("m_light[" + std::to_string(i) + "].model");
     }
 }

@@ -36,7 +36,7 @@ void MeshRender::build() {
         m_batched = nullptr;
     }
 
-    if (m_flags == Batching::Batching_Flags_Dynamic) {
+    if (m_flags == Batching::BatchingType_Dynamic) {
         auto shader = AssetsManager::FindShader("dynamic_one_model");
         if (!shader) {
             AssetsManager::LoadShader("dynamic_one_model",
@@ -80,7 +80,7 @@ const int &MeshRender::getFlags() const {
 void MeshRender::SetupShader(Mesh *mesh, grr::gShader *shader) {
     m_batched = Batching::Find(getGameObject()->getName());
     if (!m_batched) {
-        m_batched = &Batching::Add(getGameObject()->getName(), &m_materials, mesh, shader, Batching::Batching_Flags_Dynamic);
+        m_batched = &Batching::Add(getGameObject()->getName(), &m_materials, mesh, shader, Batching::BatchingType_Dynamic);
     }
     
     m_batched->insert(m_transform);

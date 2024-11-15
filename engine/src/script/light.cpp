@@ -2,6 +2,9 @@
 
 #include "transform.hpp"
 
+Matrix4x4 Light::mProjection = Math::orthographic(-10.0f, 10.0f, -10.0f, 10.0f, 1.0f, 75.0f);
+ // -10.0f, 10.0f, -10.0f, 10.0f, 0.1f, 100.0f
+ 
 Vector3 Light::getposition() const {
     return m_transform->getPosition();
 }
@@ -64,4 +67,8 @@ float Light::getOutercone() const {
 
 void Light::setOutercone(float value) {
     m_angleOuterCone = value;
+}
+
+Matrix4x4 Light::getProjetion() const {
+    return mProjection * Math::lookAt(m_transform->getPosition(), m_transform->getPosition() + m_transform->getforward(), m_transform->getup());
 }

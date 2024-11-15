@@ -22,7 +22,7 @@ private:
 
     static void LoadMaterial(const aiScene *scene, FbxScene *fbxScene);
 
-    static void ProcessTexture(aiMaterial *iMaterial, FbxMaterial& material);
+    static void ProcessTexture(aiMaterial *iMaterial, FbxMaterial& fbxMaterial);
 
     static void LoadMesh(const aiScene *scene, FbxScene *fbxScene);
 

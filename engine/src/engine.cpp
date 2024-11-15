@@ -2,6 +2,7 @@
 
 #include "editorController.h"
 #include "postProcessing.hpp"
+#include "shadowMap.hpp"
 
 #include "script/meshRender.hpp"
 #include "script/camera.hpp"
@@ -41,6 +42,8 @@ PostProcessing *Engine::MainPostProcess = nullptr;
 
 Shadowbuffer *m_shadowbuffer = nullptr;
 
+std::unique_ptr<ShadowMap> m_shadowMap = nullptr;
+
 void Engine::Reize(grm::u32 width, grm::u32 height) {
     Screen::SetResolution(width, height);
 
@@ -65,8 +68,7 @@ void Engine::Initialize() {
 
     ImGuiPostProcess = PostProcessing::Create({1, 1});
 
-    // Shadow provavelmente vou remove-lo
-    // m_shadowbuffer = &Shadowbuffer::getInstance();
+    m_shadowMap = std::make_unique<ShadowMap>(1024, 1024);
 
     SetupEnable();
 
@@ -247,9 +249,19 @@ void Engine::MainFramebuffer() {
     if (!editor) {
         return;
     }
+
+    // shadow
+    {
+        m_shadowMap->bind();
+        grr::gRender::SetRenderState(grr::GR_BACKGROUND, grr::GR_DEPTH_BUFFER);
+    
+        Batching::RenderShadow();
+    
+        m_shadowMap->unbind();
+    }
     
     // Seleção de modelos para renderizar
-    RenderManager::Process(editor->getCamera());
+    RenderManager::Process(editor->getCamera(), &(*m_shadowMap));
 
     // Pos processamento
     PostProcessing::Bind(MainPostProcess);

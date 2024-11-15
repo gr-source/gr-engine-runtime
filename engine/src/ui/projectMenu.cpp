@@ -5,6 +5,8 @@
 #include "renderManager.h"
 #include "skybox.h"
 
+#include "geometry/batching.hpp"
+
 #include "core/cmd/cmd.hpp"
 
 #include "core/threadpool.hpp"
@@ -81,6 +83,8 @@ void ProjectMenu::CloseProject() {
     }
 
     m_editor = nullptr;
+
+    Batching::Shutdown();
 
     Scene::SetCurrent(nullptr);
 
@@ -314,6 +318,8 @@ void ProjectMenu::ReadProjects() {
 
 void ProjectMenu::OpenProject(Project &project) {
     File::SetCurrentProject(project.getPath());
+
+    Batching::Initialize();
 
     m_editor = std::make_shared<Editor>();
 

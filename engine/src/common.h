@@ -7,6 +7,7 @@
 
 class ObjectManager;
 class GameObject;
+class ShadowMap;
 class Skybox;
 
 /* resources */

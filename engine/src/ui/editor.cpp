@@ -1987,7 +1987,7 @@ bool Editor::OnPropertyMeshRender(MeshRender *meshRender) {
 
     auto elem = meshRender->getFlags();
 
-    // int  = Batching::Batching_Flags_Dynamic;
+    // int  = Batching::BatchingType_Dynamic;
         
     const char* elems_names[4] = {"Dynamic", "GroupMesh", "InstanceDynamic", "InstancedStatic"};
     

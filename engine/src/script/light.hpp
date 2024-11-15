@@ -46,7 +46,11 @@ public:
 
     void setOutercone(float value);
 
+    Matrix4x4 getProjetion() const;
+
 private:
+    static Matrix4x4 mProjection;
+
     int m_type;
 
     Transform* m_transform;

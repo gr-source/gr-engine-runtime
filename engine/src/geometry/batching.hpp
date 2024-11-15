@@ -9,12 +9,18 @@
 
 class Batching {
 public:
-    enum Batching_Flags {
-        Batching_Flags_Dynamic           = 0,
-        Batching_Flags_Static_Mesh       = 1,
-        Batching_Flags_Instanced_Dynamic = 2,
-        Batching_Flags_Instanced_Static  = 3
+    enum BatchingType {
+        BatchingType_Dynamic           = 0,
+        BatchingType_Static_Mesh       = 1,
+        BatchingType_Instanced_Dynamic = 2,
+        BatchingType_Instanced_Static  = 3
     };
+
+    static void Initialize();
+
+    static void Shutdown();
+
+    static void RenderShadow();
     
     static grm::size GetBatchedCount();
 
@@ -34,7 +40,7 @@ public:
 
     void remove(Transform *transform, bool bDelete = true);
 
-    void draw();
+    void draw(grr::gShader *shader = nullptr, bool bSetMaterial = true);
 
     bool hasModel() const;
     
@@ -51,6 +57,8 @@ private:
     static std::unordered_map<std::string, std::unique_ptr<Batching>> m_batchedMap;
 
     static std::vector<Batching *> m_batched;
+
+    static grr::gShader *m_shaderShadow;
 
     std::vector<std::shared_ptr<Material>> *m_materials;
 
@@ -80,8 +88,6 @@ private:
 
     grr::gShader *m_shader;
 
-    static void Draw(Batching *batching);
-
     void build(Mesh *mesh);
 
     void compile();
@@ -95,6 +101,8 @@ private:
     void buildStaticMesh();
 
     void setupMaterial();
+
+    static void RegisterShaderShadow(grr::gShader *shader);
 };
 
 template <typename... Args>
