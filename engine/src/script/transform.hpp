@@ -26,11 +26,11 @@ public:
 
     Vector3 getLocalPosition() const;
 
-    Vector3 getright() const;
+    Vector3 getRight() const;
 
-    Vector3 getup() const;
+    Vector3 getUp() const;
 
-    Vector3 getforward() const;
+    Vector3 getForward() const;
 
     void setGlobalMatrix(const Matrix4x4 &matrix);
 

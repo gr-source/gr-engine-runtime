@@ -40,16 +40,16 @@ void EditorController::Update(Camera *camera) {
     Vector3 diretion = Vector3::zero;
 
     if (Input::IsKeyPress(InputKey_W)) {
-        diretion += transform->getforward();
+        diretion += transform->getForward();
     }
     if (Input::IsKeyPress(InputKey_S)) {
-        diretion -= transform->getforward();
+        diretion -= transform->getForward();
     }
     if (Input::IsKeyPress(InputKey_A)) {
-        diretion += transform->getright();
+        diretion += transform->getRight();
     }
     if (Input::IsKeyPress(InputKey_D)) {
-        diretion -= transform->getright();
+        diretion -= transform->getRight();
     }
     // if (Input::IsKeyPress(Input::InputKey_UP)) {
     //     diretion.y += 1.0f;

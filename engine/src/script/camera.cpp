@@ -2,7 +2,7 @@
 
 #include "transform.hpp"
 
-#include "../scriptManager/scriptManager.hpp"
+#include "settings.h"
 
 std::vector<Camera *> &(*Camera::GetCameras)();
 
@@ -17,7 +17,7 @@ const Matrix4x4 Camera::getPerspesctive() const {
 }
 
 const Matrix4x4 Camera::getViewmatrix() const {
-    return Math::lookAt(m_transform->getPosition(), m_transform->getPosition() + m_transform->getforward(), m_transform->getup());
+    return Math::lookAt(m_transform->getPosition(), m_transform->getPosition() + m_transform->getForward(), m_transform->getUp());
 }
 
 const Vector3 Camera::getPosition() const {

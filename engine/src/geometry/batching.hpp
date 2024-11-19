@@ -20,18 +20,18 @@ public:
 
     static void Shutdown();
 
-    static void RenderShadow();
+    static void RenderShadowPass();
     
-    static grm::size GetBatchedCount();
+    static grm::size GetBatchCount();
 
-    static Batching *Find(const std::string &name);
+    static Batching *FindBatchByName(const std::string &name);
 
-    static void Delete(const std::string &name);
+    static void RemoveBatchByName(const std::string &name);
 
     template <typename ...Args>
-    static Batching &Add(const std::string &key, Args &&...args);
+    static Batching &AddBatch(const std::string &key, Args &&...args);
 
-    static void Renderer();
+    static void RenderBatches();
     
     Batching(const std::string &name, std::vector<std::shared_ptr<Material>> *materials, Mesh *mesh, grr::gShader *shader, int flags);
     ~Batching();
@@ -44,7 +44,7 @@ public:
 
     bool hasModel() const;
     
-    grm::u32 m_primCount;
+    grm::u32 m_instanceCount;
     
 private:
     enum DrawType {
@@ -54,11 +54,11 @@ private:
         DrawType_Arrays             = 1 << 4
     };
 
-    static std::unordered_map<std::string, std::unique_ptr<Batching>> m_batchedMap;
+    static std::unordered_map<std::string, std::unique_ptr<Batching>> s_batchedInstances;
 
-    static std::vector<Batching *> m_batched;
+    static std::vector<Batching *> s_batchedInstancesList;
 
-    static grr::gShader *m_shaderShadow;
+    static grr::gShader *s_shadowShader;
 
     std::vector<std::shared_ptr<Material>> *m_materials;
 
@@ -66,7 +66,7 @@ private:
 
     grr::gVertexArray *m_vertexArray;
 
-    grm::u32 m_indiceCount;
+    grm::u32 m_indexCount;
 
     std::string m_name;
 
@@ -78,7 +78,7 @@ private:
 
     grm::u32 m_PBO;
 
-    bool bHasIndice;
+    bool m_hasIndex;
 
     DrawType m_type;
 
@@ -88,9 +88,9 @@ private:
 
     grr::gShader *m_shader;
 
-    void build(Mesh *mesh);
+    void BuildBatch(Mesh *mesh);
 
-    void compile();
+    void CompileBatch();
 
     void buildDynamic();
 
@@ -106,11 +106,11 @@ private:
 };
 
 template <typename... Args>
-inline Batching &Batching::Add(const std::string &key, Args &&...args) {
-    auto &&[it, added] = m_batchedMap.emplace(key, std::make_unique<Batching>(key, std::forward<Args>(args)...));
+inline Batching &Batching::AddBatch(const std::string &key, Args &&...args) {
+    auto &&[it, added] = s_batchedInstances.emplace(key, std::make_unique<Batching>(key, std::forward<Args>(args)...));
     assert(added && "Value subscrite.");
     
     auto ptr =  &(*it->second);
-    m_batched.push_back(ptr);
+    s_batchedInstancesList.push_back(ptr);
     return *ptr;
 }

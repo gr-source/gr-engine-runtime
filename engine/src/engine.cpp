@@ -254,8 +254,11 @@ void Engine::MainFramebuffer() {
     {
         m_shadowMap->bind();
         grr::gRender::SetRenderState(grr::GR_BACKGROUND, grr::GR_DEPTH_BUFFER);
-    
-        Batching::RenderShadow();
+        grr::gRender::SetRenderState(grr::GR_DEPTH, grr::GR_TRUE);
+        grr::gRender::SetRenderState(grr::GR_CULL, grr::GR_FRONT);
+        grr::gRender::SetRenderState(grr::GR_FRAMEBUFFER_SRGB, grr::GR_FALSE);
+        
+        Batching::RenderShadowPass();
     
         m_shadowMap->unbind();
     }
@@ -267,6 +270,7 @@ void Engine::MainFramebuffer() {
     PostProcessing::Bind(MainPostProcess);
 
     grr::gRender::SetRenderState(grr::GR_BACKGROUND, grr::GR_DEPTH_BUFFER | grr::GR_COLOR_BUFFER);
+    grr::gRender::SetRenderState(grr::GR_CULL, grr::GR_BACK);
     grr::gRender::SetRenderState(grr::GR_DEPTH, grr::GR_TRUE);
     grr::gRender::SetRenderState(grr::GR_FRAMEBUFFER_SRGB, grr::GR_TRUE);
 

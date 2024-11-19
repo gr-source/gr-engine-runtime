@@ -1685,7 +1685,7 @@ void Editor::RenderStatisticsMenu() {
         ImGui::Text("Luzes: %ld",     ScriptManager::GetListLight().size());
     ImGui::Text("Draw Call Count: %ld", Statistics::m_drawCallCount);
     ImGui::Text("Draw Render: %ld/%ld", Statistics::m_totalRender, Statistics::m_drawRenderCount);
-    ImGui::Text("Batched: %ld", Batching::GetBatchedCount());
+    ImGui::Text("Batched: %ld", Batching::GetBatchCount());
 }
 
 void Editor::RenderGameObjectPropertiUI() {
@@ -2133,14 +2133,14 @@ bool Editor::OnPropertyLight(Light *light) {
 
     ImGui::Text("Color");
     
-    auto color = light->getcolor();
+    auto color = light->getColor();
     if (ImGui::ColorButton("##light_color", *reinterpret_cast<ImVec4 *>(&color))) {
         ImGui::OpenPopup("##light_color_popup");
     }
     
     if (ImGui::BeginPopup("##light_color_popup")) {
         if (ImGui::ColorPicker4("#light_color_pick", reinterpret_cast<float *>(&color))) {
-            light->setcolor(color);
+            light->setColor(color);
         }
         ImGui::EndPopup();
     }

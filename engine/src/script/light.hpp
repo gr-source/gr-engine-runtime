@@ -14,13 +14,13 @@ public:
 
     Light() = delete;
 
-    Vector3 getposition() const;
+    Vector3 getPosition() const;
 
     Vector3 getForward() const;
 
-    Color getcolor() const;
+    Color getColor() const;
 
-    void setcolor(const Color& color);
+    void setColor(const Color& color);
 
     void setType(int value);
 

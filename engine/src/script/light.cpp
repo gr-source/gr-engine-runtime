@@ -2,22 +2,25 @@
 
 #include "transform.hpp"
 
-Matrix4x4 Light::mProjection = Math::orthographic(-10.0f, 10.0f, -10.0f, 10.0f, 1.0f, 75.0f);
- // -10.0f, 10.0f, -10.0f, 10.0f, 0.1f, 100.0f
- 
-Vector3 Light::getposition() const {
+#include <glm/glm.hpp>
+
+
+Matrix4x4 Light::mProjection = Math::orthographic(-10.0f, 10.0f, -10.0f, 10.0f, -10.0f, 75.0f);
+// -10.0f, 10.0f, -10.0f, 10.0f, 0.1f, 100.0f
+
+Vector3 Light::getPosition() const {
     return m_transform->getPosition();
 }
 
 Vector3 Light::getForward() const {
-    return m_transform->getforward();
+    return m_transform->getForward();
 }
 
-Color Light::getcolor() const {
+Color Light::getColor() const {
     return m_color;
 }
 
-void Light::setcolor(const Color &color) {
+void Light::setColor(const Color &color) {
     m_color = color;
 }
 
@@ -29,12 +32,12 @@ int Light::getType() const {
     return m_type;
 }
 
-void Light::setAttenuationConstant(float value) {
-    m_attenuationConstant = value;
-}
-
 float Light::getAttenuationConstant() const {
     return m_attenuationConstant;
+}
+
+void Light::setAttenuationConstant(float value) {
+    m_attenuationConstant = value;
 }
 
 float Light::getAttenuationLinear() const {
@@ -69,6 +72,29 @@ void Light::setOutercone(float value) {
     m_angleOuterCone = value;
 }
 
+#include <glm/ext.hpp>
+
 Matrix4x4 Light::getProjetion() const {
-    return mProjection * Math::lookAt(m_transform->getPosition(), m_transform->getPosition() + m_transform->getforward(), m_transform->getup());
+    // auto p = m_transform->getPosition();
+    // auto l = m_transform->getPosition() + m_transform->getforward();
+    // auto f = m_transform->getup();
+
+    // float near_plane = 0.1f, far_plane = 7.50f;
+    // glm::mat4 lightProjection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, near_plane, far_plane); 
+
+
+    // glm::mat4 lightView = glm::lookAt(glm::vec3(p.x, p.y, p.z), 
+    //                                 glm::vec3(0, 0, 0), 
+    //                                 glm::vec3(0, 1, 0));  
+
+    // glm::mat4 lightSpaceMatrix = lightProjection * lightView;
+
+    // return *reinterpret_cast<Matrix4x4 *>(glm::value_ptr(lightSpaceMatrix));
+    return mProjection * Math::lookAt(m_transform->getPosition(), m_transform->getPosition() + m_transform->getForward(), m_transform->getUp());
 }
+
+
+
+
+
+

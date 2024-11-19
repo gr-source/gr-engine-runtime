@@ -47,15 +47,15 @@ Vector3 Transform::getPosition() const {
     return m_position;
 }
 
-Vector3 Transform::getright() const {
+Vector3 Transform::getRight() const {
     return getRotation() * Vector3::right;
 }
 
-Vector3 Transform::getup() const {
+Vector3 Transform::getUp() const {
     return getRotation() * Vector3::up;
 }
 
-Vector3 Transform::getforward() const {
+Vector3 Transform::getForward() const {
     return getRotation() * Vector3::forward;
 }
 

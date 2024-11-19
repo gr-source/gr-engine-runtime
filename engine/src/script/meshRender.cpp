@@ -78,9 +78,9 @@ const int &MeshRender::getFlags() const {
 }
 
 void MeshRender::SetupShader(Mesh *mesh, grr::gShader *shader) {
-    m_batched = Batching::Find(getGameObject()->getName());
+    m_batched = Batching::FindBatchByName(getGameObject()->getName());
     if (!m_batched) {
-        m_batched = &Batching::Add(getGameObject()->getName(), &m_materials, mesh, shader, Batching::BatchingType_Dynamic);
+        m_batched = &Batching::AddBatch(getGameObject()->getName(), &m_materials, mesh, shader, Batching::BatchingType_Dynamic);
     }
     
     m_batched->insert(m_transform);

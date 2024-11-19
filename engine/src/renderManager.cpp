@@ -88,7 +88,7 @@ void RenderManager::Renderer() {
         return;
     }
 
-    Batching::Renderer();
+    Batching::RenderBatches();
 
     for (int i=0;i<10;i++) {
         grr::gTexture::Bind(nullptr, i);
@@ -116,8 +116,8 @@ void RenderManager::SetupLight() {
     for (auto i=0;i<lights.size();i++) {
         const auto& light = lights[i];
 
-        grr::gShader::SetUniform("m_light[" + std::to_string(i) + "].position",    light->getposition());
-        grr::gShader::SetUniform("m_light[" + std::to_string(i) + "].color",       light->getcolor());
+        grr::gShader::SetUniform("m_light[" + std::to_string(i) + "].position",    light->getPosition());
+        grr::gShader::SetUniform("m_light[" + std::to_string(i) + "].color",       light->getColor());
         grr::gShader::SetUniform("m_light[" + std::to_string(i) + "].attenuation", Vector3({light->getAttenuationConstant(), light->getAttenuationLinear(), light->getAttenuationQuadractc()}));
         grr::gShader::SetUniform("m_light[" + std::to_string(i) + "].direction",   light->getForward());
         grr::gShader::SetUniform("m_light[" + std::to_string(i) + "].params",      Vector3({light->getInnecone(), light->getOutercone(), (float)light->getType()}));
