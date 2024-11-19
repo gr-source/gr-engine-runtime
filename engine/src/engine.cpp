@@ -36,9 +36,9 @@
 
 #include <filesystem>
 
-PostProcessing *Engine::ImGuiPostProcess = nullptr;
+std::shared_ptr<PostProcessing> Engine::ImGuiPostProcess = nullptr;
 
-PostProcessing *Engine::MainPostProcess = nullptr;
+std::shared_ptr<PostProcessing> Engine::MainPostProcess = nullptr;
 
 Shadowbuffer *m_shadowbuffer = nullptr;
 
@@ -52,13 +52,11 @@ void Engine::Reize(grm::u32 width, grm::u32 height) {
     iVector2 size((int) width, (int) height);
 
     if (ImGuiPostProcess) {
-        PostProcessing::Resize(ImGuiPostProcess, size);
+        ImGuiPostProcess->resize(size);
     }
 }
 
 void Engine::Initialize() {
-    Memory::Initialize();
-
     Threadpool::Initialize();
 
     ImGuiRender::Initialize("#version 330 core");
@@ -66,15 +64,13 @@ void Engine::Initialize() {
     AssetsManager::Initialize();
 
     // Buffer de renderização.
-    MainPostProcess = PostProcessing::Create({1, 1});
+    MainPostProcess = std::make_shared<PostProcessing>(iVector2{1, 1}); // PostProcessing::Create({1, 1});
 
-    ImGuiPostProcess = PostProcessing::Create({1, 1});
+    ImGuiPostProcess = std::make_shared<PostProcessing>(iVector2{1, 1});
 
     m_shadowMap = std::make_unique<ShadowMap>(1024, 1024);
 
     SetupEnable();
-
-    Input::Initialize();
 
     PhysicsScene::Initialize();
 
@@ -143,11 +139,11 @@ void Engine::Render() {
 
 void Engine::Shutdown() {
     if (MainPostProcess) {
-        PostProcessing::Shutdown(MainPostProcess);
+        MainPostProcess = nullptr;
     }
 
     if (ImGuiPostProcess) {
-        PostProcessing::Shutdown(ImGuiPostProcess);
+        ImGuiPostProcess = nullptr;
     }
 
     ImGuiRender::Shutdown();
@@ -159,8 +155,6 @@ void Engine::Shutdown() {
     AssetsManager::Shutdown();
 
     Threadpool::Shutdown();
-    
-    Memory::Shutdown();
 }
 
 void Engine::GRKeyboardDown(grm::u32 key) {
@@ -266,7 +260,7 @@ void Engine::MainFramebuffer() {
     RenderManager::Process(m_editor->getCamera(), &(*m_shadowMap));
 
     // Pos processamento
-    PostProcessing::Bind(MainPostProcess);
+    MainPostProcess->bind();
 
     grr::gRender::SetRenderState(grr::GR_BACKGROUND, grr::GR_DEPTH_BUFFER | grr::GR_COLOR_BUFFER);
     grr::gRender::SetRenderState(grr::GR_CULL, grr::GR_BACK);
@@ -275,11 +269,10 @@ void Engine::MainFramebuffer() {
 
     RenderScene();
 
-    // Fim do posprocessamento
-    PostProcessing::Unbind();
+    MainPostProcess->unbind();
 
     // Captura de posprocessamento para o imgui
-    PostProcessing::Bind(ImGuiPostProcess);
+    ImGuiPostProcess->bind();
 
     // renderização da cena 2d e utilização do pos processamento;
     grr::gRender::SetRenderState(grr::GR_BACKGROUND_COLOR, (void*)&Color::red);
@@ -287,9 +280,17 @@ void Engine::MainFramebuffer() {
     grr::gRender::SetRenderState(grr::GR_DEPTH, grr::GR_FALSE);
     grr::gRender::SetRenderState(grr::GR_FRAMEBUFFER_SRGB, grr::GR_FALSE);
 
-    ScreenRender::Render(PostProcessing::GetTextureColor(MainPostProcess));
+    ScreenRender::Render(MainPostProcess->getTextureColor());
 
-    PostProcessing::Unbind();
+    ImGuiPostProcess->unbind();
+}
+
+PostProcessing *Engine::GetImGuiPostprocess() {
+    return ImGuiPostProcess != nullptr ? &(*ImGuiPostProcess) : nullptr;
+}
+
+PostProcessing *Engine::GetMainPostprocess() {
+    return MainPostProcess != nullptr ? &(*MainPostProcess) : nullptr;
 }
 
 void Engine::RenderScene() {

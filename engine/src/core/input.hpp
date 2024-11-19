@@ -52,8 +52,6 @@ enum InputKey : int {
 
 class Input {
 public:
-    static std::string getKeyName(InputKey key);
-
     static bool IsKeyDown(InputKey key);
 
     static bool IsKeyUp(InputKey key);
@@ -68,10 +66,6 @@ public:
 
     static Vector2 GetCursorPos();
 
-    static void Initialize();
-
-    static void Update();
-    
 private:
     struct MouseData {
         Vector2 pos;

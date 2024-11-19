@@ -7,100 +7,7 @@
 #include "core/stb/stb_image_write.h"
 
 PostProcessing *PostProcessing::m_current = nullptr;
-
-PostProcessing *PostProcessing::Create(const iVector2 &size) {
-    auto handle = new PostProcessing();
-    handle->m_viewport = size;
-
-    handle->m_fbo = grr::gFramebuffer::Create();
-    if (!handle->m_fbo) {
-        throw std::runtime_error("Falied to create framebuffer.");
-    }
-
-    handle->m_colorTexture = grr::gTexture::Create();
-    if (!handle->m_colorTexture) {
-        throw std::runtime_error("Falied to create Texture.");
-    }
-
-    handle->m_depthTexture = grr::gTexture::Create();
-    if (!handle->m_depthTexture) {
-        throw std::runtime_error("Falied to create renderbufer.");
-    }
-
-    grr::gTexture::Bind(handle->m_colorTexture);
-    grr::gTexture::UpdateTexture(handle->m_viewport.x, handle->m_viewport.y, grr::gTextureFlags_None, grr::TextureFormat_SRGB, nullptr);
-
-    grr::gTexture::Bind(handle->m_depthTexture);
-    grr::gTexture::UpdateTexture(handle->m_viewport.x, handle->m_viewport.y, grr::gTextureFlags_None, grr::TextureFormat_DepthComponent, nullptr);
-
-    // Set framebuffer
-    grr::gFramebuffer::Bind(handle->m_fbo);
-
-    grr::gTexture::Bind(handle->m_colorTexture, 0);
-    grr::gFramebuffer::SetTexture(grr::gFramebufferFlags_Color_Attachiment0);
-
-    grr::gTexture::Bind(handle->m_depthTexture, 0);
-    grr::gFramebuffer::SetTexture(grr::gFramebufferFlags_Depth_Attachiment);
-
-    grr::gFramebuffer::Unbind();
-
-    return handle;
-}
-
-void PostProcessing::Shutdown(PostProcessing *target) {
-    if (!target) {
-        return;
-    }
-
-    if (target->m_colorTexture) {
-        delete target->m_colorTexture;
-    }
-
-    if (target->m_depthTexture) {
-        delete target->m_depthTexture;
-    }
-
-    if (target->m_fbo) {
-        grr::gFramebuffer::Destroy(target->m_fbo);
-    }
-
-    delete target;
-}
-
-void PostProcessing::Resize(PostProcessing *target, const iVector2 &size) { 
-    assert(target != nullptr || target->m_colorTexture != nullptr);
-
-    target->m_viewport = size;
-
-    grr::gTexture::Bind(target->m_colorTexture); // SRG or RGB ???
-    grr::gTexture::UpdateTexture(target->m_viewport.x, target->m_viewport.y, grr::gTextureFlags_None, grr::TextureFormat_SRGB, nullptr);
-    grr::gTexture::Unbind();
-
-    grr::gTexture::Bind(target->m_depthTexture); // SRG or RGB ???
-    grr::gTexture::UpdateTexture(target->m_viewport.x, target->m_viewport.y, grr::gTextureFlags_None, grr::TextureFormat_DepthComponent, nullptr);
-    grr::gTexture::Unbind();
-}
-
-void PostProcessing::Bind(PostProcessing *target) {
-    assert(target != nullptr);
-
-    grr::gRender::SetRenderState(grr::GR_VIEWPORT, (void *)&target->m_viewport);
-    grr::gFramebuffer::Bind(target->m_fbo);
-
-    m_current = target;
-}
-
-void PostProcessing::Unbind() {
-    grr::gFramebuffer::Unbind();
-
-    m_current = nullptr;
-}
-
-grr::gTexture *PostProcessing::GetTextureColor(PostProcessing *target) {
-    assert(target != nullptr);
-    
-    return target->m_colorTexture;
-}
+/*
 
 void PostProcessing::Save(const std::string &path, PostProcessing *postProcessing) {
     if (!postProcessing) {
@@ -128,18 +35,81 @@ const iVector2 &PostProcessing::GetSize() {
 Vector3 PostProcessing::GetPixelInfo(PostProcessing *target) {
     return Vector3();
 }
+*/
 
-PostProcessing::PostProcessing() : m_colorTexture(nullptr), m_depthTexture(nullptr), m_fbo(0), m_viewport(0, 0) {}
+PostProcessing::PostProcessing(const iVector2 &size) : m_colorTexture(nullptr), m_depthTexture(nullptr), m_fbo(0), m_viewport(size) {
+    m_fbo = grr::gFramebuffer::Create();
+    if (!m_fbo) {
+        throw std::runtime_error("Falied to create framebuffer.");
+    }
 
+    m_colorTexture = grr::gTexture::Create();
+    if (!m_colorTexture) {
+        throw std::runtime_error("Falied to create Texture.");
+    }
 
+    m_depthTexture = grr::gTexture::Create();
+    if (!m_depthTexture) {
+        throw std::runtime_error("Falied to create renderbufer.");
+    }
 
+    grr::gTexture::Bind(m_colorTexture);
+    grr::gTexture::UpdateTexture(m_viewport.x, m_viewport.y, grr::gTextureFlags_None, grr::TextureFormat_SRGB, nullptr);
 
+    grr::gTexture::Bind(m_depthTexture);
+    grr::gTexture::UpdateTexture(m_viewport.x, m_viewport.y, grr::gTextureFlags_None, grr::TextureFormat_DepthComponent, nullptr);
 
+    // Set framebuffer
+    grr::gFramebuffer::Bind(m_fbo);
 
+    grr::gTexture::Bind(m_colorTexture, 0);
+    grr::gFramebuffer::SetTexture(grr::gFramebufferFlags_Color_Attachiment0);
 
+    grr::gTexture::Bind(m_depthTexture, 0);
+    grr::gFramebuffer::SetTexture(grr::gFramebufferFlags_Depth_Attachiment);
 
+    grr::gFramebuffer::Unbind();
+}
 
+PostProcessing::~PostProcessing() {
+    if (m_colorTexture) {
+        delete m_colorTexture;
+    }
 
+    if (m_depthTexture) {
+        delete m_depthTexture;
+    }
 
+    if (m_fbo) {
+        grr::gFramebuffer::Destroy(m_fbo);
+    }
+}
 
+void PostProcessing::resize(const iVector2 &size) {
+    m_viewport = size;
 
+    grr::gTexture::Bind(m_colorTexture); // SRG or RGB ???
+    grr::gTexture::UpdateTexture(m_viewport.x, m_viewport.y, grr::gTextureFlags_None, grr::TextureFormat_SRGB, nullptr);
+    grr::gTexture::Unbind();
+
+    grr::gTexture::Bind(m_depthTexture); // SRG or RGB ???
+    grr::gTexture::UpdateTexture(m_viewport.x, m_viewport.y, grr::gTextureFlags_None, grr::TextureFormat_DepthComponent, nullptr);
+    grr::gTexture::Unbind();
+}
+
+void PostProcessing::bind() {
+    grr::gRender::SetRenderState(grr::GR_VIEWPORT, (void *)&m_viewport);
+    grr::gFramebuffer::Bind(m_fbo);
+
+    m_current = this;
+}
+
+void PostProcessing::unbind() {
+    grr::gFramebuffer::Unbind();
+
+    m_current = nullptr;
+}
+
+grr::gTexture *PostProcessing::getTextureColor() {
+    return m_colorTexture;
+}

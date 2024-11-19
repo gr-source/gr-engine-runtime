@@ -243,12 +243,11 @@ void Scene::Load(const std::string &path, std::uint8_t flags, std::function<void
     {
         FileHeader header;
         if (!stream.readS(&header, 1)) {
-            Console::LogError("[ Scene ] Failed to read binary header: " + path);
-            return;
+            return Console::LogError("[ Scene ] Failed to read binary header: %s", path.c_str());
         }
         name = header.name;
 
-        Console::LogInfo("[ Scene ] loading scene: " + name + " - Version: " + std::to_string(header.version));
+        Console::LogInfo("[ Scene ] loading scene: %s - Version: %.2f", name.c_str(), header.version);
     }
 
     auto hasScene = scene != nullptr;
@@ -268,11 +267,11 @@ void Scene::Load(const std::string &path, std::uint8_t flags, std::function<void
             break;
         }
         
-        auto start_block_position = stream.tellg();
+        auto nextPosition = stream.tellg() + static_cast<std::streampos>(data.sizeData);
         auto block_name = struct_name[data.type];
 
         if (data.sizeData <= 0) {
-            stream.seekg(start_block_position + static_cast<std::streampos>(data.sizeData), std::ios_base::beg);
+            stream.seekg(nextPosition, std::ios_base::beg);
             continue;
         }
 
@@ -301,7 +300,11 @@ void Scene::Load(const std::string &path, std::uint8_t flags, std::function<void
         if (result != 0 && result != -1) {
             Console::LogError("[ Scene ] Falied to read segment data: " + std::string(block_name) + " Code: " + std::to_string(result));
         }
-        stream.seekg(start_block_position + static_cast<std::streampos>(data.sizeData), std::ios_base::beg);
+        
+        if (stream.tellg() != nextPosition) {
+            Console::LogWarning("[ Scene ] Data segment: %s is not fully loaded.", block_name);
+        }
+        stream.seekg(nextPosition, std::ios_base::beg);
     }
 
     Event::Add(&Scene::SetupScene, scene);
@@ -723,28 +726,28 @@ void CrateGameObject(Transform *&outTransform, GameObject *&outObject, std::cond
 }
 
 int Scene::readNode(Stream *streaming, Scene *scene, Transform *parent, std::unordered_map<std::string, GameObject *> &tempObject) {
-    std::size_t nSize;
+    std::size_t name_size = 0;
     int result = 0;
     
-    result = streaming->readS(&nSize, 1) ? 0 : 1;
+    result = streaming->readS(&name_size, 1) ? 0 : 1;
     if (result != 0) {
         return result;
     }
 
-    std::string name(nSize, '\0');
-    result = streaming->readS(name.data(), nSize) ? 0 : 2;
+    std::string name(name_size, '\0');
+    result = streaming->readS(name.data(), name_size) ? 0 : 2;
     if (result != 0) {
         return result;
     }
 
-    std::size_t tSize;
-    result = streaming->readS(&tSize, 1) ? 0 : 3;
+    std::size_t tag_size = 0;
+    result = streaming->readS(&tag_size, 1) ? 0 : 3;
     if (result != 0) {
         return result;
     }
 
-    std::string tag(tSize, '\0');
-    result = streaming->readS(tag.data(),  tSize) ? 0 : 4;
+    std::string tag(tag_size, '\0');
+    result = streaming->readS(tag.data(),  tag_size) ? 0 : 4;
     if (result != 0) {
         return result;
     }
@@ -773,7 +776,7 @@ int Scene::readNode(Stream *streaming, Scene *scene, Transform *parent, std::uno
         return transform || bQuit || presult >= 0;
     });
 
-    if (transform)
+    if (gameObject)
         tempObject.emplace(name, gameObject);
         
     if (presult != 0) {

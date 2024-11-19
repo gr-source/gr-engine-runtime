@@ -56,21 +56,6 @@ std::unordered_map<InputKey, int> Input::m_keyMap = {
 
 Input::MouseData Input::m_mouseData;
 
-std::string Input::getKeyName(InputKey key) {
-    #define GET_ENUM_NAME(e) case e: return #e;
-    switch (key) {
-    GET_ENUM_NAME(InputKey_A)
-    GET_ENUM_NAME(InputKey_W)
-    GET_ENUM_NAME(InputKey_S)
-    GET_ENUM_NAME(InputKey_D)
-    // GET_ENUM_NAME(KEY_SPACE)
-    default:
-        return "";
-        // GET_ENUM_NAME(NONE)
-    }
-    #undef GET_ENUM_NAME
-}
-
 bool Input::IsKeyDown(InputKey key) {
     return false;
 }
@@ -119,21 +104,9 @@ Vector2 Input::GetCursorPos() {
     return {static_cast<float>(x), static_cast<float>(y)};
 }
 
-void Input::Initialize() {}
 
-void Input::Update() {
-    // auto &io = ImGui::GetIO();
-    // auto window = glfwGetCurrentContext();
 
-    // // m_mouseButtonState[MouseButton_Right] = ImGui::IsMouseDown(ImGuiMouseButton_Right);//glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS ? true : false;
-    // // m_mouseButtonState[MouseButton_Left]  = ImGui::IsMouseDown(ImGuiMouseButton_Left);//glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS ? true : false;
 
-    // if (m_mouseData.want) {
-    //     glfwSetCursorPos(window, static_cast<double>(m_mouseData.pos.x), static_cast<double>(m_mouseData.pos.y));
-    //     m_mouseData.want = false;
-    // }
-    // double x, y;
-    // glfwGetCursorPos(window, &x, &y);
 
-    // m_mouseData.pos = {static_cast<float>(x), static_cast<float>(y)};
-}
+
+

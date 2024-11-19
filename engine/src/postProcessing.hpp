@@ -5,23 +5,22 @@
 
 class PostProcessing {
 public:
-    static PostProcessing *Create(const iVector2 &size);
+    PostProcessing(const iVector2 &size);
+    ~PostProcessing();
+    
+    void resize(const iVector2 &size);
 
-    static void Shutdown(PostProcessing *target);
+    void bind();
 
-    static void Bind(PostProcessing *target);
+    void unbind();
 
-    static void Unbind();
+    grr::gTexture *getTextureColor();
 
-    static void Resize(PostProcessing *target, const iVector2 &size);
+    // static void Save(const std::string &path, PostProcessing *postProcessing);
 
-    static grr::gTexture *GetTextureColor(PostProcessing *target);
+    // static const iVector2 &GetSize();
 
-    static void Save(const std::string &path, PostProcessing *postProcessing);
-
-    static const iVector2 &GetSize();
-
-    static Vector3 GetPixelInfo(PostProcessing *target);
+    // static Vector3 GetPixelInfo(PostProcessing *target);
 
 private:
     static PostProcessing *m_current;
@@ -33,6 +32,4 @@ private:
     grm::u32 m_fbo;
 
     iVector2 m_viewport;
-
-    PostProcessing();
 };

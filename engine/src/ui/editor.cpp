@@ -1010,13 +1010,13 @@ void Editor::RenderScene() {
 
         m_mainCamera->setAspectRatio(static_cast<float>(viewport.x) / static_cast<float>(viewport.y));
 
-        PostProcessing::Resize(Engine::MainPostProcess, viewport);
+        Engine::GetMainPostprocess()->resize(viewport);
         
         m_lastViewportSize = curSize;
         bScriptReloaded = false;
     }
 
-    auto texture = PostProcessing::GetTextureColor(Engine::ImGuiPostProcess);
+    auto texture = Engine::GetImGuiPostprocess()->getTextureColor();
     if (texture) {
         ImVec2 imageSize = curSize;
         ImVec2 imageUVMin(0, 1);

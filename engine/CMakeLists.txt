@@ -144,7 +144,6 @@ set(engine_src
     ${scriptManager_cpp}
     
     src/engine.cpp
-    src/memory.cpp
     src/Global.cpp
     src/skybox.cpp
     src/renderer.cpp
@@ -200,7 +199,6 @@ set(engine_hdr
     ${scriptManager_hdr}
 
     src/engine.h
-    src/memory.h
     src/Global.h
     src/skybox.h
     src/renderer.h
@@ -231,7 +229,6 @@ set(engine_hdr
     
     src/physics/physicsScene.hpp
 
-    # src/core/binary/gModel3D.hpp
     src/core/binary/gHeader.hpp
 )
 

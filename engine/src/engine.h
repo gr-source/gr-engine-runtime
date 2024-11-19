@@ -18,13 +18,17 @@ public:
 
     static void HandleEvent(EngineEvent event, const void* data);
 
-    static PostProcessing *ImGuiPostProcess;
-
-    static PostProcessing *MainPostProcess;
-
     static void MainFramebuffer();
 
+    static PostProcessing *GetImGuiPostprocess();
+
+    static PostProcessing *GetMainPostprocess();
+
 protected:
+    static std::shared_ptr<PostProcessing> ImGuiPostProcess;
+
+    static std::shared_ptr<PostProcessing> MainPostProcess;
+
     static Editor *m_editor;
     
     static void Reize(grm::u32 width, grm::u32 height);
