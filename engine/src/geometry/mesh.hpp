@@ -2,7 +2,7 @@
 
 #include <vector>
 
-#include "vertex3D.h"
+#include "vertex3D.hpp"
 
 #include "core/animation/boneWeight.hpp"
 

@@ -44,6 +44,8 @@ Shadowbuffer *m_shadowbuffer = nullptr;
 
 std::unique_ptr<ShadowMap> m_shadowMap = nullptr;
 
+Editor *Engine::m_editor = nullptr;
+
 void Engine::Reize(grm::u32 width, grm::u32 height) {
     Screen::SetResolution(width, height);
 
@@ -121,10 +123,12 @@ void Engine::Update() {
 void Engine::Render() {
     Event::ProcessEvent();
 
+    m_editor = ProjectMenu::GetEditor();
+
     Time time;
     time.end();
 
-    if (MainPostProcess) {
+    if (MainPostProcess && m_editor) {
         MainFramebuffer();
     }
 
@@ -245,11 +249,6 @@ void Engine::HandleEvent(EngineEvent event, const void* data) {
 }
 
 void Engine::MainFramebuffer() {
-    auto editor = ProjectMenu::GetEditor();
-    if (!editor) {
-        return;
-    }
-
     // shadow
     {
         m_shadowMap->bind();
@@ -264,7 +263,7 @@ void Engine::MainFramebuffer() {
     }
     
     // Seleção de modelos para renderizar
-    RenderManager::Process(editor->getCamera(), &(*m_shadowMap));
+    RenderManager::Process(m_editor->getCamera(), &(*m_shadowMap));
 
     // Pos processamento
     PostProcessing::Bind(MainPostProcess);
@@ -301,7 +300,7 @@ void Engine::RenderScene() {
     DebugDraw::Renderer();
 
     grr::gRender::SetRenderState(grr::GR_DEPTH_FUNC, grr::GR_DEPTH_LEQUAL);
-    Skybox::Renderer(ProjectMenu::GetEditor()->getCamera());
+    Skybox::Renderer(m_editor->getCamera());
 }
 
 void Engine::UIFramebuffer() {

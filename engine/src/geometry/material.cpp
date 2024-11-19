@@ -1,4 +1,4 @@
-#include "material.h"
+#include "material.hpp"
 
 #include "core/file/stream.hpp"
 

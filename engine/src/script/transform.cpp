@@ -1,5 +1,7 @@
 #include "transform.hpp"
 
+#include <algorithm>
+
 void Transform::setLocalScale(const Vector3 &value) {
     m_scale = value;
 

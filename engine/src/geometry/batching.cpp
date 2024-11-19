@@ -1,7 +1,7 @@
 #include "batching.hpp"
 
 #include "renderManager.h"
-#include "mesh.h"
+#include "mesh.hpp"
 
 #include "core/assetsManager.hpp"
 #include "core/statistics.hpp"

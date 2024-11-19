@@ -25,6 +25,8 @@ public:
     static void MainFramebuffer();
 
 protected:
+    static Editor *m_editor;
+    
     static void Reize(grm::u32 width, grm::u32 height);
 
     static void Initialize();

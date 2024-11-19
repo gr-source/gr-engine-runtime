@@ -2,7 +2,7 @@
 
 
 #include "geometry/batching.hpp"
-#include "geometry/material.h"
+#include "geometry/material.hpp"
 
 #include "default.hpp"
 

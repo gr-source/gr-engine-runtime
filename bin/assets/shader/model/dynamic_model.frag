@@ -70,19 +70,30 @@ uniform vec3 m_eye;
 uniform sampler2D m_shadowMap;
 
 float ShadowCalculation(vec4 fragPosLightSpace) {
-    // perform perspective divide
     vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
-    // transform to [0,1] range
+    
     projCoords = projCoords * 0.5 + 0.5;
-    // get closest depth value from light's perspective (using [0,1] range fragPosLight as coords)
-    float closestDepth = texture(m_shadowMap, projCoords.xy).r; 
-    // get depth of current fragment from light's perspective
+    
+    float closestDepth = texture(m_shadowMap, projCoords.xy).r;
+    
     float currentDepth = projCoords.z;
-    // check whether current frag pos is in shadow
-    float shadow = currentDepth > closestDepth  ? 1.0 : 0.0;
+        
+	float bias = 0.005;
+	float shadow = 0.0; // currentDepth - bias > closestDepth  ? 1.0 : 0.0;
+	
+	vec2 texelSize = 1.0 / textureSize(m_shadowMap, 0);
+	for(int x = -1; x <= 1; ++x) {
+		for(int y = -1; y <= 1; ++y) {
+		    float pcfDepth = texture(m_shadowMap, projCoords.xy + vec2(x, y) * texelSize).r; 
+		    shadow += currentDepth - bias > pcfDepth ? 1.0 : 0.0;        
+		}    
+	}
+	shadow /= 9.0;
+	if (projCoords.z > 1.0)
+        shadow = 0.0;
 
     return shadow;
-}  
+} 
 
 vec3 CreatePointLight(LightComponent light, vec3 V, vec3 N, vec3 F0, vec3 fragPos, vec3 albedo, float roughness, float metallic, float ao) {
     // Calculate the light direction and half vector
@@ -201,20 +212,22 @@ vec3 CreateDirectLight(LightComponent light, vec3 fragPos, vec3 V, vec3 N, vec3 
     // Cálculo do termo difuso
     vec3 kS = F;
     vec3 kD = vec3(1.0) - kS;  // Difuso é 1 menos a reflexão especular
-
+    
+    // Calcular a profundidade do fragmento no espaço da luz para sombra
+    
     // Atenuação do metal
     kD *= 1.0 - metallic;
 
     // Calcular a contribuição difusa e especular da luz
     // Radiância da luz (cor da luz multiplicada pela intensidade)
     vec3 radiance = light.color.rgb;
-
-    // Calcular a profundidade do fragmento no espaço da luz para sombra
+    
     vec4 fragPosLightSpace = light.model * vec4(fragPos, 1.0); // Transformando a posição do fragmento no espaço da luz
     float shadow = ShadowCalculation(fragPosLightSpace);  // Verificando a sombra para este fragmento
 
+    
     // O resultado final de iluminação leva em conta a sombra (atenuando a luz)
-    return ((kD * albedo / PI + specular) * radiance * NdotL) * (1.0 - shadow); // Aplicando a atenuação de sombra
+    return ((kD * albedo / PI + specular) * radiance * NdotL * (1.0 - shadow)); // Aplicando a atenuação de sombra
 }
 
 
@@ -268,5 +281,6 @@ void main() {
     // Output Color
     FragColor = vec4(color, 1.0);
 }
+
 
 

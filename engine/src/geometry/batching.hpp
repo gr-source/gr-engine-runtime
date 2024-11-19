@@ -4,8 +4,8 @@
 
 #include "default.hpp"
 
-#include "material.h"
-#include "boundbox.h"
+#include "material.hpp"
+#include "boundbox.hpp"
 
 class Batching {
 public:

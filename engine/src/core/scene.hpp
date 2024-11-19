@@ -3,7 +3,7 @@
 #include "script/default.hpp"
 #include "ecs/default.hpp"
 
-#include "geometry/material.h"
+#include "geometry/material.hpp"
 
 #include <condition_variable>
 #include <list>

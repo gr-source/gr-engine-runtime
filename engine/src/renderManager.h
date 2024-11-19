@@ -2,7 +2,7 @@
 
 #include <gr-render/gRender.h>
 
-#include "geometry/material.h"
+#include "geometry/material.hpp"
 
 #include "default.hpp"
 #include "common.h"

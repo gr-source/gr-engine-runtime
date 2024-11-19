@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../geometry/mesh.h"
-#include "../geometry/boundbox.h"
+#include "geometry/mesh.hpp"
+#include "geometry/boundbox.hpp"
 
 #include "ecs/component.hpp"
 

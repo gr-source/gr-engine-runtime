@@ -15,8 +15,8 @@
 #include "core/binary/gHeader.hpp"
 #include "core/file/file.hpp"
 
-#include "geometry/material.h"
-#include "geometry/mesh.h"
+#include "geometry/material.hpp"
+#include "geometry/mesh.hpp"
 
 #include "script/default.hpp"
 #include "ecs/default.hpp"

@@ -169,6 +169,7 @@ set(engine_src
     src/geometry/batching.cpp
     src/geometry/boundbox.cpp
     src/geometry/material.cpp
+    src/geometry/vertex2D.cpp
     src/geometry/vertex3D.cpp
     src/geometry/mesh.cpp
     
@@ -218,12 +219,6 @@ set(engine_hdr
     src/script/camera.hpp
     src/script/light.hpp
 
-    src/geometry/batching.hpp
-    src/geometry/boundbox.h
-    src/geometry/material.h
-    src/geometry/vertex3D.h
-    src/geometry/mesh.h
-    
     ${ecs_hdr}
     
     src/ui/view.hpp

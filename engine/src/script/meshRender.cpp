@@ -3,7 +3,7 @@
 #include "transform.hpp"
 #include "animator.hpp"
 
-#include "geometry/mesh.h"
+#include "geometry/mesh.hpp"
 
 #include "core/assetsManager.hpp"
 #include "core/console.hpp"
