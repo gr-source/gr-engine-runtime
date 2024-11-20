@@ -38,6 +38,7 @@ void Rigidbody::initialize() {
 
     m_body = std::make_shared<btRigidBody>(pRigidBodyConstructionInfo);
 	m_body->setAngularFactor(VEC3_TO_BTVEC3(m_lookRotation));
+    m_body->setUserPointer(reinterpret_cast<void *>(entity->getGameObject()));
     
     if (fMotionThreshold > 0.0f)
         m_body->setCcdMotionThreshold(fMotionThreshold);

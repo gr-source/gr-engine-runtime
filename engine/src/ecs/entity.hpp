@@ -71,6 +71,8 @@ private:
 
 template <typename T>
 inline T *Entity::addComponent() {
+    static_assert(sizeof(T) != 0, "Type component imcompleted.");
+    
     auto component = addInternalComponent(String::RemoveNumber(typeid(T).name()));
     if (!component) {
         return nullptr;
@@ -80,6 +82,8 @@ inline T *Entity::addComponent() {
 
 template <typename T>
 inline T *Entity::getComponent() {
+    static_assert(sizeof(T) != 0, "Type component imcompleted.");
+    
     auto typeName = String::RemoveNumber(typeid(T).name());
     
     auto it = m_componentPtr.find(typeName);

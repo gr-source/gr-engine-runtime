@@ -310,8 +310,7 @@ GameObject *Editor::createEditorCamera() {
     return gameObject;
 }
 
-void Editor::BuildDock(ImGuiID dockspace_id, ImGuiDockNodeFlags dockspace_flags)
-{
+void Editor::BuildDock(ImGuiID dockspace_id, ImGuiDockNodeFlags dockspace_flags) {
     ImGui::DockBuilderRemoveNode(dockspace_id); // clear any previous layout
 	ImGui::DockBuilderAddNode(dockspace_id, dockspace_flags | ImGuiDockNodeFlags_DockSpace);
 	ImGui::DockBuilderSetNodeSize(dockspace_id, m_viewport->Size);
