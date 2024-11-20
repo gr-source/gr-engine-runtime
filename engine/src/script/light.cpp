@@ -5,7 +5,7 @@
 #include <glm/glm.hpp>
 
 
-Matrix4x4 Light::mProjection = Math::orthographic(-10.0f, 10.0f, -10.0f, 10.0f, -10.0f, 75.0f);
+Matrix4x4 Light::mProjection = Math::orthographic(-10.0f, 10.0f, -10.0f, 10.0f, 0.1f, 100.0f);
 // -10.0f, 10.0f, -10.0f, 10.0f, 0.1f, 100.0f
 
 Vector3 Light::getPosition() const {
@@ -88,6 +88,8 @@ Matrix4x4 Light::getProjetion() const {
     //                                 glm::vec3(0, 1, 0));  
 
     // glm::mat4 lightSpaceMatrix = lightProjection * lightView;
+
+    // glm::inverse(lightSpaceMatrix);
 
     // return *reinterpret_cast<Matrix4x4 *>(glm::value_ptr(lightSpaceMatrix));
     return mProjection * Math::lookAt(m_transform->getPosition(), m_transform->getPosition() + m_transform->getForward(), m_transform->getUp());

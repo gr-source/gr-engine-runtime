@@ -64,8 +64,8 @@ void Engine::Initialize() {
     AssetsManager::Initialize();
 
     // Buffer de renderização.
-    MainPostProcess = std::make_shared<PostProcessing>(iVector2{1, 1}); // PostProcessing::Create({1, 1});
-
+    MainPostProcess = std::make_shared<PostProcessing>(iVector2{1, 1});
+    
     ImGuiPostProcess = std::make_shared<PostProcessing>(iVector2{1, 1});
 
     m_shadowMap = std::make_unique<ShadowMap>(1024, 1024);
@@ -313,6 +313,7 @@ void Engine::UIFramebuffer() {
     grr::gRender::SetRenderState(grr::GR_BACKGROUND, grr::GR_COLOR_BUFFER);
 
     ImGuiRender::Begin();
+
     ProjectMenu::Render();
 
     ImGuiRender::End();

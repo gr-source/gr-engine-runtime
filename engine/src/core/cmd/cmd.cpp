@@ -47,9 +47,9 @@ bool Command::exec(const std::vector<std::string> &list, std::function<void(std:
         }
     }
 
-    pclose(file);
+    auto status = pclose(file);
 
     std::filesystem::remove(temp_file);
     
-    return true;
+    return status != 0 ? false : true;
 }

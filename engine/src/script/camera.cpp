@@ -1,4 +1,4 @@
-#include "camera.hpp"
+    #include "camera.hpp"
 
 #include "transform.hpp"
 
@@ -46,5 +46,5 @@ void Camera::lookIt(const Vector3 &direction) {
 }
 
 void Camera::updateMatrix() {
-    m_projection = Math::perspective(Math::rad(m_fov), m_aspect, m_farPlane, m_nearPlane);
+    m_projection = Math::perspective(Math::rad(m_fov), m_aspect, m_nearPlane, m_farPlane);
 }

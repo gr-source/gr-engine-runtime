@@ -77,5 +77,5 @@ void Camera::Disable() {
 }
 
 void Camera::updateProjection() {
-    m_projection = Math::perspective(Math::rad(m_fov), m_aspect, m_farPlane, m_nearPlane);
+    m_projection = Math::perspective(Math::rad(m_fov), m_aspect, m_nearPlane, m_farPlane);
 }

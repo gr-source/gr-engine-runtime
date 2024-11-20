@@ -104,8 +104,6 @@ Editor::Editor() : m_viewport(ImGui::GetMainViewport()), s_io(&ImGui::GetIO()), 
 
     pPopupFileManager = false;
 
-    bBuildDock = false;
-
     FPSColor = {1.0f, 1.0f, 1.0f, 1.0f};
 
     m_lastViewportSize = {0.0f, 0.0f};
@@ -118,15 +116,13 @@ Editor::Editor() : m_viewport(ImGui::GetMainViewport()), s_io(&ImGui::GetIO()), 
 
     m_SelectedPath = "";
 
-    m_config = nullptr;
-
     mLastTransform = {Vector3::zero, Quaternion::identity, Vector3::one};
 
 
     m_config = std::make_shared<Config>(File::GetFile("/config.ini"));
     try {
         m_config->load();
-    } catch (const std::runtime_error &e) {
+    } catch (const std::exception &e) {
         Console::LogWarning(e.what());
     }
 
@@ -1648,7 +1644,7 @@ void Editor::ConfigureVSCode() {
 void Editor::RenderPropertiUI() {
     ImGui::Begin("Propriedades", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
 
-    if (ImGui::BeginTabBar("##propertimenubar")) {
+    if (ImGui::BeginTabBar("##render_properti_ui_tabbar")) {
         RenderGameObjectPropertiUI();
         
         if (ImGui::BeginTabItem("Estatística", nullptr)) {
@@ -1709,6 +1705,7 @@ void Editor::rTabObjectInfo(bool &isOpenPopup) {
     if (!isOpen) {
         return;
     }
+    
     ImGui::Image(reinterpret_cast<ImTextureID>(iconsUI[IconType::ICON_GAMEOBJECT]->getID()), ImVec2(16, 16));
 
     ImGui::SameLine();
@@ -1772,7 +1769,9 @@ void Editor::rTabObjectInfo(bool &isOpenPopup) {
         }
     }
 
-    if (ImGui::SmallButton("AddComponent")) {
+    auto avail = ImGui::GetContentRegionAvail();
+
+    if (ImGui::Button("AddComponent", {avail.x, 0.0f})) {
         isOpenPopup = true;
     }
 
@@ -1891,12 +1890,11 @@ void Editor::PopupAddComponent() {
     });
 
     for (auto &name : m_componentName) {
-        if (ImGui::SmallButton(name.c_str())) {
+        if (ImGui::SmallButton(name.c_str()) && !s_objectSelected->getEntity()->hasComponent(name)) {
             auto component = s_objectSelected->getEntity()->addComponent(name);
             if (component && name == "Light") {
                 component->Init();
             }
-            // AddComponentForAll(s_objectSelected, name);
 
             ImGui::CloseCurrentPopup();
         }
@@ -2541,7 +2539,6 @@ void Editor::ReconfigScript() {
     Threadpool::AddTask(&Editor::BuildScript, this);
 }
 
-// TODO: Faltaa arrumar aqui
 void Editor::BuildScript() {
     Console::LogInfo("[ Build ] Initialize");
 
@@ -2550,10 +2547,7 @@ void Editor::BuildScript() {
         return Console::LogError("[ Build ] Falied to build project, internal data not found.");
     }
 
-    std::function<void()> func = std::bind(&Editor::LoadScript, this);
-    
-    if (func)
-        Threadpool::AddTask(&Editor::CompileScript, this, path, func);
+    CompileScript(path, std::bind(&Editor::LoadScript, this));
 }
 
 void Editor::CompileScript(std::string path, std::function<void()> func) {
@@ -2574,9 +2568,11 @@ void Editor::CompileScript(std::string path, std::function<void()> func) {
         "sh " + build,
     };
 
-    Command::exec(command, [](std::string line) {
-        Console::LogWarning(line);
-    });
+    if (!Command::exec(command, [](std::string line) {
+            Console::LogWarning(line);
+        })) {
+            Console::LogError("[ Editor ] Falied to execute build.");
+        }
 
     if (func)
         Event::Add(func);
