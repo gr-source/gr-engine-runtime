@@ -1107,6 +1107,7 @@ void Editor::RenderScene() {
     }
 }
 
+// Precisamos trabalhar aki
 void Editor::PlayGame() {
     s_objectSelected = nullptr;
 
@@ -1119,7 +1120,7 @@ void Editor::PlayGame() {
         m_mainCamera = nullptr;
     }
 
-    Scene::DestroyObjects();
+    Scene::CleanCurrentScene();
 
     Threadpool::AddTask(&Editor::BuildScript, this);
 
@@ -2535,7 +2536,7 @@ void Editor::ReconfigScript() {
 
     Console::LogInfo("[ BUILD ] building scipt...");
 
-    Threadpool::AddTask(&Editor::BuildScript, this);
+    PlayGame();
 }
 
 void Editor::BuildScript() {

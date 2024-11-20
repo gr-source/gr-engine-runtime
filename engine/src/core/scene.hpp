@@ -50,7 +50,7 @@ public:
 
     static std::unordered_map<std::string, std::unique_ptr<Scene>> &GetScenes();
 
-    static void DestroyObjects();
+    static void CleanCurrentScene();
 
     static void ReloadObjects(std::function<void(Scene *)> func);
 

@@ -178,7 +178,7 @@ std::unordered_map<std::string, std::unique_ptr<Scene>> &Scene::GetScenes() {
     return m_scenes;
 }
 
-void Scene::DestroyObjects() {
+void Scene::CleanCurrentScene() {
     auto scene = GetCurrentScene();
     if (!scene) {
         return;
