@@ -46,7 +46,6 @@ void PhysicsScene::Update(float dt) {
 bool PhysicsScene::Raycast(const Vector3 &rayStart, const Vector3 &rayEnd) {
     btCollisionWorld::ClosestRayResultCallback rayCallback({rayStart.x, rayStart.y, rayStart.z}, {rayEnd.x, rayEnd.y, rayEnd.z});
     dynamicsWorld->rayTest({rayStart.x, rayStart.y, rayStart.z}, {rayEnd.x, rayEnd.y, rayEnd.z}, rayCallback);
-    
     return rayCallback.hasHit();
 }
 
