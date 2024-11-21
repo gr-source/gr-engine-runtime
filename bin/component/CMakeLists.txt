@@ -22,6 +22,7 @@ set(script_src
     src/script/meshFilter.cpp
     src/script/rigidbody.cpp
     src/script/transform.cpp
+    src/script/animator.cpp
     src/script/camera.cpp
     src/script/light.cpp
 )

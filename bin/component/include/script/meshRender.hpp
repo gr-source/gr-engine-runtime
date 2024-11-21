@@ -41,7 +41,7 @@ public:
 private:
     std::vector<std::shared_ptr<Material>> m_materials;
 
-    int flags;
+    int m_flags;
 
     Batching *m_batched;
 

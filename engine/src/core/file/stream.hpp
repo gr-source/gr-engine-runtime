@@ -24,7 +24,7 @@ public:
 
     bool write(const void *data, std::size_t size);
 
-	bool read(void *data, std::size_t size);
+	bool read(char *data, std::streamsize size);
 
     bool is_open() const;
 
@@ -67,7 +67,7 @@ bool Stream::writeS(const T *data, std::streamsize count, bool bCache) {
 
 template <typename T>
 bool Stream::readS(T *data, std::streamsize count) {
-    return read(reinterpret_cast<void *>(data), static_cast<std::size_t>(count * sizeof(T)));
+    return Stream::read(reinterpret_cast<char *>(data), static_cast<std::streamsize>(count * sizeof(T)));
 }
 
 

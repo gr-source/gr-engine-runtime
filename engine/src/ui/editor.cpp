@@ -2023,7 +2023,7 @@ bool Editor::OnPropertyMeshRender(MeshRender *meshRender) {
 
 bool Editor::RenderMaterial(Material *material) {
     auto bVisible = true;
-    
+
     auto isOpen = ImGui::CollapsingHeader(material->getName().c_str(), &bVisible);
     if (!bVisible) {
         return true;
@@ -2240,6 +2240,7 @@ bool Editor::OnPropertyRigidbody(Rigidbody *rigidbody) {
 }
 
 void Editor::OnPropertyAnimator(Animator *animator) {
+    /*
     auto &m_current = !animator->m_animation ? animator->m_animation : animator->m_nextAnimation;
 
     if (ImGui::TreeNode("Animator")) {
@@ -2293,6 +2294,7 @@ void Editor::OnPropertyAnimator(Animator *animator) {
         }
         ImGui::TreePop();
     }
+    */
 }
 
 void Editor::TextureInfo(Texture *&texture) {

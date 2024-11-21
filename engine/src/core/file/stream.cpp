@@ -40,8 +40,8 @@ bool Stream::write(const void *data, std::size_t size) {
     return true;
 }
 
-bool Stream::read(void *data, std::size_t size) {
-    if (std::fstream::read(reinterpret_cast<char *>(data), static_cast<std::streamsize>(size))) {
+bool Stream::read(char *data, std::streamsize size) {
+    if (std::fstream::read(reinterpret_cast<char *>(data), size)) {
         return true;
     }
     return false;

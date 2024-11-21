@@ -448,8 +448,110 @@ int Model3DHandler::WriteScript(Stream *stream, std::list<std::tuple<std::string
     return 0;
 }
 
+void WriteAnimation(const FbxScene *fbxScene) {
+    auto &animations = fbxScene->getAnimations();
+
+    FileHeader fileHeader{{'g', 'r', 'a', 'n'}, 1.0f};
+
+    for (auto &animation : animations) {
+        auto name = animation.getName();
+
+        Stream stream(File::GetAsset("/animation/" + name + ".anm"), std::ios_base::out | std::ios_base::binary);
+
+        stream.writeS<FileHeader>(&fileHeader, 1, false);
+
+        gAnimationHeader pAnimationHeader;
+        std::strcpy(pAnimationHeader.m_name, name.c_str());
+        pAnimationHeader.m_tick = animation.getTick();
+        pAnimationHeader.m_duration = animation.getDuration();
+
+        stream.writeS<gAnimationHeader>(&pAnimationHeader, 1, false);
+
+        auto &channels = animation.getChannels();
+
+        grm::size sChannel = channels.size();
+        gChannel *pChannels = new gChannel[sChannel];
+
+        for (auto i=0;i<sChannel;++i) {
+            auto &channel = channels[i];
+
+            auto &name = channel.getName();
+            auto &keysScale = channel.getKeysScale();
+            auto &keysRotation = channel.getKeysRotation();
+            auto &keysPosition = channel.getKeysPosition();
+
+            auto &pChannel = pChannels[i];
+            std::strcpy(pChannel.m_name, name.c_str());
+
+            // gen key scale
+            pChannel.m_keyScaleCount = keysScale.size();
+            pChannel.m_keyScale = new gKeyScale[pChannel.m_keyScaleCount];
+            for (auto i=0;i<pChannel.m_keyScaleCount;++i) {
+                pChannel.m_keyScale[i].time = keysScale[i].time;
+                pChannel.m_keyScale[i].value = keysScale[i].value;
+            }
+
+            //gen key rotation
+            pChannel.m_keyRotationCount = keysRotation.size();
+            pChannel.m_keyRotation = new gKeyRotation[pChannel.m_keyRotationCount];
+            for (auto i=0;i<pChannel.m_keyRotationCount;++i) {
+                pChannel.m_keyRotation[i].time = keysRotation[i].time;
+                pChannel.m_keyRotation[i].value = keysRotation[i].value;
+            }
+
+            // gen key position
+            pChannel.m_keyPositionCount = keysPosition.size();
+            pChannel.m_keyPosition = new gKeyPosition[pChannel.m_keyPositionCount];
+            for (auto i=0;i<pChannel.m_keyPositionCount;++i) {
+                pChannel.m_keyPosition[i].time = keysPosition[i].time;
+                pChannel.m_keyPosition[i].value = keysPosition[i].value;
+            }
+        }
+        
+        stream.writeS<grm::size>(&sChannel, 1, false);
+        for (auto i=0;i<sChannel;++i) {
+            auto &pChannel = pChannels[i];
+
+            // ame
+            stream.writeS<char>(pChannel.m_name, 256, false);
+
+            // gen key scale
+            stream.writeS<grm::size>(&pChannel.m_keyScaleCount, 1, false);
+            stream.writeS<gKeyScale>(pChannel.m_keyScale, pChannel.m_keyScaleCount, false);
+
+            //gen key rotation
+            stream.writeS<grm::size>(&pChannel.m_keyRotationCount, 1, false);
+            stream.writeS<gKeyRotation>(pChannel.m_keyRotation, pChannel.m_keyRotationCount, false);
+
+            // gen key position
+            stream.writeS<grm::size>(&pChannel.m_keyPositionCount, 1, false);
+            stream.writeS<gKeyPosition>(pChannel.m_keyPosition, pChannel.m_keyPositionCount, false);
+        }
+        
+        // ========================= CLEAN =========================
+        for (auto i=0;i<sChannel;++i) {
+            auto &pChannel = pChannels[i];
+
+            // delete keys scale
+            delete[] pChannel.m_keyScale;
+
+            // delete keys rotation
+            delete[] pChannel.m_keyRotation;
+
+            // delete keys position
+            delete[] pChannel.m_keyPosition;
+        }
+        
+        delete[] pChannels;
+
+        stream.close();
+    }
+}
+
 void Model3DHandler::SetupScene(std::shared_ptr<FbxScene> scene) {
     auto& fRootNode = scene->getRootNode();
+
+    WriteAnimation(&(*scene));
     
     for (const auto& node : fRootNode.getChildren()) {
         Threadpool::AddTask(&Model3DHandler::ConvertToGameObject, scene, node);
@@ -487,7 +589,7 @@ void Model3DHandler::CreateObjects(const FbxScene *scene, const FbxNode *node, T
 
     auto &meshes = node->getMeshes();
     if (!meshes.empty()) {
-        std::vector<FbxMaterial> m_materials;
+        std::unordered_map<std::string, FbxMaterial> m_materials;
         grm::u32 verticeCount = 0;
         std::string meshName;
         Mesh m_tempMesh;
@@ -496,7 +598,12 @@ void Model3DHandler::CreateObjects(const FbxScene *scene, const FbxNode *node, T
             meshName += fbxMesh.getName();
 
             for (auto &mIdx : fbxMesh.getMaterials()) {
-                m_materials.emplace_back(scene->getMaterial(mIdx));
+                auto fbxMaterial = scene->getMaterial(mIdx);
+                
+                if (m_materials.find(fbxMaterial.getName()) != m_materials.end()) {
+                    continue;
+                }
+                m_materials.emplace(fbxMaterial.getName(), fbxMaterial);
             }
             
             auto &vertices = fbxMesh.getVertices();
@@ -543,7 +650,7 @@ void Model3DHandler::CreateObjects(const FbxScene *scene, const FbxNode *node, T
             return;
         }
 
-        for (auto &fbxMaterial : m_materials) {
+        for (auto &&[name, fbxMaterial] : m_materials) {
             auto material = meshRender->addMaterial(fbxMaterial.getName(), fbxMaterial.getColor());
 
             int textureID = 0;

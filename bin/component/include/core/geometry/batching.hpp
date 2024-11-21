@@ -2,13 +2,17 @@
 
 #include <gr-render/gRender.h>
 
-#include "../../script/default.hpp"
+#include "script/default.hpp"
 
 #include "boundBox.hpp"
 #include "material.hpp"
 
+#include <memory>
+
 class Batching {
 public:
+    Batching() = delete;
+    
     enum Batching_Flags {
         Batching_Flags_Dynamic           = 0,
         Batching_Flags_Static_Mesh       = 1,
@@ -23,8 +27,6 @@ public:
     void insert(Transform *transform);
 
     void remove(Transform *transform, bool bDelete = true);
-
-    grm::u32 m_primCount;
     
 private:
     enum DrawType {
@@ -34,13 +36,15 @@ private:
         DrawType_Arrays             = 1 << 4
     };
 
-    std::vector<Material> *m_materials;
+    std::vector<std::shared_ptr<Material>> *m_materials;
 
     std::vector<Transform *> m_models;
 
     grr::gVertexArray *m_vertexArray;
 
-    grm::u32 m_indiceCount;
+    grm::u32 m_instanceCount;
+
+    grm::u32 m_indexCount;
 
     std::string m_name;
 
@@ -52,7 +56,7 @@ private:
 
     grm::u32 m_PBO;
 
-    bool bHasIndice;
+    bool m_hasIndex;
 
     DrawType m_type;
 

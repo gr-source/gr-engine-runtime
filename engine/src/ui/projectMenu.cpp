@@ -359,7 +359,7 @@ void ProjectMenu::InstallConfig(const std::string &config) {
 void ProjectMenu::DownloadConfig(const std::string &path) {
     Console::LogInfo("Importing rendering data...");
     if (!File::Copy("./assets", path)) {
-        Console::LogError("Falied to import data: " + File::GetError());
+        Console::LogError("Falied to import data in: %s, to: %s", File::GetError().c_str(), path.c_str());
         return;
     }
 

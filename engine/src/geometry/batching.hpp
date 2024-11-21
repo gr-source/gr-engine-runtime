@@ -44,8 +44,6 @@ public:
 
     bool hasModel() const;
     
-    grm::u32 m_instanceCount;
-    
 private:
     enum DrawType {
         DrawType_Elements_Instanced = 1 << 1,
@@ -65,6 +63,8 @@ private:
     std::vector<Transform *> m_models;
 
     grr::gVertexArray *m_vertexArray;
+
+    grm::u32 m_instanceCount;
 
     grm::u32 m_indexCount;
 

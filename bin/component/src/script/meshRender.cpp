@@ -13,7 +13,7 @@
 #include "core/function.hpp"
 #include "core/stream.hpp"
 
-MeshRender::MeshRender() : m_batched(nullptr), flags(Batching::Batching_Flags_Dynamic), m_transform(nullptr) {}
+MeshRender::MeshRender() : m_batched(nullptr), m_flags(Batching::Batching_Flags_Dynamic), m_transform(nullptr) {}
 
 // TODO: Os scripts estao sendo deletados antes
 MeshRender::~MeshRender() {
@@ -49,7 +49,7 @@ void MeshRender::build() {
 }
 
 void MeshRender::setMeshOptimize(int value) {
-    flags = value;
+    m_flags = value;
 
     build();
 
@@ -107,14 +107,16 @@ bool MeshRender::Deserialize(Stream *stream) {
         return true;
     }
     
-    std::size_t size;
+    std::size_t size = 0;
     stream->read(reinterpret_cast<char *>(&size), sizeof(std::size_t));
+    if (size <= 0) {
+        return false;
+    }
 
     m_materials.clear();
-    m_materials.resize(size, std::make_unique<Material>());
 
-    for (auto &material : m_materials) {
-        material->deserialize(stream);
+    for (std::size_t i={};i<size;i++) {
+        m_materials.emplace_back(std::make_shared<Material>())->deserialize(stream);
     }
 
     return true;
