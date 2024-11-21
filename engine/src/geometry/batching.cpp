@@ -346,10 +346,8 @@ void Batching::setupMaterial() {
     int idx[10] {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
     int idxEn[10] {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
-    auto &materials = *m_materials;
-
-    for (auto i=0;i<materials.size();i++) {
-        auto &material = materials[i];
+    for (auto i=0;i<m_materials->size();i++) {
+        auto &material = (*m_materials)[i];
 
         for (auto i=0;i<10;++i) {
             auto texture = material->getTexture(i);

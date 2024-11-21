@@ -23,7 +23,7 @@ public:
 
     void setMeshOptimize(int value);
 
-    const int &getFlags() const;
+    int getFlags() const;
 
 private:
     std::vector<std::shared_ptr<Material>> m_materials;

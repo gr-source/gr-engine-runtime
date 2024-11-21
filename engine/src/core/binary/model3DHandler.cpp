@@ -78,7 +78,7 @@ void InstantiateObject(GameObject *gameObject) {
     }
     Scene::GetCurrentScene()->insert(gameObject);
 
-    gameObject->initialize();
+    gameObject->initialize(false);
 }
 
 int Model3DHandler::ReadData(Stream *stream) {

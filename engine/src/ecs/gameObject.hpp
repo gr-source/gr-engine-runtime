@@ -27,7 +27,7 @@ public:
     GameObject(const std::string& name, const std::string& tag = "unttaged");
     ~GameObject();
 
-    void initialize();
+    void initialize(bool all);
 
     std::string getName() const;
 

@@ -44,7 +44,7 @@ void Entity::copy(const Entity *entity) {
             continue;
         }
 
-        addComponent(name, component.get());
+        addComponent(name, &(*component));
     }
 
     auto targetGameObject = entity->getGameObject();
@@ -88,6 +88,8 @@ void Entity::copy(const Entity *entity) {
     } else {
         Console::LogError("[ Entity ] Target game object does not have a transform.");
     }
+
+    // getGameObject()->initialize(true);
 
     init();
 
@@ -177,7 +179,7 @@ Component *Entity::addInternalComponent(const std::string &name, const Component
     
     component->entity = this;
 
-    m_componentPtr.emplace(name, component);
+    m_componentPtr[name] = std::unique_ptr<Component>(component);
 
     m_components.push_back(component);
 

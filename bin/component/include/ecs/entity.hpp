@@ -34,6 +34,8 @@ public:
     template <typename T>
     bool hasComponent() const;
 
+    bool hasComponent(const std::string &name) const;
+
     GameObject *getGameObject();
 
     EntityID getEntityID() const;
@@ -50,6 +52,8 @@ private:
 
 template <typename T>
 inline T *Entity::addComponent() {
+    static_assert(sizeof(T) != 0, "Type component imcompleted.");
+    
     auto component = addInternalComponent(this, StringUTF::RemoveNumber(typeid(T).name()), nullptr);
     if (!component) {
         throw std::runtime_error("Component is null.");
@@ -65,6 +69,8 @@ inline T *Entity::addComponent() {
 
 template <typename T>
 inline T *Entity::getComponent() {
+    static_assert(sizeof(T) != 0, "Type component imcompleted.");
+    
     auto typeName = StringUTF::RemoveNumber(typeid(T).name());
     
     auto it = m_componentPtr.find(typeName);

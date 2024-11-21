@@ -151,6 +151,22 @@ Transform *Transform::findChild(Transform *transform) const {
     return result;
 }
 
+Transform *Transform::findChildrenComponent(const std::string &name) const {
+    Transform *result = nullptr;
+    for (auto &child : m_children) {
+        if (child->entity->hasComponent(name)) {
+            result = child;
+            break;
+        }
+        
+        result = child->findChildrenComponent(name);
+        if (result) {
+            break;
+        }
+    }
+    return result;
+}
+
 bool Transform::Serialize(Stream *stream) {
     stream->write(reinterpret_cast<const char *>(&m_scale), sizeof(Vector3));
     stream->write(reinterpret_cast<const char *>(&m_rotation), sizeof(Quaternion));

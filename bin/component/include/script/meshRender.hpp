@@ -20,6 +20,12 @@ public:
     template <typename ...Args>
     Material *addMaterial(Args &&...args);
 
+    Material *getMaterial(int id) const;
+
+    void removeMaterial(int id);
+
+    bool hasMaterial() const;
+    
     void build();
 
     void setMeshOptimize(int value);

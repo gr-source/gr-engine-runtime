@@ -8,11 +8,50 @@ const std::string &Material::getName() const {
     return m_name;
 }
 
+Color Material::getAlbedo() const {
+    return m_albedo;
+}
+
+void Material::setAlbedo(const Color &color) {
+    m_albedo = color;
+}
+
+float Material::getMetallic() const {
+    return m_metallic;
+}
+
+void Material::setMetallic(float value) {
+    m_metallic = value;
+}
+
+float Material::getRoughness() const {
+    return m_roughness;
+}
+
+void Material::setRoughness(float value) {
+    m_roughness = value;
+}
+
+float Material::getAmbientOcclusion() const {
+    return m_ao;
+}
+
+void Material::setAmbientOcclusion(float value) {
+    m_ao = value;
+}
+
 void Material::setTexture(int idx, grr::gTexture *texture) {
     if (idx >= m_texture.size()) {
-        return;
+        throw std::runtime_error("Limite texture exceded." + std::to_string(idx) + "-" + std::to_string(m_texture.size()));
     }
     m_texture[idx] = texture;
+}
+
+grr::gTexture *Material::getTexture(int idx) const {
+    if (idx >= m_texture.size()) {
+        throw std::runtime_error("Id not avaliable:" + std::to_string(idx) + "/" + std::to_string(m_texture.size()));
+    }
+    return m_texture[idx];
 }
 
 static void (*Materialserialize)(const Material *, Stream *);

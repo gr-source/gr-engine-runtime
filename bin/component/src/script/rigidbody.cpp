@@ -126,6 +126,19 @@ void Rigidbody::setSweptSphereRadius(float value) {
     fSweptSphereRadius = value;
 }
 
+void Rigidbody::setPosition(const Vector3 &position) {
+    auto &transform = m_body->getWorldTransform();
+    transform.setOrigin({position.x, position.y, position.z});
+}
+
+Vector3 Rigidbody::getPosition() const {
+    auto &transform = m_body->getWorldTransform();
+
+    auto origin = transform.getOrigin();
+    
+    return {origin.getX(), origin.getY(), origin.getZ()};
+}
+
 void Rigidbody::setRotation(Quaternion q) {
     auto &transform = m_body->getWorldTransform();
     transform.setRotation({q.x, q.y, q.z, q.w});
@@ -135,4 +148,12 @@ Quaternion Rigidbody::getRotation() const {
     auto &transform = m_body->getWorldTransform();
 
     return {transform.getRotation().getW(), transform.getRotation().getX(), transform.getRotation().getY(), transform.getRotation().getZ()};
+}
+
+void Rigidbody::setColissionFlags(int flags) {
+    m_body->setCollisionFlags(flags);
+}
+
+int Rigidbody::getColissionFlags() const {
+    return m_body->getCollisionFlags();
 }

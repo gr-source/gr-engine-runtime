@@ -54,6 +54,8 @@ public:
 
     static void ReloadObjects(std::function<void(Scene *)> func);
 
+    static void InitializeObject();
+
 private:
     static std::unordered_map<std::string, std::unique_ptr<Scene>> m_scenes;
 

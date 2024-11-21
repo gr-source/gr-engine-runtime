@@ -10,7 +10,9 @@ class Material {
 public:
     Material(const std::string& name = "Material", const Color& albedo = Color::black, float metallic = 0.0f, float roughness = 0.0f, float ao = 0.5f);
 
-    const std::string& getName() const;
+    std::string getName() const;
+
+    void setName(const std::string &name);
 
     Color getAlbedo() const;
 

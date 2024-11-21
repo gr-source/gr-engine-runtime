@@ -71,7 +71,37 @@ void error_callback(int error, const char* description) {
     std::cout << "Error: " << description << std::endl;
 }
 
+static void destroy() {
+    Settings::StopPlayEngine();
+
+    Engine::HandleEvent(Engine::GR_DESTROY, nullptr);
+    
+    glfwTerminate();
+}
+
+#include <sys/signal.h>
+
+void segfault_sigaction(int signal, siginfo_t *si, void *arg) {
+    printf("Caught segfault at address %p\n", si->si_addr);
+
+    destroy();
+    
+    exit(1);
+}
+
 int main(int argc, char *argv[]) {
+    // ===============================
+    struct sigaction sa;
+
+    memset(&sa, 0, sizeof(struct sigaction));
+    sigemptyset(&sa.sa_mask);
+    sa.sa_sigaction = segfault_sigaction;
+    sa.sa_flags   = SA_SIGINFO;
+
+    sigaction(SIGSEGV, &sa, NULL);
+
+    // ===============================
+    
     glfwSetErrorCallback(error_callback);
 
     if (glfwInit() != GLFW_TRUE) {
@@ -117,13 +147,10 @@ int main(int argc, char *argv[]) {
 
         Engine::HandleEvent(Engine::GR_IDLE, nullptr);
     }
-    
-    Settings::StopPlayEngine();
-
-    Engine::HandleEvent(Engine::GR_DESTROY, nullptr);
 
     window = nullptr;
-    glfwTerminate();
+
+    destroy();
 }
 
 

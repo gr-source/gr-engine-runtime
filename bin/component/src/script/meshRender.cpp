@@ -10,8 +10,8 @@
 #include "ecs/gameObject.hpp"
 
 #include "core/assetsManager.hpp"
-#include "core/stream.hpp"
 #include "core/function.hpp"
+#include "core/stream.hpp"
 
 MeshRender::MeshRender() : m_batched(nullptr), flags(Batching::Batching_Flags_Dynamic), m_transform(nullptr) {}
 
@@ -29,6 +29,20 @@ void MeshRender::Init() {
 
 static void (*MeshRenderbuild)(MeshRender *);
 INSERT_FUNCTION(0, MeshRenderbuild);
+
+Material *MeshRender::getMaterial(int id) const {
+    return &(*m_materials[id]);
+}
+
+void MeshRender::removeMaterial(int id) {
+    if (id > m_materials.size()) { return; }
+
+    m_materials.erase(m_materials.begin() + id);
+}
+
+bool MeshRender::hasMaterial() const {
+    return !m_materials.empty();
+}
 
 void MeshRender::build() {
     return MeshRenderbuild(this);
@@ -102,8 +116,6 @@ bool MeshRender::Deserialize(Stream *stream) {
     for (auto &material : m_materials) {
         material->deserialize(stream);
     }
-
-    // build();
 
     return true;
 }

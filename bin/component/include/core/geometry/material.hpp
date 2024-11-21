@@ -12,7 +12,25 @@ public:
 
     const std::string& getName() const;
 
+    Color getAlbedo() const;
+
+    void setAlbedo(const Color &color);
+
+    float getMetallic() const;
+
+    void setMetallic(float value);
+    
+    float getRoughness() const;
+
+    void setRoughness(float value);
+
+    float getAmbientOcclusion() const;
+
+    void setAmbientOcclusion(float value);
+
     void setTexture(int idx, grr::gTexture *texture);
+
+    grr::gTexture *getTexture(int idx) const;
 
     void serialize(Stream *stream) const;
 

@@ -77,7 +77,7 @@ std::string getfilesize(std::size_t sz) {
     return std::to_string(sz) + "B";
 }
 
-Editor::Editor() : m_viewport(ImGui::GetMainViewport()), s_io(&ImGui::GetIO()), m_currentPath(File::GetAsset("")), m_cameraObject(nullptr), m_mainCamera(nullptr), s_objectSelected(nullptr), m_currentPage(0) {
+Editor::Editor() : m_viewport(ImGui::GetMainViewport()), s_io(&ImGui::GetIO()), m_currentPath(File::GetAsset("")), m_cameraObject(nullptr), m_mainCamera(nullptr), s_objectSelected(nullptr), m_currentPage(0), m_materialToRename(nullptr) {
     m_cameraObject = nullptr;
 
     m_mainCamera = nullptr;
@@ -252,6 +252,8 @@ void Editor::LoadScript() {
 
     Scene::ReloadObjects([](Scene *scene){
         Settings::bGameRunning = true;
+
+        Scene::InitializeObject();
     });
 }
 
@@ -306,7 +308,7 @@ GameObject *Editor::createEditorCamera() {
     if (Camera::SetEnable)
         Camera::SetEnable(camera);
 
-    gameObject->initialize();
+    gameObject->initialize(false);
     return gameObject;
 }
 
@@ -1145,7 +1147,7 @@ void Editor::loadCamera(GameObject *gameObject) {
 
     m_mainCamera = m_cameraObject->getComponent<Camera>();
 
-    m_cameraObject->initialize();
+    m_cameraObject->initialize(false);
 }
 
 void Editor::RenderGuizmo() {
@@ -1706,11 +1708,14 @@ void Editor::rTabObjectInfo(bool &isOpenPopup) {
         return;
     }
     
+    auto objName = s_objectSelected->getName();
+    ImGui::PushID(objName.c_str());
+
     ImGui::Image(reinterpret_cast<ImTextureID>(iconsUI[IconType::ICON_GAMEOBJECT]->getID()), ImVec2(16, 16));
 
     ImGui::SameLine();
 
-    ImGui::Text("[ %s - %s ]", s_objectSelected->getName().c_str(), s_objectSelected->getTag().c_str());
+    ImGui::Text("[ %s - %s ]", objName.c_str(), s_objectSelected->getTag().c_str());
 
     ImGui::SameLine();
 
@@ -1721,8 +1726,11 @@ void Editor::rTabObjectInfo(bool &isOpenPopup) {
 
     auto &components = s_objectSelected->getEntity()->getComponents();
     for (auto &&[name, component] : components) {
+        ImGui::PushID(name.c_str());
+        
         if (name == "Transform") {
             s_objectSelected->RenderProperty<Transform>(&Editor::OnPropertyTransform, this);
+            ImGui::PopID();
             continue;
         }
         
@@ -1730,6 +1738,7 @@ void Editor::rTabObjectInfo(bool &isOpenPopup) {
             if (s_objectSelected->RenderProperty<Light>(&Editor::OnPropertyLight, this)) {
                 Event::Add(&Entity::remove, s_objectSelected->getEntity(), name);
             }
+            ImGui::PopID();
             continue;
         }
 
@@ -1738,6 +1747,7 @@ void Editor::rTabObjectInfo(bool &isOpenPopup) {
                 Event::Add(&Entity::remove, s_objectSelected->getEntity(), name);
                 Event::Add(&Entity::remove, s_objectSelected->getEntity(), "MeshFilter");
             }
+            ImGui::PopID();
             continue;
         }
 
@@ -1745,6 +1755,7 @@ void Editor::rTabObjectInfo(bool &isOpenPopup) {
             if (s_objectSelected->RenderProperty<MeshFilter>(&Editor::OnPropertyMeshFilter, this)) {
                 Event::Add(&Entity::remove, s_objectSelected->getEntity(), name);
             }
+            ImGui::PopID();
             continue;
         }
 
@@ -1752,6 +1763,7 @@ void Editor::rTabObjectInfo(bool &isOpenPopup) {
             if (s_objectSelected->RenderProperty<BoxCollider>(&Editor::OnPropertyBoxCollider, this)) {
                 Event::Add(&Entity::remove, s_objectSelected->getEntity(), name);
             }
+            ImGui::PopID();
             continue;
         }
 
@@ -1759,14 +1771,17 @@ void Editor::rTabObjectInfo(bool &isOpenPopup) {
             if (s_objectSelected->RenderProperty<Rigidbody>(&Editor::OnPropertyRigidbody, this)) {
                 Event::Add(&Entity::remove, s_objectSelected->getEntity(), name);
             }
+            ImGui::PopID();
             continue;
         }
 
 
         if (!RenderComponents(name, &(*component))) {
             Event::Add(&Entity::remove, s_objectSelected->getEntity(), name);
+            ImGui::PopID();
             continue;
         }
+        ImGui::PopID();
     }
 
     auto avail = ImGui::GetContentRegionAvail();
@@ -1775,6 +1790,7 @@ void Editor::rTabObjectInfo(bool &isOpenPopup) {
         isOpenPopup = true;
     }
 
+    ImGui::PopID();
     ImGui::EndTabItem();
 }
 
@@ -1968,10 +1984,10 @@ void Editor::RenderUVConfig(MeshFilter *meshFilter) {
 }
 
 bool Editor::OnPropertyMeshRender(MeshRender *meshRender) {
-    auto bExists = true;
+    auto bVisible = true;
 
-    auto isOpen = ImGui::CollapsingHeader("MeshRender", &bExists);
-    if (!bExists) {
+    auto isOpen = ImGui::CollapsingHeader("MeshRender", &bVisible);
+    if (!bVisible) {
         return true;
     }
     
@@ -1982,63 +1998,68 @@ bool Editor::OnPropertyMeshRender(MeshRender *meshRender) {
     if (!isOpen) {
         return false;
     }
-
-    auto elem = meshRender->getFlags();
-
-    // int  = Batching::BatchingType_Dynamic;
-        
-    const char* elems_names[4] = {"Dynamic", "GroupMesh", "InstanceDynamic", "InstancedStatic"};
+   
+    auto &materialList = meshRender->getMaterials();
     
-    const char* elem_name = (elem >= 0 && elem < 4) ? elems_names[elem] : "Unknown";
-
-    ImGui::Text("Mesh Optimize:");
-    if (ImGui::SliderInt("##mesh_optimize", &elem, 0, 4 - 1, elem_name)) {
-        meshRender->setMeshOptimize(elem);
-
-        // auto gameObject = meshRender->getGameObject();
-        // auto &transform = gameObject->getTransform();
-
-        // for (auto &child : transform.getChildren()) {
-        //     auto obj = child->getGameObject();
-        //     if (obj->hasComponent<MeshRender>()) {
-        //         obj->get
-        //     }
-        // }
+    if (ImGui::Button("Create")) {
+        materialList.push_back(std::make_unique<Material>());
     }
 
-    for (auto &material : meshRender->getMaterials()) {
-        auto isOpen = ImGui::TreeNode(material->getName().c_str());
-        if (!isOpen) {
-            continue;
+    for (auto it=materialList.begin();it!=materialList.end();) {
+        if (!RenderMaterial(it->get())) {
+            it++;
+        } else {
+            it = materialList.erase(it);
         }
-
-        auto albedo = material->getAlbedo();
-        InsertTexture(&(*material));
-
-        if (View::PopupChangeColor("Albedo", albedo)) {
-            material->setAlbedo(albedo);
-        }
-
-        ImGui::Text("Roghness:");
-        auto roughness = material->getRoughness();
-        if (ImGui::DragFloat("##mesh_render_material_roughness", &roughness, 0.001f)) {
-            material->setRoughness(roughness);
-        }
-
-        ImGui::Text("Mettallic:");
-        auto metallic = material->getMetallic();
-        if (ImGui::DragFloat("##mesh_render_material_metallic", &metallic, 0.001f)) {
-            material->setMetallic(metallic);
-        }
-
-        ImGui::Text("AO:");
-        auto ao = material->getAmbientOcclusion();
-        if (ImGui::DragFloat("##mesh_render_material_ao", &ao, 0.001f)) {
-            material->setAmbientOcclusion(ao);
-        }
-        ImGui::TreePop();
     }
 
+    if (m_materialToRename) {
+        ImGui::OpenPopup("##popup_rename_material");
+    }
+
+    PopupRenameMaterial();
+    return false;
+}
+
+bool Editor::RenderMaterial(Material *material) {
+    auto bVisible = true;
+    
+    auto isOpen = ImGui::CollapsingHeader(material->getName().c_str(), &bVisible);
+    if (!bVisible) {
+        return true;
+    }
+    if (ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
+        m_materialToRename = &(*material);
+    }
+
+    if (!isOpen) {
+        return false;
+    }
+
+    auto albedo = material->getAlbedo();
+    InsertTexture(&(*material));
+
+    if (View::PopupChangeColor("Albedo", albedo)) {
+        material->setAlbedo(albedo);
+    }
+
+    ImGui::Text("Roghness:");
+    auto roughness = material->getRoughness();
+    if (ImGui::DragFloat("##mesh_render_material_roughness", &roughness, 0.001f)) {
+        material->setRoughness(roughness);
+    }
+
+    ImGui::Text("Mettallic:");
+    auto metallic = material->getMetallic();
+    if (ImGui::DragFloat("##mesh_render_material_metallic", &metallic, 0.001f)) {
+        material->setMetallic(metallic);
+    }
+
+    ImGui::Text("AO:");
+    auto ao = material->getAmbientOcclusion();
+    if (ImGui::DragFloat("##mesh_render_material_ao", &ao, 0.001f)) {
+        material->setAmbientOcclusion(ao);
+    }
     return false;
 }
 
@@ -2388,7 +2409,7 @@ void Editor::PostLoadGameObject(GameObject *gameObject) {
     if (Scene::HasScene())
         Scene::GetCurrentScene()->insert(gameObject);
     
-    gameObject->initialize();
+    gameObject->initialize(false);
 
     s_objectSelected = gameObject;
 }
@@ -2417,20 +2438,33 @@ std::string GenerateScriptSource(const std::string& name) {
     return source;
 }
 
-#include <regex>
 void Editor::CreateScriptTemplate(const std::string &path, const std::string &name) {
-    std::ofstream os_header(path  + "/" + name + ".hpp");
-    os_header << GenerateScriptHeader(name);
-    os_header.close();
+    auto script_hpp = GenerateScriptHeader(name);
+    if (script_hpp.empty()) {
+        return;
+    }
 
-    std::ofstream os_source(path + "/" + name + ".cpp");
-    os_source << GenerateScriptSource(name);
-    os_source.close();
+    auto script_cpp = GenerateScriptSource(name);
+    if (script_cpp.empty()) {
+        return;
+    }
 
-    std::string p = m_currentPath.string();
-    p = std::regex_replace(p, std::regex(" "), "\\ ");
+    // write .hpp
 
-    Command::exec("code " + p);
+    {
+        std::ofstream os_header(path  + "/" + name + ".hpp");
+        os_header << script_hpp << std::endl;
+        os_header.close();
+    }
+
+    // write .cpp
+    {
+        std::ofstream os_source(path + "/" + name + ".cpp");
+        os_source << script_cpp << std::endl;
+        os_source.close();
+    }
+
+    Command::exec("code '" + path  + "/" + name + ".hpp" + "'");
 }
 
 // PopupMenu
@@ -2457,6 +2491,37 @@ void Editor::PopupMenuSettings() {
     RenderSettings();
 
     ImGui::EndPopup();
+}
+
+void Editor::PopupRenameMaterial() {
+    auto isOpen = ImGui::BeginPopupModal("##popup_rename_material");
+    if (!isOpen || !m_materialToRename) {
+        return;
+    }
+
+    ImGui::Text("Rename");
+    if (!ImGui::IsAnyItemActive() && !ImGui::IsMouseClicked(0))
+        ImGui::SetKeyboardFocusHere(0);
+
+    auto name = m_materialToRename->getName();
+    if (name.size() < 256) {
+        name.resize(256, '\0');
+    }
+
+    if (ImGui::InputText("##popup_rename_file", name.data(), name.size(), ImGuiInputTextFlags_EnterReturnsTrue)) {
+        name.erase(std::remove(name.begin(), name.end(), '\0'), name.end());
+
+        m_materialToRename->setName(name);
+
+        m_materialToRename = nullptr;
+
+        ImGui::CloseCurrentPopup();
+    }
+
+    ImGui::EndPopup();
+}
+
+void Editor::PopupCreateMaterial() {
 }
 
 void Editor::PopupRenameFile() {

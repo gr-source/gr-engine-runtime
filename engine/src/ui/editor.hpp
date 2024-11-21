@@ -116,6 +116,8 @@ private:
 
     std::shared_ptr<Config> m_config;
 
+    Material *m_materialToRename;
+
     struct LastTransform {
         Vector3 position;
         Quaternion rotation;
@@ -223,6 +225,8 @@ private:
     
     bool OnPropertyMeshRender(MeshRender *meshRender);
 
+    bool RenderMaterial(Material *material);
+
     void InsertTexture(Material *material);
 
     bool OnPropertyLight(Light *light);
@@ -244,6 +248,10 @@ private:
 
     // PopupMenu
     void PopupMenuSettings();
+
+    void PopupRenameMaterial();
+
+    void PopupCreateMaterial();
 
     void PopupRenameFile();
 

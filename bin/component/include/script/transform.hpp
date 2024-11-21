@@ -50,6 +50,9 @@ public:
     void addChildren(Transform *child);
 
     Transform *findChildren(const std::string &name) const;
+
+    template <typename T>
+    Transform *findChildrenComponent() const;
     
     bool Serialize(Stream *stream) override;
 
@@ -75,6 +78,13 @@ private:
     void updateGlobalMatrix();
 
     Transform *findChild(Transform *transform) const;
+
+    Transform *findChildrenComponent(const std::string &name) const;
 };
 
 REGISTER_COMPONENT(Transform)
+
+template <typename T>
+inline Transform *Transform::findChildrenComponent() const {
+    return findChildrenComponent(typeid(T).name());
+}

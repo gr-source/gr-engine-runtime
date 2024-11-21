@@ -85,7 +85,7 @@ Scene *Scene::Create(const std::string &name) {
 
     camera->addComponent<Camera>();
 
-    camera->initialize();
+    camera->initialize(false);
     
     return &(*it->second);
 }
@@ -222,6 +222,17 @@ void Scene::ReloadObjects(std::function<void(Scene *)> func) {
     GameObject::Clear();
     
     Threadpool::AddTask(&Scene::Load, temp_dir + scene->getName() + ".scn.tmp", LoadFlags_Object | LoadFlags_Script, func, scene);
+}
+
+void Scene::InitializeObject() {
+    auto scene = GetCurrentScene();
+    if (!scene) {
+        return;
+    }
+
+    for (auto &object : scene->getObjectList()) {
+        object->initialize(true);
+    }
 }
 
 // TODO: Object, Script because thread dead lock
@@ -817,7 +828,7 @@ void Scene::SetupScene(Scene *scene) {
         m_scenes.emplace(scene->getName(), std::unique_ptr<Scene>(scene));
 
     for (auto &object : scene->getObjectList()) {
-        object->initialize();
+        object->initialize(false);
     }
 }
 
