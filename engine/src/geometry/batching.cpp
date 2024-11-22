@@ -97,10 +97,7 @@ void Batching::RenderBatches() {
     }
 }
 
-Batching::Batching(const std::string &name, std::vector<std::shared_ptr<Material>> *materials, Mesh *mesh, grr::gShader *shader, int flags) : m_shader(shader), m_flags(flags), m_mesh(mesh), m_name(name), m_materials(materials), m_vertexArray(nullptr), m_indexCount(0), m_instanceCount(0), m_VBO(0), m_EBO(0), m_PBO(0), m_hasIndex(false), m_type(DrawType_Elements) {
-    if (flags != BatchingType_Static_Mesh)
-        BuildBatch(mesh);
-}
+Batching::Batching(const std::string &name, std::vector<std::shared_ptr<Material>> *materials, grr::gShader *shader, BatchingFlags_ flags) : m_shader(shader), m_flags(flags), m_name(name), m_materials(materials), m_vertexArray(nullptr), m_indexCount(0), m_instanceCount(0), m_VBO(0), m_EBO(0), m_PBO(0), m_type(DrawType_Elements) {}
 
 Batching::~Batching() {
     if (m_vertexArray) {
@@ -120,6 +117,43 @@ Batching::~Batching() {
     }
 }
 
+void Batching::buildMeshe(Mesh *mesh) {
+    m_vertexArray = m_vertexArray != nullptr ? m_vertexArray : grr::gVertexArray::Create();
+
+    m_VBO = m_VBO != 0 ? m_VBO : grr::gVertexArray::CreateBuffer(BufferType::VBO);
+    
+    auto vertices = mesh->getVertices();
+
+    m_indexCount = vertices.size();
+    
+    m_vertexArray->bind();
+
+    if (m_flags & BatchingFlags_HasIndices) {
+        m_EBO = m_EBO != 0 ? m_EBO : grr::gVertexArray::CreateBuffer(BufferType::EBO);
+
+        auto indices = mesh->getIndices();
+
+        m_indexCount = indices.size();
+
+        grr::gVertexArray::Bind(m_EBO);
+        grr::gVertexArray::UpdateResizeBuffer(indices.size() * sizeof(grm::u32), BufferUsage::STATIC);
+        grr::gVertexArray::SetBufferUpdate(0, indices.size() * sizeof(grm::u32), indices.data());
+    }
+
+    grr::gVertexArray::Bind(m_VBO);
+    grr::gVertexArray::UpdateResizeBuffer(vertices.size() * sizeof(Vertex3D), BufferUsage::STATIC);
+    grr::gVertexArray::SetBufferUpdate(0, vertices.size() * sizeof(Vertex3D), vertices.data());
+
+    grr::gVertexArray::SetAttrib(0, 3, sizeof(Vertex3D), reinterpret_cast<const void*>(offsetof(Vertex3D, position)));
+    grr::gVertexArray::SetAttrib(1, 3, sizeof(Vertex3D), reinterpret_cast<const void*>(offsetof(Vertex3D, normal)));
+    grr::gVertexArray::SetAttrib(2, 2, sizeof(Vertex3D), reinterpret_cast<const void*>(offsetof(Vertex3D, texCoord)));
+    grr::gVertexArray::SetAttrib(3, 1, sizeof(Vertex3D), reinterpret_cast<const void*>(offsetof(Vertex3D, mIdx)));
+
+    m_vertexArray->unbind();
+
+    m_flags |= BatchingFlags_BuildMesh;
+}
+
 void Batching::insert(Transform *transform) {
     m_models.emplace_back(transform);
 }
@@ -137,19 +171,16 @@ void Batching::draw(grr::gShader *shader, bool bSetMaterial) {
     
     grr::gShader::Bind(shader);
 
-    CompileBatch();
+    grr::gShader::SetUniform("u_model", m_models[0]->getGlobalMatrix());
     
-    if (!m_vertexArray || !shader || !m_vertexArray->isValid() || !shader->isValid()) {
-        return;
-    }
-
     if (bSetMaterial)
         setupMaterial();
 
     m_vertexArray->bind();
+
     grr::gShader::Flush();
 
-    switch (m_type) {
+    /* switch (m_type) {
     case DrawType_Elements_Instanced:
         grr::gVertexArray::DrawElementsInstanced(grr::PrimitiveType_Triangles, m_indexCount, nullptr, m_instanceCount);
         break;
@@ -157,17 +188,22 @@ void Batching::draw(grr::gShader *shader, bool bSetMaterial) {
         grr::gVertexArray::DrawArraysInstanced(grr::PrimitiveType_Triangles, m_indexCount, m_instanceCount);
         break;
     case DrawType_Elements:
-        grr::gVertexArray::DrawElements(grr::PrimitiveType_Triangles, m_indexCount, nullptr);
         break;
-    case DrawType_Arrays:
-        grr::gVertexArray::DrawArrays(grr::PrimitiveType_Triangles, m_indexCount);
-        break;
+    case DrawType_Arrays: */
+    if (m_flags & BatchingFlags_HasIndices) {
+        grr::gVertexArray::DrawElements(PrimitiveType::TRIANGLES, m_indexCount, nullptr);
+    } else {
+        grr::gVertexArray::DrawArrays(PrimitiveType::TRIANGLES, m_indexCount);
+    }
+        /*break;
     default:
         break;
     }
+    */
 }
 
-void Batching::BuildBatch(Mesh *mesh) {
+/*
+void Batching::BuildMeshe(Mesh *mesh) {
     m_hasIndex = mesh->hasIndices();
 
     if (!m_vertexArray) {
@@ -175,7 +211,7 @@ void Batching::BuildBatch(Mesh *mesh) {
     }
     
     if (!m_VBO) {
-        m_VBO = grr::gVertexArray::CreateBuffer(grr::BufferType_VBO);
+        m_VBO = grr::gVertexArray::CreateBuffer(BufferType::VBO);
     }
 
     if (!m_PBO && m_flags == BatchingType_Instanced_Dynamic || m_flags == BatchingType_Instanced_Static) {
@@ -183,7 +219,7 @@ void Batching::BuildBatch(Mesh *mesh) {
     }
     
     if (!m_EBO && m_hasIndex) {
-        m_EBO = grr::gVertexArray::CreateBuffer(grr::BufferType_EBO);
+        m_EBO = grr::gVertexArray::CreateBuffer(BufferType::EBO);
     }
 
     auto vertexCount = mesh->getVertices().size();
@@ -200,12 +236,12 @@ void Batching::BuildBatch(Mesh *mesh) {
         m_indexCount = indiceCount;
 
         grr::gVertexArray::Bind(m_EBO);
-        grr::gVertexArray::UpdateResizeBuffer(indiceCount * sizeof(grm::u32), grr::gBufferFlags_Static);
+        grr::gVertexArray::UpdateResizeBuffer(indiceCount * sizeof(grm::u32), BufferUsage::STATIC);
         grr::gVertexArray::SetBufferUpdate(0, indiceCount * sizeof(grm::u32), indiceData);
     }
 
     grr::gVertexArray::Bind(m_VBO);
-    grr::gVertexArray::UpdateResizeBuffer(vertexCount * sizeof(Vertex3D), grr::gBufferFlags_Static);
+    grr::gVertexArray::UpdateResizeBuffer(vertexCount * sizeof(Vertex3D), BufferUsage::STATIC);
     grr::gVertexArray::SetBufferUpdate(0, vertexCount * sizeof(Vertex3D), vertexData);
 
     grr::gVertexArray::SetAttrib(0, 3, sizeof(Vertex3D), reinterpret_cast<const void*>(offsetof(Vertex3D, position)));
@@ -260,10 +296,9 @@ void Batching::buildDynamic() {
     }
 
     grr::gShader::SetUniform("u_model", m_models[0]->getGlobalMatrix());
-
-    m_type = m_hasIndex ? DrawType_Elements : DrawType_Arrays;
 }
-
+*/
+/*
 void Batching::buildDynamicInstanced() {
     std::vector<Matrix4x4> models;
     for (auto &transform : m_models) {
@@ -300,7 +335,7 @@ void Batching::buildStaticInstanced() {
 
     m_vertexArray->bind();
     grr::gVertexArray::Bind(m_PBO);
-    grr::gVertexArray::UpdateResizeBuffer(models.size() * sizeof(Matrix4x4), grr::gBufferFlags_Static);
+    grr::gVertexArray::UpdateResizeBuffer(models.size() * sizeof(Matrix4x4), BufferUsage::STATIC);
     grr::gVertexArray::SetBufferUpdate(0, models.size() * sizeof(Matrix4x4), models.data());
 
     m_type = DrawType_Arrays_Instanced;
@@ -336,12 +371,13 @@ void Batching::buildStaticMesh() {
         verticeCount += m_mesh->getVertices().size();
     }
     
-    BuildBatch(&mesh);
+    BuildMeshe(&mesh);
 
     m_type = m_hasIndex ? DrawType_Elements : DrawType_Arrays;
 
     m_instanceCount = m_models.size();
 }
+*/
 
 void Batching::setupMaterial() {
     int idx[10] {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};

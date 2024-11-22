@@ -239,6 +239,7 @@ void Engine::MainFramebuffer() {
     // shadow
     {
         m_shadowMap->bind();
+        
         grr::gRender::SetRenderState(grr::GR_BACKGROUND, grr::GR_DEPTH_BUFFER);
         grr::gRender::SetRenderState(grr::GR_DEPTH, grr::GR_TRUE);
         grr::gRender::SetRenderState(grr::GR_CULL, grr::GR_FRONT);

@@ -43,7 +43,7 @@ void DebugDraw::Initialize() {
     grr::gShader::Unbind();
 
     // vertex
-    m_vbo = grr::gVertexArray::CreateBuffer(grr::BufferType_VBO);
+    m_vbo = grr::gVertexArray::CreateBuffer(BufferType::VBO);
     assert(m_vbo && "Vbo invalid.");
 
     m_primitive = grr::gVertexArray::Create();
@@ -90,11 +90,11 @@ void DebugDraw::DrawLines() {
     m_primitive->bind();
 
     grr::gVertexArray::Bind(m_vbo);
-    grr::gVertexArray::UpdateResizeBuffer(m_lines.size() * sizeof(Line), grr::gBufferFlags_Dynamic);
+    grr::gVertexArray::UpdateResizeBuffer(m_lines.size() * sizeof(Line), BufferUsage::DYNAMIC);
     grr::gVertexArray::SetBufferUpdate(0, m_lines.size() * sizeof(Line), m_lines.data());
 
     grr::gShader::Flush();
-    grr::gVertexArray::DrawArrays(grr::PrimitiveType_Lines, (grm::u32)m_lines.size());
+    grr::gVertexArray::DrawArrays(PrimitiveType::LINES, (grm::u32)m_lines.size());
 
     m_primitive->unbind();
 

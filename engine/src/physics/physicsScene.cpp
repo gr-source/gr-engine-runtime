@@ -43,9 +43,17 @@ void PhysicsScene::Update(float dt) {
     dynamicsWorld->stepSimulation(dt);
 }
 
-bool PhysicsScene::Raycast(const Vector3 &rayStart, const Vector3 &rayEnd) {
+bool PhysicsScene::Raycast(const Vector3 &rayStart, const Vector3 &rayEnd, Hit &hit) {
     btCollisionWorld::ClosestRayResultCallback rayCallback({rayStart.x, rayStart.y, rayStart.z}, {rayEnd.x, rayEnd.y, rayEnd.z});
     dynamicsWorld->rayTest({rayStart.x, rayStart.y, rayStart.z}, {rayEnd.x, rayEnd.y, rayEnd.z}, rayCallback);
+
+    hit.collisionObject = nullptr;
+    if (rayCallback.m_collisionObject)
+        hit.collisionObject = reinterpret_cast<GameObject *>(rayCallback.m_collisionObject->getUserPointer());
+
+    hit.hitNormal = {rayCallback.m_hitNormalWorld.getX(), rayCallback.m_hitNormalWorld.getY(), rayCallback.m_hitNormalWorld.getZ()};
+    hit.hitPoint = {rayCallback.m_hitPointWorld.getX(), rayCallback.m_hitPointWorld.getY(), rayCallback.m_hitPointWorld.getZ()};
+
     return rayCallback.hasHit();
 }
 

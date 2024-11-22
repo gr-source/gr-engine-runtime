@@ -8,11 +8,11 @@ void Mesh::setName(const std::string &name) {
     m_name = name;
 }
 
-const std::string &Mesh::getName() const {
+std::string Mesh::getName() const {
     return m_name;
 }
 
-std::vector<Vertex3D> &Mesh::getVertices() {
+std::vector<Vertex3D> Mesh::getVertices() const {
     return m_vertices;
 }
 
@@ -26,15 +26,15 @@ void Mesh::addIndice(int t0) {
     m_indices.push_back(t0);
 }
 
-std::vector<int> &Mesh::getIndices() {
+std::vector<int> Mesh::getIndices() const {
     return m_indices;
 }
 
-const bool Mesh::hasIndices() const {
+bool Mesh::hasIndices() const {
     return !m_indices.empty();
 }
 
-const std::vector<BoneWeight> &Mesh::getBoneWeight() const {
+std::vector<BoneWeight> Mesh::getBoneWeight() const {
     return m_boneWeight;
 }
 

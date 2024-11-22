@@ -73,7 +73,7 @@ void Skybox::Renderer(Camera *camera) {
     
     m_vertexArray->bind();
 
-    grr::gVertexArray::DrawElements(grr::PrimitiveType_Triangles, m_count, nullptr);
+    grr::gVertexArray::DrawElements(PrimitiveType::TRIANGLES, m_count, nullptr);
 }
 
 grr::gTexture *Skybox::GetTextureCubemap() {
@@ -109,10 +109,10 @@ void Skybox::CreateCube() {
 
     m_count = indices.size();
 
-    m_vbo = grr::gVertexArray::CreateBuffer(grr::BufferType_VBO);
+    m_vbo = grr::gVertexArray::CreateBuffer(BufferType::VBO);
     assert(m_vbo && "Falied to create vbo.");
 
-    m_ebo = grr::gVertexArray::CreateBuffer(grr::BufferType_EBO);
+    m_ebo = grr::gVertexArray::CreateBuffer(BufferType::EBO);
     assert(m_vbo && "Falied to create ebo.");
 
     m_vertexArray = grr::gVertexArray::Create();
@@ -121,11 +121,11 @@ void Skybox::CreateCube() {
     m_vertexArray->bind();
 
     grr::gVertexArray::Bind(m_ebo);
-    grr::gVertexArray::UpdateResizeBuffer(indices.size() * sizeof(grm::u32), grr::gBufferFlags_Static);
+    grr::gVertexArray::UpdateResizeBuffer(indices.size() * sizeof(grm::u32), BufferUsage::STATIC);
     grr::gVertexArray::SetBufferUpdate(0, indices.size() * sizeof(grm::u32), indices.data());
 
     grr::gVertexArray::Bind(m_vbo);
-    grr::gVertexArray::UpdateResizeBuffer(vertices.size() * sizeof(Vector3), grr::gBufferFlags_Static);
+    grr::gVertexArray::UpdateResizeBuffer(vertices.size() * sizeof(Vector3), BufferUsage::STATIC);
     grr::gVertexArray::SetBufferUpdate(0, vertices.size() * sizeof(Vector3), vertices.data());
 
     grr::gVertexArray::SetAttrib(0, 3, sizeof(Vector3), nullptr);
@@ -216,14 +216,13 @@ void Skybox::GenerateMap(std::function<void(grm::u32)> func, grr::gTexture *text
         func(i);
 
         grr::gRender::SetRenderState(grr::GR_BACKGROUND_COLOR, (void *)&Color::blue);
-        grr::gRender::SetRenderState(grr::GR_BACKGROUND, grr::GR_COLOR_BUFFER);
-        grr::gRender::SetRenderState(grr::GR_BACKGROUND, grr::GR_DEPTH_BUFFER);
+        grr::gRender::SetRenderState(grr::GR_BACKGROUND, grr::GR_COLOR_BUFFER | grr::GR_DEPTH_BUFFER);
         
         grr::gShader::Flush();
         
         m_vertexArray->bind();
         
-        grr::gVertexArray::DrawElements(grr::PrimitiveType_Triangles, m_count, nullptr);
+        grr::gVertexArray::DrawElements(PrimitiveType::TRIANGLES, m_count, nullptr);
     }
     grr::gTexture::Bind(nullptr, 0);
 }

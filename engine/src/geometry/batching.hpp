@@ -7,6 +7,14 @@
 #include "material.hpp"
 #include "boundbox.hpp"
 
+enum BatchingFlags {
+    BatchingFlags_None = 1 << 0,
+    BatchingFlags_HasIndices = 1 << 1,
+    BatchingFlags_BuildMesh = 1 << 2,
+};
+
+using BatchingFlags_ = int;
+
 class Batching {
 public:
     enum BatchingType {
@@ -33,8 +41,10 @@ public:
 
     static void RenderBatches();
     
-    Batching(const std::string &name, std::vector<std::shared_ptr<Material>> *materials, Mesh *mesh, grr::gShader *shader, int flags);
+    Batching(const std::string &name, std::vector<std::shared_ptr<Material>> *materials, grr::gShader *shader, BatchingFlags_ flags);
     ~Batching();
+
+    void buildMeshe(Mesh *mesh);
 
     void insert(Transform *transform);
 
@@ -78,27 +88,25 @@ private:
 
     grm::u32 m_PBO;
 
-    bool m_hasIndex;
+    // bool m_hasIndex;
 
     DrawType m_type;
 
-    Mesh *m_mesh;
+    // Mesh *m_mesh;
 
-    int m_flags;
+    BatchingFlags_ m_flags;
 
     grr::gShader *m_shader;
 
-    void BuildBatch(Mesh *mesh);
+    // void CompileBatch();
 
-    void CompileBatch();
+    // void buildDynamic();
 
-    void buildDynamic();
+    // void buildDynamicInstanced();
 
-    void buildDynamicInstanced();
+    // void buildStaticInstanced();
 
-    void buildStaticInstanced();
-
-    void buildStaticMesh();
+    // void buildStaticMesh();
 
     void setupMaterial();
 

@@ -10,6 +10,15 @@
 #define VEC3_TO_BTVEC3(vec) btVector3(vec.x, vec.y, vec.z)
 #define QUAT_TO_BTQUAT(q) btQuaternion(q.x, q.y, q.z, q.w)
 
+class Hit {
+public:
+    GameObject *collisionObject;
+
+    Vector3 hitNormal;
+
+    Vector3 hitPoint;
+};
+
 class PhysicsScene {
 public:
     PhysicsScene() = delete;
@@ -25,7 +34,7 @@ public:
 
     static void Update(float dt);
 
-    static bool Raycast(const Vector3 &rayStart, const Vector3 &rayEnd);
+    static bool Raycast(const Vector3 &rayStart, const Vector3 &rayEnd, Hit &hit);
 
     static void contactTest(btCollisionObject *colObj, btCollisionWorld::ContactResultCallback &resultCallback);
 

@@ -47,8 +47,10 @@ void ScreenRender::Render(grr::gTexture *texture) {
     grr::gTexture::Bind(texture, 0);
     grr::gShader::SetUniform("u_texture", 0);
 
+
+
     m_vertexArray->bind();
-    m_vertexArray->DrawArrays(grr::PrimitiveType_Triangles, 6);
+    grr::gVertexArray::DrawArrays(PrimitiveType::TRIANGLES, 6);
 
     grr::gTexture::Unbind();
     grr::gShader::Unbind();
@@ -69,7 +71,7 @@ void ScreenRender::CreateMesh() {
         {{ 1.0f,  1.0f}, {1.0f, 1.0f}}
     };
 
-    m_vbo = grr::gVertexArray::CreateBuffer(grr::BufferType_VBO);
+    m_vbo = grr::gVertexArray::CreateBuffer(BufferType::VBO);
     if (!m_vbo) {
         return Console::log(Log::ERROR, "[ ScreenRender ] Falied to create vbo.");
     }
@@ -82,7 +84,7 @@ void ScreenRender::CreateMesh() {
     m_vertexArray->bind();
 
     grr::gVertexArray::Bind(m_vbo);
-    grr::gVertexArray::UpdateResizeBuffer(vertices.size() * sizeof(Vertex2D), grr::gBufferFlags_Static);
+    grr::gVertexArray::UpdateResizeBuffer(vertices.size() * sizeof(Vertex2D), BufferUsage::STATIC);
     grr::gVertexArray::SetBufferUpdate(0, vertices.size() * sizeof(Vertex2D), vertices.data());
 
     grr::gVertexArray::SetAttrib(0, 2, sizeof(Vertex2D), reinterpret_cast<const void *>(offsetof(Vertex2D, position)));

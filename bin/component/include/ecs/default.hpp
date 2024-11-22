@@ -7,3 +7,4 @@
 #include <gr-math/gmath.h>
 
 class Component;
+class GameObject;
