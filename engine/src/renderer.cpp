@@ -37,8 +37,8 @@ void DebugDraw::Initialize() {
     }
     grr::gShader::Bind(m_shader);
     
-    grr::gShader::Register("projection");
-    grr::gShader::Register("view");
+    grr::gShader::Register("projection", UniformType::MAT4, 1, Matrix4x4::identityMatrix);
+    grr::gShader::Register("view", UniformType::MAT4, 1, Matrix4x4::identityMatrix);
     
     grr::gShader::Unbind();
 
@@ -93,6 +93,7 @@ void DebugDraw::DrawLines() {
     grr::gVertexArray::UpdateResizeBuffer(m_lines.size() * sizeof(Line), grr::gBufferFlags_Dynamic);
     grr::gVertexArray::SetBufferUpdate(0, m_lines.size() * sizeof(Line), m_lines.data());
 
+    grr::gShader::Flush();
     grr::gVertexArray::DrawArrays(grr::PrimitiveType_Lines, (grm::u32)m_lines.size());
 
     m_primitive->unbind();

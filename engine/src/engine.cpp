@@ -121,20 +121,13 @@ void Engine::Render() {
 
     m_editor = ProjectMenu::GetEditor();
 
-    Time time;
-    time.end();
-
     if (MainPostProcess && m_editor) {
         MainFramebuffer();
     }
 
-    Statistics::m_sceneFrame = {time.getFPS(), time.start()};
-
-    time.end();
     if (ImGuiPostProcess) {
         UIFramebuffer();
     }
-    Statistics::m_guiFrame = {time.getFPS(), time.start()};
 }
 
 void Engine::Shutdown() {

@@ -16,11 +16,11 @@ public:
 
     Camera() = delete;
 
-    const Matrix4x4 getPerspesctive() const;
+    Matrix4x4 getPerspesctive() const;
 
-    const Matrix4x4 getViewmatrix() const;
+    Matrix4x4 getViewmatrix() const;
 
-    const Vector3 getPosition() const;
+    Vector3 getPosition() const;
 
     Transform *getTransform();
 

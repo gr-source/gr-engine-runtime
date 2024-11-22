@@ -94,7 +94,7 @@ void ScreenRender::CreateMesh() {
 void ScreenRender::RegisterShader(grr::gShader *shader) {
     grr::gShader::Bind(shader);
 
-    grr::gShader::Register("u_texture");
+    grr::gShader::Register("u_texture", UniformType::INT, 1, 0);
     grr::gShader::Unbind();
 
     m_shader = shader;

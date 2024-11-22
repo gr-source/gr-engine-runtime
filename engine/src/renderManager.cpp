@@ -71,9 +71,9 @@ void RenderManager::Process(Camera *camera, ShadowMap *shadowMap) {
 
         grr::gShader::Bind(shader);
 
-        grr::gShader::SetUniform("u_projection", 1, m_camera->getPerspesctive());
-        grr::gShader::SetUniform("u_view", 1, m_camera->getViewmatrix());
-        grr::gShader::SetUniform("m_eye", 1, m_camera->getPosition());
+        grr::gShader::SetUniform("u_projection", m_camera->getPerspesctive());
+        grr::gShader::SetUniform("u_view", m_camera->getViewmatrix());
+        grr::gShader::SetUniform("m_eye", m_camera->getPosition());
 
         shadowMap->bindTexture(8);
         grr::gShader::SetUniform("m_shadowMap", 8);
@@ -118,10 +118,10 @@ void RenderManager::SetupLight() {
 
         grr::gShader::SetUniform("m_light[" + std::to_string(i) + "].position",    light->getPosition());
         grr::gShader::SetUniform("m_light[" + std::to_string(i) + "].color",       light->getColor());
-        grr::gShader::SetUniform("m_light[" + std::to_string(i) + "].attenuation", Vector3({light->getAttenuationConstant(), light->getAttenuationLinear(), light->getAttenuationQuadractc()}));
+        grr::gShader::SetUniform("m_light[" + std::to_string(i) + "].attenuation", Vector3{light->getAttenuationConstant(), light->getAttenuationLinear(), light->getAttenuationQuadractc()});
         grr::gShader::SetUniform("m_light[" + std::to_string(i) + "].direction",   light->getForward());
-        grr::gShader::SetUniform("m_light[" + std::to_string(i) + "].params",      Vector3({light->getInnecone(), light->getOutercone(), (float)light->getType()}));
-        grr::gShader::SetUniform("m_light[" + std::to_string(i) + "].model", 1, light->getProjetion());
+        grr::gShader::SetUniform("m_light[" + std::to_string(i) + "].params",      Vector3{light->getInnecone(), light->getOutercone(), (float)light->getType()});
+        grr::gShader::SetUniform("m_light[" + std::to_string(i) + "].model", light->getProjetion());
     }
 }
 
@@ -138,33 +138,33 @@ void RenderManager::SetupShader(ShaderType type, grr::gShader *shader) {
 }
 
 void RenderManager::RegisterUniform(bool model) {
-    grr::gShader::Register("u_projection");
-    grr::gShader::Register("u_view");
+    grr::gShader::Register("u_projection", UniformType::MAT4, 1, Matrix4x4::identityMatrix);
+    grr::gShader::Register("u_view", UniformType::MAT4, 1, Matrix4x4::identityMatrix);
 
     if (model)
-        grr::gShader::Register("u_model");
+        grr::gShader::Register("u_model", UniformType::MAT4, 1, Matrix4x4::identityMatrix);
     // grr::gShader::Register("u_boneMatrices");
     // grr::gShader::Register("u_animatior");
 
     // FragmentShader
-    grr::gShader::Register("m_eye");
-    grr::gShader::Register("m_shadowMap");
-    grr::gShader::Register("m_lightcount");
+    grr::gShader::Register("m_eye", UniformType::VEC3, 1, Vector3::zero);
+    grr::gShader::Register("m_shadowMap", UniformType::INT, 1, 0);
+    grr::gShader::Register("m_lightcount", UniformType::INT, 1, 0);
 
-    grr::gShader::Register("m_texture");
-    grr::gShader::Register("m_activate");
+    grr::gShader::Register("m_texture", UniformType::INT, 10, 0);
+    grr::gShader::Register("m_activate", UniformType::INT, 10, 0);
     
     for (auto i=0;i<10;i++) {
         // Material
-        grr::gShader::Register("m_material[" + std::to_string(i) + "].albedo");
-        grr::gShader::Register("m_material[" + std::to_string(i) + "].params");
+        grr::gShader::Register("m_material[" + std::to_string(i) + "].albedo", UniformType::VEC4, 1, Vector4::zero);
+        grr::gShader::Register("m_material[" + std::to_string(i) + "].params", UniformType::VEC3, 1, Vector3::zero);
 
         // Light
-        grr::gShader::Register("m_light[" + std::to_string(i) + "].position");
-        grr::gShader::Register("m_light[" + std::to_string(i) + "].color");
-        grr::gShader::Register("m_light[" + std::to_string(i) + "].attenuation");
-        grr::gShader::Register("m_light[" + std::to_string(i) + "].direction");
-        grr::gShader::Register("m_light[" + std::to_string(i) + "].params");
-        grr::gShader::Register("m_light[" + std::to_string(i) + "].model");
+        grr::gShader::Register("m_light[" + std::to_string(i) + "].position", UniformType::VEC3, 1, Vector3::zero);
+        grr::gShader::Register("m_light[" + std::to_string(i) + "].color", UniformType::VEC4, 1, Vector4::zero);
+        grr::gShader::Register("m_light[" + std::to_string(i) + "].attenuation", UniformType::VEC3, 1, Vector3::zero);
+        grr::gShader::Register("m_light[" + std::to_string(i) + "].direction", UniformType::VEC3, 1, Vector3::zero);
+        grr::gShader::Register("m_light[" + std::to_string(i) + "].params", UniformType::VEC3, 1, Vector3::zero);
+        grr::gShader::Register("m_light[" + std::to_string(i) + "].model", UniformType::MAT4, 1, Matrix4x4::identityMatrix);
     }
 }

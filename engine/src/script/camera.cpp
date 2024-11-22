@@ -12,15 +12,15 @@ Camera *(*Camera::Main)();
 
 Camera *(*Camera::Current)();
 
-const Matrix4x4 Camera::getPerspesctive() const {
+Matrix4x4 Camera::getPerspesctive() const {
     return m_projection;
 }
 
-const Matrix4x4 Camera::getViewmatrix() const {
+Matrix4x4 Camera::getViewmatrix() const {
     return Math::lookAt(m_transform->getPosition(), m_transform->getPosition() + m_transform->getForward(), m_transform->getUp());
 }
 
-const Vector3 Camera::getPosition() const {
+Vector3 Camera::getPosition() const {
     return m_transform->getPosition();
 }
 

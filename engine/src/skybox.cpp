@@ -66,10 +66,13 @@ void Skybox::Renderer(Camera *camera) {
     grr::gTexture::Bind(CubeFramebuffer::GetTextureColor(m_cubeColor), 0);
     grr::gShader::SetUniform("u_texture", 0);
 
-    grr::gShader::SetUniform("projection", 1, camera->getPerspesctive());
-    grr::gShader::SetUniform("view", 1, camera->getViewmatrix());
+    grr::gShader::SetUniform("projection", camera->getPerspesctive());
+    grr::gShader::SetUniform("view", camera->getViewmatrix());
 
+    grr::gShader::Flush();
+    
     m_vertexArray->bind();
+
     grr::gVertexArray::DrawElements(grr::PrimitiveType_Triangles, m_count, nullptr);
 }
 
@@ -138,9 +141,9 @@ void Skybox::SetupTexture(grr::gTexture *texture) {
 
 void SetCommonRegister(grr::gShader *shader) {
     grr::gShader::Bind(shader);
-    grr::gShader::Register("projection");
-    grr::gShader::Register("u_texture");
-    grr::gShader::Register("view");
+    grr::gShader::Register("projection", UniformType::MAT4, 1, Matrix4x4::identityMatrix);
+    grr::gShader::Register("view", UniformType::MAT4, 1, Matrix4x4::identityMatrix);
+    grr::gShader::Register("u_texture", UniformType::INT, 1, 0);
 }
 
 void RegisterDeafult(grr::gShader **out, grr::gShader *shader) {
@@ -196,7 +199,7 @@ void Skybox::GenerateMap(std::function<void(grm::u32)> func, grr::gTexture *text
     grr::gTexture::Bind(texture, 0);
     grr::gShader::SetUniform("u_texture", 0);
 
-    grr::gShader::SetUniform("projection", 1, projection);
+    grr::gShader::SetUniform("projection", projection);
 
     Matrix4x4 view[6] {
         Math::lookAt({0.0f, 0.0f, 0.0f}, { 1.0f,  0.0f,  0.0f}, {0.0f, -1.0f,  0.0f}),
@@ -208,7 +211,7 @@ void Skybox::GenerateMap(std::function<void(grm::u32)> func, grr::gTexture *text
     };
 
     for (auto i=0;i<6;i++) {
-        grr::gShader::SetUniform("view", 1, view[i]);
+        grr::gShader::SetUniform("view", view[i]);
 
         func(i);
 
@@ -216,7 +219,10 @@ void Skybox::GenerateMap(std::function<void(grm::u32)> func, grr::gTexture *text
         grr::gRender::SetRenderState(grr::GR_BACKGROUND, grr::GR_COLOR_BUFFER);
         grr::gRender::SetRenderState(grr::GR_BACKGROUND, grr::GR_DEPTH_BUFFER);
         
+        grr::gShader::Flush();
+        
         m_vertexArray->bind();
+        
         grr::gVertexArray::DrawElements(grr::PrimitiveType_Triangles, m_count, nullptr);
     }
     grr::gTexture::Bind(nullptr, 0);

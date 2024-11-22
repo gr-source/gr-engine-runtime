@@ -45,7 +45,7 @@ void Batching::RenderShadowPass() {
 
     grr::gShader::Bind(s_shadowShader);
 
-    grr::gShader::SetUniform("u_light", 1, lights[0]->getProjetion());
+    grr::gShader::SetUniform("u_light", lights[0]->getProjetion());
 
     for (auto &batch : s_batchedInstancesList) {
         if (!batch || !batch->hasModel()) {
@@ -147,6 +147,7 @@ void Batching::draw(grr::gShader *shader, bool bSetMaterial) {
         setupMaterial();
 
     m_vertexArray->bind();
+    grr::gShader::Flush();
 
     switch (m_type) {
     case DrawType_Elements_Instanced:
@@ -258,7 +259,7 @@ void Batching::buildDynamic() {
         return;
     }
 
-    grr::gShader::SetUniform("u_model", 1, m_models[0]->getGlobalMatrix());
+    grr::gShader::SetUniform("u_model", m_models[0]->getGlobalMatrix());
 
     m_type = m_hasIndex ? DrawType_Elements : DrawType_Arrays;
 }
@@ -358,8 +359,8 @@ void Batching::setupMaterial() {
             idxEn[i] = 1;
         }
 
-        grr::gShader::SetUniform<int>("m_texture", 10, (const int *)idx);
-        grr::gShader::SetUniform<int>("m_activate", 10, (const int *)idxEn);
+        grr::gShader::SetUniform("m_texture", (const int *)idx);
+        grr::gShader::SetUniform("m_activate", (const int *)idxEn);
 
         grr::gShader::SetUniform("m_material[" + std::to_string(i) + "].albedo", material->getAlbedo());
         grr::gShader::SetUniform("m_material[" + std::to_string(i) + "].params", Vector3({material->getRoughness(), material->getMetallic(), material->getAmbientOcclusion()}));
@@ -373,8 +374,8 @@ void Batching::RegisterShaderShadow(grr::gShader *shader) {
 
     grr::gShader::Bind(shader);
 
-    grr::gShader::Register("u_model");
-    grr::gShader::Register("u_light");
+    grr::gShader::Register("u_model", UniformType::MAT4, 1, Matrix4x4::identityMatrix);
+    grr::gShader::Register("u_light", UniformType::MAT4, 1, Matrix4x4::identityMatrix);
 
     grr::gShader::Unbind();
     
