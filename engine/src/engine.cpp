@@ -77,6 +77,8 @@ void Engine::Initialize() {
     ProjectMenu::Initialize();
 
     EditorController::Initialize();
+
+    Threadpool::AddTask(&Engine::OnPhysics);
 }
 
 void Engine::Idle() {
@@ -101,8 +103,6 @@ void Engine::Update() {
     time.end();
 
     if (Settings::bGameRunning) {
-        PhysicsScene::Update(TimeLast::deltaTime);
-
         Manager::Update();
     } else {
         auto editor = ProjectMenu::GetEditor();
@@ -111,7 +111,6 @@ void Engine::Update() {
             EditorController::Update(editor->getCamera());
         }
     }
-
 
     Statistics::m_scriptFrame = {time.getFPS(), time.start()};
 }
@@ -175,17 +174,15 @@ void Engine::GRDropFunc(const char *path) {
 }
 
 void Engine::OnPhysics() {
-    /*
-    PhysicsScene&  pPhysicsScene  = PhysicsScene::getInstance();
-    Time timer(60.0f);
-
+    // /*
+    Time time;
     do {
-        gameStatics.physicsMs = timer.SleepTick();
+        auto deltaTime = time.sleep(60.0f);
 
-        if (Settings::IsGameRunning)
-            pPhysicsScene.Simulate(gameStatics.physicsMs);
-    } while (Settings::IsEngineRunning);
-    */
+        if (Settings::bGameRunning)
+            PhysicsScene::Update(TimeLast::deltaTime);
+        time.end();
+    } while (Settings::IsEngineRunning());
 }
 
 void Engine::HandleEvent(EngineEvent event, const void* data) {
