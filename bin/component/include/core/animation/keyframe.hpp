@@ -3,7 +3,7 @@
 #include <string>
 #include <vector>
 
-#include <gr-math/gmath.h>
+#include <gr-math/gmath.hpp>
 
 template <typename T>
 struct Key {

@@ -81,6 +81,26 @@ void Engine::Initialize() {
     Threadpool::AddTask(&Engine::OnPhysics);
 }
 
+void Engine::Shutdown() {
+    if (MainPostProcess) {
+        MainPostProcess = nullptr;
+    }
+
+    if (ImGuiPostProcess) {
+        ImGuiPostProcess = nullptr;
+    }
+
+    ImGuiRender::Shutdown();
+
+    ProjectMenu::Shutdown();
+
+    PhysicsScene::Shutdown();
+
+    AssetsManager::Shutdown();
+
+    Threadpool::Shutdown();
+}
+
 void Engine::Idle() {
     auto fps = 60.0f;
     static Time time;
@@ -127,26 +147,6 @@ void Engine::Render() {
     if (ImGuiPostProcess) {
         UIFramebuffer();
     }
-}
-
-void Engine::Shutdown() {
-    if (MainPostProcess) {
-        MainPostProcess = nullptr;
-    }
-
-    if (ImGuiPostProcess) {
-        ImGuiPostProcess = nullptr;
-    }
-
-    ImGuiRender::Shutdown();
-
-    ProjectMenu::Shutdown();
-
-    PhysicsScene::Shutdown();
-
-    AssetsManager::Shutdown();
-
-    Threadpool::Shutdown();
 }
 
 void Engine::GRKeyboardDown(grm::u32 key) {
@@ -235,16 +235,16 @@ void Engine::HandleEvent(EngineEvent event, const void* data) {
 void Engine::MainFramebuffer() {
     // shadow
     {
-        m_shadowMap->bind();
+        // m_shadowMap->bind();
         
-        grr::gRender::SetRenderState(grr::GR_BACKGROUND, grr::GR_DEPTH_BUFFER);
-        grr::gRender::SetRenderState(grr::GR_DEPTH, grr::GR_TRUE);
-        grr::gRender::SetRenderState(grr::GR_CULL, grr::GR_FRONT);
-        grr::gRender::SetRenderState(grr::GR_FRAMEBUFFER_SRGB, grr::GR_FALSE);
+        // grr::gRender::SetRenderState(grr::GR_BACKGROUND, grr::GR_DEPTH_BUFFER);
+        // grr::gRender::SetRenderState(grr::GR_DEPTH, grr::GR_TRUE);
+        // grr::gRender::SetRenderState(grr::GR_CULL, grr::GR_FRONT);
+        // grr::gRender::SetRenderState(grr::GR_FRAMEBUFFER_SRGB, grr::GR_FALSE);
         
-        Batching::RenderShadowPass();
+        // Batching::RenderShadowPass();
     
-        m_shadowMap->unbind();
+        // m_shadowMap->unbind();
     }
     
     // Seleção de modelos para renderizar

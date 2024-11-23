@@ -7,35 +7,6 @@
 #include "core/stb/stb_image_write.h"
 
 PostProcessing *PostProcessing::m_current = nullptr;
-/*
-
-void PostProcessing::Save(const std::string &path, PostProcessing *postProcessing) {
-    if (!postProcessing) {
-        throw std::runtime_error("PostProcess pointer is invalid.");
-    }
-
-    auto size = postProcessing->m_viewport;
-
-    char pixels[size.x][size.y][3];
-
-    PostProcessing::Bind(postProcessing);
-    grr::gFramebuffer::GetPixels(0, 0, size.x, size.y, grr::TextureFormat_RGB, pixels);
-
-    stbi_flip_vertically_on_write(true);
-    stbi_write_jpg(path.c_str(), size.x, size.y, 3, pixels, 100);
-}
-
-const iVector2 &PostProcessing::GetSize() {
-    if (!m_current) {
-        throw std::runtime_error("Do not exists post process.");
-    }
-    return m_current->m_viewport;
-}
-
-Vector3 PostProcessing::GetPixelInfo(PostProcessing *target) {
-    return Vector3();
-}
-*/
 
 PostProcessing::PostProcessing(const iVector2 &size) : m_colorTexture(nullptr), m_depthTexture(nullptr), m_fbo(0), m_viewport(size) {
     m_fbo = grr::gFramebuffer::Create();

@@ -6,7 +6,7 @@
 #include <mutex>
 #include <list>
 
-#include <gr-math/gmath.h>
+#include <gr-math/gmath.hpp>
 
 class Event {
 public:

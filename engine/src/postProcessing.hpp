@@ -1,7 +1,7 @@
 #pragma once
 
 #include <gr-render/gRender.h>
-#include <gr-math/gmath.h>
+#include <gr-math/gmath.hpp>
 
 class PostProcessing {
 public:
@@ -15,12 +15,6 @@ public:
     void unbind();
 
     grr::gTexture *getTextureColor();
-
-    // static void Save(const std::string &path, PostProcessing *postProcessing);
-
-    // static const iVector2 &GetSize();
-
-    // static Vector3 GetPixelInfo(PostProcessing *target);
 
 private:
     static PostProcessing *m_current;

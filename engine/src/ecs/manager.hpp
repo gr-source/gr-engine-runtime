@@ -2,7 +2,7 @@
 
 #include "default.hpp"
 
-#include <gr-math/gmath.h>
+#include <gr-math/gmath.hpp>
 
 #include <unordered_map>
 #include <vector>

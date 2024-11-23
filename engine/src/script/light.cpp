@@ -6,7 +6,6 @@
 
 
 Matrix4x4 Light::mProjection = Math::orthographic(-10.0f, 10.0f, -10.0f, 10.0f, 0.1f, 100.0f);
-// -10.0f, 10.0f, -10.0f, 10.0f, 0.1f, 100.0f
 
 Vector3 Light::getPosition() const {
     return m_transform->getPosition();
@@ -72,26 +71,7 @@ void Light::setOutercone(float value) {
     m_angleOuterCone = value;
 }
 
-#include <glm/ext.hpp>
-
 Matrix4x4 Light::getProjetion() const {
-    // auto p = m_transform->getPosition();
-    // auto l = m_transform->getPosition() + m_transform->getforward();
-    // auto f = m_transform->getup();
-
-    // float near_plane = 0.1f, far_plane = 7.50f;
-    // glm::mat4 lightProjection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, near_plane, far_plane); 
-
-
-    // glm::mat4 lightView = glm::lookAt(glm::vec3(p.x, p.y, p.z), 
-    //                                 glm::vec3(0, 0, 0), 
-    //                                 glm::vec3(0, 1, 0));  
-
-    // glm::mat4 lightSpaceMatrix = lightProjection * lightView;
-
-    // glm::inverse(lightSpaceMatrix);
-
-    // return *reinterpret_cast<Matrix4x4 *>(glm::value_ptr(lightSpaceMatrix));
     return mProjection * Math::lookAt(m_transform->getPosition(), m_transform->getPosition() + m_transform->getForward(), m_transform->getUp());
 }
 

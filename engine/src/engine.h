@@ -35,13 +35,13 @@ protected:
 
     static void Initialize();
 
+    static void Shutdown();
+
     static void Idle();
 
     static void Render();
 
     static void Update();
-
-    static void Shutdown();
 
     static void GRKeyboardDown(grm::u32 key);
     static void GRKeyboardUp(grm::u32 key);

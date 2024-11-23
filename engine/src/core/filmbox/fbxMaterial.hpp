@@ -1,7 +1,7 @@
 #pragma once
 
 #include <gr-render/gRender.h>
-#include <gr-math/gmath.h>
+#include <gr-math/gmath.hpp>
 
 #include <string>
 #include <vector>

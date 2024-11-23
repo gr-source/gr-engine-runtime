@@ -27,7 +27,7 @@
 
 #include "core/exception/Exception.h"
 
-#include <gr-math/gmath.h>
+#include <gr-math/gmath.hpp>
 
 /* pasta: src */
 class PostProcessing;

@@ -2,7 +2,7 @@
 
 #include "ImGuiRender.h"
 
-#include <gr-math/gmath.h>
+#include <gr-math/gmath.hpp>
 #include <string>
 
 class View {

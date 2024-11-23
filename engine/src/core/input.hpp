@@ -3,7 +3,7 @@
 #include <unordered_map>
 #include <string>
 
-#include <gr-math/gmath.h>
+#include <gr-math/gmath.hpp>
 
 enum InputKey : int {
     InputKey_A,

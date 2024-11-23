@@ -2,7 +2,7 @@
 
 #include "../ecs/component.hpp"
 
-#include <gr-math/gmath.h>
+#include <gr-math/gmath.hpp>
 
 #include <vector>
 

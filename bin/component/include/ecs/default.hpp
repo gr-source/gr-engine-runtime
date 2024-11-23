@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 
-#include <gr-math/gmath.h>
+#include <gr-math/gmath.hpp>
 
 class Component;
 class GameObject;

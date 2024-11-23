@@ -4,7 +4,7 @@
 #include <vector>
 #include <string>
 
-#include <gr-math/gmath.h>
+#include <gr-math/gmath.hpp>
 
 #include "ecs/default.hpp"
 

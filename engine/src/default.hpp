@@ -1,6 +1,6 @@
 #pragma once
 
-#include <gr-math/gmath.h>
+#include <gr-math/gmath.hpp>
 
 #include <unordered_set>
 #include <algorithm>
