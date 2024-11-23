@@ -17,9 +17,11 @@ class DebugDraw {
 public:
 	static void Initialize();
 
+	static void Shutdown();
+
     static void AddLine(const Vector3& start, const Vector3& end, const Color& color);
 
-    static void Renderer();
+    static void Renderer(Camera *camera);
 
     static bool bDebugMode;
 
@@ -33,6 +35,8 @@ private:
     static grr::gShader *m_shader;
 
     static grm::u32 m_vbo;
+
+    static void SetupShader(grr::gShader *shader);
 
     static void DrawLines();
 };

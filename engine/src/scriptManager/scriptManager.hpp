@@ -1,6 +1,6 @@
 #pragma once
 
-#include "scriptLoader.hpp"
+#include "script.hpp"
 
 #include "ecs/componentPool.hpp"
 
@@ -51,11 +51,10 @@ protected:
 
     static bool s_bReload;
 
-    static std::unique_ptr<ScriptLoader> m_script;
+    static std::unique_ptr<Script> m_script;
 
     // [ Main ]
     static void (*InitializeScript)();
-    
 
     static void (*Destroy)();
 };

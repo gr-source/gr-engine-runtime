@@ -18,6 +18,8 @@ private:
 #define INSERT_FUNCTION(id, func) \
     static bool register_function_##id = (Function::GetInstance().insert(#func, (void **)&func), true);
 
+#define INSERT_FUNCTION_NAME(name, func) \
+    static bool register_function_##name = (Function::GetInstance().insert(name, (void **)&func), true);
 
 
 

@@ -22,23 +22,46 @@ bool DebugDraw::bDebugMode = false;
 grm::u32 DebugDraw::m_vbo = 0;
 
 void DebugDraw::Initialize() {
-    auto frag = File::GetFileContent(File::GetFile("/shader/ShaderPrimitive.frag", true));
-    auto vert = File::GetFileContent(File::GetFile("/shader/ShaderPrimitive.vert", true));
-    if (frag.empty() || vert.empty()) {
-        throw std::runtime_error("Frag or Vert shader is empty: " + File::GetFile("/shader/ShaderPrimitive.frag") + " - " + File::GetFile("/shader/ShaderPrimitive.vert"));
+    AssetsManager::LoadShader("debug_mode", File::GetFile("/assets/shader/primitive/line.frag", true), File::GetFile("/assets/shader/primitive/line.vert", true), &DebugDraw::SetupShader);
+}
+
+void DebugDraw::Shutdown() {
+    if (m_primitive) {
+        grr::gVertexArray::Destroy(m_primitive);
+        m_primitive = nullptr;
     }
 
-    auto fSource = frag.c_str();
-    auto vSource = vert.c_str();
-
-    m_shader = grr::gShader::Create(&fSource, &vSource);
-    if (!m_shader || !m_shader->isValid()) {
-        throw std::runtime_error("Shader do not is valid: " + frag + " - " + vert);
+    if (m_vbo) {
+        grr::gVertexArray::DeleteBuffer(m_vbo);
+        m_vbo = 0;
     }
+}
+
+void DebugDraw::AddLine(const Vector3& start, const Vector3& end, const Color& color) {
+    m_lines.emplace_back(start, color);
+    m_lines.emplace_back(end, color);
+}
+
+void DebugDraw::Renderer(Camera *camera) {
+    if (!camera || !m_shader || !m_shader->isValid()) {
+        return;
+    }
+
     grr::gShader::Bind(m_shader);
+
+    grr::gShader::SetUniform("u_vp", camera->getPerspesctive() * camera->getViewmatrix());
+
+    if (!m_lines.empty()) {
+        DebugDraw::DrawLines();
+    }
+}
+
+void DebugDraw::SetupShader(grr::gShader *shader) {
+    if (!shader) { return; }
+
+    grr::gShader::Bind(shader);
     
-    grr::gShader::Register("projection", UniformType::MAT4, 1, Matrix4x4::identityMatrix);
-    grr::gShader::Register("view", UniformType::MAT4, 1, Matrix4x4::identityMatrix);
+    grr::gShader::Register("u_vp", UniformType::MAT4, 1, Matrix4x4::identityMatrix);
     
     grr::gShader::Unbind();
 
@@ -56,34 +79,8 @@ void DebugDraw::Initialize() {
     grr::gVertexArray::SetAttrib(1, 4, sizeof(Line), reinterpret_cast<void*>(offsetof(Line, color)));
 
     m_primitive->unbind();
-}
 
-void DebugDraw::AddLine(const Vector3& start, const Vector3& end, const Color& color) {
-    if (!DebugDraw::bDebugMode) return;
-    
-    m_lines.emplace_back(start, color);
-    m_lines.emplace_back(end, color);
-}
-
-void DebugDraw::Renderer() {
-    /*
-    if (!Camera::Current || !m_shader || !m_shader->isValid()) {
-        return;
-    }
-    auto camera = Camera::Current();
-    if (!camera) {
-        return;
-    }
-
-    grr::gShader::Bind(m_shader);
-
-    grr::gShader::SetUniform("projection", 1, camera->getPerspesctive());
-    grr::gShader::SetUniform("view", 1, camera->getViewmatrix());
-
-    if (!m_lines.empty()) {
-        DebugDraw::DrawLines();
-    }
-    */
+    m_shader = shader;
 }
 
 void DebugDraw::DrawLines() {
@@ -94,13 +91,10 @@ void DebugDraw::DrawLines() {
     grr::gVertexArray::SetBufferUpdate(0, m_lines.size() * sizeof(Line), m_lines.data());
 
     grr::gShader::Flush();
+
     grr::gVertexArray::DrawArrays(PrimitiveType::LINES, (grm::u32)m_lines.size());
 
     m_primitive->unbind();
 
     m_lines.clear();
 }
-
-
-
-

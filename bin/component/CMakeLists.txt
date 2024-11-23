@@ -42,6 +42,7 @@ set(core_src
     src/core/input.cpp
     src/core/file.cpp
     src/core/time.cpp
+    src/core/draw.cpp
 )
 
 set(geometry_src

@@ -1,7 +1,5 @@
 #include "scriptManager.hpp"
 
-#include "scriptLoader.hpp"
-
 #include "script/meshCollider.hpp"
 #include "script/boxCollider.hpp"
 #include "script/meshRender.hpp"
@@ -35,7 +33,7 @@ std::string ScriptManager::s_path = "";
 
 bool ScriptManager::s_bReload = false;
 
-std::unique_ptr<ScriptLoader> ScriptManager::m_script = nullptr;
+std::unique_ptr<Script> ScriptManager::m_script = nullptr;
 
 // [ Main ]
 void (*ScriptManager::InitializeScript)();
@@ -67,7 +65,7 @@ void ScriptManager::Initialize(const std::string &path) {
     }
     s_path = path;
 
-    m_script = std::make_unique<ScriptLoader>(s_path);
+    m_script = std::make_unique<Script>(s_path);
     if (!m_script->isValid()) {
         throw std::runtime_error("Script do not is valid: " + path);
     }
@@ -117,50 +115,14 @@ bool ScriptManager::CheckScriptLoaded(const std::string &name) {
     return isValid;
 }
 
-void (*Consolelog)(Log::LogType, const std::string &);
-void (*EventAddEvent)(std::function<void()>);
-
-void (*AssetsManagerSetTextureList)(const std::string &, std::function<void (grr::gTexture *)>);
-void (*AssetsManagerSetGameObjectList)(const std::string &, std::function<void (GameObject *)>);
-Mesh *(*AssetsManagerFindMesh)(const std::string &);
-grr::gShader *(*AssetsManagerFindShader)(const std::string &);
-void (*AssetsManagerSetShaderList)(const std::string &, const std::string &, const std::string &, std::function<void (grr::gShader *)>);
-
-bool (*InputIsKeyPress)(grm::u32);
-void (*InputSetCursorPos)(const Vector2 &);
-Vector2 (*InputGetCursorPos)();
-bool (*InputIsMouseDown)(InputKey);
-
-void (*Batchingremove)(Transform *, bool);
-void (*Batchinginsert)(Transform *);
-
-void (*MeshRenderbuild)();
-GameObject &(*GameObjectInstantiate)(GameObject *);
-GameObject &(*GameObjectCreate)(const std::string &, const std::string &);
-void (*GameObjectDestroy)(GameObject *);
-
-std::string (*FileGetFile)(const std::string &, bool);
-
-const void (*Materialserialize)(Stream *);
-void (*Materialdeserialize)(Stream *);
-
-void (*MeshColliderbuild)(Mesh *);
-
-void (*Rigidbodyprocess)();
-void (*Rigidbodysetup)();
-
-std::unordered_map<std::string, void **> (*GetFunctionsReference)();
-
 void ScriptManager::RegisterApi() {
     // Functions Pointer
-    if (!m_script->registerFunction("_ZN8Function19GetFunctionRefrenceB5cxx11Ev", reinterpret_cast<void **>(&GetFunctionsReference))) {
+    if (!m_script->setRegistry("_ZN8Function19GetFunctionRefrenceB5cxx11Ev")) {
         return Console::LogError("Falied to register library functions.");
     }
 
-    auto function = GetFunctionsReference();
-
-    *function["Console::log"] = reinterpret_cast<void *>(&Console::log);
-    *function["Threadpool::CreateInternalTask"] = reinterpret_cast<void *>(&Threadpool::CreateInternalTask);
+    m_script->replaceLibraryFunction("Console::log", reinterpret_cast<void *>(&Console::log));
+    m_script->replaceLibraryFunction("Threadpool::CreateInternalTask", reinterpret_cast<void *>(&Threadpool::CreateInternalTask));
 
     // First function
     m_script->registerFunction("Initialize",   reinterpret_cast<void **>(&InitializeScript));
@@ -178,23 +140,23 @@ void ScriptManager::RegisterApi() {
     m_script->registerFunction("SetEnableCamera", reinterpret_cast<void **>(&Camera::SetEnable));
 
     // Event Manager
-    *function["Event::AddInternalEvent"] = reinterpret_cast<void **>(&Event::AddEvent);
+    m_script->replaceLibraryFunction("Event::AddInternalEvent", reinterpret_cast<void **>(&Event::AddEvent));
 
     // AssetManager
-    *function["AssetsManager::SetTextureList"]    = reinterpret_cast<void *>(&AssetsManager::SetTextureList);
-    *function["AssetsManager::SetGameObjectList"] = reinterpret_cast<void *>(&AssetsManager::SetGameObjectList);
-    *function["AssetsManager::FindMesh"]          = reinterpret_cast<void *>(&AssetsManager::FindMesh);
-    *function["AssetsManager::FindShader"]        = reinterpret_cast<void *>(&AssetsManager::FindShader);
-    *function["AssetsManager::SetShaderList"]     =  reinterpret_cast<void *>(&AssetsManager::SetShaderList);
-    *function["AssetsManager::CreateMesh"]        =  reinterpret_cast<void *>(&AssetsManager::CreateMesh<std::string>);
+    m_script->replaceLibraryFunction("AssetsManager::SetTextureList", reinterpret_cast<void *>(&AssetsManager::SetTextureList));
+    m_script->replaceLibraryFunction("AssetsManager::SetGameObjectList", reinterpret_cast<void *>(&AssetsManager::SetGameObjectList));
+    m_script->replaceLibraryFunction("AssetsManager::FindMesh", reinterpret_cast<void *>(&AssetsManager::FindMesh));
+    m_script->replaceLibraryFunction("AssetsManager::FindShader", reinterpret_cast<void *>(&AssetsManager::FindShader));
+    m_script->replaceLibraryFunction("AssetsManager::SetShaderList", reinterpret_cast<void *>(&AssetsManager::SetShaderList));
+    m_script->replaceLibraryFunction("AssetsManager::CreateMesh", reinterpret_cast<void *>(&AssetsManager::CreateMesh<std::string>));
 
     m_script->registerFunction("LoadAnimation", reinterpret_cast<void **>(&LoadAnimation));
 
     // Input
-    *function["Input::IskeyPress"] = reinterpret_cast<void *>(&Input::IsKeyPress);
-    *function["Input::SetCursorPos"] = reinterpret_cast<void *>(&Input::SetCursorPos);
-    *function["Input::GetCursorPos"] = reinterpret_cast<void *>(&Input::GetCursorPos);
-    *function["Input::IsMousePress"] = reinterpret_cast<void *>(&Input::IsMouseDown);
+    m_script->replaceLibraryFunction("Input::IskeyPress", reinterpret_cast<void *>(&Input::IsKeyPress));
+    m_script->replaceLibraryFunction("Input::SetCursorPos", reinterpret_cast<void *>(&Input::SetCursorPos));
+    m_script->replaceLibraryFunction("Input::GetCursorPos", reinterpret_cast<void *>(&Input::GetCursorPos));
+    m_script->replaceLibraryFunction("Input::IsMousePress", reinterpret_cast<void *>(&Input::IsMouseDown));
 
     // Screen
     m_script->registerFunction("SetScreenSize", reinterpret_cast<void **>(&SetScreenSize));
@@ -204,48 +166,51 @@ void ScriptManager::RegisterApi() {
     m_script->registerFunction("CreateComponentWithName",   reinterpret_cast<void **>(&ScriptManager::CreateComponentWithName));
     m_script->registerFunction("CopyComponentWithName",     reinterpret_cast<void **>(&ScriptManager::CopyComponentWithName));
 
-    *function["Entity::addInternalComponent"] = (void *)&Entity::addInternalComponent;
+    m_script->replaceLibraryFunction("Entity::addInternalComponent", (void *)&Entity::addInternalComponent);
 
     // Batching
-    *function["Batching::InsertInternal"] =  (void *)&Batching::insert;
-    *function["Batching::RemoveInternal"] = (void *)&Batching::remove;
+    m_script->replaceLibraryFunction("Batching::InsertInternal",  (void *)&Batching::insert);
+    m_script->replaceLibraryFunction("Batching::RemoveInternal", (void *)&Batching::remove);
 
     // Script
-    *function["MeshRenderbuild"] = (void *)&MeshRender::build;
+    m_script->replaceLibraryFunction("MeshRenderbuild", (void *)&MeshRender::build);
 
     // GameObject
-    *function["GameObject::Instantiate"] = reinterpret_cast<void *>(&GameObject::Instantiate);
-    *function["GameObject::Create"] = reinterpret_cast<void *>(&GameObject::Create);
-    *function["GameObject::Find"] = reinterpret_cast<void *>(&GameObject::Find);
-    *function["GameObject::Destroy"] = reinterpret_cast<void *>(&Scene::Delete);
+    m_script->replaceLibraryFunction("GameObject::Instantiate", reinterpret_cast<void *>(&GameObject::Instantiate));
+    m_script->replaceLibraryFunction("GameObject::Create", reinterpret_cast<void *>(&GameObject::Create));
+    m_script->replaceLibraryFunction("GameObject::Find", reinterpret_cast<void *>(&GameObject::Find));
+    m_script->replaceLibraryFunction("GameObject::Destroy", reinterpret_cast<void *>(&Scene::Delete));
 
     // File
-    *function["File::GetFile"] = reinterpret_cast<void *>(&File::GetFile);
+    m_script->replaceLibraryFunction("File::GetFile", reinterpret_cast<void *>(&File::GetFile));
 
     // Material
-    *function["Materialserialize"] = (void *)&Material::serialize;
-    *function["Materialdeserialize"] = (void *)&Material::deserialize;
+    m_script->replaceLibraryFunction("Materialserialize", (void *)&Material::serialize);
+    m_script->replaceLibraryFunction("Materialdeserialize", (void *)&Material::deserialize);
 
     // BoxCollider
-    *function["BoxColliderbuildShape"] = (void *)&BoxCollider::build;
+    m_script->replaceLibraryFunction("BoxColliderbuildShape", (void *)&BoxCollider::build);
 
     // MeshCollider
-    *function["MeshColliderbuild"] = (void *)&MeshCollider::build;
+    m_script->replaceLibraryFunction("MeshColliderbuild", (void *)&MeshCollider::build);
 
     // Rigidbody
-    *function["RigidbodyInitialize"] = (void *)&Rigidbody::initialize;
-    *function["RigidbodyUpdate"] = (void *)&Rigidbody::update;
-    *function["RigidbodyShutdown"] = (void *)&Rigidbody::shutdown;
+    m_script->replaceLibraryFunction("RigidbodyInitialize", (void *)&Rigidbody::initialize);
+    m_script->replaceLibraryFunction("RigidbodyUpdate", (void *)&Rigidbody::update);
+    m_script->replaceLibraryFunction("RigidbodyShutdown", (void *)&Rigidbody::shutdown);
 
     // Raycast
-    *function["Raycast::RayCast"] = reinterpret_cast<void *>(&PhysicsScene::Raycast);
+    m_script->replaceLibraryFunction("Raycast::RayCast", reinterpret_cast<void *>(&PhysicsScene::Raycast));
 
     // Phys
-    *function["PhysicsScene::contactTest"] = reinterpret_cast<void *>(&PhysicsScene::contactTest);
+    m_script->replaceLibraryFunction("PhysicsScene::contactTest", reinterpret_cast<void *>(&PhysicsScene::contactTest));
 
     // Mesh
-    *function["Meshserialize"] = (void *)&Mesh::serialize;
-    *function["Meshdeserialize"] = (void *)&Mesh::deserialize;
+    m_script->replaceLibraryFunction("Meshserialize", (void *)&Mesh::serialize);
+    m_script->replaceLibraryFunction("Meshdeserialize", (void *)&Mesh::deserialize);
+
+    // Draw
+    m_script->replaceLibraryFunction("Draw::CallInternalDrawLine", reinterpret_cast<void *>(&DebugDraw::AddLine));
 }
 #pragma GCC diagnostic pop
 

@@ -62,6 +62,8 @@ void ProjectMenu::Initialize() {
 
 void ProjectMenu::Shutdown() {
     m_editor = nullptr;
+
+    DebugDraw::Shutdown();
 }
 
 void ProjectMenu::Render() {
@@ -85,6 +87,8 @@ void ProjectMenu::CloseProject() {
     m_editor = nullptr;
 
     Batching::Shutdown();
+
+    DebugDraw::Shutdown();
 
     Scene::SetCurrent(nullptr);
 
@@ -320,6 +324,8 @@ void ProjectMenu::OpenProject(Project &project) {
     File::SetCurrentProject(project.getPath());
 
     Batching::Initialize();
+
+    DebugDraw::Initialize();
 
     m_editor = std::make_shared<Editor>();
 
