@@ -167,12 +167,11 @@ void Entity::remove(const std::string &name) {
 }
 
 Component *Entity::addInternalComponent(const std::string &name, const Component *instance) {
-    if (!ScriptManager::CreateComponentWithName) {
+    if (!ScriptManager::CreateInternalComponent) {
         return nullptr;
     }
 
-    auto component = instance == nullptr ? ScriptManager::CreateComponentWithName(name) : ScriptManager::CopyComponentWithName(name, instance);
-
+    auto component = ScriptManager::CreateInternalComponent(name, instance);
     if (!component) {
         return nullptr;
     }

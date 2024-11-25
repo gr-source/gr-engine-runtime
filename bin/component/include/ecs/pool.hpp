@@ -6,9 +6,7 @@ class Pool {
 public:
     virtual ~Pool() {}
 
-    virtual Component *CreateInstanceFrom(const Component *component) = 0;
-
-    virtual Component *CreateInstance() = 0;
+    virtual Component *CreateInstance(const Component *component) = 0;
 
     template <typename ...Args>
     void RegisterField(const std::string &name, Args &&...args);

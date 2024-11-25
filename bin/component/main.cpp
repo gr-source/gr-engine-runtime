@@ -4,10 +4,7 @@
 #include "api.hpp"
 
 #include "core/assetsManager.hpp"
-#include "core/event.hpp"
 #include "core/file.hpp"
-
-std::unordered_map<int, grr::gShader *> shaderList;
 
 void Initialize() {
     AssetsManager::LoadShader("dynamic_one_model",

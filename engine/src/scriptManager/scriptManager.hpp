@@ -35,9 +35,7 @@ public:
     // Component Pool
     static std::unordered_map<std::string, Pool *> (*GetComponentPool)();
 
-    static Component *(*CreateComponentWithName)(const std::string &name);
-
-    static Component *(*CopyComponentWithName)(const std::string &name, const Component *component);
+    static Component *(*CreateInternalComponent)(const std::string &name, const Component *component);
 
     static bool CheckScriptLoaded(const std::string &name);
     

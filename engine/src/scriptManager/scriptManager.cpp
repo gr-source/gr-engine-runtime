@@ -56,9 +56,7 @@ void (*ScriptManager::SetScreenSize)(const iVector2 &);
 // ComponentPool
 std::unordered_map<std::string, Pool *> (*ScriptManager::GetComponentPool)();
 
-Component *(*ScriptManager::CreateComponentWithName)(const std::string &name);
-
-Component *(*ScriptManager::CopyComponentWithName)(const std::string &name, const Component *component);
+Component *(*ScriptManager::CreateInternalComponent)(const std::string &name, const Component *component);
 
 void ScriptManager::Initialize(const std::string &path) {
     if (!File::Exists(path)) {
@@ -164,8 +162,7 @@ void ScriptManager::RegisterApi() {
 
     // Component Pool
     m_script->registerFunction("GetComponentPool", reinterpret_cast<void **>(&GetComponentPool));
-    m_script->registerFunction("CreateComponentWithName",   reinterpret_cast<void **>(&ScriptManager::CreateComponentWithName));
-    m_script->registerFunction("CopyComponentWithName",     reinterpret_cast<void **>(&ScriptManager::CopyComponentWithName));
+    m_script->registerFunction("CreateInternalComponent",     reinterpret_cast<void **>(&ScriptManager::CreateInternalComponent));
 
     m_script->replaceLibraryFunction("Entity::addInternalComponent", (void *)&Entity::addInternalComponent);
 

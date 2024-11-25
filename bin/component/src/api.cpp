@@ -42,20 +42,12 @@ std::unordered_map<std::string, Pool *> GetComponentPool() {
     return ComponentRegistry::GetPool();
 }
 
-Component *CreateComponentWithName(const std::string &name) {
+Component *CreateInternalComponent(const std::string &name, const Component *component) {
     auto pool = ComponentRegistry::Find(name);
     if (!pool) {
         throw std::runtime_error("Falied to create component: " + name + ", component is not valid.");
     }
-    return pool->CreateInstance();
-}
-
-Component *CopyComponentWithName(const std::string &name, const Component *component) {
-    auto pool = ComponentRegistry::Find(name);
-    if (!pool) {
-        throw std::runtime_error("Falied to create component: " + name + ", component is not valid.");
-    }
-    return pool->CreateInstanceFrom(component);
+    return pool->CreateInstance(component);
 }
 
 void SetDeltaTime(float deltaTime) {
