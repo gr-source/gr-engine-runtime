@@ -91,7 +91,6 @@ bool ScriptManager::IsValid() {
     return m_script && m_script->isValid();
 }
 
-// TODO: Falta corrigir error de segmebt afult em memory hook
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wpmf-conversions"
 
