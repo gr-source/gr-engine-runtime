@@ -56,7 +56,8 @@
 #include <sstream>
 #include <iomanip>
 
-#define IMGUI_PAYLOAD_GAMEOBJECT "##payload_game_object"
+#define IMGUI_PAYLOAD_GAMEOBJECT "##payload_gameobject"
+#define IMGUI_PAYLOAD_ANIMATION "##payload_animation"
 #define IMGUI_PAYLOAD_FILE "##payload_file"
 #define IMGUI_PAYLOAD_IMAGE "##playload_image"
 
@@ -1325,8 +1326,10 @@ void Editor::RenderTreeNodeFile(std::filesystem::path path) {
     if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceNoDisableHover | ImGuiDragDropFlags_SourceNoHoldToOpenOthers)) {
         auto str = path.string();
 
+        auto bAnimation = path.extension().string() == ".anm";
+
         ImGui::Text("%s", str.c_str());
-        ImGui::SetDragDropPayload(IMGUI_PAYLOAD_FILE, str.data(), str.size());
+        ImGui::SetDragDropPayload(bAnimation ? IMGUI_PAYLOAD_ANIMATION : IMGUI_PAYLOAD_FILE, str.data(), str.size());
         ImGui::EndDragDropSource();
     }
 
@@ -1775,7 +1778,14 @@ void Editor::rTabObjectInfo(bool &isOpenPopup) {
             continue;
         }
 
-
+        if (name == "Animator") {
+            if (s_objectSelected->RenderProperty<Animator>(&Editor::OnPropertyAnimator, this)) {
+                Event::Add(&Entity::remove, s_objectSelected->getEntity(), name);
+            }
+            ImGui::PopID();
+            continue;
+        }
+        
         if (!RenderComponents(name, &(*component))) {
             Event::Add(&Entity::remove, s_objectSelected->getEntity(), name);
             ImGui::PopID();
@@ -2239,62 +2249,58 @@ bool Editor::OnPropertyRigidbody(Rigidbody *rigidbody) {
     return false;
 }
 
-void Editor::OnPropertyAnimator(Animator *animator) {
-    /*
-    auto &m_current = !animator->m_animation ? animator->m_animation : animator->m_nextAnimation;
+bool Editor::OnPropertyAnimator(Animator *animator) {
+    auto bVisible = true;
 
-    if (ImGui::TreeNode("Animator")) {
-        auto &armature = animator->m_armature;
+    auto bOpen = ImGui::CollapsingHeader("Animator", &bVisible);
 
-        if (armature) {
-            ImGui::Text("Armature: %s", armature->getName().c_str());
-        } else {
-            ImGui::Text("Draging");
-        }
-
-        if (ImGui::BeginDragDropTarget()) {
-            ImGuiDragDropFlags target_flags = 0;
-            target_flags |= ImGuiDragDropFlags_AcceptBeforeDelivery;
-            target_flags |= ImGuiDragDropFlags_SourceAllowNullID;
-
-            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(IMGUI_PAYLOAD_GAMEOBJECT, target_flags)) {
-                std::string name((char*)payload->Data, payload->DataSize);
-                if (!name.empty()) {
-                    armature = GameObject::Find(name);
-                }
-            }
-            ImGui::EndDragDropTarget();
-        }
-
-        auto isOpen = ImGui::TreeNode("Animations");
-
-        if (ImGui::BeginDragDropTarget()) {
-            ImGuiDragDropFlags target_flags = 0;
-            // target_flags |= ImGuiDragDropFlags_AcceptBeforeDelivery;
-            // target_flags |= ImGuiDragDropFlags_SourceAllowNullID;
-
-            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(IMGUI_PAYLOAD_FILE, target_flags)) {
-                std::string path((char*)payload->Data, payload->DataSize);
-                if (!path.empty() && std::filesystem::path(path).filename().extension() == ".anm") {
-                    animator->insert(AssetsManager::LoadAnimation(path));
-                }
-            }
-            ImGui::EndDragDropTarget();
-        }
-
-        if (isOpen) {
-            auto &animations = animator->m_animations;
-            for (auto &&[name, animation] : animations) {
-                ImGui::Selectable(name.c_str(), m_current == animation);
-                if (ImGui::IsItemClicked()) {
-                    m_current = animation;
-                }
-            }
-            ImGui::TreePop();
-        }
-        ImGui::TreePop();
+    if (!bVisible) {
+        return true;
     }
-    */
+
+    if (!bOpen) {
+        return false;
+    }
+
+    auto armature = animator->getArmature();
+    auto armature_name = armature != nullptr ? armature->getName() : "No Armature";
+
+    ImGui::Text("Armature: %s", armature_name.c_str());
+
+    if (ImGui::BeginDragDropTarget()) {
+        ImGuiDragDropFlags target_flags = 0;
+        target_flags |= ImGuiDragDropFlags_AcceptBeforeDelivery;
+        target_flags |= ImGuiDragDropFlags_SourceAllowNullID;
+
+        if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(IMGUI_PAYLOAD_GAMEOBJECT, target_flags)) {
+            std::string name((char*)payload->Data, payload->DataSize);
+            if (!name.empty()) {
+                animator->setArmature(GameObject::Find(name));
+            }
+        }
+        ImGui::EndDragDropTarget();
+    }
+
+    auto animation = animator->getAnimation();
+    auto animName = animation != nullptr ? animation->getName() : "No Animation";
+
+    ImGui::Text("Animation: %s", animName.c_str());
+
+    if (ImGui::BeginDragDropTarget()) {
+        ImGuiDragDropFlags target_flags = 0;
+        target_flags |= ImGuiDragDropFlags_AcceptBeforeDelivery;
+        target_flags |= ImGuiDragDropFlags_SourceAllowNullID;
+
+        if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(IMGUI_PAYLOAD_ANIMATION, target_flags)) {
+            std::string path((char*)payload->Data, payload->DataSize);
+            if (!path.empty()) {
+                animator->setAnimation(AssetsManager::LoadAnimation(path));
+            }
+        }
+        ImGui::EndDragDropTarget();
+    }
+    
+    return false;
 }
 
 void Editor::TextureInfo(Texture *&texture) {

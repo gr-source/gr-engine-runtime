@@ -235,7 +235,7 @@ private:
 
     bool OnPropertyRigidbody(Rigidbody *rigidbody);
 
-    void OnPropertyAnimator(Animator* animator);
+    bool OnPropertyAnimator(Animator* animator);
 
     void TextureInfo(Texture*& texture);
 

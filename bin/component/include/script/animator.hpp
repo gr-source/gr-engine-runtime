@@ -11,6 +11,17 @@ class Animator : public Component {
     CLASS_FUNCTIONS
 public:
     Animator();
+
+    void Update() override;
+
+private:
+    std::vector<Matrix4x4> m_FinalBoneMatrices;
+
+    GameObject *m_armature;
+
+    Animation *m_animation;
+
+    float m_currentTime;
 };
 
 REGISTER_COMPONENT(Animator)

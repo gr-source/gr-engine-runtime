@@ -4,6 +4,7 @@
 #include "script/boxCollider.hpp"
 #include "script/meshRender.hpp"
 #include "script/rigidbody.hpp"
+#include "script/animator.hpp"
 #include "script/camera.hpp"
 
 #include "geometry/batching.hpp"
@@ -211,6 +212,9 @@ void ScriptManager::RegisterApi() {
 
     // Draw
     m_script->replaceLibraryFunction("Draw::CallInternalDrawLine", reinterpret_cast<void *>(&DebugDraw::AddLine));
+
+    // Animator
+    m_script->replaceLibraryFunction("AnimatorUpdate", (void *)&Animator::update);
 }
 #pragma GCC diagnostic pop
 
