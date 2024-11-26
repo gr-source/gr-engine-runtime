@@ -40,6 +40,8 @@ inline bool ComponentRegistry::RegisterComponent() {
     if (!added) {
         throw std::runtime_error("Component: " + name + " replaced.");
     }
+
+    // ptr->update = reinterpret_cast<void (*)(void *)>((void *)&T::Update);
     return true;
 }
 

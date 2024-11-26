@@ -58,6 +58,8 @@ std::unordered_map<std::string, Pool *> (*ScriptManager::GetComponentPool)();
 
 Component *(*ScriptManager::CreateInternalComponent)(const std::string &name, const Component *component);
 
+void (*ScriptManager::Reinstance)(const std::string &name, Component *component);
+
 void ScriptManager::Initialize(const std::string &path) {
     if (!File::Exists(path)) {
         throw std::runtime_error("Script data do not exists: " + path);
@@ -163,7 +165,9 @@ void ScriptManager::RegisterApi() {
     m_script->registerFunction("GetComponentPool", reinterpret_cast<void **>(&GetComponentPool));
     m_script->registerFunction("CreateInternalComponent",     reinterpret_cast<void **>(&ScriptManager::CreateInternalComponent));
 
+    // Entity
     m_script->replaceLibraryFunction("Entity::addInternalComponent", (void *)&Entity::addInternalComponent);
+    m_script->registerFunction("_ZN6Entity6updateEv", reinterpret_cast<void **>(&Entity::Update));
 
     // Batching
     m_script->replaceLibraryFunction("Batching::InsertInternal",  (void *)&Batching::insert);
@@ -211,6 +215,9 @@ void ScriptManager::RegisterApi() {
 
     // Animator
     m_script->replaceLibraryFunction("AnimatorUpdate", (void *)&Animator::update);
+
+    // 
+    m_script->registerFunction("ReinstanceComponent", reinterpret_cast<void **>(&Reinstance));
 }
 #pragma GCC diagnostic pop
 

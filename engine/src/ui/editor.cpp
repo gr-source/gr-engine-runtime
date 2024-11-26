@@ -238,7 +238,6 @@ void Editor::LoadScript() {
 
     try {
         ScriptManager::Initialize(File::GetFile("/.build/component/lib/libgr-component.so"));
-
     } catch (const std::runtime_error &e) {
         Console::LogError(e.what());
     }
@@ -251,11 +250,13 @@ void Editor::LoadScript() {
 
     ScreenRender::Initialize();
 
-    Scene::ReloadObjects([](Scene *scene){
-        Settings::bGameRunning = true;
+    Scene::UpdateScript();
 
-        Scene::InitializeObject();
-    });
+    // Scene::ReloadObjects([](Scene *scene){
+
+    //     Scene::InitializeObject();
+    // });
+    Settings::bGameRunning = true;
 }
 
 void Editor::UnloadScript() {
@@ -1110,20 +1111,19 @@ void Editor::RenderScene() {
     }
 }
 
-// Precisamos trabalhar aki
 void Editor::PlayGame() {
     s_objectSelected = nullptr;
 
-    if (m_cameraObject) {
-        Model3DHandler::ExportGRMX(File::GetFile("/MainEngineCamera.gmdx", true), m_cameraObject);
+    // if (m_cameraObject) {
+    //     Model3DHandler::ExportGRMX(File::GetFile("/MainEngineCamera.gmdx", true), m_cameraObject);
 
-        GameObject::Destroy(m_cameraObject);
+    //     GameObject::Destroy(m_cameraObject);
 
-        m_cameraObject = nullptr;
-        m_mainCamera = nullptr;
-    }
+    //     m_cameraObject = nullptr;
+    //     m_mainCamera = nullptr;
+    // }
 
-    Scene::CleanCurrentScene();
+    // Scene::CleanCurrentScene();
 
     Threadpool::AddTask(&Editor::BuildScript, this);
 
@@ -1133,9 +1133,9 @@ void Editor::PlayGame() {
 void Editor::StopGame() {
     Settings::bGameRunning = false;
 
-    Scene::ReloadObjects(nullptr);
+    // Scene::ReloadObjects(nullptr);
 
-    AssetsManager::LoadGameObject(File::GetFile("/MainEngineCamera.gmdx", true), &Editor::loadCamera, this);
+    // AssetsManager::LoadGameObject(File::GetFile("/MainEngineCamera.gmdx", true), &Editor::loadCamera, this);
 
     Console::log(Log::DEFAULT, "Game stoped.");
 }

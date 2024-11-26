@@ -53,6 +53,8 @@ public:
 
     std::vector<Field> &getFields();
 
+    void (*update)(void *);
+
 private:
     std::unordered_map<std::string, grm::size> m_fieldID;
 

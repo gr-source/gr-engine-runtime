@@ -17,6 +17,8 @@
 
 class Entity {
 public:
+    static void (*Update)(Entity *entity);
+
     Entity() = delete;
     Entity(GameObject *gameObject, EntityID id);
 
@@ -49,13 +51,15 @@ public:
 
     void setEnable(bool value);
 
-    void update();
+    // void update();
 
     void init();
 
     void clear();
 
     void remove(const std::string &name);
+    
+    void reintantiate();
     
 private:
     std::unordered_map<std::string, std::unique_ptr<Component>> m_componentPtr;
@@ -80,6 +84,7 @@ inline T *Entity::addComponent() {
     return dynamic_cast<T *>(component);
 }
 
+// TODO: Troquei dinamic_cast para static_cast. verificar se nao vai da erro
 template <typename T>
 inline T *Entity::getComponent() {
     static_assert(sizeof(T) != 0, "Type component imcompleted.");
@@ -96,7 +101,7 @@ inline T *Entity::getComponent() {
         throw std::runtime_error("Component pointer is null.");
     }
 
-    auto typedComponent = dynamic_cast<T *>(component);
+    auto typedComponent = static_cast<T *>(component);
     if (!typedComponent) {
         throw std::runtime_error("Component cast failed.");
     }

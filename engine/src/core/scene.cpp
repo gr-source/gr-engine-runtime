@@ -95,6 +95,25 @@ void Scene::LoadScene(const std::string &path, std::function<void(Scene *)> func
     Threadpool::AddTask(&Scene::Load, path, LoadFlags_Mesh | LoadFlags_Object | LoadFlags_Texture | LoadFlags_Script, func, nullptr);
 }
 
+void UpdateComponent(Transform *transform) {
+    transform->entity->reintantiate();
+
+    for (auto child : transform->getChildren()) {
+        UpdateComponent(child);
+    }
+}
+
+void Scene::UpdateScript() {
+    auto scene = GetCurrentScene();
+    if (!scene) {
+        return;
+    }
+
+    for (auto gameObject : scene->getObjectList()) {
+        UpdateComponent(gameObject->getTransform());
+    }
+}
+
 Scene::Scene(const std::string &name) : m_name(name), m_enable(true) {}
 
 Scene::~Scene() {

@@ -29,6 +29,8 @@ public:
 
     static void LoadScene(const std::string &path, std::function<void(Scene *)> func = nullptr);
 
+    static void UpdateScript();
+
     Scene(const std::string &name);
     ~Scene();
 

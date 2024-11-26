@@ -178,7 +178,7 @@ void Batching::draw(grr::gShader *shader, bool bSetMaterial) {
 
     m_vertexArray->bind();
 
-    grr::gShader::Flush();
+    // grr::gShader::Flush();
 
     /* switch (m_type) {
     case DrawType_Elements_Instanced:

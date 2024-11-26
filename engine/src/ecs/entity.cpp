@@ -11,6 +11,8 @@
 
 #include "core/scene.hpp"
 
+void (*Entity::Update)(Entity *entity);
+
 Entity::Entity(GameObject *gameObject, EntityID id) : m_gameObject(gameObject), m_entityID(id) {}
 
 GameObject *Entity::getGameObject() const {
@@ -98,7 +100,6 @@ void Entity::copy(const Entity *entity) {
     }
 }
 
-
 EntityID Entity::getEntityID() const {
     return m_entityID;
 }
@@ -125,6 +126,9 @@ void Entity::setEnable(bool value) {
     }
 }
 
+/*
+std::unordered_map<std::string, uintptr_t> addrs;
+
 void Entity::update() {
     auto pages = (m_components.size() + MAX_PAGES - 1) / MAX_PAGES;
     for (auto i=0;i<pages;i++) {
@@ -136,6 +140,7 @@ void Entity::update() {
         }
     }
 }
+*/
 
 void Entity::init() {
     std::list<std::tuple<std::string, Component *>> temp;
@@ -164,6 +169,12 @@ void Entity::remove(const std::string &name) {
 
     m_components.erase(std::remove(m_components.begin(), m_components.end(), component), m_components.end());
     m_componentPtr.erase(it);
+}
+
+void Entity::reintantiate() {
+    for (auto &&[name, component] : m_componentPtr) {
+        ScriptManager::Reinstance(name, &(*component));
+    }
 }
 
 Component *Entity::addInternalComponent(const std::string &name, const Component *instance) {

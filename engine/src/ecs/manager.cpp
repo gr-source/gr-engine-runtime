@@ -66,7 +66,7 @@ void Manager::Update() {
                 continue;
             }
 
-            m_entities[j]->update();
+            Entity::Update(m_entities[j]);
         }
     }
 }

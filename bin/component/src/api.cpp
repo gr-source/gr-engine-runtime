@@ -50,6 +50,14 @@ Component *CreateInternalComponent(const std::string &name, const Component *com
     return pool->CreateInstance(component);
 }
 
+void ReinstanceComponent(const std::string &name, Component *component) {
+    auto pool = ComponentRegistry::Find(name);
+    if (!pool) {
+        throw std::runtime_error("Falied to create component: " + name + ", component is not valid.");
+    }
+    return pool->Instance(component);
+}
+
 void SetDeltaTime(float deltaTime) {
     Time::deltaTime = deltaTime;
 }

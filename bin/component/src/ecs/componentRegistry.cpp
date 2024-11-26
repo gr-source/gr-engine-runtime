@@ -18,4 +18,3 @@ std::unordered_map<std::string, Pool *> ComponentRegistry::GetPool() {
 }
 
 
-

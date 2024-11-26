@@ -151,7 +151,9 @@ void RenderManager::RegisterUniform(bool model) {
     grr::gShader::Register("m_shadowMap", UniformType::INT, 1, 0);
     grr::gShader::Register("m_lightcount", UniformType::INT, 1, 0);
 
-    grr::gShader::Register("m_texture", UniformType::INT, 10, 0);
+    int idx[10] {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+
+    grr::gShader::Register("m_texture", UniformType::INT, 10, idx);
     grr::gShader::Register("m_activate", UniformType::INT, 10, 0);
     
     for (auto i=0;i<10;i++) {

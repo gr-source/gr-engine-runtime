@@ -23,6 +23,8 @@ public:
 
     static void (*SetDeltaTime)(float);
 
+    static void (*Reinstance)(const std::string &name, Component *component);
+    
     // Light
     static std::vector<Light *> &(*GetListLight)();
 
