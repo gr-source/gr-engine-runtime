@@ -31,6 +31,8 @@ public:
 
     static void UpdateScript();
 
+    static void DestroyScript();
+
     Scene(const std::string &name);
     ~Scene();
 

@@ -21,8 +21,6 @@ public:
     template <typename ...Args>
     void RegisterField(const std::string &name, Args &&...args);
 
-    void (*update)(void *);
-
 private:
     std::unordered_map<std::string, grm::size> m_fieldID;
 

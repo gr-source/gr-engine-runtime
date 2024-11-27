@@ -167,7 +167,7 @@ void ScriptManager::RegisterApi() {
 
     // Entity
     m_script->replaceLibraryFunction("Entity::addInternalComponent", (void *)&Entity::addInternalComponent);
-    m_script->registerFunction("_ZN6Entity6updateEv", reinterpret_cast<void **>(&Entity::Update));
+    // m_script->registerFunction("_ZN6Entity6updateEv", reinterpret_cast<void **>(&Entity::Update));
 
     // Batching
     m_script->replaceLibraryFunction("Batching::InsertInternal",  (void *)&Batching::insert);

@@ -1114,6 +1114,8 @@ void Editor::RenderScene() {
 void Editor::PlayGame() {
     s_objectSelected = nullptr;
 
+    // Scene::DestroyScript();
+
     // if (m_cameraObject) {
     //     Model3DHandler::ExportGRMX(File::GetFile("/MainEngineCamera.gmdx", true), m_cameraObject);
 

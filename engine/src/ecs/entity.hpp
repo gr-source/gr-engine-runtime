@@ -17,8 +17,6 @@
 
 class Entity {
 public:
-    static void (*Update)(Entity *entity);
-
     Entity() = delete;
     Entity(GameObject *gameObject, EntityID id);
 
@@ -51,7 +49,7 @@ public:
 
     void setEnable(bool value);
 
-    // void update();
+    void update();
 
     void init();
 
