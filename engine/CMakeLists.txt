@@ -10,7 +10,7 @@ set(guizmo_hdr
 )
 
 set(ecs_src
-    src/ecs/componentPool.cpp
+    # src/ecs/componentPool.cpp
     src/ecs/gameObject.cpp
     src/ecs/component.cpp
     src/ecs/manager.cpp
@@ -18,7 +18,7 @@ set(ecs_src
 )
 
 set(ecs_hdr
-    src/ecs/componentPool.hpp
+    # src/ecs/componentPool.hpp
     # src/ecs/gameObject.h
     # src/ecs/component.h
     src/ecs/manager.hpp
@@ -232,8 +232,10 @@ set(engine_hdr
 
 add_library(${PROJECT_NAME} STATIC ${engine_src} ${engine_hdr})
 
-target_include_directories(${PROJECT_NAME} PRIVATE
+target_include_directories(${PROJECT_NAME} PUBLIC
+    /home/grdev/Documentos/gr-engine/gr-base/include/gr-base
     $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/${PROJECT_NAME}/src>
 )
 
+target_link_libraries(${PROJECT_NAME} PRIVATE /home/grdev/Documentos/gr-engine/gr-base/lib/libgr-base.so)
 

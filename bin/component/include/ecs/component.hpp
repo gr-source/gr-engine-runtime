@@ -6,6 +6,9 @@ class GameObject;
 class Stream;
 class Entity;
 
+#include <ecs/gComponent.hpp>
+
+/*
 class Component {
 public:
     Component();
@@ -30,7 +33,7 @@ public:
 
     Entity* entity;
 };
-
+*/
 
 #define CLASS_FUNCTIONS \
     template <typename T> \
@@ -50,7 +53,9 @@ public:
     } \
 
 
-#include "componentRegistry.hpp"
+#include <ecs/componentRegistry.hpp>
+
+#include "core/string.hpp"
 
 #define REGISTER_COMPONENT(cls) \
     static bool is_register_##cls = (ComponentRegistry::getInstance().RegisterComponent<cls>(), false); \

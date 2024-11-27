@@ -11,6 +11,8 @@
 
 #include "core/scene.hpp"
 
+#include <ecs/componentRegistry.hpp>
+
 Entity::Entity(GameObject *gameObject, EntityID id) : m_gameObject(gameObject), m_entityID(id) {}
 
 GameObject *Entity::getGameObject() const {
@@ -125,15 +127,26 @@ void Entity::setEnable(bool value) {
 }
 
 void Entity::update() {
+    for (auto &[name, component] : m_componentPtr) {
+        auto pool = ComponentRegistry::Find(name);
+        if (!pool) {
+            continue;
+        }
+        pool->update(&(*component));
+    }
+    /*
     auto pages = (m_components.size() + MAX_PAGES - 1) / MAX_PAGES;
     for (auto i=0;i<pages;i++) {
         auto start = i * MAX_PAGES;
         auto end = std::min(start + MAX_PAGES, int(m_components.size()));
 
         for (auto j=start;j<end;j++) {
-            m_components[j]->Update();
+            auto component = m_components[j];
+            if (component)
+                component->Update();
         }
     }
+    */
 }
 
 void Entity::init() {
@@ -166,22 +179,29 @@ void Entity::remove(const std::string &name) {
 }
 
 void Entity::reintantiate() {
+    /*
+    m_components.clear();
+
     for (auto &&[name, component] : m_componentPtr) {
-        ScriptManager::Reinstance(name, &(*component));
+        auto pool = ComponentRegistry::Find(name);
+        if (!pool) {
+            throw std::runtime_error("Falied to create component: " + name + ", component is not valid.");
+        }
+        m_components.push_back(pool->Instance(&(*component)));
     }
+    std::cout << "Ins" << std::endl;
+    */
 }
 
 Component *Entity::addInternalComponent(const std::string &name, const Component *instance) {
-    if (!ScriptManager::CreateInternalComponent) {
+    auto pool = ComponentRegistry::Find(name);
+    if (!pool) {
         return nullptr;
     }
-
-    auto component = ScriptManager::CreateInternalComponent(name, instance);
+    auto component = pool->CreateInstance(instance, this);
     if (!component) {
         return nullptr;
     }
-    
-    component->entity = this;
 
     m_componentPtr[name] = std::unique_ptr<Component>(component);
 

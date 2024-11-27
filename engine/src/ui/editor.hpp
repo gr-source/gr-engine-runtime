@@ -2,7 +2,7 @@
 
 #include <filesystem>
 
-#include "ecs/componentPool.hpp"
+#include <ecs/componentPool.hpp>
 
 #include "core/console.hpp"
 

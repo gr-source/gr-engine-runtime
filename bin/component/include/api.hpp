@@ -40,9 +40,11 @@ void SetScreenSize(const iVector2 &value);
 
 std::unordered_map<std::string, Pool *> GetComponentPool();
 
+/*
 Component *CreateInternalComponent(const std::string &name, const Component *component);
 
 void ReinstanceComponent(const std::string &name, Component *component);
+*/
 
 #ifdef __cplusplus
 }

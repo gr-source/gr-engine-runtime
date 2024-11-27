@@ -8,11 +8,11 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
 set(CMAKE_CXX_STANDARD 17)
 
 set(ecs_src
-    src/ecs/componentRegistry.cpp
+    # src/ecs/componentRegistry.cpp
     src/ecs/gameObject.cpp
     src/ecs/component.cpp
     src/ecs/entity.cpp
-    src/ecs/field.cpp
+    # src/ecs/field.cpp
 )
 
 set(script_src
@@ -82,9 +82,10 @@ endif()
 
 add_library(${PROJECT_NAME} SHARED main.cpp src/api.cpp ${ecs_src} ${script_src} ${source_src} ${core_src} ${animation_src} ${geometry_src})
 
-target_link_libraries(${PROJECT_NAME} PRIVATE ${GRMATH_LIBRARIES} ${BULLET_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} PRIVATE ${GRMATH_LIBRARIES} ${BULLET_LIBRARIES} /home/grdev/Documentos/gr-engine/gr-base/lib/libgr-base.so)
 
 target_include_directories(${PROJECT_NAME} PUBLIC ${BULLET_INCLUDE_DIRS}
+    /home/grdev/Documentos/gr-engine/gr-base/include/gr-base
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
 )
 

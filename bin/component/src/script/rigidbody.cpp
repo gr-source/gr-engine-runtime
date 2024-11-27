@@ -29,7 +29,7 @@ void Rigidbody::Init() {
 }
 
 void Rigidbody::Update() {
-    RigidbodyUpdate(this);
+    // RigidbodyUpdate(this);
 }
 
 bool Rigidbody::Serialize(Stream *stream) {

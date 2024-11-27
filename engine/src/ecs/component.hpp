@@ -9,6 +9,9 @@ class GameObject;
 class Entity;
 class Stream;
 
+#include <ecs/gComponent.hpp>
+/*
+
 class Component {
 public:
     Component();
@@ -33,5 +36,5 @@ public:
 
     Entity* entity;
 };
-
+*/
 

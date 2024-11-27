@@ -42,6 +42,7 @@ std::unordered_map<std::string, Pool *> GetComponentPool() {
     return ComponentRegistry::GetPool();
 }
 
+/*
 Component *CreateInternalComponent(const std::string &name, const Component *component) {
     auto pool = ComponentRegistry::Find(name);
     if (!pool) {
@@ -57,6 +58,7 @@ void ReinstanceComponent(const std::string &name, Component *component) {
     }
     return pool->Instance(component);
 }
+*/
 
 void SetDeltaTime(float deltaTime) {
     Time::deltaTime = deltaTime;

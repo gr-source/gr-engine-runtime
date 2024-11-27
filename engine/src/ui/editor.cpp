@@ -1111,8 +1111,11 @@ void Editor::RenderScene() {
     }
 }
 
+#include <ecs/componentRegistry.hpp>
 void Editor::PlayGame() {
     s_objectSelected = nullptr;
+
+    ComponentRegistry::Clean();
 
     // Scene::DestroyScript();
 
@@ -1826,7 +1829,7 @@ bool Editor::RenderComponents(const std::string &name, Component *component) {
         return false;
     }
     
-    auto &fieldList = it->second->getFields();
+    auto fieldList = it->second->getFields();
 
     for (auto &field : fieldList) {
         RenderField(field, component);
