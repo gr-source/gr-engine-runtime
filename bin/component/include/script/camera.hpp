@@ -6,22 +6,21 @@
 
 class Camera : public Component {
 public:
+    static std::vector<Camera*> s_camera;
+    
     static Camera *Main();
 
     static Camera *Current();
 
-    static void SetEnable(Camera *camera);
-
     Camera();
-    ~Camera();
 
     void Init() override;
 
+    void Destroy() override;
+
     void setEnable();
 
-    const Vector3 getPosition() const;
-
-    static std::vector<Camera*> s_camera;
+    Vector3 getPosition() const;
 
     void Enable() override;
 

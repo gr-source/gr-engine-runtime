@@ -169,16 +169,17 @@ void Batching::remove(Transform *transform, bool bDelete) {
 void Batching::draw(grr::gShader *shader, bool bSetMaterial) {
     shader = shader != nullptr ? shader : m_shader;
     
-    grr::gShader::Bind(shader);
 
     grr::gShader::SetUniform("u_model", m_models[0]->getGlobalMatrix());
     
     if (bSetMaterial)
         setupMaterial();
 
+    grr::gShader::Bind(shader);
+    
     m_vertexArray->bind();
 
-    // grr::gShader::Flush();
+    grr::gShader::Flush();
 
     /* switch (m_type) {
     case DrawType_Elements_Instanced:
@@ -395,7 +396,7 @@ void Batching::setupMaterial() {
             idxEn[i] = 1;
         }
 
-        grr::gShader::SetUniform("m_texture", (const int *)idx);
+        // grr::gShader::SetUniform("m_texture", (const int *)idx);
         grr::gShader::SetUniform("m_activate", (const int *)idxEn);
 
         grr::gShader::SetUniform("m_material[" + std::to_string(i) + "].albedo", material->getAlbedo());

@@ -19,6 +19,7 @@ class Entity {
 public:
     Entity() = delete;
     Entity(GameObject *gameObject, EntityID id);
+    ~Entity();
 
     template <typename T>
     T *addComponent();
@@ -39,7 +40,7 @@ public:
     
     GameObject *getGameObject() const;
 
-    std::unordered_map<std::string, std::unique_ptr<Component>> &getComponents();
+    std::unordered_map<std::string, Component *> &getComponents();
 
     void copy(const Entity *entity);
 
@@ -49,9 +50,11 @@ public:
 
     void setEnable(bool value);
 
+    void init();
+    
     void update();
 
-    void init();
+    void destroy();
 
     void clear();
 
@@ -60,7 +63,7 @@ public:
     void reintantiate();
     
 private:
-    std::unordered_map<std::string, std::unique_ptr<Component>> m_componentPtr;
+    std::unordered_map<std::string, Component *> m_componentPtr;
 
     std::vector<Component *> m_components;
 

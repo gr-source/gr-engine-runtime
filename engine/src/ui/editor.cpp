@@ -56,6 +56,8 @@
 #include <sstream>
 #include <iomanip>
 
+#include <ecs/componentRegistry.hpp>
+
 #define IMGUI_PAYLOAD_GAMEOBJECT "##payload_gameobject"
 #define IMGUI_PAYLOAD_ANIMATION "##payload_animation"
 #define IMGUI_PAYLOAD_FILE "##payload_file"
@@ -79,10 +81,6 @@ std::string getfilesize(std::size_t sz) {
 }
 
 Editor::Editor() : m_viewport(ImGui::GetMainViewport()), s_io(&ImGui::GetIO()), m_currentPath(File::GetAsset("")), m_cameraObject(nullptr), m_mainCamera(nullptr), s_objectSelected(nullptr), m_currentPage(0), m_materialToRename(nullptr) {
-    m_cameraObject = nullptr;
-
-    m_mainCamera = nullptr;
-
     s_texturePlayGame = nullptr;
 
     s_objectSelected = nullptr;
@@ -127,12 +125,26 @@ Editor::Editor() : m_viewport(ImGui::GetMainViewport()), s_io(&ImGui::GetIO()), 
         Console::LogWarning(e.what());
     }
 
+    {
+        auto lasCaterogy = m_config->getCategory();
+        m_config->setCategory("viewport");
+        
+        Settings::ViewportSize.x = m_config->hasKey("x") ? m_config->getValue<int>("x") : 0;
+        Settings::ViewportSize.y = m_config->hasKey("y") ? m_config->getValue<int>("y") : 0;
+
+        m_config->setCategory(lasCaterogy);
+    }
+
     bBuildDock = File::Exists("imgui.ini");
 
     LoadReources();
 
     try {
         ScriptManager::Initialize(File::GetFile("/.build/component/lib/libgr-component.so"));
+
+        if (ScriptManager::SetScreenSize) {
+            ScriptManager::SetScreenSize(Settings::ViewportSize);
+        }
     } catch (const std::exception &e) {
         Console::LogError("Fatal error in script: " + std::string(e.what()));
     }
@@ -168,6 +180,10 @@ Editor::~Editor() {
     m_config->setCategory("scene");
     m_config->setValue<std::string>("main", Scene::HasScene() ?  Scene::GetCurrentScene()->getName() : "default");
 
+    m_config->setCategory("viewport");
+    m_config->setValue("x", Settings::ViewportSize.x);
+    m_config->setValue("y", Settings::ViewportSize.y);
+
     if (m_config) {
         m_config->save();
     }
@@ -185,6 +201,8 @@ Editor::~Editor() {
     ScreenRender::Shutdown();
 
     GameObject::Clear();
+
+    ComponentRegistry::Clean();
 
     ScriptManager::Shutdown();
 
@@ -252,10 +270,8 @@ void Editor::LoadScript() {
 
     Scene::UpdateScript();
 
-    // Scene::ReloadObjects([](Scene *scene){
+    Scene::InitializeObject();
 
-    //     Scene::InitializeObject();
-    // });
     Settings::bGameRunning = true;
 }
 
@@ -263,6 +279,8 @@ void Editor::UnloadScript() {
     RenderManager::Shutdown();
 
     ScreenRender::Shutdown();
+
+    ComponentRegistry::Clean();
 
     ScriptManager::Shutdown();
 }
@@ -306,9 +324,6 @@ GameObject *Editor::createEditorCamera() {
     if (!camera) {
         return nullptr;
     }
-
-    if (Camera::SetEnable)
-        Camera::SetEnable(camera);
 
     gameObject->initialize(false);
     return gameObject;
@@ -1111,24 +1126,15 @@ void Editor::RenderScene() {
     }
 }
 
-#include <ecs/componentRegistry.hpp>
 void Editor::PlayGame() {
     s_objectSelected = nullptr;
 
-    ComponentRegistry::Clean();
+    if (m_cameraObject) {
+        GameObject::Destroy(m_cameraObject);
 
-    // Scene::DestroyScript();
-
-    // if (m_cameraObject) {
-    //     Model3DHandler::ExportGRMX(File::GetFile("/MainEngineCamera.gmdx", true), m_cameraObject);
-
-    //     GameObject::Destroy(m_cameraObject);
-
-    //     m_cameraObject = nullptr;
-    //     m_mainCamera = nullptr;
-    // }
-
-    // Scene::CleanCurrentScene();
+        m_cameraObject = nullptr;
+        m_mainCamera = nullptr;
+    }
 
     Threadpool::AddTask(&Editor::BuildScript, this);
 
@@ -1138,9 +1144,7 @@ void Editor::PlayGame() {
 void Editor::StopGame() {
     Settings::bGameRunning = false;
 
-    // Scene::ReloadObjects(nullptr);
-
-    // AssetsManager::LoadGameObject(File::GetFile("/MainEngineCamera.gmdx", true), &Editor::loadCamera, this);
+    Scene::DestroyScript();
 
     Console::log(Log::DEFAULT, "Game stoped.");
 }
@@ -1695,7 +1699,7 @@ void Editor::RenderStatisticsMenu() {
 }
 
 void Editor::RenderGameObjectPropertiUI() {
-    if (!s_objectSelected || !ScriptManager::GetComponentPool) {
+    if (!s_objectSelected) {
         return;
     }
 
@@ -1810,7 +1814,7 @@ void Editor::rTabObjectInfo(bool &isOpenPopup) {
 }
 
 bool Editor::RenderComponents(const std::string &name, Component *component) {
-    auto componentPool = ScriptManager::GetComponentPool();
+    auto componentPool = ComponentRegistry::GetPool();
 
     auto isRender = true;
 
@@ -1901,7 +1905,7 @@ void AddComponentForAll(GameObject *gameObject, std::string name) {
 }
 
 void Editor::PopupAddComponent() {
-    if (!ScriptManager::GetComponentPool && !s_objectSelected) {
+    if (!s_objectSelected) {
         return;
     }
     
@@ -1909,7 +1913,7 @@ void Editor::PopupAddComponent() {
     if (!isOpen) {
         return;
     }
-    auto componentPool = ScriptManager::GetComponentPool();
+    auto componentPool = ComponentRegistry::GetPool();
 
     std::vector<std::string> m_componentName;
     for (auto [name, pool] : componentPool) {

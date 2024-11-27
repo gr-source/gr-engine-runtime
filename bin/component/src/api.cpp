@@ -10,10 +10,6 @@
 #include "core/event.hpp"
 #include "core/time.hpp"
 
-void SetEnableCamera(Camera *camera) {
-    return Camera::SetEnable(camera);
-}
-
 std::vector<Camera *> &GetAllCamera() {
     return Camera::s_camera;
 }
@@ -37,28 +33,6 @@ grr::gShader *LoadShaderSTRSTR(const std::string &frag, const std::string &vert)
 void SetScreenSize(const iVector2 &value) {
     Screen::ScreenSize = value;
 }
-
-std::unordered_map<std::string, Pool *> GetComponentPool() {
-    return ComponentRegistry::GetPool();
-}
-
-/*
-Component *CreateInternalComponent(const std::string &name, const Component *component) {
-    auto pool = ComponentRegistry::Find(name);
-    if (!pool) {
-        throw std::runtime_error("Falied to create component: " + name + ", component is not valid.");
-    }
-    return pool->CreateInstance(component);
-}
-
-void ReinstanceComponent(const std::string &name, Component *component) {
-    auto pool = ComponentRegistry::Find(name);
-    if (!pool) {
-        throw std::runtime_error("Falied to create component: " + name + ", component is not valid.");
-    }
-    return pool->Instance(component);
-}
-*/
 
 void SetDeltaTime(float deltaTime) {
     Time::deltaTime = deltaTime;

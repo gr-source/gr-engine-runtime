@@ -6,8 +6,6 @@
 
 std::vector<Camera *> &(*Camera::GetCameras)();
 
-void (*Camera::SetEnable)(Camera *camera);
-
 Camera *(*Camera::Main)();
 
 Camera *(*Camera::Current)();

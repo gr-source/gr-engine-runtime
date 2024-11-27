@@ -8,11 +8,8 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
 set(CMAKE_CXX_STANDARD 17)
 
 set(ecs_src
-    # src/ecs/componentRegistry.cpp
     src/ecs/gameObject.cpp
-    src/ecs/component.cpp
     src/ecs/entity.cpp
-    # src/ecs/field.cpp
 )
 
 set(script_src

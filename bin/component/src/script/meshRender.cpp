@@ -15,16 +15,15 @@
 
 MeshRender::MeshRender() : m_batched(nullptr), m_flags(Batching::Batching_Flags_Dynamic), m_transform(nullptr) {}
 
-// TODO: Os scripts estao sendo deletados antes
-MeshRender::~MeshRender() {
+void MeshRender::Init() {
+    m_transform = GetComponent<Transform>();
+}
+
+void MeshRender::Destroy() {
     if (!m_batched) {
         return;
     }
     m_batched->remove(m_transform, true);
-}
-
-void MeshRender::Init() {
-    m_transform = GetComponent<Transform>();
 }
 
 static void (*MeshRenderbuild)(MeshRender *);

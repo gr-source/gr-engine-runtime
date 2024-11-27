@@ -24,7 +24,7 @@ public:
     static void Clear();
 
 private:
-    static std::unordered_map<EntityID, std::shared_ptr<Entity>> m_mapEntities;
+    static std::unordered_map<EntityID, std::unique_ptr<Entity>> m_mapEntities;
 
     static std::vector<EntityID> m_available;
 

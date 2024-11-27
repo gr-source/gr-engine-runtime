@@ -8,33 +8,6 @@ class Entity;
 
 #include <ecs/gComponent.hpp>
 
-/*
-class Component {
-public:
-    Component();
-    
-    virtual void Init() {}
-
-    virtual void Start() {}
-
-    virtual void Update() {}
-
-    virtual void Enable() {}
-
-    virtual void Disable() {}
-
-    virtual bool Serialize(Stream *stream) { return false; }
-
-    virtual bool Deserialize(Stream *stream) { return false; }
-
-    virtual ~Component() {}
-    
-    GameObject *getGameObject();
-
-    Entity* entity;
-};
-*/
-
 #define CLASS_FUNCTIONS \
     template <typename T> \
     inline T *AddComponent() { \

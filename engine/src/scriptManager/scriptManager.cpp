@@ -53,13 +53,6 @@ std::unique_ptr<Animation> (*ScriptManager::LoadAnimation)(const std::string &);
 // Screen
 void (*ScriptManager::SetScreenSize)(const iVector2 &);
 
-// ComponentPool
-std::unordered_map<std::string, Pool *> (*ScriptManager::GetComponentPool)();
-
-Component *(*ScriptManager::CreateInternalComponent)(const std::string &name, const Component *component);
-
-void (*ScriptManager::Reinstance)(const std::string &name, Component *component);
-
 void ScriptManager::Initialize(const std::string &path) {
     if (!File::Exists(path)) {
         throw std::runtime_error("Script data do not exists: " + path);
@@ -137,7 +130,6 @@ void ScriptManager::RegisterApi() {
     m_script->registerFunction("_ZN6Camera4MainEv",    reinterpret_cast<void **>(&Camera::Main));
     m_script->registerFunction("_ZN6Camera7CurrentEv", reinterpret_cast<void **>(&Camera::Current));
     m_script->registerFunction("GetAllCamera",    reinterpret_cast<void **>(&Camera::GetCameras));
-    m_script->registerFunction("SetEnableCamera", reinterpret_cast<void **>(&Camera::SetEnable));
 
     // Event Manager
     m_script->replaceLibraryFunction("Event::AddInternalEvent", reinterpret_cast<void **>(&Event::AddEvent));
@@ -160,10 +152,6 @@ void ScriptManager::RegisterApi() {
 
     // Screen
     m_script->registerFunction("SetScreenSize", reinterpret_cast<void **>(&SetScreenSize));
-
-    // Component Pool
-    m_script->registerFunction("GetComponentPool", reinterpret_cast<void **>(&GetComponentPool));
-    m_script->registerFunction("CreateInternalComponent",     reinterpret_cast<void **>(&ScriptManager::CreateInternalComponent));
 
     // Entity
     m_script->replaceLibraryFunction("Entity::addInternalComponent", (void *)&Entity::addInternalComponent);
@@ -216,8 +204,6 @@ void ScriptManager::RegisterApi() {
     // Animator
     m_script->replaceLibraryFunction("AnimatorUpdate", (void *)&Animator::update);
 
-    // 
-    m_script->registerFunction("ReinstanceComponent", reinterpret_cast<void **>(&Reinstance));
 }
 #pragma GCC diagnostic pop
 

@@ -15,6 +15,10 @@
 
 Entity::Entity(GameObject *gameObject, EntityID id) : m_gameObject(gameObject), m_entityID(id) {}
 
+Entity::~Entity() {
+    clear();
+}
+
 GameObject *Entity::getGameObject() const {
     return m_gameObject;
 }
@@ -36,7 +40,7 @@ bool Entity::hasComponent(const std::string &name) const {
     return it != m_componentPtr.end();
 }
 
-std::unordered_map<std::string, std::unique_ptr<Component>> &Entity::getComponents() {
+std::unordered_map<std::string, Component *> &Entity::getComponents() {
     return m_componentPtr;
 }
 
@@ -109,6 +113,13 @@ bool Entity::isActive() const {
 }
 
 void Entity::setEnable(bool value) {
+    for (auto [name, component] : m_componentPtr) {
+        auto pool = ComponentRegistry::Find(name);
+        if (pool) {
+            value ? pool->enable(component) : pool->disable(component);
+        }
+    }
+    /*
     auto pages = (m_components.size() + MAX_PAGES - 1) / MAX_PAGES;
     for (auto i=0;i<pages;i++) {
         auto start = i * MAX_PAGES;
@@ -124,7 +135,22 @@ void Entity::setEnable(bool value) {
             m_components[j]->Disable();
         }
     }
+    */
 }
+
+void Entity::init() {
+    std::list<std::tuple<std::string, Component *>> temp;
+    for (auto &&[name, component] : m_componentPtr) {
+        temp.emplace_front(name, &(*component));
+    }
+
+    for (auto [name, component] : temp) {
+        auto pool = ComponentRegistry::Find(name);
+        if (pool) {
+            pool->init(component);
+        }
+    }
+} 
 
 void Entity::update() {
     for (auto &[name, component] : m_componentPtr) {
@@ -149,21 +175,29 @@ void Entity::update() {
     */
 }
 
-void Entity::init() {
+void Entity::destroy() {
     std::list<std::tuple<std::string, Component *>> temp;
     for (auto &&[name, component] : m_componentPtr) {
         temp.emplace_front(name, &(*component));
     }
 
-    for (auto &&[name, component] : temp) {
-        component->Init();
+    for (auto [name, component] : temp) {
+        auto pool = ComponentRegistry::Find(name);
+        if (pool) {
+            pool->destroy(component);
+        }
     }
-} 
+}
 
 void Entity::clear() {
-    m_components.clear();
-
+    for (auto [name, component] : m_componentPtr) {
+        auto pool = ComponentRegistry::Find(name);
+        if (pool) {
+            pool->destroy(component);
+        }
+    }
     m_componentPtr.clear();
+    m_components.clear();
 }
 
 void Entity::remove(const std::string &name) {
@@ -174,23 +208,26 @@ void Entity::remove(const std::string &name) {
 
     auto component = &(*it->second);
 
+    auto pool = ComponentRegistry::Find(name);
+    if (pool) {
+        pool->destroy(component);
+    }
+
     m_components.erase(std::remove(m_components.begin(), m_components.end(), component), m_components.end());
+
     m_componentPtr.erase(it);
+    
+    std::free(component);
 }
 
 void Entity::reintantiate() {
-    /*
-    m_components.clear();
-
     for (auto &&[name, component] : m_componentPtr) {
         auto pool = ComponentRegistry::Find(name);
         if (!pool) {
             throw std::runtime_error("Falied to create component: " + name + ", component is not valid.");
         }
-        m_components.push_back(pool->Instance(&(*component)));
+        pool->Instance(&(*component));
     }
-    std::cout << "Ins" << std::endl;
-    */
 }
 
 Component *Entity::addInternalComponent(const std::string &name, const Component *instance) {
@@ -203,7 +240,7 @@ Component *Entity::addInternalComponent(const std::string &name, const Component
         return nullptr;
     }
 
-    m_componentPtr[name] = std::unique_ptr<Component>(component);
+    m_componentPtr[name] = component;
 
     m_components.push_back(component);
 

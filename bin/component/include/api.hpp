@@ -20,9 +20,6 @@ void Destroy();
 
 void SetDeltaTime(float deltaTime);
 
-// [ Component - Camera ]
-void SetEnableCamera(Camera *camera);
-
 std::vector<Camera *> &GetAllCamera();
 
 // Light
@@ -36,15 +33,6 @@ Animation *LoadAnimation(const std::string &path);
 // Screen
 void SetScreenSize(const iVector2 &value);
 
-// Component
-
-std::unordered_map<std::string, Pool *> GetComponentPool();
-
-/*
-Component *CreateInternalComponent(const std::string &name, const Component *component);
-
-void ReinstanceComponent(const std::string &name, Component *component);
-*/
 
 #ifdef __cplusplus
 }

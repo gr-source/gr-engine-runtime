@@ -114,6 +114,25 @@ void Scene::UpdateScript() {
     }
 }
 
+void DestroyComponnet(Transform *transform) {
+    transform->entity->destroy();
+
+    for (auto child : transform->getChildren()) {
+        DestroyComponnet(child);
+    }
+}
+
+void Scene::DestroyScript() {
+    auto scene = GetCurrentScene();
+    if (!scene) {
+        return;
+    }
+
+    for (auto gameObject : scene->getObjectList()) {
+        DestroyComponnet(gameObject->getTransform());
+    }
+}
+
 Scene::Scene(const std::string &name) : m_name(name), m_enable(true) {}
 
 Scene::~Scene() {

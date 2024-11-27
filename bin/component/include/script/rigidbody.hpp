@@ -22,9 +22,10 @@ public:
 	};
 
     Rigidbody();
-    ~Rigidbody();
 
     void Init() override;
+
+    void Destroy() override;
 
     void Update() override;
 

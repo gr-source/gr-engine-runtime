@@ -13,9 +13,10 @@ class MeshRender : public Component {
     CLASS_FUNCTIONS
 public:
     MeshRender();
-    ~MeshRender();
 
     void Init() override;
+
+    void Destroy() override;
 
     template <typename ...Args>
     Material *addMaterial(Args &&...args);

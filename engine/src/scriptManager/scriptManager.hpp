@@ -23,8 +23,6 @@ public:
 
     static void (*SetDeltaTime)(float);
 
-    static void (*Reinstance)(const std::string &name, Component *component);
-    
     // Light
     static std::vector<Light *> &(*GetListLight)();
 
@@ -35,10 +33,6 @@ public:
     static void (*SetScreenSize)(const iVector2 &);
 
     // Component Pool
-    static std::unordered_map<std::string, Pool *> (*GetComponentPool)();
-
-    static Component *(*CreateInternalComponent)(const std::string &name, const Component *component);
-
     static bool CheckScriptLoaded(const std::string &name);
     
 private:

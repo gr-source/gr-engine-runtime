@@ -12,7 +12,7 @@
 
 #include "core/console.hpp"
 
-std::unordered_map<EntityID, std::shared_ptr<Entity>> Manager::m_mapEntities;
+std::unordered_map<EntityID, std::unique_ptr<Entity>> Manager::m_mapEntities;
 
 std::vector<EntityID> Manager::m_available;
 
@@ -41,10 +41,6 @@ Entity *Manager::CreateEntity(GameObject * gameObject) {
 }
 
 void Manager::DestroyEntity(Entity *entity) {
-    if (!entity) {
-        throw std::runtime_error("Entity is not valid.");
-    }
-
     auto id = entity->getEntityID();
 
     std::lock_guard<std::mutex> lock(m_mutex);

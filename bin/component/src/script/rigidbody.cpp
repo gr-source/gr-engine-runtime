@@ -18,14 +18,14 @@ INSERT_FUNCTION(2, RigidbodyShutdown)
 
 Rigidbody::Rigidbody() : m_collisionShape(nullptr), m_DefaultMotionState(nullptr), m_body(nullptr), m_transform(nullptr), m_mass(0.0f), m_bDinamic(false), m_lookRotation(Vector3::one), fMotionThreshold(0.0f), fSweptSphereRadius(0.0f) {}
 
-Rigidbody::~Rigidbody() {
-    RigidbodyShutdown(this);
-}
-
 void Rigidbody::Init() {
     m_transform = GetComponent<Transform>();
 
     RigidbodyInitialize(this);
+}
+
+void Rigidbody::Destroy() {
+    RigidbodyShutdown(this);
 }
 
 void Rigidbody::Update() {

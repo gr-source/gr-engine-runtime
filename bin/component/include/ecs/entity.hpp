@@ -41,7 +41,7 @@ public:
     EntityID getEntityID() const;
 
 private:
-    std::unordered_map<std::string, std::unique_ptr<Component>> m_componentPtr;
+    std::unordered_map<std::string, Component *> m_componentPtr;
 
     std::vector<Component *> m_components;
 
@@ -78,17 +78,16 @@ inline T *Entity::getComponent() {
         throw std::runtime_error("Component type not found.");
     }
 
-    auto component = &(*it->second);
-    if (!component) {
+    if (!it->second) {
         throw std::runtime_error("Component pointer is null.");
     }
 
-    auto typedComponent = dynamic_cast<T *>(component);
-    if (!typedComponent) {
+    auto component = static_cast<T *>(it->second);
+    if (!component) {
         throw std::runtime_error("Component cast failed.");
     }
 
-    return typedComponent;
+    return component;
 }
 
 template <typename T>
