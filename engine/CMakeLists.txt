@@ -10,19 +10,13 @@ set(guizmo_hdr
 )
 
 set(ecs_src
-    # src/ecs/componentPool.cpp
     src/ecs/gameObject.cpp
-    src/ecs/component.cpp
     src/ecs/manager.cpp
     src/ecs/entity.cpp
 )
 
 set(ecs_hdr
-    # src/ecs/componentPool.hpp
-    # src/ecs/gameObject.h
-    # src/ecs/component.h
     src/ecs/manager.hpp
-    # src/ecs/entity.h
 )
 
 set(octree_src

@@ -24,6 +24,7 @@ void MeshRender::Destroy() {
         return;
     }
     m_batched->remove(m_transform, true);
+    m_batched = nullptr;
 }
 
 static void (*MeshRenderbuild)(MeshRender *);

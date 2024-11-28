@@ -86,3 +86,4 @@ target_include_directories(${PROJECT_NAME} PUBLIC ${BULLET_INCLUDE_DIRS}
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
 )
 
+target_compile_definitions(${PROJECT_NAME} PRIVATE REGISTRY=1)

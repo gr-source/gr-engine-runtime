@@ -2,7 +2,7 @@
 
 #include "../common.h"
 
-#include "ecs/component.hpp"
+#include <ecs/component.hpp>
 
 class Light : public Component {
 public:

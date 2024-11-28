@@ -7,7 +7,9 @@
 #include <memory>
 #include <list>
 
-#include "component.hpp"
+#include <ecs/component.hpp>
+
+#include "core/string.hpp"
 
 #define MAX_COMPONENT 16
 #define MAX_PAGES 10

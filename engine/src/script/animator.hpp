@@ -2,7 +2,7 @@
 
 #include "core/animation/default.hpp"
 
-#include "ecs/component.hpp"
+#include <ecs/component.hpp>
 
 #include "script/default.hpp"
 

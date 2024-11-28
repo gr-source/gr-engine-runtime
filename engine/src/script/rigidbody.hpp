@@ -2,7 +2,7 @@
 
 #include "default.hpp"
 
-#include "ecs/component.hpp"
+#include <ecs/component.hpp>
 
 class Rigidbody : public Component {
 public:

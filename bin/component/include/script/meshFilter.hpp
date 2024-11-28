@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../ecs/component.hpp"
+#include <ecs/component.hpp>
 
 #include "core/geometry/boundBox.hpp"
 #include "core/geometry/mesh.hpp"

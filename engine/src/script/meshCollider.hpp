@@ -4,7 +4,7 @@
 
 #include "geometry/vertex3D.hpp"
 
-#include "ecs/component.hpp"
+#include <ecs/component.hpp>
 
 class MeshCollider : public Component {
 public:

@@ -278,6 +278,8 @@ void Editor::LoadScript() {
     Scene::InitializeObject();
 
     Settings::bGameRunning = true;
+
+    Console::log(Log::DEFAULT, "Game playing.");
 }
 
 void Editor::UnloadScript() {
@@ -1129,8 +1131,6 @@ void Editor::RenderScene() {
 
 void Editor::PlayGame() {
     Threadpool::AddTask(&Editor::BuildScript, this);
-
-    Console::log(Log::DEFAULT, "Game playing.");
 }
 
 void Editor::StopGame() {
@@ -1810,7 +1810,7 @@ void Editor::rTabObjectInfo(bool &isOpenPopup) {
 }
 
 bool Editor::RenderComponents(const std::string &name, Component *component) {
-    auto componentPool = ComponentRegistry::GetPool();
+    auto componentPool = ComponentRegistry::GetPoolList();
 
     auto isRender = true;
 
@@ -1909,7 +1909,7 @@ void Editor::PopupAddComponent() {
     if (!isOpen) {
         return;
     }
-    auto componentPool = ComponentRegistry::GetPool();
+    auto componentPool = ComponentRegistry::GetPoolList();
 
     std::vector<std::string> m_componentName;
     for (auto [name, pool] : componentPool) {

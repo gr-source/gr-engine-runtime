@@ -10,7 +10,7 @@
 #include <array>
 
 #include "default.hpp"
-#include "component.hpp"
+#include <ecs/component.hpp>
 
 #define MAX_COMPONENT 16
 #define MAX_PAGES 10

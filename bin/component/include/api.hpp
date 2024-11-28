@@ -3,8 +3,6 @@
 #include "script/default.hpp"
 #include "core/console.hpp"
 
-#include "ecs/component.hpp"
-
 #include <gr-render/gRender.h>
 
 #define GR_EXPORT __attribute__((visibility("default")))

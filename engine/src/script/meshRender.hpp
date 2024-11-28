@@ -6,7 +6,7 @@
 
 #include "default.hpp"
 
-#include "ecs/component.hpp"
+#include <ecs/component.hpp>
 
 class MeshRender : public Component {
 public:

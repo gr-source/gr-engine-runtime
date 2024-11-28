@@ -2,7 +2,7 @@
 
 #include <vector>
 
-#include "ecs/component.hpp"
+#include <ecs/component.hpp>
 
 class Transform : public Component {
 public:

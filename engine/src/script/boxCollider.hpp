@@ -2,7 +2,7 @@
 
 #include "default.hpp"
 
-#include "ecs/component.hpp"
+#include <ecs/component.hpp>
 
 class BoxCollider : public Component {
 public:
