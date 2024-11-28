@@ -68,6 +68,8 @@ private:
     
     GameObject *m_cameraObject;
 
+    GameObject *tempCam;
+
     Camera *m_mainCamera;
 
     ImGuiViewport *m_viewport;
@@ -270,4 +272,5 @@ private:
     // Scene
     void SaveScene(const std::string &name, Scene *scene);
 
+    void setActiveCamera(bool value);
 };

@@ -19,6 +19,8 @@
 
 #include "ecs/gameObject.hpp"
 
+#include <ecs/componentRegistry.hpp>
+
 std::unordered_map<std::string, std::unique_ptr<Scene>> Scene::m_scenes;
 
 std::hash<std::string> Scene::hash;
@@ -131,6 +133,33 @@ void Scene::DestroyScript() {
     for (auto gameObject : scene->getObjectList()) {
         DestroyComponnet(gameObject->getTransform());
     }
+}
+
+void Scene::SetupEssential() {
+    auto scene = GetCurrentScene();
+    if (!scene) { return; }
+    
+    /*
+    std::vector<std::string> component = {
+        "Light",
+        "Camera",
+    };
+    */
+    
+    auto pool = ComponentRegistry::Find("MeshRender");
+    if (!pool) {
+        return;
+    }
+
+    scene->for_each([pool] (GameObject *go) {
+        if (go->hasComponent<MeshRender>()) {
+            auto meshRender = go->getComponent<MeshRender>();
+
+            pool->init(meshRender);
+
+            meshRender->build();
+        }
+    });
 }
 
 Scene::Scene(const std::string &name) : m_name(name), m_enable(true) {}
@@ -913,13 +942,16 @@ void Scene::ProcessScript(Component *component, std::string path, std::streampos
     }
 }
 
+void Scene::for_each(std::function<void(GameObject *)> func) {
+    for (auto object : m_objects) {
+        for_each(object->getTransform(), func);
+    }
+}
 
+void Scene::for_each(Transform *transform, std::function<void(GameObject *)> func) {
+    func(transform->getGameObject());
 
-
-
-
-
-
-
-
-
+    for (auto child : transform->getChildren()) {
+        for_each(child, func);
+    }
+}

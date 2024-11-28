@@ -190,12 +190,18 @@ void Entity::destroy() {
 }
 
 void Entity::clear() {
+    std::list<std::tuple<std::string, Component *>> temp;
     for (auto [name, component] : m_componentPtr) {
+        temp.emplace_front(name, component);
+    }
+
+    for (auto &&[name, component] : temp) {
         auto pool = ComponentRegistry::Find(name);
         if (pool) {
             pool->destroy(component);
         }
     }
+    
     m_componentPtr.clear();
     m_components.clear();
 }

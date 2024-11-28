@@ -33,6 +33,8 @@ public:
 
     static void DestroyScript();
 
+    static void SetupEssential();
+
     Scene(const std::string &name);
     ~Scene();
 
@@ -125,4 +127,8 @@ private:
     static void SetupScript(GameObject *gameObject, std::string name, std::condition_variable &cv, Component *&component, int &result);
 
     static void ProcessScript(Component *component, std::string path, std::streampos position);
+
+    void for_each(std::function<void (GameObject *)> func);
+
+    void for_each(Transform *transform, std::function<void (GameObject *)> func);
 };

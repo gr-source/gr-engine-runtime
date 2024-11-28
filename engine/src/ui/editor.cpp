@@ -80,7 +80,7 @@ std::string getfilesize(std::size_t sz) {
     return std::to_string(sz) + "B";
 }
 
-Editor::Editor() : m_viewport(ImGui::GetMainViewport()), s_io(&ImGui::GetIO()), m_currentPath(File::GetAsset("")), m_cameraObject(nullptr), m_mainCamera(nullptr), s_objectSelected(nullptr), m_currentPage(0), m_materialToRename(nullptr) {
+Editor::Editor() : m_viewport(ImGui::GetMainViewport()), s_io(&ImGui::GetIO()), m_currentPath(File::GetAsset("")), m_cameraObject(nullptr), m_mainCamera(nullptr), s_objectSelected(nullptr), m_currentPage(0), m_materialToRename(nullptr), tempCam(nullptr) {
     s_texturePlayGame = nullptr;
 
     s_objectSelected = nullptr;
@@ -246,6 +246,10 @@ void Editor::KeyBoardUp(grm::u32 key) {
 }
 
 void Editor::LoadScript() {
+    if (m_cameraObject) {
+        Editor::setActiveCamera(false);
+    }
+    
     if (ScriptManager::IsValid()) {
         UnloadScript();
     }
@@ -268,7 +272,8 @@ void Editor::LoadScript() {
 
     ScreenRender::Initialize();
 
-    Scene::UpdateScript();
+    // È necessário ?
+    // Scene::UpdateScript();
 
     Scene::InitializeObject();
 
@@ -287,10 +292,6 @@ void Editor::UnloadScript() {
 
 // ===================================== END =========================================================
 void Editor::RenderUI() {
-    if (!Project::GetCurrent()) {
-        return;
-    }
-
     RenderDocking();
 
     RenderViewportUI();
@@ -1127,15 +1128,6 @@ void Editor::RenderScene() {
 }
 
 void Editor::PlayGame() {
-    s_objectSelected = nullptr;
-
-    if (m_cameraObject) {
-        GameObject::Destroy(m_cameraObject);
-
-        m_cameraObject = nullptr;
-        m_mainCamera = nullptr;
-    }
-
     Threadpool::AddTask(&Editor::BuildScript, this);
 
     Console::log(Log::DEFAULT, "Game playing.");
@@ -1145,6 +1137,10 @@ void Editor::StopGame() {
     Settings::bGameRunning = false;
 
     Scene::DestroyScript();
+
+    Scene::SetupEssential();
+
+    Editor::setActiveCamera(true);
 
     Console::log(Log::DEFAULT, "Game stoped.");
 }
@@ -2666,12 +2662,19 @@ void Editor::SaveScene(const std::string &name, Scene *scene) {
     scene->save(File::GetAsset("/scene/") + name + ".scn");
 }
 
+void Editor::setActiveCamera(bool value) {
+    if (value && tempCam) {
+        m_cameraObject = tempCam;
+        m_mainCamera = tempCam->hasComponent<Camera>() ? tempCam->getComponent<Camera>() : tempCam->addComponent<Camera>();
 
+        if (Camera::SetActive) {
+            Camera::SetActive(m_mainCamera);
+        }
+        return;
+    }
 
+    tempCam = m_cameraObject;
 
-
-
-
-
-
-
+    m_cameraObject = nullptr;
+    m_mainCamera = nullptr;
+}

@@ -130,6 +130,7 @@ void ScriptManager::RegisterApi() {
     m_script->registerFunction("_ZN6Camera4MainEv",    reinterpret_cast<void **>(&Camera::Main));
     m_script->registerFunction("_ZN6Camera7CurrentEv", reinterpret_cast<void **>(&Camera::Current));
     m_script->registerFunction("GetAllCamera",    reinterpret_cast<void **>(&Camera::GetCameras));
+    m_script->registerFunction("_ZN6Camera9setEnableEv",    reinterpret_cast<void **>(&Camera::SetActive));
 
     // Event Manager
     m_script->replaceLibraryFunction("Event::AddInternalEvent", reinterpret_cast<void **>(&Event::AddEvent));

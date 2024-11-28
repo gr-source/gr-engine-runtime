@@ -8,6 +8,8 @@ class Camera : public Component {
 public:
     static std::vector<Camera *> &(*GetCameras)();
 
+    static void (*SetActive)(Camera *camera);
+
     static Camera *(*Main)();
 
     static Camera *(*Current)();

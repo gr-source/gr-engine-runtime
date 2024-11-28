@@ -25,7 +25,6 @@ Camera *Camera::Current() {
 Camera::Camera() : m_transform(nullptr), m_fov(45.0f), m_aspect(1.0f), m_farPlane(1000.0f), m_nearPlane(0.001f), m_projection(Matrix4x4::identityMatrix) {
     m_aspect = static_cast<float>(Screen::ScreenSize.x) / static_cast<float>(Screen::ScreenSize.y);
     
-    std::cout << m_aspect << ", " << Screen::ScreenSize.x << ", " << Screen::ScreenSize.y << std::endl;
     updateProjection();
 }
 
@@ -77,3 +76,6 @@ void Camera::Disable() {
 void Camera::updateProjection() {
     m_projection = Math::perspective(Math::rad(m_fov), m_aspect, m_nearPlane, m_farPlane);
 }
+
+
+
