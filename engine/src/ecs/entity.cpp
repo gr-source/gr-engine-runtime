@@ -241,6 +241,7 @@ Component *Entity::addInternalComponent(const std::string &name, const Component
     if (!pool) {
         return nullptr;
     }
+   
     auto component = pool->CreateInstance(instance, this);
     if (!component) {
         return nullptr;

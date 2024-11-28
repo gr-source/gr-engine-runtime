@@ -162,6 +162,17 @@ void Scene::SetupEssential() {
     });
 }
 
+void Scene::RequestScript() {
+    auto script = ComponentRegistry::GetRequestScriptUpdate();
+    if (script.empty()) { return; }
+
+    for (auto &&[name, scene] : m_scenes) {
+        for (auto name : script) {
+            scene->updateScript(name);
+        }
+    }
+}
+
 Scene::Scene(const std::string &name) : m_name(name), m_enable(true) {}
 
 Scene::~Scene() {
@@ -954,4 +965,19 @@ void Scene::for_each(Transform *transform, std::function<void(GameObject *)> fun
     for (auto child : transform->getChildren()) {
         for_each(child, func);
     }
+}
+
+void Scene::updateScript(const std::string &name) {
+    Scene::for_each([name] (GameObject *go) {
+        auto entt = go->getEntity();
+
+        if (entt->hasComponent(name)) {
+
+            entt->remove(name);
+
+            entt->addComponent(name);
+
+            std::cout << "Update: " << go->getName() << " Script: " << name << std::endl;
+        }
+    });
 }

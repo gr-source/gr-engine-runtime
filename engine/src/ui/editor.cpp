@@ -264,6 +264,8 @@ void Editor::LoadScript() {
         Console::LogError(e.what());
     }
 
+    Scene::RequestScript();
+
     if (ScriptManager::SetScreenSize) {
         ScriptManager::SetScreenSize(Settings::ViewportSize);
     }
