@@ -32,9 +32,11 @@ public:
     template <typename ...Args>
     FbxBone &addBone(Args &&...args);
 
-    const std::vector<FbxBone> &getBones() const;
+    FbxBone *findBone(const std::string &name);
 
-    const bool hasBone() const;
+    std::vector<FbxBone> getBones() const;
+
+    bool hasBone() const;
     
 private:
     std::string m_name;

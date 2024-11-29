@@ -39,39 +39,46 @@ std::vector<BoneWeight> Mesh::getBoneWeight() const {
 }
 
 int Mesh::serialize(Stream *streaming) const {
-    auto &vertices = m_vertices;
-    auto &indices = m_indices;
-    auto &name = m_name;
-
     // Serialzie name
-    auto nSize = name.size();
+    auto nSize = m_name.size();
     if (!streaming->writeS(&nSize, 1)) {
         return 1;
     }
 
-    if (!streaming->writeS(name.data(), nSize)) {
+    if (!streaming->writeS(m_name.data(), nSize)) {
         return 2;
     }
 
     // Serialize vertices
-    auto vSize = vertices.size();
+    auto vSize = m_vertices.size();
     if (!streaming->writeS(&vSize, 1)) {
         return 3;
     }
 
-    if (!streaming->writeS(vertices.data(), vSize)) {
+    if (!streaming->writeS(m_vertices.data(), vSize)) {
         return 4;
     }
 
     // Serialize indices
-    auto iSize = indices.size();
+    auto iSize = m_indices.size();
     if (!streaming->writeS(&iSize, 1)) {
         return 5;
     }
 
-    if (!streaming->writeS(indices.data(), iSize)) {
+    if (!streaming->writeS(m_indices.data(), iSize)) {
         return 6;
     }
+
+    // Serialize bone
+    auto bsize = m_boneWeight.size();
+    if (!streaming->writeS(&bsize, 1)) {
+        return 7;
+    }
+
+    if (!streaming->writeS(m_boneWeight.data(), m_boneWeight.size())) {
+        return 8;
+    }
+    
     return 0;
 }
 
@@ -107,6 +114,18 @@ int Mesh::deserialize(Stream *streaming) {
     m_indices.resize(iSize, 0);
     if (!streaming->readS(m_indices.data(), iSize)) {
         return 6;
+    }
+
+    std::size_t bsize = 0;
+    if (!streaming->readS(&bsize, 1)) {
+        return 7;
+    }
+
+    if (bsize <= 0) { return 0; }
+
+    m_boneWeight.resize(bsize);
+    if (!streaming->readS(m_boneWeight.data(), m_boneWeight.size())) {
+        return 8;
     }
     return 0;
 }

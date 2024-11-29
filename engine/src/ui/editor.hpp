@@ -158,8 +158,6 @@ private:
 
     void StopGame();
 
-    void LoadSceneCamera(Scene *scene);
-
     void loadCamera(GameObject *camera);
 
     void RenderGuizmo();
@@ -273,4 +271,13 @@ private:
     void SaveScene(const std::string &name, Scene *scene);
 
     void setActiveCamera(bool value);
+
+    // UI
+    void showShaderListPopup();
+
+    void renderShaderList();
+
+    void showMeshListPopup();
+
+    void renderMeshList();
 };

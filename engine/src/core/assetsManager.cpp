@@ -241,7 +241,7 @@ void AssetsManager::SetupShader(ShaderHandle handle, const std::string &frag, co
 
     handle.invoke(shader);
 
-    Console::LogInfo("[ AssetsManager::Shader ] Shader loadedd sucessfull: " + handle.m_name);
+    Console::LogInfo("[ AssetsManager::Shader ] Shader loadedd sucessfull: %s", handle.m_name.c_str());
 }
 
 bool AssetsManager::CheckShaderError(grr::gShader *shader, const std::string &name) {
@@ -743,6 +743,10 @@ void AssetsManager::SetTextureList(const std::string &path, std::function<void(g
     }
 
     Threadpool::AddTask(&AssetsManager::ProcessTexture);
+}
+
+std::unordered_map<std::string, std::unique_ptr<grr::gShader>> &AssetsManager::GetShaderList() {
+    return s_shaderList;
 }
 
 grm::size AssetsManager::GetTextureCount() {

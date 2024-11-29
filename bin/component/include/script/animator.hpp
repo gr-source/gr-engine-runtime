@@ -14,6 +14,8 @@ public:
 
     void Update() override;
 
+    std::unordered_map<std::string, std::shared_ptr<Bone>> m_bones;
+    
 private:
     std::vector<Matrix4x4> m_FinalBoneMatrices;
 

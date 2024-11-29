@@ -9,14 +9,14 @@ class FbxNode {
 public:
     FbxNode(const std::string &name = "default", FbxNode *parent = nullptr);
 
-    const std::string &getName() const;
+    std::string getName() const;
 
     template <typename ...Args>
     void addMesh(Args &&...args);
 
-    const bool hasMeshe() const;
+    std::vector<FbxMesh> getMeshes() const;
 
-    const std::vector<FbxMesh> &getMeshes() const;
+    bool hasMeshe() const;
 
     template <typename ...Args>
     FbxNode &addNode(Args &&...args);

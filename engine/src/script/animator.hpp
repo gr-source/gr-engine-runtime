@@ -2,9 +2,9 @@
 
 #include "core/animation/default.hpp"
 
-#include <ecs/component.hpp>
-
 #include "script/default.hpp"
+
+#include <ecs/component.hpp>
 
 class Animator : public Component {
 public:
@@ -23,6 +23,8 @@ public:
     void setAnimation(Animation *animation);
 
     Matrix4x4 *getBoneData();
+
+    std::unordered_map<std::string, std::shared_ptr<Bone>> m_bones;
 
 private:
     std::vector<Matrix4x4> m_FinalBoneMatrices;

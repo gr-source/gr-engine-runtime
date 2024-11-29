@@ -1,6 +1,8 @@
 #include "animator.hpp"
 
 #include "core/animation/animation.hpp"
+#include "core/animation/bone.hpp"
+
 #include "core/timer.hpp"
 
 #include "script/transform.hpp"
@@ -21,7 +23,7 @@ void Animator::update() {
 }
 
 bool Animator::isReady() const {
-    return m_armature != nullptr && m_animation != nullptr;
+    return m_armature != nullptr && m_animation != nullptr && !m_bones.empty();
 }
 
 GameObject *Animator::getArmature() const {
@@ -45,11 +47,15 @@ Matrix4x4 *Animator::getBoneData() {
 }
 
 void Animator::for_each(Transform *transform, Matrix4x4 parent) {
-    auto keyframe = m_animation->findKeyframe(transform->getGameObject()->getName());
-    if (keyframe) {
+    auto boneName = transform->getGameObject()->getName();
+
+    auto keyframe = m_animation->findKeyframe(boneName);
+    auto it = m_bones.find(boneName);
+    if (keyframe && it != m_bones.end()) {
         parent *= keyframe->getLocalMatrix(m_currentTime);
 
-        m_FinalBoneMatrices[0] = parent * transform->getLocalMatrix();
+
+        m_FinalBoneMatrices[it->second->getBoneIndex()] = parent * it->second->getLocalMatrix();
     }
 
     for (auto child : transform->getChildren()) {

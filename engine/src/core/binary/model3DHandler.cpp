@@ -18,6 +18,9 @@
 #include "script/meshRender.hpp"
 #include "script/meshFilter.hpp"
 #include "script/transform.hpp"
+#include "script/animator.hpp"
+
+#include "core/animation/bone.hpp"
 
 std::mutex Model3DHandler::m_mutex;
 
@@ -587,14 +590,14 @@ void Model3DHandler::CreateObjects(const FbxScene *scene, const FbxNode *node, T
         transform->setParent(parent);
     }
 
-    auto &meshes = node->getMeshes();
-    if (!meshes.empty()) {
+    if (node->hasMeshe()) {
         std::unordered_map<std::string, FbxMaterial> m_materials;
+        std::unordered_map<std::string, FbxBone> m_bones;
         grm::u32 verticeCount = 0;
         std::string meshName;
         Mesh m_tempMesh;
 
-        for (auto &fbxMesh : meshes) {
+        for (auto &fbxMesh : node->getMeshes()) {
             meshName += fbxMesh.getName();
 
             for (auto &mIdx : fbxMesh.getMaterials()) {
@@ -614,7 +617,7 @@ void Model3DHandler::CreateObjects(const FbxScene *scene, const FbxNode *node, T
                 if (!fbxMesh.hasBone()) {
                     continue;
                 }
-                
+
                 auto& boneWeight = m_tempMesh.addBoneWeight();
 
                 float norm = vertice.weight[0] + vertice.weight[1] + vertice.weight[2] + vertice.weight[3];
@@ -629,7 +632,15 @@ void Model3DHandler::CreateObjects(const FbxScene *scene, const FbxNode *node, T
                 m_tempMesh.addIndice(verticeCount + indice);
             }
 
+            if (fbxMesh.hasBone()) {
+                for (auto &bone : fbxMesh.getBones()) {
+                    if (m_bones.find(bone.getName()) != m_bones.end()) { continue; }
+
+                    m_bones.emplace(bone.getName(), bone);
+                }
+            }
             verticeCount += vertices.size();
+
         }
 
         auto m_mesh = AssetsManager::FindMesh(meshName);
@@ -649,6 +660,14 @@ void Model3DHandler::CreateObjects(const FbxScene *scene, const FbxNode *node, T
         if (!meshRender) {
             return;
         }
+
+        auto animator = gameObject->addComponent<Animator>();
+        if (!animator) { return; }
+
+        for (auto &&[name, bone] : m_bones) {
+            animator->m_bones[name] = std::make_shared<Bone>(name, bone.getPosition(), bone.getScale(), bone.getRotation(), bone.getID());
+        }
+
 
         for (auto &&[name, fbxMaterial] : m_materials) {
             auto material = meshRender->addMaterial(fbxMaterial.getName(), fbxMaterial.getColor());

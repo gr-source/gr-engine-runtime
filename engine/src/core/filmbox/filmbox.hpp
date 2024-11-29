@@ -28,7 +28,7 @@ private:
 
     static void ProcessMesh(aiMesh *mMesh, FbxScene *fbxScene);
 
-    static void InserMesh(FbxMesh *mesh, aiMesh *mMesh);
+    static void InserMesh(FbxMesh *fbxMesh, aiMesh *mMesh);
 
     static void LoadAnimation(const aiScene *scene, FbxScene *fbxScene);
 

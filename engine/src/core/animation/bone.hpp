@@ -5,13 +5,13 @@
 
 class Bone {
 public:
-    Bone(const std::string &name = "default", const Vector3 &position = Vector3::zero, const Vector3 &scale = Vector3::one, const Quaternion &rotation = Quaternion::identity, grm::u32 id = 0);
+    Bone(const std::string &name = "default", const Vector3 &position = Vector3::zero, const Vector3 &scale = Vector3::one, const Quaternion &rotation = Quaternion::identity, int id = 0);
 
-    const std::string &getName() const;
+    std::string getName() const;
 
-    const Matrix4x4 &getLocalMatrix() const;
+    Matrix4x4 getLocalMatrix() const;
 
-    const grm::u32 getBoneIndex() const;
+    int getBoneIndex() const;
     
 private:
     std::string m_name;
@@ -22,7 +22,7 @@ private:
 
     Vector3 m_position;
 
-    grm::u32 m_boneIndex;
+    int m_boneIndex;
 
     Matrix4x4 m_localMatrix;
 

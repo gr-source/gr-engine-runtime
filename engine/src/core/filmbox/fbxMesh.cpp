@@ -1,5 +1,7 @@
 #include "fbxMesh.hpp"
 
+#include <algorithm>
+
 FbxMesh::FbxMesh(const std::string &name) : m_name(name) {}
 
 const std::string &FbxMesh::getName() const {
@@ -37,10 +39,17 @@ const std::vector<int> &FbxMesh::getMaterials() const {
     return m_materials;
 }
 
-const std::vector<FbxBone> &FbxMesh::getBones() const {
+FbxBone *FbxMesh::findBone(const std::string &name) {
+    auto it = std::find_if(m_bones.begin(), m_bones.end(), [name](const auto &bone) {
+        return bone.getName() == name;
+    });
+    return it != m_bones.end() ? &(*it) : nullptr;
+}
+
+std::vector<FbxBone> FbxMesh::getBones() const {
     return m_bones;
 }
 
-const bool FbxMesh::hasBone() const {
+bool FbxMesh::hasBone() const {
     return !m_bones.empty();
 }

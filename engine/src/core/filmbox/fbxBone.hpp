@@ -8,21 +8,21 @@ class FbxBone {
 public:
     FbxBone(const std::string &name, int id);
 
-    const std::string &getName() const;
+    std::string getName() const;
 
     void setPosition(const Vector3 &position);
 
-    const Vector3 &getPosition() const;
+    Vector3 getPosition() const;
 
     void setScale(const Vector3 &scale);
 
-    const Vector3 &getScale() const;
+    Vector3 getScale() const;
 
     void setRotation(const Quaternion &rotation);
 
-    const Quaternion &getRotation() const;
+    Quaternion getRotation() const;
 
-    int m_id;
+    int getID() const;
 
 private:
     std::string m_name;
@@ -32,6 +32,8 @@ private:
     Vector3 m_scale;
     
     Quaternion m_rotation;
+
+    int m_id;
 };
 
 

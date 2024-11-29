@@ -169,15 +169,15 @@ void Filmbox::ProcessMesh(aiMesh *mMesh, FbxScene *fbxScene) {
 }
 
 // TODO: falta corrigir o indice da mesh
-void Filmbox::InserMesh(FbxMesh *mesh, aiMesh *mMesh) {
+void Filmbox::InserMesh(FbxMesh *fbxMesh, aiMesh *mMesh) {
     auto bHasPosition = mMesh->HasPositions();
     auto bHasNormal = mMesh->HasNormals();
     auto bHasTexCoord = mMesh->HasTextureCoords(0);
 
-    auto id = mesh->addMaterial(mMesh->mMaterialIndex);
+    auto id = fbxMesh->addMaterial(mMesh->mMaterialIndex);
 
     for (auto i=0;i<mMesh->mNumVertices;++i) {
-        auto& vertice = mesh->addVertice(Vector3::zero, Vector3::zero, Vector2::zero, id);
+        auto& vertice = fbxMesh->addVertice(Vector3::zero, Vector3::zero, Vector2::zero, id);
 
         if (bHasPosition) {
             auto &mVertice = mMesh->mVertices[i];
@@ -224,12 +224,16 @@ void Filmbox::InserMesh(FbxMesh *mesh, aiMesh *mMesh) {
 
             auto name = mBone->mName;
 
+            if (fbxMesh->findBone(name.C_Str()) != nullptr) {
+                continue;
+            }
+
             aiVector3D scale;
             aiQuaternion rotation;
             aiVector3D position;
             mBone->mOffsetMatrix.Decompose(scale, rotation, position);
 
-            auto& fBone = mesh->addBone(name.C_Str(), i);
+            auto& fBone = fbxMesh->addBone(name.C_Str(), i);
             fBone.setScale({scale.x, scale.y, scale.z});
             fBone.setPosition({position.x, position.y, position.z});
             fBone.setRotation({rotation.w, rotation.x, rotation.y, rotation.z});
@@ -237,7 +241,7 @@ void Filmbox::InserMesh(FbxMesh *mesh, aiMesh *mMesh) {
             for (auto j=0;j<mBone->mNumWeights;++j) {
                 auto weight = mBone->mWeights[j];
 
-                auto& vertice = mesh->getVertice(weight.mVertexId);
+                auto& vertice = fbxMesh->getVertice(weight.mVertexId);
                 for (auto k=0;k<4;++k) {
                     if (vertice.boneIndex[k] != -1 || weight.mWeight <= 0.0f) {
                         continue;

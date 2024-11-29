@@ -317,6 +317,10 @@ void Editor::RenderUI() {
     PopupComponentMenu();
 
     PopupMenuSettings();
+
+    showShaderListPopup();
+
+    showMeshListPopup();
 }
 
 GameObject *Editor::createEditorCamera() {
@@ -396,7 +400,7 @@ void Editor::RenderDocking() {
     ImGui::Begin(label, NULL, host_window_flags);
     ImGui::PopStyleVar(3);
 
-    auto bPopupMenuSettings = false;
+    bool bPopupMenuSettings = false, bPopupMenuShader = false, bMeshList = false;
 
     if (ImGui::BeginMenuBar()) {
         if (ImGui::BeginMenu("Project")) {
@@ -432,6 +436,18 @@ void Editor::RenderDocking() {
             }
             ImGui::EndMenu();
         }
+
+        if (ImGui::BeginMenu("Tools")) {
+            if (ImGui::MenuItem("Shader List")) {
+                bPopupMenuShader = true;
+            }
+
+            if (ImGui::MenuItem("Mesh List")) {
+                bMeshList = true;
+            }
+            ImGui::EndMenu();
+        }
+
         ImGui::EndMenuBar();
     }
 
@@ -441,6 +457,14 @@ void Editor::RenderDocking() {
 
     if (bPopupMenuSettings) {
         ImGui::OpenPopup("##popup_menu_settings");
+    }
+
+    if (bPopupMenuShader) {
+        ImGui::OpenPopup("##popup_menu_shader_list");
+    }
+
+    if (bMeshList) {
+        ImGui::OpenPopup("##popup_menu_mesh_list");
     }
 
     if (bBuildDock) {
@@ -2679,4 +2703,58 @@ void Editor::setActiveCamera(bool value) {
 
     m_cameraObject = nullptr;
     m_mainCamera = nullptr;
+}
+
+void Editor::showShaderListPopup() {
+    auto bOpen = ImGui::BeginPopup("##popup_menu_shader_list");
+    if (!bOpen) { return; }
+
+    renderShaderList();
+
+    ImGui::EndPopup();
+}
+
+void Editor::renderShaderList() {
+    auto &shader_list = AssetsManager::GetShaderList();
+
+    for (auto &&[name, shader] : shader_list) {
+        ImGui::Text("%s", name.c_str());
+
+        ImGui::SameLine();
+
+        if (ImGui::Button("Reload")) {
+            //
+        }
+    }
+}
+
+void Editor::showMeshListPopup() {
+    auto bOpen = ImGui::BeginPopup("##popup_menu_mesh_list");
+    if (!bOpen) { return; }
+
+    renderMeshList();
+
+    ImGui::EndPopup();
+}
+
+void Editor::renderMeshList() {
+    ImGui::SeparatorText("Mesh List");
+
+    auto &mesh_list = AssetsManager::GetMeshListMap();
+    if (mesh_list.empty()) { return; }
+
+    for (auto &&[name, mesh] : mesh_list) {
+        ImGui::Text("%s", name.c_str());
+
+        auto vertices = mesh->getVertices();
+        ImGui::Text("Vertices: %ld", vertices.size());
+        
+        auto indices = mesh->getIndices();
+        ImGui::Text("Indices: %ld", indices.size());
+
+        auto bones = mesh->getBoneWeight();
+        ImGui::Text("Bone: %ld", bones.size());
+
+        ImGui::Separator();
+    }
 }

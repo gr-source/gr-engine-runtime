@@ -1,6 +1,7 @@
 #pragma once
 
-struct BoneWeight {
+class BoneWeight {
+public:
     BoneWeight();
 
     template <typename T>

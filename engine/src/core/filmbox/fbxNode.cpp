@@ -2,15 +2,15 @@
 
 FbxNode::FbxNode(const std::string &name, FbxNode *parent) : m_name(name), m_parent(parent) {}
 
-const std::string &FbxNode::getName() const {
+std::string FbxNode::getName() const {
     return m_name;
 }
 
-const std::vector<FbxMesh> &FbxNode::getMeshes() const {
+std::vector<FbxMesh> FbxNode::getMeshes() const {
     return m_meshes;
 }
 
-const bool FbxNode::hasMeshe() const {
+bool FbxNode::hasMeshe() const {
     return !m_meshes.empty();
 }
 
