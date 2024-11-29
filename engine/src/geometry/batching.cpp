@@ -43,12 +43,10 @@ void Batching::RenderShadowPass() {
     auto& lights = ScriptManager::GetListLight();
     if (lights.empty()) { return; }
 
-    grr::gShader::Bind(s_shadowShader);
-
     grr::gShader::SetUniform("u_light", lights[0]->getProjetion());
 
     for (auto &batch : s_batchedInstancesList) {
-        if (!batch || !batch->hasModel()) {
+        if (!batch || !batch->isValid()) {
             continue;
         }
         
@@ -87,7 +85,7 @@ void Batching::RenderBatches() {
     Statistics::m_totalRender = 0;
 
     for (auto &batching : s_batchedInstancesList) {
-        if (!batching || !batching->hasModel()) {
+        if (!batching->isValid()) {
             continue;
         }
         
@@ -97,7 +95,7 @@ void Batching::RenderBatches() {
     }
 }
 
-Batching::Batching(const std::string &name, std::vector<std::shared_ptr<Material>> *materials, grr::gShader *shader, BatchingFlags_ flags) : m_shader(shader), m_flags(flags), m_name(name), m_materials(materials), m_vertexArray(nullptr), m_indexCount(0), m_instanceCount(0), m_VBO(0), m_EBO(0), m_PBO(0), m_type(DrawType_Elements) {}
+Batching::Batching(const std::string &name, std::vector<std::shared_ptr<Material>> *materials, grr::gShader *shader, BatchingFlags_ flags) : m_shader(shader), m_flags(flags), m_name(name), m_materials(materials), m_vertexArray(nullptr), m_indexCount(0), m_instanceCount(0), m_VBO(0), m_EBO(0), m_PBO(0) {}
 
 Batching::~Batching() {
     if (m_vertexArray) {
@@ -168,7 +166,6 @@ void Batching::remove(Transform *transform, bool bDelete) {
 
 void Batching::draw(grr::gShader *shader, bool bSetMaterial) {
     shader = shader != nullptr ? shader : m_shader;
-    
 
     grr::gShader::SetUniform("u_model", m_models[0]->getGlobalMatrix());
     
@@ -181,204 +178,12 @@ void Batching::draw(grr::gShader *shader, bool bSetMaterial) {
 
     grr::gShader::Flush();
 
-    /* switch (m_type) {
-    case DrawType_Elements_Instanced:
-        grr::gVertexArray::DrawElementsInstanced(grr::PrimitiveType_Triangles, m_indexCount, nullptr, m_instanceCount);
-        break;
-    case DrawType_Arrays_Instanced:
-        grr::gVertexArray::DrawArraysInstanced(grr::PrimitiveType_Triangles, m_indexCount, m_instanceCount);
-        break;
-    case DrawType_Elements:
-        break;
-    case DrawType_Arrays: */
     if (m_flags & BatchingFlags_HasIndices) {
-        grr::gVertexArray::DrawElements(PrimitiveType::TRIANGLES, m_indexCount, nullptr);
-    } else {
-        grr::gVertexArray::DrawArrays(PrimitiveType::TRIANGLES, m_indexCount);
+        return grr::gVertexArray::DrawElements(PrimitiveType::TRIANGLES, m_indexCount, nullptr);
     }
-        /*break;
-    default:
-        break;
-    }
-    */
+
+    return grr::gVertexArray::DrawArrays(PrimitiveType::TRIANGLES, m_indexCount);
 }
-
-/*
-void Batching::BuildMeshe(Mesh *mesh) {
-    m_hasIndex = mesh->hasIndices();
-
-    if (!m_vertexArray) {
-        m_vertexArray = grr::gVertexArray::Create();
-    }
-    
-    if (!m_VBO) {
-        m_VBO = grr::gVertexArray::CreateBuffer(BufferType::VBO);
-    }
-
-    if (!m_PBO && m_flags == BatchingType_Instanced_Dynamic || m_flags == BatchingType_Instanced_Static) {
-        m_PBO = grr::gVertexArray::CreateBuffer(grr::BufferType_PBO);
-    }
-    
-    if (!m_EBO && m_hasIndex) {
-        m_EBO = grr::gVertexArray::CreateBuffer(BufferType::EBO);
-    }
-
-    auto vertexCount = mesh->getVertices().size();
-    auto vertexData  = mesh->getVertices().data();
-
-    m_indexCount = vertexCount;
-
-    m_vertexArray->bind();
-
-    if (m_hasIndex) {
-        auto indiceCount = mesh->getIndices().size();
-        auto indiceData  = mesh->getIndices().data();
-
-        m_indexCount = indiceCount;
-
-        grr::gVertexArray::Bind(m_EBO);
-        grr::gVertexArray::UpdateResizeBuffer(indiceCount * sizeof(grm::u32), BufferUsage::STATIC);
-        grr::gVertexArray::SetBufferUpdate(0, indiceCount * sizeof(grm::u32), indiceData);
-    }
-
-    grr::gVertexArray::Bind(m_VBO);
-    grr::gVertexArray::UpdateResizeBuffer(vertexCount * sizeof(Vertex3D), BufferUsage::STATIC);
-    grr::gVertexArray::SetBufferUpdate(0, vertexCount * sizeof(Vertex3D), vertexData);
-
-    grr::gVertexArray::SetAttrib(0, 3, sizeof(Vertex3D), reinterpret_cast<const void*>(offsetof(Vertex3D, position)));
-    grr::gVertexArray::SetAttrib(1, 3, sizeof(Vertex3D), reinterpret_cast<const void*>(offsetof(Vertex3D, normal)));
-    grr::gVertexArray::SetAttrib(2, 2, sizeof(Vertex3D), reinterpret_cast<const void*>(offsetof(Vertex3D, texCoord)));
-    grr::gVertexArray::SetAttrib(3, 1, sizeof(Vertex3D), reinterpret_cast<const void*>(offsetof(Vertex3D, mIdx)));
-
-    if (m_flags == BatchingType_Instanced_Dynamic || m_flags == BatchingType_Instanced_Static) {
-        grr::gVertexArray::Bind(m_PBO);
-        for (int i=0;i<4;i++) {
-            grr::gVertexArray::SetAttrib(4 + i, 4, sizeof(Matrix4x4), reinterpret_cast<const void*>(i * sizeof(Vector4)));
-            grr::gVertexArray::SetAttribDivisor(4 + i, 1);
-        }
-    }
-
-    m_vertexArray->unbind();
-
-    // process boundbox
-    m_boundbox.min = {std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), std::numeric_limits<float>::max()};
-    m_boundbox.max = {std::numeric_limits<float>::min(), std::numeric_limits<float>::min(), std::numeric_limits<float>::min()};
-    
-    for (const auto& vertex : mesh->getVertices()) {
-        m_boundbox.min = Math::min(m_boundbox.min, vertex.position);
-        m_boundbox.max = Math::max(m_boundbox.max, vertex.position);
-    }
-}
-
-void Batching::CompileBatch() {
-    switch (m_flags) {
-    case BatchingType_Static_Mesh:
-        buildStaticMesh();
-        break;
-    case BatchingType_Instanced_Static:
-        buildStaticInstanced();
-        break;
-    case BatchingType_Instanced_Dynamic:
-        buildDynamicInstanced();
-        break;
-    case BatchingType_Dynamic:
-        buildDynamic();
-        break;
-    default:
-        break;
-    }
-
-    Statistics::m_totalRender += m_models.size();
-}
-
-void Batching::buildDynamic() {
-    if (m_models.empty()) {
-        return;
-    }
-
-    grr::gShader::SetUniform("u_model", m_models[0]->getGlobalMatrix());
-}
-*/
-/*
-void Batching::buildDynamicInstanced() {
-    std::vector<Matrix4x4> models;
-    for (auto &transform : m_models) {
-        models.push_back(transform->getGlobalMatrix());
-    }
-
-    if (models.empty()) {
-        return;
-    }
-
-    m_vertexArray->bind();
-    grr::gVertexArray::Bind(m_PBO);
-    grr::gVertexArray::UpdateResizeBuffer(models.size() * sizeof(Matrix4x4), grr::gBufferFlags_Dynamic);
-    grr::gVertexArray::SetBufferUpdate(0, models.size() * sizeof(Matrix4x4), models.data());
-
-    m_type = DrawType_Arrays_Instanced;
-
-    m_instanceCount = models.size();
-}
-
-void Batching::buildStaticInstanced() {
-    if (m_instanceCount == m_models.size()) {
-        return;
-    }
-
-    std::vector<Matrix4x4> models;
-    for (auto &transform : m_models) {
-        models.push_back(transform->getGlobalMatrix());
-    }
-
-    if (models.empty()) {
-        return;
-    }
-
-    m_vertexArray->bind();
-    grr::gVertexArray::Bind(m_PBO);
-    grr::gVertexArray::UpdateResizeBuffer(models.size() * sizeof(Matrix4x4), BufferUsage::STATIC);
-    grr::gVertexArray::SetBufferUpdate(0, models.size() * sizeof(Matrix4x4), models.data());
-
-    m_type = DrawType_Arrays_Instanced;
-
-    m_instanceCount = models.size();
-}
-
-void Batching::buildStaticMesh() {
-    if (m_instanceCount == m_models.size()) {
-        return;
-    }
-    Mesh mesh;
-
-    grm::size verticeCount = 0;
-    for (auto &transform : m_models) {
-        auto model = transform->getGlobalMatrix();
-
-        for (auto &vertice : m_mesh->getVertices()) {
-            Vector4 position = {vertice.position.x, vertice.position.y, vertice.position.z, 1.0f};
-            Vector4 normal = {vertice.normal.x, vertice.normal.y, vertice.normal.z, 0.0f};
-
-            mesh.addVertex(
-                Vector3(model * position),
-                Vector3(model * normal),
-                vertice.texCoord,
-                vertice.mIdx
-            );
-        }
-
-        for (auto &indice : m_mesh->getIndices()) {
-            mesh.addIndice(verticeCount + indice);
-        }
-        verticeCount += m_mesh->getVertices().size();
-    }
-    
-    BuildMeshe(&mesh);
-
-    m_type = m_hasIndex ? DrawType_Elements : DrawType_Arrays;
-
-    m_instanceCount = m_models.size();
-}
-*/
 
 void Batching::setupMaterial() {
     int idx[10] {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
@@ -409,8 +214,6 @@ void Batching::RegisterShaderShadow(grr::gShader *shader) {
         return;
     }
 
-    grr::gShader::Bind(shader);
-
     grr::gShader::Register("u_model", UniformType::MAT4, 1, Matrix4x4::identityMatrix);
     grr::gShader::Register("u_light", UniformType::MAT4, 1, Matrix4x4::identityMatrix);
 
@@ -419,8 +222,8 @@ void Batching::RegisterShaderShadow(grr::gShader *shader) {
     s_shadowShader = shader;
 }
 
-bool Batching::hasModel() const {
-    return !m_models.empty();
+bool Batching::isValid() const {
+    return !m_models.empty() && (m_flags & BatchingFlags_BuildMesh);
 }
 
 

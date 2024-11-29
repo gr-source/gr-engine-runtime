@@ -47,8 +47,6 @@ void DebugDraw::Renderer(Camera *camera) {
         return;
     }
 
-    grr::gShader::Bind(m_shader);
-
     grr::gShader::SetUniform("u_vp", camera->getPerspesctive() * camera->getViewmatrix());
 
     if (!m_lines.empty()) {
@@ -59,11 +57,7 @@ void DebugDraw::Renderer(Camera *camera) {
 void DebugDraw::SetupShader(grr::gShader *shader) {
     if (!shader) { return; }
 
-    grr::gShader::Bind(shader);
-    
     grr::gShader::Register("u_vp", UniformType::MAT4, 1, Matrix4x4::identityMatrix);
-    
-    grr::gShader::Unbind();
 
     // vertex
     m_vbo = grr::gVertexArray::CreateBuffer(BufferType::VBO);

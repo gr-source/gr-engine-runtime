@@ -36,51 +36,26 @@ void MeshRender::build() {
         m_batched = nullptr;
     }
 
-    if (m_flags == Batching::BatchingType_Dynamic) {
-        auto shader = AssetsManager::FindShader("dynamic_one_model");
-        if (!shader) {
-            AssetsManager::LoadShader("dynamic_one_model",
-                File::GetAsset("/shader/model/dynamic_model.frag"),
-                File::GetAsset("/shader/model/dynamic_one_model.vert"),
-                &MeshRender::SetupShader, this, mesh
-            );
-            return;
-        }
-
-        SetupShader(mesh, shader);
-        return;
+    auto shader = AssetsManager::FindShader("dynamic_one_model");
+    if (!shader) {
+        return AssetsManager::LoadShader("dynamic_one_model",
+            File::GetAsset("/shader/model/dynamic_model.frag"),
+            File::GetAsset("/shader/model/dynamic_one_model.vert"),
+            &MeshRender::SetupShader, this, mesh
+        );
     }
+
+    SetupShader(mesh, shader);
 }
 
 Batching *MeshRender::getBatchGroup() {
     return m_batched;
 }
 
-void MeshRender::setMeshOptimize(int value) {
-    m_flags = value;
-
-    build();
-
-    auto transform = entity->getComponent<Transform>();
-    for (auto &child : transform->getChildren()) {
-        auto gameObject = child->getGameObject();
-
-        if (!gameObject->hasComponent<MeshRender>()) {
-            continue;
-        }
-        auto meshRender = gameObject->getComponent<MeshRender>();
-        meshRender->setMeshOptimize(value);
-    }
-}
-
-int MeshRender::getFlags() const {
-    return m_flags;
-}
-
 void MeshRender::SetupShader(Mesh *mesh, grr::gShader *shader) {
     m_batched = Batching::FindBatchByName(getGameObject()->getName());
     if (!m_batched) {
-        m_batched = &Batching::AddBatch(getGameObject()->getName(), &m_materials, shader, Batching::BatchingType_Dynamic);
+        m_batched = Batching::AddBatch(getGameObject()->getName(), &m_materials, shader);
         m_batched->buildMeshe(mesh);
     }
     m_batched->insert(m_transform);

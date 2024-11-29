@@ -69,8 +69,6 @@ void RenderManager::Process(Camera *camera, ShadowMap *shadowMap) {
             continue;
         }
 
-        grr::gShader::Bind(shader);
-
         grr::gShader::SetUniform("u_projection", m_camera->getPerspesctive());
         grr::gShader::SetUniform("u_view", m_camera->getViewmatrix());
         grr::gShader::SetUniform("m_eye", m_camera->getPosition());
@@ -128,11 +126,7 @@ void RenderManager::SetupLight() {
 void RenderManager::SetupShader(ShaderType type, grr::gShader *shader) {
     m_shader[type] = shader;
 
-    grr::gShader::Bind(shader);
-
     RegisterUniform(type == ShaderType_Dynamic);
-
-    grr::gShader::Unbind();
 
     bRender = true;
 }

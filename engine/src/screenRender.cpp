@@ -42,14 +42,15 @@ void ScreenRender::Render(grr::gTexture *texture) {
         return;
     }
 
-    grr::gShader::Bind(m_shader);
 
     grr::gTexture::Bind(texture, 0);
     grr::gShader::SetUniform("u_texture", 0);
 
-
-
+    grr::gShader::Bind(m_shader);
+    grr::gShader::Flush();
+    
     m_vertexArray->bind();
+    
     grr::gVertexArray::DrawArrays(PrimitiveType::TRIANGLES, 6);
 
     grr::gTexture::Unbind();
@@ -94,10 +95,7 @@ void ScreenRender::CreateMesh() {
 }
 
 void ScreenRender::RegisterShader(grr::gShader *shader) {
-    grr::gShader::Bind(shader);
-
     grr::gShader::Register("u_texture", UniformType::INT, 1, 0);
-    grr::gShader::Unbind();
 
     m_shader = shader;
 }

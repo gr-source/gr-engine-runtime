@@ -7,41 +7,37 @@
 #include "material.hpp"
 #include "boundbox.hpp"
 
-enum BatchingFlags {
-    BatchingFlags_None = 1 << 0,
+enum BatchingFlags : uint32_t {
+    BatchingFlags_None       = 1 << 0,
     BatchingFlags_HasIndices = 1 << 1,
-    BatchingFlags_BuildMesh = 1 << 2,
+    BatchingFlags_BuildMesh  = 1 << 2,
 };
 
-using BatchingFlags_ = int;
+using BatchingFlags_ = uint32_t;
 
 class Batching {
 public:
-    enum BatchingType {
-        BatchingType_Dynamic           = 0,
-        BatchingType_Static_Mesh       = 1,
-        BatchingType_Instanced_Dynamic = 2,
-        BatchingType_Instanced_Static  = 3
-    };
-
+    // ***** Static Method ***** //
     static void Initialize();
 
     static void Shutdown();
 
     static void RenderShadowPass();
-    
+
     static grm::size GetBatchCount();
 
     static Batching *FindBatchByName(const std::string &name);
 
     static void RemoveBatchByName(const std::string &name);
 
-    template <typename ...Args>
-    static Batching &AddBatch(const std::string &key, Args &&...args);
+    template <typename... Args>
+    static Batching *AddBatch(const std::string &key, Args &&...args);
 
     static void RenderBatches();
-    
-    Batching(const std::string &name, std::vector<std::shared_ptr<Material>> *materials, grr::gShader *shader, BatchingFlags_ flags);
+
+    // ***** Class Method ***** //
+
+    Batching(const std::string &name, std::vector<std::shared_ptr<Material>> *materials, grr::gShader *shader, BatchingFlags_ flags = 0);
     ~Batching();
 
     void buildMeshe(Mesh *mesh);
@@ -52,16 +48,9 @@ public:
 
     void draw(grr::gShader *shader = nullptr, bool bSetMaterial = true);
 
-    bool hasModel() const;
-    
-private:
-    enum DrawType {
-        DrawType_Elements_Instanced = 1 << 1,
-        DrawType_Arrays_Instanced   = 1 << 2,
-        DrawType_Elements           = 1 << 3,
-        DrawType_Arrays             = 1 << 4
-    };
+    bool isValid() const;
 
+private:
     static std::unordered_map<std::string, std::unique_ptr<Batching>> s_batchedInstances;
 
     static std::vector<Batching *> s_batchedInstancesList;
@@ -88,25 +77,9 @@ private:
 
     grm::u32 m_PBO;
 
-    // bool m_hasIndex;
-
-    DrawType m_type;
-
-    // Mesh *m_mesh;
-
     BatchingFlags_ m_flags;
 
     grr::gShader *m_shader;
-
-    // void CompileBatch();
-
-    // void buildDynamic();
-
-    // void buildDynamicInstanced();
-
-    // void buildStaticInstanced();
-
-    // void buildStaticMesh();
 
     void setupMaterial();
 
@@ -114,11 +87,12 @@ private:
 };
 
 template <typename... Args>
-inline Batching &Batching::AddBatch(const std::string &key, Args &&...args) {
+inline Batching *Batching::AddBatch(const std::string &key, Args &&...args) {
     auto &&[it, added] = s_batchedInstances.emplace(key, std::make_unique<Batching>(key, std::forward<Args>(args)...));
-    assert(added && "Value subscrite.");
+
+    auto ptr = &(*it->second);
     
-    auto ptr =  &(*it->second);
     s_batchedInstancesList.push_back(ptr);
-    return *ptr;
+
+    return &(*ptr);
 }
