@@ -25,7 +25,9 @@ std::vector<Batching *> Batching::s_batchedInstancesList;
 grr::gShader *Batching::s_shadowShader = nullptr;
 
 void Batching::Initialize() {
-    AssetsManager::LoadShader("shadow", File::GetAsset("/shader/shadow/shadow.frag"), File::GetAsset("/shader/shadow/shadow.vert"), &Batching::RegisterShaderShadow);
+    AssetsManager::LoadShader("shadow",
+        File::GetAsset("/shader/shadow/shadow.frag"),
+        File::GetAsset("/shader/shadow/shadow.vert"), &Batching::RegisterShaderShadow);
 }
 
 // TODO: falta descarregar o shader
@@ -216,8 +218,6 @@ void Batching::RegisterShaderShadow(grr::gShader *shader) {
 
     grr::gShader::Register("u_model", UniformType::MAT4, 1, Matrix4x4::identityMatrix);
     grr::gShader::Register("u_light", UniformType::MAT4, 1, Matrix4x4::identityMatrix);
-
-    grr::gShader::Unbind();
     
     s_shadowShader = shader;
 }
