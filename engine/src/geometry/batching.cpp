@@ -8,11 +8,14 @@
 #include "core/event.hpp"
 
 #include "script/transform.hpp"
+#include "script/animator.hpp"
 #include "script/light.hpp"
 
 #include "culling/frustum.h"
 
 #include "scriptManager/scriptManager.hpp"
+
+#include "ecs/gameObject.hpp"
 
 #include <gr-render/gVertexArray.h>
 #include <gr-render/gTexture.h>
@@ -117,6 +120,73 @@ Batching::~Batching() {
     }
 }
 
+/*
+struct VertexData {
+    Vector3 position;
+    Vector3 normal;
+    Vector2 texCoord;
+    int mIdx;
+    int m_index[4];
+    float m_weight[4];
+};
+
+void Batching::buildMeshe(Mesh *mesh) {
+    m_vertexArray = m_vertexArray != nullptr ? m_vertexArray : grr::gVertexArray::Create();
+
+    m_VBO = m_VBO != 0 ? m_VBO : grr::gVertexArray::CreateBuffer(BufferType::VBO);
+    
+    auto vertices = mesh->getVertices();
+    auto bones = mesh->getBoneWeight();
+
+    m_indexCount = vertices.size();
+    
+    m_vertexArray->bind();
+
+    std::vector<VertexData> buffer;
+    for (int i=0;i<m_indexCount;i++) {
+        auto vertex = vertices[i];
+        auto bone = bones[i];
+
+        auto &data = buffer.emplace_back(VertexData{vertex.position, vertex.normal, vertex.texCoord, vertex.mIdx});
+        for (int i=0;i<4;i++) {
+            data.m_index[i] = bone.m_index[i];
+            data.m_weight[i] = bone.m_weight[i];
+        }
+    }
+
+    if (m_flags & BatchingFlags_HasIndices) {
+        m_EBO = m_EBO != 0 ? m_EBO : grr::gVertexArray::CreateBuffer(BufferType::EBO);
+
+        auto indices = mesh->getIndices();
+
+        m_indexCount = indices.size();
+
+        std::cout << "Indices: " << m_indexCount << std::endl;
+
+        grr::gVertexArray::Bind(m_EBO);
+        grr::gVertexArray::UpdateResizeBuffer(indices.size() * sizeof(grm::u32), BufferUsage::STATIC);
+        grr::gVertexArray::SetBufferUpdate(0, indices.size() * sizeof(grm::u32), indices.data());
+    }
+
+    grr::gVertexArray::Bind(m_VBO);
+    grr::gVertexArray::UpdateResizeBuffer(buffer.size() * sizeof(VertexData), BufferUsage::STATIC);
+    grr::gVertexArray::SetBufferUpdate(0, buffer.size() * sizeof(VertexData), buffer.data());
+    // grr::gVertexArray::SetBufferUpdate(vertices.size() * sizeof(Vertex3D), bones.size() * sizeof(BoneWeight), bones.data());
+
+    grr::gVertexArray::SetAttrib(0, 3, sizeof(VertexData), reinterpret_cast<const void*>(offsetof(VertexData, position)));
+    grr::gVertexArray::SetAttrib(1, 3, sizeof(VertexData), reinterpret_cast<const void*>(offsetof(VertexData, normal)));
+    grr::gVertexArray::SetAttrib(2, 2, sizeof(VertexData), reinterpret_cast<const void*>(offsetof(VertexData, texCoord)));
+    grr::gVertexArray::SetAttrib(3, 1, sizeof(VertexData), reinterpret_cast<const void*>(offsetof(VertexData, mIdx)));
+    
+    grr::gVertexArray::SetAttribI(4, 4, sizeof(VertexData), reinterpret_cast<const void*>(offsetof(VertexData, m_index)));
+    grr::gVertexArray::SetAttrib(5, 4,  sizeof(VertexData), reinterpret_cast<const void*>(offsetof(VertexData, m_weight)));
+
+    m_vertexArray->unbind();
+
+    m_flags |= BatchingFlags_BuildMesh;
+}
+*/
+
 void Batching::buildMeshe(Mesh *mesh) {
     m_vertexArray = m_vertexArray != nullptr ? m_vertexArray : grr::gVertexArray::Create();
 
@@ -169,7 +239,19 @@ void Batching::remove(Transform *transform, bool bDelete) {
 void Batching::draw(grr::gShader *shader, bool bSetMaterial) {
     shader = shader != nullptr ? shader : m_shader;
 
-    grr::gShader::SetUniform("u_model", m_models[0]->getGlobalMatrix());
+    auto transform = m_models[0];
+    auto go = transform->getGameObject();
+
+    grr::gShader::SetUniform("u_model", transform->getGlobalMatrix());
+
+    /*
+    auto animator =  go->getComponent<Animator>();
+        auto &metrices = animator->getBoneData();
+    if (animator) {
+        
+        grr::gShader::SetUniform<Matrix4x4>("u_boneMatrices", metrices.data());
+    }
+    */
     
     if (bSetMaterial)
         setupMaterial();

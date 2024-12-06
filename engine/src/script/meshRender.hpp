@@ -21,14 +21,8 @@ public:
 
     Batching *getBatchGroup();
 
-    void setMeshOptimize(int value);
-
-    int getFlags() const;
-
 private:
     std::vector<std::shared_ptr<Material>> m_materials;
-
-    int m_flags;
 
     Batching *m_batched;
 

@@ -14,6 +14,10 @@ public:
 
     void Update() override;
 
+    bool Serialize(Stream *stream) override;
+
+    bool Deserialize(Stream *stream) override;
+    
     std::unordered_map<std::string, std::shared_ptr<Bone>> m_bones;
     
 private:

@@ -198,25 +198,16 @@ void Filmbox::InserMesh(FbxMesh *fbxMesh, aiMesh *mMesh) {
         }
     }
 
-    /*
-    for (auto i=0;i<mMesh->mNumFaces;++i) {
-        auto &mFace = mMesh->mFaces[i];
+    if (mMesh->HasFaces()) {
+        for (auto i = 0; i < mMesh->mNumFaces; ++i) {
+            auto &mFace = mMesh->mFaces[i];
 
-        // if (mFace.mNumIndices > 3) {
-        //     continue;
-        // }
-
-        for (auto j=0;j<mFace.mNumIndices;j++) {
-            mesh->addIndice(mesh->getVertices().size() + mFace.mIndices[j]);
+            // Adiciona os índices das faces
+            for (auto j = 0; j < mFace.mNumIndices; ++j) {
+                fbxMesh->addIndice(mFace.mIndices[j]);
+            }
         }
-
-        // mesh->addTriangle(
-        //     mFace.mIndices[0],
-        //     mFace.mIndices[1],
-        //     mFace.mIndices[2]
-        // );
     }
-    */
 
     if (mMesh->HasBones()) {
         for (auto i=0;i<mMesh->mNumBones;++i) {
@@ -224,9 +215,9 @@ void Filmbox::InserMesh(FbxMesh *fbxMesh, aiMesh *mMesh) {
 
             auto name = mBone->mName;
 
-            if (fbxMesh->findBone(name.C_Str()) != nullptr) {
-                continue;
-            }
+            // if (fbxMesh->findBone(name.C_Str()) != nullptr) {
+            //     continue;
+            // }
 
             aiVector3D scale;
             aiQuaternion rotation;

@@ -137,7 +137,7 @@ void RenderManager::RegisterUniform(bool model) {
 
     if (model)
         grr::gShader::Register("u_model", UniformType::MAT4, 1, Matrix4x4::identityMatrix);
-    // grr::gShader::Register("u_boneMatrices");
+    grr::gShader::Register<Matrix4x4>("u_boneMatrices", UniformType::MAT4, 100, Matrix4x4::identityMatrix);
     // grr::gShader::Register("u_animatior");
 
     // FragmentShader

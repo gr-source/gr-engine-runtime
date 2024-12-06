@@ -8,6 +8,7 @@
 #include "core/threadpool.hpp"
 #include "core/scene.hpp"
 
+#include <ecs/componentRegistry.hpp>
 #include "ecs/gameObject.hpp"
 
 #include "script/meshFilter.hpp"
@@ -115,6 +116,9 @@ Animation *AssetsManager::LoadAnimation(const std::string &path) {
         std::lock_guard<std::mutex> lock(s_animatioMutex);
         s_animationFromLoader.emplace_back(path, animation);
     }
+
+    Threadpool::AddTask(&AssetsManager::ProcessAnimation);
+
     return animation;
 }
 
@@ -321,45 +325,43 @@ void AssetsManager::SetupAnimation(const std::string &path, FbxAnimation *temp, 
 }
 
 void AssetsManager::doAnimationInBackground(const std::string &path, Animation *target) {
-    /*
-    Streaming stream(path, std::ios_base::in | std::ios_base::binary);
+    Stream stream(path, std::ios_base::in | std::ios_base::binary);
     if (!stream.is_open()) {
-        Console::log(LogInfo::ERROR, "Falied to open animation: " + path);
-        return;
+        return Console::LogError("Falied to open animation: %s", path.c_str());
     }
 
-    gHeader pHeader;
-    Stream::read<gHeader>(&pHeader, 1);
+    FileHeader pHeader;
+    stream.readS<FileHeader>(&pHeader, 1);
 
     gAnimationHeader pAnimationHeader;
-    Stream::read<gAnimationHeader>(&pAnimationHeader, 1);
+    stream.readS<gAnimationHeader>(&pAnimationHeader, 1);
 
     auto fbxAnimation = new FbxAnimation(pAnimationHeader.m_name, pAnimationHeader.m_duration, pAnimationHeader.m_tick);
 
     grm::size sChannel;
-    Stream::read<grm::size>(&sChannel, 1);
+    stream.readS<grm::size>(&sChannel, 1);
 
     std::vector<gChannel> pChannels(sChannel);
 
     for (auto i=0;i<sChannel;++i) {
         auto &pChannel = pChannels[i];
 
-        Stream::read<char>(pChannel.m_name, 256);
+        stream.readS<char>(pChannel.m_name, 256);
 
         // gen key scale
-        Stream::read<grm::size>(&pChannel.m_keyScaleCount, 1);
+        stream.readS<grm::size>(&pChannel.m_keyScaleCount, 1);
         pChannel.m_keyScale = new gKeyScale[pChannel.m_keyScaleCount];
-        Stream::read<gKeyScale>(pChannel.m_keyScale, pChannel.m_keyScaleCount);
+        stream.readS<gKeyScale>(pChannel.m_keyScale, pChannel.m_keyScaleCount);
 
         //gen key rotation
-        Stream::read<grm::size>(&pChannel.m_keyRotationCount, 1);
+        stream.readS<grm::size>(&pChannel.m_keyRotationCount, 1);
         pChannel.m_keyRotation = new gKeyRotation[pChannel.m_keyRotationCount];
-        Stream::read<gKeyRotation>(pChannel.m_keyRotation, pChannel.m_keyRotationCount);
+        stream.readS<gKeyRotation>(pChannel.m_keyRotation, pChannel.m_keyRotationCount);
 
         // gen key position
-        Stream::read<grm::size>(&pChannel.m_keyPositionCount, 1);
+        stream.readS<grm::size>(&pChannel.m_keyPositionCount, 1);
         pChannel.m_keyPosition = new gKeyPosition[pChannel.m_keyPositionCount];
-        Stream::read<gKeyPosition>(pChannel.m_keyPosition, pChannel.m_keyPositionCount);
+        stream.readS<gKeyPosition>(pChannel.m_keyPosition, pChannel.m_keyPositionCount);
     }
 
     for (auto &channel : pChannels) {
@@ -398,10 +400,7 @@ void AssetsManager::doAnimationInBackground(const std::string &path, Animation *
         delete[] pChannel.m_keyPosition;
     }
 
-    Stream::close();
-
     Event::Add(&AssetsManager::SetupAnimation, path, fbxAnimation, target);
-    */
 }
 
 void AssetsManager::ProcessAnimation() {
@@ -490,6 +489,11 @@ void AssetsManager::CreateComponent(GameObject *gameObject, std::string componen
 void AssetsManager::SetupScript(GameObject *gameObject, std::string path, std::streampos position, std::string componentName) {
     auto entt = gameObject->getEntity();
 
+    auto pool = ComponentRegistry::Find(componentName);
+    if (!pool) {
+        return Console::LogError("[ AssetsManager ] Falied to addcomponent %s, component not found.", componentName.c_str());
+    }
+
     auto component = entt->hasComponent(componentName) ? entt->getComponent(componentName) : entt->addComponent(componentName);
     if (!component) {
         return Console::LogError("[ Assetsmanager.GameObject ] Falied to serialize component: %s, %s - Invalid componnet.", gameObject->getName().c_str(), componentName.c_str());
@@ -498,7 +502,7 @@ void AssetsManager::SetupScript(GameObject *gameObject, std::string path, std::s
     Stream stream(path, std::ios_base::in | std::ios_base::out);
     stream.seekg(position, std::ios_base::beg);
 
-    component->Deserialize(&stream);
+    pool->deserialize(component, &stream);
 }
 
 int AssetsManager::ReadScript(Stream *stream, std::unordered_map<std::string, GameObject *> &tempList) {
@@ -564,6 +568,7 @@ void AssetsManager::CreateGameObject(std::string name, std::string tag, bool ena
     if (!gameObject) {
         return;
     }
+    
     if (!(*gameOut)) {
         *gameOut = gameObject;
     }

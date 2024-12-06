@@ -13,7 +13,7 @@
 #include "core/function.hpp"
 #include "core/stream.hpp"
 
-MeshRender::MeshRender() : m_batched(nullptr), m_flags(Batching::Batching_Flags_Dynamic), m_transform(nullptr) {}
+MeshRender::MeshRender() : m_batched(nullptr), m_transform(nullptr) {}
 
 void MeshRender::Init() {
     m_transform = GetComponent<Transform>();
@@ -46,24 +46,6 @@ bool MeshRender::hasMaterial() const {
 
 void MeshRender::build() {
     return MeshRenderbuild(this);
-}
-
-void MeshRender::setMeshOptimize(int value) {
-    m_flags = value;
-
-    build();
-
-    auto transform = GetComponent<Transform>();
-    for (auto &child : transform->getChildren()) {
-        auto gameObject = child->getGameObject();
-
-        if (!gameObject->hasComponent<MeshRender>()) {
-            continue;
-        }
-
-        auto meshRender = gameObject->getComponent<MeshRender>();
-        meshRender->setMeshOptimize(value);
-    }
 }
 
 void MeshRender::Enable() {

@@ -22,7 +22,7 @@ public:
 
     void setAnimation(Animation *animation);
 
-    Matrix4x4 *getBoneData();
+    const std::vector<Matrix4x4> &getBoneData() const;
 
     std::unordered_map<std::string, std::shared_ptr<Bone>> m_bones;
 

@@ -13,13 +13,13 @@
 
 void Animator::update() {
     if (!isReady()) { return; }
-
+    
     m_currentTime += m_animation->getTick() * TimeLast::deltaTime;
     m_currentTime = std::fmod(m_currentTime, m_animation->getDuration());
 
     auto transform = m_armature->getTransform();
 
-    for_each(transform);
+    for_each(transform, Matrix4x4::identityMatrix);
 }
 
 bool Animator::isReady() const {
@@ -42,8 +42,8 @@ void Animator::setAnimation(Animation *animation) {
     m_animation = animation;
 }
 
-Matrix4x4 *Animator::getBoneData() {
-    return m_FinalBoneMatrices.data();
+const std::vector<Matrix4x4> &Animator::getBoneData() const {
+    return m_FinalBoneMatrices;
 }
 
 void Animator::for_each(Transform *transform, Matrix4x4 parent) {
@@ -54,7 +54,6 @@ void Animator::for_each(Transform *transform, Matrix4x4 parent) {
     if (keyframe && it != m_bones.end()) {
         parent *= keyframe->getLocalMatrix(m_currentTime);
 
-
         m_FinalBoneMatrices[it->second->getBoneIndex()] = parent * it->second->getLocalMatrix();
     }
 
@@ -62,5 +61,33 @@ void Animator::for_each(Transform *transform, Matrix4x4 parent) {
         for_each(child, parent);
     }
 }
+/*
 
+void Animator::hierarchy(Transform *transform, const Matrix4x4 &parentTransform) {
+    auto gameObject = transform->getGameObject();
+
+    Matrix4x4 result = parentTransform;
+
+    if (!gameObject) {
+        return;
+    }
+    
+    auto name = gameObject->getName();
+
+    auto keyframe = m_animation->findKeyframe(name);
+    auto bone = findBone(name);
+
+    if (keyframe && bone) {
+        Matrix4x4 offset = bone->getLocalMatrix();
+        result *= keyframe->getLocalMatrix(m_currentTime);
+
+        m_finalBoneMatrices[bone->getBoneIndex()] = result * offset;
+    }
+
+    for (const auto &child : transform->getChildren()) {
+        hierarchy(child, result);
+    }
+}
+
+*/
 

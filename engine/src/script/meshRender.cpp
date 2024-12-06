@@ -36,6 +36,7 @@ void MeshRender::build() {
         m_batched = nullptr;
     }
 
+    // /*
     auto shader = AssetsManager::FindShader("dynamic_one_model");
     if (!shader) {
         return AssetsManager::LoadShader("dynamic_one_model",
@@ -44,6 +45,18 @@ void MeshRender::build() {
             &MeshRender::SetupShader, this, mesh
         );
     }
+    // */
+
+    /*
+    auto shader = AssetsManager::FindShader("dynamic_anim");
+    if (!shader) {
+        return AssetsManager::LoadShader("dynamic_anim",
+            File::GetAsset("/shader/model/dynamic_model.frag"),
+            File::GetAsset("/shader/model/dynamic_model_anim.vert"),
+            &MeshRender::SetupShader, this, mesh
+        );
+    }
+    */
 
     SetupShader(mesh, shader);
 }

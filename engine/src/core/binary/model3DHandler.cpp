@@ -275,13 +275,6 @@ int Model3DHandler::ReadScript(Stream *stream, std::unordered_map<std::string, G
 
 
             Event::Add(&SetupScript, gameObject, stream->getPath(), stream->tellg(), componentName);
-
-            // auto entt = gameObject->getEntity();
-
-            // auto component = entt->hasComponent(componentName) ? entt->getComponent(componentName) : entt->addComponent(componentName);
-            // if (component) {
-            //     component->Deserialize(stream);
-            // }
         }
 
         if (stream->tellg() != nextPosition)
@@ -443,6 +436,7 @@ int Model3DHandler::WriteScript(Stream *stream, std::list<std::tuple<std::string
         if (!stream->writeS(&stream_size, 1)) {
             return 6;
         }
+        
         if (stream_size <= 0) {
             continue;
         }
@@ -640,7 +634,6 @@ void Model3DHandler::CreateObjects(const FbxScene *scene, const FbxNode *node, T
                 }
             }
             verticeCount += vertices.size();
-
         }
 
         auto m_mesh = AssetsManager::FindMesh(meshName);
@@ -667,7 +660,6 @@ void Model3DHandler::CreateObjects(const FbxScene *scene, const FbxNode *node, T
         for (auto &&[name, bone] : m_bones) {
             animator->m_bones[name] = std::make_shared<Bone>(name, bone.getPosition(), bone.getScale(), bone.getRotation(), bone.getID());
         }
-
 
         for (auto &&[name, fbxMaterial] : m_materials) {
             auto material = meshRender->addMaterial(fbxMaterial.getName(), fbxMaterial.getColor());
