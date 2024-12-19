@@ -80,7 +80,7 @@ std::string getfilesize(std::size_t sz) {
     return std::to_string(sz) + "B";
 }
 
-Editor::Editor() : m_viewport(ImGui::GetMainViewport()), s_io(&ImGui::GetIO()), m_currentPath(File::GetAsset("")), m_cameraObject(nullptr), m_mainCamera(nullptr), s_objectSelected(nullptr), m_currentPage(0), m_materialToRename(nullptr), tempCam(nullptr) {
+Editor::Editor() : m_viewport(ImGui::GetMainViewport()), s_io(&ImGui::GetIO()), m_currentPath(File::GetAsset("")), m_cameraObject(nullptr), m_mainCamera(nullptr), s_objectSelected(nullptr), m_currentPage(0), m_materialToRename(nullptr), tempCam(nullptr), uIPopup(0) {
     s_texturePlayGame = nullptr;
 
     s_objectSelected = nullptr;
@@ -314,6 +314,11 @@ void Editor::RenderUI() {
         }
     }
 
+    if (uIPopup & UIPopup_PopupAddComponent) {
+        ImGui::OpenPopup("##popup_add_component");
+        uIPopup &= ~UIPopup_PopupAddComponent;
+    }
+
     PopupComponentMenu();
 
     PopupMenuSettings();
@@ -321,6 +326,8 @@ void Editor::RenderUI() {
     showShaderListPopup();
 
     showMeshListPopup();
+
+    PopupAddComponent();
 }
 
 GameObject *Editor::createEditorCamera() {
@@ -637,13 +644,20 @@ void Editor::PopupMenuAdd() {
     if (!isOpen) {
         return;
     }
-    const char* item_name[1]{"Empty GameObject"};
+    const char* item_name[2] {"Cube", "Empty"};
     auto id = 0;
 
     ImGui::Text("Add Object");
-    if (ImGui::ListBox("##ListBoxOptionsGame", &id, item_name, 1)) {
-        if (id == 0) {
+    if (ImGui::ListBox("##popup_menu_menu_add_list_box", &id, item_name, (sizeof(item_name) / sizeof(item_name[0])))) {
+        switch (id) {
+        case 0:
+            s_objectSelected = CreatePrimitive(0);
+            break;
+        case 1:
             s_objectSelected = Scene::GetCurrentScene()->CreateGameObject("Empty");
+            break;
+        default:
+            break;
         }
         ImGui::CloseCurrentPopup();
     }
@@ -1039,13 +1053,15 @@ bool gluInvertMatrix(const Matrix4x4 &m, Matrix4x4 &invOut) {
 }
 */
 
+#include "core/input.hpp"
+
 void Editor::RenderScene() {
     auto cursorY = ImGui::GetCursorPosY();
     cursorY += 5.0f;
 
-    ImVec2 curSize = ImGui::GetContentRegionAvail();
-    if (m_mainCamera && (m_lastViewportSize.x != curSize.x || m_lastViewportSize.y != curSize.y && curSize.x > 5.0f && curSize.y > 5.0f || bScriptReloaded)) {
-        auto &viewport = Settings::ViewportSize = {static_cast<int>(curSize.x), static_cast<int>(curSize.y)};
+    ImVec2 regionAvail = ImGui::GetContentRegionAvail();
+    if (m_mainCamera && (m_lastViewportSize.x != regionAvail.x || m_lastViewportSize.y != regionAvail.y && regionAvail.x > 5.0f && regionAvail.y > 5.0f || bScriptReloaded)) {
+        auto &viewport = Settings::ViewportSize = {static_cast<int>(regionAvail.x), static_cast<int>(regionAvail.y)};
 
         if (ScriptManager::SetScreenSize) {
             ScriptManager::SetScreenSize(Settings::ViewportSize);
@@ -1055,25 +1071,28 @@ void Editor::RenderScene() {
 
         Engine::GetMainPostprocess()->resize(viewport);
         
-        m_lastViewportSize = curSize;
+        m_lastViewportSize = regionAvail;
         bScriptReloaded = false;
     }
 
     auto texture = Engine::GetImGuiPostprocess()->getTextureColor();
     if (texture) {
-        ImVec2 imageSize = curSize;
-        ImVec2 imageUVMin(0, 1);
-        ImVec2 imageUVMax(1, 0);
-
-        ImGui::Image(reinterpret_cast<ImTextureID>(texture->getID()), imageSize, imageUVMin, imageUVMax);
+        ImGui::Image(reinterpret_cast<ImTextureID>(texture->getID()), regionAvail, {0.0f, 1.0f}, {1.0f, 0.0f});
 
         if (ImGui::IsWindowHovered()) {
             ImVec2 mousePos = ImGui::GetMousePos();
             ImVec2 windowPos = ImGui::GetWindowPos();
             ImVec2 localMousePos = ImVec2(mousePos.x - windowPos.x, mousePos.y - windowPos.y);
 
-            if (localMousePos.x >= 0 && localMousePos.x <= imageSize.x &&
-                localMousePos.y >= 0 && localMousePos.y <= imageSize.y) {
+            if (localMousePos.x >= 0 && localMousePos.x <= regionAvail.x &&
+                localMousePos.y >= 0 && localMousePos.y <= regionAvail.y) {
+                    /*
+                    if (localMousePos.x < 10.f) {
+                        Input::SetCursorPos({mousePos.x + regionAvail.x, mousePos.y});
+                    } else if (localMousePos.x > regionAvail.x - 10.0f) {
+                        Input::SetCursorPos({mousePos.x - (regionAvail.x - 10.0f), mousePos.y});
+                    }
+                    */
             }
         }
 
@@ -1094,7 +1113,7 @@ void Editor::RenderScene() {
             }
         }
         
-        ImGui::SetCursorPos({curSize.x / 2 - cursorPos.x, cursorY});
+        ImGui::SetCursorPos({regionAvail.x / 2 - cursorPos.x, cursorY});
 
         if (ImGui::ImageButton(reinterpret_cast<ImTextureID>(s_texturePlayGame->getID()), ImVec2(16, 16))) {
             if (!Settings::bGameRunning) {
@@ -1106,7 +1125,7 @@ void Editor::RenderScene() {
     }
 
     ImGuizmo::SetDrawlist();
-    ImGuizmo::SetRect(pos.x, pos.y + (cursorY - 5.0f), curSize.x, curSize.y);
+    ImGuizmo::SetRect(pos.x, pos.y + (cursorY - 5.0f), regionAvail.x, regionAvail.y);
 
     if (m_mainCamera && s_objectSelected && s_objectSelected->hasComponent<Transform>()) {
         RenderGuizmo();
@@ -1126,7 +1145,7 @@ void Editor::RenderScene() {
 
         auto textSize = ImGui::CalcTextSize(fps.c_str());
 
-        auto curtorPos = ImVec2(curSize.x - textSize.x, cursorY + textSize.y);
+        auto curtorPos = ImVec2(regionAvail.x - textSize.x, cursorY + textSize.y);
 
         ImGui::SetCursorPos(curtorPos);
 
@@ -1616,28 +1635,39 @@ void Editor::RenderSettings() {
     ImGui::Checkbox("Wireframe", &RenderManager::bWireFrame);
     ImGui::Checkbox("Debug Mode", &DebugDraw::bDebugMode);
 
-    ImGui::SeparatorText("Editor");
-
-    std::array<const char *, 3> editor_name{"None", "Visual Studio Code", "Sublime Text"};
-
     m_config->setCategory("config");
 
-    int item = m_config->hasKey("use_editor") ? m_config->getValue<int>("use_editor") : m_config->setValue<int>("use_editor", 0);
-    if (ImGui::Combo("##render_settings_list_box", &item, editor_name.data(), editor_name.size())) {
-        m_config->setValue<int>("use_editor", item);
+    ImGui::SeparatorText("Editor");
 
-        switch (item) {
-        case 1: // Visual Studio Code
-            return ConfigureVSCode();
+    {
+        const char *editor_name[] {"None", "Visual Studio Code", "Sublime Text"};
+        int len = sizeof(editor_name) / sizeof(editor_name[0]);
+    
+        int item = m_config->hasKey("use_editor") ? m_config->getValue<int>("use_editor") : m_config->setValue<int>("use_editor", 0);
+        if (ImGui::Combo("##render_settings_list_box", &item, editor_name, len)) {
+            m_config->setValue<int>("use_editor", item);
+    
+            switch (item) {
+            case 1: // Visual Studio Code
+                return ConfigureVSCode();
+            }
+            ImGui::CloseCurrentPopup();
         }
-        ImGui::CloseCurrentPopup();
+    
+    }
+    
+    ImGui::SeparatorText("World");
+    {
+        auto bFpsLimited = m_config->hasKey("fps_limit") ? m_config->getValue<bool>("fps_limit") : m_config->setValue<bool>("fps_limit", true);
+        if (ImGui::Checkbox("Fps Limited", &bFpsLimited)) {
+            m_config->setValue<bool>("fps_limit", bFpsLimited);
+        }
     }
 
-    ImGui::SeparatorText("World");
+    ImGui::SeparatorText("View");
 
-    auto bFpsLimited = m_config->hasKey("fps_limit") ? m_config->getValue<bool>("fps_limit") : m_config->setValue<bool>("fps_limit", true);
-    if (ImGui::Checkbox("Fps Limited", &bFpsLimited)) {
-        m_config->setValue<bool>("fps_limit", bFpsLimited);
+    auto regionAvail = ImGui::GetContentRegionAvail();
+    if (ImGui::Button("Estatisticas", ImVec2{regionAvail.x, 0.0f})) {
     }
 }
 
@@ -1683,10 +1713,12 @@ void Editor::RenderPropertiUI() {
     if (ImGui::BeginTabBar("##render_properti_ui_tabbar")) {
         RenderGameObjectPropertiUI();
         
+        /*
         if (ImGui::BeginTabItem("Estatística", nullptr)) {
             RenderStatisticsMenu();
             ImGui::EndTabItem();
         }
+        */
         ImGui::EndTabBar();
     }
     ImGui::End();
@@ -1721,27 +1753,8 @@ void Editor::RenderStatisticsMenu() {
 }
 
 void Editor::RenderGameObjectPropertiUI() {
-    if (!s_objectSelected) {
-        return;
-    }
+    if (!s_objectSelected) { return; }
 
-    auto entt = s_objectSelected->getEntity();
-
-    auto isOpenPopup = false;
-    rTabObjectInfo(isOpenPopup);
-    
-    if (isOpenPopup) {
-        ImGui::OpenPopup("##popup_add_component");
-    }
-    PopupAddComponent();
-}
-
-void Editor::rTabObjectInfo(bool &isOpenPopup) {
-    auto isOpen = ImGui::BeginTabItem("GameObject", nullptr);
-    if (!isOpen) {
-        return;
-    }
-    
     auto objName = s_objectSelected->getName();
     ImGui::PushID(objName.c_str());
 
@@ -1828,11 +1841,10 @@ void Editor::rTabObjectInfo(bool &isOpenPopup) {
     auto avail = ImGui::GetContentRegionAvail();
 
     if (ImGui::Button("AddComponent", {avail.x, 0.0f})) {
-        isOpenPopup = true;
+        uIPopup |= UIPopup_PopupAddComponent;
     }
 
     ImGui::PopID();
-    ImGui::EndTabItem();
 }
 
 bool Editor::RenderComponents(const std::string &name, Component *component) {
@@ -2046,6 +2058,7 @@ bool Editor::OnPropertyMeshRender(MeshRender *meshRender) {
         materialList.push_back(std::make_unique<Material>());
     }
 
+    ImGui::Indent();
     for (auto it=materialList.begin();it!=materialList.end();) {
         if (!RenderMaterial(it->get())) {
             it++;
@@ -2053,6 +2066,7 @@ bool Editor::OnPropertyMeshRender(MeshRender *meshRender) {
             it = materialList.erase(it);
         }
     }
+    ImGui::Unindent();
 
     if (m_materialToRename) {
         ImGui::OpenPopup("##popup_rename_material");
@@ -2069,6 +2083,7 @@ bool Editor::RenderMaterial(Material *material) {
     if (!bVisible) {
         return true;
     }
+    
     if (ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
         m_materialToRename = &(*material);
     }
@@ -2518,7 +2533,7 @@ void Editor::PopupMenuSettings() {
         return;
     }
 
-    const char *title = "Settings";
+    auto title = "Settings";
 
     auto textSize = ImGui::CalcTextSize(title);
 
@@ -2757,4 +2772,81 @@ void Editor::renderMeshList() {
 
         ImGui::Separator();
     }
+}
+
+GameObject *Editor::CreatePrimitive(int type) {
+    auto go = GameObject::Create("Cube");
+
+    auto mesh = AssetsManager::FindMesh("Cube");
+    if (!mesh) {
+        mesh = AssetsManager::CreateMesh("Cube");
+
+        std::vector<Vertex3D> vertices = {
+            Vertex3D{Vector3{-1.000000, -1.000000,  1.000000}, Vector3{-1.000000, -0.000000, -0.000000}, Vector2{0.625000, 0.000000}, 0},
+            Vertex3D{Vector3{-1.000000,  1.000000,  1.000000}, Vector3{-0.000000, -0.000000, -1.000000}, Vector2{0.375000, 0.000000}, 0},
+            Vertex3D{Vector3{-1.000000, -1.000000, -1.000000}, Vector3{ 1.000000, -0.000000, -0.000000}, Vector2{0.375000, 0.000000}, 0},
+
+            Vertex3D{Vector3{-1.000000, -1.000000,  1.000000}, Vector3{-1.000000, -0.000000, -0.000000}, Vector2{0.625000, 0.000000}, 0},
+            Vertex3D{Vector3{-1.000000,  1.000000,  1.000000}, Vector3{-0.000000, -0.000000, -1.000000}, Vector2{0.375000, 0.000000}, 0},
+            Vertex3D{Vector3{-1.000000, -1.000000, -1.000000}, Vector3{ 1.000000, -0.000000, -0.000000}, Vector2{0.375000, 0.000000}, 0},
+
+            Vertex3D{Vector3{-1.000000, -1.000000,  1.000000}, Vector3{-1.000000, -0.000000, -0.000000}, Vector2{0.625000, 0.000000}, 0},
+            Vertex3D{Vector3{-1.000000,  1.000000,  1.000000}, Vector3{-0.000000, -0.000000, -1.000000}, Vector2{0.375000, 0.000000}, 0},
+            Vertex3D{Vector3{-1.000000, -1.000000, -1.000000}, Vector3{ 1.000000, -0.000000, -0.000000}, Vector2{0.375000, 0.000000}, 0},
+
+            Vertex3D{Vector3{-1.000000, -1.000000,  1.000000}, Vector3{-1.000000, -0.000000, -0.000000}, Vector2{0.625000, 0.000000}, 0},
+            Vertex3D{Vector3{-1.000000,  1.000000,  1.000000}, Vector3{-0.000000, -0.000000, -1.000000}, Vector2{0.375000, 0.000000}, 0},
+            Vertex3D{Vector3{-1.000000, -1.000000, -1.000000}, Vector3{ 1.000000, -0.000000, -0.000000}, Vector2{0.375000, 0.000000}, 0},
+
+            Vertex3D{Vector3{-1.000000, -1.000000,  1.000000}, Vector3{-1.000000, -0.000000, -0.000000}, Vector2{0.625000, 0.000000}, 0},
+            Vertex3D{Vector3{-1.000000 , 1.000000,  1.000000}, Vector3{-0.000000, -0.000000, -1.000000}, Vector2{0.375000, 0.000000}, 0},
+            Vertex3D{Vector3{-1.000000, -1.000000, -1.000000}, Vector3{ 1.000000, -0.000000, -0.000000}, Vector2{0.375000, 0.000000}, 0},
+
+            Vertex3D{Vector3{-1.000000, -1.000000,  1.000000}, Vector3{-1.000000, -0.000000, -0.000000}, Vector2{0.625000, 0.000000}, 0},
+            Vertex3D{Vector3{-1.000000,  1.000000,  1.000000}, Vector3{-0.000000, -0.000000, -1.000000}, Vector2{0.375000, 0.000000}, 0},
+            Vertex3D{Vector3{-1.000000, -1.000000, -1.000000}, Vector3{ 1.000000, -0.000000, -0.000000}, Vector2{0.375000, 0.000000}, 0},
+
+            Vertex3D{Vector3{-1.000000, -1.000000,  1.000000}, Vector3{-1.000000, -0.000000, -0.000000}, Vector2{0.625000, 0.000000}, 0},
+            Vertex3D{Vector3{-1.000000,  1.000000,  1.000000}, Vector3{-0.000000, -0.000000, -1.000000}, Vector2{0.375000, 0.000000}, 0},
+            Vertex3D{Vector3{-1.000000, -1.000000, -1.000000}, Vector3{ 1.000000, -0.000000, -0.000000}, Vector2{0.375000, 0.000000}, 0},
+
+            Vertex3D{Vector3{-1.000000, -1.000000,  1.000000}, Vector3{-1.000000, -0.000000, -0.000000}, Vector2{0.625000, 0.000000}, 0},
+            Vertex3D{Vector3{-1.000000,  1.000000,  1.000000}, Vector3{-0.000000, -0.000000, -1.000000}, Vector2{0.375000, 0.000000}, 0},
+            Vertex3D{Vector3{-1.000000, -1.000000, -1.000000}, Vector3{ 1.000000, -0.000000, -0.000000}, Vector2{0.375000, 0.000000}, 0},
+
+            Vertex3D{Vector3{-1.000000, -1.000000,  1.000000}, Vector3{-1.000000, -0.000000, -0.000000}, Vector2{0.625000, 0.000000}, 0},
+            Vertex3D{Vector3{-1.000000,  1.000000,  1.000000}, Vector3{-0.000000, -0.000000, -1.000000}, Vector2{0.375000, 0.000000}, 0},
+            Vertex3D{Vector3{-1.000000, -1.000000, -1.000000}, Vector3{ 1.000000, -0.000000, -0.000000}, Vector2{0.375000, 0.000000}, 0},
+
+            Vertex3D{Vector3{-1.000000, -1.000000,  1.000000}, Vector3{-1.000000, -0.000000, -0.000000}, Vector2{0.625000, 0.000000}, 0},
+            Vertex3D{Vector3{-1.000000,  1.000000,  1.000000}, Vector3{-0.000000, -0.000000, -1.000000}, Vector2{0.375000, 0.000000}, 0},
+            Vertex3D{Vector3{-1.000000, -1.000000, -1.000000}, Vector3{ 1.000000, -0.000000, -0.000000}, Vector2{0.375000, 0.000000}, 0},
+
+            Vertex3D{Vector3{-1.000000, -1.000000,  1.000000}, Vector3{-1.000000, -0.000000, -0.000000}, Vector2{0.625000, 0.000000}, 0},
+            Vertex3D{Vector3{-1.000000,  1.000000,  1.000000}, Vector3{-0.000000, -0.000000, -1.000000}, Vector2{0.375000, 0.000000}, 0},
+            Vertex3D{Vector3{-1.000000, -1.000000, -1.000000}, Vector3{ 1.000000, -0.000000, -0.000000}, Vector2{0.375000, 0.000000}, 0},
+
+            Vertex3D{Vector3{-1.000000, -1.000000,  1.000000}, Vector3{-1.000000, -0.000000, -0.000000}, Vector2{0.625000, 0.000000}, 0},
+            Vertex3D{Vector3{-1.000000,  1.000000,  1.000000}, Vector3{-0.000000, -0.000000, -1.000000}, Vector2{0.375000, 0.000000}, 0},
+            Vertex3D{Vector3{-1.000000, -1.000000, -1.000000}, Vector3{ 1.000000, -0.000000, -0.000000}, Vector2{0.375000, 0.000000}, 0}
+
+        };
+
+        for (auto &v : vertices) {
+            mesh->addVertex(v);
+        }
+    }
+
+
+    auto mf = go->addComponent<MeshFilter>();
+    mf->Init();
+    mf->setMesh(mesh);
+
+    auto mr = go->addComponent<MeshRender>();
+    mr->Init();
+
+    mr->addMaterial();
+    // mr->build();
+
+    return GameObject::Instantiate(go);
 }

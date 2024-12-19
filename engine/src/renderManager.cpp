@@ -73,8 +73,8 @@ void RenderManager::Process(Camera *camera, ShadowMap *shadowMap) {
         grr::gShader::SetUniform("u_view", m_camera->getViewmatrix());
         grr::gShader::SetUniform("m_eye", m_camera->getPosition());
 
-        shadowMap->bindTexture(8);
-        grr::gShader::SetUniform("m_shadowMap", 8);
+        // shadowMap->bindTexture(8);
+        // grr::gShader::SetUniform("m_shadowMap", 8);
 
         SetupLight();
     }

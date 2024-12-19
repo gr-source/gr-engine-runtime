@@ -95,11 +95,10 @@ void Entity::copy(const Entity *entity) {
         Console::LogError("[ Entity ] Target game object does not have a transform.");
     }
 
-    // getGameObject()->initialize(true);
-
     init();
 
     if (hasComponent<MeshRender>()) {
+
         getComponent<MeshRender>()->build();
     }
 }
@@ -246,6 +245,8 @@ Component *Entity::addInternalComponent(const std::string &name, const Component
     if (!component) {
         return nullptr;
     }
+
+    component->entity = this;
 
     m_componentPtr[name] = component;
 

@@ -23,7 +23,7 @@ void MeshRender::build() {
     if (!entity->hasComponent<MeshFilter>()) {
         return Console::LogError("[ MeshRender ] MeshFilter component fo not found.");
     }
-    
+
     auto meshFilter = entity->getComponent<MeshFilter>();
     
     auto mesh = meshFilter->getMesh();
@@ -68,7 +68,7 @@ Batching *MeshRender::getBatchGroup() {
 void MeshRender::SetupShader(Mesh *mesh, grr::gShader *shader) {
     m_batched = Batching::FindBatchByName(getGameObject()->getName());
     if (!m_batched) {
-        m_batched = Batching::AddBatch(getGameObject()->getName(), &m_materials, shader);
+        m_batched = Batching::AddBatch(getGameObject()->getName(), &m_materials, shader, mesh->hasIndices() ? BatchingFlags_HasIndices : 0);
         m_batched->buildMeshe(mesh);
     }
     m_batched->insert(m_transform);

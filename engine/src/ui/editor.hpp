@@ -35,6 +35,12 @@ enum IconType : int {
 	ICON_SCENE        = 17
 };
 
+enum UIPopup : grm::u32 {
+    UIPopup_PopupAddComponent = 1 << 1, 
+};
+
+using UIPopup_ = grm::u32;
+
 
 class Editor {
 public:
@@ -125,6 +131,8 @@ private:
         Quaternion rotation;
         Vector3 scale;
     } mLastTransform;
+
+    UIPopup_ uIPopup;
 
     GameObject *createEditorCamera();
 
@@ -280,4 +288,6 @@ private:
     void showMeshListPopup();
 
     void renderMeshList();
+
+    static GameObject *CreatePrimitive(int type);
 };
