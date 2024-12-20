@@ -47,7 +47,7 @@ protected:
     static void GRKeyboardUp(grm::u32 key);
     static void GRCursorPos(float xpos, float ypos);
     static void GRCursorScrool(float xoffset, float yoffset);
-    static void GRDropFunc(const char* path);
+    static void DropFile(const char* path);
 
     static void OnPhysics();
 

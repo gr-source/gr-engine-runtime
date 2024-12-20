@@ -15,6 +15,8 @@ std::unique_ptr<btCollisionDispatcher> PhysicsScene::dispatcher = nullptr;
 std::mutex PhysicsScene::m_mutex;
 
 void PhysicsScene::Initialize() {
+    std::unique_lock<std::mutex> lock(m_mutex);
+
     broadphase             = std::make_unique<btDbvtBroadphase>();
 
     collisionConfiguration = std::make_unique<btDefaultCollisionConfiguration>();
@@ -32,20 +34,26 @@ void PhysicsScene::Shutdown() {
 }
 
 void PhysicsScene::AddRigidbody(btRigidBody* body) {
+    std::lock_guard<std::mutex> lock(m_mutex);
     dynamicsWorld->addRigidBody(body);
 }
 
 void PhysicsScene::RemoveRigidbody(btRigidBody* body) {
+    std::lock_guard<std::mutex> lock(m_mutex);
     dynamicsWorld->removeRigidBody(body);
 }
 
 void PhysicsScene::Update(float dt) {
+    std::lock_guard<std::mutex> lock(m_mutex);
     dynamicsWorld->stepSimulation(dt);
 }
 
 bool PhysicsScene::Raycast(const Vector3 &rayStart, const Vector3 &rayEnd, Hit &hit) {
     btCollisionWorld::ClosestRayResultCallback rayCallback({rayStart.x, rayStart.y, rayStart.z}, {rayEnd.x, rayEnd.y, rayEnd.z});
-    dynamicsWorld->rayTest({rayStart.x, rayStart.y, rayStart.z}, {rayEnd.x, rayEnd.y, rayEnd.z}, rayCallback);
+    {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        dynamicsWorld->rayTest({rayStart.x, rayStart.y, rayStart.z}, {rayEnd.x, rayEnd.y, rayEnd.z}, rayCallback);
+    }
 
     hit.collisionObject = nullptr;
     if (rayCallback.m_collisionObject)
@@ -58,5 +66,6 @@ bool PhysicsScene::Raycast(const Vector3 &rayStart, const Vector3 &rayEnd, Hit &
 }
 
 void PhysicsScene::contactTest(btCollisionObject *colObj, btCollisionWorld::ContactResultCallback &resultCallback) {
+    std::lock_guard<std::mutex> lock(m_mutex);
     return dynamicsWorld->contactTest(colObj, resultCallback);
 }

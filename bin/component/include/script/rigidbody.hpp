@@ -59,8 +59,6 @@ public:
 
     void setMass(float value);
 
-    void setDynamic(bool value);
-
     btRigidBody *getBody() const;
 
     float getMotionThreshold() const;
@@ -93,8 +91,6 @@ private:
     Transform *m_transform;
 
     float m_mass;
-
-    bool m_bDinamic;
 
     Vector3 m_lookRotation;
 

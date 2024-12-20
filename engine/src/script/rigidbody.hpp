@@ -18,10 +18,6 @@ public:
 
     void setMass(float value);
 
-    bool getDinamic() const;
-
-    void setDynamic(bool value);
-
     void setLookRotation(const Vector3 &value);
 
     const Vector3 &getLookRotation() const;
@@ -44,8 +40,6 @@ private:
     Transform *m_transform;
 
     float m_mass;
-
-    bool m_bDinamic;
 
     Vector3 m_lookRotation;
 

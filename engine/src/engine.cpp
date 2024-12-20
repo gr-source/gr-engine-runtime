@@ -167,7 +167,7 @@ void Engine::GRCursorScrool(float xoffset, float yoffset) {
     }
 }
 
-void Engine::GRDropFunc(const char *path) {
+void Engine::DropFile(const char *path) {
     auto editor = ProjectMenu::GetEditor();
     if (editor)
         editor->DropFile(path);
@@ -220,7 +220,7 @@ void Engine::HandleEvent(EngineEvent event, const void* data) {
         break;
     }
     case GR_DROFUNC: {
-        GRDropFunc((const char*)data);
+        DropFile(reinterpret_cast<const char *>(data));
         break;
     }
     case GR_DESTROY: {

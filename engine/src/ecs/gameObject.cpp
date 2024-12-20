@@ -129,22 +129,8 @@ void GameObject::initialize(bool all) {
         return Console::LogError("[ GameObject ] Falied to initialize object: %s", m_name.c_str());
     }
     
-    // if (all) {
     m_entity->init();
-    // } else {
-        // if (hasComponent<MeshRender>()) {
-        //     getComponent<MeshRender>()->Init();
-        // }
-
-        // if (hasComponent<Light>()) {
-        //     getComponent<Light>()->Init();
-        // }
-
-        // if (hasComponent<Camera>()) {
-        //     getComponent<Camera>()->Init();
-        // }
-    // }
-
+    
     if (hasComponent<MeshRender>()) {
         getComponent<MeshRender>()->build();
     }

@@ -136,6 +136,7 @@ set(engine_src
     src/Global.cpp
     src/skybox.cpp
     src/renderer.cpp
+    src/window.cpp
     src/settings.cpp
     src/screenRender.cpp
     src/shadowMap.cpp

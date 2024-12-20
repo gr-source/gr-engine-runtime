@@ -152,7 +152,7 @@ void Entity::init() {
 } 
 
 void Entity::update() {
-    for (auto &[name, component] : m_componentPtr) {
+    for (auto &&[name, component] : m_componentPtr) {
         auto pool = ComponentRegistry::Find(name);
         if (!pool) {
             continue;

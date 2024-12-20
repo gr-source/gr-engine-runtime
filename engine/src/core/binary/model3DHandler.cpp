@@ -562,7 +562,7 @@ void Model3DHandler::ConvertToGameObject(std::shared_ptr<FbxScene> scene, const 
     CreateObjects(&(*scene), &node, nullptr, &gameObject, m_tempObject);
     if (!gameObject) {
         return Console::LogError("[ Model3DHandler ] Falied to convert fbx model to grmx.");
-    }
+    } 
 
     ExportGRMX(File::GetAsset("/model/" + gameObject->getName() + ".gmdx"), gameObject);
 }
@@ -654,11 +654,13 @@ void Model3DHandler::CreateObjects(const FbxScene *scene, const FbxNode *node, T
             return;
         }
 
-        auto animator = gameObject->addComponent<Animator>();
-        if (!animator) { return; }
-
-        for (auto &&[name, bone] : m_bones) {
-            animator->m_bones[name] = std::make_shared<Bone>(name, bone.getPosition(), bone.getScale(), bone.getRotation(), bone.getID());
+        if (!m_bones.empty()) {
+            auto animator = gameObject->addComponent<Animator>();
+            if (!animator) { return; }
+    
+            for (auto &&[name, bone] : m_bones) {
+                animator->m_bones[name] = std::make_shared<Bone>(name, bone.getPosition(), bone.getScale(), bone.getRotation(), bone.getID());
+            }
         }
 
         for (auto &&[name, fbxMaterial] : m_materials) {
@@ -669,7 +671,8 @@ void Model3DHandler::CreateObjects(const FbxScene *scene, const FbxNode *node, T
                 if (type != TextureType_Albedo) {
                     continue;
                 }
-                AssetsManager::LoadTexture(path, &Model3DHandler::SetupTextureMaterial, material, textureID++);
+                AssetsManager::LoadTexture(path, &Model3DHandler::SetupTextureMaterial, material, textureID);
+                textureID++;
             }
         }
     }

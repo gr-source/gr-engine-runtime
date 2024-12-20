@@ -5,6 +5,7 @@
 #include "renderManager.h"
 #include "screenRender.hpp"
 #include "renderer.h"
+#include "window.hpp"
 #include "settings.h"
 #include "engine.h"
 #include "memory.h"
@@ -80,7 +81,7 @@ std::string getfilesize(std::size_t sz) {
     return std::to_string(sz) + "B";
 }
 
-Editor::Editor() : m_viewport(ImGui::GetMainViewport()), s_io(&ImGui::GetIO()), m_currentPath(File::GetAsset("")), m_cameraObject(nullptr), m_mainCamera(nullptr), s_objectSelected(nullptr), m_currentPage(0), m_materialToRename(nullptr), tempCam(nullptr), uIPopup(0) {
+Editor::Editor() : m_viewport(ImGui::GetMainViewport()), mImGuiIO(&ImGui::GetIO()), m_currentPath(File::GetAsset("")), m_cameraObject(nullptr), m_mainCamera(nullptr), s_objectSelected(nullptr), m_currentPage(0), m_materialToRename(nullptr), tempCam(nullptr), uIPopup(0) {
     s_texturePlayGame = nullptr;
 
     s_objectSelected = nullptr;
@@ -159,7 +160,7 @@ Editor::Editor() : m_viewport(ImGui::GetMainViewport()), s_io(&ImGui::GetIO()), 
     m_config->setCategory(lastCategory);
 
     if (!File::Exists(File::GetFile("/MainEngineCamera.gmdx", true))) {
-        m_cameraObject = createEditorCamera();
+        m_cameraObject = CreateEditorCamera();
         if (m_cameraObject) {
             m_mainCamera = m_cameraObject->getComponent<Camera>();
         }
@@ -174,6 +175,8 @@ Editor::Editor() : m_viewport(ImGui::GetMainViewport()), s_io(&ImGui::GetIO()), 
     ScreenRender::Initialize();
 
     Skybox::Initialize();
+
+    Window::SetName("GameEngine: " + Project::GetCurrent()->getName());
 }
 
 Editor::~Editor() {
@@ -220,6 +223,7 @@ void Editor::DropFile(const std::filesystem::path &path) {
 }
  
 void Editor::Import3DModel(const std::string &path) {
+    // Threadpool::AddTask(&Filmbox::Load, path, .., false);
     Model3DHandler::ImportFBX(path);
 }
 
@@ -241,8 +245,8 @@ void Editor::KeyBoardUp(grm::u32 key) {
         return;
     }
 
-    if (s_io)
-        s_io->MouseDrawCursor = !s_io->MouseDrawCursor;
+    if (mImGuiIO)
+        mImGuiIO->MouseDrawCursor = !mImGuiIO->MouseDrawCursor;
 }
 
 void Editor::LoadScript() {
@@ -308,7 +312,7 @@ void Editor::RenderUI() {
 
     RenderPropertiUI();
 
-    if (m_mainCamera && s_io->KeyCtrl && ImGui::IsKeyReleased(ImGuiKey_S)) {
+    if (m_mainCamera && mImGuiIO->KeyCtrl && ImGui::IsKeyReleased(ImGuiKey_S)) {
         for (auto &&[name, scene] : Scene::GetScenes()) {
             Event::Add(&Editor::SaveScene, this, name, &(*scene));
         }
@@ -328,21 +332,6 @@ void Editor::RenderUI() {
     showMeshListPopup();
 
     PopupAddComponent();
-}
-
-GameObject *Editor::createEditorCamera() {
-    auto gameObject = GameObject::Create("MainEngineCamera", "Engine");
-    if (!gameObject) {
-        return nullptr;
-    }
-
-    auto camera = gameObject->addComponent<Camera>();
-    if (!camera) {
-        return nullptr;
-    }
-
-    gameObject->initialize(false);
-    return gameObject;
 }
 
 void Editor::BuildDock(ImGuiID dockspace_id, ImGuiDockNodeFlags dockspace_flags) {
@@ -1169,7 +1158,7 @@ void Editor::RenderScene() {
 
     ImGui::PopStyleColor();
 
-    if (s_objectSelected && !s_io->MouseDrawCursor && ImGui::IsWindowFocused() && s_io->KeyShift && ImGui::IsKeyReleased(ImGuiKey_D)) {
+    if (s_objectSelected && !mImGuiIO->MouseDrawCursor && ImGui::IsWindowFocused() && mImGuiIO->KeyShift && ImGui::IsKeyReleased(ImGuiKey_D)) {
         s_objectSelected = GameObject::Instantiate(s_objectSelected);
     }
 }
@@ -1193,7 +1182,7 @@ void Editor::StopGame() {
 void Editor::loadCamera(GameObject *gameObject) {
     m_cameraObject = gameObject;
     if (!m_cameraObject) {
-        m_cameraObject = createEditorCamera();
+        m_cameraObject = CreateEditorCamera();
     }
 
     m_mainCamera = m_cameraObject->getComponent<Camera>();
@@ -1202,17 +1191,19 @@ void Editor::loadCamera(GameObject *gameObject) {
 }
 
 void Editor::RenderGuizmo() {
-    if (!s_io->MouseDrawCursor && !s_io->KeyShift && !s_io->KeyCtrl && ImGui::IsKeyReleased(ImGuiKey_G) && ImGui::IsWindowHovered()) {
+    if (!mImGuiIO->MouseDrawCursor && !mImGuiIO->KeyShift && !mImGuiIO->KeyCtrl && ImGui::IsKeyReleased(ImGuiKey_G) && ImGui::IsWindowHovered()) {
         m_guizmoOperation = ImGuizmo::TRANSLATE;
     }
-    if (!s_io->MouseDrawCursor && !s_io->KeyShift && !s_io->KeyCtrl && ImGui::IsKeyReleased(ImGuiKey_R) && ImGui::IsWindowHovered()) {
+    
+    if (!mImGuiIO->MouseDrawCursor && !mImGuiIO->KeyShift && !mImGuiIO->KeyCtrl && ImGui::IsKeyReleased(ImGuiKey_R) && ImGui::IsWindowHovered()) {
         m_guizmoOperation = ImGuizmo::ROTATE;
     }
-    if (!s_io->MouseDrawCursor && !s_io->KeyShift && !s_io->KeyCtrl && ImGui::IsKeyReleased(ImGuiKey_S) && ImGui::IsWindowHovered()) {
+    
+    if (!mImGuiIO->MouseDrawCursor && !mImGuiIO->KeyShift && !mImGuiIO->KeyCtrl && ImGui::IsKeyReleased(ImGuiKey_S) && ImGui::IsWindowHovered()) {
         m_guizmoOperation = ImGuizmo::SCALE;
     }
 
-    if (s_io->KeyCtrl && ImGui::IsKeyReleased(ImGuiKey_Space) && ImGui::IsWindowHovered()) {
+    if (mImGuiIO->KeyCtrl && ImGui::IsKeyReleased(ImGuiKey_Space) && ImGui::IsWindowHovered()) {
         if (m_guizmoManipulate == ImGuizmo::WORLD) {
             m_guizmoManipulate = ImGuizmo::LOCAL;
         } else if (m_guizmoManipulate == ImGuizmo::LOCAL) {
@@ -1275,15 +1266,13 @@ void Editor::PopupMenuCreateScene() {
 
     ImGui::Text("Input scene name");
 
-    if (!ImGui::IsAnyItemActive() && !ImGui::IsMouseClicked(0))
-        ImGui::SetKeyboardFocusHere(0);
+    if (!ImGui::IsAnyItemActive() && !ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+        ImGui::SetKeyboardFocusHere();
 
     std::string name(256, '\0');
-    if (ImGui::InputText("##input_scene_name", name.data(), name.size(), ImGuiInputTextFlags_EnterReturnsTrue)) {
+    if (ImGui::InputText("##popup_create_scene_inputtext", name.data(), name.size(), ImGuiInputTextFlags_EnterReturnsTrue)) {
         name.erase(std::remove(name.begin(), name.end(), '\0'), name.end());
 
-        std::cout << name.size() << std::endl;
-        
         if (!name.empty()) {
             Scene::Create(name);
         }
@@ -1348,7 +1337,7 @@ void Editor::RenderTreeNodeFile(std::filesystem::path path) {
             fLisDirSelected.emplace(path, true);
         }
         pPopupFileManager = true;
-    } else if (s_io->KeyShift && ImGui::IsItemClicked(ImGuiMouseButton_Left)) {
+    } else if (mImGuiIO->KeyShift && ImGui::IsItemClicked(ImGuiMouseButton_Left)) {
         fLisDirSelected.emplace(path, true);
     } else if (ImGui::IsItemClicked(ImGuiMouseButton_Left) && fLisDirSelected.find(path) == fLisDirSelected.end()) {
         fLisDirSelected.clear();
@@ -1947,10 +1936,9 @@ void Editor::PopupAddComponent() {
     if (!isOpen) {
         return;
     }
-    auto componentPool = ComponentRegistry::GetPoolList();
 
     std::vector<std::string> m_componentName;
-    for (auto [name, pool] : componentPool) {
+    for (auto [name, pool] : ComponentRegistry::GetPoolList()) {
         m_componentName.push_back(name);
     }
 
@@ -1958,12 +1946,26 @@ void Editor::PopupAddComponent() {
         return lhs < rhs;
     });
 
+    if (!ImGui::IsAnyItemActive() && !ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+        ImGui::SetKeyboardFocusHere();
+
+    static char componentName[256] = {'\0'};
+    ImGui::InputText("##popup_add_componnet_inputtext_filter", componentName, sizeof(componentName));
+
+    m_componentName.erase(std::remove_if(m_componentName.begin(), m_componentName.end(), [] (auto &name) {
+        return std::strstr(name.c_str(), componentName) == nullptr;
+    }), m_componentName.end());
+
+    auto regionAvail = ImGui::GetContentRegionAvail();
+
     for (auto &name : m_componentName) {
-        if (ImGui::SmallButton(name.c_str()) && !s_objectSelected->getEntity()->hasComponent(name)) {
+        if (ImGui::Button(name.c_str(), ImVec2{regionAvail.x, 0.0f}) && !s_objectSelected->getEntity()->hasComponent(name)) {
             auto component = s_objectSelected->getEntity()->addComponent(name);
             if (component && name == "Light") {
                 component->Init();
             }
+
+            std::memset(componentName, '\0', sizeof(componentName));
 
             ImGui::CloseCurrentPopup();
         }
@@ -2000,6 +2002,7 @@ bool Editor::OnPropertyTransform(Transform *transform) {
 
         transform->setLocalRotation(Math::normalize(Math::euler({Math::rad(euler)})));
     }
+    
     return false;
 }
 
@@ -2039,7 +2042,7 @@ void Editor::RenderUVConfig(MeshFilter *meshFilter) {
 
     ImGui::Text("Rotation:");
     Vector3 euler = Vector3::zero;
-    if (View::DragScalarEx(name, reinterpret_cast<float *>(&euler), 3, 1.0f, 0.0f, 0.0f)) {
+    if (View::DragScalarEx(name, reinterpret_cast<float *>(&euler), 2, 1.0f, 0.0f, 0.0f)) {
         //
     }
 
@@ -2281,11 +2284,6 @@ bool Editor::OnPropertyRigidbody(Rigidbody *rigidbody) {
         rigidbody->setMass(mass);
     }
 
-    auto bDynamic = rigidbody->getDinamic();
-    if (ImGui::Checkbox("##rigidbody_dynamic", &bDynamic)) {
-        rigidbody->setDynamic(bDynamic);
-    }
-
     const char* text[] {"X", "Y", "Z"};
 
     auto freese = rigidbody->getLookRotation();
@@ -2453,7 +2451,7 @@ Camera *Editor::getCamera() {
 bool Editor::ProgressLoad(int max, int current) {
     const ImVec2 windowSize(300, 200);
 
-    ImVec2 displaySize = s_io->DisplaySize;
+    ImVec2 displaySize = mImGuiIO->DisplaySize;
     displaySize.x = (displaySize.x / 2.0f) - windowSize.x / 2.0f;
     displaySize.y = (displaySize.y / 2.0f) - windowSize.y / 2.0f;
 
@@ -2864,3 +2862,21 @@ GameObject *Editor::CreatePrimitive(int type) {
 
     return GameObject::Instantiate(go);
 }
+
+GameObject *Editor::CreateEditorCamera() {
+    auto gameObject = GameObject::Create("MainEngineCamera", "Engine");
+    if (!gameObject) {
+        return nullptr;
+    }
+
+    auto camera = gameObject->addComponent<Camera>();
+    if (!camera) {
+        return nullptr;
+    }
+
+    gameObject->initialize(false);
+    return gameObject;
+}
+
+
+

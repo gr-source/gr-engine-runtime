@@ -148,6 +148,7 @@ void Filmbox::ProcessTexture(aiMaterial *iMaterial, FbxMaterial &fbxMaterial) {
         }
 
         fbxMaterial.addTexture(TextureType_Albedo, path.C_Str());
+        break;
     }
 }
 

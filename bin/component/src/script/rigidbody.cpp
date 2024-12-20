@@ -8,34 +8,36 @@
 
 #include <bullet/btBulletDynamicsCommon.h>
 
-static void (*RigidbodyInitialize)(Rigidbody *instance);
+static void (*RigidbodyInitialize)(Rigidbody *instance) = nullptr;
 INSERT_FUNCTION(0, RigidbodyInitialize)
 
-static void (*RigidbodyUpdate)(Rigidbody *instance);
+static void (*RigidbodyUpdate)(Rigidbody *instance) = nullptr;
 INSERT_FUNCTION(1, RigidbodyUpdate)
 
-static void (*RigidbodyShutdown)(Rigidbody *instance);
+static void (*RigidbodyShutdown)(Rigidbody *instance) = nullptr;
 INSERT_FUNCTION(2, RigidbodyShutdown)
 
-Rigidbody::Rigidbody() : m_collisionShape(nullptr), m_DefaultMotionState(nullptr), m_body(nullptr), m_transform(nullptr), m_mass(0.0f), m_bDinamic(false), m_lookRotation(Vector3::one), fMotionThreshold(0.0f), fSweptSphereRadius(0.0f) {}
+Rigidbody::Rigidbody() : m_collisionShape(nullptr), m_DefaultMotionState(nullptr), m_body(nullptr), m_transform(nullptr), m_mass(0.0f), m_lookRotation(Vector3::one), fMotionThreshold(0.0f), fSweptSphereRadius(0.0f) {}
 
 void Rigidbody::Init() {
     m_transform = GetComponent<Transform>();
 
-    RigidbodyInitialize(this);
+    if (RigidbodyInitialize)
+        RigidbodyInitialize(this);
 }
 
 void Rigidbody::Destroy() {
-    RigidbodyShutdown(this);
+    if (RigidbodyShutdown)
+        RigidbodyShutdown(this);
 }
 
 void Rigidbody::Update() {
-    // RigidbodyUpdate(this);
+    if (RigidbodyUpdate)
+        RigidbodyUpdate(this);
 }
 
 bool Rigidbody::Serialize(Stream *stream) {
     stream->write(&m_mass, sizeof(float));
-    stream->write(&m_bDinamic, sizeof(bool));
     stream->write(&m_lookRotation, sizeof(Vector3));
     stream->write(&fMotionThreshold, sizeof(float));
     stream->write(&fSweptSphereRadius, sizeof(float));
@@ -44,7 +46,6 @@ bool Rigidbody::Serialize(Stream *stream) {
 
 bool Rigidbody::Deserialize(Stream *stream) {
     stream->read(reinterpret_cast<char *>(&m_mass), sizeof(float));
-    stream->read(reinterpret_cast<char *>(&m_bDinamic), sizeof(bool));
     stream->read(reinterpret_cast<char *>(&m_lookRotation), sizeof(Vector3));
     stream->read(reinterpret_cast<char *>(&fMotionThreshold), sizeof(float));
     stream->read(reinterpret_cast<char *>(&fSweptSphereRadius), sizeof(float));
@@ -103,12 +104,8 @@ void Rigidbody::setMass(float value) {
     m_mass = value;
 }
 
-void Rigidbody::setDynamic(bool value) {
-    m_bDinamic = value;
-}
-
 btRigidBody *Rigidbody::getBody() const {
-    return &(*m_body);
+    return m_body != nullptr ? &(*m_body) : nullptr;
 }
 
 float Rigidbody::getMotionThreshold() const {

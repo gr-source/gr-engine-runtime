@@ -84,7 +84,7 @@ private:
 
     GameObject *s_objectSelected;
 
-    ImGuiIO* s_io;
+    ImGuiIO *mImGuiIO;
 
     grm::u8 m_currentPage;
 
@@ -133,8 +133,6 @@ private:
     } mLastTransform;
 
     UIPopup_ uIPopup;
-
-    GameObject *createEditorCamera();
 
     void BuildDock(ImGuiID dockspace_id, ImGuiDockNodeFlags dockspace_flags);
 
@@ -207,8 +205,6 @@ private:
     void RenderStatisticsMenu();
 
     void RenderGameObjectPropertiUI();
-
-    void rTabObjectInfo(bool &isOpenPopup);
 
     bool RenderComponents(const std::string &name, Component *component);
 
@@ -290,4 +286,6 @@ private:
     void renderMeshList();
 
     static GameObject *CreatePrimitive(int type);
+
+    static GameObject *CreateEditorCamera();
 };

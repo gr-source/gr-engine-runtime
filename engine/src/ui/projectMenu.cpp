@@ -327,9 +327,10 @@ void ProjectMenu::OpenProject(Project &project) {
 
     DebugDraw::Initialize();
 
+    Project::SetCurrent(&project);
+    
     m_editor = std::make_shared<Editor>();
 
-    Project::SetCurrent(&project);
 
     SaveLastProject(project);
 }

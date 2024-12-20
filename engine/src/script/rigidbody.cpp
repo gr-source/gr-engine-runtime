@@ -9,6 +9,7 @@
 
 #include "core/console.hpp"
 
+#include "ecs/gameObject.hpp"
 #include "ecs/entity.hpp"
 
 void Rigidbody::initialize() {
@@ -36,15 +37,22 @@ void Rigidbody::initialize() {
     pRigidBodyConstructionInfo.m_friction = 0.5f;
     pRigidBodyConstructionInfo.m_restitution = 0.1f;
 
+    if (m_body) {
+        shutdown();
+        m_body = nullptr;
+    }
+
     m_body = std::make_shared<btRigidBody>(pRigidBodyConstructionInfo);
 	m_body->setAngularFactor(VEC3_TO_BTVEC3(m_lookRotation));
     m_body->setUserPointer(reinterpret_cast<void *>(entity->getGameObject()));
+
+    std::cout << "Init: " << entity->getGameObject()->getName() << std::endl;
     
-    if (fMotionThreshold > 0.0f)
+    if (fMotionThreshold >= 0.0f)
         m_body->setCcdMotionThreshold(fMotionThreshold);
 
-    if (fSweptSphereRadius > 0.0f)
-        m_body->setCcdSweptSphereRadius(fSweptSphereRadius); // Configuração de CCD
+    if (fSweptSphereRadius >= 0.0f)
+        m_body->setCcdSweptSphereRadius(fSweptSphereRadius);
 
     PhysicsScene::AddRigidbody(&(*m_body));
 }
@@ -53,6 +61,8 @@ void Rigidbody::shutdown() {
     if (!m_body) {
         return;
     }
+
+    std::cout << "Destroy: " << entity->getGameObject()->getName() << std::endl;
     
     PhysicsScene::RemoveRigidbody(&(*m_body));
 }
@@ -62,7 +72,7 @@ void Rigidbody::update() {
         return;
     }
 
-    if (m_bDinamic) {
+    if (getGameObject()->isActive()) {
         if (m_body->getLinearVelocity().length() < 0.01 && m_body->getAngularVelocity().length() < 0.01) {
             m_body->setActivationState(DISABLE_DEACTIVATION);
         } else {
@@ -86,14 +96,6 @@ float Rigidbody::getMass() const {
 
 void Rigidbody::setMass(float value) {
     m_mass = value;
-}
-
-bool Rigidbody::getDinamic() const {
-    return m_bDinamic;
-}
-
-void Rigidbody::setDynamic(bool value) {
-    m_bDinamic = value;
 }
 
 void Rigidbody::setLookRotation(const Vector3 &value) {

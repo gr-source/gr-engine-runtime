@@ -15,31 +15,19 @@ void MeshCollider::build(Mesh *mesh) {
         return Console::LogError("[ MeshCollider ] Game object do not has mesh.");
     }
 
-    auto transform = entity->getComponent<Transform>();
     m_triangleMesh = std::make_shared<btTriangleMesh>();
 
-    const auto &indices = mesh->getIndices();
-    const auto &vertices = mesh->getVertices();
+    auto indices = mesh->getIndices();
+    auto vertices = mesh->getVertices();
 
-    if (indices.empty() && vertices.empty()) {
-        return Console::LogError("[ MeshCollider ] Mesh has no data.");
-    } else if (!vertices.empty()) {
-        buildWithVertice(vertices);
-
-        return setup(transform);
+    if (vertices.empty()) {
+        throw std::runtime_error("Mesh do not has vertices");
     }
 
-    if (indices.size() % 3 != 0) {
-        return Console::LogError("[ MeshCollider ] Indices size is not a multiple of 3.");
+    if (!indices.empty()) {
+        return buildWithIndice(indices, vertices);
     }
-
-    buildWithIndice(indices, vertices);
-
-    if (!m_triangleMesh) {
-        return Console::LogError("[ MeshCollider ] triangle ptr invalid.");
-    }
-
-    setup(transform);
+    buildWithVertice(vertices);
 }
 
 btCollisionShape *MeshCollider::getShape() {
@@ -66,6 +54,7 @@ void MeshCollider::buildWithIndice(const std::vector<int> &indices, const std::v
             btVector3(trangle3.x, trangle3.y, trangle3.z)
         );
     }
+    return setup(entity->getComponent<Transform>());
 }
 
 void MeshCollider::buildWithVertice(const std::vector<Vertex3D> &vertices) {
@@ -88,6 +77,8 @@ void MeshCollider::buildWithVertice(const std::vector<Vertex3D> &vertices) {
             btVector3(trangle3.x, trangle3.y, trangle3.z)
         );
     }
+
+    return setup(entity->getComponent<Transform>());
 }
 
 void MeshCollider::setup(Transform *transform) {
