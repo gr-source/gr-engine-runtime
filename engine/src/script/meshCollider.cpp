@@ -4,7 +4,7 @@
 
 #include "physics/physicsScene.hpp"
 
-#include "geometry/mesh.hpp"
+#include <core/geometry/mesh.hpp>
 
 #include "core/console.hpp"
 

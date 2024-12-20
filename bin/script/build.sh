@@ -1,94 +1,149 @@
-#!/usr/bin/bash
+#!/bin/bash
 
-# Save current path
-current_path=${PWD}
-
-temp_file_source="script_source.txt"
-temp_file_header="script_header.txt"
-
-# verification of project existence
-if ! [ -d "${GR_ROOT_PROJECT_PATH}" ]; then
-    echo "Project do not exist."
-    exit 1
+if ! [ -d "$1" ]; then
+	echo "Use: $0 /dir/my project"
+	exit 1
 fi
 
-if ! [ -d "${GR_ROOT_ASSETS_PATH}" ]; then
-    echo "Assets data do not exist."
-    exit 2
+if ! [ -f "$1/.build/component/CMakeLists.txt" ]; then
+	echo "Cmake do not found."
+	exit 2
 fi
 
-# verification of scripts existece
-if ! [ -d "${GR_ROOT_PROJECT_PATH}/source" ]; then
-    echo "Script data do not found."
-    exit 3
+if ! [ -d "$1/.build" ]; then
+	mkdir "$1/.build"
 fi
 
-# ===== Check Cmake exist and clear files in cmake =====
-echo "Clearing data..."
-if [ ! -f "${GR_ROOT_PROJECT_PATH}/CMakeLists.txt" ]; then
-    echo "CMakeLists.txt do not found: ${GR_ROOT_PROJECT_PATH}/CMakeLists.txt"
-    exit 4
+
+echo "Reading project: $1"
+
+find "$1" -type d -path "$1/.build" -prune -o -type f -name "*.cpp" -exec sha1sum {} \; > "$1/.build/source.txt"
+find "$1" -type d -path "$1/.build" -prune -o -type f -name "*.hpp" -exec sha1sum {} \; > "$1/.build/header.txt"
+
+if ! [ -f "$1/.build/source.txt" ]; then
+	echo "Fail fo read source file."
+	exit 2
+fi
+
+if ! [ -f "$1/.build/header.txt" ]; then
+	echo "Fail ti read header file."
+	exit 3
+fi
+
+if [ -f "$1/.build/sourcex.txt" ]; then
+	diff -b "$1/.build/source.txt" "$1/.build/sourcex.txt" > /dev/null
+	if [ $? -ne 0 ]; then
+		diff -b "$1/.build/source.txt" "$1/.build/sourcex.txt" | grep '^<' | sed 's/^< //' > "$1/.build/source_add.txt"
+		diff -b "$1/.build/source.txt" "$1/.build/sourcex.txt" | grep '^>' | sed 's/^> //' > "$1/.build/source_remove.txt"
+	fi
 else
-    # clean source files
-    sed -i '/#{GR_SRC_START}/,/#{GR_SRC_END}/ {
+	cp "$1/.build/source.txt" "$1/.build/source_add.txt"
+fi
+
+if [ -f "$1/.build/headerx.txt" ]; then
+	diff -d "$1/.build/header.txt" "$1/.build/headerx.txt" > /dev/null
+	if [ $? -ne 0 ]; then
+		diff -b "$1/.build/header.txt" "$1/.build/headerx.txt" | grep '^<' | sed 's/^< //' > "$1/.build/header_add.txt"
+		diff -b "$1/.build/header.txt" "$1/.build/headerx.txt" | grep '^>' | sed 's/^> //' > "$1/.build/header_remove.txt"
+	fi
+else
+	cp "$1/.build/header.txt" "$1/.build/header_add.txt"
+fi
+
+if [ -f "$1/.build/source_remove.txt" ]; then
+	while IFS=' ' read -r hash file; do
+		filename=$(basename "$file")
+		if [ -f "$1/.build/component/source/$filename" ]; then			
+			echo "Remove script: $filename"
+			rm "$1/.build/component/source/$filename"
+		fi
+	done < "$1/.build/source_remove.txt"
+	rm "$1/.build/source_remove.txt"
+fi
+
+
+if [ -f "$1/.build/header_remove.txt" ]; then
+	while IFS=' ' read -r hash file; do
+		filename=$(basename "$file")
+		if [ -f "$1/.build/component/source/$filename" ]; then
+			echo "Remove script: $filename"
+			rm "$1/.build/component/source/$filename"
+		fi
+	done < "$1/.build/header_remove.txt"
+	rm "$1/.build/header_remove.txt"
+fi
+
+# Adiciona novos scripts(cpp)
+if [ -f "$1/.build/source_add.txt" ]; then
+	echo "Update cmake sources."
+	
+	sed -i '/#{GR_SRC_START}/,/#{GR_SRC_END}/ {
             /#{GR_SRC_START}/!{
                 /#{GR_SRC_END}/!d
             }
-        }' "${GR_ROOT_PROJECT_PATH}/CMakeLists.txt"
-    
-    # clear header files
-    sed -i '/#{GR_HDR_START}/,/#{GR_HDR_END}/ {
-            /#{GR_HDR_START}/!{
-                /#{GR_HDR_END}/!d
-            }
-        }' "${GR_ROOT_PROJECT_PATH}/CMakeLists.txt"
+        }' "$1/.build/component/CMakeLists.txt"
+
+	while IFS=' ' read -r hash file; do
+		filename=$(basename "$file")
+		if ! [ -f "$file" ]; then
+			continue;
+		fi
+		if  [ -f "$1/.build/component/source/$filename" ]; then
+			echo "Update file: $filename"
+		else
+			echo "Adding file: $filename"
+		fi
+		cp "$file"  "$1/.build/component/source"
+
+		sed -i "/#{GR_SRC_END}/i source/$filename" "$1/.build/component/CMakeLists.txt"
+	done < "$1/.build/source_add.txt"
+	rm "$1/.build/source_add.txt"
 fi
 
-# ===== Create temp file =====
-find "${GR_ROOT_ASSETS_PATH}" -type f -name "*.cpp" > ${temp_file_source}
-find "${GR_ROOT_ASSETS_PATH}" -type f -name "*.hpp" > ${temp_file_header}
-
-# ===== Read temp file and copy from project =====
-if [ -f ${temp_file_source} ]; then
-    while IFS= read -r line; do
-        if [ -f "$line" ]; then
-            cp "$line" "${GR_ROOT_PROJECT_PATH}/source"
-
-            filename=$(basename "$line")
-
-            sed -i "/#{GR_SRC_END}/i source/$filename" "${GR_ROOT_PROJECT_PATH}/CMakeLists.txt"
-        fi
-    done < ${temp_file_source}
+# Adiciona os novos scripts(hpp)
+if [ -f "$1/.build/header_add.txt" ]; then
+	echo "Update cmake header."
+	while IFS=' ' read -r hash file; do
+		filename=$(basename "$file")
+		if ! [ -f "$file" ]; then
+			continue;
+		fi
+		if  [ -f "$1/.build/component/source/$filename" ]; then
+			echo "Update file: $filename"
+		else
+			echo "Adding file: $filename"
+		fi
+		cp "$file" "$1/.build/component/source"
+	done < "$1/.build/header_add.txt"
+	rm "$1/.build/header_add.txt"
 fi
 
-# ===== Read temp file and copy from project =====
-if [ -f ${temp_file_header} ]; then
-    while IFS= read -r line; do
-        if [ -f "$line" ]; then
-            cp "$line" "${GR_ROOT_PROJECT_PATH}/source"
 
-            filename=$(basename "$line")
+cp "$1/.build/source.txt" "$1/.build/sourcex.txt"
+cp "$1/.build/header.txt" "$1/.build/headerx.txt"
 
-            sed -i "/#{GR_HDR_END}/i source/$filename" "${GR_ROOT_PROJECT_PATH}/CMakeLists.txt"
-        fi
-    done < ${temp_file_header}
+echo "Initialize building project."
+
+last_path=$(pwd)
+if ! [ -d "$1/.build/component/build" ]; then
+	mkdir "$1/.build/component/build"
+
+	cd "$1/.build/component/build"
+
+	cmake -DCMAKE_BUILD_TYPE=Debug .. >  /dev/null
+	if [ $? -ne 0 ]; then
+		echo "Fail to configure project."
+		exit 4
+	fi
+fi
+cd "$last_path"
+
+cmake --build "$1/.build/component/build" -j4 > /dev/null
+if [ $? -ne 0 ]; then
+	echo "Fail to build project."
+	exit 5
 fi
 
-rm ${temp_file_source}
-rm ${temp_file_header}
+echo "Project build successfully."
 
-# If the project is not configured, configure it
-if ! [ -d "${GR_ROOT_PROJECT_PATH}/build" ]; then
-    echo "configuring project..."
 
-    mkdir "${GR_ROOT_PROJECT_PATH}/build"
-
-    cd "${GR_ROOT_PROJECT_PATH}/build"
-
-    cmake -DCMAKE_BUILD_TYPE=Debug ..
-    
-    cd "${current_path}"
-fi
-
-# # building project
-cmake --build "${GR_ROOT_PROJECT_PATH}/build" -j4

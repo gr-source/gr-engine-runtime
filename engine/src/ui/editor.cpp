@@ -2027,9 +2027,25 @@ void Editor::RenderUVConfig(MeshFilter *meshFilter) {
     if (!isOpen || !mesh) {
         return;
     }
+    const char *name[] {"X", "Y", "Z"};
 
-    Vector2 scale;
-    if (ImGui::DragFloat2("##meshFilter_uv_scale", reinterpret_cast<float *>(&scale))) {
+    ImGui::Text("%s", mesh->getName().c_str());
+
+    ImGui::Text("Position:");
+    Vector2 position = Vector2::zero;
+    if (View::DragScalarEx(name, reinterpret_cast<float *>(&position), 2, 1.0f, 0.0f, 0.0f)) {
+        //
+    }
+
+    ImGui::Text("Rotation:");
+    Vector3 euler = Vector3::zero;
+    if (View::DragScalarEx(name, reinterpret_cast<float *>(&euler), 3, 1.0f, 0.0f, 0.0f)) {
+        //
+    }
+
+    ImGui::Text("Scale:");
+    Vector2 scale = Vector2::zero;
+    if (View::DragScalarEx(name, reinterpret_cast<float *>(&scale), 2, 1.0f, 0.0f, 0.0f)) {
         //
     }
 
@@ -2675,16 +2691,14 @@ void Editor::CompileScript(std::string path, std::function<void()> func) {
         return Console::LogError("Build script do not found.");
     }
 
-    auto component = File::GetFile("/.build/component");
-    if (!File::Exists(component)) {
-        return Console::LogError("Component library do not found. [1]");
+    auto project_path = File::GetFile("");
+    if (!File::Exists(project_path)) {
+        return Console::LogError("Project do not found.");
     }
 
     std::vector<std::string> command {
-        "export GR_ROOT_PROJECT_PATH='" + component + "'",
-        "export GR_ROOT_ASSETS_PATH='" + File::GetAsset("") + "'",
         "chmod +x " + build,
-        "sh " + build,
+        "sh " + build + " '" + project_path + "'"
     };
 
     if (!Command::exec(command, [](std::string line) {

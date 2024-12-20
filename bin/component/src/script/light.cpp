@@ -2,7 +2,7 @@
 
 #include "script/transform.hpp"
 
-#include "core/stream.hpp"
+#include <core/file/stream.hpp>
 
 std::vector<Light *> Light::m_lights;
 

@@ -3,7 +3,8 @@
 #include "script/transform.hpp"
 
 #include "core/function.hpp"
-#include "core/stream.hpp"
+
+#include <core/file/stream.hpp>
 
 #include <bullet/btBulletDynamicsCommon.h>
 
@@ -42,11 +43,11 @@ bool Rigidbody::Serialize(Stream *stream) {
 }
 
 bool Rigidbody::Deserialize(Stream *stream) {
-    stream->read(&m_mass, sizeof(float));
-    stream->read(&m_bDinamic, sizeof(bool));
-    stream->read(&m_lookRotation, sizeof(Vector3));
-    stream->read(&fMotionThreshold, sizeof(float));
-    stream->read(&fSweptSphereRadius, sizeof(float));
+    stream->read(reinterpret_cast<char *>(&m_mass), sizeof(float));
+    stream->read(reinterpret_cast<char *>(&m_bDinamic), sizeof(bool));
+    stream->read(reinterpret_cast<char *>(&m_lookRotation), sizeof(Vector3));
+    stream->read(reinterpret_cast<char *>(&fMotionThreshold), sizeof(float));
+    stream->read(reinterpret_cast<char *>(&fSweptSphereRadius), sizeof(float));
     return true;
 }
 

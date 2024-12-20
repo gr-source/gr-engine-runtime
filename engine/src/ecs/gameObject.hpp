@@ -11,7 +11,7 @@ class GameObject {
 public:
     static GameObject *Create(const std::string& name, const std::string& tag = "unttaged");
 
-    static GameObject *Instantiate(GameObject *target);
+    static GameObject *Instantiate(const GameObject *target);
 
     static GameObject *Find(const std::string &name);
 

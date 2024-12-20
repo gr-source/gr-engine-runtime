@@ -2,7 +2,7 @@
 
 #include "default.hpp"
 
-#include "geometry/vertex3D.hpp"
+#include <core/geometry/vertex3D.hpp>
 
 #include <ecs/component.hpp>
 

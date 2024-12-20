@@ -41,7 +41,7 @@ GameObject *GameObject::Create(const std::string &name, const std::string &tag) 
     return &(*gameObject);
 }
 
-GameObject *GameObject::Instantiate(GameObject *target) {
+GameObject *GameObject::Instantiate(const GameObject *target) {
     auto gameObject = GameObject::Create(target->m_name, target->m_tag);
     if (!gameObject) {
         return nullptr;

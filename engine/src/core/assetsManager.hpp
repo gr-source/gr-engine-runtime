@@ -16,10 +16,11 @@
 #include "core/file/file.hpp"
 
 #include "geometry/material.hpp"
-#include "geometry/mesh.hpp"
 
 #include "script/default.hpp"
 #include "ecs/default.hpp"
+
+#include <core/geometry/mesh.hpp>
 
 class FbxAnimation;
 

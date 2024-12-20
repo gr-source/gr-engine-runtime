@@ -3,7 +3,6 @@
 #include "core/animation/animation.hpp"
 
 #include "core/function.hpp"
-#include "core/stream.hpp"
 #include "core/scene.hpp"
 #include "core/file.hpp"
 

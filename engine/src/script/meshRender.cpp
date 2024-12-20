@@ -3,12 +3,12 @@
 #include "transform.hpp"
 #include "animator.hpp"
 
-#include "geometry/mesh.hpp"
-
 #include "core/assetsManager.hpp"
 #include "core/console.hpp"
 
 #include "ecs/gameObject.hpp"
+
+#include <core/geometry/mesh.hpp>
 
 std::vector<std::shared_ptr<Material>> &MeshRender::getMaterials() {
     return m_materials;

@@ -1,6 +1,6 @@
 #include "screenRender.hpp"
 
-#include "geometry/vertex2D.hpp"
+#include <core/geometry/vertex2D.hpp>
 
 #include "scriptManager/scriptManager.hpp"
 

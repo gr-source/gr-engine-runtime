@@ -3,7 +3,7 @@
 #include "ecs/gameObject.hpp"
 
 #include "core/function.hpp"
-#include "core/stream.hpp"
+#include <core/file/stream.hpp>
 
 static void (*AnimatorUpdate)(Animator *);
 INSERT_FUNCTION(0, AnimatorUpdate)
@@ -35,12 +35,12 @@ bool Animator::Deserialize(Stream *stream) {
     bool result = true;
 
     std::size_t bsize = 0;
-    stream->read(&bsize, sizeof(std::size_t));
+    stream->read(reinterpret_cast<char *>(&bsize), sizeof(std::size_t));
 
     for (std::size_t i={};i<bsize;i++) {
         std::size_t nsize = 0;
 
-        stream->read(&nsize, sizeof(std::size_t));
+        stream->read(reinterpret_cast<char *>(&nsize), sizeof(std::size_t));
 
         std::string name(nsize, '\0');
         stream->read(name.data(), nsize * sizeof(char));

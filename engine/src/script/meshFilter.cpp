@@ -1,5 +1,7 @@
 #include "meshFilter.hpp"
 
+#include <core/geometry/mesh.hpp>
+
 void MeshFilter::setMesh(Mesh *mesh) {
     m_sharedMesh = mesh;
 }

@@ -1,6 +1,6 @@
 #include "renderer.h"
 
-#include "geometry/mesh.hpp"
+#include <core/geometry/mesh.hpp>
 
 #include "core/assetsManager.hpp"
 

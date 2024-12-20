@@ -3,7 +3,8 @@
 #include "script/transform.hpp"
 
 #include "core/function.hpp"
-#include "core/stream.hpp"
+
+#include <core/file/stream.hpp>
 
 BoxCollider::BoxCollider() : m_CollisionShape(nullptr), boxSize(Vector3::one) {
     buildShape(boxSize);
@@ -15,7 +16,7 @@ bool BoxCollider::Serialize(Stream *stream) {
 }
 
 bool BoxCollider::Deserialize(Stream *stream) {
-    stream->read(&boxSize, sizeof(Vector3));
+    stream->read(reinterpret_cast<char *>(&boxSize), sizeof(Vector3));
     return true;
 }
 

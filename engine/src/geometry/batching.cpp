@@ -1,7 +1,6 @@
 #include "batching.hpp"
 
 #include "renderManager.h"
-#include "mesh.hpp"
 
 #include "core/assetsManager.hpp"
 #include "core/statistics.hpp"
@@ -20,6 +19,8 @@
 #include <gr-render/gVertexArray.h>
 #include <gr-render/gTexture.h>
 #include <gr-render/gShader.h>
+
+#include <core/geometry/mesh.hpp>
 
 std::unordered_map<std::string, std::unique_ptr<Batching>> Batching::s_batchedInstances;
 

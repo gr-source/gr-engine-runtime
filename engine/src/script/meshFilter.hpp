@@ -1,8 +1,8 @@
 #pragma once
 
-#include "geometry/mesh.hpp"
 #include "geometry/boundbox.hpp"
 
+#include <core/geometry/default.hpp>
 #include <ecs/component.hpp>
 
 class MeshFilter : public Component {

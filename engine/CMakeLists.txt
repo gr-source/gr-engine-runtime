@@ -96,7 +96,6 @@ set(animation_src
 )
 
 set(animation_hdr
-    src/core/animation/boneWeight.cpp
     src/core/animation/animation.cpp
     src/core/animation/keyframe.cpp
     src/core/animation/bone.cpp
@@ -104,14 +103,12 @@ set(animation_hdr
 
 set(core_file_src
     src/core/file/initialization.cpp
-    src/core/file/stream.cpp
     src/core/file/config.cpp
     src/core/file/file.cpp
 )
 
 set(core_file_hdr
     src/core/file/initialization.hpp
-    src/core/file/stream.hpp
     src/core/file/config.hpp
     src/core/file/file.hpp
 )
@@ -160,9 +157,6 @@ set(engine_src
     src/geometry/batching.cpp
     src/geometry/boundbox.cpp
     src/geometry/material.cpp
-    src/geometry/vertex2D.cpp
-    src/geometry/vertex3D.cpp
-    src/geometry/mesh.cpp
     
     ${ecs_src}
 

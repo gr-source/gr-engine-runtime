@@ -31,13 +31,12 @@ set(core_src
     src/core/function.cpp
     src/core/console.cpp
     src/core/raycast.cpp
-    src/core/stream.cpp
+    src/core/file.cpp
     src/core/screen.cpp
     src/core/string.cpp
     src/core/event.cpp
     src/core/scene.cpp
     src/core/input.cpp
-    src/core/file.cpp
     src/core/time.cpp
     src/core/draw.cpp
 )
@@ -45,13 +44,10 @@ set(core_src
 set(geometry_src
     src/core/geometry/material.cpp
     src/core/geometry/boundBox.cpp
-    src/core/geometry/vertex3D.cpp
     src/core/geometry/batching.cpp
-    src/core/geometry/mesh.cpp
 )
 
 set(animation_src
-    src/core/animation/boneWeight.cpp
     src/core/animation/animation.cpp
     src/core/animation/keyframe.cpp
     src/core/animation/bone.cpp

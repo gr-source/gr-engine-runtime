@@ -2,8 +2,9 @@
 
 #include "core/assetsManager.hpp"
 #include "core/threadpool.hpp"
-#include "core/stream.hpp"
 #include "core/event.hpp"
+
+#include <core/file/stream.hpp>
 
 MeshFilter::MeshFilter() : m_sharedMesh(nullptr) { }
 

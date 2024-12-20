@@ -1,6 +1,6 @@
 #include "core/animation/bone.hpp"
 
-#include "core/stream.hpp"
+#include <core/file/stream.hpp>
 
 Bone::Bone(const std::string & name, const Vector3 & position, const Vector3 & scale, const Quaternion & rotation, int boneIndex) : m_name(name), m_position(position), m_scale(scale), m_rotation(rotation), m_boneIndex(boneIndex), m_localMatrix(Matrix4x4::identityMatrix) {}
 
@@ -40,7 +40,7 @@ bool Bone::serizalize(Stream *stream) const {
 
 bool Bone::deserizalize(Stream *stream) {
     std::size_t nsize = 0;
-    if (!stream->read(&nsize, sizeof(std::size_t))) {
+    if (!stream->read(reinterpret_cast<char *>(&nsize), sizeof(std::size_t))) {
         return false;
     }
 
@@ -49,19 +49,19 @@ bool Bone::deserizalize(Stream *stream) {
         return false;
     }
 
-    if (!stream->read(&m_position, sizeof(Vector3))) {
+    if (!stream->read(reinterpret_cast<char *>(&m_position), sizeof(Vector3))) {
         return false;
     }
 
-    if (!stream->read(&m_scale, sizeof(Vector3))) {
+    if (!stream->read(reinterpret_cast<char *>(&m_scale), sizeof(Vector3))) {
         return false;
     }
 
-    if (!stream->read(&m_rotation, sizeof(Quaternion))) {
+    if (!stream->read(reinterpret_cast<char *>(&m_rotation), sizeof(Quaternion))) {
         return false;
     }
 
-    if (!stream->read(&m_boneIndex, sizeof(grm::u32))) {
+    if (!stream->read(reinterpret_cast<char *>(&m_boneIndex), sizeof(grm::u32))) {
         return false;
     }
 

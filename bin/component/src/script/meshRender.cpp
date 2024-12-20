@@ -11,7 +11,8 @@
 
 #include "core/assetsManager.hpp"
 #include "core/function.hpp"
-#include "core/stream.hpp"
+
+#include <core/file/stream.hpp>
 
 MeshRender::MeshRender() : m_batched(nullptr), m_transform(nullptr) {}
 
