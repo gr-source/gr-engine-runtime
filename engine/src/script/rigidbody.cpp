@@ -46,8 +46,6 @@ void Rigidbody::initialize() {
 	m_body->setAngularFactor(VEC3_TO_BTVEC3(m_lookRotation));
     m_body->setUserPointer(reinterpret_cast<void *>(entity->getGameObject()));
 
-    std::cout << "Init: " << entity->getGameObject()->getName() << std::endl;
-    
     if (fMotionThreshold >= 0.0f)
         m_body->setCcdMotionThreshold(fMotionThreshold);
 
@@ -62,8 +60,6 @@ void Rigidbody::shutdown() {
         return;
     }
 
-    std::cout << "Destroy: " << entity->getGameObject()->getName() << std::endl;
-    
     PhysicsScene::RemoveRigidbody(&(*m_body));
 }
 

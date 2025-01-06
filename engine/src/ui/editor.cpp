@@ -1604,13 +1604,13 @@ void Editor::RenderLog(Log &info) {
     ImVec4 color = {1.0f, 1.0f, 1.0f, 1.0f};
     switch (info.type) {
     case Log::LogType::INFO:
-        color = {0.0f, 1.0f, 0.0f, 1.0f};
+        color = {0.1f, 0.8f, 0.1f, 1.0f};
         break;
     case Log::LogType::WARNING:
-        color = {1.0f, 1.0f, 0.0f, 1.0f};
+        color = {0.8f, 0.8f, 0.1f, 1.0f};
         break;
     case Log::LogType::ERROR:
-        color = {1.0f, 0.0f, 0.0f, 1.0f};
+        color = {0.8f, 0.1f, 0.1f, 1.0f};
         break;
     default:
         break;
