@@ -77,6 +77,7 @@ private:
     bool m_bEnable;
 
 protected:
+
     static std::unordered_map<std::string, std::unique_ptr<GameObject>> m_dataObject;
 };
 

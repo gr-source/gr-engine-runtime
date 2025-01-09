@@ -98,7 +98,6 @@ void Entity::copy(const Entity *entity) {
     init();
 
     if (hasComponent<MeshRender>()) {
-
         getComponent<MeshRender>()->build();
     }
 }
@@ -145,8 +144,14 @@ void Entity::init() {
 
     for (auto [name, component] : temp) {
         auto pool = ComponentRegistry::Find(name);
-        if (pool) {
+        if (!pool) {
+            continue;
+        }
+
+        try {
             pool->init(component);
+        } catch (const std::exception &e) {
+            Console::LogError("Fail to initialize %s, %s", name.c_str(), e.what());
         }
     }
 } 

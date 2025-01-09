@@ -15,6 +15,7 @@
 #include "core/scene.hpp"
 
 #include "manager.hpp"
+#include "settings.h"
 
 std::unordered_map<std::string, std::unique_ptr<GameObject>> GameObject::m_dataObject;
 

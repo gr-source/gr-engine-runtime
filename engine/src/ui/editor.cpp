@@ -1950,7 +1950,7 @@ void Editor::PopupAddComponent() {
         ImGui::SetKeyboardFocusHere();
 
     static char componentName[256] = {'\0'};
-    ImGui::InputText("##popup_add_componnet_inputtext_filter", componentName, sizeof(componentName));
+    auto bSelect = ImGui::InputText("##popup_add_componnet_inputtext_filter", componentName, sizeof(componentName), ImGuiInputTextFlags_EnterReturnsTrue);
 
     m_componentName.erase(std::remove_if(m_componentName.begin(), m_componentName.end(), [] (auto &name) {
         return std::strstr(name.c_str(), componentName) == nullptr;
@@ -1958,9 +1958,29 @@ void Editor::PopupAddComponent() {
 
     auto regionAvail = ImGui::GetContentRegionAvail();
 
+    for (auto it = m_componentName.begin(); it != m_componentName.end(); ++it) {
+        bool isFirst = (it == m_componentName.begin());
+        if (ImGui::Selectable(it->c_str(), isFirst) || bSelect) {
+            std::cout << it->c_str() << std::endl;
+
+            auto component = s_objectSelected->getEntity()->addComponent((*it));
+            
+            if (component && (*it) == "Light") {
+                component->Init();
+            }
+
+            std::memset(componentName, '\0', sizeof(componentName));
+
+            ImGui::CloseCurrentPopup();
+        }
+    }
+
+    /*
     for (auto &name : m_componentName) {
+        ImGui::Selectable(name.c_str(), m_componentName.cbegin() != m_componentName.end());
         if (ImGui::Button(name.c_str(), ImVec2{regionAvail.x, 0.0f}) && !s_objectSelected->getEntity()->hasComponent(name)) {
             auto component = s_objectSelected->getEntity()->addComponent(name);
+            
             if (component && name == "Light") {
                 component->Init();
             }
@@ -1970,6 +1990,7 @@ void Editor::PopupAddComponent() {
             ImGui::CloseCurrentPopup();
         }
     }
+    */
     
     ImGui::EndPopup();
 }
