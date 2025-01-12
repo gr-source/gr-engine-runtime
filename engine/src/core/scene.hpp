@@ -35,7 +35,7 @@ public:
 
     static void SetupEssential();
 
-    static void RequestScript();
+    static void CheckRequestReinstanceScript();
 
     Scene(const std::string &name);
     ~Scene();
@@ -134,6 +134,5 @@ private:
 
     void for_each(Transform *transform, std::function<void (GameObject *)> func);
 
-    void updateScript(const std::string &name);
-    
+    void reinstanceScript(const std::string &name);
 };

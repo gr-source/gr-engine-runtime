@@ -87,7 +87,7 @@ Scene *Scene::Create(const std::string &name) {
 
     camera->addComponent<Camera>();
 
-    camera->initialize(false);
+    camera->initialize();
     
     return &(*it->second);
 }
@@ -134,7 +134,7 @@ void Scene::DestroyScript() {
         DestroyComponnet(gameObject->getTransform());
     }
 }
-
+#
 void Scene::SetupEssential() {
     auto scene = GetCurrentScene();
     if (!scene) { return; }
@@ -162,13 +162,13 @@ void Scene::SetupEssential() {
     });
 }
 
-void Scene::RequestScript() {
+void Scene::CheckRequestReinstanceScript() {
     auto script = ComponentRegistry::GetRequestScriptUpdate();
     if (script.empty()) { return; }
 
     for (auto &&[name, scene] : m_scenes) {
         for (auto name : script) {
-            scene->updateScript(name);
+            scene->reinstanceScript(name);
         }
     }
 }
@@ -304,12 +304,10 @@ void Scene::ReloadObjects(std::function<void(Scene *)> func) {
 
 void Scene::InitializeObject() {
     auto scene = GetCurrentScene();
-    if (!scene) {
-        return;
-    }
+    if (!scene) { return; }
 
-    for (auto &object : scene->getObjectList()) {
-        object->initialize(true);
+    for (auto object : scene->getObjectList()) {
+        object->initialize();
     }
 }
 
@@ -906,7 +904,7 @@ void Scene::SetupScene(Scene *scene) {
         m_scenes.emplace(scene->getName(), std::unique_ptr<Scene>(scene));
 
     for (auto &object : scene->getObjectList()) {
-        object->initialize(false);
+        object->initialize();
     }
 }
 
@@ -967,17 +965,14 @@ void Scene::for_each(Transform *transform, std::function<void(GameObject *)> fun
     }
 }
 
-void Scene::updateScript(const std::string &name) {
+void Scene::reinstanceScript(const std::string &name) {
     Scene::for_each([name] (GameObject *go) {
         auto entt = go->getEntity();
 
-        if (entt->hasComponent(name)) {
+        if (!entt->hasComponent(name)) { return; }
 
-            entt->remove(name);
+        entt->remove(name);
 
-            entt->addComponent(name);
-
-            std::cout << "Update: " << go->getName() << " Script: " << name << std::endl;
-        }
+        entt->addComponent(name);
     });
 }

@@ -125,7 +125,8 @@ GameObject::~GameObject() {
     Manager::DestroyEntity(m_entity);
 }
 
-void GameObject::initialize(bool all) {
+// TODO: MeshRender -> build, isso é necessario ?
+void GameObject::initialize() {
     if (!m_entity || !m_transform) {
         return Console::LogError("[ GameObject ] Falied to initialize object: %s", m_name.c_str());
     }
@@ -137,7 +138,7 @@ void GameObject::initialize(bool all) {
     }
 
     for (auto &child : m_transform->getChildren()) {
-        child->getGameObject()->initialize(all);
+        child->getGameObject()->initialize();
     }
 }
 

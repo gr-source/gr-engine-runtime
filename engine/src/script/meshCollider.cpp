@@ -8,11 +8,12 @@
 
 #include "core/console.hpp"
 
+#include "ecs/gameObject.hpp"
 #include "ecs/entity.hpp"
 
 void MeshCollider::build(Mesh *mesh) {
     if (!mesh) {
-        return Console::LogError("[ MeshCollider ] Game object do not has mesh.");
+        return Console::LogError("[ MeshCollider ] Gameobject %s, don't has mesh.", getGameObject()->getName().c_str());
     }
 
     m_triangleMesh = std::make_shared<btTriangleMesh>();

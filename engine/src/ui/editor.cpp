@@ -268,8 +268,6 @@ void Editor::LoadScript() {
         Console::LogError(e.what());
     }
 
-    Scene::RequestScript();
-
     if (ScriptManager::SetScreenSize) {
         ScriptManager::SetScreenSize(Settings::ViewportSize);
     }
@@ -277,6 +275,8 @@ void Editor::LoadScript() {
     RenderManager::Initialize();
 
     ScreenRender::Initialize();
+
+    Scene::CheckRequestReinstanceScript();
 
     // È necessário ?
     // Scene::UpdateScript();
@@ -361,9 +361,8 @@ void Editor::BuildDock(ImGuiID dockspace_id, ImGuiDockNodeFlags dockspace_flags)
 
 void Editor::PopupComponentMenu() {
     auto isOpen = ImGui::BeginPopup("##game_object_component_menu");
-    if (!isOpen) {
-        return;
-    }
+    if (!isOpen) { return; }
+
     ImGui::EndPopup();
 }
 
@@ -434,6 +433,8 @@ void Editor::RenderDocking() {
         }
 
         if (ImGui::BeginMenu("Tools")) {
+            if (ImGui::MenuItem("Skybox")) {}
+
             if (ImGui::MenuItem("Shader List")) {
                 bPopupMenuShader = true;
             }
@@ -1180,14 +1181,14 @@ void Editor::StopGame() {
 }
 
 void Editor::loadCamera(GameObject *gameObject) {
-    m_cameraObject = gameObject;
+    m_cameraObject = gameObject != nullptr ? gameObject : CreateEditorCamera();
     if (!m_cameraObject) {
-        m_cameraObject = CreateEditorCamera();
+        throw std::runtime_error("Fail to get camera object instance.");
     }
 
     m_mainCamera = m_cameraObject->getComponent<Camera>();
 
-    m_cameraObject->initialize(false);
+    m_cameraObject->initialize();
 }
 
 void Editor::RenderGuizmo() {
@@ -1961,9 +1962,9 @@ void Editor::PopupAddComponent() {
     for (auto it = m_componentName.begin(); it != m_componentName.end(); ++it) {
         bool isFirst = (it == m_componentName.begin());
         if (ImGui::Selectable(it->c_str(), isFirst) || bSelect) {
-            std::cout << it->c_str() << std::endl;
-
             auto component = s_objectSelected->getEntity()->addComponent((*it));
+
+            std::cout << (*it) << std::endl;
             
             if (component && (*it) == "Light") {
                 component->Init();
@@ -1972,25 +1973,10 @@ void Editor::PopupAddComponent() {
             std::memset(componentName, '\0', sizeof(componentName));
 
             ImGui::CloseCurrentPopup();
-        }
-    }
-
-    /*
-    for (auto &name : m_componentName) {
-        ImGui::Selectable(name.c_str(), m_componentName.cbegin() != m_componentName.end());
-        if (ImGui::Button(name.c_str(), ImVec2{regionAvail.x, 0.0f}) && !s_objectSelected->getEntity()->hasComponent(name)) {
-            auto component = s_objectSelected->getEntity()->addComponent(name);
             
-            if (component && name == "Light") {
-                component->Init();
-            }
-
-            std::memset(componentName, '\0', sizeof(componentName));
-
-            ImGui::CloseCurrentPopup();
+            break;
         }
     }
-    */
     
     ImGui::EndPopup();
 }
@@ -2039,6 +2025,8 @@ bool Editor::OnPropertyMeshFilter(MeshFilter *meshFilter) {
         return false;
     }
 
+    ImGui::Text("Name: %s", meshFilter->getMesh()->getName().c_str());
+
     RenderUVConfig(meshFilter);
 
     return false;
@@ -2052,8 +2040,6 @@ void Editor::RenderUVConfig(MeshFilter *meshFilter) {
         return;
     }
     const char *name[] {"X", "Y", "Z"};
-
-    ImGui::Text("%s", mesh->getName().c_str());
 
     ImGui::Text("Position:");
     Vector2 position = Vector2::zero;
@@ -2498,7 +2484,7 @@ void Editor::PostLoadGameObject(GameObject *gameObject) {
     if (Scene::HasScene())
         Scene::GetCurrentScene()->insert(gameObject);
     
-    gameObject->initialize(false);
+    gameObject->initialize();
 
     s_objectSelected = gameObject;
 }
@@ -2895,7 +2881,7 @@ GameObject *Editor::CreateEditorCamera() {
         return nullptr;
     }
 
-    gameObject->initialize(false);
+    gameObject->initialize();
     return gameObject;
 }
 
