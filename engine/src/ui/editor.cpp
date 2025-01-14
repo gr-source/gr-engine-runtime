@@ -278,12 +278,9 @@ void Editor::LoadScript() {
 
     Scene::CheckRequestReinstanceScript();
 
-    // È necessário ?
-    // Scene::UpdateScript();
+    Settings::bGameRunning = true;
 
     Scene::InitializeObject();
-
-    Settings::bGameRunning = true;
 
     Console::log(Log::DEFAULT, "Game playing.");
 }
@@ -332,6 +329,8 @@ void Editor::RenderUI() {
     showMeshListPopup();
 
     PopupAddComponent();
+
+    PopupMenuProperty();
 }
 
 void Editor::BuildDock(ImGuiID dockspace_id, ImGuiDockNodeFlags dockspace_flags) {
@@ -395,6 +394,8 @@ void Editor::RenderDocking() {
     ImGui::Begin(label, NULL, host_window_flags);
     ImGui::PopStyleVar(3);
 
+    int flags = 0;
+
     bool bPopupMenuSettings = false, bPopupMenuShader = false, bMeshList = false;
 
     if (ImGui::BeginMenuBar()) {
@@ -415,6 +416,7 @@ void Editor::RenderDocking() {
         
         if (ImGui::BeginMenu("View")) {
             if (ImGui::MenuItem("Propriedades")) {
+                flags |= 2;
             }
             ImGui::EndMenu();
         }
@@ -451,6 +453,10 @@ void Editor::RenderDocking() {
     ImGuiID dockspace_id = ImGui::GetID("DockSpace");
     ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
     ImGui::End();
+
+    if (flags & 2) {
+        ImGui::OpenPopup("##popup_menu_property");
+    }
 
     if (bPopupMenuSettings) {
         ImGui::OpenPopup("##popup_menu_settings");
@@ -504,7 +510,7 @@ void Editor::RenderScenesUI() {
     }
 
     if (ImGui::IsKeyReleased(ImGuiKey_Delete) && s_objectSelected) {
-        Event::Add(&Scene::Delete, s_objectSelected);
+        Event::Add(&Scene::Destoy, s_objectSelected);
         s_objectSelected = nullptr;
     }
     
@@ -668,7 +674,7 @@ void Editor::PopupOptionsGameObject() {
         if (ImGui::ListBox("##ListBoxOptionsGame", &id, item_name.data(), item_name.size())) {
             switch (id) {
             case 0:
-                Event::Add(&Scene::Delete, s_objectSelected);
+                Event::Add(&Scene::Destoy, s_objectSelected);
                 s_objectSelected = nullptr;
                 break;
             case 1:
@@ -1172,6 +1178,8 @@ void Editor::StopGame() {
     Settings::bGameRunning = false;
 
     Scene::DestroyScript();
+
+    Scene::CleanTemp();
 
     Scene::SetupEssential();
 
@@ -1964,8 +1972,6 @@ void Editor::PopupAddComponent() {
         if (ImGui::Selectable(it->c_str(), isFirst) || bSelect) {
             auto component = s_objectSelected->getEntity()->addComponent((*it));
 
-            std::cout << (*it) << std::endl;
-            
             if (component && (*it) == "Light") {
                 component->Init();
             }
@@ -1978,6 +1984,15 @@ void Editor::PopupAddComponent() {
         }
     }
     
+    ImGui::EndPopup();
+}
+
+void Editor::PopupMenuProperty() {
+    auto isOpen = ImGui::BeginPopup("##popup_menu_property");
+    if (!isOpen) { return; }
+
+    RenderStatisticsMenu();
+
     ImGui::EndPopup();
 }
 
@@ -2293,10 +2308,10 @@ bool Editor::OnPropertyRigidbody(Rigidbody *rigidbody) {
 
     const char* text[] {"X", "Y", "Z"};
 
-    auto freese = rigidbody->getLookRotation();
+    auto freese = rigidbody->getFreezerRotation();
     ImGui::Text("Freeze Rotation");
     if (ImGui::DragFloatEx("##rigidbody_freeze", text, reinterpret_cast<float *>(&freese), 1.0f, 0.0f, 0.0f, "%.3f")) {
-        rigidbody->setLookRotation(freese);
+        rigidbody->setFreezerRotation(freese);
     }
 
     ImGui::SeparatorText("Continuous Collision Detection");

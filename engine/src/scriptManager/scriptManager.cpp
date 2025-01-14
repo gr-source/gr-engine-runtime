@@ -169,7 +169,7 @@ void ScriptManager::RegisterApi() {
     m_script->replaceLibraryFunction("GameObject::Instantiate", reinterpret_cast<void *>(&GameObject::Instantiate));
     m_script->replaceLibraryFunction("GameObject::Create", reinterpret_cast<void *>(&GameObject::Create));
     m_script->replaceLibraryFunction("GameObject::Find", reinterpret_cast<void *>(&GameObject::Find));
-    m_script->replaceLibraryFunction("GameObject::Destroy", reinterpret_cast<void *>(&Scene::Delete));
+    m_script->replaceLibraryFunction("GameObject::Destroy", reinterpret_cast<void *>(&Scene::Destoy));
 
     // File
     m_script->replaceLibraryFunction("File::GetFile", reinterpret_cast<void *>(&File::GetFile));

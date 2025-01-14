@@ -19,6 +19,8 @@
 
 std::unordered_map<std::string, std::unique_ptr<GameObject>> GameObject::m_dataObject;
 
+std::vector<GameObject *> GameObject::m_temp;
+
 GameObject *GameObject::Create(const std::string &name, const std::string &tag) {
     auto newName = NameManager::GenerateNameID(name);
 
@@ -37,6 +39,10 @@ GameObject *GameObject::Create(const std::string &name, const std::string &tag) 
     if (!gameObject->m_transform) {
         m_dataObject.erase(it);
         return nullptr;
+    }
+
+    if (Settings::bGameRunning) {
+        m_temp.push_back(&(*gameObject));
     }
 
     return &(*gameObject);
@@ -84,12 +90,14 @@ void GameObject::Rename(GameObject *gameObject, std::string name) {
 void GameObject::Destroy(GameObject *target) {
     auto sname = target->getName();
 
-    NameManager::RemoveNameID(sname);
-
-    auto it = m_dataObject.find(target->getName());
+    auto it = m_dataObject.find(sname);
     if (it == m_dataObject.end()) {
         return;
     }
+
+    m_temp.erase(std::remove(m_temp.begin(), m_temp.end(), target), m_temp.end());
+
+    NameManager::RemoveNameID(sname);
 
     auto transform = target->getTransform();
     // remove o objeto pai do objeto altual e se o pai me ter como filho me remove do objeto pai.
@@ -137,7 +145,7 @@ void GameObject::initialize() {
         getComponent<MeshRender>()->build();
     }
 
-    for (auto &child : m_transform->getChildren()) {
+    for (auto child : m_transform->getChildren()) {
         child->getGameObject()->initialize();
     }
 }

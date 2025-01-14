@@ -6,7 +6,7 @@
 
 #include <core/file/stream.hpp>
 
-MeshFilter::MeshFilter() : m_sharedMesh(nullptr) { }
+MeshFilter::MeshFilter() : m_sharedMesh(nullptr) {}
 
 void MeshFilter::setMesh(Mesh *mesh) {
     m_sharedMesh = mesh;

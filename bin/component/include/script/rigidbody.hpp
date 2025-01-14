@@ -77,6 +77,10 @@ public:
 
     Quaternion getRotation() const;
 
+    void setFreezerRotation(const Vector3 &value);
+
+    Vector3 getFreezerRotation() const;
+
     void setColissionFlags(int flags);
 
     int getColissionFlags() const;

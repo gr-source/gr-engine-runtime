@@ -94,14 +94,14 @@ void Rigidbody::setMass(float value) {
     m_mass = value;
 }
 
-void Rigidbody::setLookRotation(const Vector3 &value) {
+void Rigidbody::setFreezerRotation(const Vector3 &value) {
     m_lookRotation = value;
 
     if (m_body)
         m_body->setAngularFactor(VEC3_TO_BTVEC3(value));
 }
 
-const Vector3 &Rigidbody::getLookRotation() const {
+Vector3 Rigidbody::getFreezerRotation() const {
     return m_lookRotation;
 }
 

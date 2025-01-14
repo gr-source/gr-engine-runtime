@@ -134,17 +134,11 @@ void Scene::DestroyScript() {
         DestroyComponnet(gameObject->getTransform());
     }
 }
-#
+
 void Scene::SetupEssential() {
     auto scene = GetCurrentScene();
     if (!scene) { return; }
     
-    /*
-    std::vector<std::string> component = {
-        "Light",
-        "Camera",
-    };
-    */
     
     auto pool = ComponentRegistry::Find("MeshRender");
     if (!pool) {
@@ -174,6 +168,17 @@ void Scene::CheckRequestReinstanceScript() {
 }
 
 Scene::Scene(const std::string &name) : m_name(name), m_enable(true) {}
+
+void Scene::CleanTemp() {
+    auto gos = GameObject::m_temp;
+    if (gos.empty()) { return; }
+
+    for (auto &&[name, scene] : m_scenes) {
+        for (auto go : gos) {
+            scene->destroy(go);
+        }
+    }
+}
 
 Scene::~Scene() {
     for (auto &gameObject : m_objects) {
@@ -227,25 +232,23 @@ std::vector<GameObject *> &Scene::getObjectList() {
 
 void Scene::insert(GameObject *gameObject) {
     auto it = std::find(m_objects.begin(), m_objects.end(), gameObject);
-    if (it != m_objects.end()) {
-        return;
-    }
+    if (it != m_objects.end()) { return; }
+
     m_objects.push_back(gameObject);
 }
 
 void Scene::Remove(GameObject *gameObject) {
-    GetCurrentScene()->remove(gameObject);
+    auto scene = GetCurrentScene();
+    if (!scene) { return; }
+
+    scene->remove(gameObject);
 }
 
-void Scene::Delete(GameObject *gameObject) {
-    if (!gameObject) {
-        return Console::LogError("[ SCENE ] Failed to delete game object.");
-    }
-
-    if (HasScene())
-        Remove(gameObject);
-
-    GameObject::Destroy(gameObject);
+void Scene::Destoy(GameObject *gameObject) {
+    auto scene = GetCurrentScene();
+    if (!scene) { return; }
+    
+    scene->destroy(gameObject);
 }
 
 void Scene::Clear() {
@@ -258,9 +261,7 @@ std::unordered_map<std::string, std::unique_ptr<Scene>> &Scene::GetScenes() {
 
 void Scene::CleanCurrentScene() {
     auto scene = GetCurrentScene();
-    if (!scene) {
-        return;
-    }
+    if (!scene) { return; }
 
     auto temp_dir = File::GetTempFile("gr-engine/");
     if (!File::Exists(temp_dir)) {
@@ -894,17 +895,14 @@ int Scene::readNode(Stream *streaming, Scene *scene, Transform *parent, std::uno
     return 0;
 }
 
-void Scene::remove(GameObject *gameObject) {
-    m_objects.erase(std::remove(m_objects.begin(), m_objects.end(), gameObject), m_objects.end());
-}
-
 void Scene::SetupScene(Scene *scene) {
     auto it = m_scenes.find(scene->getName());
     if (it == m_scenes.end())
         m_scenes.emplace(scene->getName(), std::unique_ptr<Scene>(scene));
 
-    for (auto &object : scene->getObjectList()) {
-        object->initialize();
+    for (auto &go : scene->getObjectList()) {
+        Initialize(go);
+        // object->initialize();
     }
 }
 
@@ -951,6 +949,42 @@ void Scene::ProcessScript(Component *component, std::string path, std::streampos
     }
 }
 
+static std::vector<std::string> names = {"Light", "MeshRender", "MeshFilter"};
+void Scene::Initialize(GameObject *go) {
+    auto entity = go->getEntity();
+    
+    for (auto cname : names) {
+        if (entity->hasComponent(cname)) {
+            entity->init();
+
+            if (cname == "MeshRender") {
+                static_cast<MeshRender *>(entity->getComponent(cname))->build();
+            }
+        }
+    }
+    
+    for (auto child : go->getTransform()->getChildren()) {
+        Scene::Initialize(child->getGameObject());
+    }
+}
+
+bool Scene::remove(GameObject *gameObject) {
+    auto it = std::remove(m_objects.begin(), m_objects.end(), gameObject);
+    if (it == m_objects.end()) { return false; }
+
+    m_objects.erase(it, m_objects.end());
+    return true;
+}
+
+bool Scene::destroy(GameObject *gameObject) {
+    if (!remove(gameObject)) {
+        Console::LogWarning("[ Scene ] GameObject don't has in scene.");
+    }
+
+    GameObject::Destroy(gameObject);
+    return true;
+}
+
 void Scene::for_each(std::function<void(GameObject *)> func) {
     for (auto object : m_objects) {
         for_each(object->getTransform(), func);
@@ -976,3 +1010,4 @@ void Scene::reinstanceScript(const std::string &name) {
         entt->addComponent(name);
     });
 }
+

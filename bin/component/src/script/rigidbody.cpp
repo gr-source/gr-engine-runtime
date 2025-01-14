@@ -148,6 +148,17 @@ Quaternion Rigidbody::getRotation() const {
     return {transform.getRotation().getW(), transform.getRotation().getX(), transform.getRotation().getY(), transform.getRotation().getZ()};
 }
 
+void Rigidbody::setFreezerRotation(const Vector3 &value) {
+    m_lookRotation = value;
+
+    if (m_body)
+        m_body->setAngularFactor({value.x, value.y, value.z});
+}
+
+Vector3 Rigidbody::getFreezerRotation() const {
+    return m_lookRotation;
+}
+
 void Rigidbody::setColissionFlags(int flags) {
     m_body->setCollisionFlags(flags);
 }

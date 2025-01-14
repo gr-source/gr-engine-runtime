@@ -37,6 +37,8 @@ public:
 
     static void CheckRequestReinstanceScript();
 
+    static void CleanTemp();
+
     Scene(const std::string &name);
     ~Scene();
 
@@ -52,7 +54,7 @@ public:
     
     static void Remove(GameObject *gameObject);
 
-    static void Delete(GameObject *gameObject);
+    static void Destoy(GameObject *gameObject);
 
     void Clear();
 
@@ -122,17 +124,22 @@ private:
 
     static int readNode(Stream *streaming, Scene *scene, Transform *parent, std::unordered_map<std::string, GameObject *> &tempObject);
 
-    void remove(GameObject *gameObject);
-
     static void SetupScene(Scene *scene);
 
     static void SetupScript(GameObject *gameObject, std::string name, std::condition_variable &cv, Component *&component, int &result);
 
     static void ProcessScript(Component *component, std::string path, std::streampos position);
 
+    static void Initialize(GameObject *go);
+
+    bool remove(GameObject *gameObject);
+
+    bool destroy(GameObject *gameObject);
+
     void for_each(std::function<void (GameObject *)> func);
 
     void for_each(Transform *transform, std::function<void (GameObject *)> func);
 
     void reinstanceScript(const std::string &name);
+
 };

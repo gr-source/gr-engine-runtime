@@ -212,6 +212,8 @@ private:
 
     void PopupAddComponent();
 
+    void PopupMenuProperty();
+
     bool ProgressLoad(int max, int current);
 
     enum NavegationFlags : grm::u8 {

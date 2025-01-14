@@ -18,9 +18,9 @@ public:
 
     void setMass(float value);
 
-    void setLookRotation(const Vector3 &value);
+    Vector3 getFreezerRotation() const;
 
-    const Vector3 &getLookRotation() const;
+    void setFreezerRotation(const Vector3 &value);
 
     float getMotionThreshold() const;
 

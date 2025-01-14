@@ -174,7 +174,6 @@ void Engine::DropFile(const char *path) {
 }
 
 void Engine::OnPhysics() {
-    // /*
     Time time;
     do {
         auto deltaTime = time.sleep(60.0f);

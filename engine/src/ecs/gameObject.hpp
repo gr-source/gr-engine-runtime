@@ -9,6 +9,8 @@
 
 class GameObject {
 public:
+    static std::vector<GameObject *> m_temp;
+    
     static GameObject *Create(const std::string& name, const std::string& tag = "unttaged");
 
     static GameObject *Instantiate(const GameObject *target);
