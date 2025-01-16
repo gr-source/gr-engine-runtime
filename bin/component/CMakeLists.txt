@@ -27,14 +27,12 @@ set(script_src
 set(core_src
     src/core/assetsManager.cpp
     src/core/physicsScene.cpp
-    src/core/threadpool.cpp
     src/core/function.cpp
     src/core/console.cpp
     src/core/raycast.cpp
     src/core/file.cpp
     src/core/screen.cpp
     src/core/string.cpp
-    src/core/event.cpp
     src/core/scene.cpp
     src/core/input.cpp
     src/core/time.cpp
@@ -47,11 +45,11 @@ set(geometry_src
     src/core/geometry/batching.cpp
 )
 
-set(animation_src
-    src/core/animation/animation.cpp
-    src/core/animation/keyframe.cpp
-    src/core/animation/bone.cpp
-)
+# set(animation_src
+    # src/core/animation/animation.cpp
+    # src/core/animation/keyframe.cpp
+    # src/core/animation/bone.cpp
+# )
 
 set(source_src
     source/gr-script.cpp
@@ -73,7 +71,7 @@ if(NOT Bullet_FOUND)
     return()
 endif()
 
-add_library(${PROJECT_NAME} SHARED main.cpp src/api.cpp ${ecs_src} ${script_src} ${source_src} ${core_src} ${animation_src} ${geometry_src})
+add_library(${PROJECT_NAME} SHARED main.cpp src/api.cpp ${ecs_src} ${script_src} ${source_src} ${core_src} ${geometry_src})
 
 target_link_libraries(${PROJECT_NAME} PRIVATE ${GRMATH_LIBRARIES} ${BULLET_LIBRARIES} /home/grdev/Documentos/gr-engine/gr-base/lib/libgr-base.so)
 

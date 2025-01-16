@@ -2110,8 +2110,10 @@ bool Editor::OnPropertyMeshRender(MeshRender *meshRender) {
     }
    
     auto &materialList = meshRender->getMaterials();
+
+    auto avail = ImGui::GetContentRegionAvail();
     
-    if (ImGui::Button("Create")) {
+    if (ImGui::Button("Create", {avail.x, 0.0f})) {
         materialList.push_back(std::make_unique<Material>());
     }
 

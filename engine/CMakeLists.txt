@@ -39,11 +39,11 @@ set(core_src
     src/core/assetsManager.cpp
     src/core/nameManager.cpp
     src/core/statistics.cpp
-    src/core/threadpool.cpp
+    # src/core/threadpool.cpp
     src/core/console.cpp
     src/core/string.cpp
     src/core/screen.cpp
-    src/core/event.cpp
+    # src/core/event.cpp
     src/core/scene.cpp
     src/core/input.cpp
     src/core/time.cpp
@@ -54,11 +54,11 @@ set(core_hdr
     src/core/assetsManager.hpp
     src/core/nameManager.hpp
     src/core/statistics.hpp
-    src/core/threadpool.hpp
+    # src/core/threadpool.hpp
     src/core/console.hpp
     src/core/string.hpp
     src/core/screen.hpp
-    src/core/event.hpp
+    # src/core/event.hpp
     src/core/scene.hpp
     src/core/input.hpp
     src/core/time.hpp
@@ -89,17 +89,17 @@ set(filmbox_hdr
     src/core/filmbox/filmbox.hpp
 )
 
-set(animation_src
-    src/core/animation/animation.cpp
-    src/core/animation/keyframe.cpp
-    src/core/animation/bone.cpp
-)
+# set(animation_src
+#     src/core/animation/animation.cpp
+#     src/core/animation/keyframe.cpp
+#     src/core/animation/bone.cpp
+# )
 
-set(animation_hdr
-    src/core/animation/animation.cpp
-    src/core/animation/keyframe.cpp
-    src/core/animation/bone.cpp
-)
+# set(animation_hdr
+#     src/core/animation/animation.cpp
+#     src/core/animation/keyframe.cpp
+#     src/core/animation/bone.cpp
+# )
 
 set(core_file_src
     src/core/file/initialization.cpp

@@ -26,7 +26,7 @@ bool Animator::Serialize(Stream *stream) {
         stream->write(&nsize, sizeof(std::size_t));
         stream->write(name.data(), nsize * sizeof(char));
 
-        result |= bone->serizalize(stream);
+        result |= bone->serialize(stream);
     }
     return result;
 }
@@ -47,7 +47,7 @@ bool Animator::Deserialize(Stream *stream) {
 
         auto &&[it, added] = m_bones.emplace(name, std::make_shared<Bone>());
 
-        result |= it->second->deserizalize(stream);
+        result |= it->second->deserialize(stream);
     }
     return result;
 }

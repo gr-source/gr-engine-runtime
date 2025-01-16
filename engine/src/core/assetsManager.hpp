@@ -12,8 +12,12 @@
 #include <gr-render/gRender.h>
 
 #include "core/animation/animation.hpp"
+
 #include "core/binary/gHeader.hpp"
+
 #include "core/file/file.hpp"
+
+#include "core/filmbox/default.hpp"
 
 #include "geometry/material.hpp"
 
@@ -21,8 +25,6 @@
 #include "ecs/default.hpp"
 
 #include <core/geometry/mesh.hpp>
-
-class FbxAnimation;
 
 class GameObjectHandle {
 public:
@@ -76,6 +78,8 @@ public:
     template <typename ...Args>
     static void LoadTexture(const std::string &path, Args &&...args);
 
+    static std::string GetRefTextureName(grr::gTexture *texture);
+
     template <typename ...Args>
     static void LoadShader(const std::string &name, const std::string &frag, const std::string &vert, Args &&...args);
 
@@ -104,8 +108,6 @@ public:
     
     static grm::size GetMeshCount();
 
-    static std::string GetTextureKeyMap(grr::gTexture *texture);
-
     static std::unordered_map<std::string, std::unique_ptr<grr::gTexture>> &GetTextureMap();
 
     static void SetGameObjectList(const std::string &path, std::function<void(GameObject *)> func);
@@ -115,6 +117,14 @@ public:
     static void SetTextureList(const std::string &path, std::function<void(grr::gTexture *)> func);
 
     static std::unordered_map<std::string, std::unique_ptr<grr::gShader>> &GetShaderList();
+
+    template <typename ...Args>
+    static Material *CreateMaterial(const std::string &key, Args &&...args);
+
+    static Material *FindMaterial(const std::string &key);
+
+    static std::string GetRefMaterialToName(Material *material);
+
 private:
     /***************** Shader *****************/
     static std::unordered_map<std::string, std::unique_ptr<grr::gShader>> s_shaderList;
@@ -122,7 +132,10 @@ private:
     static std::mutex s_shaderMutex;
 
     /***************** Texture *****************/
-    static std::unordered_map<std::string, std::unique_ptr<grr::gTexture>> m_textureMap;
+    static std::unordered_map<std::string, std::unique_ptr<grr::gTexture>> textureMap;
+    static std::unordered_map<grr::gTexture *, std::string> textureRefToName;
+
+
     // multithread
     static std::unordered_map<std::string, TextureHandle *> m_mapHandleTexture;
     static std::list<TextureHandle> m_textureHandle;
@@ -142,7 +155,9 @@ private:
     static std::mutex m_meshMutex;
     
     /***************** Material *****************/
-    // static std::unordered_map<std::string, std::vector<Material>> m_materialMap;
+    static std::unordered_map<std::string, std::unique_ptr<Material>> materialsMap;
+    static std::unordered_map<Material *, std::string> materialRefToName;
+    static std::mutex materialsMutex;
 
     static void SetupTexture(TextureHandle handle, int width, int height, int ch, void *pixels);
 
@@ -219,6 +234,21 @@ inline Mesh *AssetsManager::CreateMesh(const std::string &key, Args &&...args) {
     s_meshList.emplace(key, std::make_unique<Mesh>(std::forward<Args>(args)...));
 
     return &(*s_meshList[key]);
+}
+
+// ***** Material ***** //
+template <typename... Args>
+inline Material *AssetsManager::CreateMaterial(const std::string &key, Args && ...args) {
+    std::lock_guard<std::mutex> lock(materialsMutex);
+    auto it = materialsMap.find(key);
+    if (it != materialsMap.end()) {
+        return &(*it->second);
+    }
+    materialsMap[key] = std::make_unique<Material>(std::forward<Args>(args)...);
+
+    materialRefToName[&(*materialsMap[key])] = key;
+
+    return &(*materialsMap[key]);
 }
 
 

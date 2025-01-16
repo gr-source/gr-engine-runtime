@@ -47,17 +47,11 @@ void Material::setAmbientOcclusion(float value) {
 }
 
 void Material::setTexture(int idx, grr::gTexture *texture) {
-    if (idx >= m_texture.size()) {
-        throw std::runtime_error("Limite texture exceded." + std::to_string(idx) + "-" + std::to_string(m_texture.size()));
-    }
-    m_texture[idx] = texture;
+    m_texture[idx >= m_texture.size() ? 0 : idx] = texture;
 }
 
 grr::gTexture *Material::getTexture(int idx) const {
-    if (idx >= m_texture.size()) {
-        throw std::runtime_error("Id not avaliable:" + std::to_string(idx) + "/" + std::to_string(m_texture.size()));
-    }
-    return m_texture[idx];
+    return m_texture[idx >= m_texture.size() ? 0 : idx];
 }
 
 void Material::serialize(Stream *stream) const {
@@ -83,7 +77,7 @@ void Material::serialize(Stream *stream) const {
 
     for (int i = 0;i<m_texture.size();i++) {
         stream->write(reinterpret_cast<const char *>(&i), sizeof(int));
-        auto name = AssetsManager::GetTextureKeyMap(m_texture[i]);
+        auto name = AssetsManager::GetRefTextureName(m_texture[i]);
 
         nSize = name.size();
         stream->write(reinterpret_cast<const char *>(&nSize), sizeof(std::size_t));

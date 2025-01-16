@@ -8,7 +8,14 @@
 #include "core/threadpool.hpp"
 #include "core/scene.hpp"
 
+#include "core/filmbox/fbxAnimation.hpp"
+
+
+#include <core/event.hpp>
+
 #include <ecs/componentRegistry.hpp>
+
+
 #include "ecs/gameObject.hpp"
 
 #include "script/meshFilter.hpp"
@@ -18,8 +25,6 @@
 
 #include "console.hpp"
 #include "settings.h"
-
-#include "event.hpp"
 
 #include "scriptManager/scriptManager.hpp"
 
@@ -41,7 +46,9 @@ std::list<ShaderHandle> AssetsManager::s_shaderFromLoader;
 std::mutex AssetsManager::s_shaderMutex;
 
 /***************** Texture *****************/
-std::unordered_map<std::string, std::unique_ptr<grr::gTexture>> AssetsManager::m_textureMap;
+std::unordered_map<std::string, std::unique_ptr<grr::gTexture>> AssetsManager::textureMap;
+std::unordered_map<grr::gTexture *, std::string> AssetsManager::textureRefToName;
+
 std::unordered_map<std::string, TextureHandle *> AssetsManager::m_mapHandleTexture;
 std::list<TextureHandle> AssetsManager::m_textureHandle;
 std::mutex AssetsManager::m_mutexTexture;
@@ -60,12 +67,15 @@ std::unordered_map<std::string, std::unique_ptr<Mesh>> AssetsManager::s_meshList
 std::mutex AssetsManager::m_meshMutex;
 
 /***************** Material *****************/
-// std::unordered_map<std::string, std::vector<Material>> AssetsManager::m_materialMap;
+std::unordered_map<std::string, std::unique_ptr<Material>> AssetsManager::materialsMap;
+std::unordered_map<Material *, std::string> AssetsManager::materialRefToName;
+std::mutex AssetsManager::materialsMutex;
 
 void AssetsManager::Initialize() {
     stbi_set_flip_vertically_on_load(true);
 }
 
+// TODO: Falta corrigir
 void AssetsManager::Shutdown() {
     // clear assets
     m_processCount = 0;
@@ -75,7 +85,8 @@ void AssetsManager::Shutdown() {
     s_shaderFromLoader.clear();
 
     /***************** Texture *****************/
-    m_textureMap.clear();
+    textureMap.clear();
+
     // multithread
     m_mapHandleTexture.clear();
     m_textureHandle.clear();
@@ -89,6 +100,14 @@ void AssetsManager::Shutdown() {
 
     /***************** Mesh *****************/
     s_meshList.clear();
+}
+
+std::string AssetsManager::GetRefTextureName(grr::gTexture *texture) {
+    auto it = textureRefToName.find(texture);
+    if (it == textureRefToName.end()) {
+        return "";
+    }
+    return it->second;
 }
 
 Animation *AssetsManager::LoadAnimation(const std::string &path) {
@@ -157,10 +176,9 @@ std::unordered_map<std::string, std::unique_ptr<Mesh>> &AssetsManager::GetMeshLi
 /***************** Texture Process ****************/
 void AssetsManager::SetupTexture(TextureHandle handle, int width, int height, int ch, void *pixels) {
     std::unique_lock<std::mutex> lock(m_mutexTexture);
-    auto it = m_textureMap.find(handle.m_path);
-    if (it != m_textureMap.end()) {
-        handle.invoke(&(*it->second));
-        return;
+    auto it = textureMap.find(handle.m_path);
+    if (it != textureMap.end()) {
+        return handle.invoke(&(*it->second));
     }
     auto texture = grr::gTexture::Create();
 
@@ -180,7 +198,6 @@ void AssetsManager::SetupTexture(TextureHandle handle, int width, int height, in
             format = grr::TextureFormat_SRGBA;
             break;
         default:
-            assert(false && "[ Resources::getTextureType ] typo invalido");
             break;
         }
 
@@ -190,8 +207,9 @@ void AssetsManager::SetupTexture(TextureHandle handle, int width, int height, in
         stbi_image_free(pixels);
     }
 
-    m_textureMap.emplace(handle.m_path, std::unique_ptr<grr::gTexture>(texture));
-   
+    auto &&[ita, added] = textureMap.emplace(handle.m_path, std::unique_ptr<grr::gTexture>(texture));
+    textureRefToName[&(*ita->second)] = handle.m_path;
+
     handle.invoke(texture);
 
     lock.unlock();
@@ -209,7 +227,7 @@ void AssetsManager::ProcessTexture() {
         m_mapHandleTexture.erase(path);
 
         int width, height, ch;
-        auto pixels = static_cast<void *>(stbi_load(path.c_str(), &width, &height, &ch, 0));
+        auto pixels = reinterpret_cast<void *>(stbi_load(path.c_str(), &width, &height, &ch, 0));
         if (!pixels) {
             Console::LogError("[ AssetsManager::Texture ] Failed to load texture: " + path);
             handle.invoke(nullptr);
@@ -730,8 +748,8 @@ void AssetsManager::SetTextureList(const std::string &path, std::function<void(g
 
     {
         std::lock_guard<std::mutex> lock(m_mutexTexture);
-        auto map = m_textureMap.find(path);
-        if (map != m_textureMap.end()) {
+        auto map = textureMap.find(path);
+        if (map != textureMap.end()) {
             if (func) {
                 func(&(*map->second));
             }
@@ -755,7 +773,7 @@ std::unordered_map<std::string, std::unique_ptr<grr::gShader>> &AssetsManager::G
 }
 
 grm::size AssetsManager::GetTextureCount() {
-    return m_textureMap.size();
+    return textureMap.size();
 }
 
 grm::size AssetsManager::GetShaderCount() {
@@ -771,19 +789,8 @@ grm::size AssetsManager::GetMeshCount() {
     return count;
 }
 
-std::string AssetsManager::GetTextureKeyMap(grr::gTexture *texture) {
-    auto it = std::find_if(m_textureMap.begin(), m_textureMap.end(), [&texture](const auto &tuple) {
-        return &(*std::get<std::unique_ptr<grr::gTexture>>(tuple)) == texture;
-    });
-
-    if (it == m_textureMap.end()) {
-        return "";
-    }
-    return it->first;
-}
-
 std::unordered_map<std::string, std::unique_ptr<grr::gTexture>> &AssetsManager::GetTextureMap() {
-    return m_textureMap;
+    return textureMap;
 }
 
 TextureHandle::TextureHandle(std::function<void(grr::gTexture *)> function, std::string path) : m_path(path) {
@@ -826,10 +833,20 @@ void ShaderHandle::add(std::function<void(grr::gShader *)> function) {
     m_functions.push_back(function);
 }
 
+Material *AssetsManager::FindMaterial(const std::string &key) {
+    std::lock_guard<std::mutex> lock(materialsMutex);
+    auto it = materialsMap.find(key);
+    if (it == materialsMap.end()) {
+        return nullptr;
+    }
+    return &(*it->second);
+}
 
-
-
-
-
-
-
+std::string AssetsManager::GetRefMaterialToName(Material *material) {
+    std::lock_guard<std::mutex> lock(materialsMutex);
+    auto it = materialRefToName.find(material);
+    if (it == materialRefToName.end()) {
+        return "";
+    }
+    return it->second;
+}

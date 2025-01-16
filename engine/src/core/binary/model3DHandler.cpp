@@ -685,7 +685,6 @@ void Model3DHandler::SetupTextureMaterial(Material *material, int id, grr::gText
         return;
     }
 
-
     material->setTexture(id, texture);
 }
 

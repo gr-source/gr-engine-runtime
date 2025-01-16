@@ -196,7 +196,7 @@ void ProjectMenu::RenderMainMenu() {
 }
 
 void ProjectMenu::RenderProject(Project &project) {
-    auto &name = project.getName();
+    auto name = project.getName();
 
     if (ImGui::Selectable(name.c_str())) {
         OpenProject(project);

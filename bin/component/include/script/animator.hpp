@@ -4,8 +4,8 @@
 
 #include "default.hpp"
 
-#include "core/animation/animation.hpp"
-#include "core/animation/bone.hpp"
+#include <core/animation/animation.hpp>
+#include <core/animation/bone.hpp>
 
 class Animator : public Component {
     CLASS_FUNCTIONS

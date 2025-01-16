@@ -17,8 +17,8 @@ public:
     
     Project(const std::string &name, const std::string &path);
 
-    const std::string &getPath() const;
+    std::string getPath() const;
 
-    const std::string &getName() const;
+    std::string getName() const;
 };
 
