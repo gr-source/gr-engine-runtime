@@ -264,10 +264,14 @@ void Batching::draw(grr::gShader *shader, bool bSetMaterial) {
     grr::gShader::Flush();
 
     if (m_flags & BatchingFlags_HasIndices) {
-        return grr::gVertexArray::DrawElements(PrimitiveType::TRIANGLES, m_indexCount, nullptr);
+        grr::gVertexArray::DrawElements(PrimitiveType::TRIANGLES, m_indexCount, nullptr);
+    } else {
+        grr::gVertexArray::DrawArrays(PrimitiveType::TRIANGLES, m_indexCount);
     }
 
-    return grr::gVertexArray::DrawArrays(PrimitiveType::TRIANGLES, m_indexCount);
+    for (int i=0;i<10;i++) {
+        grr::gTexture::Bind(nullptr, i);
+    }
 }
 
 void Batching::setupMaterial() {
@@ -277,21 +281,22 @@ void Batching::setupMaterial() {
     for (auto i=0;i<m_materials->size();i++) {
         auto &material = (*m_materials)[i];
 
-        for (auto i=0;i<10;++i) {
-            auto texture = material->getTexture(i);
-            if (!texture || !texture->isValid()) {
-                continue;
-            }
-            grr::gTexture::Bind(texture, idx[i]);
+        // 0 - Albedo
+        // 1 - Normal
+        // 2 - Roughness
+        // 3 - Metallic
+        // 4 - Ao
+        auto texture = material->getTexture(0);
+        if (texture && texture->isValid()) {
+            grr::gTexture::Bind(texture, i);
             idxEn[i] = 1;
         }
-
-        // grr::gShader::SetUniform("m_texture", (const int *)idx);
-        grr::gShader::SetUniform("m_activate", (const int *)idxEn);
 
         grr::gShader::SetUniform("m_material[" + std::to_string(i) + "].albedo", material->getAlbedo());
         grr::gShader::SetUniform("m_material[" + std::to_string(i) + "].params", Vector3({material->getRoughness(), material->getMetallic(), material->getAmbientOcclusion()}));
     }
+    grr::gShader::SetUniform("m_texture", (const int *)idx);
+    grr::gShader::SetUniform("m_activate", (const int *)idxEn);
 }
 
 void Batching::RegisterShaderShadow(grr::gShader *shader) {

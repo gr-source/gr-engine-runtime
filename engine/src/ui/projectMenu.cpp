@@ -22,8 +22,9 @@
 #include <algorithm>
 #include <iostream>
 
-std::array<const std::string, 6> ProjectMenu::m_assetsFile {
+std::array<const std::string, 7> ProjectMenu::m_assetsFile {
     "animation",
+    "material",
     "texture",
     "shader",
     "script",

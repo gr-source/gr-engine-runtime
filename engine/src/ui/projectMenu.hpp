@@ -24,7 +24,7 @@ public:
     static Editor *GetEditor();
 
 private:
-    static std::array<const std::string, 6> m_assetsFile;
+    static std::array<const std::string, 7> m_assetsFile;
 
     static std::vector<Project> m_projects;
 

@@ -644,15 +644,12 @@ void Model3DHandler::CreateObjects(const FbxScene *scene, const FbxNode *node, T
         }
 
         auto meshFilter = gameObject->addComponent<MeshFilter>();
-        if (!meshFilter) {
-            return;
-        }
+        if (!meshFilter) { return; }
+
         meshFilter->setMesh(m_mesh);
 
         auto meshRender = gameObject->addComponent<MeshRender>();
-        if (!meshRender) {
-            return;
-        }
+        if (!meshRender) { return; }
 
         if (!m_bones.empty()) {
             auto animator = gameObject->addComponent<Animator>();
@@ -687,6 +684,8 @@ void Model3DHandler::SetupTextureMaterial(Material *material, int id, grr::gText
     if (!material || !texture) {
         return;
     }
+
+
     material->setTexture(id, texture);
 }
 

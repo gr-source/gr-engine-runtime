@@ -369,7 +369,7 @@ void Editor::RenderDocking() {
 
     EditorPopupFlags_ flags = 0;
 
-    // bool bPopupMenuShader = false, bMeshList = false;
+    bool bPopupMenuShader = false, bMeshList = false;
 
     if (ImGui::BeginMenuBar()) {
         if (ImGui::BeginMenu("Project")) {
@@ -414,7 +414,7 @@ void Editor::RenderDocking() {
                 flags |= EditorPopupFlags_SkyboxEditor;
             }
 
-            /*
+            // /*
             if (ImGui::MenuItem("Shader List")) {
                 bPopupMenuShader = true;
             }
@@ -422,7 +422,7 @@ void Editor::RenderDocking() {
             if (ImGui::MenuItem("Mesh List")) {
                 bMeshList = true;
             }
-            */
+            // */
             ImGui::EndMenu();
         }
 
@@ -445,7 +445,7 @@ void Editor::RenderDocking() {
         ImGui::OpenPopup("##popup_skybox_editor");
     }
 
-    /*
+    // /*
     if (bPopupMenuShader) {
         ImGui::OpenPopup("##popup_menu_shader_list");
     }
@@ -453,7 +453,7 @@ void Editor::RenderDocking() {
     if (bMeshList) {
         ImGui::OpenPopup("##popup_menu_mesh_list");
     }
-    */
+    // */
 
     if (bBuildDock) {
         return;
@@ -1475,11 +1475,9 @@ void Editor::PopupDirmanager() {
     }
 
     auto idx = 0;
-    bool bCreateDiretory = false;
-    bool bCreateScript = false;
-    bool bRenameFile = false;
+    bool bCreateDiretory = false, bCreateScript = false, bRenameFile = false, bCreateMaterial = false;;
 
-    std::array<const char *, 4> item_list{"Delete", "Rename", "Create directory", "Create script"};
+    std::array<const char *, 5> item_list{"Delete", "Rename", "Create directory", "Create script", "Create material"};
 
     if (ImGui::ListBox("##DirManager", &idx, item_list.data(), item_list.size())) {
         switch (idx) {
@@ -1496,6 +1494,9 @@ void Editor::PopupDirmanager() {
             break;
         case 3:
             bCreateScript = true;
+            break;
+        case 4:
+            bCreateMaterial = true;
             break;
         default:
             break;

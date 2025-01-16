@@ -169,11 +169,11 @@ void Filmbox::ProcessMesh(aiMesh *mMesh, FbxScene *fbxScene) {
     InserMesh(mesh, mMesh);
 }
 
-// TODO: falta corrigir o indice da mesh
 void Filmbox::InserMesh(FbxMesh *fbxMesh, aiMesh *mMesh) {
     auto bHasPosition = mMesh->HasPositions();
     auto bHasNormal = mMesh->HasNormals();
     auto bHasTexCoord = mMesh->HasTextureCoords(0);
+
 
     auto id = fbxMesh->addMaterial(mMesh->mMaterialIndex);
 
@@ -199,16 +199,17 @@ void Filmbox::InserMesh(FbxMesh *fbxMesh, aiMesh *mMesh) {
         }
     }
 
+    /*
     if (mMesh->HasFaces()) {
         for (auto i = 0; i < mMesh->mNumFaces; ++i) {
             auto &mFace = mMesh->mFaces[i];
 
-            // Adiciona os índices das faces
             for (auto j = 0; j < mFace.mNumIndices; ++j) {
-                fbxMesh->addIndice(mFace.mIndices[j]);
+                fbxMesh->addIndice(fbxMesh->getVertices().size() + mFace.mIndices[j]);
             }
         }
     }
+    */
 
     if (mMesh->HasBones()) {
         for (auto i=0;i<mMesh->mNumBones;++i) {
