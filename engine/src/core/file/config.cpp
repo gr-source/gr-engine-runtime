@@ -6,7 +6,7 @@
 
 #include <iostream>
 
-Config::Config(const std::string &path) : m_path(path), m_category("none") {}
+Config::Config(const std::string &path) : m_path(path) {}
 
 bool Config::is_open() const {
     return std::filesystem::exists(m_path);
@@ -54,6 +54,8 @@ void Config::clear() {
 }
 
 void Config::setCategory(const std::string &name) {
+    if (name.empty()) { return; }
+    
     m_sections.emplace(name, std::unordered_map<std::string, std::string>());
 
     m_category = name;

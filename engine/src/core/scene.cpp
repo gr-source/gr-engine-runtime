@@ -167,8 +167,6 @@ void Scene::CheckRequestReinstanceScript() {
     }
 }
 
-Scene::Scene(const std::string &name) : m_name(name), m_enable(true) {}
-
 void Scene::CleanTemp() {
     auto gos = GameObject::m_temp;
     if (gos.empty()) { return; }
@@ -180,13 +178,29 @@ void Scene::CleanTemp() {
     }
 }
 
+void Scene::Remove(GameObject *gameObject) {
+    auto scene = GetCurrentScene();
+    if (!scene) { return; }
+
+    scene->remove(gameObject);
+}
+
+void Scene::Destoy(GameObject *gameObject) {
+    auto scene = GetCurrentScene();
+    if (!scene) { return; }
+    
+    scene->destroy(gameObject);
+}
+
+Scene::Scene(const std::string &name) : m_name(name), m_enable(true) {}
+
 Scene::~Scene() {
     for (auto &gameObject : m_objects) {
         GameObject::Destroy(gameObject);
     }
 }
 
-const std::string &Scene::getName() const {
+std::string Scene::getName() const {
     return m_name;
 }
 
@@ -235,20 +249,6 @@ void Scene::insert(GameObject *gameObject) {
     if (it != m_objects.end()) { return; }
 
     m_objects.push_back(gameObject);
-}
-
-void Scene::Remove(GameObject *gameObject) {
-    auto scene = GetCurrentScene();
-    if (!scene) { return; }
-
-    scene->remove(gameObject);
-}
-
-void Scene::Destoy(GameObject *gameObject) {
-    auto scene = GetCurrentScene();
-    if (!scene) { return; }
-    
-    scene->destroy(gameObject);
 }
 
 void Scene::Clear() {

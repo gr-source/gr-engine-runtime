@@ -13,6 +13,13 @@
 
 #include <gr-render/gTexture.h>
 
+enum EditorPopupFlags : int {
+    EditorPopupFlags_EngineStatus = 1 << 1,
+    EditorPopupFlags_Settings     = 1 << 2,
+    EditorPopupFlags_SkyboxEditor = 1 << 2,
+};
+
+using EditorPopupFlags_ = int;
 
 enum IconType : int {
     ICON_FOLDER       = 0,
@@ -134,11 +141,11 @@ private:
 
     UIPopup_ uIPopup;
 
+    void RenderDocking();
+
     void BuildDock(ImGuiID dockspace_id, ImGuiDockNodeFlags dockspace_flags);
 
     void PopupComponentMenu();
-
-    void RenderDocking();
 
     void RenderScenesUI();
 
@@ -290,4 +297,9 @@ private:
     static GameObject *CreatePrimitive(int type);
 
     static GameObject *CreateEditorCamera();
+
+    // 
+    void SkyboxEditor();
+
+    void ScenePostEcecute(Scene *scene);
 };

@@ -39,10 +39,22 @@ public:
 
     static void CleanTemp();
 
+    static std::unordered_map<std::string, std::unique_ptr<Scene>> &GetScenes();
+
+    static void CleanCurrentScene();
+
+    static void ReloadObjects(std::function<void(Scene *)> func);
+
+    static void InitializeObject();
+
+    static void Remove(GameObject *gameObject);
+
+    static void Destoy(GameObject *gameObject);
+
     Scene(const std::string &name);
     ~Scene();
 
-    const std::string &getName() const;
+    std::string getName() const;
     
     void save(const std::string &path);
 
@@ -51,20 +63,8 @@ public:
     std::vector<GameObject *> &getObjectList();
 
     void insert(GameObject *gameObject);
-    
-    static void Remove(GameObject *gameObject);
-
-    static void Destoy(GameObject *gameObject);
 
     void Clear();
-
-    static std::unordered_map<std::string, std::unique_ptr<Scene>> &GetScenes();
-
-    static void CleanCurrentScene();
-
-    static void ReloadObjects(std::function<void(Scene *)> func);
-
-    static void InitializeObject();
 
 private:
     static std::unordered_map<std::string, std::unique_ptr<Scene>> m_scenes;

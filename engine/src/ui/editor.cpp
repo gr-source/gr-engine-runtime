@@ -2,6 +2,7 @@
 
 #include "postProcessing.hpp"
 #include "editorController.h"
+#include "projectMenu.hpp"
 #include "renderManager.h"
 #include "screenRender.hpp"
 #include "renderer.h"
@@ -118,7 +119,6 @@ Editor::Editor() : m_viewport(ImGui::GetMainViewport()), mImGuiIO(&ImGui::GetIO(
 
     mLastTransform = {Vector3::zero, Quaternion::identity, Vector3::one};
 
-
     m_config = std::make_shared<Config>(File::GetFile("/config.ini"));
     try {
         m_config->load();
@@ -130,8 +130,8 @@ Editor::Editor() : m_viewport(ImGui::GetMainViewport()), mImGuiIO(&ImGui::GetIO(
         auto lasCaterogy = m_config->getCategory();
         m_config->setCategory("viewport");
         
-        Settings::ViewportSize.x = m_config->hasKey("x") ? m_config->getValue<int>("x") : 0;
-        Settings::ViewportSize.y = m_config->hasKey("y") ? m_config->getValue<int>("y") : 0;
+        Settings::ViewportSize.x = m_config->hasKey("w") ? m_config->getValue<int>("w") : 0;
+        Settings::ViewportSize.y = m_config->hasKey("h") ? m_config->getValue<int>("h") : 0;
 
         m_config->setCategory(lasCaterogy);
     }
@@ -154,7 +154,7 @@ Editor::Editor() : m_viewport(ImGui::GetMainViewport()), mImGuiIO(&ImGui::GetIO(
 
     m_config->setCategory("scene");
     if (m_config->hasKey("main") && m_config->getValue<std::string>("main") != "default" && !Scene::HasScene()) {
-        Scene::LoadScene(File::GetAsset("/scene/" + m_config->getValue<std::string>("main") + ".scn"));
+        Scene::LoadScene(File::GetAsset("/scene/" + m_config->getValue<std::string>("main") + ".scn"), static_cast<std::function<void(Scene *)>>(std::bind(&Editor::ScenePostEcecute, this, std::placeholders::_1)));
     }
 
     m_config->setCategory(lastCategory);
@@ -184,8 +184,13 @@ Editor::~Editor() {
     m_config->setValue<std::string>("main", Scene::HasScene() ?  Scene::GetCurrentScene()->getName() : "default");
 
     m_config->setCategory("viewport");
-    m_config->setValue("x", Settings::ViewportSize.x);
-    m_config->setValue("y", Settings::ViewportSize.y);
+    m_config->setValue("w", Settings::ViewportSize.x);
+    m_config->setValue("h", Settings::ViewportSize.y);
+
+    if (s_objectSelected) {
+        m_config->setCategory("editor");
+        m_config->setValue("GoSelecetd", s_objectSelected->getName());
+    }
 
     if (m_config) {
         m_config->save();
@@ -331,6 +336,132 @@ void Editor::RenderUI() {
     PopupAddComponent();
 
     PopupMenuProperty();
+
+    SkyboxEditor();
+}
+
+void Editor::RenderDocking() {
+    if (m_viewport == nullptr)
+        m_viewport = ImGui::GetMainViewport();
+
+    ImGui::SetNextWindowPos(m_viewport->WorkPos);
+    ImGui::SetNextWindowSize(m_viewport->WorkSize);
+    ImGui::SetNextWindowViewport(m_viewport->ID);
+
+    ImGuiWindowFlags host_window_flags = 0;
+    host_window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoDocking;
+    host_window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
+    host_window_flags |= ImGuiWindowFlags_MenuBar;
+
+    ImGuiDockNodeFlags dockspace_flags = 0;
+    dockspace_flags |= ImGuiDockNodeFlags_PassthruCentralNode;
+    if (dockspace_flags & ImGuiDockNodeFlags_PassthruCentralNode)
+        host_window_flags |= ImGuiWindowFlags_NoBackground;
+
+    char label[32];
+    ImFormatString(label, IM_ARRAYSIZE(label), "DockSpaceViewport_%08X", m_viewport->ID);
+
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+    ImGui::Begin(label, NULL, host_window_flags);
+    ImGui::PopStyleVar(3);
+
+    EditorPopupFlags_ flags = 0;
+
+    // bool bPopupMenuShader = false, bMeshList = false;
+
+    if (ImGui::BeginMenuBar()) {
+        if (ImGui::BeginMenu("Project")) {
+            if (ImGui::MenuItem("Reconfigure Script")) {
+                ReconfigScript();
+            }
+            
+            if (ImGui::MenuItem("Reconfigure Component")) {
+                // ProjectMenu::CloseProject();
+            }
+            
+            if (ImGui::MenuItem("Settings")) {}
+
+            if (ImGui::MenuItem("Close")) {
+                // ProjectMenu::CloseProject();
+            }
+            ImGui::EndMenu();
+        }
+        
+        if (ImGui::BeginMenu("View")) {
+            if (ImGui::MenuItem("Engine status")) {
+                flags |= EditorPopupFlags_EngineStatus;
+            }
+            ImGui::EndMenu();
+        }
+        
+        if (ImGui::BeginMenu("Build")) {
+            if (ImGui::MenuItem("compile")) {
+            }
+            ImGui::EndMenu();
+        }
+        
+        if (ImGui::BeginMenu("Preferences")) {
+            if (ImGui::MenuItem("Settings")) {
+                flags |= EditorPopupFlags_Settings;
+            }
+            ImGui::EndMenu();
+        }
+
+        if (ImGui::BeginMenu("Tools")) {
+            if (ImGui::MenuItem("Skybox Editor")) {
+                flags |= EditorPopupFlags_SkyboxEditor;
+            }
+
+            /*
+            if (ImGui::MenuItem("Shader List")) {
+                bPopupMenuShader = true;
+            }
+
+            if (ImGui::MenuItem("Mesh List")) {
+                bMeshList = true;
+            }
+            */
+            ImGui::EndMenu();
+        }
+
+        ImGui::EndMenuBar();
+    }
+
+    ImGuiID dockspace_id = ImGui::GetID("DockSpace");
+    ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
+    ImGui::End();
+
+    if (flags & EditorPopupFlags_EngineStatus) {
+        ImGui::OpenPopup("##popup_engine_status");
+    }
+
+    if (flags & EditorPopupFlags_Settings) {
+        ImGui::OpenPopup("##popup_menu_settings");
+    }
+
+    if (flags & EditorPopupFlags_SkyboxEditor) {
+        ImGui::OpenPopup("##popup_skybox_editor");
+    }
+
+    /*
+    if (bPopupMenuShader) {
+        ImGui::OpenPopup("##popup_menu_shader_list");
+    }
+
+    if (bMeshList) {
+        ImGui::OpenPopup("##popup_menu_mesh_list");
+    }
+    */
+
+    if (bBuildDock) {
+        return;
+    }
+
+    BuildDock(dockspace_id, dockspace_flags);
+
+    bBuildDock = true;
 }
 
 void Editor::BuildDock(ImGuiID dockspace_id, ImGuiDockNodeFlags dockspace_flags) {
@@ -363,120 +494,6 @@ void Editor::PopupComponentMenu() {
     if (!isOpen) { return; }
 
     ImGui::EndPopup();
-}
-
-#include "projectMenu.hpp"
-
-void Editor::RenderDocking() {
-    if (m_viewport == nullptr)
-        m_viewport = ImGui::GetMainViewport();
-
-    ImGui::SetNextWindowPos(m_viewport->WorkPos);
-    ImGui::SetNextWindowSize(m_viewport->WorkSize);
-    ImGui::SetNextWindowViewport(m_viewport->ID);
-
-    ImGuiWindowFlags host_window_flags = 0;
-    host_window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoDocking;
-    host_window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
-    host_window_flags |= ImGuiWindowFlags_MenuBar;
-
-    ImGuiDockNodeFlags dockspace_flags = 0;
-    dockspace_flags |= ImGuiDockNodeFlags_PassthruCentralNode;
-    if (dockspace_flags & ImGuiDockNodeFlags_PassthruCentralNode)
-        host_window_flags |= ImGuiWindowFlags_NoBackground;
-
-    char label[32];
-    ImFormatString(label, IM_ARRAYSIZE(label), "DockSpaceViewport_%08X", m_viewport->ID);
-
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-    ImGui::Begin(label, NULL, host_window_flags);
-    ImGui::PopStyleVar(3);
-
-    int flags = 0;
-
-    bool bPopupMenuSettings = false, bPopupMenuShader = false, bMeshList = false;
-
-    if (ImGui::BeginMenuBar()) {
-        if (ImGui::BeginMenu("Project")) {
-            if (ImGui::MenuItem("Reconfigure Script")) {
-                ReconfigScript();
-            }
-            
-            if (ImGui::MenuItem("Reconfigure Component")) {
-                // ProjectMenu::CloseProject();
-            }
-            
-            if (ImGui::MenuItem("Close")) {
-                ProjectMenu::CloseProject();
-            }
-            ImGui::EndMenu();
-        }
-        
-        if (ImGui::BeginMenu("View")) {
-            if (ImGui::MenuItem("Propriedades")) {
-                flags |= 2;
-            }
-            ImGui::EndMenu();
-        }
-        
-        if (ImGui::BeginMenu("Build")) {
-            if (ImGui::MenuItem("compile")) {
-            }
-            ImGui::EndMenu();
-        }
-        
-        if (ImGui::BeginMenu("Preferences")) {
-            if (ImGui::MenuItem("Settings")) {
-                bPopupMenuSettings = true;
-            }
-            ImGui::EndMenu();
-        }
-
-        if (ImGui::BeginMenu("Tools")) {
-            if (ImGui::MenuItem("Skybox")) {}
-
-            if (ImGui::MenuItem("Shader List")) {
-                bPopupMenuShader = true;
-            }
-
-            if (ImGui::MenuItem("Mesh List")) {
-                bMeshList = true;
-            }
-            ImGui::EndMenu();
-        }
-
-        ImGui::EndMenuBar();
-    }
-
-    ImGuiID dockspace_id = ImGui::GetID("DockSpace");
-    ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
-    ImGui::End();
-
-    if (flags & 2) {
-        ImGui::OpenPopup("##popup_menu_property");
-    }
-
-    if (bPopupMenuSettings) {
-        ImGui::OpenPopup("##popup_menu_settings");
-    }
-
-    if (bPopupMenuShader) {
-        ImGui::OpenPopup("##popup_menu_shader_list");
-    }
-
-    if (bMeshList) {
-        ImGui::OpenPopup("##popup_menu_mesh_list");
-    }
-
-    if (bBuildDock) {
-        return;
-    }
-
-    BuildDock(dockspace_id, dockspace_flags);
-
-    bBuildDock = true;
 }
 
 void Editor::RenderScenesUI() {
@@ -723,7 +740,7 @@ void Editor::PopupRenameGameObject() {
 void Editor::RenderViewportUI() {
     ImGui::Begin("Viewport", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
     
-    auto isOpen = false;
+    auto bCreateScene = false;
 
     bViewPortFocused = ImGui::IsWindowFocused();
 
@@ -763,12 +780,12 @@ void Editor::RenderViewportUI() {
         }
 
         if (ImGui::TabItemButton("+")) {
-            isOpen = true;
+            bCreateScene = true;
         }
         ImGui::EndTabBar();
     }
 
-    if (isOpen) {
+    if (bCreateScene) {
         ImGui::OpenPopup("##popup_menu_create_scene");
     }
 
@@ -1988,7 +2005,7 @@ void Editor::PopupAddComponent() {
 }
 
 void Editor::PopupMenuProperty() {
-    auto isOpen = ImGui::BeginPopup("##popup_menu_property");
+    auto isOpen = ImGui::BeginPopup("##popup_engine_status");
     if (!isOpen) { return; }
 
     RenderStatisticsMenu();
@@ -2041,8 +2058,6 @@ bool Editor::OnPropertyMeshFilter(MeshFilter *meshFilter) {
     }
 
     ImGui::Text("Name: %s", meshFilter->getMesh()->getName().c_str());
-
-    RenderUVConfig(meshFilter);
 
     return false;
 }
@@ -2900,5 +2915,18 @@ GameObject *Editor::CreateEditorCamera() {
     return gameObject;
 }
 
+void Editor::SkyboxEditor() {
+    auto isOpen = ImGui::BeginPopupModal("##popup_skybox_editor", nullptr, ImGuiWindowFlags_Modal);
+    if (!isOpen) { return; }
 
+    ImGui::Text("Teste");
 
+    ImGui::EndPopup();
+}
+
+void Editor::ScenePostEcecute(Scene *scene) {
+    m_config->setCategory("editor");
+    if (!m_config->hasKey("GoSelecetd")) { return; }
+
+    s_objectSelected = GameObject::Find(m_config->getValue<std::string>("GoSelecetd"));
+}
