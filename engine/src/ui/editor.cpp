@@ -115,8 +115,6 @@ Editor::Editor() : m_viewport(ImGui::GetMainViewport()), mImGuiIO(&ImGui::GetIO(
 
     s_maxProgress = 0;
 
-    m_SelectedPath = "";
-
     mLastTransform = {Vector3::zero, Quaternion::identity, Vector3::one};
 
     m_config = std::make_shared<Config>(File::GetFile("/config.ini"));
@@ -228,8 +226,8 @@ void Editor::DropFile(const std::filesystem::path &path) {
 }
  
 void Editor::Import3DModel(const std::string &path) {
-    // Threadpool::AddTask(&Filmbox::Load, path, .., false);
-    Model3DHandler::ImportFBX(path);
+    // Filmbox::Load(path, std::bind( ));
+    // Model3DHandler::ImportFBX(path);
 }
 
 void Editor::ImportImage(const std::string &path) {
@@ -2933,3 +2931,32 @@ void Editor::ScenePostEcecute(Scene *scene) {
 
     s_objectSelected = GameObject::Find(m_config->getValue<std::string>("GoSelecetd"));
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -660,6 +660,7 @@ void Model3DHandler::CreateObjects(const FbxScene *scene, const FbxNode *node, T
             }
         }
 
+        // TODO: Falta arrumar aqui, nos materiais talvez esta dereferenciado o materia do objetos antes de seta a textura.
         for (auto &&[name, fbxMaterial] : m_materials) {
             auto material = meshRender->addMaterial(fbxMaterial.getName(), fbxMaterial.getColor());
 
