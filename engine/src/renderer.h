@@ -36,7 +36,7 @@ private:
 
     static grm::u32 m_vbo;
 
-    static void SetupShader(grr::gShader *shader);
+    static bool SetupShader(grr::gShader *shader);
 
     static void DrawLines();
 };

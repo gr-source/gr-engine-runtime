@@ -123,6 +123,7 @@ void Material::deserialize(Stream *stream) {
     }
 }
 
-void Material::setupTexture(int id, grr::gTexture *texture) {
+bool Material::setupTexture(int id, grr::gTexture *texture) {
     m_texture[id] = texture;
+    return true;
 }

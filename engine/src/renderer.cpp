@@ -54,8 +54,8 @@ void DebugDraw::Renderer(Camera *camera) {
     }
 }
 
-void DebugDraw::SetupShader(grr::gShader *shader) {
-    if (!shader) { return; }
+bool DebugDraw::SetupShader(grr::gShader *shader) {
+    if (!shader) { return true; }
 
     grr::gShader::Register("u_vp", UniformType::MAT4, 1, Matrix4x4::identityMatrix);
 
@@ -75,6 +75,8 @@ void DebugDraw::SetupShader(grr::gShader *shader) {
     m_primitive->unbind();
 
     m_shader = shader;
+
+    return true;
 }
 
 void DebugDraw::DrawLines() {

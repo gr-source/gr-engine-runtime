@@ -51,6 +51,6 @@ private:
 
     std::vector<grr::gTexture *> m_texture;
 
-    void setupTexture(int id, grr::gTexture *texture);
+    bool setupTexture(int id, grr::gTexture *texture);
 };
 

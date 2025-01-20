@@ -19,7 +19,7 @@ private:
 
     static void CreateMesh();
 
-    static void RegisterShader(grr::gShader *shader);
+    static bool RegisterShader(grr::gShader *shader);
 };
 
 

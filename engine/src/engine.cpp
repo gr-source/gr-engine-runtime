@@ -119,6 +119,8 @@ void Engine::Idle() {
 }
 
 void Engine::Update() {
+    Event::Update();
+
     Time time;
     time.end();
 
@@ -136,8 +138,6 @@ void Engine::Update() {
 }
 
 void Engine::Render() {
-    Event::ProcessEvent();
-
     m_editor = ProjectMenu::GetEditor();
 
     if (MainPostProcess && m_editor) {
@@ -305,7 +305,7 @@ void Engine::UIFramebuffer() {
     grr::gRender::SetRenderState(grr::GR_BACKGROUND, grr::GR_COLOR_BUFFER);
 
     ImGuiRender::Begin();
-
+    
     ProjectMenu::Render();
 
     ImGuiRender::End();

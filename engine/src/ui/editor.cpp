@@ -226,7 +226,7 @@ void Editor::DropFile(const std::filesystem::path &path) {
 }
  
 void Editor::Import3DModel(const std::string &path) {
-    // Filmbox::Load(path, std::bind( ));
+    // Filmbox::Load(path, std::bind());
     // Model3DHandler::ImportFBX(path);
 }
 

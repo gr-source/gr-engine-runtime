@@ -123,12 +123,13 @@ void RenderManager::SetupLight() {
     }
 }
 
-void RenderManager::SetupShader(ShaderType type, grr::gShader *shader) {
+bool RenderManager::SetupShader(ShaderType type, grr::gShader *shader) {
     m_shader[type] = shader;
 
     RegisterUniform(type == ShaderType_Dynamic);
 
     bRender = true;
+    return true;
 }
 
 void RenderManager::RegisterUniform(bool model) {
