@@ -208,7 +208,7 @@ Editor::~Editor() {
 
     GameObject::Clear();
 
-    ComponentRegistry::Clean();
+    ComponentRegistry::getInstance().clear();
 
     ScriptManager::Shutdown();
 
@@ -293,7 +293,7 @@ void Editor::UnloadScript() {
 
     ScreenRender::Shutdown();
 
-    ComponentRegistry::Clean();
+    ComponentRegistry::getInstance().clear();
 
     ScriptManager::Shutdown();
 }
@@ -336,6 +336,8 @@ void Editor::RenderUI() {
     PopupMenuProperty();
 
     SkyboxEditor();
+
+    PluginManager();
 }
 
 void Editor::RenderDocking() {
@@ -412,6 +414,10 @@ void Editor::RenderDocking() {
                 flags |= EditorPopupFlags_SkyboxEditor;
             }
 
+            if (ImGui::MenuItem("Plugin")) {
+                flags |= EditorPopupFlags_Plugin;
+            }
+
             // /*
             if (ImGui::MenuItem("Shader List")) {
                 bPopupMenuShader = true;
@@ -441,6 +447,10 @@ void Editor::RenderDocking() {
 
     if (flags & EditorPopupFlags_SkyboxEditor) {
         ImGui::OpenPopup("##popup_skybox_editor");
+    }
+
+    if (flags & EditorPopupFlags_Plugin) {
+        ImGui::OpenPopup("##popup_plugin_manager");
     }
 
     // /*
@@ -2921,6 +2931,30 @@ void Editor::SkyboxEditor() {
     if (!isOpen) { return; }
 
     ImGui::Text("Teste");
+
+    ImGui::EndPopup();
+}
+
+void Editor::PluginManager() {
+    ImVec2 winSize(200, 300);
+    
+    ImGui::SetNextWindowPos(ImVec2{static_cast<float>(Screen::width / 2), static_cast<float>(Screen::height / 2)} - (winSize / 2.0f), ImGuiCond_Always);
+    ImGui::SetNextWindowSize(winSize, ImGuiCond_Always);
+    auto isOpen = ImGui::BeginPopup("##popup_plugin_manager");
+    if (!isOpen) { return; }
+
+    auto avail = ImGui::GetContentRegionAvail();
+
+    auto calcTexsize = ImGui::CalcTextSize("Install");
+
+    ImGui::SetCursorPosY(avail.y - calcTexsize.y);
+    ImGui::Button("Install");
+
+    ImGui::SameLine();
+    calcTexsize = ImGui::CalcTextSize("Remove");
+
+    ImGui::SetCursorPosX(avail.x - calcTexsize.x);
+    ImGui::Button("Remove");
 
     ImGui::EndPopup();
 }

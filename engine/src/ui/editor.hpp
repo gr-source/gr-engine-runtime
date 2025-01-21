@@ -17,6 +17,7 @@ enum EditorPopupFlags : int {
     EditorPopupFlags_EngineStatus = 1 << 1,
     EditorPopupFlags_Settings     = 1 << 2,
     EditorPopupFlags_SkyboxEditor = 1 << 2,
+    EditorPopupFlags_Plugin       = 1 << 3,
 };
 
 using EditorPopupFlags_ = int;
@@ -300,6 +301,8 @@ private:
 
     // 
     void SkyboxEditor();
+
+    void PluginManager();
 
     void ScenePostEcecute(Scene *scene);
 };
