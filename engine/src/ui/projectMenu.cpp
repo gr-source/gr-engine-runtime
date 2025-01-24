@@ -5,7 +5,7 @@
 #include "renderManager.h"
 #include "skybox.h"
 
-#include "geometry/batching.hpp"
+#include <core/geometry/batching.hpp>
 
 #include "core/cmd/cmd.hpp"
 

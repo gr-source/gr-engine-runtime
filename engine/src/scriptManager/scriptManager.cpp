@@ -7,7 +7,7 @@
 #include "script/animator.hpp"
 #include "script/camera.hpp"
 
-#include "geometry/batching.hpp"
+#include <core/geometry/batching.hpp>
 
 #include "core/assetsManager.hpp"
 #include "core/threadpool.hpp"
@@ -144,60 +144,6 @@ void ScriptManager::RegisterApi() {
     m_script->replaceLibraryFunction("Input::SetCursorPos", reinterpret_cast<void *>(&Input::SetCursorPos));
     m_script->replaceLibraryFunction("Input::GetCursorPos", reinterpret_cast<void *>(&Input::GetCursorPos));
     m_script->replaceLibraryFunction("Input::IsMousePress", reinterpret_cast<void *>(&Input::IsMouseDown));
-
-    // Screen
-    // m_script->registerFunction("SetScreenSize", reinterpret_cast<void **>(&SetScreenSize));
-
-    // Entity
-    // m_script->replaceLibraryFunction("Entity::addInternalComponent", (void *)&Entity::addComponent);
-    // m_script->registerFunction("_ZN6Entity6updateEv", reinterpret_cast<void **>(&Entity::Update));
-
-    // Batching
-    m_script->replaceLibraryFunction("Batching::InsertInternal",  (void *)&Batching::insert);
-    m_script->replaceLibraryFunction("Batching::RemoveInternal", (void *)&Batching::remove);
-
-    // Script
-    m_script->replaceLibraryFunction("MeshRenderbuild", (void *)&MeshRender::build);
-
-    // GameObject
-    m_script->replaceLibraryFunction("GameObject::Instantiate", reinterpret_cast<void *>(&GameObject::Instantiate));
-    m_script->replaceLibraryFunction("GameObject::Create", reinterpret_cast<void *>(&GameObject::Create));
-    m_script->replaceLibraryFunction("GameObject::Find", reinterpret_cast<void *>(&GameObject::Find));
-    m_script->replaceLibraryFunction("GameObject::Destroy", reinterpret_cast<void *>(&Scene::Destoy));
-
-    // File
-    m_script->replaceLibraryFunction("File::GetFile", reinterpret_cast<void *>(&File::GetFile));
-
-    // Material
-    m_script->replaceLibraryFunction("Materialserialize", (void *)&Material::serialize);
-    m_script->replaceLibraryFunction("Materialdeserialize", (void *)&Material::deserialize);
-
-    // BoxCollider
-    m_script->replaceLibraryFunction("BoxColliderbuildShape", (void *)&BoxCollider::build);
-
-    // MeshCollider
-    m_script->replaceLibraryFunction("MeshColliderbuild", (void *)&MeshCollider::build);
-
-    // Rigidbody
-    m_script->replaceLibraryFunction("RigidbodyInitialize", (void *)&Rigidbody::initialize);
-    m_script->replaceLibraryFunction("RigidbodyUpdate", (void *)&Rigidbody::update);
-    m_script->replaceLibraryFunction("RigidbodyShutdown", (void *)&Rigidbody::shutdown);
-
-    // Raycast
-    m_script->replaceLibraryFunction("Raycast::RayCast", reinterpret_cast<void *>(&PhysicsScene::Raycast));
-
-    // Phys
-    m_script->replaceLibraryFunction("PhysicsScene::contactTest", reinterpret_cast<void *>(&PhysicsScene::contactTest));
-
-    // Mesh
-    m_script->replaceLibraryFunction("Meshserialize", (void *)&Mesh::serialize);
-    m_script->replaceLibraryFunction("Meshdeserialize", (void *)&Mesh::deserialize);
-
-    // Draw
-    m_script->replaceLibraryFunction("Draw::CallInternalDrawLine", reinterpret_cast<void *>(&DebugDraw::AddLine));
-
-    // Animator
-    m_script->replaceLibraryFunction("AnimatorUpdate", (void *)&Animator::update);
 
 }
 #pragma GCC diagnostic pop

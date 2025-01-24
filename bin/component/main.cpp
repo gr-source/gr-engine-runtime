@@ -4,7 +4,7 @@
 #include "api.hpp"
 
 #include "core/assetsManager.hpp"
-#include "core/file.hpp"
+#include "core/file/file.hpp"
 
 void Initialize() {
     AssetsManager::LoadShader("dynamic_one_model",

@@ -16,7 +16,7 @@
 
 #include "scriptManager/scriptManager.hpp"
 
-#include "geometry/batching.hpp"
+#include <core/geometry/batching.hpp>
 
 #include "culling/frustum.h"
 

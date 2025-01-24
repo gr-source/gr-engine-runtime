@@ -18,16 +18,6 @@ void Destroy();
 
 void SetDeltaTime(float deltaTime);
 
-std::vector<Camera *> &GetAllCamera();
-
-// Light
-std::vector<Light*> &GetListLight();
-
-// AssetsManager
-grr::gShader *LoadShader(const std::string &frag, const std::string &vert);
-
-Animation *LoadAnimation(const std::string &path);
-
 #ifdef __cplusplus
 }
 #endif

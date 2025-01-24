@@ -48,7 +48,7 @@
 
 #include "scriptManager/scriptManager.hpp"
 
-#include "geometry/batching.hpp"
+#include <core/geometry/batching.hpp>
 
 #include "ecs/gameObject.hpp"
 #include "ecs/manager.hpp"
@@ -1776,6 +1776,8 @@ void Editor::RenderStatisticsMenu() {
 void Editor::RenderGameObjectPropertiUI() {
     if (!s_objectSelected) { return; }
 
+    auto entity = s_objectSelected->getEntity();
+
     auto objName = s_objectSelected->getName();
     ImGui::PushID(objName.c_str());
 
@@ -1792,9 +1794,7 @@ void Editor::RenderGameObjectPropertiUI() {
         s_objectSelected->setActive(isActive);
     }
 
-    auto components = s_objectSelected->getEntity()->getComponentMap();
-    /*
-    for (auto [name, component] : components) {
+    for (auto [name, component] : entity->getComponentMap()) {
         ImGui::PushID(name.c_str());
         
         if (name == "Transform") {
@@ -1805,7 +1805,7 @@ void Editor::RenderGameObjectPropertiUI() {
         
         if (name == "Light") {
             if (RenderProperty<Light>(&Editor::OnPropertyLight, this)) {
-                Event::Add(&Entity::destroy<std::string>, s_objectSelected->getEntity(), name);
+                entity->destroy(name);
             }
             ImGui::PopID();
             continue;
@@ -1813,8 +1813,7 @@ void Editor::RenderGameObjectPropertiUI() {
 
         if (name == "MeshRender") {
             if (RenderProperty<MeshRender>(&Editor::OnPropertyMeshRender, this)) {
-                Event::Add(&Entity::remove, s_objectSelected->getEntity(), name);
-                Event::Add(&Entity::remove, s_objectSelected->getEntity(), "MeshFilter");
+                entity->destroy(name);
             }
             ImGui::PopID();
             continue;
@@ -1822,7 +1821,7 @@ void Editor::RenderGameObjectPropertiUI() {
 
         if (name == "MeshFilter") {
             if (RenderProperty<MeshFilter>(&Editor::OnPropertyMeshFilter, this)) {
-                Event::Add(&Entity::remove, s_objectSelected->getEntity(), name);
+                entity->destroy(name);
             }
             ImGui::PopID();
             continue;
@@ -1830,7 +1829,7 @@ void Editor::RenderGameObjectPropertiUI() {
 
         if (name == "BoxCollider") {
             if (RenderProperty<BoxCollider>(&Editor::OnPropertyBoxCollider, this)) {
-                Event::Add(&Entity::remove, s_objectSelected->getEntity(), name);
+                entity->destroy(name);
             }
             ImGui::PopID();
             continue;
@@ -1838,7 +1837,7 @@ void Editor::RenderGameObjectPropertiUI() {
 
         if (name == "Rigidbody") {
             if (RenderProperty<Rigidbody>(&Editor::OnPropertyRigidbody, this)) {
-                Event::Add(&Entity::remove, s_objectSelected->getEntity(), name);
+                entity->destroy(name);
             }
             ImGui::PopID();
             continue;
@@ -1846,20 +1845,19 @@ void Editor::RenderGameObjectPropertiUI() {
 
         if (name == "Animator") {
             if (RenderProperty<Animator>(&Editor::OnPropertyAnimator, this)) {
-                Event::Add(&Entity::remove, s_objectSelected->getEntity(), name);
+                entity->destroy(name);
             }
             ImGui::PopID();
             continue;
         }
         
         if (!RenderComponents(name, &(*component))) {
-            Event::Add(&Entity::remove, s_objectSelected->getEntity(), name);
+            entity->destroy(name);
             ImGui::PopID();
             continue;
         }
         ImGui::PopID();
     }
-    */
 
     auto avail = ImGui::GetContentRegionAvail();
 
@@ -1999,6 +1997,8 @@ void Editor::PopupAddComponent() {
 
             if (component && (*it) == "Light") {
                 component->Init();
+
+                std::cout << "X" << std::endl;
             }
 
             std::memset(componentName, '\0', sizeof(componentName));

@@ -7,47 +7,13 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
 
 set(CMAKE_CXX_STANDARD 17)
 
-# set(ecs_src
-#     src/ecs/gameObject.cpp
-# )
-
-set(script_src
-    src/script/meshCollider.cpp
-    src/script/boxCollider.cpp
-    src/script/meshRender.cpp
-    src/script/meshFilter.cpp
-    src/script/rigidbody.cpp
-    # src/script/transform.cpp
-    src/script/animator.cpp
-    # src/script/camera.cpp
-    src/script/light.cpp
-)
-
 set(core_src
-    src/core/assetsManager.cpp
-    src/core/physicsScene.cpp
     src/core/function.cpp
-    src/core/console.cpp
     src/core/raycast.cpp
-    src/core/file.cpp
-    # src/core/screen.cpp
-    src/core/scene.cpp
     src/core/input.cpp
     src/core/time.cpp
     src/core/draw.cpp
 )
-
-set(geometry_src
-    src/core/geometry/material.cpp
-    src/core/geometry/boundBox.cpp
-    src/core/geometry/batching.cpp
-)
-
-# set(animation_src
-    # src/core/animation/animation.cpp
-    # src/core/animation/keyframe.cpp
-    # src/core/animation/bone.cpp
-# )
 
 set(source_src
     source/gr-script.cpp
@@ -69,7 +35,7 @@ if(NOT Bullet_FOUND)
     return()
 endif()
 
-add_library(${PROJECT_NAME} SHARED main.cpp src/api.cpp ${script_src} ${source_src} ${core_src} ${geometry_src})
+add_library(${PROJECT_NAME} SHARED main.cpp src/api.cpp ${source_src} ${core_src})
 
 target_link_libraries(${PROJECT_NAME} PRIVATE ${GRMATH_LIBRARIES} ${BULLET_LIBRARIES} /home/grdev/Documentos/gr-engine/gr-base/lib/libgr-base.so)
 
