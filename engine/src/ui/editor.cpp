@@ -60,6 +60,8 @@
 
 #include <ecs/componentRegistry.hpp>
 
+#include <core/display.hpp>
+
 #define IMGUI_PAYLOAD_GAMEOBJECT "##payload_gameobject"
 #define IMGUI_PAYLOAD_ANIMATION "##payload_animation"
 #define IMGUI_PAYLOAD_FILE "##payload_file"
@@ -141,9 +143,7 @@ Editor::Editor() : m_viewport(ImGui::GetMainViewport()), mImGuiIO(&ImGui::GetIO(
     try {
         ScriptManager::Initialize(File::GetFile("/.build/component/lib/libgr-component.so"));
 
-        if (ScriptManager::SetScreenSize) {
-            ScriptManager::SetScreenSize(Settings::ViewportSize);
-        }
+        Display::SetDisplayRect(Rect{0.0f, 0.0f, (float)Settings::ViewportSize.x, (float)Settings::ViewportSize.y});
     } catch (const std::exception &e) {
         Console::LogError("Fatal error in script: " + std::string(e.what()));
     }
@@ -271,9 +271,7 @@ void Editor::LoadScript() {
         Console::LogError(e.what());
     }
 
-    if (ScriptManager::SetScreenSize) {
-        ScriptManager::SetScreenSize(Settings::ViewportSize);
-    }
+    Display::SetDisplayRect(Rect{0.0f, 0.0f, (float)Settings::ViewportSize.x, (float)Settings::ViewportSize.y});
 
     RenderManager::Initialize();
 
@@ -1083,17 +1081,16 @@ void Editor::RenderScene() {
     ImVec2 regionAvail = ImGui::GetContentRegionAvail();
     if (m_mainCamera && (m_lastViewportSize.x != regionAvail.x || m_lastViewportSize.y != regionAvail.y && regionAvail.x > 5.0f && regionAvail.y > 5.0f || bScriptReloaded)) {
         auto &viewport = Settings::ViewportSize = {static_cast<int>(regionAvail.x), static_cast<int>(regionAvail.y)};
+        if (viewport.x > 0 && viewport.y > 0) {
+            Display::SetDisplayRect(Rect{0.0f, 0.0f, (float)Settings::ViewportSize.x, (float)Settings::ViewportSize.y});
 
-        if (ScriptManager::SetScreenSize) {
-            ScriptManager::SetScreenSize(Settings::ViewportSize);
+            m_mainCamera->setAspectRatio(static_cast<float>(viewport.x) / static_cast<float>(viewport.y));
+
+            Engine::GetMainPostprocess()->resize(viewport);
+            
+            m_lastViewportSize = regionAvail;
+            bScriptReloaded = false;
         }
-
-        m_mainCamera->setAspectRatio(static_cast<float>(viewport.x) / static_cast<float>(viewport.y));
-
-        Engine::GetMainPostprocess()->resize(viewport);
-        
-        m_lastViewportSize = regionAvail;
-        bScriptReloaded = false;
     }
 
     auto texture = Engine::GetImGuiPostprocess()->getTextureColor();
@@ -1221,7 +1218,7 @@ void Editor::loadCamera(GameObject *gameObject) {
 
     m_mainCamera = m_cameraObject->getComponent<Camera>();
 
-    m_cameraObject->initialize();
+    Scene::Init(m_cameraObject);
 }
 
 void Editor::RenderGuizmo() {
@@ -1790,31 +1787,32 @@ void Editor::RenderGameObjectPropertiUI() {
 
     ImGui::SameLine();
 
-    auto isActive = s_objectSelected->isActive();
+    auto isActive = s_objectSelected->getActive();
     if (ImGui::Checkbox("##check_box_is_active", &isActive)) {
         s_objectSelected->setActive(isActive);
     }
 
-    auto &components = s_objectSelected->getEntity()->getComponents();
-    for (auto &&[name, component] : components) {
+    auto components = s_objectSelected->getEntity()->getComponentMap();
+    /*
+    for (auto [name, component] : components) {
         ImGui::PushID(name.c_str());
         
         if (name == "Transform") {
-            s_objectSelected->RenderProperty<Transform>(&Editor::OnPropertyTransform, this);
+            RenderProperty<Transform>(&Editor::OnPropertyTransform, this);
             ImGui::PopID();
             continue;
         }
         
         if (name == "Light") {
-            if (s_objectSelected->RenderProperty<Light>(&Editor::OnPropertyLight, this)) {
-                Event::Add(&Entity::remove, s_objectSelected->getEntity(), name);
+            if (RenderProperty<Light>(&Editor::OnPropertyLight, this)) {
+                Event::Add(&Entity::destroy<std::string>, s_objectSelected->getEntity(), name);
             }
             ImGui::PopID();
             continue;
         }
 
         if (name == "MeshRender") {
-            if (s_objectSelected->RenderProperty<MeshRender>(&Editor::OnPropertyMeshRender, this)) {
+            if (RenderProperty<MeshRender>(&Editor::OnPropertyMeshRender, this)) {
                 Event::Add(&Entity::remove, s_objectSelected->getEntity(), name);
                 Event::Add(&Entity::remove, s_objectSelected->getEntity(), "MeshFilter");
             }
@@ -1823,7 +1821,7 @@ void Editor::RenderGameObjectPropertiUI() {
         }
 
         if (name == "MeshFilter") {
-            if (s_objectSelected->RenderProperty<MeshFilter>(&Editor::OnPropertyMeshFilter, this)) {
+            if (RenderProperty<MeshFilter>(&Editor::OnPropertyMeshFilter, this)) {
                 Event::Add(&Entity::remove, s_objectSelected->getEntity(), name);
             }
             ImGui::PopID();
@@ -1831,7 +1829,7 @@ void Editor::RenderGameObjectPropertiUI() {
         }
 
         if (name == "BoxCollider") {
-            if (s_objectSelected->RenderProperty<BoxCollider>(&Editor::OnPropertyBoxCollider, this)) {
+            if (RenderProperty<BoxCollider>(&Editor::OnPropertyBoxCollider, this)) {
                 Event::Add(&Entity::remove, s_objectSelected->getEntity(), name);
             }
             ImGui::PopID();
@@ -1839,7 +1837,7 @@ void Editor::RenderGameObjectPropertiUI() {
         }
 
         if (name == "Rigidbody") {
-            if (s_objectSelected->RenderProperty<Rigidbody>(&Editor::OnPropertyRigidbody, this)) {
+            if (RenderProperty<Rigidbody>(&Editor::OnPropertyRigidbody, this)) {
                 Event::Add(&Entity::remove, s_objectSelected->getEntity(), name);
             }
             ImGui::PopID();
@@ -1847,7 +1845,7 @@ void Editor::RenderGameObjectPropertiUI() {
         }
 
         if (name == "Animator") {
-            if (s_objectSelected->RenderProperty<Animator>(&Editor::OnPropertyAnimator, this)) {
+            if (RenderProperty<Animator>(&Editor::OnPropertyAnimator, this)) {
                 Event::Add(&Entity::remove, s_objectSelected->getEntity(), name);
             }
             ImGui::PopID();
@@ -1861,6 +1859,7 @@ void Editor::RenderGameObjectPropertiUI() {
         }
         ImGui::PopID();
     }
+    */
 
     auto avail = ImGui::GetContentRegionAvail();
 
@@ -1891,7 +1890,7 @@ bool Editor::RenderComponents(const std::string &name, Component *component) {
         return false;
     }
     
-    auto fieldList = it->second->getFields();
+    auto fieldList = it->second.pointer->getFields();
 
     for (auto &field : fieldList) {
         RenderField(field, component);
@@ -2525,7 +2524,7 @@ void Editor::PostLoadGameObject(GameObject *gameObject) {
     if (Scene::HasScene())
         Scene::GetCurrentScene()->insert(gameObject);
     
-    gameObject->initialize();
+    Scene::Init(gameObject);
 
     s_objectSelected = gameObject;
 }
@@ -2768,9 +2767,7 @@ void Editor::setActiveCamera(bool value) {
         m_cameraObject = tempCam;
         m_mainCamera = tempCam->hasComponent<Camera>() ? tempCam->getComponent<Camera>() : tempCam->addComponent<Camera>();
 
-        if (Camera::SetActive) {
-            Camera::SetActive(m_mainCamera);
-        }
+        m_mainCamera->setEnable();
         return;
     }
 
@@ -2922,7 +2919,7 @@ GameObject *Editor::CreateEditorCamera() {
         return nullptr;
     }
 
-    gameObject->initialize();
+    Scene::Init(gameObject);
     return gameObject;
 }
 

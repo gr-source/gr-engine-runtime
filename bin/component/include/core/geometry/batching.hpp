@@ -2,7 +2,7 @@
 
 #include <gr-render/gRender.h>
 
-#include "script/default.hpp"
+#include "../../script/default.hpp"
 
 #include "boundBox.hpp"
 #include "material.hpp"

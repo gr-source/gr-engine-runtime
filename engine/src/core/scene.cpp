@@ -87,7 +87,7 @@ Scene *Scene::Create(const std::string &name) {
 
     camera->addComponent<Camera>();
 
-    camera->initialize();
+    Scene::Init(camera);
     
     return &(*it->second);
 }
@@ -97,6 +97,7 @@ void Scene::LoadScene(const std::string &path, std::function<void(Scene *)> func
     Threadpool::AddTask(&Scene::Load, path, LoadFlags_Mesh | LoadFlags_Object | LoadFlags_Texture | LoadFlags_Script, func, nullptr);
 }
 
+/*
 void UpdateComponent(Transform *transform) {
     transform->entity->reintantiate();
 
@@ -115,6 +116,7 @@ void Scene::UpdateScript() {
         UpdateComponent(gameObject->getTransform());
     }
 }
+*/
 
 void DestroyComponnet(Transform *transform) {
     transform->entity->destroy();
@@ -168,6 +170,7 @@ void Scene::CheckRequestReinstanceScript() {
 }
 
 void Scene::CleanTemp() {
+    /*
     auto gos = GameObject::m_temp;
     if (gos.empty()) { return; }
 
@@ -176,6 +179,7 @@ void Scene::CleanTemp() {
             scene->destroy(go);
         }
     }
+    */
 }
 
 void Scene::Remove(GameObject *gameObject) {
@@ -190,6 +194,22 @@ void Scene::Destoy(GameObject *gameObject) {
     if (!scene) { return; }
     
     scene->destroy(gameObject);
+}
+
+void Scene::Init(GameObject *gameObject) {
+    auto entity = gameObject->getEntity();
+
+    entity->init();
+
+    if (entity->hasComponent<MeshRender>()) {
+        entity->getComponent<MeshRender>()->build();
+    }
+
+    auto transform = entity->getComponent<Transform>();
+
+    for (auto child : transform->getChildren()) {
+        Scene::Init(child->getGameObject());
+    }
 }
 
 Scene::Scene(const std::string &name) : m_name(name), m_enable(true) {}
@@ -277,7 +297,7 @@ void Scene::CleanCurrentScene() {
         it = objectList.erase(it);
     }
 
-    GameObject::Clear();
+    // GameObject::Clear();
 }
 
 void Scene::ReloadObjects(std::function<void(Scene *)> func) {
@@ -298,7 +318,7 @@ void Scene::ReloadObjects(std::function<void(Scene *)> func) {
         it = objectList.erase(it);
     }
 
-    GameObject::Clear();
+    // GameObject::Clear();
     
     Threadpool::AddTask(&Scene::Load, temp_dir + scene->getName() + ".scn.tmp", LoadFlags_Object | LoadFlags_Script, func, scene);
 }
@@ -307,8 +327,8 @@ void Scene::InitializeObject() {
     auto scene = GetCurrentScene();
     if (!scene) { return; }
 
-    for (auto object : scene->getObjectList()) {
-        object->initialize();
+    for (auto go : scene->getObjectList()) {
+        Scene::Init(go);
     }
 }
 
@@ -587,12 +607,8 @@ int Scene::writeGameObject(Stream *streaming, GameObject *gameObject) {
     // Write Component
     auto entity = gameObject->getEntity();
 
-    auto &components = entity->getComponents();
-    // auto cSize = components.size();
-    // streaming->writeS(&cSize, 1);
-
     std::list<std::tuple<std::string, Component *>> m_list;
-    for (auto &&[name, ptr] : components) {
+    for (auto [name, ptr] : entity->getComponentMap()) {
         m_list.emplace_front(name, &(*ptr));
     }
 
@@ -789,11 +805,10 @@ void CrateGameObject(Transform *&outTransform, GameObject *&outObject, std::cond
             return;
         }
 
-        gameObject->getEntity()->clear();
+        if (gameObject->hasComponent<Transform>())
+            gameObject->destroy<Transform>();
 
-        if (!gameObject->hasComponent<Transform>()) {
-            gameObject->setTransform(gameObject->addComponent<Transform>());
-        }
+        gameObject->setTransform(gameObject->addComponent<Transform>());
     }
     
     gameObject->setActive(active);
@@ -1005,7 +1020,7 @@ void Scene::reinstanceScript(const std::string &name) {
 
         if (!entt->hasComponent(name)) { return; }
 
-        entt->remove(name);
+        entt->destroy(name);
 
         entt->addComponent(name);
     });

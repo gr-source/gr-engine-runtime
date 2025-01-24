@@ -2,7 +2,7 @@
 
 #include "default.hpp"
 
-#include "../ecs/entity.hpp"
+#include <ecs/entity.hpp>
 
 #include "core/geometry/batching.hpp"
 #include "core/geometry/material.hpp"

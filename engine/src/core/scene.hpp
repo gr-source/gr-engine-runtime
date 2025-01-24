@@ -1,6 +1,6 @@
 #pragma once
 
-#include "script/default.hpp"
+#include "../script/default.hpp"
 #include "ecs/default.hpp"
 
 #include "geometry/material.hpp"
@@ -50,6 +50,8 @@ public:
     static void Remove(GameObject *gameObject);
 
     static void Destoy(GameObject *gameObject);
+
+    static void Init(GameObject *gameObject);
 
     Scene(const std::string &name);
     ~Scene();

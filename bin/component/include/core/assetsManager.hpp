@@ -4,7 +4,7 @@
 
 #include <functional>
 
-#include "script/default.hpp"
+#include "../script/default.hpp"
 
 #include "geometry/material.hpp"
 

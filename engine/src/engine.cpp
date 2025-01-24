@@ -44,7 +44,7 @@ Shadowbuffer *m_shadowbuffer = nullptr;
 
 std::unique_ptr<ShadowMap> m_shadowMap = nullptr;
 
-Editor *Engine::m_editor = nullptr;
+Editor *Engine::m_editor = nullptr; 
 
 void Engine::Reize(grm::u32 width, grm::u32 height) {
     Screen::SetResolution(width, height);

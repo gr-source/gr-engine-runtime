@@ -5,7 +5,7 @@
 #include "script/light.hpp"
 
 // #include "core/assetsManager.hpp"
-#include "core/screen.hpp"
+// #include "core/screen.hpp"
 // #include "core/scene.hpp"
 #include "core/event.hpp"
 #include "core/time.hpp"
@@ -28,10 +28,6 @@ Animation *LoadAnimation(const std::string &path) {
 
 grr::gShader *LoadShaderSTRSTR(const std::string &frag, const std::string &vert) {
     return nullptr;
-}
-
-void SetScreenSize(const iVector2 &value) {
-    Screen::ScreenSize = value;
 }
 
 void SetDeltaTime(float deltaTime) {

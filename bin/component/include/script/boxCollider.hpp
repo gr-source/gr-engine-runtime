@@ -1,15 +1,14 @@
 #pragma once
 
-#include "../ecs/entity.hpp"
+#include <ecs/entity.hpp>
 
-#include "script/default.hpp"
+#include "default.hpp"
 
 class BoxCollider : public Component {
     CLASS_FUNCTIONS
 
 public:
     BoxCollider();
-
 
     bool Serialize(Stream *stream) override;
 

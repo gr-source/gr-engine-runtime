@@ -42,16 +42,10 @@ void (*ScriptManager::Update)();
 void (*ScriptManager::Destroy)();
 void (*ScriptManager::SetDeltaTime)(float);
 
-// [ Entity ]
-std::size_t (*ScriptManager::GetEntityCount)();
-
 // LIght
 std::vector<Light *> &(*ScriptManager::GetListLight)();
 
 std::unique_ptr<Animation> (*ScriptManager::LoadAnimation)(const std::string &);
-
-// Screen
-void (*ScriptManager::SetScreenSize)(const iVector2 &);
 
 void ScriptManager::Initialize(const std::string &path) {
     if (!File::Exists(path)) {
@@ -127,10 +121,10 @@ void ScriptManager::RegisterApi() {
     m_script->registerFunction("GetListLight", reinterpret_cast<void **>(&GetListLight));
 
     // Camera functions
-    m_script->registerFunction("_ZN6Camera4MainEv",    reinterpret_cast<void **>(&Camera::Main));
-    m_script->registerFunction("_ZN6Camera7CurrentEv", reinterpret_cast<void **>(&Camera::Current));
-    m_script->registerFunction("GetAllCamera",    reinterpret_cast<void **>(&Camera::GetCameras));
-    m_script->registerFunction("_ZN6Camera9setEnableEv",    reinterpret_cast<void **>(&Camera::SetActive));
+    // m_script->registerFunction("_ZN6Camera4MainEv",    reinterpret_cast<void **>(&Camera::Main));
+    // m_script->registerFunction("_ZN6Camera7CurrentEv", reinterpret_cast<void **>(&Camera::Current));
+    // m_script->registerFunction("GetAllCamera",    reinterpret_cast<void **>(&Camera::GetCameras));
+    // m_script->registerFunction("_ZN6Camera9setEnableEv",    reinterpret_cast<void **>(&Camera::SetActive));
 
     // Event Manager
     m_script->replaceLibraryFunction("Event::AddInternalEvent", reinterpret_cast<void **>(&Event::AddEvent));
@@ -152,10 +146,10 @@ void ScriptManager::RegisterApi() {
     m_script->replaceLibraryFunction("Input::IsMousePress", reinterpret_cast<void *>(&Input::IsMouseDown));
 
     // Screen
-    m_script->registerFunction("SetScreenSize", reinterpret_cast<void **>(&SetScreenSize));
+    // m_script->registerFunction("SetScreenSize", reinterpret_cast<void **>(&SetScreenSize));
 
     // Entity
-    m_script->replaceLibraryFunction("Entity::addInternalComponent", (void *)&Entity::addInternalComponent);
+    // m_script->replaceLibraryFunction("Entity::addInternalComponent", (void *)&Entity::addComponent);
     // m_script->registerFunction("_ZN6Entity6updateEv", reinterpret_cast<void **>(&Entity::Update));
 
     // Batching

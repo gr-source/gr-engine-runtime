@@ -1,8 +1,8 @@
 #pragma once
 
-#include "../ecs/entity.hpp"
+#include <ecs/entity.hpp>
 
-#include "script/default.hpp"
+#include "../script/default.hpp"
 
 class MeshCollider : public Component {
     CLASS_FUNCTIONS

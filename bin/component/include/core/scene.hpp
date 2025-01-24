@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../ecs/gameObject.hpp"
+#include <ecs/default.hpp>
 
 class Scene {
 public:

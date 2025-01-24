@@ -18,9 +18,6 @@ public:
 
     static bool IsValid();
 
-    // [ Entity ]
-    static std::size_t (*GetEntityCount)();
-
     static void (*SetDeltaTime)(float);
 
     // Light
@@ -30,8 +27,6 @@ public:
 
     static std::unique_ptr<Animation> (*LoadAnimation)(const std::string &);
     
-    static void (*SetScreenSize)(const iVector2 &);
-
     // Component Pool
     static bool CheckScriptLoaded(const std::string &name);
     

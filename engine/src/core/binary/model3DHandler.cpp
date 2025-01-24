@@ -81,7 +81,7 @@ void InstantiateObject(GameObject *gameObject) {
     }
     Scene::GetCurrentScene()->insert(gameObject);
 
-    gameObject->initialize();
+    Scene::Init(gameObject);
 }
 
 int Model3DHandler::ReadData(Stream *stream) {
@@ -370,7 +370,7 @@ int Model3DHandler::WriteGameObject(Stream *stream, const GameObject *gameObject
     // Temp
     auto entt = gameObject->getEntity();
 
-    for (auto &&[cname, ptr] : entt->getComponents()) {
+    for (auto &&[cname, ptr] : entt->getComponentMap()) {
         tempList.emplace_front(gameObject->getName(), cname, &(*ptr));
     }
 

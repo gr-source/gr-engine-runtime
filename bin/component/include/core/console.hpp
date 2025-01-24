@@ -3,7 +3,7 @@
 #include <sstream>
 #include <string>
 
-#include "string.hpp"
+#include <core/string.hpp>
 
 struct LogInfo {
     enum LogType {
@@ -37,7 +37,7 @@ public:
 template <typename... Args>
 inline void Console::Message(LogInfo::LogType type, const std::string &fmt, Args &&...args) {
     if constexpr (sizeof...(Args) > 0) {
-        return log(type, StringUTF::format(fmt, std::forward<Args>(args)...));
+        return log(type, String::format(fmt, std::forward<Args>(args)...));
     }
     return log(type, fmt);
 }

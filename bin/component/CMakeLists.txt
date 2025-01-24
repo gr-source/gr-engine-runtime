@@ -7,10 +7,9 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
 
 set(CMAKE_CXX_STANDARD 17)
 
-set(ecs_src
-    src/ecs/gameObject.cpp
-    src/ecs/entity.cpp
-)
+# set(ecs_src
+#     src/ecs/gameObject.cpp
+# )
 
 set(script_src
     src/script/meshCollider.cpp
@@ -18,9 +17,9 @@ set(script_src
     src/script/meshRender.cpp
     src/script/meshFilter.cpp
     src/script/rigidbody.cpp
-    src/script/transform.cpp
+    # src/script/transform.cpp
     src/script/animator.cpp
-    src/script/camera.cpp
+    # src/script/camera.cpp
     src/script/light.cpp
 )
 
@@ -31,8 +30,7 @@ set(core_src
     src/core/console.cpp
     src/core/raycast.cpp
     src/core/file.cpp
-    src/core/screen.cpp
-    src/core/string.cpp
+    # src/core/screen.cpp
     src/core/scene.cpp
     src/core/input.cpp
     src/core/time.cpp
@@ -71,7 +69,7 @@ if(NOT Bullet_FOUND)
     return()
 endif()
 
-add_library(${PROJECT_NAME} SHARED main.cpp src/api.cpp ${ecs_src} ${script_src} ${source_src} ${core_src} ${geometry_src})
+add_library(${PROJECT_NAME} SHARED main.cpp src/api.cpp ${script_src} ${source_src} ${core_src} ${geometry_src})
 
 target_link_libraries(${PROJECT_NAME} PRIVATE ${GRMATH_LIBRARIES} ${BULLET_LIBRARIES} /home/grdev/Documentos/gr-engine/gr-base/lib/libgr-base.so)
 
@@ -80,4 +78,4 @@ target_include_directories(${PROJECT_NAME} PUBLIC ${BULLET_INCLUDE_DIRS}
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
 )
 
-target_compile_definitions(${PROJECT_NAME} PRIVATE REGISTRY=1)
+target_compile_definitions(${PROJECT_NAME} PRIVATE REGISTRY)

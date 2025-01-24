@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../ecs/entity.hpp"
+#include <ecs/entity.hpp>
 
 #include "default.hpp"
 

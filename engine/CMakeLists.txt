@@ -152,14 +152,14 @@ set(engine_src
     src/script/rigidbody.cpp
     src/script/transform.cpp
     src/script/animator.cpp
-    src/script/camera.cpp
+    # src/script/camera.cpp
     src/script/light.cpp
 
     src/geometry/batching.cpp
     src/geometry/boundbox.cpp
     src/geometry/material.cpp
     
-    ${ecs_src}
+    # ${ecs_src}
 
     src/ui/view.cpp
     src/ui/editor.cpp
@@ -201,10 +201,10 @@ set(engine_hdr
     src/script/meshRender.hpp
     src/script/meshFilter.hpp
     src/script/transform.hpp
-    src/script/camera.hpp
+    # src/script/camera.hpp
     src/script/light.hpp
 
-    ${ecs_hdr}
+    # ${ecs_hdr}
     
     src/ui/view.hpp
     src/ui/editor.hpp
@@ -228,3 +228,4 @@ target_include_directories(${PROJECT_NAME} PUBLIC
 
 target_link_libraries(${PROJECT_NAME} PRIVATE /home/grdev/Documentos/gr-engine/gr-base/lib/libgr-base.so)
 
+target_compile_definitions(${PROJECT_NAME} PUBLIC INTERNAL_REGISTER_SCRIPT)

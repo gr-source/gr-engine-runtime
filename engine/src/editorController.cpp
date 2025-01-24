@@ -12,6 +12,8 @@
 
 #include "settings.h"
 
+#include <ecs/gameObject.hpp>
+
 Camera *EditorController::m_mainCamera = nullptr;
 ImGuiIO *EditorController::m_io = nullptr;
 
@@ -35,7 +37,7 @@ void EditorController::Update(Camera *camera) {
         return;
     }
 
-    auto transform = m_mainCamera->getTransform();
+    auto transform = m_mainCamera->getGameObject()->getTransform();
 
     Vector3 diretion = Vector3::zero;
 
@@ -66,6 +68,7 @@ void EditorController::Update(Camera *camera) {
 }
 
 void EditorController::LookAt(Transform *transform) {
+    /*
     auto dir = Math::normalize(m_mainCamera->getPosition() - transform->getPosition());
 
     m_mainCamera->lookIt(dir);
@@ -79,6 +82,7 @@ void EditorController::LookAt(Transform *transform) {
 
     elapsed.y = std::clamp(elapsed.y, -89.0f, 89.0f);
     elapsed.x = std::fmod(elapsed.x, 360.0f);
+    */
 }
 
 void EditorController::UpdateCursor(Transform *transform) {

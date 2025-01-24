@@ -68,7 +68,7 @@ void Rigidbody::update() {
         return;
     }
 
-    if (getGameObject()->isActive()) {
+    if (getGameObject()->getActive()) {
         if (m_body->getLinearVelocity().length() < 0.01 && m_body->getAngularVelocity().length() < 0.01) {
             m_body->setActivationState(DISABLE_DEACTIVATION);
         } else {

@@ -3,6 +3,7 @@
 #include <filesystem>
 
 #include <ecs/componentPool.hpp>
+#include <ecs/gameObject.hpp>
 
 #include "core/console.hpp"
 
@@ -305,4 +306,15 @@ private:
     void PluginManager();
 
     void ScenePostEcecute(Scene *scene);
+
+    template <typename T, typename... Args>
+    bool RenderProperty(Args&&... args);
 };
+
+template <typename T, typename... Args>
+inline bool Editor::RenderProperty(Args&&... args) {
+    if (!s_objectSelected->hasComponent<T>()) return false;
+
+    return std::invoke(std::bind(std::forward<Args>(args)..., s_objectSelected->getComponent<T>()));
+}
+
