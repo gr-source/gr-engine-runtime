@@ -20,13 +20,8 @@ public:
 
     static void (*SetDeltaTime)(float);
 
-    // Light
-    static std::vector<Light *> &(*GetListLight)();
-
     static void (*Update)();
 
-    static std::unique_ptr<Animation> (*LoadAnimation)(const std::string &);
-    
     // Component Pool
     static bool CheckScriptLoaded(const std::string &name);
     

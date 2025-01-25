@@ -42,11 +42,6 @@ void (*ScriptManager::Update)();
 void (*ScriptManager::Destroy)();
 void (*ScriptManager::SetDeltaTime)(float);
 
-// LIght
-std::vector<Light *> &(*ScriptManager::GetListLight)();
-
-std::unique_ptr<Animation> (*ScriptManager::LoadAnimation)(const std::string &);
-
 void ScriptManager::Initialize(const std::string &path) {
     if (!File::Exists(path)) {
         throw std::runtime_error("Script data do not exists: " + path);
@@ -117,15 +112,6 @@ void ScriptManager::RegisterApi() {
 
     m_script->registerFunction("SetDeltaTime", reinterpret_cast<void **>(&SetDeltaTime));
     
-    // Light fundtiosn
-    m_script->registerFunction("GetListLight", reinterpret_cast<void **>(&GetListLight));
-
-    // Camera functions
-    // m_script->registerFunction("_ZN6Camera4MainEv",    reinterpret_cast<void **>(&Camera::Main));
-    // m_script->registerFunction("_ZN6Camera7CurrentEv", reinterpret_cast<void **>(&Camera::Current));
-    // m_script->registerFunction("GetAllCamera",    reinterpret_cast<void **>(&Camera::GetCameras));
-    // m_script->registerFunction("_ZN6Camera9setEnableEv",    reinterpret_cast<void **>(&Camera::SetActive));
-
     // Event Manager
     m_script->replaceLibraryFunction("Event::AddInternalEvent", reinterpret_cast<void **>(&Event::AddEvent));
 
@@ -136,8 +122,6 @@ void ScriptManager::RegisterApi() {
     m_script->replaceLibraryFunction("AssetsManager::FindShader", reinterpret_cast<void *>(&AssetsManager::FindShader));
     m_script->replaceLibraryFunction("AssetsManager::SetShaderList", reinterpret_cast<void *>(&AssetsManager::SetShaderList));
     m_script->replaceLibraryFunction("AssetsManager::CreateMesh", reinterpret_cast<void *>(&AssetsManager::CreateMesh<std::string>));
-
-    m_script->registerFunction("LoadAnimation", reinterpret_cast<void **>(&LoadAnimation));
 
     // Input
     m_script->replaceLibraryFunction("Input::IskeyPress", reinterpret_cast<void *>(&Input::IsKeyPress));

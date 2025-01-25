@@ -102,10 +102,7 @@ void RenderManager::Shutdown() {
 }
 
 void RenderManager::SetupLight() {
-    if (!ScriptManager::GetListLight) {
-        return;
-    }
-    auto& lights = ScriptManager::GetListLight();
+    auto lights = Light::GetListLight();
 
     grr::gShader::SetUniform("m_lightcount", static_cast<int>(lights.size()));
 

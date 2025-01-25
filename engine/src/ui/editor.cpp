@@ -1766,8 +1766,7 @@ void Editor::RenderStatisticsMenu() {
     ImGui::Text("Script:      %fms  | FPS: %.2f",  Statistics::m_scriptFrame.delta,  (1.0f / Statistics::m_scriptFrame.delta));
 
     ImGui::SeparatorText("Renderização");
-    if (ScriptManager::GetListLight)
-        ImGui::Text("Luzes: %ld",     ScriptManager::GetListLight().size());
+    ImGui::Text("Luzes: %ld",     Light::GetListLight().size());
     ImGui::Text("Draw Call Count: %ld", Statistics::m_drawCallCount);
     ImGui::Text("Draw Render: %ld/%ld", Statistics::m_totalRender, Statistics::m_drawRenderCount);
     ImGui::Text("Batched: %ld", Batching::GetBatchCount());
@@ -2489,7 +2488,7 @@ float Editor::GetFps() {
 }
 
 Camera *Editor::getCamera() {
-    if (!Camera::Current || !Camera::Current()) {
+    if (!Camera::Current()) {
         return m_mainCamera;
     }
     return Settings::bGameRunning ? Camera::Current() : m_mainCamera;
@@ -2767,9 +2766,10 @@ void Editor::setActiveCamera(bool value) {
         m_cameraObject = tempCam;
         m_mainCamera = tempCam->hasComponent<Camera>() ? tempCam->getComponent<Camera>() : tempCam->addComponent<Camera>();
 
-        m_mainCamera->setEnable();
+        m_mainCamera->setActive(true);
         return;
     }
+    m_mainCamera->setActive(false);
 
     tempCam = m_cameraObject;
 
