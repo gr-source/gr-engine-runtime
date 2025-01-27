@@ -91,6 +91,8 @@ Editor::Editor() : m_viewport(ImGui::GetMainViewport()), mImGuiIO(&ImGui::GetIO(
 
     m_currentPage = 0;
 
+    popupFlags = 0;
+
     bFileDoubleClick = false;
 
     bCutAllFile = false;
@@ -321,6 +323,14 @@ void Editor::RenderUI() {
         uIPopup &= ~UIPopup_PopupAddComponent;
     }
 
+    switch (popupFlags) {
+    case EditorPopupFlags_LoadPlugin:
+        ImGui::OpenPopup("##popup_load_plugin");
+        break;
+    default:
+        break;
+    }
+    
     PopupComponentMenu();
 
     PopupMenuSettings();
@@ -336,6 +346,8 @@ void Editor::RenderUI() {
     SkyboxEditor();
 
     PluginManager();
+
+    LoadPlugin();
 }
 
 void Editor::RenderDocking() {
@@ -1199,11 +1211,14 @@ void Editor::PlayGame() {
 void Editor::StopGame() {
     Settings::bGameRunning = false;
 
+
     Scene::DestroyScript();
 
     Scene::CleanTemp();
 
-    Scene::SetupEssential();
+    Scene::InitializeObject();
+
+    // Scene::SetupEssential();
 
     Editor::setActiveCamera(true);
 
@@ -2932,6 +2947,8 @@ void Editor::SkyboxEditor() {
     ImGui::EndPopup();
 }
 
+#include "plugin/pluginManager.hpp"
+
 void Editor::PluginManager() {
     ImVec2 winSize(200, 300);
     
@@ -2940,18 +2957,79 @@ void Editor::PluginManager() {
     auto isOpen = ImGui::BeginPopup("##popup_plugin_manager");
     if (!isOpen) { return; }
 
+    for (auto &plugin : PluginManager::getPluginList()) {
+        auto info = plugin.getPluginInfo();
+
+        ImGui::Text("%s", info.name.c_str());
+        ImGui::Text("%s", info.description.c_str());
+
+        ImGui::Separator();
+    }
+
     auto avail = ImGui::GetContentRegionAvail();
 
     auto calcTexsize = ImGui::CalcTextSize("Install");
 
     ImGui::SetCursorPosY(avail.y - calcTexsize.y);
-    ImGui::Button("Install");
+    if (ImGui::Button("Install")) {
+        popupFlags |= EditorPopupFlags_LoadPlugin;
+
+        ImGui::CloseCurrentPopup();
+    }
 
     ImGui::SameLine();
     calcTexsize = ImGui::CalcTextSize("Remove");
 
     ImGui::SetCursorPosX(avail.x - calcTexsize.x);
     ImGui::Button("Remove");
+
+    ImGui::EndPopup();
+}
+
+void Editor::LoadPlugin() {
+    ImVec2 winSize(200, 300);
+    
+    ImGui::SetNextWindowPos(ImVec2{static_cast<float>(Screen::width / 2), static_cast<float>(Screen::height / 2)} - (winSize / 2.0f), ImGuiCond_Always);
+    ImGui::SetNextWindowSize(winSize, ImGuiCond_Always);
+    auto isOpen = ImGui::BeginPopup("##popup_load_plugin");
+    if (!isOpen) { return; }
+
+    auto avail = ImGui::GetContentRegionAvail();
+
+    static auto home_dir = File::getHomeDirectory();
+
+    for (auto entry : std::filesystem::directory_iterator(home_dir)) {
+        auto path = entry.path();
+        if (path.filename().string()[0] == '.' || !std::filesystem::exists(path)) { continue; }
+
+        if (ImGui::Button(path.filename().c_str(), ImVec2{avail.x, 0.0f})) {
+            if (std::filesystem::is_directory(path)) {
+                home_dir = path;
+                continue;
+            }
+            
+            if (path.extension() == ".so") {
+                popupFlags &= ~EditorPopupFlags_LoadPlugin;
+
+                ImGui::CloseCurrentPopup();
+
+                PluginManager::Load(path.string());
+                
+                return ImGui::EndPopup();
+            }
+        }
+    }
+
+    if (ImGui::IsKeyReleased(ImGuiKey_Escape)) {
+        if (home_dir == File::getHomeDirectory()) {
+            popupFlags &= ~EditorPopupFlags_LoadPlugin;
+
+            ImGui::CloseCurrentPopup();
+
+            return ImGui::EndPopup();
+        }
+        home_dir = std::filesystem::path(home_dir).parent_path();
+    }
 
     ImGui::EndPopup();
 }

@@ -31,6 +31,8 @@
 #include "scriptManager/scriptManager.hpp"
 #include "memory.h"
 
+#include "plugin/pluginManager.hpp"
+
 #include "ecs/gameObject.hpp"
 #include "ecs/manager.hpp"
 
@@ -93,6 +95,8 @@ void Engine::Shutdown() {
     ImGuiRender::Shutdown();
 
     ProjectMenu::Shutdown();
+
+    PluginManager::Shutdown();
 
     PhysicsScene::Shutdown();
 
@@ -307,6 +311,10 @@ void Engine::UIFramebuffer() {
     ImGuiRender::Begin();
     
     ProjectMenu::Render();
+
+    for (auto &plugin : PluginManager::getPluginList()) {
+        plugin.renderGUI();
+    }
 
     ImGuiRender::End();
 }

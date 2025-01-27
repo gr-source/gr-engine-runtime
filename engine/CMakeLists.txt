@@ -120,7 +120,12 @@ set(engine_hdr
     src/culling/frustum.h
 )
 
-add_library(${PROJECT_NAME} STATIC ${engine_src} ${engine_hdr})
+set(plugin
+    src/plugin/pluginManager.cpp
+    src/plugin/plugin.cpp
+)
+
+add_library(${PROJECT_NAME} STATIC ${engine_src} ${plugin} ${engine_hdr})
 
 target_include_directories(${PROJECT_NAME} PUBLIC
     /home/grdev/Documentos/gr-engine/gr-base/include/gr-base

@@ -19,6 +19,7 @@ enum EditorPopupFlags : int {
     EditorPopupFlags_Settings     = 1 << 2,
     EditorPopupFlags_SkyboxEditor = 1 << 2,
     EditorPopupFlags_Plugin       = 1 << 3,
+    EditorPopupFlags_LoadPlugin   = 1 << 4,
 };
 
 using EditorPopupFlags_ = int;
@@ -92,6 +93,8 @@ private:
     grr::gTexture *s_texturePlayGame;
 
     GameObject *s_objectSelected;
+
+    EditorPopupFlags_ popupFlags;
 
     ImGuiIO *mImGuiIO;
 
@@ -304,6 +307,8 @@ private:
     void SkyboxEditor();
 
     void PluginManager();
+
+    void LoadPlugin();
 
     void ScenePostEcecute(Scene *scene);
 
