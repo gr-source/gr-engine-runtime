@@ -1,9 +1,9 @@
 #include "octree.h"
 
-#include "ecs/gameObject.hpp"
+#include <gr-base/ecs/gameObject.hpp>
 
-#include "script/meshRender.hpp"
-#include "script/transform.hpp"
+#include <gr-base/script/meshRender.hpp>
+#include <gr-base/script/transform.hpp>
 
 #include "../renderer.h"
 

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "script/default.hpp"
+#include <gr-base/script/default.hpp>
 
 #include <gr-render/gRender.h>
 

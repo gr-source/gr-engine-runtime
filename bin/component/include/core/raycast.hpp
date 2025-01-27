@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ecs/default.hpp"
+#include <gr-base/ecs/default.hpp>
 
 class Hit {
 public:

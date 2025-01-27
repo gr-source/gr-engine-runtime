@@ -1,7 +1,7 @@
 #include "script.hpp"
 
-#include "core/file/file.hpp"
-#include "core/console.hpp"
+#include <gr-base/core/file/file.hpp>
+#include <gr-base/core/console.hpp>
 
 #include <dlfcn.h>
 

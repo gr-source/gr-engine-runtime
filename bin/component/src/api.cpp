@@ -1,6 +1,7 @@
 #include "api.hpp"
 
-#include "core/event.hpp"
+#include <gr-base/core/event.hpp>
+
 #include "core/time.hpp"
 
 void SetDeltaTime(float deltaTime) {

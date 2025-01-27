@@ -40,7 +40,7 @@ add_library(${PROJECT_NAME} SHARED main.cpp src/api.cpp ${source_src} ${core_src
 target_link_libraries(${PROJECT_NAME} PRIVATE ${GRMATH_LIBRARIES} ${BULLET_LIBRARIES} /home/grdev/Documentos/gr-engine/gr-base/lib/libgr-base.so)
 
 target_include_directories(${PROJECT_NAME} PUBLIC ${BULLET_INCLUDE_DIRS}
-    /home/grdev/Documentos/gr-engine/gr-base/include/gr-base
+    /home/grdev/Documentos/gr-engine/gr-base/include
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
 )
 

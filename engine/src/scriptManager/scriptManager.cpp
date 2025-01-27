@@ -1,24 +1,24 @@
 #include "scriptManager.hpp"
 
-#include "script/meshCollider.hpp"
-#include "script/boxCollider.hpp"
-#include "script/meshRender.hpp"
-#include "script/rigidbody.hpp"
-#include "script/animator.hpp"
-#include "script/camera.hpp"
+#include <gr-base/script/meshCollider.hpp>
+#include <gr-base/script/boxCollider.hpp>
+#include <gr-base/script/meshRender.hpp>
+#include <gr-base/script/rigidbody.hpp>
+#include <gr-base/script/animator.hpp>
+#include <gr-base/script/camera.hpp>
 
-#include <core/geometry/batching.hpp>
+#include <gr-base/core/geometry/batching.hpp>
 
-#include "core/assetsManager.hpp"
-#include "core/threadpool.hpp"
-#include "core/scene.hpp"
-#include "core/event.hpp"
+#include <gr-base/core/assetsManager.hpp>
+#include <gr-base/core/threadpool.hpp>
+#include <gr-base/core/scene.hpp>
+#include <gr-base/core/event.hpp>
 #include "core/input.hpp"
 
 #include "physics/physicsScene.hpp"
 
-#include "ecs/gameObject.hpp"
-#include "ecs/entity.hpp"
+#include <gr-base/ecs/gameObject.hpp>
+#include <gr-base/ecs/entity.hpp>
 
 #include "../memory.h"
 

@@ -1,6 +1,6 @@
 #include "cmd.hpp"
 
-#include "core/console.hpp"
+#include <gr-base/core/console.hpp>
 
 #include <stdio.h>
 

@@ -4,7 +4,7 @@
 #include <gr-render/gTexture.h>
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
-#include "core/stb/stb_image_write.h"
+#include <gr-base/core/stb/stb_image_write.h>
 
 PostProcessing *PostProcessing::m_current = nullptr;
 

@@ -1,6 +1,8 @@
 #include "screenRender.hpp"
 
-#include <core/geometry/vertex2D.hpp>
+#include <gr-base/core/geometry/vertex2D.hpp>
+
+#include <gr-base/core/assetsManager.hpp>
 
 #include "scriptManager/scriptManager.hpp"
 
@@ -9,8 +11,6 @@
 #include <gr-render/gVertexArray.h>
 #include <gr-render/gTexture.h>
 #include <gr-render/gError.h>
-
-#include "core/assetsManager.hpp"
 
 grr::gVertexArray *ScreenRender::m_vertexArray = nullptr;
 

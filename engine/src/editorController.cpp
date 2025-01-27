@@ -1,18 +1,19 @@
 #include "editorController.h"
 
-#include "script/transform.hpp"
-#include "script/camera.hpp"
+#include <gr-base/script/transform.hpp>
+#include <gr-base/script/camera.hpp>
+
+#include <gr-base/core/console.hpp>
+
+#include <gr-base/ecs/gameObject.hpp>
 
 #include "ui/ImGuiRender.h"
 
-#include "core/console.hpp"
 #include "core/screen.hpp"
 #include "core/input.hpp"
 #include "core/timer.hpp"
 
 #include "settings.h"
-
-#include <ecs/gameObject.hpp>
 
 Camera *EditorController::m_mainCamera = nullptr;
 ImGuiIO *EditorController::m_io = nullptr;

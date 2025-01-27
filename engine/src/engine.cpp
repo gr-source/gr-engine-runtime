@@ -4,17 +4,18 @@
 #include "postProcessing.hpp"
 #include "shadowMap.hpp"
 
-#include "script/meshRender.hpp"
-#include "script/camera.hpp"
+#include <gr-base/script/meshRender.hpp>
+#include <gr-base/script/camera.hpp>
 
 #include "ui/projectMenu.hpp"
 #include "ui/ImGuiRender.h"
 
-#include "core/assetsManager.hpp"
-#include "core/threadpool.hpp"
+#include <gr-base/core/assetsManager.hpp>
+#include <gr-base/core/threadpool.hpp>
+#include <gr-base/core/event.hpp>
+
 #include "core/statistics.hpp"
 #include "core/screen.hpp"
-#include "core/event.hpp"
 #include "core/input.hpp"
 #include "core/timer.hpp"
 #include "core/time.hpp"
@@ -33,8 +34,8 @@
 
 #include "plugin/pluginManager.hpp"
 
-#include "ecs/gameObject.hpp"
-#include "ecs/manager.hpp"
+#include <gr-base/ecs/gameObject.hpp>
+#include <gr-base/ecs/manager.hpp>
 
 #include <filesystem>
 

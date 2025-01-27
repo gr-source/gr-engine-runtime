@@ -128,7 +128,7 @@ set(plugin
 add_library(${PROJECT_NAME} STATIC ${engine_src} ${plugin} ${engine_hdr})
 
 target_include_directories(${PROJECT_NAME} PUBLIC
-    /home/grdev/Documentos/gr-engine/gr-base/include/gr-base
+    /home/grdev/Documentos/gr-engine/gr-base/include
     $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/${PROJECT_NAME}/src>
 )
 

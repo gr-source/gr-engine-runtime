@@ -1,6 +1,6 @@
 #include "pluginManager.hpp"
 
-#include <core/file/file.hpp>
+#include <gr-base/core/file/file.hpp>
 
 #include <stdexcept>
 

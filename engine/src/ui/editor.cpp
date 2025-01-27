@@ -12,33 +12,36 @@
 #include "memory.h"
 #include "skybox.h"
 
-#include "core/filmbox/filmbox.hpp"
+#include <gr-base/core/filmbox/filmbox.hpp>
 
-#include "core/binary/model3DHandler.hpp"
+#include <gr-base/core/binary/model3DHandler.hpp>
+
+#include <gr-base/core/file/file.hpp>
 
 #include "core/cmd/cmd.hpp"
 
 #include "core/file/initialization.hpp"
 #include "core/file/config.hpp"
-#include "core/file/file.hpp"
 
-#include "core/assetsManager.hpp"
-#include "core/threadpool.hpp"
+#include <gr-base/core/assetsManager.hpp>
+#include <gr-base/core/threadpool.hpp>
+
+#include <gr-base/core/console.hpp>
+#include <gr-base/core/scene.hpp>
+#include <gr-base/core/event.hpp>
+
 #include "core/statistics.hpp"
-#include "core/console.hpp"
 #include "core/screen.hpp"
-#include "core/scene.hpp"
-#include "core/event.hpp"
 #include "core/timer.hpp"
 
-#include "script/boxCollider.hpp"
-#include "script/meshFilter.hpp"
-#include "script/meshRender.hpp"
-#include "script/transform.hpp"
-#include "script/rigidbody.hpp"
-#include "script/animator.hpp"
-#include "script/camera.hpp"
-#include "script/light.hpp"
+#include <gr-base/script/boxCollider.hpp>
+#include <gr-base/script/meshFilter.hpp>
+#include <gr-base/script/meshRender.hpp>
+#include <gr-base/script/transform.hpp>
+#include <gr-base/script/rigidbody.hpp>
+#include <gr-base/script/animator.hpp>
+#include <gr-base/script/camera.hpp>
+#include <gr-base/script/light.hpp>
 
 #include "guizmo/ImGuizmo.h"
 
@@ -48,19 +51,19 @@
 
 #include "scriptManager/scriptManager.hpp"
 
-#include <core/geometry/batching.hpp>
+#include <gr-base/core/geometry/batching.hpp>
 
-#include "ecs/gameObject.hpp"
-#include "ecs/manager.hpp"
+#include <gr-base/ecs/gameObject.hpp>
+#include <gr-base/ecs/manager.hpp>
 
 #include <linux/input-event-codes.h>
 #include <filesystem>
 #include <sstream>
 #include <iomanip>
 
-#include <ecs/componentRegistry.hpp>
+#include <gr-base/ecs/componentRegistry.hpp>
 
-#include <core/display.hpp>
+#include <gr-base/core/display.hpp>
 
 #define IMGUI_PAYLOAD_GAMEOBJECT "##payload_gameobject"
 #define IMGUI_PAYLOAD_ANIMATION "##payload_animation"

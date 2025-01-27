@@ -1,10 +1,10 @@
 #include "renderer.h"
 
-#include <core/geometry/mesh.hpp>
+#include <gr-base/core/geometry/mesh.hpp>
 
-#include "core/assetsManager.hpp"
+#include <gr-base/core/assetsManager.hpp>
 
-#include "script/camera.hpp"
+#include <gr-base/script/camera.hpp>
 
 #include <gr-render/gVertexArray.h>
 #include <gr-render/gShader.h>

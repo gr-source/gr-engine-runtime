@@ -1,12 +1,12 @@
 #include "skybox.h"
 
-#include "core/assetsManager.hpp"
-#include "core/event.hpp"
+#include <gr-base/core/assetsManager.hpp>
+#include <gr-base/core/event.hpp>
+
+#include <gr-base/script/camera.hpp>
 
 #include "cubeFramebuffer.hpp"
 #include "postProcessing.hpp"
-
-#include "script/camera.hpp"
 
 #include <gr-render/gVertexArray.h>
 #include <gr-render/gTexture.h>

@@ -5,16 +5,17 @@
 #include "renderManager.h"
 #include "skybox.h"
 
-#include <core/geometry/batching.hpp>
-
 #include "core/cmd/cmd.hpp"
 
-#include "core/threadpool.hpp"
-#include "core/console.hpp"
-#include "core/scene.hpp"
+#include <gr-base/core/geometry/batching.hpp>
+
+#include <gr-base/core/threadpool.hpp>
+#include <gr-base/core/console.hpp>
+#include <gr-base/core/scene.hpp>
+
+#include <gr-base/core/file/file.hpp>
 
 #include "core/file/config.hpp"
-#include "core/file/file.hpp"
 
 #include "scriptManager/scriptManager.hpp"
 

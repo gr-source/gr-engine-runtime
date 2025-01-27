@@ -2,10 +2,10 @@
 
 #include <filesystem>
 
-#include <ecs/componentPool.hpp>
-#include <ecs/gameObject.hpp>
+#include <gr-base/ecs/componentPool.hpp>
+#include <gr-base/ecs/gameObject.hpp>
 
-#include "core/console.hpp"
+#include <gr-base/core/console.hpp>
 
 #include "renderer.h"
 #include "Global.h"
