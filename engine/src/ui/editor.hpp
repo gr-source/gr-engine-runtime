@@ -12,14 +12,18 @@
 
 #include "guizmo/ImGuizmo.h"
 
+#include "plugin/default.hpp"
+
 #include <gr-render/gTexture.h>
 
 enum EditorPopupFlags : int {
-    EditorPopupFlags_EngineStatus = 1 << 1,
-    EditorPopupFlags_Settings     = 1 << 2,
-    EditorPopupFlags_SkyboxEditor = 1 << 2,
-    EditorPopupFlags_Plugin       = 1 << 3,
-    EditorPopupFlags_LoadPlugin   = 1 << 4,
+    EditorPopupFlags_EngineStatus  = 1 << 1,
+    EditorPopupFlags_Settings      = 1 << 2,
+    EditorPopupFlags_SkyboxEditor  = 1 << 2,
+    EditorPopupFlags_Plugin        = 1 << 3,
+    EditorPopupFlags_LoadPlugin    = 1 << 4,
+    EditorPopupFlags_PluginEditor  = 1 << 5,
+    EditorPopupFlags_AddComponent  = 1 << 6,
 };
 
 using EditorPopupFlags_ = int;
@@ -44,13 +48,6 @@ enum IconType : int {
 	ICON_SHADER       = 16,
 	ICON_SCENE        = 17
 };
-
-enum UIPopup : grm::u32 {
-    UIPopup_PopupAddComponent = 1 << 1, 
-};
-
-using UIPopup_ = grm::u32;
-
 
 class Editor {
 public:
@@ -87,6 +84,8 @@ private:
     GameObject *tempCam;
 
     Camera *m_mainCamera;
+
+    Plugin *m_plugin;
 
     ImGuiViewport *m_viewport;
 
@@ -143,8 +142,6 @@ private:
         Quaternion rotation;
         Vector3 scale;
     } mLastTransform;
-
-    UIPopup_ uIPopup;
 
     void RenderDocking();
 
@@ -308,7 +305,9 @@ private:
 
     void PluginManager();
 
-    void LoadPlugin();
+    void PluginLoad();
+
+    void PluginEditor();
 
     void ScenePostEcecute(Scene *scene);
 

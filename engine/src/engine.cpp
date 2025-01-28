@@ -314,7 +314,7 @@ void Engine::UIFramebuffer() {
     ProjectMenu::Render();
 
     for (auto &plugin : PluginManager::getPluginList()) {
-        plugin.renderGUI();
+        plugin->renderGUI();
     }
 
     ImGuiRender::End();
