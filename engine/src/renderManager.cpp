@@ -23,6 +23,7 @@
 #include <cstring>
 
 #include <gr-render/gTexture.h>
+#include <gr-render/gError.h>
 
 std::array<grr::gShader *, 4> RenderManager::m_shader = {nullptr, nullptr, nullptr, nullptr};
 
@@ -64,19 +65,23 @@ void RenderManager::Process(Camera *camera, ShadowMap *shadowMap) {
         return;
     }
 
+    auto projection = m_camera->getPerspesctive();
+    auto view = m_camera->getViewmatrix();
+    auto position = m_camera->getPosition();
+
     for (auto &shader : m_shader) {
         if (!shader || !shader->isValid()) {
             continue;
         }
 
-        grr::gShader::SetUniform("u_projection", m_camera->getPerspesctive());
-        grr::gShader::SetUniform("u_view", m_camera->getViewmatrix());
-        grr::gShader::SetUniform("m_eye", m_camera->getPosition());
+        shader->setUniform("u_projection", 1, &projection);
+        shader->setUniform("u_view",       1, &view);
+        shader->setUniform("m_eye",        1, &position);
 
         // shadowMap->bindTexture(8);
         // grr::gShader::SetUniform("m_shadowMap", 8);
 
-        SetupLight();
+        SetupLight(shader);
     }
     // Frustum::CalculateFrustum(m_camera->getPerspesctive() * m_camera->getViewmatrix());
 }
@@ -101,65 +106,81 @@ void RenderManager::Shutdown() {
     }
 }
 
-void RenderManager::SetupLight() {
+void RenderManager::SetupLight(grr::gShader *shader) {
     auto lights = Light::GetListLight();
 
-    grr::gShader::SetUniform("m_lightcount", static_cast<int>(lights.size()));
+    int numLight = static_cast<int>(lights.size());
+
+    shader->setUniform("m_lightcount", 1, &numLight);
 
     if (lights.empty()) return;
 
     for (auto i=0;i<lights.size();i++) {
-        const auto& light = lights[i];
+        auto light = lights[i];
 
-        grr::gShader::SetUniform("m_light[" + std::to_string(i) + "].position",    light->getPosition());
-        grr::gShader::SetUniform("m_light[" + std::to_string(i) + "].color",       light->getColor());
-        grr::gShader::SetUniform("m_light[" + std::to_string(i) + "].attenuation", Vector3{light->getAttenuationConstant(), light->getAttenuationLinear(), light->getAttenuationQuadractc()});
-        grr::gShader::SetUniform("m_light[" + std::to_string(i) + "].direction",   light->getForward());
-        grr::gShader::SetUniform("m_light[" + std::to_string(i) + "].params",      Vector3{light->getInnecone(), light->getOutercone(), (float)light->getType()});
-        grr::gShader::SetUniform("m_light[" + std::to_string(i) + "].model", light->getProjetion());
+        auto position    = light->getPosition();
+        auto color       = light->getColor();
+        auto attenuation = Vector3{light->getAttenuationConstant(), light->getAttenuationLinear(), light->getAttenuationQuadractc()};
+        auto forward     = light->getForward();
+        auto params      = Vector3{light->getInnecone(), light->getOutercone(), (float)light->getType()};
+        auto projection  = light->getProjetion();
+
+        shader->setUniform(("m_light[" + std::to_string(i) + "].position").c_str(),    1, &position);
+        shader->setUniform(("m_light[" + std::to_string(i) + "].color").c_str(),       1, &color);
+        shader->setUniform(("m_light[" + std::to_string(i) + "].attenuation").c_str(), 1, &attenuation);
+        shader->setUniform(("m_light[" + std::to_string(i) + "].direction").c_str(),   1, &forward);
+        shader->setUniform(("m_light[" + std::to_string(i) + "].params").c_str(),      1, &params);
+        shader->setUniform(("m_light[" + std::to_string(i) + "].model").c_str(),       1, &projection);
     }
 }
 
 bool RenderManager::SetupShader(ShaderType type, grr::gShader *shader) {
     m_shader[type] = shader;
 
-    RegisterUniform(type == ShaderType_Dynamic);
+    RegisterUniform(type == ShaderType_Dynamic, shader);
 
     bRender = true;
     return true;
 }
 
-void RenderManager::RegisterUniform(bool model) {
-    grr::gShader::Register("u_projection", UniformType::MAT4, 1, Matrix4x4::identityMatrix);
-    grr::gShader::Register("u_view", UniformType::MAT4, 1, Matrix4x4::identityMatrix);
+#define PRINT_ERROR(func) \
+    if (func == -1) { \
+        Console::LogError("[ RenderManager ] Fail to register uniform: %s", grr::error()); \
+    }
+
+void RenderManager::RegisterUniform(bool model, grr::gShader *shader) {
+    PRINT_ERROR(shader->registry("u_projection", grr::UniformType_mat4));
+    PRINT_ERROR(shader->registry("u_view",       grr::UniformType_mat4));
 
     if (model)
-        grr::gShader::Register("u_model", UniformType::MAT4, 1, Matrix4x4::identityMatrix);
-    grr::gShader::Register<Matrix4x4>("u_boneMatrices", UniformType::MAT4, 100, Matrix4x4::identityMatrix);
-    // grr::gShader::Register("u_animatior");
+        PRINT_ERROR(shader->registry("u_model",    grr::UniformType_mat4));
+    // PRINT_ERROR(shader->registry("u_boneMatrices", grr::UniformType_mat4));
+    // PRINT_ERROR(shader->registry("u_animatior"));
 
     // FragmentShader
-    grr::gShader::Register("m_eye", UniformType::VEC3, 1, Vector3::zero);
-    grr::gShader::Register("m_shadowMap", UniformType::INT, 1, 0);
-    grr::gShader::Register("m_lightcount", UniformType::INT, 1, 0);
+    PRINT_ERROR(shader->registry("m_eye",        grr::UniformType_vec3));
+    // PRINT_ERROR(shader->registry("m_shadowMap",  grr::UniformType_int));
+    PRINT_ERROR(shader->registry("m_lightcount", grr::UniformType_int));
 
-    int idx[10] {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
-    int idxEn[10] {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    PRINT_ERROR(shader->registry("m_texture",  grr::UniformType_int));
+    PRINT_ERROR(shader->registry("m_activate", grr::UniformType_int));
 
-    grr::gShader::Register<int>("m_texture", UniformType::INT, 10, idxEn);
-    grr::gShader::Register("m_activate", UniformType::INT, 10, 0);
+    char buff[256] = {0};
     
-    for (auto i=0;i<10;i++) {
+    for (int i=0;i<10;i++) {
         // Material
-        grr::gShader::Register("m_material[" + std::to_string(i) + "].albedo", UniformType::VEC4, 1, Vector4::zero);
-        grr::gShader::Register("m_material[" + std::to_string(i) + "].params", UniformType::VEC3, 1, Vector3::zero);
+        sprintf(buff, "m_material[%d].albedo", i);
+        PRINT_ERROR(shader->registry(buff, grr::UniformType_vec4));
+
+        sprintf(buff, "m_material[%d].params", i);
+        PRINT_ERROR(shader->registry(buff, grr::UniformType_vec3));
 
         // Light
-        grr::gShader::Register("m_light[" + std::to_string(i) + "].position", UniformType::VEC3, 1, Vector3::zero);
-        grr::gShader::Register("m_light[" + std::to_string(i) + "].color", UniformType::VEC4, 1, Vector4::zero);
-        grr::gShader::Register("m_light[" + std::to_string(i) + "].attenuation", UniformType::VEC3, 1, Vector3::zero);
-        grr::gShader::Register("m_light[" + std::to_string(i) + "].direction", UniformType::VEC3, 1, Vector3::zero);
-        grr::gShader::Register("m_light[" + std::to_string(i) + "].params", UniformType::VEC3, 1, Vector3::zero);
-        grr::gShader::Register("m_light[" + std::to_string(i) + "].model", UniformType::MAT4, 1, Matrix4x4::identityMatrix);
+        PRINT_ERROR(shader->registry(("m_light[" + std::to_string(i) + "].position").c_str(),    grr::UniformType_vec3));
+        PRINT_ERROR(shader->registry(("m_light[" + std::to_string(i) + "].color").c_str(),       grr::UniformType_vec4));
+        PRINT_ERROR(shader->registry(("m_light[" + std::to_string(i) + "].attenuation").c_str(), grr::UniformType_vec3));
+        PRINT_ERROR(shader->registry(("m_light[" + std::to_string(i) + "].direction").c_str(),   grr::UniformType_vec3));
+        PRINT_ERROR(shader->registry(("m_light[" + std::to_string(i) + "].params").c_str(),      grr::UniformType_vec3));
+        PRINT_ERROR(shader->registry(("m_light[" + std::to_string(i) + "].model").c_str(),       grr::UniformType_mat4));
     }
 }

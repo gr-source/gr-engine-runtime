@@ -45,7 +45,7 @@ private:
 
     static void RegisterSky(grr::gShader **out, grr::gShader *shader);
 
-    static void GenerateMap(std::function<void(grm::u32)> func, grr::gTexture *texture);
+    static void GenerateMap(std::function<void(grm::u32)> func, grr::gTexture *texture, grr::gShader *shader);
 };
 
 

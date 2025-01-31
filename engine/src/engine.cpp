@@ -297,7 +297,7 @@ void Engine::RenderScene() {
     grr::gRender::SetRenderState(grr::GR_DEPTH_FUNC, grr::GR_DEPTH_LEQUAL);
     DebugDraw::Renderer(m_editor->getCamera());
 
-    // grr::gRender::SetRenderState(grr::GR_DEPTH_FUNC, grr::GR_DEPTH_LEQUAL);
+    grr::gRender::SetRenderState(grr::GR_DEPTH_FUNC, grr::GR_DEPTH_LEQUAL);
     Skybox::Renderer(m_editor->getCamera());
 }
 

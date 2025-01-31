@@ -33,9 +33,9 @@ public:
 
     static bool bRender;
 
-    static void SetupLight();
+    static void SetupLight(grr::gShader *shader);
 
     static bool SetupShader(ShaderType type, grr::gShader *shader);
 
-    static void RegisterUniform(bool model);
+    static void RegisterUniform(bool model, grr::gShader *shader);
 };

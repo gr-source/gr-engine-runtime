@@ -43,6 +43,7 @@ void DebugDraw::AddLine(const Vector3& start, const Vector3& end, const Color& c
 }
 
 void DebugDraw::Renderer(Camera *camera) {
+    /*
     if (!camera || !m_shader || !m_shader->isValid()) {
         return;
     }
@@ -52,9 +53,11 @@ void DebugDraw::Renderer(Camera *camera) {
     if (!m_lines.empty()) {
         DebugDraw::DrawLines();
     }
+    */
 }
 
 bool DebugDraw::SetupShader(grr::gShader *shader) {
+    /*
     if (!shader) { return true; }
 
     grr::gShader::Register("u_vp", UniformType::MAT4, 1, Matrix4x4::identityMatrix);
@@ -76,10 +79,12 @@ bool DebugDraw::SetupShader(grr::gShader *shader) {
 
     m_shader = shader;
 
+    */
     return true;
 }
 
 void DebugDraw::DrawLines() {
+    /*
     m_primitive->bind();
 
     grr::gVertexArray::Bind(m_vbo);
@@ -93,4 +98,5 @@ void DebugDraw::DrawLines() {
     m_primitive->unbind();
 
     m_lines.clear();
+    */
 }

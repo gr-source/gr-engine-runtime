@@ -61,15 +61,20 @@ void Skybox::Renderer(Camera *camera) {
         return;
     }
 
-    grr::gShader::Bind(m_shader);
+    int textureID = 0;
+
+    auto projection = camera->getPerspesctive();
+    auto view = camera->getViewmatrix();
+
+    m_shader->bind();
 
     grr::gTexture::Bind(CubeFramebuffer::GetTextureColor(m_cubeColor), 0);
-    grr::gShader::SetUniform("u_texture", 0);
+    m_shader->setUniform("u_texture", 1, &textureID);
 
-    grr::gShader::SetUniform("projection", camera->getPerspesctive());
-    grr::gShader::SetUniform("view", camera->getViewmatrix());
+    m_shader->setUniform("projection", 1, &projection);
+    m_shader->setUniform("view", 1, &view);
 
-    grr::gShader::Flush();
+    m_shader->flush();
     
     m_vertexArray->bind();
 
@@ -140,20 +145,24 @@ void Skybox::SetupTexture(grr::gTexture *texture) {
 }
 
 void SetCommonRegister(grr::gShader *shader) {
-    grr::gShader::Bind(shader);
-    grr::gShader::Register("projection", UniformType::MAT4, 1, Matrix4x4::identityMatrix);
-    grr::gShader::Register("view", UniformType::MAT4, 1, Matrix4x4::identityMatrix);
-    grr::gShader::Register("u_texture", UniformType::INT, 1, 0);
+    shader->bind();
+    shader->registry("projection", grr::UniformType_mat4);
+    shader->registry("view",       grr::UniformType_mat4);
+    shader->registry("u_texture",  grr::UniformType_int);
 }
 
 void RegisterDeafult(grr::gShader **out, grr::gShader *shader) {
     *out = shader;
+
+    if (!shader) { return; }
 
     SetCommonRegister(shader);
 }
 
 void Skybox::RegisterSky(grr::gShader **out, grr::gShader *shader) {
     *out = shader;
+
+    if (!shader) { return; }
 
     SetCommonRegister(shader);
 
@@ -169,8 +178,7 @@ void Skybox::RegisterSky(grr::gShader **out, grr::gShader *shader) {
                 case 5: flags = grr::gFramebufferFlags_Cubemap_Negative_Z; break;
             }
             m_cubeColor->SetTexture(flags);
-        }, m_texture);
-        grr::gShader::Unbind();
+        }, m_texture, shader);
 }
 
 void Skybox::UploadShader() {
@@ -193,13 +201,15 @@ void Skybox::UploadShader() {
     );
 }
 
-void Skybox::GenerateMap(std::function<void(grm::u32)> func, grr::gTexture *texture) {
+void Skybox::GenerateMap(std::function<void(grm::u32)> func, grr::gTexture *texture, grr::gShader *shader) {
     auto projection = Math::perspective(Math::rad(90.0f), 1.0f, 0.1f, 10.0f);
 
-    grr::gTexture::Bind(texture, 0);
-    grr::gShader::SetUniform("u_texture", 0);
+    int textureID = 0;
 
-    grr::gShader::SetUniform("projection", projection);
+    grr::gTexture::Bind(texture, textureID);
+    shader->setUniform("u_texture", 1, &textureID);
+
+    shader->setUniform("projection", 1, &projection);
 
     Matrix4x4 view[6] {
         Math::lookAt({0.0f, 0.0f, 0.0f}, { 1.0f,  0.0f,  0.0f}, {0.0f, -1.0f,  0.0f}),
@@ -210,19 +220,23 @@ void Skybox::GenerateMap(std::function<void(grm::u32)> func, grr::gTexture *text
         Math::lookAt({0.0f, 0.0f, 0.0f}, { 0.0f,  0.0f, -1.0f}, {0.0f, -1.0f,  0.0f})
     };
 
+    shader->bind();
+
     for (auto i=0;i<6;i++) {
-        grr::gShader::SetUniform("view", view[i]);
+        shader->setUniform("view", 1, &view[i]);
 
         func(i);
 
         grr::gRender::SetRenderState(grr::GR_BACKGROUND_COLOR, (void *)&Color::blue);
         grr::gRender::SetRenderState(grr::GR_BACKGROUND, grr::GR_COLOR_BUFFER | grr::GR_DEPTH_BUFFER);
         
-        grr::gShader::Flush();
+        shader->flush();
         
         m_vertexArray->bind();
         
         grr::gVertexArray::DrawElements(PrimitiveType::TRIANGLES, m_count, nullptr);
     }
     grr::gTexture::Bind(nullptr, 0);
+
+    shader->unbind();
 }
