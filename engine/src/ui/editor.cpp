@@ -15,6 +15,7 @@
 #include <gr-base/core/filmbox/filmbox.hpp>
 
 #include <gr-base/core/binary/model3DHandler.hpp>
+#include <gr-base/core/binary/modelhandle.hpp>
 
 #include <gr-base/core/file/file.hpp>
 
@@ -232,7 +233,9 @@ void Editor::DropFile(const std::filesystem::path &path) {
  
 void Editor::Import3DModel(const std::string &path) {
     // Filmbox::Load(path, std::bind());
-    Model3DHandler::ImportFBX(path);
+    // Model3DHandler::ImportFBX(path);
+
+    ModelHandle::ImportFBX(path);
 }
 
 void Editor::ImportImage(const std::string &path) {
@@ -334,6 +337,10 @@ void Editor::RenderUI() {
         ImGui::OpenPopup("##popup_plugin_editor");
         popupFlags &= ~EditorPopupFlags_PluginEditor;
         break;
+    case EditorPopupFlags_CreateMaterial:
+        ImGui::OpenPopup("##popup_create_material");
+        popupFlags &= ~EditorPopupFlags_CreateMaterial;
+        break;
     default:
         break;
     }
@@ -357,6 +364,10 @@ void Editor::RenderUI() {
     PluginLoad();
 
     PluginEditor();
+
+    RenameMaterial();
+
+    CreateMaterial();
 }
 
 void Editor::RenderDocking() {
@@ -2139,20 +2150,18 @@ bool Editor::OnPropertyMeshRender(MeshRender *meshRender) {
         return false;
     }
    
-    auto &materialList = meshRender->getMaterials();
+    auto materialList = meshRender->getMaterials();
 
     auto avail = ImGui::GetContentRegionAvail();
     
     if (ImGui::Button("Create", {avail.x, 0.0f})) {
-        materialList.push_back(std::make_unique<Material>());
+        popupFlags |= EditorPopupFlags_CreateMaterial;
     }
 
     ImGui::Indent();
-    for (auto it=materialList.begin();it!=materialList.end();) {
-        if (!RenderMaterial(it->get())) {
-            it++;
-        } else {
-            it = materialList.erase(it);
+    for (auto material : materialList) {
+        if (RenderMaterial(material)) {
+            meshRender->removeMaterial(material);
         }
     }
     ImGui::Unindent();
@@ -2161,7 +2170,6 @@ bool Editor::OnPropertyMeshRender(MeshRender *meshRender) {
         ImGui::OpenPopup("##popup_rename_material");
     }
 
-    PopupRenameMaterial();
     return false;
 }
 
@@ -2174,7 +2182,7 @@ bool Editor::RenderMaterial(Material *material) {
     }
     
     if (ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
-        m_materialToRename = &(*material);
+        m_materialToRename = material;
     }
 
     if (!isOpen) {
@@ -2182,7 +2190,7 @@ bool Editor::RenderMaterial(Material *material) {
     }
 
     auto albedo = material->getAlbedo();
-    InsertTexture(&(*material));
+    InsertTexture(material);
 
     if (View::PopupChangeColor("Albedo", albedo)) {
         material->setAlbedo(albedo);
@@ -2631,7 +2639,7 @@ void Editor::PopupMenuSettings() {
     ImGui::EndPopup();
 }
 
-void Editor::PopupRenameMaterial() {
+void Editor::RenameMaterial() {
     auto isOpen = ImGui::BeginPopupModal("##popup_rename_material");
     if (!isOpen || !m_materialToRename) {
         return;
@@ -2659,7 +2667,26 @@ void Editor::PopupRenameMaterial() {
     ImGui::EndPopup();
 }
 
-void Editor::PopupCreateMaterial() {
+void Editor::CreateMaterial() {
+    auto isOpen = ImGui::BeginPopupModal("##popup_create_material");
+    if (!isOpen || !s_objectSelected) {
+        return;
+    }
+
+    ImGui::Text("Name");
+    if (!ImGui::IsAnyItemActive() && !ImGui::IsMouseClicked(0))
+        ImGui::SetKeyboardFocusHere(0);
+
+    static char name[256] = {0};
+    if (ImGui::InputText("##popup_create_material_inputtext", name, 256, ImGuiInputTextFlags_EnterReturnsTrue)) {
+        auto meshRender = s_objectSelected->getComponent<MeshRender>();
+        
+        meshRender->addMaterial(name, name);
+
+        ImGui::CloseCurrentPopup();
+    }
+
+    ImGui::EndPopup();
 }
 
 void Editor::PopupRenameFile() {
@@ -2926,7 +2953,7 @@ GameObject *Editor::CreatePrimitive(int type) {
     auto mr = go->addComponent<MeshRender>();
     mr->Init();
 
-    mr->addMaterial();
+    mr->addMaterial("DefaultMaterial");
     // mr->build();
 
     return GameObject::Instantiate(go);

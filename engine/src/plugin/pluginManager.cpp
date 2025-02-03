@@ -71,6 +71,12 @@ void PluginManager::Remove(Plugin *plugin) {
     pluginMap.erase(it);
 }
 
+void PluginManager::Render() {
+    for (auto &plugin : PluginManager::getPluginList()) {
+        plugin->renderGUI();
+    }
+}
+
 void PluginManager::Shutdown() {
     for (auto &plugin : pluginList) {
         plugin->shutdown();

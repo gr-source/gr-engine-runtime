@@ -37,6 +37,8 @@
 #include <gr-base/ecs/gameObject.hpp>
 #include <gr-base/ecs/manager.hpp>
 
+#include <gr-base/core/binary/modelhandle.hpp>
+
 #include <filesystem>
 
 std::shared_ptr<PostProcessing> Engine::ImGuiPostProcess = nullptr;
@@ -313,9 +315,9 @@ void Engine::UIFramebuffer() {
     
     ProjectMenu::Render();
 
-    for (auto &plugin : PluginManager::getPluginList()) {
-        plugin->renderGUI();
-    }
+    ModelHandle::Render();
+
+    PluginManager::Render();
 
     ImGuiRender::End();
 }

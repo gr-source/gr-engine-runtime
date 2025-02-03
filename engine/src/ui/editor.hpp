@@ -17,13 +17,14 @@
 #include <gr-render/gTexture.h>
 
 enum EditorPopupFlags : int {
-    EditorPopupFlags_EngineStatus  = 1 << 1,
-    EditorPopupFlags_Settings      = 1 << 2,
-    EditorPopupFlags_SkyboxEditor  = 1 << 2,
-    EditorPopupFlags_Plugin        = 1 << 3,
-    EditorPopupFlags_LoadPlugin    = 1 << 4,
-    EditorPopupFlags_PluginEditor  = 1 << 5,
-    EditorPopupFlags_AddComponent  = 1 << 6,
+    EditorPopupFlags_EngineStatus   = 1 << 1,
+    EditorPopupFlags_Settings       = 1 << 2,
+    EditorPopupFlags_SkyboxEditor   = 1 << 2,
+    EditorPopupFlags_Plugin         = 1 << 3,
+    EditorPopupFlags_LoadPlugin     = 1 << 4,
+    EditorPopupFlags_PluginEditor   = 1 << 5,
+    EditorPopupFlags_AddComponent   = 1 << 6,
+    EditorPopupFlags_CreateMaterial = 1 << 7,
 };
 
 using EditorPopupFlags_ = int;
@@ -264,7 +265,9 @@ private:
     // PopupMenu
     void PopupMenuSettings();
 
-    void PopupRenameMaterial();
+    void RenameMaterial();
+
+    void CreateMaterial();
 
     void PopupCreateMaterial();
 

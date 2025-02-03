@@ -15,6 +15,8 @@ public:
 
     static void Remove(Plugin *plugin);
 
+    static void Render();
+    
     static void Shutdown();
 
 private:
