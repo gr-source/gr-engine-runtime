@@ -258,8 +258,6 @@ private:
     // Loader    
     void PostLoadGameObject(GameObject *gameObject);
 
-    void SetupTextureMaterial(Material *material, int id, grr::gTexture *texture);
-
     void CreateScriptTemplate(const std::string &path, const std::string &name);
 
     // PopupMenu

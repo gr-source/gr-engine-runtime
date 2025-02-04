@@ -6,11 +6,12 @@
 #include "renderManager.h"
 #include "screenRender.hpp"
 #include "renderer.h"
-#include "window.hpp"
 #include "settings.h"
 #include "engine.h"
 #include "memory.h"
 #include "skybox.h"
+
+#include <gr-base/core/window.hpp>
 
 #include <gr-base/core/filmbox/filmbox.hpp>
 
@@ -180,7 +181,15 @@ Editor::Editor() : m_viewport(ImGui::GetMainViewport()), mImGuiIO(&ImGui::GetIO(
 
     Skybox::Initialize();
 
-    Window::SetName("GameEngine: " + Project::GetCurrent()->getName());
+    auto project = Project::GetCurrent();
+    if (project) {
+        auto projectname = project->getName();
+
+        char name[256];
+        sprintf(name, "GR - %s", projectname.c_str());
+
+        Window::SetWindowTitle(name);
+    }
 }
 
 Editor::~Editor() {
@@ -2242,7 +2251,7 @@ void Editor::InsertTexture(Material *material) {
         Console::LogError("[ GUI ] Texture do not loaded, patg is empty.");
         return ImGui::EndDragDropTarget();
     }
-    AssetsManager::LoadTexture(path, &Editor::SetupTextureMaterial, this, material, 0);
+    AssetsManager::LoadTexture(path, &Material::setTexture, material, 0);
     ImGui::EndDragDropTarget();
 }
 
@@ -2558,10 +2567,6 @@ void Editor::PostLoadGameObject(GameObject *gameObject) {
     Scene::Init(gameObject);
 
     s_objectSelected = gameObject;
-}
-
-void Editor::SetupTextureMaterial(Material *material, int id, grr::gTexture *texture) {
-    material->setTexture(id, texture);
 }
 
 std::string GenerateScriptHeader(const std::string& name) {
