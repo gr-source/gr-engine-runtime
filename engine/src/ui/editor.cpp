@@ -241,9 +241,6 @@ void Editor::DropFile(const std::filesystem::path &path) {
 }
  
 void Editor::Import3DModel(const std::string &path) {
-    // Filmbox::Load(path, std::bind());
-    // Model3DHandler::ImportFBX(path);
-
     ModelHandle::ImportFBX(path);
 }
 
@@ -350,6 +347,9 @@ void Editor::RenderUI() {
         ImGui::OpenPopup("##popup_create_material");
         popupFlags &= ~EditorPopupFlags_CreateMaterial;
         break;
+    case EditorPopupFlags_EngineStatus:
+        PopupMenuProperty();
+        break;
     default:
         break;
     }
@@ -363,8 +363,6 @@ void Editor::RenderUI() {
     showMeshListPopup();
 
     PopupAddComponent();
-
-    PopupMenuProperty();
 
     SkyboxEditor();
 
@@ -429,8 +427,13 @@ void Editor::RenderDocking() {
         }
         
         if (ImGui::BeginMenu("View")) {
-            if (ImGui::MenuItem("Engine status")) {
-                flags |= EditorPopupFlags_EngineStatus;
+            bool isSelected = popupFlags & EditorPopupFlags_EngineStatus;
+            if (ImGui::MenuItem("Engine status", nullptr, &isSelected)) {
+                if (isSelected) {
+                    popupFlags |= EditorPopupFlags_EngineStatus;
+                } else {
+                    popupFlags &= ~EditorPopupFlags_EngineStatus;
+                }
             }
             ImGui::EndMenu();
         }
@@ -475,10 +478,6 @@ void Editor::RenderDocking() {
     ImGuiID dockspace_id = ImGui::GetID("DockSpace");
     ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
     ImGui::End();
-
-    if (flags & EditorPopupFlags_EngineStatus) {
-        ImGui::OpenPopup("##popup_engine_status");
-    }
 
     if (flags & EditorPopupFlags_Settings) {
         ImGui::OpenPopup("##popup_menu_settings");
@@ -1116,6 +1115,8 @@ bool gluInvertMatrix(const Matrix4x4 &m, Matrix4x4 &invOut) {
 #include "core/input.hpp"
 
 void Editor::RenderScene() {
+    auto cursorPos = ImGui::GetCursorPos();
+
     auto cursorY = ImGui::GetCursorPosY();
     cursorY += 5.0f;
 
@@ -1136,29 +1137,36 @@ void Editor::RenderScene() {
 
     auto texture = Engine::GetImGuiPostprocess()->getTextureColor();
     if (texture) {
+        auto windowSize = ImGui::GetContentRegionAvail();
         ImGui::Image(reinterpret_cast<ImTextureID>(texture->getID()), regionAvail, {0.0f, 1.0f}, {1.0f, 0.0f});
 
-        if (ImGui::IsWindowHovered()) {
-            ImVec2 mousePos = ImGui::GetMousePos();
-            ImVec2 windowPos = ImGui::GetWindowPos();
-            ImVec2 localMousePos = ImVec2(mousePos.x - windowPos.x, mousePos.y - windowPos.y);
+        auto windowPos = ImGui::GetWindowPos();
+        windowPos += cursorPos;
 
-            if (localMousePos.x >= 0 && localMousePos.x <= regionAvail.x &&
-                localMousePos.y >= 0 && localMousePos.y <= regionAvail.y) {
-                    /*
-                    if (localMousePos.x < 10.f) {
-                        Input::SetCursorPos({mousePos.x + regionAvail.x, mousePos.y});
-                    } else if (localMousePos.x > regionAvail.x - 10.0f) {
-                        Input::SetCursorPos({mousePos.x - (regionAvail.x - 10.0f), mousePos.y});
-                    }
-                    */
+        auto max = windowPos + windowSize;
+
+        auto mousePos = ImGui::GetMousePos();
+        mousePos -= windowPos;
+
+        // auto viewportsize = max - windowPos;
+        mousePos.y = windowSize.y - mousePos.y;
+
+        int mouseX = static_cast<int>(mousePos.x);
+        int mouseY = static_cast<int>(mousePos.y);
+
+        if (mouseX >= 0 && mouseY >= 0 && mouseX <= static_cast<int>(windowSize.x) && mouseY <= static_cast<int>(windowSize.y) && ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
+            int entityID = -1;
+            Engine::GetMainPostprocess()->readPixel(mouseX, mouseY, &entityID);
+
+            if (entityID != -1) {
+                s_objectSelected = Manager::GetEntityFromID(static_cast<EntityID>(entityID))->getGameObject();
             }
         }
 
         DropGameObjectInScene();
     }
 
-    auto cursorPos =  ImGui::GetCursorPos();
+    cursorPos =  ImGui::GetCursorPos();
     auto pos = ImGui::GetWindowPos();
 
     // Play button
@@ -1789,6 +1797,8 @@ void Editor::RenderPropertiUI() {
     ImGui::End();
 }
 
+#include <gr-base/core/status.hpp>
+
 void Editor::RenderStatisticsMenu() {
     ImGui::SeparatorText("Scripts");
     ImGui::Text("Entidades: %ld", Manager::GetEntityCount());
@@ -1811,9 +1821,7 @@ void Editor::RenderStatisticsMenu() {
 
     ImGui::SeparatorText("Renderização");
     ImGui::Text("Luzes: %ld",     Light::GetListLight().size());
-    ImGui::Text("Draw Call Count: %ld", Statistics::m_drawCallCount);
-    ImGui::Text("Draw Render: %ld/%ld", Statistics::m_totalRender, Statistics::m_drawRenderCount);
-    ImGui::Text("Batched: %ld", Batching::GetBatchCount());
+    ImGui::Text("BatchRender: %ld/%ld", Batching::GetBatchCount(), Status::BatchRenderCount);
 }
 
 void Editor::RenderGameObjectPropertiUI() {
@@ -2056,12 +2064,11 @@ void Editor::PopupAddComponent() {
 }
 
 void Editor::PopupMenuProperty() {
-    auto isOpen = ImGui::BeginPopup("##popup_engine_status");
-    if (!isOpen) { return; }
+    ImGui::Begin("Status");
 
     RenderStatisticsMenu();
 
-    ImGui::EndPopup();
+    ImGui::End();
 }
 
 /* ********** Propriedades ********** */
@@ -2894,62 +2901,55 @@ GameObject *Editor::CreatePrimitive(int type) {
     if (!mesh) {
         mesh = AssetsManager::CreateMesh("Cube");
 
-        std::vector<Vertex3D> vertices = {
-            Vertex3D{Vector3{-1.000000, -1.000000,  1.000000}, Vector3{-1.000000, -0.000000, -0.000000}, Vector2{0.625000, 0.000000}, 0},
-            Vertex3D{Vector3{-1.000000,  1.000000,  1.000000}, Vector3{-0.000000, -0.000000, -1.000000}, Vector2{0.375000, 0.000000}, 0},
-            Vertex3D{Vector3{-1.000000, -1.000000, -1.000000}, Vector3{ 1.000000, -0.000000, -0.000000}, Vector2{0.375000, 0.000000}, 0},
-
-            Vertex3D{Vector3{-1.000000, -1.000000,  1.000000}, Vector3{-1.000000, -0.000000, -0.000000}, Vector2{0.625000, 0.000000}, 0},
-            Vertex3D{Vector3{-1.000000,  1.000000,  1.000000}, Vector3{-0.000000, -0.000000, -1.000000}, Vector2{0.375000, 0.000000}, 0},
-            Vertex3D{Vector3{-1.000000, -1.000000, -1.000000}, Vector3{ 1.000000, -0.000000, -0.000000}, Vector2{0.375000, 0.000000}, 0},
-
-            Vertex3D{Vector3{-1.000000, -1.000000,  1.000000}, Vector3{-1.000000, -0.000000, -0.000000}, Vector2{0.625000, 0.000000}, 0},
-            Vertex3D{Vector3{-1.000000,  1.000000,  1.000000}, Vector3{-0.000000, -0.000000, -1.000000}, Vector2{0.375000, 0.000000}, 0},
-            Vertex3D{Vector3{-1.000000, -1.000000, -1.000000}, Vector3{ 1.000000, -0.000000, -0.000000}, Vector2{0.375000, 0.000000}, 0},
-
-            Vertex3D{Vector3{-1.000000, -1.000000,  1.000000}, Vector3{-1.000000, -0.000000, -0.000000}, Vector2{0.625000, 0.000000}, 0},
-            Vertex3D{Vector3{-1.000000,  1.000000,  1.000000}, Vector3{-0.000000, -0.000000, -1.000000}, Vector2{0.375000, 0.000000}, 0},
-            Vertex3D{Vector3{-1.000000, -1.000000, -1.000000}, Vector3{ 1.000000, -0.000000, -0.000000}, Vector2{0.375000, 0.000000}, 0},
-
-            Vertex3D{Vector3{-1.000000, -1.000000,  1.000000}, Vector3{-1.000000, -0.000000, -0.000000}, Vector2{0.625000, 0.000000}, 0},
-            Vertex3D{Vector3{-1.000000 , 1.000000,  1.000000}, Vector3{-0.000000, -0.000000, -1.000000}, Vector2{0.375000, 0.000000}, 0},
-            Vertex3D{Vector3{-1.000000, -1.000000, -1.000000}, Vector3{ 1.000000, -0.000000, -0.000000}, Vector2{0.375000, 0.000000}, 0},
-
-            Vertex3D{Vector3{-1.000000, -1.000000,  1.000000}, Vector3{-1.000000, -0.000000, -0.000000}, Vector2{0.625000, 0.000000}, 0},
-            Vertex3D{Vector3{-1.000000,  1.000000,  1.000000}, Vector3{-0.000000, -0.000000, -1.000000}, Vector2{0.375000, 0.000000}, 0},
-            Vertex3D{Vector3{-1.000000, -1.000000, -1.000000}, Vector3{ 1.000000, -0.000000, -0.000000}, Vector2{0.375000, 0.000000}, 0},
-
-            Vertex3D{Vector3{-1.000000, -1.000000,  1.000000}, Vector3{-1.000000, -0.000000, -0.000000}, Vector2{0.625000, 0.000000}, 0},
-            Vertex3D{Vector3{-1.000000,  1.000000,  1.000000}, Vector3{-0.000000, -0.000000, -1.000000}, Vector2{0.375000, 0.000000}, 0},
-            Vertex3D{Vector3{-1.000000, -1.000000, -1.000000}, Vector3{ 1.000000, -0.000000, -0.000000}, Vector2{0.375000, 0.000000}, 0},
-
-            Vertex3D{Vector3{-1.000000, -1.000000,  1.000000}, Vector3{-1.000000, -0.000000, -0.000000}, Vector2{0.625000, 0.000000}, 0},
-            Vertex3D{Vector3{-1.000000,  1.000000,  1.000000}, Vector3{-0.000000, -0.000000, -1.000000}, Vector2{0.375000, 0.000000}, 0},
-            Vertex3D{Vector3{-1.000000, -1.000000, -1.000000}, Vector3{ 1.000000, -0.000000, -0.000000}, Vector2{0.375000, 0.000000}, 0},
-
-            Vertex3D{Vector3{-1.000000, -1.000000,  1.000000}, Vector3{-1.000000, -0.000000, -0.000000}, Vector2{0.625000, 0.000000}, 0},
-            Vertex3D{Vector3{-1.000000,  1.000000,  1.000000}, Vector3{-0.000000, -0.000000, -1.000000}, Vector2{0.375000, 0.000000}, 0},
-            Vertex3D{Vector3{-1.000000, -1.000000, -1.000000}, Vector3{ 1.000000, -0.000000, -0.000000}, Vector2{0.375000, 0.000000}, 0},
-
-            Vertex3D{Vector3{-1.000000, -1.000000,  1.000000}, Vector3{-1.000000, -0.000000, -0.000000}, Vector2{0.625000, 0.000000}, 0},
-            Vertex3D{Vector3{-1.000000,  1.000000,  1.000000}, Vector3{-0.000000, -0.000000, -1.000000}, Vector2{0.375000, 0.000000}, 0},
-            Vertex3D{Vector3{-1.000000, -1.000000, -1.000000}, Vector3{ 1.000000, -0.000000, -0.000000}, Vector2{0.375000, 0.000000}, 0},
-
-            Vertex3D{Vector3{-1.000000, -1.000000,  1.000000}, Vector3{-1.000000, -0.000000, -0.000000}, Vector2{0.625000, 0.000000}, 0},
-            Vertex3D{Vector3{-1.000000,  1.000000,  1.000000}, Vector3{-0.000000, -0.000000, -1.000000}, Vector2{0.375000, 0.000000}, 0},
-            Vertex3D{Vector3{-1.000000, -1.000000, -1.000000}, Vector3{ 1.000000, -0.000000, -0.000000}, Vector2{0.375000, 0.000000}, 0},
-
-            Vertex3D{Vector3{-1.000000, -1.000000,  1.000000}, Vector3{-1.000000, -0.000000, -0.000000}, Vector2{0.625000, 0.000000}, 0},
-            Vertex3D{Vector3{-1.000000,  1.000000,  1.000000}, Vector3{-0.000000, -0.000000, -1.000000}, Vector2{0.375000, 0.000000}, 0},
-            Vertex3D{Vector3{-1.000000, -1.000000, -1.000000}, Vector3{ 1.000000, -0.000000, -0.000000}, Vector2{0.375000, 0.000000}, 0}
-
+        std::vector<int> indices = {
+            0, 1, 5,  5, 1, 6,
+            1, 2, 6,  6, 2, 7,
+            2, 3, 7,  7, 3, 8,
+            3, 4, 8,  8, 4, 9,
+            10, 11, 0,  0, 11, 1,
+            5, 6, 12, 12, 6, 13
         };
 
-        for (auto &v : vertices) {
-            mesh->addVertex(v);
-        }
-    }
+        std::vector<Vertex3D> vertices = {
+            Vertex3D(Vector3{-1, -1, -1}, Vector3{0, 0, 0}, Vector2{0, 0}, 0),
+            Vertex3D(Vector3{ 1, -1, -1}, Vector3{0, 0, 0}, Vector2{1, 0}, 0),
 
+            Vertex3D(Vector3{ 1,  1, -1}, Vector3{0, 0, 0}, Vector2{2, 0}, 0),
+            Vertex3D(Vector3{-1,  1, -1}, Vector3{0, 0, 0}, Vector2{3, 0}, 0),
+
+            Vertex3D(Vector3{-1, -1, -1}, Vector3{0, 0, 0}, Vector2{4, 0}, 0),
+            Vertex3D(Vector3{-1, -1,  1}, Vector3{0, 0, 0}, Vector2{0, 1}, 0),
+
+            Vertex3D(Vector3{ 1, -1,  1}, Vector3{0, 0, 0}, Vector2{1, 1}, 0),
+            Vertex3D(Vector3{ 1,  1,  1}, Vector3{0, 0, 0}, Vector2{2, 1}, 0),
+
+            Vertex3D(Vector3{-1,  1,  1}, Vector3{0, 0, 0}, Vector2{3, 1}, 0),
+            Vertex3D(Vector3{-1, -1,  1}, Vector3{0, 0, 0}, Vector2{4, 1}, 0),
+
+            Vertex3D(Vector3{-1,  1, -1}, Vector3{0, 0, 0}, Vector2{0, -1}, 0),
+            Vertex3D(Vector3{ 1,  1, -1}, Vector3{0, 0, 0}, Vector2{1, -1}, 0),
+
+            Vertex3D(Vector3{-1,  1,  1}, Vector3{0, 0, 0}, Vector2{0,  2}, 0),
+            Vertex3D(Vector3{ 1,  1,  1}, Vector3{0, 0, 0}, Vector2{1,  2}, 0)
+        };
+
+        for (std::size_t i=0;i<indices.size();i+=3) {
+            auto A = vertices[indices[i] - 1].position;
+            auto B = vertices[indices[i + 1] - 1].position;
+            auto C = vertices[indices[i + 2] - 1].position;
+
+            auto AB = B - A;
+            auto AC = C - A;
+            auto ABxAC = Math::cross(AB, AC);
+         
+            vertices[indices[i] - 1].normal = Math::normalize(vertices[indices[i] - 1].normal + ABxAC);
+            vertices[indices[i + 1] - 1].normal = Math::normalize(vertices[indices[i + 1] - 1].normal + ABxAC);
+            vertices[indices[i + 2] - 1].normal = Math::normalize(vertices[indices[i + 2] - 1].normal + ABxAC);
+        }
+
+        mesh->setIndices(indices);
+        mesh->setVertices(vertices);
+    }
 
     auto mf = go->addComponent<MeshFilter>();
     mf->Init();

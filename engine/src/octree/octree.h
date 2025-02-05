@@ -2,8 +2,6 @@
 
 #include "../common.h"
 
-#include "../culling/frustum.h"
-
 #include <vector>
 #include <memory>
 #include <array>
@@ -12,6 +10,7 @@
 #define MAX_OCTREE_CHILD 8
 #define MAX_OCTREE_DEPTH 10
 
+/*
 class Octree {
 public:
     Octree(const Vector3& position, const Vector3& scale);
@@ -35,4 +34,4 @@ private:
 
     void subdivid();
 };
-
+*/

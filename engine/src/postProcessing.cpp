@@ -2,6 +2,7 @@
 
 #include <gr-render/gFramebuffer.h>
 #include <gr-render/gTexture.h>
+#include <gr-render/gl.h>
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include <gr-base/core/stb/stb_image_write.h>
@@ -19,13 +20,21 @@ PostProcessing::PostProcessing(const iVector2 &size) : m_colorTexture(nullptr), 
         throw std::runtime_error("Falied to create Texture.");
     }
 
+    m_pickTexture = grr::gTexture::Create();
+    if (!m_pickTexture) {
+        throw std::runtime_error("Falied to create Texture.");
+    }
+
     m_depthTexture = grr::gTexture::Create();
     if (!m_depthTexture) {
         throw std::runtime_error("Falied to create renderbufer.");
     }
 
     grr::gTexture::Bind(m_colorTexture);
-    grr::gTexture::UpdateTexture(m_viewport.x, m_viewport.y, grr::gTextureFlags_None, grr::TextureFormat_SRGB, nullptr);
+    grr::gTexture::UpdateTexture(m_viewport.x, m_viewport.y, grr::gTextureFlags_None, grr::TextureFormat_RGBA8888, nullptr);
+
+    grr::gTexture::Bind(m_pickTexture);
+    grr::gTexture::UpdateTexture(m_viewport.x, m_viewport.y, grr::gTextureFlags_None, grr::TextureFormat_RED_INTEGER, nullptr);
 
     grr::gTexture::Bind(m_depthTexture);
     grr::gTexture::UpdateTexture(m_viewport.x, m_viewport.y, grr::gTextureFlags_None, grr::TextureFormat_DepthComponent, nullptr);
@@ -36,8 +45,14 @@ PostProcessing::PostProcessing(const iVector2 &size) : m_colorTexture(nullptr), 
     grr::gTexture::Bind(m_colorTexture, 0);
     grr::gFramebuffer::SetTexture(grr::gFramebufferFlags_Color_Attachiment0);
 
+    grr::gTexture::Bind(m_pickTexture, 0);
+    grr::gFramebuffer::SetTexture(grr::gFramebufferFlags_Color_Attachiment1);
+
     grr::gTexture::Bind(m_depthTexture, 0);
     grr::gFramebuffer::SetTexture(grr::gFramebufferFlags_Depth_Attachiment);
+
+    GLenum buffers[4] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3};
+    glDrawBuffers(4, buffers);
 
     grr::gFramebuffer::Unbind();
 }
@@ -59,11 +74,15 @@ PostProcessing::~PostProcessing() {
 void PostProcessing::resize(const iVector2 &size) {
     m_viewport = size;
 
-    grr::gTexture::Bind(m_colorTexture); // SRG or RGB ???
-    grr::gTexture::UpdateTexture(m_viewport.x, m_viewport.y, grr::gTextureFlags_None, grr::TextureFormat_SRGB, nullptr);
+    grr::gTexture::Bind(m_colorTexture);
+    grr::gTexture::UpdateTexture(m_viewport.x, m_viewport.y, grr::gTextureFlags_None, grr::TextureFormat_RGBA8888, nullptr);
     grr::gTexture::Unbind();
 
-    grr::gTexture::Bind(m_depthTexture); // SRG or RGB ???
+    grr::gTexture::Bind(m_pickTexture);
+    grr::gTexture::UpdateTexture(m_viewport.x, m_viewport.y, grr::gTextureFlags_None, grr::TextureFormat_RED_INTEGER, nullptr);
+    grr::gTexture::Unbind();
+
+    grr::gTexture::Bind(m_depthTexture);
     grr::gTexture::UpdateTexture(m_viewport.x, m_viewport.y, grr::gTextureFlags_None, grr::TextureFormat_DepthComponent, nullptr);
     grr::gTexture::Unbind();
 }
@@ -83,4 +102,14 @@ void PostProcessing::unbind() {
 
 grr::gTexture *PostProcessing::getTextureColor() {
     return m_colorTexture;
+}
+
+void PostProcessing::readPixel(int x, int y, void *data) {
+    bind();
+
+    glReadBuffer(GL_COLOR_ATTACHMENT1);
+
+    glReadPixels(x, y, 1, 1, GL_RED_INTEGER, GL_INT, data);
+
+    unbind();
 }

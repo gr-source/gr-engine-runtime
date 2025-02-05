@@ -85,8 +85,6 @@ set(engine_src
     src/ui/project.cpp
     src/ui/ImGuiRender.cpp
     src/ui/projectMenu.cpp
-
-    src/culling/frustum.cpp
 )
 
 set(engine_hdr
@@ -115,8 +113,6 @@ set(engine_hdr
     src/ui/project.hpp
     src/ui/ImGuiRender.h
     src/ui/projectMenu.hpp
-
-    src/culling/frustum.h
 )
 
 set(plugin

@@ -18,7 +18,7 @@
 
 #include "scriptManager/scriptManager.hpp"
 
-#include "culling/frustum.h"
+#include <gr-base/core/culling/frustum.hpp>
 
 #include <cstring>
 
@@ -83,7 +83,7 @@ void RenderManager::Process(Camera *camera, ShadowMap *shadowMap) {
 
         SetupLight(shader);
     }
-    // Frustum::CalculateFrustum(m_camera->getPerspesctive() * m_camera->getViewmatrix());
+    Frustum::CalculateFrustum(m_camera->getPerspesctive() * m_camera->getViewmatrix());
 }
 
 void RenderManager::Renderer() {

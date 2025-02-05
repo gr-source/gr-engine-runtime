@@ -6,7 +6,7 @@
 #include <gr-base/script/transform.hpp>
 
 #include "../renderer.h"
-
+/*
 Octree::Octree(const Vector3 &position, const Vector3& scale) : m_position(position), m_scale(scale), m_subdivid(false) {
     for (grm::u32 i=0;i<MAX_OCTREE_CHILD;i++) {
         m_childrent[i] = nullptr;
@@ -91,7 +91,7 @@ std::vector<GameObject*> Octree::render(const Frustum& frustum) {
 
     for (const auto& p : m_points) {
         DebugDraw::addPoint(p, Color::red);
-    }*/
+    }
 
     for (auto& child : m_childrent) {
         if (!child) {
@@ -124,3 +124,4 @@ void Octree::subdivid() {
     }
 }
 
+*/
