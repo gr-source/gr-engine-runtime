@@ -170,6 +170,8 @@ private:
 
     void RenderScene();
 
+    void UpdateResizeSceneFramebuffer();
+
     void PlayGame();
 
     void StopGame();

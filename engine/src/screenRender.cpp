@@ -45,7 +45,7 @@ void ScreenRender::Render(grr::gTexture *texture) {
 
     int textureID = 0;
 
-    grr::gTexture::Bind(texture, 0);
+    texture->bind(0);
     m_shader->setUniform("u_texture", 1, (void *)&textureID);
 
     m_shader->bind();
@@ -55,9 +55,8 @@ void ScreenRender::Render(grr::gTexture *texture) {
     
     grr::gVertexArray::DrawArrays(PrimitiveType::TRIANGLES, 6);
 
-    grr::gTexture::Unbind();
-
     m_vertexArray->unbind();
+    texture->unbind();
     m_shader->unbind();
 }
 

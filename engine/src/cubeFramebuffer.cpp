@@ -19,12 +19,12 @@ CubeFramebuffer *CubeFramebuffer::Create(const iVector2 &size) {
         throw std::runtime_error("Falied to create renderbufer.");
     }
 
-    handle->m_texture = grr::gTexture::Create();
+    handle->m_texture = new grr::gTexture();
     if (!handle->m_texture) {
         throw std::runtime_error("Falied to create Texture.");
     }
 
-    grr::gTexture::Bind(handle->m_texture);
+    // handle->m_texture->bind(0);
     for (int i = 0; i < 6; ++i) {
         grm::u32 cubemapFlag = 0;
         switch (i) {
@@ -36,7 +36,7 @@ CubeFramebuffer *CubeFramebuffer::Create(const iVector2 &size) {
             case 5: cubemapFlag = grr::gTextureFlags_Cubemap_Negative_Z; break;
         }
 
-        grr::gTexture::UpdateTexture(handle->m_viewport.x, handle->m_viewport.y, grr::gTextureFlags_Cubemap | grr::gTextureFlags_Clamp_Edge | cubemapFlag, grr::TextureFormat_SRGB, nullptr);
+        handle->m_texture->updateBuffer(handle->m_viewport.x, handle->m_viewport.y, grr::gTextureFlags_Cubemap | grr::gTextureFlags_Clamp_Edge | cubemapFlag, grr::TextureFormat_SRGB, nullptr);
     }
 
     grr::gRenderbuffer::Bind(handle->m_rbo);
@@ -76,7 +76,7 @@ void CubeFramebuffer::Bind(CubeFramebuffer *target) {
     grr::gRender::SetRenderState(grr::GR_VIEWPORT, (void *)&target->m_viewport);
     grr::gFramebuffer::Bind(target->m_fbo);
 
-    grr::gTexture::Bind(target->m_texture, 0);
+    target->m_texture->bind(0);
 
     s_current = target;
 }
@@ -85,7 +85,7 @@ void CubeFramebuffer::SetTexture(grr::gFramebufferFlags attachment) {
     auto texture = s_current->m_texture;
     assert(texture != nullptr);
     
-    grr::gTexture::Bind(texture, 1);
+    texture->bind(1);
     grr::gFramebuffer::SetTexture(grr::gFramebufferFlags_Color_Attachiment0, attachment);
 }
 

@@ -94,7 +94,7 @@ void RenderManager::Renderer() {
     Batching::RenderBatches();
 
     for (int i=0;i<10;i++) {
-        grr::gTexture::Bind(nullptr, i);
+        grr::gTexture::Unbind(i);
     }
 }
 

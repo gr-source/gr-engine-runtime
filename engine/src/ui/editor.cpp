@@ -1115,59 +1115,36 @@ bool gluInvertMatrix(const Matrix4x4 &m, Matrix4x4 &invOut) {
 #include "core/input.hpp"
 
 void Editor::RenderScene() {
+    UpdateResizeSceneFramebuffer();
+
+    auto regionAvail = ImGui::GetContentRegionAvail();
+    auto windowPos = ImGui::GetWindowPos();
     auto cursorPos = ImGui::GetCursorPos();
-
-    auto cursorY = ImGui::GetCursorPosY();
-    cursorY += 5.0f;
-
-    ImVec2 regionAvail = ImGui::GetContentRegionAvail();
-    if (m_mainCamera && (m_lastViewportSize.x != regionAvail.x || m_lastViewportSize.y != regionAvail.y && regionAvail.x > 5.0f && regionAvail.y > 5.0f || bScriptReloaded)) {
-        auto &viewport = Settings::ViewportSize = {static_cast<int>(regionAvail.x), static_cast<int>(regionAvail.y)};
-        if (viewport.x > 0 && viewport.y > 0) {
-            Display::SetDisplayRect(Rect{0.0f, 0.0f, (float)Settings::ViewportSize.x, (float)Settings::ViewportSize.y});
-
-            m_mainCamera->setAspectRatio(static_cast<float>(viewport.x) / static_cast<float>(viewport.y));
-
-            Engine::GetMainPostprocess()->resize(viewport);
-            
-            m_lastViewportSize = regionAvail;
-            bScriptReloaded = false;
-        }
-    }
 
     auto texture = Engine::GetImGuiPostprocess()->getTextureColor();
     if (texture) {
-        auto windowSize = ImGui::GetContentRegionAvail();
         ImGui::Image(reinterpret_cast<ImTextureID>(texture->getID()), regionAvail, {0.0f, 1.0f}, {1.0f, 0.0f});
 
-        auto windowPos = ImGui::GetWindowPos();
-        windowPos += cursorPos;
+        if (ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
+            auto mousePos = ImGui::GetMousePos();
+            mousePos -= windowPos + cursorPos;
 
-        auto max = windowPos + windowSize;
+            mousePos.y = regionAvail.y - mousePos.y;
 
-        auto mousePos = ImGui::GetMousePos();
-        mousePos -= windowPos;
+            int mouseX = static_cast<int>(mousePos.x);
+            int mouseY = static_cast<int>(mousePos.y);
 
-        // auto viewportsize = max - windowPos;
-        mousePos.y = windowSize.y - mousePos.y;
+            if (mouseX >= 0 && mouseY >= 0 && mouseX <= static_cast<int>(regionAvail.x) && mouseY <= static_cast<int>(regionAvail.y)) {
+                int entityID = -1;
+                Engine::GetMainPostprocess()->readPixel(mouseX, mouseY, &entityID);
 
-        int mouseX = static_cast<int>(mousePos.x);
-        int mouseY = static_cast<int>(mousePos.y);
-
-        if (mouseX >= 0 && mouseY >= 0 && mouseX <= static_cast<int>(windowSize.x) && mouseY <= static_cast<int>(windowSize.y) && ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
-            int entityID = -1;
-            Engine::GetMainPostprocess()->readPixel(mouseX, mouseY, &entityID);
-
-            if (entityID != -1) {
-                s_objectSelected = Manager::GetEntityFromID(static_cast<EntityID>(entityID))->getGameObject();
+                if (entityID != -1) {
+                    s_objectSelected = Manager::GetEntityFromID(static_cast<EntityID>(entityID))->getGameObject();
+                }
             }
         }
-
         DropGameObjectInScene();
     }
-
-    cursorPos =  ImGui::GetCursorPos();
-    auto pos = ImGui::GetWindowPos();
 
     // Play button
     if (s_texturePlayGame) {
@@ -1180,7 +1157,7 @@ void Editor::RenderScene() {
             }
         }
         
-        ImGui::SetCursorPos({regionAvail.x / 2 - cursorPos.x, cursorY});
+        ImGui::SetCursorPos({regionAvail.x / 2 - cursorPos.x, cursorPos.y + 0.5f});
 
         if (ImGui::ImageButton(reinterpret_cast<ImTextureID>(s_texturePlayGame->getID()), ImVec2(16, 16))) {
             if (!Settings::bGameRunning) {
@@ -1192,34 +1169,24 @@ void Editor::RenderScene() {
     }
 
     ImGuizmo::SetDrawlist();
-    ImGuizmo::SetRect(pos.x, pos.y + (cursorY - 5.0f), regionAvail.x, regionAvail.y);
+    ImGuizmo::SetRect(windowPos.x + cursorPos.x, windowPos.y + cursorPos.y, regionAvail.x, regionAvail.y);
 
-    if (m_mainCamera && s_objectSelected && s_objectSelected->hasComponent<Transform>()) {
+    if (m_mainCamera && s_objectSelected) {
         RenderGuizmo();
-    }
-
-    if (TimeLast::FPS > 50) {
-        FPSColor = {0, 255, 0, 255};
-    } else if (TimeLast::FPS > 25) {
-        FPSColor = {255, 255, 0, 255};
-    } else if (TimeLast::FPS > 0) {
-        FPSColor = {255, 0, 0, 255};
     }
 
     // Fps Draw
     {
-        std::string fps = "FPS: 000.00f";
+        const char *fps_text = "FPS: 000.00f";
 
-        auto textSize = ImGui::CalcTextSize(fps.c_str());
+        auto textSize = ImGui::CalcTextSize(fps_text);
 
-        auto curtorPos = ImVec2(regionAvail.x - textSize.x, cursorY + textSize.y);
-
-        ImGui::SetCursorPos(curtorPos);
+        ImGui::SetCursorPos(ImVec2(regionAvail.x - textSize.x, cursorPos.y + textSize.y));
 
         ImGui::TextColored(FPSColor, "FPS: %.2f", Statistics::m_threadFrame.fps);
     }
 
-    ImGui::SetCursorPos({8.0f, cursorY});
+    ImGui::SetCursorPos({8.0f, cursorPos.y});
 
     ImGui::PushStyleColor(ImGuiCol_Text, {0.0f, 0.0f, 1.0f, 1.0f});
 
@@ -1238,6 +1205,23 @@ void Editor::RenderScene() {
 
     if (s_objectSelected && !mImGuiIO->MouseDrawCursor && ImGui::IsWindowFocused() && mImGuiIO->KeyShift && ImGui::IsKeyReleased(ImGuiKey_D)) {
         s_objectSelected = GameObject::Instantiate(s_objectSelected);
+    }
+}
+
+void Editor::UpdateResizeSceneFramebuffer() {
+    ImVec2 regionAvail = ImGui::GetContentRegionAvail();
+    if (m_mainCamera && (m_lastViewportSize.x != regionAvail.x || m_lastViewportSize.y != regionAvail.y && regionAvail.x > 5.0f && regionAvail.y > 5.0f || bScriptReloaded)) {
+        auto &viewport = Settings::ViewportSize = {static_cast<int>(regionAvail.x), static_cast<int>(regionAvail.y)};
+        if (viewport.x > 0 && viewport.y > 0) {
+            Display::SetDisplayRect(Rect{0.0f, 0.0f, (float)Settings::ViewportSize.x, (float)Settings::ViewportSize.y});
+
+            m_mainCamera->setAspectRatio(static_cast<float>(viewport.x) / static_cast<float>(viewport.y));
+
+            Engine::GetMainPostprocess()->resize(viewport);
+            
+            m_lastViewportSize = regionAvail;
+            bScriptReloaded = false;
+        }
     }
 }
 
@@ -2852,11 +2836,18 @@ void Editor::showShaderListPopup() {
 void Editor::renderShaderList() {
     auto &shader_list = AssetsManager::GetShaderList();
 
+    auto regionAvail = ImGui::GetContentRegionAvail();
+    const char *reload_text = "Reload";
+    auto textSize = ImGui::CalcTextSize(reload_text);
+
+    auto button_pos_x = regionAvail.x - textSize.x;
+
     for (auto &&[name, shader] : shader_list) {
         ImGui::Text("%s", name.c_str());
 
         ImGui::SameLine();
 
+        ImGui::SetCursorPosX(button_pos_x);
         if (ImGui::Button("Reload")) {
             //
         }
@@ -3051,7 +3042,7 @@ void Editor::PluginLoad() {
                 continue;
             }
             
-            if (path.extension() == ".so") {
+            if (path.extension() == ".gp") {
                 popupFlags &= ~EditorPopupFlags_LoadPlugin;
 
                 ImGui::CloseCurrentPopup();

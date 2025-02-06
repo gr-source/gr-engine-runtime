@@ -15,40 +15,40 @@ PostProcessing::PostProcessing(const iVector2 &size) : m_colorTexture(nullptr), 
         throw std::runtime_error("Falied to create framebuffer.");
     }
 
-    m_colorTexture = grr::gTexture::Create();
+    m_colorTexture = new grr::gTexture();
     if (!m_colorTexture) {
         throw std::runtime_error("Falied to create Texture.");
     }
 
-    m_pickTexture = grr::gTexture::Create();
+    m_pickTexture = new grr::gTexture();
     if (!m_pickTexture) {
         throw std::runtime_error("Falied to create Texture.");
     }
 
-    m_depthTexture = grr::gTexture::Create();
+    m_depthTexture = new grr::gTexture();
     if (!m_depthTexture) {
         throw std::runtime_error("Falied to create renderbufer.");
     }
 
-    grr::gTexture::Bind(m_colorTexture);
-    grr::gTexture::UpdateTexture(m_viewport.x, m_viewport.y, grr::gTextureFlags_None, grr::TextureFormat_RGBA8888, nullptr);
+    // grr::gTexture::Bind(m_colorTexture);
+    m_colorTexture->updateBuffer(m_viewport.x, m_viewport.y, grr::gTextureFlags_None, grr::TextureFormat_SRGBA, nullptr);
 
-    grr::gTexture::Bind(m_pickTexture);
-    grr::gTexture::UpdateTexture(m_viewport.x, m_viewport.y, grr::gTextureFlags_None, grr::TextureFormat_RED_INTEGER, nullptr);
+    // grr::gTexture::Bind(m_pickTexture);
+    m_pickTexture->updateBuffer(m_viewport.x, m_viewport.y, grr::gTextureFlags_None, grr::TextureFormat_RED_INTEGER, nullptr);
 
-    grr::gTexture::Bind(m_depthTexture);
-    grr::gTexture::UpdateTexture(m_viewport.x, m_viewport.y, grr::gTextureFlags_None, grr::TextureFormat_DepthComponent, nullptr);
+    // grr::gTexture::Bind(m_depthTexture);
+    m_depthTexture->updateBuffer(m_viewport.x, m_viewport.y, grr::gTextureFlags_None, grr::TextureFormat_DepthComponent, nullptr);
 
     // Set framebuffer
     grr::gFramebuffer::Bind(m_fbo);
 
-    grr::gTexture::Bind(m_colorTexture, 0);
+    m_colorTexture->bind(0);
     grr::gFramebuffer::SetTexture(grr::gFramebufferFlags_Color_Attachiment0);
 
-    grr::gTexture::Bind(m_pickTexture, 0);
+    m_pickTexture->bind(0);
     grr::gFramebuffer::SetTexture(grr::gFramebufferFlags_Color_Attachiment1);
 
-    grr::gTexture::Bind(m_depthTexture, 0);
+    m_depthTexture->bind(0);
     grr::gFramebuffer::SetTexture(grr::gFramebufferFlags_Depth_Attachiment);
 
     GLenum buffers[4] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3};
@@ -74,17 +74,11 @@ PostProcessing::~PostProcessing() {
 void PostProcessing::resize(const iVector2 &size) {
     m_viewport = size;
 
-    grr::gTexture::Bind(m_colorTexture);
-    grr::gTexture::UpdateTexture(m_viewport.x, m_viewport.y, grr::gTextureFlags_None, grr::TextureFormat_RGBA8888, nullptr);
-    grr::gTexture::Unbind();
+    m_colorTexture->updateBuffer(m_viewport.x, m_viewport.y, grr::gTextureFlags_None, grr::TextureFormat_SRGBA, nullptr);
 
-    grr::gTexture::Bind(m_pickTexture);
-    grr::gTexture::UpdateTexture(m_viewport.x, m_viewport.y, grr::gTextureFlags_None, grr::TextureFormat_RED_INTEGER, nullptr);
-    grr::gTexture::Unbind();
+    m_pickTexture->updateBuffer(m_viewport.x, m_viewport.y, grr::gTextureFlags_None, grr::TextureFormat_RED_INTEGER, nullptr);
 
-    grr::gTexture::Bind(m_depthTexture);
-    grr::gTexture::UpdateTexture(m_viewport.x, m_viewport.y, grr::gTextureFlags_None, grr::TextureFormat_DepthComponent, nullptr);
-    grr::gTexture::Unbind();
+    m_depthTexture->updateBuffer(m_viewport.x, m_viewport.y, grr::gTextureFlags_None, grr::TextureFormat_DepthComponent, nullptr);
 }
 
 void PostProcessing::bind() {

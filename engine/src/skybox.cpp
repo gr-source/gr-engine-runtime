@@ -68,7 +68,7 @@ void Skybox::Renderer(Camera *camera) {
 
     m_shader->bind();
 
-    grr::gTexture::Bind(CubeFramebuffer::GetTextureColor(m_cubeColor), 0);
+    CubeFramebuffer::GetTextureColor(m_cubeColor)->bind(0);
     m_shader->setUniform("u_texture", 1, &textureID);
 
     m_shader->setUniform("projection", 1, &projection);
@@ -206,7 +206,7 @@ void Skybox::GenerateMap(std::function<void(grm::u32)> func, grr::gTexture *text
 
     int textureID = 0;
 
-    grr::gTexture::Bind(texture, textureID);
+    texture->bind(textureID);
     shader->setUniform("u_texture", 1, &textureID);
 
     shader->setUniform("projection", 1, &projection);
@@ -236,7 +236,6 @@ void Skybox::GenerateMap(std::function<void(grm::u32)> func, grr::gTexture *text
         
         grr::gVertexArray::DrawElements(PrimitiveType::TRIANGLES, m_count, nullptr);
     }
-    grr::gTexture::Bind(nullptr, 0);
-
+    texture->unbind();
     shader->unbind();
 }
