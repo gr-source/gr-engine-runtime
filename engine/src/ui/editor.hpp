@@ -17,14 +17,20 @@
 #include <gr-render/gTexture.h>
 
 enum EditorPopupFlags : int {
-    EditorPopupFlags_EngineStatus   = 1 << 1,
-    EditorPopupFlags_Settings       = 1 << 2,
-    EditorPopupFlags_SkyboxEditor   = 1 << 2,
-    EditorPopupFlags_Plugin         = 1 << 3,
-    EditorPopupFlags_LoadPlugin     = 1 << 4,
-    EditorPopupFlags_PluginEditor   = 1 << 5,
-    EditorPopupFlags_AddComponent   = 1 << 6,
-    EditorPopupFlags_CreateMaterial = 1 << 7,
+    EditorPopupFlags_EngineStatus        = 1 << 1,
+    EditorPopupFlags_Settings            = 1 << 2,
+    EditorPopupFlags_SkyboxEditor        = 1 << 2,
+    EditorPopupFlags_Plugin              = 1 << 3,
+    EditorPopupFlags_LoadPlugin          = 1 << 4,
+    EditorPopupFlags_PluginEditor        = 1 << 5,
+    EditorPopupFlags_AddComponent        = 1 << 6,
+    EditorPopupFlags_CreateMaterial      = 1 << 7,
+    EditorPopupFlags_CreateMaterialInDir = 1 << 8,
+    EditorPopupFlags_FileManager         = 1 << 9,
+    EditorPopupFlags_DirManager          = 1 << 10,
+    EditorPopupFlags_RenameFileOrDir     = 1 << 11,
+    EditorPopupFlags_CreateNewDir        = 1 << 12,
+    EditorPopupFlags_CreateScript        = 1 << 13,
 };
 
 using EditorPopupFlags_ = int;
@@ -114,8 +120,6 @@ private:
 
     bool bOpenPopupOptionGameObject;
 
-    bool pPopupFileManager;
-
     bool bBuildDock;
 
     ImVec4 FPSColor;
@@ -128,11 +132,11 @@ private:
 
     grm::u32 s_maxProgress;
 
-    std::unordered_map<std::filesystem::path, bool> fLisDirSelected;
+    std::unordered_map<std::filesystem::path, bool> mDirSelectedMap;
+
+    std::vector<std::filesystem::path> mDirSelectedList;
 
     std::filesystem::path m_currentPath;
-
-    std::filesystem::path m_SelectedPath;
 
     std::shared_ptr<Config> m_config;
 
@@ -190,13 +194,17 @@ private:
 
     void OpenFileDoubleClick(std::filesystem::path path);
 
-    void PopupDirmanager();
+    void PopupFileAndDirmanager();
 
     void PopupFileManager();
 
-    void PopupCreateScript();
+    void PopupDirManager();
+
+    void PopupRenameFileOrDir();
 
     void PopupCreateDirectory();
+
+    void PopupCreateScript();
 
     void RenderOtherUI();
 
@@ -271,7 +279,6 @@ private:
 
     void PopupCreateMaterial();
 
-    void PopupRenameFile();
 
     // Project
     void BuildProject();

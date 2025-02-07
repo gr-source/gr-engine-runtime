@@ -112,8 +112,6 @@ Editor::Editor() : m_viewport(ImGui::GetMainViewport()), mImGuiIO(&ImGui::GetIO(
 
     bOpenPopupOptionGameObject = false;
 
-    pPopupFileManager = false;
-
     FPSColor = {1.0f, 1.0f, 1.0f, 1.0f};
 
     m_lastViewportSize = {0.0f, 0.0f};
@@ -337,6 +335,30 @@ void Editor::RenderUI() {
     case EditorPopupFlags_EngineStatus:
         PopupMenuProperty();
         break;
+    case EditorPopupFlags_FileManager | EditorPopupFlags_DirManager:
+        ImGui::OpenPopup("##popup_file_and_dir_manager");
+        popupFlags &= ~(EditorPopupFlags_FileManager | EditorPopupFlags_DirManager);
+        break;
+    case EditorPopupFlags_FileManager:
+        ImGui::OpenPopup("##popup_file_manager");
+        popupFlags &= ~EditorPopupFlags_FileManager;
+        break;
+    case EditorPopupFlags_DirManager:
+        ImGui::OpenPopup("##popup_dir_manager");
+        popupFlags &= ~EditorPopupFlags_DirManager;
+        break;
+    case EditorPopupFlags_RenameFileOrDir:
+        ImGui::OpenPopup("##popup_rename_file_or_dir");
+        popupFlags &= ~EditorPopupFlags_RenameFileOrDir;
+        break;
+    case EditorPopupFlags_CreateNewDir:
+        ImGui::OpenPopup("##popup_create_new_dir");
+        popupFlags &= ~EditorPopupFlags_CreateNewDir;
+        break;
+    case EditorPopupFlags_CreateScript:
+        ImGui::OpenPopup("##popup_create_script");
+        popupFlags &= ~EditorPopupFlags_CreateScript;
+        break;
     default:
         break;
     }
@@ -362,6 +384,18 @@ void Editor::RenderUI() {
     RenameMaterial();
 
     CreateMaterial();
+
+    PopupFileAndDirmanager();
+
+    PopupFileManager();
+
+    PopupDirManager();
+
+    PopupRenameFileOrDir();
+
+    PopupCreateDirectory();
+
+    PopupCreateScript();
 }
 
 void Editor::RenderDocking() {
@@ -1328,20 +1362,8 @@ void Editor::PopupMenuCreateScene() {
 
 void Editor::RenderFilesUI() {
     ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
+
     RenderTreeNodeFile(m_currentPath);
-
-    if (pPopupFileManager) {
-        ImGui::OpenPopup("##popup_dir_manager");
-        pPopupFileManager = false;
-    }
-
-    PopupDirmanager();
-
-    PopupCreateDirectory();
-
-    PopupCreateScript();
-
-    PopupRenameFile();
 }
 
 void Editor::RenderTreeNodeFile(std::filesystem::path path) {
@@ -1359,7 +1381,7 @@ void Editor::RenderTreeNodeFile(std::filesystem::path path) {
         flags &= ~ImGuiTreeNodeFlags_Leaf;
     }
 
-    if (fLisDirSelected.find(path) == fLisDirSelected.end()) {
+    if (mDirSelectedMap.find(path) == mDirSelectedMap.end()) {
         flags &= ~ImGuiTreeNodeFlags_Selected;
     }
 
@@ -1367,26 +1389,27 @@ void Editor::RenderTreeNodeFile(std::filesystem::path path) {
     
     auto isOpen = ImGui::TreeNodeEx(name.c_str(), flags);
 
-    if (ImGui::IsWindowFocused() && ImGui::IsKeyReleased(ImGuiKey_Escape)) {
-        fLisDirSelected.clear();
-    }
-
     if (ImGui::IsItemClicked() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
         OpenFileDoubleClick(path);
     }
 
-    if (ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
-        if (!(flags & ImGuiTreeNodeFlags_Selected)) {
-            fLisDirSelected.emplace(path, true);
+    auto isKeyDownShift = ImGui::IsKeyDown(ImGuiKey_LeftShift);
+    if (isKeyDownShift) {
+        if (ImGui::IsItemClicked(ImGuiMouseButton_Right) && !(flags & ImGuiTreeNodeFlags_Selected)) {
+            mDirSelectedMap.emplace(path, true);
+        } else if (ImGui::IsItemClicked(ImGuiMouseButton_Right) && (flags & ImGuiTreeNodeFlags_Selected)) {
+            popupFlags |= EditorPopupFlags_FileManager | EditorPopupFlags_DirManager;
         }
-        pPopupFileManager = true;
-    } else if (mImGuiIO->KeyShift && ImGui::IsItemClicked(ImGuiMouseButton_Left)) {
-        fLisDirSelected.emplace(path, true);
-    } else if (ImGui::IsItemClicked(ImGuiMouseButton_Left) && fLisDirSelected.find(path) == fLisDirSelected.end()) {
-        fLisDirSelected.clear();
-    } else if (ImGui::IsItemClicked(ImGuiMouseButton_Left) && fLisDirSelected.find(path) != fLisDirSelected.end()) {
-        fLisDirSelected.clear();
-        fLisDirSelected.emplace(path, true);
+    } else {
+        mDirSelectedMap.clear();
+    }
+
+    if (!isKeyDownShift && mDirSelectedMap.empty() && ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
+        mDirSelectedList.clear();
+
+        mDirSelectedList.push_back(path);
+
+        popupFlags |= bDirectory ? EditorPopupFlags_DirManager : EditorPopupFlags_FileManager;
     }
 
     DropTargetGameObjectInFile(path.string());
@@ -1479,30 +1502,29 @@ void Editor::OpenFileDoubleClick(std::filesystem::path path) {
     Command::exec("code '" + path.string() + "'");
 }
 
-void Editor::PopupDirmanager() {
-    auto isOpen = ImGui::BeginPopup("##popup_dir_manager");
+void Editor::PopupFileAndDirmanager() {
+    auto isOpen = ImGui::BeginPopup("##popup_file_and_dir_manager");
     if (!isOpen) {
         return;
     }
 
-    for (auto &&[path, isSeleceted] : fLisDirSelected) {
+    for (auto &&[path, isSeleceted] : mDirSelectedMap) {
         ImGui::Text("Dir: %s", path.filename().string().c_str());
-
-        m_SelectedPath = path;
     }
 
-    auto idx = 0;
-    bool bCreateDiretory = false, bCreateScript = false, bRenameFile = false, bCreateMaterial = false;;
+    //bool bCreateDiretory = false, bCreateScript = false, bRenameFile = false, bCreateMaterial = false;;
 
-    std::array<const char *, 5> item_list{"Delete", "Rename", "Create directory", "Create script", "Create material"};
+    std::array<const char *, 1> item_list{"Delete"};
 
-    if (ImGui::ListBox("##DirManager", &idx, item_list.data(), item_list.size())) {
-        switch (idx) {
+    int i = 0;
+    if (ImGui::ListBox("##DirManager", &i, item_list.data(), item_list.size())) {
+        switch (i) {
         case 0:
-            for (auto &&[path, isSeleceted] : fLisDirSelected) {
+            for (auto &&[path, isSeleceted] : mDirSelectedMap) {
                 File::Delete(path);
             }
             break;
+        /*
         case 1:
             bRenameFile = true;
             break;
@@ -1513,16 +1535,18 @@ void Editor::PopupDirmanager() {
             bCreateScript = true;
             break;
         case 4:
-            bCreateMaterial = true;
+            popupFlags |= EditorPopupFlags_CreateMaterialInDir;
             break;
+            */
         default:
             break;
         }
-        fLisDirSelected.clear();
+        mDirSelectedMap.clear();
         ImGui::CloseCurrentPopup();
     }
     ImGui::EndPopup();
 
+    /*
     if (bRenameFile) {
         ImGui::OpenPopup("##popup_rename_file");
     }
@@ -1534,50 +1558,101 @@ void Editor::PopupDirmanager() {
     if (bCreateScript) {
         ImGui::OpenPopup("##popup_create_new_script");
     }
+    */
 }
 
 void Editor::PopupFileManager() {
-    bool isOpenPopup = false;
-    if (ImGui::BeginPopup("##popup_file_manager")) {
-        ImGui::Text("FileManager");
+    bool isOpenPopup = ImGui::BeginPopup("##popup_file_manager");
+    if (!isOpenPopup) { return; }
 
-        auto idx = 0;
+    auto path = mDirSelectedList.back();
 
-        const char *item_list[2] {"Create New Directory"};
+    ImGui::Text("%s", path.filename().c_str());
 
-        if (ImGui::ListBox("##FileManager", &idx, item_list, 1)) {
-            switch (idx) {
-            case 0:
-                isOpenPopup = true;
-                break;
-            default:
-                break;
-            }
-            ImGui::CloseCurrentPopup();
+    const char *item_list[4] {"Delete", "Rename", "Move", "Copy"};
+
+    int i = 0;
+    if (ImGui::ListBox("##FileManager", &i, item_list, 4)) {
+        switch (i) {
+        case 0:
+            File::Delete(path);
+            mDirSelectedList.clear();
+            break;
+        case 1:
+            popupFlags |= EditorPopupFlags_RenameFileOrDir;
+            break;
+        default:
+            break;
         }
-
-        ImGui::EndPopup();
+        ImGui::CloseCurrentPopup();
     }
 
-    if (isOpenPopup) {
-        ImGui::OpenPopup("##popup_create_new_dir");
-    }
+    ImGui::EndPopup();
 }
 
-void Editor::PopupCreateScript() {
-    auto isOpen = ImGui::BeginPopup("##popup_create_new_script");
+void Editor::PopupDirManager() {
+    bool isOpenPopup = ImGui::BeginPopup("##popup_dir_manager");
+    if (!isOpenPopup) { return; }
+
+    auto path = mDirSelectedList.back();
+
+    ImGui::Text("%s", path.filename().c_str());
+
+    const char *item_list[6] {"Delete", "Rename", "Create Dir", "Create Script", "Move", "Copy"};
+
+    int i = 0;
+    if (ImGui::ListBox("##FileManager", &i, item_list, 4)) {
+        switch (i) {
+        case 0:
+            File::Delete(path);
+            mDirSelectedList.clear();
+            break;
+        case 1:
+            popupFlags |= EditorPopupFlags_RenameFileOrDir;
+            break;
+        case 2:
+            popupFlags |= EditorPopupFlags_CreateNewDir;
+            break;
+        case 3:
+            popupFlags |= EditorPopupFlags_CreateScript;
+            break;
+        default:
+            break;
+        }
+        ImGui::CloseCurrentPopup();
+    }
+
+    ImGui::EndPopup();
+}
+
+void Editor::PopupRenameFileOrDir() {
+    auto isOpen = ImGui::BeginPopup("##popup_rename_file_or_dir");
     if (!isOpen) {
         return;
     }
+    auto path = mDirSelectedList.back();
 
-    ImGui::Text("Input your script name");
+    ImGui::Text("Rename:");
+    if (!ImGui::IsAnyItemActive() && !ImGui::IsMouseClicked(0))
+        ImGui::SetKeyboardFocusHere(0);
 
-    char name[256] = {0};
-    if (ImGui::InputText("##input_text_popup_create_script_name", name, 256, ImGuiInputTextFlags_EnterReturnsTrue)) {
-        CreateScriptTemplate(m_SelectedPath.string(), name);
 
+    auto name = path.filename().string();
+    if (name.size() < 256) {
+        name.resize(256, '\0');
+    }
+
+    if (ImGui::InputText("##popup_rename_file", name.data(), name.size(), ImGuiInputTextFlags_EnterReturnsTrue)) {
+        name.erase(std::remove(name.begin(), name.end(), '\0'), name.end());
+
+        auto temp_path = path;
+        File::rename(path, temp_path.replace_filename(name));
+
+        mDirSelectedList.clear();
+        
         ImGui::CloseCurrentPopup();
     }
+
     ImGui::EndPopup();
 }
 
@@ -1586,6 +1661,8 @@ void Editor::PopupCreateDirectory() {
     if (!isOpen) {
         return;
     }
+
+    auto path = mDirSelectedList.back();
     
     ImGui::Text("Input directory name:");
     if (!ImGui::IsAnyItemActive() && !ImGui::IsMouseClicked(0))
@@ -1593,12 +1670,33 @@ void Editor::PopupCreateDirectory() {
 
     char name[256] = {0};
     if (ImGui::InputText("##InputDirectoryName", name, 256, ImGuiInputTextFlags_EnterReturnsTrue)) {
-        File::CreateDirectory(m_SelectedPath.string() + "/" + std::string(name));
+        File::CreateDirectory(path.string() + "/" + std::string(name));
+
+        mDirSelectedList.clear();
         ImGui::CloseCurrentPopup();
     }
 
-    ImGui::Text("%s/%s", m_SelectedPath.c_str(), name);
+    ImGui::EndPopup();
+}
 
+void Editor::PopupCreateScript() {
+    auto isOpen = ImGui::BeginPopup("##popup_create_script");
+    if (!isOpen) {
+        return;
+    }
+
+    auto path = mDirSelectedList.back();
+
+    ImGui::Text("Input your script name");
+
+    char name[256] = {0};
+    if (ImGui::InputText("##input_text_popup_create_script_name", name, 256, ImGuiInputTextFlags_EnterReturnsTrue)) {
+        CreateScriptTemplate(path.string(), name);
+
+        mDirSelectedList.clear();
+
+        ImGui::CloseCurrentPopup();
+    }
     ImGui::EndPopup();
 }
 
@@ -2202,7 +2300,9 @@ bool Editor::OnPropertyMeshRender(MeshRender *meshRender) {
 bool Editor::RenderMaterial(Material *material) {
     auto bVisible = true;
 
-    auto isOpen = ImGui::CollapsingHeader(material->getName().c_str(), &bVisible);
+    auto name = AssetsManager::GetRefMaterialToName(material);
+
+    auto isOpen = ImGui::CollapsingHeader(name.c_str(), &bVisible);
     if (!bVisible) {
         return true;
     }
@@ -2661,7 +2761,9 @@ void Editor::PopupMenuSettings() {
     ImGui::EndPopup();
 }
 
+// TODO: Precisa adicionar um suport para renoemar o marterial
 void Editor::RenameMaterial() {
+    /*
     auto isOpen = ImGui::BeginPopupModal("##popup_rename_material");
     if (!isOpen || !m_materialToRename) {
         return;
@@ -2671,7 +2773,7 @@ void Editor::RenameMaterial() {
     if (!ImGui::IsAnyItemActive() && !ImGui::IsMouseClicked(0))
         ImGui::SetKeyboardFocusHere(0);
 
-    auto name = m_materialToRename->getName();
+    auto name = AssetsManager::GetRefMaterialToName(m_materialToRename);
     if (name.size() < 256) {
         name.resize(256, '\0');
     }
@@ -2679,7 +2781,7 @@ void Editor::RenameMaterial() {
     if (ImGui::InputText("##popup_rename_file", name.data(), name.size(), ImGuiInputTextFlags_EnterReturnsTrue)) {
         name.erase(std::remove(name.begin(), name.end(), '\0'), name.end());
 
-        m_materialToRename->setName(name);
+        // m_materialToRename->setName(name);
 
         m_materialToRename = nullptr;
 
@@ -2687,6 +2789,7 @@ void Editor::RenameMaterial() {
     }
 
     ImGui::EndPopup();
+    */
 }
 
 void Editor::CreateMaterial() {
@@ -2703,35 +2806,7 @@ void Editor::CreateMaterial() {
     if (ImGui::InputText("##popup_create_material_inputtext", name, 256, ImGuiInputTextFlags_EnterReturnsTrue)) {
         auto meshRender = s_objectSelected->getComponent<MeshRender>();
         
-        meshRender->addMaterial(name, name);
-
-        ImGui::CloseCurrentPopup();
-    }
-
-    ImGui::EndPopup();
-}
-
-void Editor::PopupRenameFile() {
-    auto isOpen = ImGui::BeginPopup("##popup_rename_file");
-    if (!isOpen) {
-        return;
-    }
-
-    ImGui::Text("Rename");
-    if (!ImGui::IsAnyItemActive() && !ImGui::IsMouseClicked(0))
-        ImGui::SetKeyboardFocusHere(0);
-
-    auto path = m_SelectedPath.string();
-
-    auto name = m_SelectedPath.filename().string();
-    if (name.size() < 256) {
-        name.resize(256, '\0');
-    }
-
-    if (ImGui::InputText("##popup_rename_file", name.data(), name.size(), ImGuiInputTextFlags_EnterReturnsTrue)) {
-        name.erase(std::remove(name.begin(), name.end(), '\0'), name.end());
-
-        File::rename(path, m_SelectedPath.replace_filename(name));
+        meshRender->addMaterial(name);
 
         ImGui::CloseCurrentPopup();
     }
