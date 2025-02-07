@@ -234,6 +234,8 @@ private:
     };
 
     bool OnPropertyTransform(Transform *transform);
+
+    bool OnPropertyCamera(Camera *camera);
     
     bool OnPropertyMeshFilter(MeshFilter *meshFilter);
 

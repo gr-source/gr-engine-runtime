@@ -51,10 +51,13 @@ std::unique_ptr<ShadowMap> m_shadowMap = nullptr;
 
 Editor *Engine::m_editor = nullptr; 
 
+#include <gr-base/core/window.hpp>
 void Engine::Reize(grm::u32 width, grm::u32 height) {
     Screen::SetResolution(width, height);
 
     iVector2 size((int) width, (int) height);
+
+    Window::SetWindowSize(size);
 
     if (ImGuiPostProcess) {
         ImGuiPostProcess->resize(size);
@@ -181,14 +184,16 @@ void Engine::DropFile(const char *path) {
 }
 
 void Engine::OnPhysics() {
+    /*
     Time time;
-    do {
-        auto deltaTime = time.sleep(60.0f);
-
-        if (Settings::bGameRunning)
-            PhysicsScene::Update(TimeLast::deltaTime);
+    while (Settings::IsEngineRunning()) {
+        auto deltaTime = time.getDeltaTime();
+        if (Settings::bGameRunning) {
+            PhysicsScene::Update(deltaTime);
+        }
         time.end();
-    } while (Settings::IsEngineRunning());
+    }
+    */
 }
 
 void Engine::HandleEvent(EngineEvent event, const void* data) {
@@ -255,20 +260,30 @@ void Engine::MainFramebuffer() {
     }
     */
     
-    // Seleção de modelos para renderizar
-    RenderManager::Process(m_editor->getCamera(), &(*m_shadowMap));
 
-    // Pos processamento
-    MainPostProcess->bind();
+    auto cameras = Camera::GetCameras();
+    for (auto camera : cameras) {
+        if (!camera->getGameObject()->getActive()) {
+            continue;
+        }
 
-    grr::gRender::SetRenderState(grr::GR_BACKGROUND, grr::GR_DEPTH_BUFFER | grr::GR_COLOR_BUFFER);
-    grr::gRender::SetRenderState(grr::GR_CULL, grr::GR_BACK);
-    grr::gRender::SetRenderState(grr::GR_DEPTH, grr::GR_TRUE);
-    grr::gRender::SetRenderState(grr::GR_FRAMEBUFFER_SRGB, grr::GR_TRUE);
+        // Seleção de modelos para renderizar
+        RenderManager::Process(camera, &(*m_shadowMap));
 
-    RenderScene();
+        MainPostProcess->setTextureColor(camera->getColorTexture());
 
-    MainPostProcess->unbind();
+        // Pos processamento
+        MainPostProcess->bind();
+
+        grr::gRender::SetRenderState(grr::GR_BACKGROUND, grr::GR_DEPTH_BUFFER | grr::GR_COLOR_BUFFER);
+        grr::gRender::SetRenderState(grr::GR_CULL, grr::GR_BACK);
+        grr::gRender::SetRenderState(grr::GR_DEPTH, grr::GR_TRUE);
+        grr::gRender::SetRenderState(grr::GR_FRAMEBUFFER_SRGB, grr::GR_TRUE);
+
+        RenderScene(camera);
+
+        MainPostProcess->unbind();
+    }
 
     // Captura de posprocessamento para o imgui
     ImGuiPostProcess->bind();
@@ -279,7 +294,13 @@ void Engine::MainFramebuffer() {
     grr::gRender::SetRenderState(grr::GR_DEPTH, grr::GR_FALSE);
     grr::gRender::SetRenderState(grr::GR_FRAMEBUFFER_SRGB, grr::GR_FALSE);
 
-    ScreenRender::Render(MainPostProcess->getTextureColor());
+    for (auto camera : cameras) {
+        if (!camera->getGameObject()->getActive()) {
+            continue;
+        }
+
+        ScreenRender::Render(camera->getColorTexture(), camera->getRect());
+    }
 
     ImGuiPostProcess->unbind();
 }
@@ -292,15 +313,15 @@ PostProcessing *Engine::GetMainPostprocess() {
     return MainPostProcess != nullptr ? &(*MainPostProcess) : nullptr;
 }
 
-void Engine::RenderScene() {
+void Engine::RenderScene(Camera *camera) {
     grr::gRender::SetRenderState(grr::GR_DEPTH_FUNC, grr::GR_DEPTH_LESS);
     RenderManager::Renderer();
 
     grr::gRender::SetRenderState(grr::GR_DEPTH_FUNC, grr::GR_DEPTH_LEQUAL);
-    DebugDraw::Renderer(m_editor->getCamera());
+    DebugDraw::Renderer(camera);
 
     grr::gRender::SetRenderState(grr::GR_DEPTH_FUNC, grr::GR_DEPTH_LEQUAL);
-    Skybox::Renderer(m_editor->getCamera());
+    Skybox::Renderer(camera);
 }
 
 void Engine::UIFramebuffer() {

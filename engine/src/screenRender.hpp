@@ -8,7 +8,7 @@ public:
 
     static void Shutdown();
 
-    static void Render(grr::gTexture *texture);
+    static void Render(grr::gTexture *texture, const Rect &rect);
 
 private:
     static grr::gVertexArray *m_vertexArray;

@@ -14,6 +14,8 @@ public:
 
     void unbind();
 
+    void setTextureColor(grr::gTexture *texture);
+
     grr::gTexture *getTextureColor();
 
     void readPixel(int x, int y, void *data);
@@ -21,7 +23,7 @@ public:
 private:
     static PostProcessing *m_current;
 
-    grr::gTexture *m_colorTexture;
+    grr::gTexture *m_colorTexture[2];
 
     grr::gTexture *m_pickTexture;
 

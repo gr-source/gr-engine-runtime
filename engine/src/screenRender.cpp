@@ -37,11 +37,24 @@ void ScreenRender::Shutdown() {
     }
 }
 
-void ScreenRender::Render(grr::gTexture *texture) {
+#include <gr-base/core/window.hpp>
+void ScreenRender::Render(grr::gTexture *texture, const Rect &rect) {
     if (!texture || !texture->isValid() || !m_shader || !m_shader->isValid()) {
         return;
     }
 
+    auto windowsize = Window::GetWindowSize();
+
+    Matrix4x4 model = 
+                    Math::translate<Matrix4x4>(Vector3{rect.x, rect.y, 0.0f}) *
+                    Math::rotate<Matrix4x4>(Quaternion::identity) *
+                    Math::scale<Matrix4x4>(Vector3{rect.w, rect.h, 0.0f});
+
+    auto orth = Math::orthographic(-1.0f, 1.0f, -1.0f, 1.0f, -1.0f, 1.0f);
+
+
+    m_shader->setUniform("u_projection", 1, &orth);
+    m_shader->setUniform("u_model", 1, &model);
 
     int textureID = 0;
 
@@ -99,6 +112,9 @@ void ScreenRender::CreateMesh() {
 
 bool ScreenRender::RegisterShader(grr::gShader *shader) {
     if (!shader) { return false; }
+
+    shader->registry("u_projection", grr::UniformType_mat4);
+    shader->registry("u_model", grr::UniformType_mat4);
 
     shader->registry("u_texture", grr::UniformType_int);
 

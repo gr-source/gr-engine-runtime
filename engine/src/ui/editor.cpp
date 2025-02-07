@@ -1807,9 +1807,15 @@ void Editor::RenderGameObjectPropertiUI() {
 
     for (auto [name, component] : entity->getComponentMap()) {
         ImGui::PushID(name.c_str());
-        
+
         if (name == "Transform") {
             RenderProperty<Transform>(&Editor::OnPropertyTransform, this);
+            ImGui::PopID();
+            continue;
+        }
+
+        if (name == "Camera") {
+            RenderProperty<Camera>(&Editor::OnPropertyCamera, this);
             ImGui::PopID();
             continue;
         }
@@ -2060,6 +2066,50 @@ bool Editor::OnPropertyTransform(Transform *transform) {
         transform->setLocalRotation(Math::normalize(Math::euler({Math::rad(euler)})));
     }
     
+    return false;
+}
+
+bool Editor::OnPropertyCamera(Camera *camera) {
+    bool bactive = true;
+    auto isOpen = ImGui::CollapsingHeader("Camera", &bactive);
+    if (!bactive) {
+        return true;
+    }
+
+    if (!isOpen) {
+        return false;
+    }
+
+    bool isChanged = false;
+
+    ImGui::Text("Rect");
+    auto rect = camera->getRect();
+
+    ImGui::Text("x");
+    isChanged |= ImGui::DragFloat("##camera_rect_x", &rect.x);
+
+    ImGui::Text("y");
+    isChanged |= ImGui::DragFloat("##camera_rect_y", &rect.y);
+
+    ImGui::Text("w");
+    isChanged |= ImGui::DragFloat("##camera_rect_w", &rect.w);
+
+    ImGui::Text("h");
+    isChanged |= ImGui::DragFloat("##camera_rect_h", &rect.h);
+
+    if (isChanged) {
+        camera->setRect(rect);
+    }
+
+    auto texture = camera->getColorTexture();
+    if (!texture) { return false; }
+
+    if (ImGui::TreeNode("Render")) {
+        ImGui::Image(reinterpret_cast<ImTextureID>(texture->getID()), {64.0f, 64.0f}, {0.0f, 1.0f}, {1.0f, 0.0f});
+
+        ImGui::TreePop();
+    }
+
     return false;
 }
 

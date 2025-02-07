@@ -29,8 +29,6 @@ public:
 
     static std::array<grr::gShader *, 4> m_shader;
 
-    static Camera *m_camera;
-
     static bool bRender;
 
     static void SetupLight(grr::gShader *shader);

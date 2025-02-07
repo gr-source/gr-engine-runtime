@@ -51,7 +51,7 @@ protected:
 
     static void OnPhysics();
 
-    static void RenderScene();
+    static void RenderScene(Camera *camera);
     
     static void UIFramebuffer();
     

@@ -29,8 +29,6 @@ std::array<grr::gShader *, 4> RenderManager::m_shader = {nullptr, nullptr, nullp
 
 bool RenderManager::bWireFrame = false;
 
-Camera *RenderManager::m_camera = nullptr;
-
 bool RenderManager::bRender = false;
 
 void RenderManager::Initialize() {
@@ -60,14 +58,13 @@ void RenderManager::Initialize() {
 }
 
 void RenderManager::Process(Camera *camera, ShadowMap *shadowMap) {
-    m_camera = camera;
-    if (!bRender || !m_camera) {
+    if (!bRender || !camera) {
         return;
     }
 
-    auto projection = m_camera->getPerspesctive();
-    auto view = m_camera->getViewmatrix();
-    auto position = m_camera->getPosition();
+    auto projection = camera->getPerspesctive();
+    auto view = camera->getViewmatrix();
+    auto position = camera->getPosition();
 
     for (auto &shader : m_shader) {
         if (!shader || !shader->isValid()) {
@@ -78,18 +75,13 @@ void RenderManager::Process(Camera *camera, ShadowMap *shadowMap) {
         shader->setUniform("u_view",       1, &view);
         shader->setUniform("m_eye",        1, &position);
 
-        // shadowMap->bindTexture(8);
-        // grr::gShader::SetUniform("m_shadowMap", 8);
-
         SetupLight(shader);
     }
-    Frustum::CalculateFrustum(m_camera->getPerspesctive() * m_camera->getViewmatrix());
+    Frustum::CalculateFrustum(camera->getPerspesctive() * camera->getViewmatrix());
 }
 
 void RenderManager::Renderer() {
-    if (!bRender || !m_camera) {
-        return;
-    }
+    if (!bRender) { return; }
 
     Batching::RenderBatches();
 
@@ -99,8 +91,6 @@ void RenderManager::Renderer() {
 }
 
 void RenderManager::Shutdown() {
-    m_camera = nullptr;
-    
     for (auto &shader : m_shader) {
         shader = nullptr;
     }
