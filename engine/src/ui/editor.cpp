@@ -164,15 +164,6 @@ Editor::Editor() : m_viewport(ImGui::GetMainViewport()), mImGuiIO(&ImGui::GetIO(
 
     m_config->setCategory(lastCategory);
 
-    if (!File::Exists(File::GetFile("/MainEngineCamera.gmdx", true))) {
-        m_cameraObject = CreateEditorCamera();
-        if (m_cameraObject) {
-            m_mainCamera = m_cameraObject->getComponent<Camera>();
-        }
-    } else {
-        AssetsManager::LoadGameObject(File::GetFile("/MainEngineCamera.gmdx", true), &Editor::loadCamera, this);
-    }
-
     Scene::Initialize();
 
     RenderManager::Initialize();
@@ -207,10 +198,6 @@ Editor::~Editor() {
 
     if (m_config) {
         m_config->save();
-    }
-
-    if (m_cameraObject) {
-        GameObject::Destroy(m_cameraObject);
     }
 
     Scene::Shutdown();
@@ -1246,17 +1233,6 @@ void Editor::StopGame() {
     Console::log(Log::DEFAULT, "Game stoped.");
 }
 
-void Editor::loadCamera(GameObject *gameObject) {
-    m_cameraObject = gameObject != nullptr ? gameObject : CreateEditorCamera();
-    if (!m_cameraObject) {
-        throw std::runtime_error("Fail to get camera object instance.");
-    }
-
-    m_mainCamera = m_cameraObject->getComponent<Camera>();
-
-    Scene::Init(m_cameraObject);
-}
-
 void Editor::RenderGuizmo() {
     if (!mImGuiIO->MouseDrawCursor && !mImGuiIO->KeyShift && !mImGuiIO->KeyCtrl && ImGui::IsKeyReleased(ImGuiKey_G) && ImGui::IsWindowHovered()) {
         m_guizmoOperation = ImGuizmo::TRANSLATE;
@@ -1341,7 +1317,7 @@ void Editor::PopupMenuCreateScene() {
         name.erase(std::remove(name.begin(), name.end(), '\0'), name.end());
 
         if (!name.empty()) {
-            Scene::Create(name);
+            ScenePostEcecute(Scene::Create(name));
         }
         
         ImGui::CloseCurrentPopup();
@@ -2955,21 +2931,6 @@ GameObject *Editor::CreatePrimitive(int type) {
     return GameObject::Instantiate(go);
 }
 
-GameObject *Editor::CreateEditorCamera() {
-    auto gameObject = GameObject::Create("MainEngineCamera", "Engine");
-    if (!gameObject) {
-        return nullptr;
-    }
-
-    auto camera = gameObject->addComponent<Camera>();
-    if (!camera) {
-        return nullptr;
-    }
-
-    Scene::Init(gameObject);
-    return gameObject;
-}
-
 void Editor::SkyboxEditor() {
     auto isOpen = ImGui::BeginPopupModal("##popup_skybox_editor", nullptr, ImGuiWindowFlags_Modal);
     if (!isOpen) { return; }
@@ -3102,10 +3063,13 @@ void Editor::PluginEditor() {
 }
 
 void Editor::ScenePostEcecute(Scene *scene) {
-    m_config->setCategory("editor");
-    if (!m_config->hasKey("GoSelecetd")) { return; }
+    m_cameraObject = scene->getCameraObject();
 
-    s_objectSelected = GameObject::Find(m_config->getValue<std::string>("GoSelecetd"));
+    m_mainCamera = scene->getCamera();
+    // m_config->setCategory("editor");
+    // if (!m_config->hasKey("GoSelecetd")) { return; }
+
+    // s_objectSelected = GameObject::Find(m_config->getValue<std::string>("GoSelecetd"));
 }
 
 

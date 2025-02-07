@@ -176,8 +176,6 @@ private:
 
     void StopGame();
 
-    void loadCamera(GameObject *camera);
-
     void RenderGuizmo();
 
     void DropGameObjectInScene();
@@ -300,8 +298,6 @@ private:
     void renderMeshList();
 
     static GameObject *CreatePrimitive(int type);
-
-    static GameObject *CreateEditorCamera();
 
     // 
     void SkyboxEditor();
