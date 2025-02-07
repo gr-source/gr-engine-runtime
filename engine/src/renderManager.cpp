@@ -32,12 +32,11 @@ bool RenderManager::bWireFrame = false;
 bool RenderManager::bRender = false;
 
 void RenderManager::Initialize() {
-    AssetsManager::LoadShader("dynamic_one_model",
-        File::GetAsset("/shader/model/dynamic_model.frag"),
-        File::GetAsset("/shader/model/dynamic_one_model.vert"),
+    AssetsManager::LoadShader(
+        File::GetAsset("/shader/model/default_model.glsl"),
         &RenderManager::SetupShader, ShaderType_Dynamic
     );
-    
+    /*
     AssetsManager::LoadShader("dynamic_anim",
         File::GetAsset("/shader/model/dynamic_model.frag"),
         File::GetAsset("/shader/model/dynamic_model_anim.vert"),
@@ -55,6 +54,7 @@ void RenderManager::Initialize() {
         File::GetAsset("/shader/model/static_multi_model.vert"),
         &RenderManager::SetupShader, ShaderType_Static_Multi_Model
     );
+    */
 }
 
 void RenderManager::Process(Camera *camera, ShadowMap *shadowMap) {

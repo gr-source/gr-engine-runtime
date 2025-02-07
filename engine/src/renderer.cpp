@@ -22,7 +22,13 @@ bool DebugDraw::bDebugMode = false;
 grm::u32 DebugDraw::m_vbo = 0;
 
 void DebugDraw::Initialize() {
-    AssetsManager::LoadShader("debug_mode", File::GetFile("/assets/shader/primitive/line.frag", true), File::GetFile("/assets/shader/primitive/line.vert", true), &DebugDraw::SetupShader);
+    /*
+    AssetsManager::LoadShader(
+        "debug_mode",
+        File::GetFile("/assets/shader/primitive/line.frag", true),
+        File::GetFile("/assets/shader/primitive/line.vert", true),
+        &DebugDraw::SetupShader);
+    */
 }
 
 void DebugDraw::Shutdown() {

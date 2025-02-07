@@ -182,21 +182,18 @@ void Skybox::RegisterSky(grr::gShader **out, grr::gShader *shader) {
 }
 
 void Skybox::UploadShader() {
-    AssetsManager::LoadShader("SkyboxIrradianceShader",
-        File::GetAsset("/shader/skybox/Irradiance.frag"),
-        File::GetAsset("/shader/skybox/Irradiance.vert"),
+    AssetsManager::LoadShader(
+        File::GetAsset("/shader/skybox/irradiance.glsl"),
         RegisterDeafult, &m_irradianceShader
     );
 
-    AssetsManager::LoadShader("SkyBoxShader",
-        File::GetAsset("/shader/skybox/Skybox.frag"),
-        File::GetAsset("/shader/skybox/Skybox.vert"),
+    AssetsManager::LoadShader(
+        File::GetAsset("/shader/skybox/skybox.glsl"),
         Skybox::RegisterSky, &m_skyShader
     );
 
-    AssetsManager::LoadShader("SkyboxBackgroundShader",
-        File::GetAsset("/shader/skybox/Background.frag"),
-        File::GetAsset("/shader/skybox/Background.vert"),
+    AssetsManager::LoadShader(
+        File::GetAsset("/shader/skybox/background.glsl"),
         RegisterDeafult, &m_shader
     );
 }
