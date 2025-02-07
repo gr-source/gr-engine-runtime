@@ -309,12 +309,6 @@ void Editor::RenderUI() {
 
     RenderPropertiUI();
 
-    if (m_mainCamera && mImGuiIO->KeyCtrl && ImGui::IsKeyReleased(ImGuiKey_S)) {
-        for (auto &&[name, scene] : Scene::GetScenes()) {
-            Event::Add(&Editor::SaveScene, this, name, &(*scene));
-        }
-    }
-
     switch (popupFlags) {
     case EditorPopupFlags_LoadPlugin:
         ImGui::OpenPopup("##popup_load_plugin");
@@ -1226,6 +1220,10 @@ void Editor::RenderScene() {
 
     if (s_objectSelected && !mImGuiIO->MouseDrawCursor && ImGui::IsWindowFocused() && mImGuiIO->KeyShift && ImGui::IsKeyReleased(ImGuiKey_D)) {
         s_objectSelected = GameObject::Instantiate(s_objectSelected);
+    }
+
+    if (ImGui::IsWindowFocused() && mImGuiIO->KeyCtrl && ImGui::IsKeyReleased(ImGuiKey_S)) {
+        Event::Add(&Editor::SaveScene, this, Scene::GetCurrentScene()->getName(), Scene::GetCurrentScene());
     }
 }
 
