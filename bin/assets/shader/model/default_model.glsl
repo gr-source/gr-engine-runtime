@@ -1,3 +1,47 @@
+#shader_type vertex
+
+#version 330 core
+
+layout (location = 0) in vec3 in_pos;
+layout (location = 1) in vec3 in_normal;
+layout (location = 2) in vec2 in_texCood;
+layout (location = 3) in int in_index;
+layout (location = 4) in int in_entityID;
+
+flat out int u_entityID;
+flat out int u_index;
+out vec3 u_fragPos;
+out vec3 u_normal;
+out vec2 u_texCoord;
+
+uniform mat4 u_projection;
+uniform mat4 u_view;
+uniform mat4 u_model;
+
+out vec3 ViewDirection;
+
+void main() {
+    vec4 worldPos = u_model * vec4(in_pos, 1.0);
+    vec4 worldNorm = u_model * vec4(in_normal, 1.0);
+
+    u_fragPos = worldPos.xyz;
+
+    u_index = in_index;
+    
+    u_entityID = in_entityID;
+
+    u_texCoord = in_texCood;
+
+    u_normal = mat3(u_model) * in_normal;
+
+    ViewDirection  = worldPos.xyz;
+
+    gl_Position = u_projection * u_view * worldPos;
+}
+
+
+#shader_type fragment
+
 #version 330 core
 
 #define PI 3.14159265358979323846
@@ -41,8 +85,10 @@ vec3 fresnelSchlick(float cosTheta, vec3 F0) {
 #define LIGHT_SPOT 2.0
 
 out vec4 FragColor;
+out int EntityID;
 
 flat in int u_index;
+flat in int u_entityID;
 in vec3 u_fragPos;
 in vec3 u_normal;
 in vec2 u_texCoord;
@@ -67,8 +113,9 @@ uniform sampler2D m_texture[10];
 uniform bool m_activate[10];
 uniform int m_lightcount;
 uniform vec3 m_eye;
-uniform sampler2D m_shadowMap;
+// uniform sampler2D m_shadowMap;
 
+/*
 float ShadowCalculation(vec4 fragPosLightSpace) {
     vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
     
@@ -93,7 +140,8 @@ float ShadowCalculation(vec4 fragPosLightSpace) {
         shadow = 0.0;
 
     return shadow;
-} 
+}
+*/
 
 vec3 CreatePointLight(LightComponent light, vec3 V, vec3 N, vec3 F0, vec3 fragPos, vec3 albedo, float roughness, float metallic, float ao) {
     // Calculate the light direction and half vector
@@ -113,8 +161,8 @@ vec3 CreatePointLight(LightComponent light, vec3 V, vec3 N, vec3 F0, vec3 fragPo
     vec3 radiance = light.color.xyz * attenuation;
 
     // Shadow calculation (assuming a point light's shadow map is set up)
-    vec4 fragPosLightSpace = light.model * vec4(fragPos, 1.0);
-    float shadow = ShadowCalculation(fragPosLightSpace);
+    // vec4 fragPosLightSpace = light.model * vec4(fragPos, 1.0);
+    // float shadow = ShadowCalculation(fragPosLightSpace);
 
     // Cook-Torrance BRDF calculations
     float NDF = DistributionGGX(NdotH, roughness);
@@ -132,7 +180,7 @@ vec3 CreatePointLight(LightComponent light, vec3 V, vec3 N, vec3 F0, vec3 fragPo
     vec3 specular = numerator / denominator;
 
     // Final lighting result considering shadow
-    return ((kD * albedo / PI + specular) * radiance * NdotL) * (1.0 - shadow); // Apply shadow attenuation
+    return ((kD * albedo / PI + specular) * radiance * NdotL) /* (1.0 - shadow)*/ ; // Apply shadow attenuation
 }
 
 vec3 CreateSpotLight(LightComponent light, vec3 V, vec3 N, vec3 F0, vec3 fragPos, vec3 albedo, float roughness, float metallic, float ao) {
@@ -158,8 +206,8 @@ vec3 CreateSpotLight(LightComponent light, vec3 V, vec3 N, vec3 F0, vec3 fragPos
     vec3 radiance = light.color.xyz * attenuation * intensity;
 
     // Shadow calculation
-    vec4 fragPosLightSpace = light.model * vec4(fragPos, 1.0);
-    float shadow = ShadowCalculation(fragPosLightSpace);
+    // vec4 fragPosLightSpace = light.model * vec4(fragPos, 1.0);
+    // float shadow = ShadowCalculation(fragPosLightSpace);
 
     // Cook-Torrance BRDF
     float NDF = DistributionGGX(NdotH, roughness);
@@ -177,7 +225,7 @@ vec3 CreateSpotLight(LightComponent light, vec3 V, vec3 N, vec3 F0, vec3 fragPos
     vec3 specular = numerator / denominator;
 
     // Final lighting result considering shadow
-    return ((kD * albedo / PI + specular) * radiance * NdotL) * (1.0 - shadow); // Apply shadow attenuation
+    return ((kD * albedo / PI + specular) * radiance * NdotL) /* (1.0 - shadow)*/; // Apply shadow attenuation
 }
 
 
@@ -222,12 +270,12 @@ vec3 CreateDirectLight(LightComponent light, vec3 fragPos, vec3 V, vec3 N, vec3 
     // Radiância da luz (cor da luz multiplicada pela intensidade)
     vec3 radiance = light.color.rgb;
     
-    vec4 fragPosLightSpace = light.model * vec4(fragPos, 1.0); // Transformando a posição do fragmento no espaço da luz
-    float shadow = ShadowCalculation(fragPosLightSpace);  // Verificando a sombra para este fragmento
+    // vec4 fragPosLightSpace = light.model * vec4(fragPos, 1.0); // Transformando a posição do fragmento no espaço da luz
+    // float shadow = ShadowCalculation(fragPosLightSpace);  // Verificando a sombra para este fragmento
 
     
     // O resultado final de iluminação leva em conta a sombra (atenuando a luz)
-    return ((kD * albedo / PI + specular) * radiance * NdotL * (1.0 - shadow)); // Aplicando a atenuação de sombra
+    return ((kD * albedo / PI + specular) * radiance * NdotL /* (1.0 - shadow)*/); // Aplicando a atenuação de sombra
 }
 
 
@@ -262,8 +310,26 @@ vec3 BaseColor(vec3 eye, vec3 fragPos, vec3 albedo, float roughness, float metal
 
 void main() {
     vec4 albedo = m_material[u_index].albedo;
-    if (m_activate[0]) {
-        albedo = texture(m_texture[0], u_texCoord);
+    if (u_index == 0 && m_activate[0]) {
+    	albedo = texture(m_texture[0], u_texCoord);
+    } else if (u_index == 1 && m_activate[1]) {
+    	albedo = texture(m_texture[1], u_texCoord);
+    } else if (u_index == 2 && m_activate[2]) {
+    	albedo = texture(m_texture[2], u_texCoord);
+    } else if (u_index == 3 && m_activate[3]) {
+    	albedo = texture(m_texture[3], u_texCoord);
+    } else if (u_index == 4 && m_activate[4]) {
+    	albedo = texture(m_texture[4], u_texCoord);
+    }  else if (u_index == 5 && m_activate[5]) {
+    	albedo = texture(m_texture[5], u_texCoord);
+    }  else if (u_index == 6 && m_activate[6]) {
+    	albedo = texture(m_texture[6], u_texCoord);
+    }  else if (u_index == 7 && m_activate[7]) {
+    	albedo = texture(m_texture[7], u_texCoord);
+    }  else if (u_index == 8 && m_activate[8]) {
+    	albedo = texture(m_texture[8], u_texCoord);
+    }  else if (u_index == 9 && m_activate[9]) {
+    	albedo = texture(m_texture[9], u_texCoord);
     }
 
     float roughness = m_material[u_index].params.x;
@@ -280,6 +346,7 @@ void main() {
 
     // Output Color
     FragColor = vec4(color, 1.0);
+    EntityID = u_entityID;
 }
 
 
