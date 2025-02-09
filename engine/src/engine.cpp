@@ -39,6 +39,8 @@
 
 #include <gr-base/core/binary/modelhandle.hpp>
 
+#include <gr-base/core/clock.hpp>
+
 #include <filesystem>
 
 std::shared_ptr<PostProcessing> Engine::ImGuiPostProcess = nullptr;
@@ -115,11 +117,7 @@ void Engine::Idle() {
     auto fps = 60.0f;
     static Time time;
     Statistics::m_threadFrame = {time.getFPS(), (fps > 0.0f ? time.sleep(fps) : time.start())};
-    TimeLast::deltaTime = Statistics::m_threadFrame.delta;
-
-    if (ScriptManager::SetDeltaTime) {
-        ScriptManager::SetDeltaTime(TimeLast::deltaTime);
-    }
+    Clock::deltaTime = Statistics::m_threadFrame.delta;
 
     Engine::Update();
 

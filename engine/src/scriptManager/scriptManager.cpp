@@ -40,7 +40,6 @@ std::unique_ptr<Script> ScriptManager::m_script = nullptr;
 void (*ScriptManager::InitializeScript)();
 void (*ScriptManager::Update)();
 void (*ScriptManager::Destroy)();
-void (*ScriptManager::SetDeltaTime)(float);
 
 void ScriptManager::Initialize(const std::string &path) {
     if (!File::Exists(path)) {
@@ -103,25 +102,9 @@ void ScriptManager::RegisterApi() {
         return Console::LogError("Falied to register library functions.");
     }
 
-    m_script->replaceLibraryFunction("Console::log", reinterpret_cast<void *>(&Console::log));
-    m_script->replaceLibraryFunction("Threadpool::CreateInternalTask", reinterpret_cast<void *>(&Threadpool::CreateInternalTask));
-
     // First function
     m_script->registerFunction("Initialize",   reinterpret_cast<void **>(&InitializeScript));
     m_script->registerFunction("Destroy",      reinterpret_cast<void **>(&Destroy));
-
-    m_script->registerFunction("SetDeltaTime", reinterpret_cast<void **>(&SetDeltaTime));
-    
-    // Event Manager
-    m_script->replaceLibraryFunction("Event::AddInternalEvent", reinterpret_cast<void **>(&Event::AddEvent));
-
-    // AssetManager
-    m_script->replaceLibraryFunction("AssetsManager::SetTextureList", reinterpret_cast<void *>(&AssetsManager::SetTextureList));
-    m_script->replaceLibraryFunction("AssetsManager::SetGameObjectList", reinterpret_cast<void *>(&AssetsManager::SetGameObjectList));
-    m_script->replaceLibraryFunction("AssetsManager::FindMesh", reinterpret_cast<void *>(&AssetsManager::FindMesh));
-    m_script->replaceLibraryFunction("AssetsManager::FindShader", reinterpret_cast<void *>(&AssetsManager::FindShader));
-    m_script->replaceLibraryFunction("AssetsManager::SetShaderList", reinterpret_cast<void *>(&AssetsManager::SetShaderList));
-    m_script->replaceLibraryFunction("AssetsManager::CreateMesh", reinterpret_cast<void *>(&AssetsManager::CreateMesh<std::string>));
 
     // Input
     m_script->replaceLibraryFunction("Input::IskeyPress", reinterpret_cast<void *>(&Input::IsKeyPress));

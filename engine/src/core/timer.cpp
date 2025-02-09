@@ -4,7 +4,6 @@
 
 #include <thread>
 
-float TimeLast::deltaTime = 0.0f;
 float TimeLast::FPS = 0;
 
 float TimeLast::RenderFPS = 0;

@@ -18,8 +18,6 @@ private:
     static grm::u32 m_vbo;
 
     static void CreateMesh();
-
-    static bool RegisterShader(grr::gShader *shader);
 };
 
 

@@ -22,7 +22,7 @@ void ScreenRender::Initialize() {
     if (!m_shader) {
         AssetsManager::LoadShader(
             File::GetAsset("/shader/screen.glsl"),
-            &ScreenRender::RegisterShader
+            [](grr::gShader *shader) { ScreenRender::m_shader = shader; }
         );
     }
     CreateMesh();
@@ -36,11 +36,13 @@ void ScreenRender::Shutdown() {
 }
 
 #include <gr-base/core/window.hpp>
+#include <gr-base/core/clock.hpp>
+
 void ScreenRender::Render(grr::gTexture *texture, const Rect &rect) {
     if (!texture || !texture->isValid() || !m_shader || !m_shader->isValid()) {
         return;
     }
-
+    
     auto windowsize = Window::GetWindowSize();
 
     Matrix4x4 model = 
@@ -106,17 +108,4 @@ void ScreenRender::CreateMesh() {
     grr::gVertexArray::SetAttrib(1, 2, sizeof(Vertex2D), reinterpret_cast<const void *>(offsetof(Vertex2D, uv)));
 
     m_vertexArray->unbind();
-}
-
-bool ScreenRender::RegisterShader(grr::gShader *shader) {
-    if (!shader) { return false; }
-
-    shader->registry("u_projection", grr::UniformType_mat4);
-    shader->registry("u_model", grr::UniformType_mat4);
-
-    shader->registry("u_texture", grr::UniformType_int);
-
-    m_shader = shader;
-    
-    return true;
 }

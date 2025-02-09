@@ -18,8 +18,6 @@ public:
 
     static bool IsValid();
 
-    static void (*SetDeltaTime)(float);
-
     static void (*Update)();
 
     // Component Pool

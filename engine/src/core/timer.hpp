@@ -6,8 +6,6 @@
 
 class TimeLast {
 public:
-    static float deltaTime;
-
     static float FPS;
 
     static float RenderFPS;
