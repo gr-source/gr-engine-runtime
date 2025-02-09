@@ -280,7 +280,7 @@ void Editor::LoadScript() {
 
     Settings::bGameRunning = true;
 
-    Scene::InitializeObject();
+    Scene::InitializeAllScript();
 
     Console::log(Log::DEFAULT, "Game playing.");
 }
@@ -1251,14 +1251,11 @@ void Editor::PlayGame() {
 void Editor::StopGame() {
     Settings::bGameRunning = false;
 
-
     Scene::DestroyScript();
 
     Scene::CleanTemp();
 
-    Scene::InitializeObject();
-
-    // Scene::SetupEssential();
+    Scene::InitializeEngineScript();
 
     Editor::setActiveCamera(true);
 
@@ -2018,6 +2015,16 @@ void Editor::RenderField(Field &field, Component *component) {
     name = "##" + name;
     
     switch (type) {
+    case FieldType_GameObject: {
+        renderDropGameObject(Field::GetFieldData<GameObject *>(component, field));
+        // auto gameObject = Field::GetFieldData<GameObject *>(component, field);
+        // *gameObject = s_objectSelected;
+
+        // if (*gameObject)
+        //     ImGui::Text("%s", (*gameObject)->getName().c_str());
+        // dropGameObject();
+        break;
+    }
     case FieldType_float: {
         auto data = Field::GetFieldData<float>(component, field);
 
@@ -2057,6 +2064,26 @@ void Editor::RenderField(Field &field, Component *component) {
     default:
         break;
     }
+}
+
+void Editor::renderDropGameObject(GameObject **ref) {
+    if (*ref) {
+        ImGui::Text("%s", (*ref)->getName().c_str());
+    }
+
+    if (!ImGui::BeginDragDropTarget()) {
+        return;
+    }
+    auto data = ImGui::AcceptDragDropPayload(IMGUI_PAYLOAD_FILE, ImGuiDragDropFlags_None);
+    if (data) {
+        std::string path((char*)data->Data, data->DataSize);
+        if (path.empty() || path.find(".gmdx") == std::string::npos) {
+            return ImGui::EndDragDropTarget();
+        }
+        return AssetsManager::LoadGameObject(path, &Editor::OutputGameObject, ref);
+    }
+
+    ImGui::EndDragDropTarget();
 }
 
 void AddComponentForAll(GameObject *gameObject, std::string name) {
@@ -3195,31 +3222,6 @@ void Editor::ScenePostEcecute(Scene *scene) {
     // s_objectSelected = GameObject::Find(m_config->getValue<std::string>("GoSelecetd"));
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+void Editor::OutputGameObject(GameObject **ref, GameObject *go) {
+    *ref = go;
+}

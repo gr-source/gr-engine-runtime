@@ -228,6 +228,8 @@ private:
 
     void RenderField(Field &field, Component *component);
 
+    void renderDropGameObject(GameObject **ref);
+
     void PopupAddComponent();
 
     void PopupMenuProperty();
@@ -321,6 +323,8 @@ private:
 
     template <typename T, typename... Args>
     bool RenderProperty(Args&&... args);
+
+    static void OutputGameObject(GameObject **ref, GameObject *go);
 };
 
 template <typename T, typename... Args>

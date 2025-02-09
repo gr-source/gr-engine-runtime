@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ecs/entity.hpp"
+#include <gr-base/ecs/entity.hpp>
 
 class #name : public Component {
     CLASS_FUNCTIONS

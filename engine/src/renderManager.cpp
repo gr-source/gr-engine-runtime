@@ -138,7 +138,7 @@ bool RenderManager::SetupShader(ShaderType type, grr::gShader *shader) {
         Console::LogError("[ RenderManager ] Fail to register uniform: %s", grr::error()); \
     }
 
-void RenderManager::RegisterUniform(bool model, grr::gShader *shader) {
+void RenderManager::RegisterUniform(bool model, grr::gShader *shader) { return;
     PRINT_ERROR(shader->registry("u_projection", grr::UniformType_mat4));
     PRINT_ERROR(shader->registry("u_view",       grr::UniformType_mat4));
 

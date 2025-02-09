@@ -1,14 +1,13 @@
 #include "#name.hpp"
 
-#include "core/console.hpp"
-
+#include <gr-base/core/console.hpp"
 
 #name::#name() {
-    Console::log(LogInfo::DEFAULT, "Initialize: #name");;
+    Console::logWarning("Initialize: #name");;
 }
 
 #name::~#name() {
-    Console::log(LogInfo::DEFAULT, "Shutdown: #name");
+    Console::logWarning("Shutdown: #name");
 }
 
 
