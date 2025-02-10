@@ -7,11 +7,20 @@
 #include <cstring>
 #include <dlfcn.h>
 
-std::unordered_map<Plugin *, std::unique_ptr<Plugin>> PluginManager::pluginMap; 
+std::unordered_map<std::string, std::unique_ptr<Plugin>> PluginManager::pluginMap; 
+
+std::unordered_map<Plugin *, std::string> PluginManager::pluginPathMap;
+
+std::unordered_map<std::string, Plugin *> pluginPath;
 
 std::vector<Plugin *> PluginManager::pluginList;
 
 void PluginManager::Load(const std::string &path) {
+    auto it = pluginMap.find(path);
+    if (it != pluginMap.end()) {
+        throw std::runtime_error("plugin has be loaded.");
+    }
+
     if (!File::Exists(path)) {
         throw std::runtime_error("plugin do not exists.");
     }
@@ -48,9 +57,15 @@ void PluginManager::Load(const std::string &path) {
     }
     plugin->initialize();
     
-    pluginList.push_back(&(*plugin));
+    pluginMap[path] = std::move(plugin);
 
-    pluginMap[pluginList.back()] = std::move(plugin);
+    pluginList.push_back(&(*pluginMap[path]));
+
+    pluginPathMap[&(*pluginMap[path])] = path;
+}
+
+std::unordered_map<Plugin *, std::string> PluginManager::GetPluginFile() {
+    return pluginPathMap;
 }
 
 std::vector<Plugin *> PluginManager::getPluginList() {
@@ -58,8 +73,8 @@ std::vector<Plugin *> PluginManager::getPluginList() {
 }
 
 void PluginManager::Remove(Plugin *plugin) {
-    auto it = pluginMap.find(plugin);
-    if (it == pluginMap.end()) {
+    auto it = pluginPathMap.find(plugin);
+    if (it == pluginPathMap.end()) {
         return;
     }
     plugin->shutdown();
@@ -68,7 +83,9 @@ void PluginManager::Remove(Plugin *plugin) {
     
     pluginList.erase(std::remove(pluginList.begin(), pluginList.end(), plugin), pluginList.end());
 
-    pluginMap.erase(it);
+    pluginMap.erase(it->second);
+
+    pluginPathMap.erase(it);
 }
 
 void PluginManager::Render() {

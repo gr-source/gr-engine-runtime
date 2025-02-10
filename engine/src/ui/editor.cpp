@@ -32,6 +32,7 @@
 #include <gr-base/core/scene.hpp>
 #include <gr-base/core/event.hpp>
 
+#include "plugin/pluginManager.hpp"
 #include "core/statistics.hpp"
 #include "core/screen.hpp"
 #include "core/timer.hpp"
@@ -127,9 +128,16 @@ Editor::Editor() : m_viewport(ImGui::GetMainViewport()), mImGuiIO(&ImGui::GetIO(
     m_config = std::make_shared<Config>(File::GetFile("/config.ini"));
     try {
         m_config->load();
+
+        m_config->setCategory("plugin");
+        for (auto &&[name, path] : m_config->getValues()) {
+            PluginManager::Load(path);
+        }
     } catch (const std::exception &e) {
         Console::LogWarning(e.what());
     }
+
+    m_config->erase("plugin");
 
     {
         auto lasCaterogy = m_config->getCategory();
@@ -188,6 +196,13 @@ Editor::~Editor() {
     m_config->setCategory("viewport");
     m_config->setValue("w", Settings::ViewportSize.x);
     m_config->setValue("h", Settings::ViewportSize.y);
+
+    m_config->setCategory("plugin");
+    for (auto [plugin, path] : PluginManager::GetPluginFile()) {
+        auto info = plugin->getPluginInfo();
+
+        m_config->setValue<std::string>(info.name, path);
+    }
 
     if (s_objectSelected) {
         m_config->setCategory("editor");

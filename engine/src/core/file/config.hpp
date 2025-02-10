@@ -17,6 +17,8 @@ public:
 
     void setCategory(const std::string &name);
 
+    void erase(const std::string &name);
+
     std::string getCategory();
 
     bool hasKey(const std::string &key);
@@ -26,15 +28,13 @@ public:
     
     template <typename T>
     T getValue(const std::string &key);
-    
-    // bool operator [](const std::string &key) const;
+
+    std::unordered_map<std::string, std::string> getValues();
 
     void print();
 
 private:
     std::unordered_map<std::string, std::unordered_map<std::string, std::string>> m_sections;
-
-    // std::unordered_map<std::string, std::string> m_keyMap;
 
     std::string m_category;
 

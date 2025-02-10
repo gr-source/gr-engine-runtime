@@ -61,6 +61,10 @@ void Config::setCategory(const std::string &name) {
     m_category = name;
 }
 
+void Config::erase(const std::string &name) {
+    m_sections.erase(name);
+}
+
 std::string Config::getCategory() {
     return m_category;
 }
@@ -69,7 +73,13 @@ bool Config::hasKey(const std::string &key) {
     return m_sections[m_category].find(key) != m_sections[m_category].end();
 }
 
-void Config::print() {
+std::unordered_map<std::string, std::string> Config::getValues()
+{
+    return m_sections[m_category];
+}
+
+void Config::print()
+{
     for (auto &&[name, property] : m_sections) {
         std::cout << "[" << name << "]" << std::endl;
 
