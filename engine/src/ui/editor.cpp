@@ -165,7 +165,7 @@ Editor::Editor() : m_viewport(ImGui::GetMainViewport()), mImGuiIO(&ImGui::GetIO(
 
     m_config->setCategory("scene");
     if (m_config->hasKey("main") && m_config->getValue<std::string>("main") != "default" && !Scene::HasScene()) {
-        Scene::LoadScene(File::GetAsset("/scene/" + m_config->getValue<std::string>("main") + ".scn"), static_cast<std::function<void(Scene *)>>(std::bind(&Editor::ScenePostEcecute, this, std::placeholders::_1)));
+        AssetsManager::LoadScene(File::GetAsset("/scene/" + m_config->getValue<std::string>("main") + ".scn"), &Editor::ScenePostEcecute, this);
     }
 
     m_config->setCategory(lastCategory);
@@ -316,7 +316,7 @@ void Editor::RenderUI() {
 
     RenderViewportUI();
 
-    RenderScenesUI();
+    RenderObjectUI();
 
     RenderOtherUI();
 
@@ -572,18 +572,18 @@ void Editor::PopupComponentMenu() {
     ImGui::EndPopup();
 }
 
-void Editor::RenderScenesUI() {
+void Editor::RenderObjectUI() {
     ImGui::Begin("Cenario", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
 
-    auto name = Scene::HasScene() ? Scene::GetCurrentScene()->getName() : "Default";
+    auto scene = Scene::GetCurrentScene();
+
+    auto name = scene != nullptr ? scene->getName() : "Default";
 
     ImGui::SetNextItemOpen(true, ImGuiCond_Appearing);
     if (ImGui::TreeNodeEx(name.empty() ? "Scene name is empty!" : name.c_str(), ImGuiTreeNodeFlags_SpanFullWidth)) {
         if (ImGui::BeginDragDropTarget()) {
             ImGuiDragDropFlags target_flags = 0;
-            // target_flags |= ImGuiDragDropFlags_AcceptBeforeDelivery;
-            // target_flags |= ImGuiDragDropFlags_SourceAllowNullID;
-
+            
             if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(IMGUI_PAYLOAD_GAMEOBJECT, target_flags)) {
                 std::string name((char*)payload->Data, payload->DataSize);
                 if (!name.empty()) {
@@ -591,13 +591,14 @@ void Editor::RenderScenesUI() {
 
                     target->getTransform()->setParent(nullptr);
                     
-                    Scene::GetCurrentScene()->insert(target);
+                    scene->insert(target);
                 }
             }
             ImGui::EndDragDropTarget();
         }
         
-        RenderHierarchi();
+        if (scene != nullptr)
+            RenderSceneObject(scene);
 
         ImGui::TreePop();
     }
@@ -633,29 +634,30 @@ void Editor::RenderScenesUI() {
     ImGui::End();
 }
 
-void Editor::RenderHierarchi() {
-    if (!Scene::HasScene()) {
-        return;
-    }
+void Editor::RenderSceneObject(Scene *scene)
+{
+    auto list = scene->getObjectList();
 
-    auto &list = Scene::GetCurrentScene()->getObjectList();
-
-    if (m_currentPage > 0 && ImGui::Button("Before")) {
+    if (m_currentPage > 0 && ImGui::Button("Before"))
+    {
         --m_currentPage;
     }
     
-    RenderPage(list, m_currentPage);
+    RenderObjectPage(list, m_currentPage);
     
-    if (list.size() >= m_currentPage && ImGui::Button("Next")) {
+    if (list.size() > ITEMS_PER_PAGE && ImGui::Button("Next"))
+    {
         ++m_currentPage;
     }
 }
 
-void Editor::RenderPage(std::vector<GameObject *> &list, int page) {
+void Editor::RenderObjectPage(std::vector<GameObject *> list, int page)
+{
     int start = page * ITEMS_PER_PAGE;
     int end = std::min(start + ITEMS_PER_PAGE, static_cast<int>(list.size()));
 
-    for (int i = start; i < end; ++i) {
+    for (int i = start; i < end; ++i)
+    {
         auto transform = list[i]->getTransform();
 
         ReadHierarchy(transform);
@@ -669,6 +671,7 @@ void Editor::ReadHierarchy(Transform *transform) {
     if (!gameObject) {
         return;
     }
+
     auto name = gameObject->getName();
 
     if (s_objectSelected != gameObject) {
@@ -833,19 +836,20 @@ void Editor::RenderViewportUI() {
                 flags |= ImGuiTabItemFlags_UnsavedDocument;
             }
             
-            bool isQuit = true;
-            if (ImGui::BeginTabItem(name.c_str(), &isQuit, flags)) {
+            bool bactive = true;
+            if (ImGui::BeginTabItem(name.c_str(), &bactive, flags)) {
                 if (Scene::GetCurrentScene() != &(*scene)) {
                     Scene::Use(&(*scene));
 
                     s_objectSelected = nullptr;
                 }
-                    
+
                 RenderScene();
+
                 ImGui::EndTabItem();
             }
 
-            if (!isQuit) {
+            if (!bactive) {
                 s_objectSelected = nullptr;
                 Scene::Use(nullptr);
                 
@@ -880,8 +884,8 @@ void Editor::DropSceneInViewport() {
 
     if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(IMGUI_PAYLOAD_FILE)) {
         std::string path((char*)payload->Data, payload->DataSize);
-        if (!path.empty() && std::filesystem::path(path).filename().extension() == ".scn") {
-            Scene::LoadScene(path);
+        if (!path.empty() && path.find(".scn") != std::string::npos) {
+            AssetsManager::LoadScene(path, &Editor::ScenePostEcecute, this);
         }
     }
     ImGui::EndDragDropTarget();

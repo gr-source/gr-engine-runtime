@@ -154,11 +154,11 @@ private:
 
     void PopupComponentMenu();
 
-    void RenderScenesUI();
+    void RenderObjectUI();
 
-    void RenderHierarchi();
+    void RenderSceneObject(Scene *scene);
 
-    void RenderPage(std::vector<GameObject *> &list, int page);
+    void RenderObjectPage(std::vector<GameObject *> list, int page);
 
     void ReadHierarchy(Transform* transform);
 
