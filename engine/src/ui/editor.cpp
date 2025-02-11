@@ -2093,6 +2093,7 @@ void Editor::renderDropGameObject(GameObject **ref) {
     if (!ImGui::BeginDragDropTarget()) {
         return;
     }
+    
     auto data = ImGui::AcceptDragDropPayload(IMGUI_PAYLOAD_FILE, ImGuiDragDropFlags_None);
     if (data) {
         std::string path((char*)data->Data, data->DataSize);
