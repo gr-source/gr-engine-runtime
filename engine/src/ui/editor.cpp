@@ -1178,7 +1178,9 @@ void Editor::RenderScene() {
                 Engine::GetMainPostprocess()->readPixel(mouseX, mouseY, &entityID);
 
                 if (entityID != -1) {
-                    s_objectSelected = Manager::GetEntityFromID(static_cast<EntityID>(entityID))->getGameObject();
+                    auto entity = Manager::GetEntityFromID(static_cast<EntityID>(entityID));
+                    if (entity != nullptr)
+                        s_objectSelected = entity->getGameObject();
                 }
             }
         }
@@ -2786,7 +2788,7 @@ void Editor::PostLoadGameObject(GameObject *gameObject) {
     if (Scene::HasScene())
         Scene::GetCurrentScene()->insert(gameObject);
     
-    Scene::Init(gameObject);
+    // Scene::Init(gameObject);
 
     s_objectSelected = gameObject;
 }
