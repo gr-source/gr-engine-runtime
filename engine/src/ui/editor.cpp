@@ -15,7 +15,6 @@
 
 #include <gr-base/core/filmbox/filmbox.hpp>
 
-#include <gr-base/core/binary/model3DHandler.hpp>
 #include <gr-base/core/binary/modelhandle.hpp>
 
 #include <gr-base/core/file/file.hpp>
@@ -1508,7 +1507,7 @@ void Editor::DropTargetGameObjectInFile(std::string path) {
 
     path = path[path.size()] == '/' ? path : path + "/";
 
-    Model3DHandler::ExportGRMX(path + name + ".gmdx", target);
+    // Model3DHandler::ExportGRMX(path + name + ".gmdx", target);
     
     ImGui::EndDragDropTarget();
 }
@@ -1925,6 +1924,7 @@ void Editor::RenderStatisticsMenu() {
     ImGui::SeparatorText("Renderização");
     ImGui::Text("Luzes: %ld",     Light::GetListLight().size());
     ImGui::Text("BatchRender: %ld/%ld", Batching::GetBatchCount(), Status::BatchRenderCount);
+    ImGui::Text("DrawCallCount: %ld/%ld", Status::BatchDrawCallCount, Status::BatchDrawCallRender);
 }
 
 void Editor::RenderGameObjectPropertiUI() {
@@ -2299,7 +2299,7 @@ bool Editor::OnPropertyMeshFilter(MeshFilter *meshFilter) {
         return false;
     }
 
-    ImGui::Text("Name: %s", meshFilter->getMesh()->getName().c_str());
+    // ImGui::Text("Name: %s", meshFilter->getMesh()->getName().c_str());
 
     return false;
 }
@@ -3079,6 +3079,7 @@ void Editor::showMeshListPopup() {
 void Editor::renderMeshList() {
     ImGui::SeparatorText("Mesh List");
 
+    /*
     auto &mesh_list = AssetsManager::GetMeshListMap();
     if (mesh_list.empty()) { return; }
 
@@ -3096,6 +3097,7 @@ void Editor::renderMeshList() {
 
         ImGui::Separator();
     }
+    */
 }
 
 GameObject *Editor::CreatePrimitive(int type) {
@@ -3151,8 +3153,10 @@ GameObject *Editor::CreatePrimitive(int type) {
             vertices[indices[i + 2] - 1].normal = Math::normalize(vertices[indices[i + 2] - 1].normal + ABxAC);
         }
 
+        /*
         mesh->setIndices(indices);
         mesh->setVertices(vertices);
+        */
     }
 
     auto mf = go->addComponent<MeshFilter>();
