@@ -16,7 +16,7 @@
 
 #include <gr-render/gTexture.h>
 
-enum EditorPopupFlags : int {
+enum EditorPopupFlags : int64_t {
     EditorPopupFlags_EngineStatus        = 1 << 1,
     EditorPopupFlags_Settings            = 1 << 2,
     EditorPopupFlags_SkyboxEditor        = 1 << 2,
@@ -31,6 +31,7 @@ enum EditorPopupFlags : int {
     EditorPopupFlags_RenameFileOrDir     = 1 << 11,
     EditorPopupFlags_CreateNewDir        = 1 << 12,
     EditorPopupFlags_CreateScript        = 1 << 13,
+    EditorPopupFlags_CreateShader        = 1 << 14,
 };
 
 using EditorPopupFlags_ = int;
@@ -206,6 +207,8 @@ private:
 
     void PopupCreateScript();
 
+    void PopupCreateShader();
+
     void RenderOtherUI();
 
     void RenderConsoleWindow();
@@ -255,6 +258,8 @@ private:
 
     bool RenderMaterial(Material *material);
 
+    void dropShaderInMaterial(Material *material);
+
     void InsertTexture(Material *material);
 
     bool OnPropertyLight(Light *light);
@@ -271,6 +276,8 @@ private:
     void PostLoadGameObject(GameObject *gameObject);
 
     void CreateScriptTemplate(const std::string &path, const std::string &name);
+
+    void CreateShaderTemplate(const std::string &path, const std::string &name);
 
     // PopupMenu
     void PopupMenuSettings();

@@ -368,6 +368,10 @@ void Editor::RenderUI() {
         ImGui::OpenPopup("##popup_create_script");
         popupFlags &= ~EditorPopupFlags_CreateScript;
         break;
+    case EditorPopupFlags_CreateShader:
+        ImGui::OpenPopup("##popup_create_shader");
+        popupFlags &= ~EditorPopupFlags_CreateShader;
+        break;
     default:
         break;
     }
@@ -405,6 +409,8 @@ void Editor::RenderUI() {
     PopupCreateDirectory();
 
     PopupCreateScript();
+
+    PopupCreateShader();
 }
 
 void Editor::RenderDocking() {
@@ -1612,10 +1618,10 @@ void Editor::PopupDirManager() {
 
     ImGui::Text("%s", path.filename().c_str());
 
-    const char *item_list[6] {"Delete", "Rename", "Create Dir", "Create Script", "Move", "Copy"};
+    const char *item_list[8] {"Delete", "Rename", "Create Dir", "Create Script", "Create Material", "Create Shader", "Move", "Copy"};
 
     int i = 0;
-    if (ImGui::ListBox("##FileManager", &i, item_list, 4)) {
+    if (ImGui::ListBox("##FileManager", &i, item_list, 8)) {
         switch (i) {
         case 0:
             File::Delete(path);
@@ -1629,6 +1635,9 @@ void Editor::PopupDirManager() {
             break;
         case 3:
             popupFlags |= EditorPopupFlags_CreateScript;
+            break;
+        case 5:
+            popupFlags |= EditorPopupFlags_CreateShader;
             break;
         default:
             break;
@@ -1706,6 +1715,28 @@ void Editor::PopupCreateScript() {
     char name[256] = {0};
     if (ImGui::InputText("##input_text_popup_create_script_name", name, 256, ImGuiInputTextFlags_EnterReturnsTrue)) {
         CreateScriptTemplate(path.string(), name);
+
+        mDirSelectedList.clear();
+
+        ImGui::CloseCurrentPopup();
+    }
+    ImGui::EndPopup();
+}
+
+void Editor::PopupCreateShader()
+{
+    auto isOpen = ImGui::BeginPopup("##popup_create_shader");
+    if (!isOpen)
+    {
+        return;
+    }
+    ImGui::SeparatorText("Create Shader");
+
+    auto path = mDirSelectedList.back();
+
+    char name[256] = {0};
+    if (ImGui::InputText("##input_text_popup_create_shader_name", name, 256, ImGuiInputTextFlags_EnterReturnsTrue)) {
+        CreateShaderTemplate(path.string(), name);
 
         mDirSelectedList.clear();
 
@@ -2319,8 +2350,6 @@ bool Editor::OnPropertyMeshRender(MeshRender *meshRender) {
         return false;
     }
    
-    auto materialList = meshRender->getMaterials();
-
     auto avail = ImGui::GetContentRegionAvail();
     
     if (ImGui::Button("Create", {avail.x, 0.0f})) {
@@ -2328,7 +2357,7 @@ bool Editor::OnPropertyMeshRender(MeshRender *meshRender) {
     }
 
     ImGui::Indent();
-    for (auto material : materialList) {
+    for (auto material : meshRender->getMaterials()) {
         if (RenderMaterial(material)) {
             meshRender->removeMaterial(material);
         }
@@ -2360,6 +2389,22 @@ bool Editor::RenderMaterial(Material *material) {
         return false;
     }
 
+    ImGui::Text("Shader: ");
+    auto shader = material->getShader();
+    if (shader != nullptr) {
+        try {
+            auto shader_name = std::filesystem::path(AssetsManager::GetShaderRefToName(shader)).filename();
+
+            ImGui::SameLine();
+
+            ImGui::TextColored(ImVec4(0.0f, 255.0f, 0.0f, 255.0f), "%s", shader_name.c_str());
+        } catch (const std::exception &e) {
+            ImGui::TextColored(ImVec4(255.0f, 0.0f, 0.0f, 255.0f), "Invalid");
+        }
+    }
+
+    dropShaderInMaterial(material);
+
     auto albedo = material->getAlbedo();
     InsertTexture(material);
 
@@ -2384,6 +2429,7 @@ bool Editor::RenderMaterial(Material *material) {
     if (ImGui::DragFloat("##mesh_render_material_ao", &ao, 0.001f)) {
         material->setAmbientOcclusion(ao);
     }
+
     return false;
 }
 
@@ -2414,6 +2460,20 @@ void Editor::InsertTexture(Material *material) {
         return ImGui::EndDragDropTarget();
     }
     AssetsManager::LoadTexture(path, &Material::setTexture, material, 0);
+    ImGui::EndDragDropTarget();
+}
+
+void Editor::dropShaderInMaterial(Material *material) {
+    if (!ImGui::BeginDragDropTarget()) { return; }
+
+    auto payload = ImGui::AcceptDragDropPayload(IMGUI_PAYLOAD_FILE, ImGuiDragDropFlags_AcceptBeforeDelivery | ImGuiDragDropFlags_SourceAllowNullID);
+    if (!payload) { return ImGui::EndDragDropTarget(); }
+    
+    std::string file((char*)payload->Data, payload->DataSize);
+    if (file.empty() || file.find(".glsl") == std::string::npos) { return ImGui::EndDragDropTarget(); }
+
+    AssetsManager::LoadShader(file, &Material::setShader, material);
+
     ImGui::EndDragDropTarget();
 }
 
@@ -2778,6 +2838,13 @@ void Editor::CreateScriptTemplate(const std::string &path, const std::string &na
     }
 
     Command::exec("code '" + path  + "/" + name + ".hpp" + "'");
+}
+
+void Editor::CreateShaderTemplate(const std::string &path, const std::string &name)
+{
+    std::ofstream os(path + "/" + name + ".glsl");
+    os << "Sample" << std::endl;
+    os.close();
 }
 
 // PopupMenu

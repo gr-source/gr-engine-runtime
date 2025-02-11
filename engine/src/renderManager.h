@@ -20,20 +20,5 @@ public:
     static bool bWireFrame;
     
 public:
-    enum ShaderType : int {
-        ShaderType_Dynamic = 0,
-        ShaderType_Dynamic_Anim = 1,
-        ShaderType_Dynamic_Multi_Model = 2,
-        ShaderType_Static_Multi_Model = 3,
-    };
-
-    static std::array<grr::gShader *, 4> m_shader;
-
-    static bool bRender;
-
     static void SetupLight(grr::gShader *shader);
-
-    static bool SetupShader(ShaderType type, grr::gShader *shader);
-
-    static void RegisterUniform(bool model, grr::gShader *shader);
 };

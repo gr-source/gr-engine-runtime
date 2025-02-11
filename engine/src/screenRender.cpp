@@ -43,12 +43,6 @@ void ScreenRender::Render(grr::gTexture *texture, const Rect &rect) {
         return;
     }
 
-    // static float TIME = 0.0f;
-    // TIME += Clock::deltaTime;
-    // TIME = std::fmod(TIME, 360.0f);
-
-    // m_shader->setUniform("TIME", 1, &TIME);
-    
     auto windowsize = Window::GetWindowSize();
 
     Matrix4x4 model = 
