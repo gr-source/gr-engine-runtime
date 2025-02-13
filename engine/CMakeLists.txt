@@ -69,6 +69,7 @@ set(engine_src
     src/engine.cpp
     src/Global.cpp
     src/skybox.cpp
+    src/functionTimer.cpp
     src/renderer.cpp
     src/settings.cpp
     src/screenRender.cpp

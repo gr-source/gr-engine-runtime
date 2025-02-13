@@ -22,8 +22,9 @@
 
 #include "physics/physicsScene.hpp"
 
-#include "renderManager.h"
+#include "functionTimer.hpp"
 #include "screenRender.hpp"
+#include "renderManager.h"
 #include "settings.h"
 #include "renderer.h"
 #include "skybox.h"
@@ -39,6 +40,7 @@
 
 #include <gr-base/core/binary/modelhandle.hpp>
 
+#include <gr-base/core/window.hpp>
 #include <gr-base/core/clock.hpp>
 
 #include <filesystem>
@@ -53,7 +55,8 @@ std::unique_ptr<ShadowMap> m_shadowMap = nullptr;
 
 Editor *Engine::m_editor = nullptr; 
 
-#include <gr-base/core/window.hpp>
+static FunctionTimer mFunctionTimer;
+
 void Engine::Reize(grm::u32 width, grm::u32 height) {
     Screen::SetResolution(width, height);
 
@@ -113,6 +116,26 @@ void Engine::Shutdown() {
     Threadpool::Shutdown();
 }
 
+/*
+FunctionTimer mMainFunctionTimer;
+void Engine::Idle() {
+    m_editor = ProjectMenu::GetEditor();
+
+    mMainFunctionTimer.end();
+    mMainFunctionTimer.start();
+    // auto fps = 60.0f;
+    // static Time time;
+    Statistics::m_threadFrame = {mMainFunctionTimer.getFps(), mMainFunctionTimer.getDeltaTime()};
+    Clock::deltaTime = Statistics::m_threadFrame.delta;
+
+    if (m_editor != nullptr)
+        Engine::Update();
+
+    Engine::Render();
+
+    // time.end();
+}
+*/
 void Engine::Idle() {
     m_editor = ProjectMenu::GetEditor();
 
@@ -132,8 +155,7 @@ void Engine::Idle() {
 void Engine::Update() {
     Event::Update();
 
-    Time time;
-    time.end();
+    mFunctionTimer.start();
 
     if (Settings::bGameRunning) {
         Manager::Update();
@@ -141,16 +163,23 @@ void Engine::Update() {
         EditorController::Update(m_editor->getCamera());
     }
 
-    Statistics::m_scriptFrame = {time.getFPS(), time.start()};
+    mFunctionTimer.end();
+
+    Statistics::m_scriptFrame = {mFunctionTimer.getFps(), mFunctionTimer.getDeltaTime()};
 }
 
 void Engine::Render() {
+    mFunctionTimer.start();
+
     if (MainPostProcess && m_editor) {
         CameraRenderManager();
     }
+    mFunctionTimer.end();
+
+    Statistics::m_sceneFrame = {mFunctionTimer.getFps(), mFunctionTimer.getDeltaTime()};
 
     if (ImGuiPostProcess) {
-        UIFramebuffer();
+        GUIRender();
     }
 }
 
@@ -343,21 +372,30 @@ void Engine::RenderScene(const Camera *camera) {
     Skybox::Renderer(camera);
 }
 
-void Engine::UIFramebuffer() {
+void Engine::GUIRender() {
     iVector2 scale(Screen::width, Screen::height);
     
     grr::gRender::SetRenderState(grr::GR_VIEWPORT, (void*)&scale);
-
+    
     grr::gRender::SetRenderState(grr::GR_BACKGROUND_COLOR, (void*)&Color::black);
     grr::gRender::SetRenderState(grr::GR_BACKGROUND, grr::GR_COLOR_BUFFER);
-
+    
     ImGuiRender::Begin();
     
-    ProjectMenu::Render();
+    {
+        mFunctionTimer.start();
 
-    ModelHandle::Render();
+        ProjectMenu::Render();
 
-    PluginManager::Render();
+        ModelHandle::Render();
+
+        PluginManager::Render();
+
+        mFunctionTimer.end();
+    }
+    
+    Statistics::m_guiFrame = {mFunctionTimer.getFps(), mFunctionTimer.getDeltaTime()};
+    // m_editor->renderFrame();
 
     ImGuiRender::End();
 }

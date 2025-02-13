@@ -55,7 +55,7 @@ protected:
 
     static void RenderScene(const Camera *camera);
     
-    static void UIFramebuffer();
+    static void GUIRender();
     
     static void SetupEnable();
 };

@@ -1922,10 +1922,10 @@ void Editor::RenderStatisticsMenu() {
     ImGui::Text("Threads: %ld/%ld", Threadpool::GetThreadCount(), Threadpool::GetThreadAvailable());
 
     ImGui::SeparatorText("FrameTime");
-    ImGui::Text("MainThread:  %fms  | FPS: %.2f",  Statistics::m_threadFrame.delta,  (1.0f / Statistics::m_threadFrame.delta));
-    ImGui::Text("Render:      %fms  | FPS: %.2f",  Statistics::m_sceneFrame.delta,   (1.0f / Statistics::m_sceneFrame.delta));
-    ImGui::Text("GUI:         %fms  | FPS: %.2f",  Statistics::m_guiFrame.delta,     (1.0f / Statistics::m_guiFrame.delta));
-    ImGui::Text("Script:      %fms  | FPS: %.2f",  Statistics::m_scriptFrame.delta,  (1.0f / Statistics::m_scriptFrame.delta));
+    ImGui::Text("MainThread:  %fms  | FPS: %.2f",  Statistics::m_threadFrame.delta,  Statistics::m_threadFrame.fps);
+    ImGui::Text("Render:      %fms  | FPS: %.2f",  Statistics::m_sceneFrame.delta,   Statistics::m_sceneFrame.fps);
+    ImGui::Text("GUI:         %fms  | FPS: %.2f",  Statistics::m_guiFrame.delta,     Statistics::m_guiFrame.fps);
+    ImGui::Text("Script:      %fms  | FPS: %.2f",  Statistics::m_scriptFrame.delta,  Statistics::m_scriptFrame.fps);
 
     ImGui::SeparatorText("Renderização");
     ImGui::Text("Luzes: %ld",     Light::GetListLight().size());
