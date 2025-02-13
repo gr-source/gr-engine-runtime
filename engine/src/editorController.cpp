@@ -5,13 +5,13 @@
 
 #include <gr-base/core/console.hpp>
 #include <gr-base/core/clock.hpp>
+#include <gr-base/core/input.hpp>
 
 #include <gr-base/ecs/gameObject.hpp>
 
 #include "ui/ImGuiRender.h"
 
 #include "core/screen.hpp"
-#include "core/input.hpp"
 #include "core/timer.hpp"
 
 #include "settings.h"

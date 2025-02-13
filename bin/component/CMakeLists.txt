@@ -10,7 +10,6 @@ set(CMAKE_CXX_STANDARD 17)
 set(core_src
     src/core/function.cpp
     src/core/raycast.cpp
-    src/core/input.cpp
     src/core/time.cpp
     src/core/draw.cpp
 )

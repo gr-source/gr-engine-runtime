@@ -26,7 +26,6 @@ set(core_src
     src/core/statistics.cpp
     src/core/string.cpp
     src/core/screen.cpp
-    src/core/input.cpp
     src/core/time.cpp
     src/core/timer.cpp
 )
@@ -35,7 +34,6 @@ set(core_hdr
     src/core/statistics.hpp
     src/core/string.hpp
     src/core/screen.hpp
-    src/core/input.hpp
     src/core/time.hpp
     src/core/timer.hpp
 )

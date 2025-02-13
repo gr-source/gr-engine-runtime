@@ -13,7 +13,6 @@
 #include <gr-base/core/threadpool.hpp>
 #include <gr-base/core/scene.hpp>
 #include <gr-base/core/event.hpp>
-#include "core/input.hpp"
 
 #include "physics/physicsScene.hpp"
 
@@ -105,12 +104,6 @@ void ScriptManager::RegisterApi() {
     // First function
     m_script->registerFunction("Initialize",   reinterpret_cast<void **>(&InitializeScript));
     m_script->registerFunction("Destroy",      reinterpret_cast<void **>(&Destroy));
-
-    // Input
-    m_script->replaceLibraryFunction("Input::IskeyPress", reinterpret_cast<void *>(&Input::IsKeyPress));
-    m_script->replaceLibraryFunction("Input::SetCursorPos", reinterpret_cast<void *>(&Input::SetCursorPos));
-    m_script->replaceLibraryFunction("Input::GetCursorPos", reinterpret_cast<void *>(&Input::GetCursorPos));
-    m_script->replaceLibraryFunction("Input::IsMousePress", reinterpret_cast<void *>(&Input::IsMouseDown));
 
 }
 #pragma GCC diagnostic pop

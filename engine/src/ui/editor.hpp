@@ -187,8 +187,6 @@ private:
 
     void PopupMenuCreateScene();
 
-    void RenderFilesUI();
-
     void RenderTreeNodeFile(std::filesystem::path path);
 
     void DropTargetGameObjectInFile(std::string path);
@@ -240,13 +238,6 @@ private:
     void PopupMenuProperty();
 
     bool ProgressLoad(int max, int current);
-
-    enum NavegationFlags : grm::u8 {
-        NavegationFlags_default = 1 << 1,
-        NavegationFlags_console = 1 << 2,
-        NavegationFlags_files   = 1 << 3,
-        NavegationFlags_models  = 1 << 4,
-    };
 
     bool OnPropertyTransform(Transform *transform);
 

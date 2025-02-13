@@ -13,10 +13,10 @@
 #include <gr-base/core/assetsManager.hpp>
 #include <gr-base/core/threadpool.hpp>
 #include <gr-base/core/event.hpp>
+#include <gr-base/core/input.hpp>
 
 #include "core/statistics.hpp"
 #include "core/screen.hpp"
-#include "core/input.hpp"
 #include "core/timer.hpp"
 #include "core/time.hpp"
 
@@ -114,12 +114,15 @@ void Engine::Shutdown() {
 }
 
 void Engine::Idle() {
+    m_editor = ProjectMenu::GetEditor();
+
     auto fps = 60.0f;
     static Time time;
     Statistics::m_threadFrame = {time.getFPS(), (fps > 0.0f ? time.sleep(fps) : time.start())};
     Clock::deltaTime = Statistics::m_threadFrame.delta;
 
-    Engine::Update();
+    if (m_editor != nullptr)
+        Engine::Update();
 
     Engine::Render();
 
@@ -135,19 +138,13 @@ void Engine::Update() {
     if (Settings::bGameRunning) {
         Manager::Update();
     } else {
-        auto editor = ProjectMenu::GetEditor();
-
-        if (editor) {
-            EditorController::Update(editor->getCamera());
-        }
+        EditorController::Update(m_editor->getCamera());
     }
 
     Statistics::m_scriptFrame = {time.getFPS(), time.start()};
 }
 
 void Engine::Render() {
-    m_editor = ProjectMenu::GetEditor();
-
     if (MainPostProcess && m_editor) {
         CameraRenderManager();
     }
@@ -186,7 +183,7 @@ void Engine::CameraRenderManager()
     {
         for (auto camera : cameras)
         {
-            if (!camera->getGameObject()->getActive())
+            if (!camera->getGameObject()->getActive() || camera == camera_editor)
             {
                 continue;
             }
@@ -209,8 +206,10 @@ void Engine::CameraRenderManager()
         ScreenRender::Render(camera_editor);
     } else
     {
-        for (auto camera : cameras) {
-            if (!camera->getGameObject()->getActive()) {
+        for (auto camera : cameras)
+        {
+            if (!camera->getGameObject()->getActive() || camera == camera_editor)
+            {
                 continue;
             }
     

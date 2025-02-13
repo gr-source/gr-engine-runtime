@@ -627,7 +627,7 @@ void Editor::RenderObjectUI() {
         ImGui::TreePop();
     }
 
-    if (ImGui::IsKeyReleased(ImGuiKey_Delete) && s_objectSelected) {
+    if (ImGui::IsKeyReleased(ImGuiKey_Delete) && s_objectSelected && !ImGui::IsPopupOpen("##popup_rename_gameobject")) {
         Event::Add(&Scene::Destoy, s_objectSelected);
         s_objectSelected = nullptr;
     }
@@ -1170,8 +1170,6 @@ bool gluInvertMatrix(const Matrix4x4 &m, Matrix4x4 &invOut) {
 }
 */
 
-#include "core/input.hpp"
-
 void Editor::RenderScene() {
     UpdateResizeSceneFramebuffer();
 
@@ -1231,7 +1229,7 @@ void Editor::RenderScene() {
     ImGuizmo::SetDrawlist();
     ImGuizmo::SetRect(windowPos.x + cursorPos.x, windowPos.y + cursorPos.y, regionAvail.x, regionAvail.y);
 
-    if (m_mainCamera && s_objectSelected) {
+    if (m_mainCamera && s_objectSelected && !Settings::bGameRunning) {
         RenderGuizmo();
     }
 
@@ -1293,6 +1291,8 @@ void Editor::PlayGame() {
 }
 
 void Editor::StopGame() {
+    s_objectSelected = nullptr;
+
     Settings::bGameRunning = false;
 
     Scene::DestroyScript();
@@ -1395,12 +1395,6 @@ void Editor::PopupMenuCreateScene() {
     }
 
     ImGui::EndPopup();
-}
-
-void Editor::RenderFilesUI() {
-    ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
-
-    RenderTreeNodeFile(m_currentPath);
 }
 
 void Editor::RenderTreeNodeFile(std::filesystem::path path) {
@@ -1763,26 +1757,20 @@ void Editor::PopupCreateShader()
 }
 
 void Editor::RenderOtherUI() {
-    static NavegationFlags flags = NavegationFlags_files;
+    if (ImGui::Begin("Navegador", nullptr, ImGuiWindowFlags_AlwaysHorizontalScrollbar | ImGuiWindowFlags_AlwaysAutoResize))
+    {
+        auto avail = ImGui::GetContentRegionAvail();
 
-    ImGui::Begin("Navegador", nullptr, ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_AlwaysHorizontalScrollbar | ImGuiWindowFlags_AlwaysAutoResize);
+        ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
+        ImGui::BeginChild("aaa", ImVec2(avail.x / 3.0f, 0), ImGuiChildFlags_AlwaysUseWindowPadding);
+        RenderTreeNodeFile(m_currentPath);
+        ImGui::EndChild();
+
+        ImGui::SameLine();
+        ImGui::BeginChild("bbb", ImVec2(0.0f, 0.0f), ImGuiChildFlags_AlwaysUseWindowPadding);
+        ImGui::EndChild();
+    }
     
-    if (ImGui::BeginMenuBar()) {
-        if (ImGui::MenuItem("Files")) {
-            flags = NavegationFlags_files;
-        }
-        if (ImGui::MenuItem("Models")) {
-            flags = NavegationFlags_models;
-        }
-        ImGui::EndMenuBar();
-    }
-
-    if (flags & NavegationFlags_files) {
-        RenderFilesUI();
-    }
-
-    if (flags & NavegationFlags_models) {
-    }
 
     ImGui::End();
 }
@@ -1941,6 +1929,7 @@ void Editor::RenderStatisticsMenu() {
 
     ImGui::SeparatorText("Renderização");
     ImGui::Text("Luzes: %ld",     Light::GetListLight().size());
+    ImGui::Text("Cameras: %ld",     Camera::GetCameras().size());
     ImGui::Text("BatchRender: %ld/%ld", Batching::GetBatchCount(), Status::BatchRenderCount);
     ImGui::Text("DrawCallCount: %ld/%ld", Status::BatchDrawCallCount, Status::BatchDrawCallRender);
 }
