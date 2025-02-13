@@ -11,7 +11,7 @@ class RenderManager {
 public:
     static void Initialize();
 
-    static void Process(Camera *camera, ShadowMap *shadowMap);
+    static void Process(const Camera *camera, ShadowMap *shadowMap);
 
     static void Renderer();
 

@@ -21,7 +21,7 @@ public:
 
     static void AddLine(const Vector3& start, const Vector3& end, const Color& color);
 
-    static void Renderer(Camera *camera);
+    static void Renderer(const Camera *camera);
 
     static bool bDebugMode;
 

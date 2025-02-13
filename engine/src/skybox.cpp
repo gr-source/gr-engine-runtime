@@ -16,13 +16,13 @@ grr::gVertexArray *Skybox::m_vertexArray = nullptr;
 
 grr::gShader *Skybox::m_irradianceShader = nullptr;
 
-CubeFramebuffer *Skybox::m_cubeColor = nullptr;
+std::unique_ptr<CubeFramebuffer> Skybox::m_colorbuffer = nullptr;
 
-grr::gShader *Skybox::m_skyShader = nullptr;
+std::unique_ptr<CubeFramebuffer> Skybox::m_irradiance = nullptr;
 
 grr::gShader *Skybox::m_shader = nullptr;
 
-grr::gTexture *Skybox::m_texture = nullptr;
+grr::gTexture *Skybox::m_cubemapTexture = nullptr;
 
 grm::u32 Skybox::m_count = 0;
 
@@ -32,11 +32,13 @@ grm::u32 Skybox::m_ebo = 0;
 
 // TODO: falta adicionara a textura default ao skybox
 void Skybox::Initialize() {
-    m_cubeColor = CubeFramebuffer::Create({512, 512});
+    m_colorbuffer = std::make_unique<CubeFramebuffer>(iVector2{512, 512});
+
+    m_irradiance = std::make_unique<CubeFramebuffer>(iVector2{32, 32});
 
     CreateCube();
 
-    AssetsManager::LoadTexture(File::GetAsset("/texture/skybox/industrial_sunset_puresky_1k.hdr", true), &Skybox::SetupTexture);
+    AssetsManager::LoadTexture("/home/grdev/Downloads/sky_clouds_06_2k/sky_clouds_06_2k.png", &Skybox::ConfigCubemap);
 }
 
 void Skybox::Shutdown() {
@@ -56,8 +58,8 @@ void Skybox::Shutdown() {
     m_ebo = 0;
 }
 
-void Skybox::Renderer(Camera *camera) {
-    if (!camera || !m_shader || !m_shader->isValid()) {
+void Skybox::Renderer(const Camera *camera) {
+    if (!m_shader || !m_shader->isValid()) {
         return;
     }
 
@@ -66,23 +68,28 @@ void Skybox::Renderer(Camera *camera) {
     auto projection = camera->getPerspesctive();
     auto view = camera->getViewmatrix();
 
-    m_shader->bind();
-
-    CubeFramebuffer::GetTextureColor(m_cubeColor)->bind(0);
+    m_colorbuffer->getCubemapTexture()->bind(0);
     m_shader->setUniform("u_texture", 1, &textureID);
-
+    
     m_shader->setUniform("projection", 1, &projection);
     m_shader->setUniform("view", 1, &view);
+    
+    m_shader->bind();
 
     m_shader->flush();
     
     m_vertexArray->bind();
-
+    
     grr::gVertexArray::DrawElements(PrimitiveType::TRIANGLES, m_count, nullptr);
 }
 
 grr::gTexture *Skybox::GetTextureCubemap() {
-    return CubeFramebuffer::GetTextureColor(m_cubeColor);
+    return m_colorbuffer->getCubemapTexture();
+}
+
+grr::gTexture *Skybox::GetTextureIrradiance()
+{
+    return &(*m_irradiance->getCubemapTexture());
 }
 
 void Skybox::CreateCube() {
@@ -138,59 +145,55 @@ void Skybox::CreateCube() {
     m_vertexArray->unbind();
 }
 
-void Skybox::SetupTexture(grr::gTexture *texture) {
-    m_texture = texture;
-
-    Event::Add(&Skybox::UploadShader);
-}
-
-void SetCommonRegister(grr::gShader *shader) {
-    shader->bind();
-    shader->registry("projection", grr::UniformType_mat4);
-    shader->registry("view",       grr::UniformType_mat4);
-    shader->registry("u_texture",  grr::UniformType_int);
-}
-
 void RegisterDeafult(grr::gShader **out, grr::gShader *shader) {
     *out = shader;
-
-    if (!shader) { return; }
-
-    SetCommonRegister(shader);
 }
 
-void Skybox::RegisterSky(grr::gShader **out, grr::gShader *shader) {
-    *out = shader;
-
-    if (!shader) { return; }
-
-    SetCommonRegister(shader);
-
-    CubeFramebuffer::Bind(m_cubeColor);
-        GenerateMap([](grm::u32 i) {
-            grr::gFramebufferFlags flags = grr::gFramebufferFlags_Cubemap;
-            switch (i) {
-                case 0: flags = grr::gFramebufferFlags_Cubemap_Positive_X; break;
-                case 1: flags = grr::gFramebufferFlags_Cubemap_Negative_X; break;
-                case 2: flags = grr::gFramebufferFlags_Cubemap_Positive_Y; break;
-                case 3: flags = grr::gFramebufferFlags_Cubemap_Negative_Y; break;
-                case 4: flags = grr::gFramebufferFlags_Cubemap_Positive_Z; break;
-                case 5: flags = grr::gFramebufferFlags_Cubemap_Negative_Z; break;
-            }
-            m_cubeColor->SetTexture(flags);
-        }, m_texture, shader);
-}
-
-void Skybox::UploadShader() {
-    AssetsManager::LoadShader(
-        File::GetAsset("/shader/skybox/irradiance.glsl"),
-        RegisterDeafult, &m_irradianceShader
-    );
+void Skybox::ConfigCubemap(grr::gTexture *texture) {
+    m_cubemapTexture = texture;
 
     AssetsManager::LoadShader(
         File::GetAsset("/shader/skybox/skybox.glsl"),
-        Skybox::RegisterSky, &m_skyShader
+        &Skybox::CreateCubemapBackground
     );
+}
+
+void Skybox::CreateCubemapBackground(grr::gShader *shader) {
+    m_colorbuffer->bind();
+    GenerateMap([](grm::u32 i) {
+        grr::gFramebufferFlags flags = grr::gFramebufferFlags_Cubemap;
+        switch (i) {
+            case 0: flags = grr::gFramebufferFlags_Cubemap_Positive_X; break;
+            case 1: flags = grr::gFramebufferFlags_Cubemap_Negative_X; break;
+            case 2: flags = grr::gFramebufferFlags_Cubemap_Positive_Y; break;
+            case 3: flags = grr::gFramebufferFlags_Cubemap_Negative_Y; break;
+            case 4: flags = grr::gFramebufferFlags_Cubemap_Positive_Z; break;
+            case 5: flags = grr::gFramebufferFlags_Cubemap_Negative_Z; break;
+        }
+        m_colorbuffer->setTextureAttachment(flags);
+    }, m_cubemapTexture, shader);
+
+    AssetsManager::LoadShader(
+        File::GetAsset("/shader/skybox/irradiance.glsl"),
+        &Skybox::CreateCubemapIrradiance
+    );
+}
+
+void Skybox::CreateCubemapIrradiance(grr::gShader *shader)
+{
+    m_irradiance->bind();
+    GenerateMap([](grm::u32 i) {
+        grr::gFramebufferFlags flags = grr::gFramebufferFlags_Cubemap;
+        switch (i) {
+            case 0: flags = grr::gFramebufferFlags_Cubemap_Positive_X; break;
+            case 1: flags = grr::gFramebufferFlags_Cubemap_Negative_X; break;
+            case 2: flags = grr::gFramebufferFlags_Cubemap_Positive_Y; break;
+            case 3: flags = grr::gFramebufferFlags_Cubemap_Negative_Y; break;
+            case 4: flags = grr::gFramebufferFlags_Cubemap_Positive_Z; break;
+            case 5: flags = grr::gFramebufferFlags_Cubemap_Negative_Z; break;
+        }
+        m_irradiance->setTextureAttachment(flags);
+    }, m_colorbuffer->getCubemapTexture(), shader);
 
     AssetsManager::LoadShader(
         File::GetAsset("/shader/skybox/background.glsl"),
@@ -201,7 +204,8 @@ void Skybox::UploadShader() {
 void Skybox::GenerateMap(std::function<void(grm::u32)> func, grr::gTexture *texture, grr::gShader *shader) {
     auto projection = Math::perspective(Math::rad(90.0f), 1.0f, 0.1f, 10.0f);
 
-    int textureID = 0;
+    // cubefraembuffer a ta usando id 0
+    int textureID = 1;
 
     texture->bind(textureID);
     shader->setUniform("u_texture", 1, &textureID);

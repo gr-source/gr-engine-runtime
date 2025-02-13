@@ -3,28 +3,17 @@
 #include <gr-render/gFramebuffer.h>
 #include <gr-render/gTexture.h>
 
-CubeFramebuffer *CubeFramebuffer::s_current = nullptr;
-
-CubeFramebuffer *CubeFramebuffer::Create(const iVector2 &size) {
-    auto handle = new CubeFramebuffer();
-    handle->m_viewport = size;
-
-    handle->m_fbo = grr::gFramebuffer::Create();
-    if (!handle->m_fbo) {
+CubeFramebuffer::CubeFramebuffer(const iVector2 &size) : m_viewport(size), m_fbo(0), m_rbo(0), m_texture(std::make_unique<grr::gTexture>()) {
+    m_fbo = grr::gFramebuffer::Create();
+    if (!m_fbo) {
         throw std::runtime_error("Falied to create framebuffer.");
     }
 
-    handle->m_rbo = grr::gRenderbuffer::Create();
-    if (!handle->m_rbo) {
+    m_rbo = grr::gRenderbuffer::Create();
+    if (!m_rbo) {
         throw std::runtime_error("Falied to create renderbufer.");
     }
 
-    handle->m_texture = new grr::gTexture();
-    if (!handle->m_texture) {
-        throw std::runtime_error("Falied to create Texture.");
-    }
-
-    // handle->m_texture->bind(0);
     for (int i = 0; i < 6; ++i) {
         grm::u32 cubemapFlag = 0;
         switch (i) {
@@ -36,69 +25,47 @@ CubeFramebuffer *CubeFramebuffer::Create(const iVector2 &size) {
             case 5: cubemapFlag = grr::gTextureFlags_Cubemap_Negative_Z; break;
         }
 
-        handle->m_texture->updateBuffer(handle->m_viewport.x, handle->m_viewport.y, grr::gTextureFlags_Cubemap | grr::gTextureFlags_Clamp_Edge | cubemapFlag, grr::TextureFormat_SRGB, nullptr);
+        m_texture->updateBuffer(m_viewport.x, m_viewport.y, grr::gTextureFlags_Cubemap | grr::gTextureFlags_Clamp_Edge | cubemapFlag, grr::TextureFormat_RGB16F, nullptr);
     }
 
-    grr::gRenderbuffer::Bind(handle->m_rbo);
-    grr::gRenderbuffer::SetBufferStorage(grr::RenderbufferType_Depth_Component, handle->m_viewport.x, handle->m_viewport.y);
+    grr::gRenderbuffer::Bind(m_rbo);
+    grr::gRenderbuffer::SetBufferStorage(grr::RenderbufferType_Depth_Component, m_viewport.x, m_viewport.y);
     grr::gRenderbuffer::Unbind();
 
     // configure framebuffer
-    grr::gFramebuffer::Bind(handle->m_fbo);
+    grr::gFramebuffer::Bind(m_fbo);
 
-    grr::gRenderbuffer::Bind(handle->m_rbo);
+    grr::gRenderbuffer::Bind(m_rbo);
     grr::gFramebuffer::SetRenderbuffer(grr::gFramebufferFlags_Depth_Attachiment);
 
     grr::gFramebuffer::Unbind();
-
-    return handle;
 }
 
-void CubeFramebuffer::Shutdown(CubeFramebuffer *target) {
-    if (!target) {
-        return;
+CubeFramebuffer::~CubeFramebuffer() {
+    if (m_fbo) {
+        grr::gFramebuffer::Destroy(m_fbo);
     }
-
-    if (target->m_texture) {
-        delete target->m_texture;
-    }
-
-    if (target->m_fbo) {
-        grr::gFramebuffer::Destroy(target->m_fbo);
-    }
-
-    delete target;
 }
 
-void CubeFramebuffer::Bind(CubeFramebuffer *target) {
-    assert(target != nullptr);
-
-    grr::gRender::SetRenderState(grr::GR_VIEWPORT, (void *)&target->m_viewport);
-    grr::gFramebuffer::Bind(target->m_fbo);
-
-    target->m_texture->bind(0);
-
-    s_current = target;
+void CubeFramebuffer::bind() const {
+    grr::gRender::SetRenderState(grr::GR_VIEWPORT, (void *)&m_viewport);
+    grr::gFramebuffer::Bind(m_fbo);
 }
 
-void CubeFramebuffer::SetTexture(grr::gFramebufferFlags attachment) {
-    auto texture = s_current->m_texture;
-    assert(texture != nullptr);
-    
-    texture->bind(1);
-    grr::gFramebuffer::SetTexture(grr::gFramebufferFlags_Color_Attachiment0, attachment);
-}
-
-void CubeFramebuffer::Unbind() {
+void CubeFramebuffer::unbind() const {
     grr::gFramebuffer::Unbind();
 }
 
-grr::gTexture *CubeFramebuffer::GetTextureColor(CubeFramebuffer *target) {
-    assert(target != nullptr);
+void CubeFramebuffer::setTextureAttachment(grr::gFramebufferFlags attachment) {
+    m_texture->bind(0);
     
-    return target->m_texture;
+    grr::gFramebuffer::SetTexture(grr::gFramebufferFlags_Color_Attachiment0, attachment);
+
+    m_texture->unbind();
 }
 
-CubeFramebuffer::CubeFramebuffer() : m_texture(nullptr), m_rbo(0), m_fbo(0), m_viewport(0, 0) {}
+grr::gTexture *CubeFramebuffer::getCubemapTexture() const {
+    return &(*m_texture);
+}
 
 

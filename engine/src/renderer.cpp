@@ -48,7 +48,7 @@ void DebugDraw::AddLine(const Vector3& start, const Vector3& end, const Color& c
     m_lines.emplace_back(end, color);
 }
 
-void DebugDraw::Renderer(Camera *camera) {
+void DebugDraw::Renderer(const Camera *camera) {
     /*
     if (!camera || !m_shader || !m_shader->isValid()) {
         return;

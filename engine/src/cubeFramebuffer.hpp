@@ -3,24 +3,24 @@
 #include <gr-render/gRender.h>
 #include <gr-math/gmath.hpp>
 
-class CubeFramebuffer {
+#include <memory>
+
+class CubeFramebuffer
+{
 public:
-    static CubeFramebuffer *Create(const iVector2 &size);
+    CubeFramebuffer(const iVector2 &size);
+    ~CubeFramebuffer();
 
-    static void Shutdown(CubeFramebuffer *target);
+    void bind() const;
 
-    static void Bind(CubeFramebuffer *target);
+    void unbind() const;
 
-    static void SetTexture(grr::gFramebufferFlags attachment);
+    void setTextureAttachment(grr::gFramebufferFlags attachment);
 
-    static void Unbind();
-
-    static grr::gTexture *GetTextureColor(CubeFramebuffer *target);
-
+    grr::gTexture *getCubemapTexture() const;
+    
 private:
-    static CubeFramebuffer *s_current;
-
-    grr::gTexture *m_texture;
+    std::unique_ptr<grr::gTexture> m_texture;
 
     grm::u32 m_rbo;
 

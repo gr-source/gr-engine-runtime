@@ -26,14 +26,18 @@
 #include <gr-render/gTexture.h>
 #include <gr-render/gError.h>
 
+#include "skybox.h"
+
 bool RenderManager::bWireFrame = false;
 
 void RenderManager::Initialize() {}
 
 void RenderManager::Shutdown() {}
 
-void RenderManager::Process(Camera *camera, ShadowMap *shadowMap) {
+void RenderManager::Process(const Camera *camera, ShadowMap *shadowMap) {
     if (!camera) { return; }
+
+    auto irradianceMap = Skybox::GetTextureIrradiance();
 
     auto projection = camera->getPerspesctive();
     auto view = camera->getViewmatrix();
@@ -42,6 +46,8 @@ void RenderManager::Process(Camera *camera, ShadowMap *shadowMap) {
     static float TIME = 0.0f;
     TIME += Clock::deltaTime;
     TIME = std::fmod(TIME, 360.0f);
+
+    int textureID = 4;
 
     for (auto &&[name, shader] : AssetsManager::GetShaderList()) {
         if (!shader || !shader->isValid()) {
@@ -52,6 +58,12 @@ void RenderManager::Process(Camera *camera, ShadowMap *shadowMap) {
         shader->setUniform("u_view",       1, &view);
         shader->setUniform("m_eye",        1, &position);
         shader->setUniform("TIME",         1, &TIME);
+        
+        if (irradianceMap != nullptr)
+        {
+            irradianceMap->bind(textureID);
+            shader->setUniform("irradianceMap", 1, &textureID);
+        }
 
         SetupLight(shader.get());
     }

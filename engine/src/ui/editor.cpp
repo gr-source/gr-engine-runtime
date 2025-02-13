@@ -36,6 +36,7 @@
 #include "core/screen.hpp"
 #include "core/timer.hpp"
 
+#include <gr-base/script/meshCollider.hpp>
 #include <gr-base/script/boxCollider.hpp>
 #include <gr-base/script/meshFilter.hpp>
 #include <gr-base/script/meshRender.hpp>
@@ -89,7 +90,17 @@ std::string getfilesize(std::size_t sz) {
     return std::to_string(sz) + "B";
 }
 
-Editor::Editor() : m_viewport(ImGui::GetMainViewport()), mImGuiIO(&ImGui::GetIO()), m_currentPath(File::GetAsset("")), m_cameraObject(nullptr), m_mainCamera(nullptr), s_objectSelected(nullptr), m_currentPage(0), m_materialToRename(nullptr), tempCam(nullptr), m_plugin(nullptr) {
+#define INSERT_SCRIPT(object) \
+    {#object, [this](Entity *entity) \
+        { \
+            if (RenderProperty<object>(&Editor::OnProperty##object, this)) \
+            { \
+                entity->destroy(#object); \
+            } \
+        } \
+    }
+
+Editor::Editor() : m_viewport(ImGui::GetMainViewport()), mImGuiIO(&ImGui::GetIO()), m_currentPath(File::GetAsset("")), m_cameraObject(nullptr), m_mainCamera(nullptr), s_objectSelected(nullptr), m_currentPage(0), m_materialToRename(nullptr), m_plugin(nullptr) {
     s_texturePlayGame = nullptr;
 
     s_objectSelected = nullptr;
@@ -108,8 +119,6 @@ Editor::Editor() : m_viewport(ImGui::GetMainViewport()), mImGuiIO(&ImGui::GetIO(
 
     bOpenPopupInfoDir = false;
 
-    bScriptReloaded = false;
-
     bOpenPopupOptionGameObject = false;
 
     FPSColor = {1.0f, 1.0f, 1.0f, 1.0f};
@@ -120,9 +129,23 @@ Editor::Editor() : m_viewport(ImGui::GetMainViewport()), mImGuiIO(&ImGui::GetIO(
 
     m_guizmoManipulate = ImGuizmo::WORLD;
 
-    s_maxProgress = 0;
-
     mLastTransform = {Vector3::zero, Quaternion::identity, Vector3::one};
+
+    mInternalScript = {
+        {"Transform", [this](Entity *entity)
+            {
+                RenderProperty<Transform>(&Editor::OnPropertyTransform, this);
+            }
+        },
+        INSERT_SCRIPT(Camera),
+        INSERT_SCRIPT(Light),
+        INSERT_SCRIPT(MeshRender),
+        INSERT_SCRIPT(MeshFilter),
+        // INSERT_SCRIPT(MeshCollider),
+        INSERT_SCRIPT(BoxCollider),
+        INSERT_SCRIPT(Rigidbody),
+        INSERT_SCRIPT(Animator),
+    };
 
     m_config = std::make_shared<Config>(File::GetFile("/config.ini"));
     try {
@@ -266,10 +289,6 @@ void Editor::KeyBoardUp(grm::u32 key) {
 }
 
 void Editor::LoadScript() {
-    if (m_cameraObject) {
-        Editor::setActiveCamera(false);
-    }
-    
     if (ScriptManager::IsValid()) {
         UnloadScript();
     }
@@ -325,7 +344,7 @@ void Editor::RenderUI() {
 
     switch (popupFlags) {
     case EditorPopupFlags_LoadPlugin:
-        ImGui::OpenPopup("##popup_load_plugin");
+        ImGui::OpenPopup(GET_FLAG_NAME(EditorPopupFlags_LoadPlugin));
         popupFlags &= ~EditorPopupFlags_LoadPlugin;
         break;
     case EditorPopupFlags_AddComponent:
@@ -389,7 +408,7 @@ void Editor::RenderUI() {
 
     PluginManager();
 
-    PluginLoad();
+    PopupPluginLoad();
 
     PluginEditor();
 
@@ -1255,7 +1274,7 @@ void Editor::RenderScene() {
 
 void Editor::UpdateResizeSceneFramebuffer() {
     ImVec2 regionAvail = ImGui::GetContentRegionAvail();
-    if (m_mainCamera && (m_lastViewportSize.x != regionAvail.x || m_lastViewportSize.y != regionAvail.y && regionAvail.x > 5.0f && regionAvail.y > 5.0f || bScriptReloaded)) {
+    if (m_mainCamera && (m_lastViewportSize.x != regionAvail.x || m_lastViewportSize.y != regionAvail.y && regionAvail.x > 5.0f && regionAvail.y > 5.0f)) {
         auto &viewport = Settings::ViewportSize = {static_cast<int>(regionAvail.x), static_cast<int>(regionAvail.y)};
         if (viewport.x > 0 && viewport.y > 0) {
             Display::SetDisplayRect(Rect{0.0f, 0.0f, (float)Settings::ViewportSize.x, (float)Settings::ViewportSize.y});
@@ -1265,7 +1284,6 @@ void Editor::UpdateResizeSceneFramebuffer() {
             Engine::GetMainPostprocess()->resize(viewport);
             
             m_lastViewportSize = regionAvail;
-            bScriptReloaded = false;
         }
     }
 }
@@ -1282,8 +1300,6 @@ void Editor::StopGame() {
     Scene::CleanTemp();
 
     Scene::InitializeEngineScript();
-
-    Editor::setActiveCamera(true);
 
     Console::log(Log::DEFAULT, "Game stoped.");
 }
@@ -1888,7 +1904,7 @@ void Editor::RenderPropertiUI() {
     ImGui::Begin("Propriedades", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
 
     if (ImGui::BeginTabBar("##render_properti_ui_tabbar")) {
-        RenderGameObjectPropertiUI();
+        RenderObjectInfo();
         
         /*
         if (ImGui::BeginTabItem("Estatística", nullptr)) {
@@ -1929,7 +1945,7 @@ void Editor::RenderStatisticsMenu() {
     ImGui::Text("DrawCallCount: %ld/%ld", Status::BatchDrawCallCount, Status::BatchDrawCallRender);
 }
 
-void Editor::RenderGameObjectPropertiUI() {
+void Editor::RenderObjectInfo() {
     if (!s_objectSelected) { return; }
 
     auto entity = s_objectSelected->getEntity();
@@ -1950,76 +1966,7 @@ void Editor::RenderGameObjectPropertiUI() {
         s_objectSelected->setActive(isActive);
     }
 
-    for (auto [name, component] : entity->getComponentMap()) {
-        ImGui::PushID(name.c_str());
-
-        if (name == "Transform") {
-            RenderProperty<Transform>(&Editor::OnPropertyTransform, this);
-            ImGui::PopID();
-            continue;
-        }
-
-        if (name == "Camera") {
-            RenderProperty<Camera>(&Editor::OnPropertyCamera, this);
-            ImGui::PopID();
-            continue;
-        }
-        
-        if (name == "Light") {
-            if (RenderProperty<Light>(&Editor::OnPropertyLight, this)) {
-                entity->destroy(name);
-            }
-            ImGui::PopID();
-            continue;
-        }
-
-        if (name == "MeshRender") {
-            if (RenderProperty<MeshRender>(&Editor::OnPropertyMeshRender, this)) {
-                entity->destroy(name);
-            }
-            ImGui::PopID();
-            continue;
-        }
-
-        if (name == "MeshFilter") {
-            if (RenderProperty<MeshFilter>(&Editor::OnPropertyMeshFilter, this)) {
-                entity->destroy(name);
-            }
-            ImGui::PopID();
-            continue;
-        }
-
-        if (name == "BoxCollider") {
-            if (RenderProperty<BoxCollider>(&Editor::OnPropertyBoxCollider, this)) {
-                entity->destroy(name);
-            }
-            ImGui::PopID();
-            continue;
-        }
-
-        if (name == "Rigidbody") {
-            if (RenderProperty<Rigidbody>(&Editor::OnPropertyRigidbody, this)) {
-                entity->destroy(name);
-            }
-            ImGui::PopID();
-            continue;
-        }
-
-        if (name == "Animator") {
-            if (RenderProperty<Animator>(&Editor::OnPropertyAnimator, this)) {
-                entity->destroy(name);
-            }
-            ImGui::PopID();
-            continue;
-        }
-        
-        if (!RenderComponents(name, &(*component))) {
-            entity->destroy(name);
-            ImGui::PopID();
-            continue;
-        }
-        ImGui::PopID();
-    }
+    RenderScriptFromEntity(entity);
 
     auto avail = ImGui::GetContentRegionAvail();
 
@@ -2028,6 +1975,25 @@ void Editor::RenderGameObjectPropertiUI() {
     }
 
     ImGui::PopID();
+}
+
+void Editor::RenderScriptFromEntity(Entity *entity)
+{
+    for (auto [name, component] : entity->getComponentMap())
+    {
+        ImGui::PushID(name.c_str());
+
+        auto it = mInternalScript.find(name);
+        if (it != mInternalScript.end())
+        {
+            it->second(entity);
+        } else if (!RenderComponents(name, &(*component)))
+        {
+            entity->destroy(name);
+        }
+
+        ImGui::PopID();
+    }
 }
 
 bool Editor::RenderComponents(const std::string &name, Component *component) {
@@ -2061,20 +2027,13 @@ bool Editor::RenderComponents(const std::string &name, Component *component) {
 
 void Editor::RenderField(Field &field, Component *component) {
     auto name = field.getName();
-    auto type = field.getType();
 
     ImGui::Text("%s:", name.c_str());
     name = "##" + name;
     
-    switch (type) {
+    switch (field.getType()) {
     case FieldType_GameObject: {
         renderDropGameObject(Field::GetFieldData<GameObject *>(component, field));
-        // auto gameObject = Field::GetFieldData<GameObject *>(component, field);
-        // *gameObject = s_objectSelected;
-
-        // if (*gameObject)
-        //     ImGui::Text("%s", (*gameObject)->getName().c_str());
-        // dropGameObject();
         break;
     }
     case FieldType_float: {
@@ -2139,19 +2098,6 @@ void Editor::renderDropGameObject(GameObject **ref) {
     ImGui::EndDragDropTarget();
 }
 
-void AddComponentForAll(GameObject *gameObject, std::string name) {
-    auto entt = gameObject->getEntity();
-
-    if (!entt->hasComponent(name)) {
-        entt->addComponent(name);
-    }
-
-    auto transform = gameObject->getTransform();
-    for (auto &child : transform->getChildren()) {
-        AddComponentForAll(child->getGameObject(), name);
-    }
-}
-
 void Editor::PopupAddComponent() {
     if (!s_objectSelected) {
         return;
@@ -2190,8 +2136,6 @@ void Editor::PopupAddComponent() {
 
             if (component && (*it) == "Light") {
                 component->Init();
-
-                std::cout << "X" << std::endl;
             }
 
             std::memset(componentName, '\0', sizeof(componentName));
@@ -2297,43 +2241,25 @@ bool Editor::OnPropertyMeshFilter(MeshFilter *meshFilter) {
         return true;
     }
 
-    if (!isOpen) {
+    auto meshList = meshFilter->getMesh();
+
+    if (!isOpen || meshList == nullptr) {
         return false;
     }
 
-    // ImGui::Text("Name: %s", meshFilter->getMesh()->getName().c_str());
+    auto name = AssetsManager::GetMeshListRefToName(meshList);
 
+    if (ImGui::TreeNode(name.c_str()))
+    {
+        for (std::size_t i=0;i<meshList->size();i++)
+        {
+            auto &mesh = (*meshList)[i];
+
+            ImGui::Text("ID: %ld Name: %s", i, mesh.getName().c_str());
+        }
+        ImGui::TreePop();
+    }
     return false;
-}
-
-void Editor::RenderUVConfig(MeshFilter *meshFilter) {
-    auto mesh = meshFilter->getMesh();
-
-    auto isOpen = ImGui::TreeNode("UV");
-    if (!isOpen || !mesh) {
-        return;
-    }
-    const char *name[] {"X", "Y", "Z"};
-
-    ImGui::Text("Position:");
-    Vector2 position = Vector2::zero;
-    if (View::DragScalarEx(name, reinterpret_cast<float *>(&position), 2, 1.0f, 0.0f, 0.0f)) {
-        //
-    }
-
-    ImGui::Text("Rotation:");
-    Vector3 euler = Vector3::zero;
-    if (View::DragScalarEx(name, reinterpret_cast<float *>(&euler), 2, 1.0f, 0.0f, 0.0f)) {
-        //
-    }
-
-    ImGui::Text("Scale:");
-    Vector2 scale = Vector2::zero;
-    if (View::DragScalarEx(name, reinterpret_cast<float *>(&scale), 2, 1.0f, 0.0f, 0.0f)) {
-        //
-    }
-
-    ImGui::TreePop();
 }
 
 bool Editor::OnPropertyMeshRender(MeshRender *meshRender) {
@@ -2373,6 +2299,11 @@ bool Editor::OnPropertyMeshRender(MeshRender *meshRender) {
     return false;
 }
 
+// bool Editor::OnPropertyMeshCollider(MeshCollider *meshCollider)
+// {
+//     return false;
+// }
+
 bool Editor::RenderMaterial(Material *material) {
     auto bVisible = true;
 
@@ -2407,6 +2338,9 @@ bool Editor::RenderMaterial(Material *material) {
 
     dropShaderInMaterial(material);
 
+    RenderShaderUniform(shader);
+
+    /*
     auto albedo = material->getAlbedo();
     InsertTexture(material);
 
@@ -2431,8 +2365,42 @@ bool Editor::RenderMaterial(Material *material) {
     if (ImGui::DragFloat("##mesh_render_material_ao", &ao, 0.001f)) {
         material->setAmbientOcclusion(ao);
     }
+    */
 
     return false;
+}
+
+void Editor::RenderShaderUniform(grr::gShader *shader)
+{
+    // for (std::size_t i=0;i<shader->getUniformCount();i++)
+    // {
+    //     auto &uniform = shader->getUniform()[i];
+    //     if (uniform.name == nullptr ||
+    //         strchr(uniform.name, '[') != NULL)
+    //     {
+    //         continue;
+    //     }
+
+    //     ImGui::Text("%s:", uniform.name);
+
+    //     switch (uniform.type)
+    //     {
+    //     case grr::UniformType_float: {
+    //         float value = 0.0f;
+    //         if (uniform.data != nullptr)
+    //             value = *reinterpret_cast<float *>(uniform.data);
+
+    //         if (ImGui::DragFloat(("##" + std::string(uniform.name)).c_str(), &value))
+    //         {
+    //             shader->setUniform(uniform.name, 1, &value);
+    //         }
+    //         break;
+    //     }
+    //     default:
+    //         break;
+    //     }
+        
+    // }
 }
 
 void Editor::InsertTexture(Material *material) {
@@ -2753,10 +2721,7 @@ float Editor::GetFps() {
 }
 
 Camera *Editor::getCamera() {
-    if (!Camera::Current()) {
-        return m_mainCamera;
-    }
-    return Settings::bGameRunning ? Camera::Current() : m_mainCamera;
+    return m_mainCamera;
 }
 
 bool Editor::ProgressLoad(int max, int current) {
@@ -2781,15 +2746,9 @@ bool Editor::ProgressLoad(int max, int current) {
 }
 
 void Editor::PostLoadGameObject(GameObject *gameObject) {
-    if (!m_mainCamera || !gameObject) {
-        return;
-    }
-    
     if (Scene::HasScene())
         Scene::GetCurrentScene()->insert(gameObject);
     
-    // Scene::Init(gameObject);
-
     s_objectSelected = gameObject;
 }
 
@@ -3023,22 +2982,6 @@ void Editor::SaveScene(const std::string &name, Scene *scene) {
     scene->save(File::GetAsset("/scene/") + name + ".scn");
 }
 
-void Editor::setActiveCamera(bool value) {
-    if (value && tempCam) {
-        m_cameraObject = tempCam;
-        m_mainCamera = tempCam->hasComponent<Camera>() ? tempCam->getComponent<Camera>() : tempCam->addComponent<Camera>();
-
-        m_mainCamera->setActive(true);
-        return;
-    }
-    m_mainCamera->setActive(false);
-
-    tempCam = m_cameraObject;
-
-    m_cameraObject = nullptr;
-    m_mainCamera = nullptr;
-}
-
 void Editor::showShaderListPopup() {
     auto bOpen = ImGui::BeginPopup("##popup_menu_shader_list");
     if (!bOpen) { return; }
@@ -3224,12 +3167,12 @@ void Editor::PluginManager() {
     ImGui::EndPopup();
 }
 
-void Editor::PluginLoad() {
+void Editor::PopupPluginLoad() {
     ImVec2 winSize(200, 300);
     
     ImGui::SetNextWindowPos(ImVec2{static_cast<float>(Screen::width / 2), static_cast<float>(Screen::height / 2)} - (winSize / 2.0f), ImGuiCond_Always);
     ImGui::SetNextWindowSize(winSize, ImGuiCond_Always);
-    auto isOpen = ImGui::BeginPopup("##popup_load_plugin");
+    auto isOpen = ImGui::BeginPopup(GET_FLAG_NAME(EditorPopupFlags_LoadPlugin));
     if (!isOpen) { return; }
 
     auto avail = ImGui::GetContentRegionAvail();

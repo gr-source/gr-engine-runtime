@@ -2,13 +2,15 @@
 
 #include <gr-render/gRender.h>
 
+#include <gr-base/script/default.hpp>
+
 class ScreenRender {
 public:
     static void Initialize();
 
     static void Shutdown();
 
-    static void Render(grr::gTexture *texture, const Rect &rect);
+    static void Render(const Camera *camera);
 
 private:
     static grr::gVertexArray *m_vertexArray;

@@ -18,8 +18,6 @@ public:
 
     static void HandleEvent(EngineEvent event, const void* data);
 
-    static void MainFramebuffer();
-
     static PostProcessing *GetImGuiPostprocess();
 
     static PostProcessing *GetMainPostprocess();
@@ -39,9 +37,13 @@ protected:
 
     static void Idle();
 
+    static void Update();
+
     static void Render();
 
-    static void Update();
+    static void CameraRenderManager();
+
+    static void PreConfigRenderScene(const Camera *camera);
 
     static void GRKeyboardDown(grm::u32 key);
     static void GRKeyboardUp(grm::u32 key);
@@ -51,7 +53,7 @@ protected:
 
     static void OnPhysics();
 
-    static void RenderScene(Camera *camera);
+    static void RenderScene(const Camera *camera);
     
     static void UIFramebuffer();
     

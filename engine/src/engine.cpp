@@ -149,12 +149,96 @@ void Engine::Render() {
     m_editor = ProjectMenu::GetEditor();
 
     if (MainPostProcess && m_editor) {
-        MainFramebuffer();
+        CameraRenderManager();
     }
 
     if (ImGuiPostProcess) {
         UIFramebuffer();
     }
+}
+
+void Engine::CameraRenderManager()
+{
+    // shadow
+    /*
+    {
+        m_shadowMap->bind();
+        
+        grr::gRender::SetRenderState(grr::GR_BACKGROUND, grr::GR_DEPTH_BUFFER);
+        grr::gRender::SetRenderState(grr::GR_DEPTH, grr::GR_TRUE);
+        grr::gRender::SetRenderState(grr::GR_CULL, grr::GR_FRONT);
+        grr::gRender::SetRenderState(grr::GR_FRAMEBUFFER_SRGB, grr::GR_FALSE);
+        
+        Batching::RenderShadowPass();
+    
+        m_shadowMap->unbind();
+    }
+    */
+
+
+    auto camera_editor = m_editor->getCamera();
+    auto cameras = Camera::GetCameras();
+
+    if (!Settings::bGameRunning && camera_editor != nullptr)
+    {
+        PreConfigRenderScene(camera_editor);
+    } else
+    {
+        for (auto camera : cameras)
+        {
+            if (!camera->getGameObject()->getActive())
+            {
+                continue;
+            }
+
+            PreConfigRenderScene(camera);
+        }
+    }
+
+    // Captura de posprocessamento para o imgui
+    ImGuiPostProcess->bind();
+
+    // renderização da cena 2d e utilização do pos processamento;
+    grr::gRender::SetRenderState(grr::GR_BACKGROUND_COLOR, (void*)&Color::red);
+    grr::gRender::SetRenderState(grr::GR_BACKGROUND, grr::GR_COLOR_BUFFER);
+    grr::gRender::SetRenderState(grr::GR_DEPTH, grr::GR_FALSE);
+    // grr::gRender::SetRenderState(grr::GR_FRAMEBUFFER_SRGB, grr::GR_FALSE);
+
+    if (!Settings::bGameRunning && camera_editor != nullptr)
+    {
+        ScreenRender::Render(camera_editor);
+    } else
+    {
+        for (auto camera : cameras) {
+            if (!camera->getGameObject()->getActive()) {
+                continue;
+            }
+    
+            ScreenRender::Render(camera);
+        }
+    }
+
+    ImGuiPostProcess->unbind();
+}
+
+void Engine::PreConfigRenderScene(const Camera *camera)
+{
+    // Seleção de modelos para renderizar
+    RenderManager::Process(camera, &(*m_shadowMap));
+
+    MainPostProcess->setTextureColor(camera->getColorTexture());
+
+    // Pos processamento
+    MainPostProcess->bind();
+
+    grr::gRender::SetRenderState(grr::GR_BACKGROUND, grr::GR_DEPTH_BUFFER | grr::GR_COLOR_BUFFER);
+    grr::gRender::SetRenderState(grr::GR_CULL, grr::GR_BACK);
+    grr::gRender::SetRenderState(grr::GR_DEPTH, grr::GR_TRUE);
+    // grr::gRender::SetRenderState(grr::GR_FRAMEBUFFER_SRGB, grr::GR_FALSE);
+
+    RenderScene(camera);
+
+    MainPostProcess->unbind();
 }
 
 void Engine::GRKeyboardDown(grm::u32 key) {
@@ -241,68 +325,6 @@ void Engine::HandleEvent(EngineEvent event, const void* data) {
     }
 }
 
-void Engine::MainFramebuffer() {
-    // shadow
-    /*
-    {
-        m_shadowMap->bind();
-        
-        grr::gRender::SetRenderState(grr::GR_BACKGROUND, grr::GR_DEPTH_BUFFER);
-        grr::gRender::SetRenderState(grr::GR_DEPTH, grr::GR_TRUE);
-        grr::gRender::SetRenderState(grr::GR_CULL, grr::GR_FRONT);
-        grr::gRender::SetRenderState(grr::GR_FRAMEBUFFER_SRGB, grr::GR_FALSE);
-        
-        Batching::RenderShadowPass();
-    
-        m_shadowMap->unbind();
-    }
-    */
-    
-
-    auto cameras = Camera::GetCameras();
-    for (auto camera : cameras) {
-        if (!camera->getGameObject()->getActive()) {
-            continue;
-        }
-
-        // Seleção de modelos para renderizar
-        RenderManager::Process(camera, &(*m_shadowMap));
-
-        MainPostProcess->setTextureColor(camera->getColorTexture());
-
-        // Pos processamento
-        MainPostProcess->bind();
-
-        grr::gRender::SetRenderState(grr::GR_BACKGROUND, grr::GR_DEPTH_BUFFER | grr::GR_COLOR_BUFFER);
-        grr::gRender::SetRenderState(grr::GR_CULL, grr::GR_BACK);
-        grr::gRender::SetRenderState(grr::GR_DEPTH, grr::GR_TRUE);
-        grr::gRender::SetRenderState(grr::GR_FRAMEBUFFER_SRGB, grr::GR_TRUE);
-
-        RenderScene(camera);
-
-        MainPostProcess->unbind();
-    }
-
-    // Captura de posprocessamento para o imgui
-    ImGuiPostProcess->bind();
-
-    // renderização da cena 2d e utilização do pos processamento;
-    grr::gRender::SetRenderState(grr::GR_BACKGROUND_COLOR, (void*)&Color::red);
-    grr::gRender::SetRenderState(grr::GR_BACKGROUND, grr::GR_COLOR_BUFFER);
-    grr::gRender::SetRenderState(grr::GR_DEPTH, grr::GR_FALSE);
-    grr::gRender::SetRenderState(grr::GR_FRAMEBUFFER_SRGB, grr::GR_FALSE);
-
-    for (auto camera : cameras) {
-        if (!camera->getGameObject()->getActive()) {
-            continue;
-        }
-
-        ScreenRender::Render(camera->getColorTexture(), camera->getRect());
-    }
-
-    ImGuiPostProcess->unbind();
-}
-
 PostProcessing *Engine::GetImGuiPostprocess() {
     return ImGuiPostProcess != nullptr ? &(*ImGuiPostProcess) : nullptr;
 }
@@ -311,7 +333,7 @@ PostProcessing *Engine::GetMainPostprocess() {
     return MainPostProcess != nullptr ? &(*MainPostProcess) : nullptr;
 }
 
-void Engine::RenderScene(Camera *camera) {
+void Engine::RenderScene(const Camera *camera) {
     grr::gRender::SetRenderState(grr::GR_DEPTH_FUNC, grr::GR_DEPTH_LESS);
     RenderManager::Renderer();
 

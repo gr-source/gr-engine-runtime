@@ -34,7 +34,7 @@ PostProcessing::PostProcessing(const iVector2 &size) : m_depthTexture(nullptr), 
     }
 
     // grr::gTexture::Bind(m_colorTexture[0]);
-    m_colorTexture[0]->updateBuffer(m_viewport.x, m_viewport.y, grr::gTextureFlags_None, grr::TextureFormat_SRGBA, nullptr);
+    m_colorTexture[0]->updateBuffer(m_viewport.x, m_viewport.y, grr::gTextureFlags_None, grr::TextureFormat_RGB, nullptr);
 
     // grr::gTexture::Bind(m_pickTexture);
     m_pickTexture->updateBuffer(m_viewport.x, m_viewport.y, grr::gTextureFlags_None, grr::TextureFormat_RED_INTEGER, nullptr);
@@ -77,9 +77,9 @@ PostProcessing::~PostProcessing() {
 void PostProcessing::resize(const iVector2 &size) {
     m_viewport = size;
 
-    m_colorTexture[0]->updateBuffer(m_viewport.x, m_viewport.y, grr::gTextureFlags_None, grr::TextureFormat_SRGBA, nullptr);
+    m_colorTexture[0]->updateBuffer(m_viewport.x, m_viewport.y, grr::gTextureFlags_None, grr::TextureFormat_RGB, nullptr);
     if (m_colorTexture[1] != nullptr) {
-        m_colorTexture[1]->updateBuffer(m_viewport.x, m_viewport.y, grr::gTextureFlags_None, grr::TextureFormat_SRGBA, nullptr);
+        m_colorTexture[1]->updateBuffer(m_viewport.x, m_viewport.y, grr::gTextureFlags_None, grr::TextureFormat_RGB, nullptr);
     }
 
     m_pickTexture->updateBuffer(m_viewport.x, m_viewport.y, grr::gTextureFlags_None, grr::TextureFormat_RED_INTEGER, nullptr);

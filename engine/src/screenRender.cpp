@@ -12,6 +12,11 @@
 #include <gr-render/gTexture.h>
 #include <gr-render/gError.h>
 
+#include <gr-base/core/window.hpp>
+#include <gr-base/core/clock.hpp>
+
+#include <gr-base/script/camera.hpp>
+
 grr::gVertexArray *ScreenRender::m_vertexArray = nullptr;
 
 grr::gShader *ScreenRender::m_shader = nullptr;
@@ -35,10 +40,10 @@ void ScreenRender::Shutdown() {
     }
 }
 
-#include <gr-base/core/window.hpp>
-#include <gr-base/core/clock.hpp>
+void ScreenRender::Render(const Camera *camera) {
+    auto texture = camera->getColorTexture();
+    auto rect = camera->getRect();
 
-void ScreenRender::Render(grr::gTexture *texture, const Rect &rect) {
     if (!texture || !texture->isValid() || !m_shader || !m_shader->isValid()) {
         return;
     }

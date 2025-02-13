@@ -6,7 +6,7 @@
 
 #include <functional>
 
-class CubeFramebuffer;
+#include "cubeFramebuffer.hpp"
 
 class Skybox {
 public:
@@ -14,22 +14,24 @@ public:
 
     static void Shutdown();
 
-    static void Renderer(Camera *camera);
+    static void Renderer(const Camera *camera);
 
     static grr::gTexture *GetTextureCubemap();
+
+    static grr::gTexture *GetTextureIrradiance();
 
 private:
     static grr::gVertexArray *m_vertexArray;
 
     static grr::gShader *m_irradianceShader;
 
-    static grr::gShader *m_skyShader;
-
     static grr::gShader *m_shader;
 
-    static CubeFramebuffer *m_cubeColor;
+    static std::unique_ptr<CubeFramebuffer> m_colorbuffer;
 
-    static grr::gTexture *m_texture;
+    static std::unique_ptr<CubeFramebuffer> m_irradiance;
+
+    static grr::gTexture *m_cubemapTexture;
 
     static grm::u32 m_count;
 
@@ -39,11 +41,11 @@ private:
 
     static void CreateCube();
     
-    static void SetupTexture(grr::gTexture *texture);
+    static void ConfigCubemap(grr::gTexture *texture);
 
-    static void UploadShader();
+    static void CreateCubemapBackground(grr::gShader *shader);
 
-    static void RegisterSky(grr::gShader **out, grr::gShader *shader);
+    static void CreateCubemapIrradiance(grr::gShader *shader);
 
     static void GenerateMap(std::function<void(grm::u32)> func, grr::gTexture *texture, grr::gShader *shader);
 };

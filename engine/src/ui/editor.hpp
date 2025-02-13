@@ -16,6 +16,8 @@
 
 #include <gr-render/gTexture.h>
 
+#include <gr-base/script/default.hpp>
+
 enum EditorPopupFlags : int64_t {
     EditorPopupFlags_EngineStatus        = 1 << 1,
     EditorPopupFlags_Settings            = 1 << 2,
@@ -33,6 +35,8 @@ enum EditorPopupFlags : int64_t {
     EditorPopupFlags_CreateScript        = 1 << 13,
     EditorPopupFlags_CreateShader        = 1 << 14,
 };
+
+#define GET_FLAG_NAME(c) #c
 
 using EditorPopupFlags_ = int;
 
@@ -85,11 +89,11 @@ public:
     Camera *getCamera();
 
 private:
+    std::unordered_map<std::string, std::function<void(Entity *)>> mInternalScript;
+
     std::unordered_map<IconType, grr::gTexture *> iconsUI;
     
     GameObject *m_cameraObject;
-
-    GameObject *tempCam;
 
     Camera *m_mainCamera;
 
@@ -117,8 +121,6 @@ private:
 
     bool bOpenPopupInfoDir;
 
-    bool bScriptReloaded;
-
     bool bOpenPopupOptionGameObject;
 
     bool bBuildDock;
@@ -130,8 +132,6 @@ private:
     ImGuizmo::OPERATION m_guizmoOperation;
 
     ImGuizmo::MODE m_guizmoManipulate;
-
-    grm::u32 s_maxProgress;
 
     std::unordered_map<std::filesystem::path, bool> mDirSelectedMap;
 
@@ -225,7 +225,9 @@ private:
 
     void RenderStatisticsMenu();
 
-    void RenderGameObjectPropertiUI();
+    void RenderObjectInfo();
+
+    void RenderScriptFromEntity(Entity *entity);
 
     bool RenderComponents(const std::string &name, Component *component);
 
@@ -256,7 +258,11 @@ private:
     
     bool OnPropertyMeshRender(MeshRender *meshRender);
 
+    // bool OnPropertyMeshCollider(MeshCollider *meshCollider);
+
     bool RenderMaterial(Material *material);
+
+    void RenderShaderUniform(grr::gShader *shader);
 
     void dropShaderInMaterial(Material *material);
 
@@ -304,8 +310,6 @@ private:
     // Scene
     void SaveScene(const std::string &name, Scene *scene);
 
-    void setActiveCamera(bool value);
-
     // UI
     void showShaderListPopup();
 
@@ -322,7 +326,7 @@ private:
 
     void PluginManager();
 
-    void PluginLoad();
+    void PopupPluginLoad();
 
     void PluginEditor();
 
