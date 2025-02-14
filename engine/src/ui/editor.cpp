@@ -245,7 +245,7 @@ Editor::~Editor() {
 
     GameObject::Clear();
 
-    ComponentRegistry::getInstance().clear();
+    ComponentRegistry::Clear();
 
     ScriptManager::Shutdown();
 
@@ -323,7 +323,7 @@ void Editor::UnloadScript() {
 
     ScreenRender::Shutdown();
 
-    ComponentRegistry::getInstance().clear();
+    // ComponentRegistry::Clear();
 
     ScriptManager::Shutdown();
 }
@@ -1985,8 +1985,6 @@ void Editor::RenderScriptFromEntity(Entity *entity)
 }
 
 bool Editor::RenderComponents(const std::string &name, Component *component) {
-    auto componentPool = ComponentRegistry::GetPoolList();
-
     auto isRender = true;
 
     auto isOpen = ImGui::CollapsingHeader(name.c_str(), &isRender);
@@ -1998,13 +1996,15 @@ bool Editor::RenderComponents(const std::string &name, Component *component) {
         return true;
     }
 
-    auto it = componentPool.find(name);
-    if (it == componentPool.end()) {
+    // auto &baseChunkList = ComponentRegistry::GetAllChunkComponent();
+    
+    auto baseChunk = ComponentRegistry::Find(name);
+    if (baseChunk == nullptr) {
         Console::LogError("Invalid component: " + name);
         return false;
     }
-    
-    auto fieldList = it->second.pointer->getFields();
+
+    auto fieldList = baseChunk->getFields();
 
     for (auto &field : fieldList) {
         RenderField(field, component);
@@ -2097,7 +2097,7 @@ void Editor::PopupAddComponent() {
     }
 
     std::vector<std::string> m_componentName;
-    for (auto [name, pool] : ComponentRegistry::GetPoolList()) {
+    for (auto &&[name, tuple] : ComponentRegistry::GetAllChunkComponent()) {
         m_componentName.push_back(name);
     }
 
