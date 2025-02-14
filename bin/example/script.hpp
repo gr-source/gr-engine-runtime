@@ -1,5 +1,7 @@
 #pragma once
 
+#include <gr-base/script/default.hpp>
+
 #include <gr-base/ecs/entity.hpp>
 
 class #name : public Component {

@@ -1297,8 +1297,6 @@ void Editor::StopGame() {
 
     Scene::DestroyScript();
 
-    Scene::CleanTemp();
-
     Scene::InitializeEngineScript();
 
     Console::log(Log::DEFAULT, "Game stoped.");
@@ -1495,6 +1493,7 @@ void Editor::RenderTreeNodeFile(std::filesystem::path path) {
     ImGui::TreePop();
 }
 
+#include "gr-base/core/task/saveGameObjectTask.hpp"
 void Editor::DropTargetGameObjectInFile(std::string path) {
     if (!ImGui::BeginDragDropTarget()) {
         return;
@@ -1519,8 +1518,8 @@ void Editor::DropTargetGameObjectInFile(std::string path) {
 
     path = path[path.size()] == '/' ? path : path + "/";
 
-    // Model3DHandler::ExportGRMX(path + name + ".gmdx", target);
-    
+    SaveGameObjectTask SaveGameObjectTask(target, path);
+
     ImGui::EndDragDropTarget();
 }
 
