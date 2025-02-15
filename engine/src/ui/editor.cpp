@@ -314,9 +314,11 @@ void Editor::LoadScript() {
 
     Scene::CheckRequestReinstanceScript();
 
-    Settings::bGameRunning = true;
-
+    // ComponentRegistry::getInstance().init();
+    
     Scene::InitializeAllScript();
+
+    Settings::bGameRunning = true;
 
     Console::log(Log::DEFAULT, "Game playing.");
 }
