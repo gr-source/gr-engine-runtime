@@ -299,6 +299,9 @@ void Editor::LoadScript() {
 
     try {
         ScriptManager::Initialize(File::GetFile("/.build/component/lib/libgr-component.so"));
+
+        ComponentRegistry::getInstance().CheckScriptRemoved();
+        
     } catch (const std::runtime_error &e) {
         Console::LogError(e.what());
     }
