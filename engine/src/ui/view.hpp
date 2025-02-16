@@ -16,6 +16,9 @@ public:
     static bool ImageTreeNode(ImTextureID textureID, const char *name);
 
     static bool CloseButton();
+
+    static bool ImageAndTextButton(ImTextureID textureID, const char *label, ImVec2 size = {0.0f, 0.0f});
+    
 };
 
 

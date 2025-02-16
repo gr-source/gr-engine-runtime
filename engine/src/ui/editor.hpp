@@ -139,6 +139,8 @@ private:
 
     std::filesystem::path m_currentPath;
 
+    std::filesystem::path m_dirSelected;
+
     std::shared_ptr<Config> m_config;
 
     Material *m_materialToRename;
@@ -209,6 +211,8 @@ private:
 
     void RenderOtherUI();
 
+    void RenderFiles();
+
     void RenderConsoleWindow();
 
     void RenderConsole();
@@ -224,6 +228,8 @@ private:
     void RenderStatisticsMenu();
 
     void RenderObjectInfo();
+
+    void dropScriptInAddComponent();
 
     void RenderScriptFromEntity(Entity *entity);
 

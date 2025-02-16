@@ -35,7 +35,7 @@ void EditorController::Initialize() {
 void EditorController::Update(Camera *camera) {
     m_mainCamera = camera;
 
-    if (!m_mainCamera || !m_io->MouseDrawCursor || Settings::bGameRunning) {
+    if (!m_mainCamera || !m_io->MouseDrawCursor) {
         return;
     }
 
