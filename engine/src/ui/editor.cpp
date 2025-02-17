@@ -2059,17 +2059,28 @@ void Editor::RenderObjectInfo() {
     auto objName = s_objectSelected->getName();
     ImGui::PushID(objName.c_str());
 
-    ImGui::Image(reinterpret_cast<ImTextureID>(iconsUI[IconType::ICON_GAMEOBJECT]->getID()), ImVec2(16, 16));
+    {
+        ImGui::Image(reinterpret_cast<ImTextureID>(iconsUI[IconType::ICON_GAMEOBJECT]->getID()), ImVec2(16, 16));
 
-    ImGui::SameLine();
+        ImGui::SameLine();
 
-    ImGui::Text("[ %s - %s ]", objName.c_str(), s_objectSelected->getTag().c_str());
+        ImGui::Text("%s", objName.c_str());
+        
+        ImGui::SameLine();
 
-    ImGui::SameLine();
+        ImGui::Text("%s", s_objectSelected->getTag().c_str());
+    
+    }
 
-    auto isActive = s_objectSelected->getActive();
-    if (ImGui::Checkbox("##check_box_is_active", &isActive)) {
-        s_objectSelected->setActive(isActive);
+    {
+        auto isStatic = s_objectSelected->getStatic();
+
+        ImGui::Text("Static");
+        ImGui::SameLine();
+        if (ImGui::Checkbox("##gameobject_info_static", &isStatic))
+        {
+            s_objectSelected->setStatic(isStatic);
+        }
     }
 
     RenderScriptFromEntity(entity);

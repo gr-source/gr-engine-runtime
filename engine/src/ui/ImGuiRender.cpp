@@ -20,7 +20,7 @@ void ImGuiRender::Initialize(const char* openglVersion) {
 
     m_io = &ImGui::GetIO();
     m_io->ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-    m_io->Fonts->AddFontFromFileTTF("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 16.5f);
+    m_io->Fonts->AddFontFromFileTTF("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 13.5f);
 }
 
 void ImGuiRender::Shutdown() {
