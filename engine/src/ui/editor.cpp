@@ -2404,7 +2404,8 @@ bool Editor::OnPropertyMeshRender(MeshRender *meshRender) {
     auto bVisible = true;
 
     auto isOpen = ImGui::CollapsingHeader("MeshRender", &bVisible);
-    if (!bVisible) {
+    if (!bVisible)
+    {
         return true;
     }
     
@@ -2510,35 +2511,78 @@ bool Editor::RenderMaterial(Material *material) {
 
 void Editor::RenderShaderUniform(grr::gShader *shader)
 {
-    // for (std::size_t i=0;i<shader->getUniformCount();i++)
-    // {
-    //     auto &uniform = shader->getUniform()[i];
-    //     if (uniform.name == nullptr ||
-    //         strchr(uniform.name, '[') != NULL)
-    //     {
-    //         continue;
-    //     }
-
-    //     ImGui::Text("%s:", uniform.name);
-
-    //     switch (uniform.type)
-    //     {
-    //     case grr::UniformType_float: {
-    //         float value = 0.0f;
-    //         if (uniform.data != nullptr)
-    //             value = *reinterpret_cast<float *>(uniform.data);
-
-    //         if (ImGui::DragFloat(("##" + std::string(uniform.name)).c_str(), &value))
-    //         {
-    //             shader->setUniform(uniform.name, 1, &value);
-    //         }
-    //         break;
-    //     }
-    //     default:
-    //         break;
-    //     }
+    for (std::size_t i=0;i<shader->getUniformCount();i++)
+    {
+        auto &uniform = shader->getUniform()[i];
+        if (uniform.name == nullptr ||
+            strchr(uniform.name, '[') != NULL)
+        {
+            continue;
+        }
+        switch (uniform.type)
+        {
+        case grr::UniformType_mat3:
+        case grr::UniformType_mat4:
+        case grr::UniformType_none:
+            continue;
         
-    // }
+        default:
+            break;
+        }
+
+        ImGui::Text("%s:", uniform.name);
+
+        switch (uniform.type)
+        {
+        case grr::UniformType_int: {
+            int value = 0.0f;
+            if (uniform.data != nullptr)
+                value = *reinterpret_cast<int *>(uniform.data);
+
+            if (ImGui::DragInt(("##" + std::string(uniform.name)).c_str(), &value))
+            {
+                shader->setUniform(uniform.name, 1, &value);
+            }
+            break;
+        }
+        case grr::UniformType_float: {
+            float value = 0.0f;
+            if (uniform.data != nullptr)
+                value = *reinterpret_cast<float *>(uniform.data);
+
+            if (ImGui::DragFloat(("##" + std::string(uniform.name)).c_str(), &value))
+            {
+                shader->setUniform(uniform.name, 1, &value);
+            }
+            break;
+        }
+        case grr::UniformType_vec3: {
+            Vector3 value = Vector3::zero;
+            if (uniform.data != nullptr)
+                value = *reinterpret_cast<Vector3 *>(uniform.data);
+
+            if (ImGui::DragFloat3(("##" + std::string(uniform.name)).c_str(), (float *)&value))
+            {
+                shader->setUniform(uniform.name, 1, &value);
+            }
+            break;
+        }
+        case grr::UniformType_vec4: {
+            Vector4 value = Vector4::zero;
+            if (uniform.data != nullptr)
+                value = *reinterpret_cast<Vector4 *>(uniform.data);
+
+            if (ImGui::DragFloat3(("##" + std::string(uniform.name)).c_str(), (float *)&value))
+            {
+                shader->setUniform(uniform.name, 1, &value);
+            }
+            break;
+        }
+        default:
+            break;
+        }
+        
+    }
 }
 
 void Editor::InsertTexture(Material *material) {

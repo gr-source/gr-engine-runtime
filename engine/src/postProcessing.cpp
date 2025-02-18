@@ -33,13 +33,10 @@ PostProcessing::PostProcessing(const iVector2 &size) : m_depthTexture(nullptr), 
         throw std::runtime_error("Falied to create renderbufer.");
     }
 
-    // grr::gTexture::Bind(m_colorTexture[0]);
     m_colorTexture[0]->updateBuffer(m_viewport.x, m_viewport.y, grr::gTextureFlags_None, grr::TextureFormat_RGB, nullptr);
 
-    // grr::gTexture::Bind(m_pickTexture);
     m_pickTexture->updateBuffer(m_viewport.x, m_viewport.y, grr::gTextureFlags_None, grr::TextureFormat_RED_INTEGER, nullptr);
 
-    // grr::gTexture::Bind(m_depthTexture);
     m_depthTexture->updateBuffer(m_viewport.x, m_viewport.y, grr::gTextureFlags_None, grr::TextureFormat_DepthComponent, nullptr);
 
     // Set framebuffer
@@ -50,7 +47,7 @@ PostProcessing::PostProcessing(const iVector2 &size) : m_depthTexture(nullptr), 
 
     m_pickTexture->bind(0);
     grr::gFramebuffer::SetTexture(grr::gFramebufferFlags_Color_Attachiment1);
-
+    
     m_depthTexture->bind(0);
     grr::gFramebuffer::SetTexture(grr::gFramebufferFlags_Depth_Attachiment);
 
@@ -115,7 +112,7 @@ void PostProcessing::setTextureColor(grr::gTexture *texture) {
 
     m_pickTexture->bind(0);
     grr::gFramebuffer::SetTexture(grr::gFramebufferFlags_Color_Attachiment1);
-
+    
     m_depthTexture->bind(0);
     grr::gFramebuffer::SetTexture(grr::gFramebufferFlags_Depth_Attachiment);
 
@@ -134,9 +131,7 @@ grr::gTexture *PostProcessing::getTextureColor() {
 void PostProcessing::readPixel(int x, int y, void *data) {
     bind();
 
-    glReadBuffer(GL_COLOR_ATTACHMENT1);
-
-    glReadPixels(x, y, 1, 1, GL_RED_INTEGER, GL_INT, data);
+    grr::gFramebuffer::GetPixels(1, x, y, 1, 1, grr::TextureFormat_RED_INTEGER, data);
 
     unbind();
 }

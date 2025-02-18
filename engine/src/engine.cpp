@@ -294,8 +294,7 @@ void Engine::DropFile(const char *path) {
 }
 
 void Engine::OnPhysics() {
-    // /*
-    static Time time;
+    Time time;
     while (Settings::IsEngineRunning()) {
         auto deltaTime = time.sleep(60.0f);
 
@@ -305,7 +304,6 @@ void Engine::OnPhysics() {
 
         time.end();
     }
-    // */
 }
 
 void Engine::HandleEvent(EngineEvent event, const void* data) {
