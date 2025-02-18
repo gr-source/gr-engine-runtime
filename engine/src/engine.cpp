@@ -262,7 +262,7 @@ void Engine::PreConfigRenderScene(const Camera *camera)
     grr::gRender::SetRenderState(grr::GR_BACKGROUND, grr::GR_DEPTH_BUFFER | grr::GR_COLOR_BUFFER);
     grr::gRender::SetRenderState(grr::GR_CULL, grr::GR_BACK);
     grr::gRender::SetRenderState(grr::GR_DEPTH, grr::GR_TRUE);
-    // grr::gRender::SetRenderState(grr::GR_FRAMEBUFFER_SRGB, grr::GR_FALSE);
+    grr::gRender::SetRenderState(grr::GR_FRAMEBUFFER_SRGB, grr::GR_FALSE);
 
     RenderScene(camera);
 
@@ -294,16 +294,18 @@ void Engine::DropFile(const char *path) {
 }
 
 void Engine::OnPhysics() {
-    /*
-    Time time;
+    // /*
+    static Time time;
     while (Settings::IsEngineRunning()) {
-        auto deltaTime = time.getDeltaTime();
+        auto deltaTime = time.sleep(60.0f);
+
         if (Settings::bGameRunning) {
             PhysicsScene::Update(deltaTime);
         }
+
         time.end();
     }
-    */
+    // */
 }
 
 void Engine::HandleEvent(EngineEvent event, const void* data) {

@@ -3130,7 +3130,7 @@ void Editor::showShaderListPopup() {
 }
 
 void Editor::renderShaderList() {
-    auto &shader_list = AssetsManager::GetShaderList();
+    auto &shader_list = AssetsManager::GetShaderMap();
 
     auto regionAvail = ImGui::GetContentRegionAvail();
     const char *reload_text = "Reload";

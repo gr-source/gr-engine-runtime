@@ -49,7 +49,7 @@ void RenderManager::Process(const Camera *camera, ShadowMap *shadowMap) {
 
     int textureID = 4;
 
-    for (auto &&[name, shader] : AssetsManager::GetShaderList()) {
+    for (auto shader : AssetsManager::GetShaderList()) {
         if (!shader || !shader->isValid()) {
             continue;
         }
@@ -65,7 +65,7 @@ void RenderManager::Process(const Camera *camera, ShadowMap *shadowMap) {
             shader->setUniform("irradianceMap", 1, &textureID);
         }
 
-        SetupLight(shader.get());
+        SetupLight(shader);
     }
     Frustum::CalculateFrustum(projection * view);
 }
