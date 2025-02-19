@@ -54,15 +54,15 @@ void RenderManager::Process(const Camera *camera, ShadowMap *shadowMap) {
             continue;
         }
 
-        shader->setUniform("u_projection", 1, &projection);
-        shader->setUniform("u_view",       1, &view);
-        shader->setUniform("m_eye",        1, &position);
-        shader->setUniform("TIME",         1, &TIME);
+        shader->setUniform("u_projection", &projection);
+        shader->setUniform("u_view",       &view);
+        shader->setUniform("m_eye",        &position);
+        shader->setUniform("TIME",         &TIME);
         
         if (irradianceMap != nullptr)
         {
             irradianceMap->bind(textureID);
-            shader->setUniform("irradianceMap", 1, &textureID);
+            shader->setUniform("irradianceMap", &textureID);
         }
 
         SetupLight(shader);
@@ -84,7 +84,7 @@ void RenderManager::SetupLight(grr::gShader *shader) {
 
     int numLight = static_cast<int>(lights.size());
 
-    shader->setUniform("m_lightcount", 1, &numLight);
+    shader->setUniform("m_lightcount", &numLight);
 
     if (lights.empty()) return;
 
@@ -98,11 +98,11 @@ void RenderManager::SetupLight(grr::gShader *shader) {
         auto params      = Vector3{light->getInnecone(), light->getOutercone(), (float)light->getType()};
         auto projection  = light->getProjetion();
 
-        shader->setUniform(("m_light[" + std::to_string(i) + "].position").c_str(),    1, &position);
-        shader->setUniform(("m_light[" + std::to_string(i) + "].color").c_str(),       1, &color);
-        shader->setUniform(("m_light[" + std::to_string(i) + "].attenuation").c_str(), 1, &attenuation);
-        shader->setUniform(("m_light[" + std::to_string(i) + "].direction").c_str(),   1, &forward);
-        shader->setUniform(("m_light[" + std::to_string(i) + "].params").c_str(),      1, &params);
-        shader->setUniform(("m_light[" + std::to_string(i) + "].model").c_str(),       1, &projection);
+        shader->setUniform(("m_light[" + std::to_string(i) + "].position").c_str(),    &position);
+        shader->setUniform(("m_light[" + std::to_string(i) + "].color").c_str(),       &color);
+        shader->setUniform(("m_light[" + std::to_string(i) + "].attenuation").c_str(), &attenuation);
+        shader->setUniform(("m_light[" + std::to_string(i) + "].direction").c_str(),   &forward);
+        shader->setUniform(("m_light[" + std::to_string(i) + "].params").c_str(),      &params);
+        shader->setUniform(("m_light[" + std::to_string(i) + "].model").c_str(),       &projection);
     }
 }

@@ -69,10 +69,10 @@ void Skybox::Renderer(const Camera *camera) {
     auto view = camera->getViewmatrix();
 
     m_colorbuffer->getCubemapTexture()->bind(0);
-    m_shader->setUniform("u_texture", 1, &textureID);
+    m_shader->setUniform("u_texture", &textureID);
     
-    m_shader->setUniform("projection", 1, &projection);
-    m_shader->setUniform("view", 1, &view);
+    m_shader->setUniform("u_projection", &projection);
+    m_shader->setUniform("u_view", &view);
     
     m_shader->bind();
 
@@ -174,6 +174,11 @@ void Skybox::CreateCubemapBackground(grr::gShader *shader) {
     }, m_cubemapTexture, shader);
 
     AssetsManager::LoadShader(
+        File::GetAsset("/shader/skybox/background.glsl"),
+        RegisterDeafult, &m_shader
+    );
+
+    AssetsManager::LoadShader(
         File::GetAsset("/shader/skybox/irradiance.glsl"),
         &Skybox::CreateCubemapIrradiance
     );
@@ -194,11 +199,6 @@ void Skybox::CreateCubemapIrradiance(grr::gShader *shader)
         }
         m_irradiance->setTextureAttachment(flags);
     }, m_colorbuffer->getCubemapTexture(), shader);
-
-    AssetsManager::LoadShader(
-        File::GetAsset("/shader/skybox/background.glsl"),
-        RegisterDeafult, &m_shader
-    );
 }
 
 void Skybox::GenerateMap(std::function<void(grm::u32)> func, grr::gTexture *texture, grr::gShader *shader) {
@@ -208,9 +208,9 @@ void Skybox::GenerateMap(std::function<void(grm::u32)> func, grr::gTexture *text
     int textureID = 1;
 
     texture->bind(textureID);
-    shader->setUniform("u_texture", 1, &textureID);
+    shader->setUniform("u_texture", &textureID);
 
-    shader->setUniform("projection", 1, &projection);
+    shader->setUniform("u_projection", &projection);
 
     Matrix4x4 view[6] {
         Math::lookAt({0.0f, 0.0f, 0.0f}, { 1.0f,  0.0f,  0.0f}, {0.0f, -1.0f,  0.0f}),
@@ -224,7 +224,7 @@ void Skybox::GenerateMap(std::function<void(grm::u32)> func, grr::gTexture *text
     shader->bind();
 
     for (auto i=0;i<6;i++) {
-        shader->setUniform("view", 1, &view[i]);
+        shader->setUniform("u_view", &view[i]);
 
         func(i);
 

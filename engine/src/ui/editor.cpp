@@ -2541,7 +2541,7 @@ void Editor::RenderShaderUniform(grr::gShader *shader)
 
             if (ImGui::DragInt(("##" + std::string(uniform.name)).c_str(), &value))
             {
-                shader->setUniform(uniform.name, 1, &value);
+                shader->setUniform(uniform.name, &value);
             }
             break;
         }
@@ -2552,7 +2552,7 @@ void Editor::RenderShaderUniform(grr::gShader *shader)
 
             if (ImGui::DragFloat(("##" + std::string(uniform.name)).c_str(), &value))
             {
-                shader->setUniform(uniform.name, 1, &value);
+                shader->setUniform(uniform.name, &value);
             }
             break;
         }
@@ -2563,7 +2563,7 @@ void Editor::RenderShaderUniform(grr::gShader *shader)
 
             if (ImGui::DragFloat3(("##" + std::string(uniform.name)).c_str(), (float *)&value))
             {
-                shader->setUniform(uniform.name, 1, &value);
+                shader->setUniform(uniform.name, &value);
             }
             break;
         }
@@ -2574,7 +2574,7 @@ void Editor::RenderShaderUniform(grr::gShader *shader)
 
             if (ImGui::DragFloat3(("##" + std::string(uniform.name)).c_str(), (float *)&value))
             {
-                shader->setUniform(uniform.name, 1, &value);
+                shader->setUniform(uniform.name, &value);
             }
             break;
         }

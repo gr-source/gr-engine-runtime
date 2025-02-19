@@ -58,13 +58,13 @@ void ScreenRender::Render(const Camera *camera) {
     auto orth = Math::orthographic(-1.0f, 1.0f, -1.0f, 1.0f, -1.0f, 1.0f);
 
 
-    m_shader->setUniform("u_projection", 1, &orth);
-    m_shader->setUniform("u_model", 1, &model);
+    m_shader->setUniform("u_projection", &orth);
+    m_shader->setUniform("u_model", &model);
 
     int textureID = 0;
 
     texture->bind(0);
-    m_shader->setUniform("u_texture", 1, (void *)&textureID);
+    m_shader->setUniform("u_texture", (void *)&textureID);
 
     m_shader->bind();
     m_shader->flush();
