@@ -21,8 +21,6 @@
 
 #include "../memory.h"
 
-#include "settings.h"
-
 #include <iostream>
 #include <fstream>
 #include <dlfcn.h>

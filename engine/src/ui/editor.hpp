@@ -159,11 +159,15 @@ private:
 
     void RenderObjectUI();
 
+    void dropGameObjectInHierarchy(Scene *scene);
+
     void RenderSceneObject(Scene *scene);
 
     void RenderObjectPage(std::vector<GameObject *> list, int page);
 
     void ReadHierarchy(Transform* transform);
+
+    void dragDropGameObject(Transform *transform, const std::string &name);
 
     void PopupMenuAdd();
 
@@ -189,10 +193,6 @@ private:
 
     void PopupMenuCreateScene();
 
-    void RenderTreeNodeFile(std::filesystem::path path);
-
-    void DropTargetGameObjectInFile(std::string path);
-
     void OpenFileDoubleClick(std::filesystem::path path);
 
     void PopupFileAndDirmanager();
@@ -211,7 +211,11 @@ private:
 
     void RenderOtherUI();
 
+    void RenderTreeNodeFile(std::filesystem::path path);
+
     void RenderFiles();
+
+    void dropTargetGameObjectInFile(std::string path);
 
     void RenderConsoleWindow();
 
@@ -251,15 +255,13 @@ private:
     
     bool OnPropertyMeshFilter(MeshFilter *meshFilter);
 
-    void RenderUVConfig(MeshFilter *meshFilter);
-    
     bool OnPropertyMeshRender(MeshRender *meshRender);
 
     // bool OnPropertyMeshCollider(MeshCollider *meshCollider);
 
     bool RenderMaterial(Material *material);
 
-    void RenderShaderUniform(grr::gShader *shader);
+    void RenderShaderUniform(Material *material, grr::gShader *shader);
 
     void dropShaderInMaterial(Material *material);
 

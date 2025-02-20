@@ -76,24 +76,30 @@
 #define ITEMS_PER_PAGE 20
 
 enum class DragDropFlags : uint32_t {
-    GMDX    = 1 << 1,
-    SCN     = 1 << 2,
-    SCRIPT  = 1 << 3,
+    GMDX       = 1 << 1,
+    SCN        = 1 << 2,
+    SCRIPT     = 1 << 3,
+    SHADER     = 1 << 4,
+    GAMEOBJECT = 1 << 5,
 };
 
 static std::map<DragDropFlags, const char *> m_extensionDragDrop =
 {
-    {DragDropFlags::GMDX,    ".gmdx"},
-    {DragDropFlags::SCN,     ".scn"},
-    {DragDropFlags::SCRIPT,  ".script"},
+    {DragDropFlags::GMDX,       ".gmdx"},
+    {DragDropFlags::SCN,        ".scn"},
+    {DragDropFlags::SCRIPT,     ".script"},
+    {DragDropFlags::SHADER,     ".shader"},
+    {DragDropFlags::GAMEOBJECT, ".gameobject"},
 };
 
 static std::unordered_map<std::string, DragDropFlags> m_extensionNameToFlag =
 {
-    {".gmdx", DragDropFlags::GMDX},
-    {".scn",  DragDropFlags::SCN},
-    {".cpp",  DragDropFlags::SCRIPT},
-    {".hpp",  DragDropFlags::SCRIPT},
+    {".gmdx",       DragDropFlags::GMDX},
+    {".scn",        DragDropFlags::SCN},
+    {".cpp",        DragDropFlags::SCRIPT},
+    {".hpp",        DragDropFlags::SCRIPT},
+    {".glsl",       DragDropFlags::SHADER},
+    {".gameobject", DragDropFlags::GAMEOBJECT},
 };
 
 std::string getfilesize(std::size_t sz) {
@@ -633,21 +639,7 @@ void Editor::RenderObjectUI() {
 
     ImGui::SetNextItemOpen(true, ImGuiCond_Appearing);
     if (ImGui::TreeNodeEx(name.empty() ? "Scene name is empty!" : name.c_str(), ImGuiTreeNodeFlags_SpanFullWidth)) {
-        if (ImGui::BeginDragDropTarget()) {
-            ImGuiDragDropFlags target_flags = 0;
-            
-            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(IMGUI_PAYLOAD_GAMEOBJECT, target_flags)) {
-                std::string name((char*)payload->Data, payload->DataSize);
-                if (!name.empty()) {
-                    auto target = GameObject::Find(name);
-
-                    target->getTransform()->setParent(nullptr);
-                    
-                    scene->insert(target);
-                }
-            }
-            ImGui::EndDragDropTarget();
-        }
+        dropGameObjectInHierarchy(scene);
         
         if (scene != nullptr)
             RenderSceneObject(scene);
@@ -684,6 +676,26 @@ void Editor::RenderObjectUI() {
     PopupMenuAdd();
 
     ImGui::End();
+}
+
+void Editor::dropGameObjectInHierarchy(Scene *scene)
+{
+    if (!ImGui::BeginDragDropTarget())
+    {
+        return;
+    }
+    auto payload = ImGui::AcceptDragDropPayload(m_extensionDragDrop[DragDropFlags::GAMEOBJECT]);
+    if (!payload || payload->DataSize <= 0)
+    {
+        return ImGui::EndDragDropTarget();
+    }
+    auto transform = *reinterpret_cast<Transform **>(payload->Data);
+    
+    transform->setParent(nullptr);
+        
+    scene->insert(transform->getGameObject());
+
+    ImGui::EndDragDropTarget();
 }
 
 void Editor::RenderSceneObject(Scene *scene)
@@ -745,42 +757,43 @@ void Editor::ReadHierarchy(Transform *transform) {
         bOpenPopupOptionGameObject = true;
     }
 
-    if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceNoDisableHover | ImGuiDragDropFlags_SourceNoHoldToOpenOthers)) {
-        ImGui::Text("Moving \"%s\"", name.c_str());
-        ImGui::SetDragDropPayload(IMGUI_PAYLOAD_GAMEOBJECT, name.data(), name.size());
-        ImGui::EndDragDropSource();
-    }
-
-    if (ImGui::BeginDragDropTarget()) {
-        ImGuiDragDropFlags target_flags = 0;
-        // target_flags |= ImGuiDragDropFlags_AcceptBeforeDelivery;
-        // target_flags |= ImGuiDragDropFlags_SourceAllowNullID;
-
-        if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(IMGUI_PAYLOAD_GAMEOBJECT, target_flags)) {
-            std::string name((char*)payload->Data, payload->DataSize);
-            if (!name.empty()) {
-                auto target = GameObject::Find(name);
-                if (!target) {
-                    Console::LogError("GameObject do not found: " + name);
-                } else {
-                    auto ts = target->getTransform();
-                    if (ts != transform->getParent()) {
-                        ts->setParent(transform);
-                    
-                        Event::Add(&Scene::Remove, target);
-                    }
-                }
-            }
-        }
-        ImGui::EndDragDropTarget();
-    }
-
+    dragDropGameObject(transform, name);
+    
     if (isOpen) {
         for (auto& child : transform->getChildren()) {
             ReadHierarchy(child);
         }
         ImGui::TreePop();
     }
+}
+
+void Editor::dragDropGameObject(Transform *transform, const std::string &name)
+{
+    if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceNoDisableHover | ImGuiDragDropFlags_SourceNoHoldToOpenOthers)) {
+        ImGui::Text("Moving \"%s\"", name.c_str());
+        ImGui::SetDragDropPayload(m_extensionDragDrop[DragDropFlags::GAMEOBJECT], &transform, sizeof(Transform *));
+        ImGui::EndDragDropSource();
+    }
+
+    if (!ImGui::BeginDragDropTarget())
+    {
+        return;
+    }
+
+    auto payload = ImGui::AcceptDragDropPayload(m_extensionDragDrop[DragDropFlags::GAMEOBJECT]);
+    if (!payload || payload->DataSize <= 0)
+    {
+        return ImGui::EndDragDropTarget();
+    }
+
+    auto target = *reinterpret_cast<Transform **>(payload->Data);
+    if (target != transform->getParent()) {
+        target->setParent(transform);
+
+        Scene::Remove(target->getGameObject());
+    }
+
+    ImGui::EndDragDropTarget();
 }
 
 void Editor::PopupMenuAdd() {
@@ -1423,174 +1436,6 @@ void Editor::PopupMenuCreateScene() {
     ImGui::EndPopup();
 }
 
-void Editor::RenderTreeNodeFile(std::filesystem::path path)
-{
-    auto filename = path.filename().string();
-    if (filename[0] == '.' || !std::filesystem::is_directory(path))
-    {
-        return;
-    }
-
-    ImGuiTreeNodeFlags flags = 0;
-    if (path == m_dirSelected)
-    {
-        flags |= ImGuiTreeNodeFlags_Selected;
-    }
-
-    auto isOpen = ImGui::TreeNodeEx(filename.c_str(), flags);
-    if (ImGui::IsItemClicked(ImGuiMouseButton_Left))
-    {
-        m_dirSelected = path;
-    }
-
-    if (!isOpen)
-    {
-        return;
-    }
-
-    std::vector<std::filesystem::directory_entry> dirs;
-    for (auto &file : std::filesystem::directory_iterator(path)) {
-        dirs.push_back(file);
-    }
-
-    std::sort(dirs.begin(), dirs.end(), [](const auto& lhs, const auto& rhs) {
-        if (lhs.is_directory() != rhs.is_directory()) {
-            return lhs.is_directory() > rhs.is_directory();
-        }
-        return lhs.path().filename() < rhs.path().filename();
-    });
-
-    for (auto &file : dirs)
-        RenderTreeNodeFile(file);
-
-    ImGui::TreePop();
-
-    /*
-    
-    ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_Leaf;
-    flags |= ImGuiTreeNodeFlags_SpanFullWidth;
-    flags |= ImGuiTreeNodeFlags_SpanAvailWidth;
-    flags |= ImGuiTreeNodeFlags_Selected;
-
-    auto bDirectory = std::filesystem::is_directory(path);
-    if (bDirectory) {
-        flags &= ~ImGuiTreeNodeFlags_Leaf;
-    }
-
-    if (mDirSelectedMap.find(path) == mDirSelectedMap.end()) {
-        flags &= ~ImGuiTreeNodeFlags_Selected;
-    }
-
-    auto name = path.filename();
-    
-    auto isOpen = ImGui::TreeNodeEx(name.c_str(), flags);
-
-    if (ImGui::IsItemClicked() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
-        OpenFileDoubleClick(path);
-    }
-
-    auto isKeyDownShift = ImGui::IsKeyDown(ImGuiKey_LeftShift);
-    if (isKeyDownShift) {
-        if (ImGui::IsItemClicked(ImGuiMouseButton_Right) && !(flags & ImGuiTreeNodeFlags_Selected)) {
-            mDirSelectedMap.emplace(path, true);
-        } else if (ImGui::IsItemClicked(ImGuiMouseButton_Right) && (flags & ImGuiTreeNodeFlags_Selected)) {
-            popupFlags |= EditorPopupFlags_FileManager | EditorPopupFlags_DirManager;
-        }
-    } else {
-        mDirSelectedMap.clear();
-    }
-
-    if (!isKeyDownShift && mDirSelectedMap.empty() && ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
-        mDirSelectedList.clear();
-
-        mDirSelectedList.push_back(path);
-
-        popupFlags |= bDirectory ? EditorPopupFlags_DirManager : EditorPopupFlags_FileManager;
-    }
-
-    DropTargetGameObjectInFile(path.string());
-
-    if (ImGui::BeginDragDropTarget()) {
-        ImGuiDragDropFlags target_flags = 0;
-        // target_flags |= ImGuiDragDropFlags_AcceptBeforeDelivery;
-        // target_flags |= ImGuiDragDropFlags_SourceAllowNullID;
-
-        if (auto payload = ImGui::AcceptDragDropPayload(IMGUI_PAYLOAD_FILE, target_flags)) {
-            std::filesystem::path from = std::string((char*)payload->Data, payload->DataSize);
-            if (!from.empty() && (path.string() + "/" + from.filename().string()) != from.string()) {
-                File::Move(from, path);
-            }
-        }
-        ImGui::EndDragDropTarget();
-    }
-
-    if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceNoDisableHover | ImGuiDragDropFlags_SourceNoHoldToOpenOthers)) {
-        auto str = path.string();
-
-        auto bAnimation = path.extension().string() == ".anm";
-
-        ImGui::Text("%s", str.c_str());
-        ImGui::SetDragDropPayload(bAnimation ? IMGUI_PAYLOAD_ANIMATION : IMGUI_PAYLOAD_FILE, str.data(), str.size());
-        ImGui::EndDragDropSource();
-    }
-
-    if (!isOpen) {
-        return;
-    }
-
-    if (!bDirectory) {
-        return ImGui::TreePop();
-    }
-
-    std::vector<std::filesystem::directory_entry> dirs;
-    for (auto &file : std::filesystem::directory_iterator(path)) {
-        dirs.push_back(file);
-    }
-
-    std::sort(dirs.begin(), dirs.end(), [](const auto& lhs, const auto& rhs) {
-        if (lhs.is_directory() != rhs.is_directory()) {
-            return lhs.is_directory() > rhs.is_directory();
-        }
-        return lhs.path().filename() < rhs.path().filename();
-    });
-
-    for (auto &file : dirs) {
-        RenderTreeNodeFile(file);
-    }
-    ImGui::TreePop();
-    */
-}
-
-#include "gr-base/core/task/saveGameObjectTask.hpp"
-void Editor::DropTargetGameObjectInFile(std::string path) {
-    if (!ImGui::BeginDragDropTarget()) {
-        return;
-    }
-    
-    auto payload = ImGui::AcceptDragDropPayload(IMGUI_PAYLOAD_GAMEOBJECT);
-    if (!payload) {
-        return ImGui::EndDragDropTarget();
-    }
-
-    std::string name(static_cast<char *>(payload->Data), payload->DataSize);
-    if (name.empty()) {
-        return ImGui::EndDragDropTarget();
-    }
-    
-    auto target = GameObject::Find(name);
-    if (!target) {
-        Console::LogError("GameObject do not found: %s", name.c_str());
-
-        return ImGui::EndDragDropTarget();
-    }
-
-    path = path[path.size()] == '/' ? path : path + "/";
-
-    SaveGameObjectTask SaveGameObjectTask(target, path);
-
-    ImGui::EndDragDropTarget();
-}
-
 void Editor::OpenFileDoubleClick(std::filesystem::path path) {
     if (path.extension().string() != ".hpp" && path.extension().string() != ".cpp") {
         return;
@@ -1842,6 +1687,144 @@ void Editor::RenderOtherUI() {
     ImGui::End();
 }
 
+void Editor::RenderTreeNodeFile(std::filesystem::path path)
+{
+    auto filename = path.filename().string();
+    if (filename[0] == '.' || !std::filesystem::is_directory(path))
+    {
+        return;
+    }
+
+    ImGuiTreeNodeFlags flags = 0;
+    if (path == m_dirSelected)
+    {
+        flags |= ImGuiTreeNodeFlags_Selected;
+    }
+
+    auto isOpen = ImGui::TreeNodeEx(filename.c_str(), flags);
+    if (ImGui::IsItemClicked(ImGuiMouseButton_Left))
+    {
+        m_dirSelected = path;
+    }
+
+    if (!isOpen)
+    {
+        return;
+    }
+
+    std::vector<std::filesystem::directory_entry> dirs;
+    for (auto &file : std::filesystem::directory_iterator(path)) {
+        dirs.push_back(file);
+    }
+
+    std::sort(dirs.begin(), dirs.end(), [](const auto& lhs, const auto& rhs) {
+        if (lhs.is_directory() != rhs.is_directory()) {
+            return lhs.is_directory() > rhs.is_directory();
+        }
+        return lhs.path().filename() < rhs.path().filename();
+    });
+
+    for (auto &file : dirs)
+        RenderTreeNodeFile(file);
+
+    ImGui::TreePop();
+
+    /*
+    
+    ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_Leaf;
+    flags |= ImGuiTreeNodeFlags_SpanFullWidth;
+    flags |= ImGuiTreeNodeFlags_SpanAvailWidth;
+    flags |= ImGuiTreeNodeFlags_Selected;
+
+    auto bDirectory = std::filesystem::is_directory(path);
+    if (bDirectory) {
+        flags &= ~ImGuiTreeNodeFlags_Leaf;
+    }
+
+    if (mDirSelectedMap.find(path) == mDirSelectedMap.end()) {
+        flags &= ~ImGuiTreeNodeFlags_Selected;
+    }
+
+    auto name = path.filename();
+    
+    auto isOpen = ImGui::TreeNodeEx(name.c_str(), flags);
+
+    if (ImGui::IsItemClicked() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
+        OpenFileDoubleClick(path);
+    }
+
+    auto isKeyDownShift = ImGui::IsKeyDown(ImGuiKey_LeftShift);
+    if (isKeyDownShift) {
+        if (ImGui::IsItemClicked(ImGuiMouseButton_Right) && !(flags & ImGuiTreeNodeFlags_Selected)) {
+            mDirSelectedMap.emplace(path, true);
+        } else if (ImGui::IsItemClicked(ImGuiMouseButton_Right) && (flags & ImGuiTreeNodeFlags_Selected)) {
+            popupFlags |= EditorPopupFlags_FileManager | EditorPopupFlags_DirManager;
+        }
+    } else {
+        mDirSelectedMap.clear();
+    }
+
+    if (!isKeyDownShift && mDirSelectedMap.empty() && ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
+        mDirSelectedList.clear();
+
+        mDirSelectedList.push_back(path);
+
+        popupFlags |= bDirectory ? EditorPopupFlags_DirManager : EditorPopupFlags_FileManager;
+    }
+
+    DropTargetGameObjectInFile(path.string());
+
+    if (ImGui::BeginDragDropTarget()) {
+        ImGuiDragDropFlags target_flags = 0;
+        // target_flags |= ImGuiDragDropFlags_AcceptBeforeDelivery;
+        // target_flags |= ImGuiDragDropFlags_SourceAllowNullID;
+
+        if (auto payload = ImGui::AcceptDragDropPayload(IMGUI_PAYLOAD_FILE, target_flags)) {
+            std::filesystem::path from = std::string((char*)payload->Data, payload->DataSize);
+            if (!from.empty() && (path.string() + "/" + from.filename().string()) != from.string()) {
+                File::Move(from, path);
+            }
+        }
+        ImGui::EndDragDropTarget();
+    }
+
+    if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceNoDisableHover | ImGuiDragDropFlags_SourceNoHoldToOpenOthers)) {
+        auto str = path.string();
+
+        auto bAnimation = path.extension().string() == ".anm";
+
+        ImGui::Text("%s", str.c_str());
+        ImGui::SetDragDropPayload(bAnimation ? IMGUI_PAYLOAD_ANIMATION : IMGUI_PAYLOAD_FILE, str.data(), str.size());
+        ImGui::EndDragDropSource();
+    }
+
+    if (!isOpen) {
+        return;
+    }
+
+    if (!bDirectory) {
+        return ImGui::TreePop();
+    }
+
+    std::vector<std::filesystem::directory_entry> dirs;
+    for (auto &file : std::filesystem::directory_iterator(path)) {
+        dirs.push_back(file);
+    }
+
+    std::sort(dirs.begin(), dirs.end(), [](const auto& lhs, const auto& rhs) {
+        if (lhs.is_directory() != rhs.is_directory()) {
+            return lhs.is_directory() > rhs.is_directory();
+        }
+        return lhs.path().filename() < rhs.path().filename();
+    });
+
+    for (auto &file : dirs) {
+        RenderTreeNodeFile(file);
+    }
+    ImGui::TreePop();
+    */
+}
+
 void Editor::RenderFiles()
 {
     ImGui::Columns(4, nullptr, false);
@@ -1860,6 +1843,8 @@ void Editor::RenderFiles()
         if (View::ImageAndTextButton(reinterpret_cast<ImTextureID>(iconsUI[IconType::ICON_GAMEOBJECT]->getID()), filename.c_str()))
         {
         }
+
+        dropTargetGameObjectInFile(entry.path().parent_path());
 
         if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceNoDisableHover | ImGuiDragDropFlags_SourceNoHoldToOpenOthers | ImGuiDragDropFlags_SourceAllowNullID)) {
             if (m_extensionNameToFlag.find(extension) != m_extensionNameToFlag.end())
@@ -1890,6 +1875,26 @@ void Editor::RenderFiles()
         // ImGui::PopID();
     }
     // ImGui::Columns(1);
+}
+
+#include "gr-base/core/task/saveGameObjectTask.hpp"
+void Editor::dropTargetGameObjectInFile(std::string path) {
+    if (!ImGui::BeginDragDropTarget()) {
+        return;
+    }
+    
+    auto payload = ImGui::AcceptDragDropPayload(m_extensionDragDrop[DragDropFlags::GAMEOBJECT]);
+    if (!payload || payload->DataSize <= 0) {
+        return ImGui::EndDragDropTarget();
+    }
+
+    auto transform = *reinterpret_cast<Transform **>(payload->Data);
+    
+    path = path[path.size()] == '/' ? path : path + "/";
+
+    SaveGameObjectTask SaveGameObjectTask(transform->getGameObject(), path);
+
+    ImGui::EndDragDropTarget();
 }
 
 void Editor::RenderConsoleWindow() {
@@ -2477,7 +2482,7 @@ bool Editor::RenderMaterial(Material *material) {
 
     dropShaderInMaterial(material);
 
-    RenderShaderUniform(shader);
+    RenderShaderUniform(material, shader);
 
     /*
     auto albedo = material->getAlbedo();
@@ -2509,32 +2514,45 @@ bool Editor::RenderMaterial(Material *material) {
     return false;
 }
 
-void Editor::RenderShaderUniform(grr::gShader *shader)
+void Editor::RenderShaderUniform(Material *material, grr::gShader *shader)
 {
-    for (std::size_t i=0;i<shader->getUniformCount();i++)
+    auto property = AssetsManager::GetShaderProperty(shader);
+    if (property == nullptr)
     {
-        auto &uniform = shader->getUniform()[i];
-        if (uniform.name == nullptr ||
-            strchr(uniform.name, '[') != NULL)
-        {
-            continue;
-        }
-        switch (uniform.type)
+        return;
+    }
+
+    for (auto &&[object, name, type] : property->getProperty())
+    {
+        switch (type)
         {
         case grr::UniformType_mat3:
         case grr::UniformType_mat4:
         case grr::UniformType_none:
             continue;
-        
         default:
             break;
         }
 
-        ImGui::Text("%s:", uniform.name);
+        ImGui::SeparatorText(name.c_str());
 
-        switch (uniform.type)
+        switch (type)
         {
-        case grr::UniformType_int: {
+            case grr::UniformType_vec3: {
+                auto value = material->getValue<Vector3>(name);
+                if (value == nullptr)
+                {
+                    value = material->setValue<Vector3>(name, Vector3::zero);
+                }
+                if (value == nullptr)
+                {
+                    continue;
+                }
+
+                ImGui::DragFloat3(("##" + std::string(name)).c_str(), (float *)value);
+                break;
+            }
+            /*case grr::UniformType_int: {
             int value = 0.0f;
             if (uniform.data != nullptr)
                 value = *reinterpret_cast<int *>(uniform.data);
@@ -2578,6 +2596,7 @@ void Editor::RenderShaderUniform(grr::gShader *shader)
             }
             break;
         }
+        */
         default:
             break;
         }
@@ -2586,7 +2605,7 @@ void Editor::RenderShaderUniform(grr::gShader *shader)
 }
 
 void Editor::InsertTexture(Material *material) {
-    auto color = material->getAlbedo();
+    /*auto color = material->getAlbedo();
     ImGui::SeparatorText("Albedo");
     
     auto texture = material->getTexture(0);
@@ -2613,6 +2632,7 @@ void Editor::InsertTexture(Material *material) {
     }
     AssetsManager::LoadTexture(path, &Material::setTexture, material, 0);
     ImGui::EndDragDropTarget();
+    */
 }
 
 void Editor::dropShaderInMaterial(Material *material) {
@@ -3442,4 +3462,6 @@ void Editor::ScenePostEcecute(Scene *scene) {
 
 void Editor::OutputGameObject(GameObject **ref, GameObject *go) {
     *ref = go;
+
+    go->getEntity()->setEnable(false);
 }
