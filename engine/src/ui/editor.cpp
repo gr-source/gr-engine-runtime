@@ -2236,7 +2236,9 @@ void Editor::renderDropGameObject(GameObject **ref) {
         return ImGui::EndDragDropTarget();
     }
     
-    AssetsManager::LoadGameObject(std::string((char*)data->Data, data->DataSize), &Editor::OutputGameObject, ref);
+    auto path = std::string((char*)data->Data, data->DataSize);
+
+    AssetsManager::LoadGameObject(path, &Editor::OutputGameObject, ref);
 
     ImGui::EndDragDropTarget();
 }
