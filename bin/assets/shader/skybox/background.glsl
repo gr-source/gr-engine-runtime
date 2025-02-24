@@ -1,32 +1,38 @@
-#shader_type vertex
+#define_type shader3D
 
-#version 330 core
+#define_raster vertex
 
-layout (location = 0) in vec3 aPos;
+out vec3 u_texCoord;
 
-uniform mat4 projection;
-uniform mat4 view;
+void vertex()
+{
+	u_texCoord = in_pos;
 
-out vec3 WorldPos;
+	mat4 rotView = mat4(mat3(u_view));
+	vec4 clipPos = u_projection * rotView * vec4(in_pos, 1.0);
 
-void main() {
-    WorldPos = aPos;
-
-	mat4 rotView = mat4(mat3(view));
-	vec4 clipPos = projection * rotView * vec4(WorldPos, 1.0);
-
-	gl_Position = clipPos.xyww;
+	u_position = clipPos.xyww;
 }
 
-#shader_type fragment
+#define_raster fragment
 
-#version 330 core
-
-out vec4 FragColor;
-in vec3 WorldPos;
+in vec3 u_texCoord;
 
 uniform samplerCube u_texture;
 
+void fragment()
+{
+	vec3 envColor = texture(u_texture, u_texCoord).rgb;
+    
+    // HDR tonemap and gamma correct
+    // envColor = envColor / (envColor + vec3(1.0));
+    // envColor = pow(envColor, vec3(1.0/2.2));
+    
+    FragColor = vec4(envColor, 1.0);
+}
+
+
+/*
 void main() {
     vec3 envColor = texture(u_texture, WorldPos).rgb;
     
@@ -36,4 +42,7 @@ void main() {
     
     FragColor = vec4(envColor, 1.0);
 }
+*/
+
+
 

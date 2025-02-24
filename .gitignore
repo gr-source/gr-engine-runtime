@@ -1,5 +1,4 @@
-build/
-bullet3/build/
 .vscode/
+build/
+bin/
 lib/
-bin/assets/model/

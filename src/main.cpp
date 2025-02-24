@@ -123,7 +123,7 @@ int main(int argc, char *argv[]) {
 
     glfwInstallCallback(&(*window));
 
-    glfwSetWindowPos(&(*window), 0, 0);
+    // glfwSetWindowPos(&(*window), 0, 0);
 
     if (!grr::gRender::Initialize()) {
         window = nullptr;

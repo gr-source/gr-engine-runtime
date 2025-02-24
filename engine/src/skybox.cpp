@@ -38,7 +38,7 @@ void Skybox::Initialize() {
 
     CreateCube();
 
-    AssetsManager::LoadTexture("/home/grdev/Downloads/sky_clouds_06_2k/sky_clouds_06_2k.png", &Skybox::ConfigCubemap);
+    AssetsManager::LoadTexture("/home/felipy/Downloads/Skyboxes/SunsetSky.png", &Skybox::ConfigCubemap);
 }
 
 void Skybox::Shutdown() {

@@ -1,3 +1,24 @@
+#define_type shader2D
+
+#define_raster vertex
+
+void vertex()
+{
+	u_position = u_projection * u_model * vec4(in_pos, 0.0f, 1.0); 
+
+    u_texCoord = in_texCoord;
+}
+
+#define_raster fragment
+
+uniform sampler2D u_texture;
+
+void fragment()
+{
+	FragColor = texture(u_texture, u_texCoord);
+}
+
+/*
 #shader_type vertex
 
 #version 330 core
@@ -42,4 +63,4 @@ void main() {
 }
 
 
-
+*/

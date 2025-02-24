@@ -1,43 +1,41 @@
-#shader_type vertex
+#define_type shader3D
 
-#version 330 core
+#define_raster vertex
 
-layout (location = 0) in vec3 aPos;
+out vec3 u_fragPos;
 
-uniform mat4 projection;
-uniform mat4 view;
+void vertex()
+{
+	u_fragPos = in_pos;
 
-out vec3 lPos;
-
-void main() {
-    lPos = aPos;
-
-    gl_Position = projection * view * vec4(lPos, 1.0);
+    u_position = u_projection * u_view * vec4(in_pos, 1.0);
 }
 
-#shader_type fragment
+#define_raster fragment
 
-#version 330 core
-
-/* cor de saida */
-out vec4 FragColor;
-
-/* variavel recebida de vert */
-in vec3 lPos;
+in vec3 u_fragPos;
 
 uniform sampler2D u_texture;
 
 const vec2 invAtan = vec2(0.1591, 0.3183);
-vec2 SampleSphericalMap(vec3 v) {
+vec2 SampleSphericalMap(vec3 v)
+{
     vec2 uv = vec2(atan(v.z, v.x), asin(v.y));
     uv *= invAtan;
     uv += 0.5;
     return uv;
 }
 
-void main() {
-    vec2 uv = SampleSphericalMap(normalize(lPos));
+void fragment()
+{
+	vec2 uv = SampleSphericalMap(normalize(u_fragPos));
     vec3 color = texture(u_texture, uv).rgb;
     
     FragColor = vec4(color, 1.0);
 }
+
+
+
+
+
+

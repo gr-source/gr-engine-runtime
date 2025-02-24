@@ -122,10 +122,10 @@ set(plugin
 add_library(${PROJECT_NAME} STATIC ${engine_src} ${plugin} ${engine_hdr})
 
 target_include_directories(${PROJECT_NAME} PUBLIC
-    /home/grdev/Documentos/gr-engine/gr-base/include
+    /home/felipy/Documentos/gr-projects/gr-base/include
     $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/${PROJECT_NAME}/src>
 )
 
-target_link_libraries(${PROJECT_NAME} PRIVATE /home/grdev/Documentos/gr-engine/gr-base/lib/libgr-base.so)
+target_link_libraries(${PROJECT_NAME} PRIVATE /home/felipy/Documentos/gr-projects/gr-base/lib/libgr-base.so)
 
 target_compile_definitions(${PROJECT_NAME} PUBLIC INTERNAL_REGISTER_SCRIPT)

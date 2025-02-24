@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5.0)
+cmake_minimum_required(VERSION 3.31.5)
 
 project(gr-component VERSION 0.1.0 LANGUAGES C CXX)
 
@@ -36,10 +36,10 @@ endif()
 
 add_library(${PROJECT_NAME} SHARED main.cpp src/api.cpp ${source_src} ${core_src})
 
-target_link_libraries(${PROJECT_NAME} PRIVATE ${GRMATH_LIBRARIES} ${BULLET_LIBRARIES} /home/grdev/Documentos/gr-engine/gr-base/lib/libgr-base.so)
+target_link_libraries(${PROJECT_NAME} PRIVATE ${GRMATH_LIBRARIES} ${BULLET_LIBRARIES})
 
 target_include_directories(${PROJECT_NAME} PUBLIC ${BULLET_INCLUDE_DIRS}
-    /home/grdev/Documentos/gr-engine/gr-base/include
+    /home/felipy/Documentos/gr-projects/gr-base/include
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
 )
 
