@@ -116,26 +116,6 @@ void Engine::Shutdown() {
     Threadpool::Shutdown();
 }
 
-/*
-FunctionTimer mMainFunctionTimer;
-void Engine::Idle() {
-    m_editor = ProjectMenu::GetEditor();
-
-    mMainFunctionTimer.end();
-    mMainFunctionTimer.start();
-    // auto fps = 60.0f;
-    // static Time time;
-    Statistics::m_threadFrame = {mMainFunctionTimer.getFps(), mMainFunctionTimer.getDeltaTime()};
-    Clock::deltaTime = Statistics::m_threadFrame.delta;
-
-    if (m_editor != nullptr)
-        Engine::Update();
-
-    Engine::Render();
-
-    // time.end();
-}
-*/
 void Engine::Idle() {
     m_editor = ProjectMenu::GetEditor();
 
