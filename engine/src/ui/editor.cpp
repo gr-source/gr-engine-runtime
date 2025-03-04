@@ -2488,10 +2488,16 @@ void Editor::RenderShaderUniform(Material *material, grr::gShader *shader)
 }
 
 void Editor::dropShaderInMaterial(Material *material) {
-    if (!ImGui::BeginDragDropTarget()) { return; }
+    if (!ImGui::BeginDragDropTarget())
+    {
+        return;
+    }
 
     auto payload = ImGui::AcceptDragDropPayload(m_extensionDragDrop[DragDropFlags::SHADER], ImGuiDragDropFlags_AcceptBeforeDelivery | ImGuiDragDropFlags_SourceAllowNullID);
-    if (!payload) { return ImGui::EndDragDropTarget(); }
+    if (!payload)
+    {
+        return ImGui::EndDragDropTarget();
+    }
     
     std::string file((char*)payload->Data, payload->DataSize);
     if (file.empty() || file.find(".glsl") == std::string::npos)
