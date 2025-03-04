@@ -1681,12 +1681,6 @@ void Editor::RenderOtherUI() {
         ImGui::SameLine();
         ImGui::BeginChild("bbb", ImVec2(0.0f, 0.0f), ImGuiChildFlags_AlwaysUseWindowPadding);
         
-        if (ImGui::IsWindowHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Right))
-        {
-            mDirSelectedList.push_back(m_dirSelected);
-            popupFlags |= EditorPopupFlags_DirManager;
-        }
-
         RenderFiles();
         ImGui::EndChild();
     }
@@ -1754,7 +1748,15 @@ void Editor::RenderFiles()
 
         if (View::ImageAndTextButton(reinterpret_cast<ImTextureID>(iconsUI[IconType::ICON_GAMEOBJECT]->getID()), filename.c_str()))
         {
-        } 
+        }
+
+        if (ImGui::IsItemClicked(ImGuiMouseButton_Right))
+        {
+            popupFlags |= EditorPopupFlags_FileManager;
+            mDirSelectedList.clear();
+
+            mDirSelectedList.push_back(path_str);
+        }
 
         dropTargetGameObjectInFile(entry.path().parent_path());
 
@@ -1772,26 +1774,15 @@ void Editor::RenderFiles()
             OpenFileDoubleClick(path_str);
         }
 
-        // ImGui::Image(reinterpret_cast<ImTextureID>(iconsUI[IconType::ICON_GAMEOBJECT]->getID()), ImVec2(32.0f, 32.0f));
-        /*
-        ImGui::PushID(entry.path().c_str());
-        auto lastPos = ImGui::GetCursorStartPos();
-
-
-        ImGui::Text("%s", entry.path().filename().c_str());
-
-        ImGui::SetCursorPos(ImGui::GetCursorStartPos() - lastPos);
-        if (ImGui::Button("file_select", ImVec2{40, 40}))
-        {
-            std::cout << entry.path() << std::endl;
-        }
-        */
-
         ImGui::NextColumn();
         
-        // ImGui::PopID();
     }
-    // ImGui::Columns(1);
+
+    if (!(popupFlags & EditorPopupFlags_FileManager) && ImGui::IsWindowHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Right))
+    {
+        mDirSelectedList.push_back(m_dirSelected);
+        popupFlags |= EditorPopupFlags_DirManager;
+    }
 }
 
 #include "gr-base/core/task/saveGameObjectTask.hpp"

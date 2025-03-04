@@ -57,7 +57,6 @@ void ScreenRender::Render(const Camera *camera) {
 
     auto orth = Math::orthographic(-1.0f, 1.0f, -1.0f, 1.0f, -1.0f, 1.0f);
 
-
     m_shader->setUniform("u_projection", &orth);
     m_shader->setUniform("u_model", &model);
 
