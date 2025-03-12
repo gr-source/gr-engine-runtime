@@ -10,7 +10,6 @@ set(CMAKE_CXX_STANDARD 17)
 # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pg")
 
 # Adicionando o executável principal
-add_executable(${PROJECT_NAME} src/main.cpp)
 
 # Encontrando as bibliotecas necessárias
 find_package(glfw3 QUIET)
@@ -25,9 +24,10 @@ if(NOT GLEW_FOUND)
     return()
 endif()
 
-find_package(OpenGL REQUIRED)
-find_package(gr-math REQUIRED)
-find_package(gr-render REQUIRED)
+find_package(OpenGL     REQUIRED)
+find_package(gr-math    REQUIRED)
+find_package(gr-render  REQUIRED)
+find_package(gr-ini     REQUIRED)
 
 find_package(Bullet QUIET)
 if(NOT Bullet_FOUND)
@@ -41,15 +41,16 @@ if(NOT assimp_FOUND)
     return()
 endif()
 
+add_executable(${PROJECT_NAME} src/main.cpp)
+
 # Adicionando subdiretórios
 add_subdirectory(engine)
 add_subdirectory(imgui)
 
-
 #### ENGINE ####
 target_include_directories(engine PRIVATE imgui/src imgui/src/backends ${BULLET_INCLUDE_DIRS} ${OPENGL_INCLUDE_DIRS} ${GLEW_INCLUDE_DIRS})
 
-target_link_libraries(engine PRIVATE ${OPENGL_LIBRARIES} ${GRMATH_LIBRARIES} ${GRRENDER_LIBRARIES} ${BULLET_LIBRARIES})
+target_link_libraries(engine PRIVATE ${OPENGL_LIBRARIES} ${GRINI_LIBRARIES} ${GRMATH_LIBRARIES} ${GRRENDER_LIBRARIES} ${BULLET_LIBRARIES})
 
 
 #### IMGUI ####
@@ -59,7 +60,5 @@ target_include_directories(imgui PRIVATE imgui/src imgui/src/backends)
 
 target_include_directories(${PROJECT_NAME} PRIVATE imgui/src imgui/src/backends engine/src)
 
-target_link_libraries(${PROJECT_NAME} PRIVATE engine glfw imgui assimp ${GLEW_LIBRARIES} ${OPENGL_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} PRIVATE engine glfw imgui assimp ${GLEW_LIBRARIES} ${OPENGL_LIBRARIES} ${GRINI_LIBRARIES})
 
-set(CPACK_PROJECT_NAME ${PROJECT_NAME})
-set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})

@@ -12,6 +12,8 @@
 #include "memory.h"
 #include "skybox.h"
 
+#include <cstring>
+#include <functional>
 #include <gr-base/core/window.hpp>
 
 #include <gr-base/core/filmbox/filmbox.hpp>
@@ -60,12 +62,14 @@
 #include <gr-base/ecs/gameObject.hpp>
 #include <gr-base/ecs/manager.hpp>
 
+#include <gr-ini/config.h>
 #include <linux/input-event-codes.h>
 #include <filesystem>
 
 #include <gr-base/ecs/componentRegistry.hpp>
 
 #include <gr-base/core/display.hpp>
+#include <vector>
 
 #define IMGUI_PAYLOAD_GAMEOBJECT "##payload_gameobject"
 #define IMGUI_PAYLOAD_ANIMATION "##payload_animation"
@@ -126,6 +130,10 @@ std::string getfilesize(std::size_t sz) {
         } \
     }
 
+std::map<std::string, void *> Editor::m_runtimeFuncAddr = {
+    {"", nullptr}
+};
+
 Editor::Editor() : m_viewport(ImGui::GetMainViewport()), mImGuiIO(&ImGui::GetIO()), m_currentPath(File::GetAsset("")), m_cameraObject(nullptr), m_mainCamera(nullptr), s_objectSelected(nullptr), m_currentPage(0), m_materialToRename(nullptr), m_plugin(nullptr) {
     s_texturePlayGame = nullptr;
 
@@ -179,16 +187,17 @@ Editor::Editor() : m_viewport(ImGui::GetMainViewport()), mImGuiIO(&ImGui::GetIO(
     try {
         m_config->load();
 
-        m_config->setCategory("plugin");
-        for (auto &&[name, path] : m_config->getValues()) {
-            PluginManager::Load(path);
-        }
+        // m_config->setCategory("plugin");
+        // for (auto &&[name, path] : m_config->getValues()) {
+            // PluginManager::Load(path);
+        // }
     } catch (const std::exception &e) {
         Console::LogWarning(e.what());
     }
 
-    m_config->erase("plugin");
+    // m_config->erase("plugin");
 
+    /*
     {
         auto lasCaterogy = m_config->getCategory();
         m_config->setCategory("viewport");
@@ -198,25 +207,43 @@ Editor::Editor() : m_viewport(ImGui::GetMainViewport()), mImGuiIO(&ImGui::GetIO(
 
         m_config->setCategory(lasCaterogy);
     }
+    */
+
+    m_settings = config_create();
+    if (File::Exists(File::GetFile("/gsettings.ini")))
+    {
+        config_load(File::GetFile("/gsettings.ini").c_str(), m_settings);
+            
+        config_foreach(m_settings, static_cast<ConfigFunc>(&Editor::foreach_settings), this);
+    } else
+    {
+        generateConfig(File::GetFile("/gsettings.ini"));
+    }
 
     bBuildDock = File::Exists("imgui.ini");
 
     LoadReources();
 
-    try {
-        ScriptManager::Initialize(File::GetFile("/.build/component/lib/libgr-component.so"));
+    try
+    {
+        auto section_script = config_find_section(m_settings, "Script");
+        if (section_script != nullptr)
+        {
+            ScriptManager::Initialize(File::GetFile(config_get_string(section_script, "dir")) + config_get_string(section_script, "libname"));
+        }
 
         Display::SetDisplayRect(Rect{0.0f, 0.0f, (float)Settings::ViewportSize.x, (float)Settings::ViewportSize.y});
-    } catch (const std::exception &e) {
+    } catch (const std::exception &e)
+    {
         Console::LogError("Fatal error in script: " + std::string(e.what()));
     }
 
     auto lastCategory = m_config->getCategory();
 
-    m_config->setCategory("scene");
-    if (m_config->hasKey("main") && m_config->getValue<std::string>("main") != "default" && !Scene::HasScene()) {
-        AssetsManager::LoadScene(File::GetAsset("/scene/" + m_config->getValue<std::string>("main") + ".scn"), &Editor::ScenePostEcecute, this);
-    }
+    /*m_config->setCategory("scene");*/
+    /*if (m_config->hasKey("main") && m_config->getValue<std::string>("main") != "default" && !Scene::HasScene()) {*/
+    /*    AssetsManager::LoadScene(File::GetAsset("/scene/" + m_config->getValue<std::string>("main") + ".scn"), &Editor::ScenePostEcecute, this);*/
+    /*}*/
 
     m_config->setCategory(lastCategory);
 
@@ -229,7 +256,8 @@ Editor::Editor() : m_viewport(ImGui::GetMainViewport()), mImGuiIO(&ImGui::GetIO(
     Skybox::Initialize();
 
     auto project = Project::GetCurrent();
-    if (project) {
+    if (project)
+    {
         auto projectname = project->getName();
 
         char name[256];
@@ -237,9 +265,18 @@ Editor::Editor() : m_viewport(ImGui::GetMainViewport()), mImGuiIO(&ImGui::GetIO(
 
         Window::SetWindowTitle(name);
     }
+
+    refreshDockMenuBar(File::GetFile("/dock_menu_bar.ini", true));
 }
 
 Editor::~Editor() {
+    generateConfig(File::GetFile("/gsettings.ini"));
+
+    config_save(File::GetFile("/gsettings.ini").c_str(), m_settings);
+
+    config_release(m_settings);
+    
+    /*
     m_config->setCategory("scene");
     m_config->setValue<std::string>("main", Scene::HasScene() ?  Scene::GetCurrentScene()->getName() : "default");
 
@@ -262,6 +299,7 @@ Editor::~Editor() {
     if (m_config) {
         m_config->save();
     }
+    */
 
     Scene::Shutdown();
 
@@ -316,21 +354,32 @@ void Editor::KeyBoardUp(grm::u32 key) {
         mImGuiIO->MouseDrawCursor = !mImGuiIO->MouseDrawCursor;
 }
 
-void Editor::LoadScript() {
-    if (ScriptManager::IsValid()) {
+void Editor::LoadScript()
+{
+    if (ScriptManager::IsValid())
+    {
         UnloadScript();
     }
 
-    if (ScriptManager::CheckScriptLoaded("libgr-component.so")) {
+
+    auto section_script = config_find_section(m_settings, "Script");
+    
+    if (ScriptManager::CheckScriptLoaded(config_get_string(section_script, "libname")))
+    {
         return Console::LogError("[ Script ] Fatal error data not unloaded.");
     }
 
-    try {
-        ScriptManager::Initialize(File::GetFile("/.build/component/lib/libgr-component.so"));
+    try
+    {
+        if (section_script != nullptr)
+        {
+            ScriptManager::Initialize(File::GetFile(config_get_string(section_script, "dir")) + config_get_string(section_script, "libname"));
+        }
 
         ComponentRegistry::getInstance().CheckScriptRemoved();
         
-    } catch (const std::runtime_error &e) {
+    } catch (const std::runtime_error &e)
+    {
         Console::LogError(e.what());
     }
 
@@ -341,8 +390,6 @@ void Editor::LoadScript() {
     ScreenRender::Initialize();
 
     Scene::CheckRequestReinstanceScript();
-
-    // ComponentRegistry::getInstance().init();
     
     Scene::InitializeAllScript();
 
@@ -355,8 +402,6 @@ void Editor::UnloadScript() {
     RenderManager::Shutdown();
 
     ScreenRender::Shutdown();
-
-    // ComponentRegistry::Clear();
 
     ScriptManager::Shutdown();
 }
@@ -495,8 +540,23 @@ void Editor::RenderDocking() {
 
     bool bPopupMenuShader = false, bMeshList = false;
 
-    if (ImGui::BeginMenuBar()) {
-        if (ImGui::BeginMenu("Project")) {
+    if (ImGui::BeginMenuBar())
+    {
+        for (auto &menu : mMenuBarList)
+        {
+            if (ImGui::BeginMenu(menu.name.c_str()))
+            {
+                for (auto &item : menu.items)
+                {
+                    if (item.func != nullptr && ImGui::MenuItem(item.name.c_str()))
+                    {
+                        item.func();
+                    }
+                }
+                ImGui::EndMenu();
+            }
+        }
+        /*if (ImGui::BeginMenu("Project")) {
             if (ImGui::MenuItem("Reconfigure Script")) {
                 ReconfigScript();
             }
@@ -547,7 +607,6 @@ void Editor::RenderDocking() {
                 flags |= EditorPopupFlags_Plugin;
             }
 
-            // /*
             if (ImGui::MenuItem("Shader List")) {
                 bPopupMenuShader = true;
             }
@@ -555,9 +614,9 @@ void Editor::RenderDocking() {
             if (ImGui::MenuItem("Mesh List")) {
                 bMeshList = true;
             }
-            // */
             ImGui::EndMenu();
         }
+        */
 
         ImGui::EndMenuBar();
     }
@@ -807,7 +866,7 @@ void Editor::PopupMenuAdd() {
     if (ImGui::ListBox("##popup_menu_menu_add_list_box", &id, item_name, (sizeof(item_name) / sizeof(item_name[0])))) {
         switch (id) {
         case 0:
-            s_objectSelected = CreatePrimitive(0);
+            /*s_objectSelected = CreatePrimitive(0);*/
             break;
         case 1:
             s_objectSelected = Scene::GetCurrentScene()->CreateGameObject("Empty");
@@ -2378,16 +2437,20 @@ bool Editor::RenderMaterial(Material *material) {
 
     ImGui::Text("Shader: ");
     auto shader = material->getShader();
-    if (shader != nullptr) {
-        try {
-            auto shader_name = std::filesystem::path(AssetsManager::GetShaderRefToName(shader)).filename();
+    if (shader == nullptr)
+    {
+        dropShaderInMaterial(material);
+        return false;
+    }
 
-            ImGui::SameLine();
+    try {
+        auto shader_name = std::filesystem::path(AssetsManager::GetShaderRefToName(shader)).filename();
 
-            ImGui::TextColored(ImVec4(0.0f, 255.0f, 0.0f, 255.0f), "%s", shader_name.c_str());
-        } catch (const std::exception &e) {
-            ImGui::TextColored(ImVec4(255.0f, 0.0f, 0.0f, 255.0f), "Invalid");
-        }
+        ImGui::SameLine();
+
+        ImGui::TextColored(ImVec4(0.0f, 255.0f, 0.0f, 255.0f), "%s", shader_name.c_str());
+    } catch (const std::exception &e) {
+        ImGui::TextColored(ImVec4(255.0f, 0.0f, 0.0f, 255.0f), "Invalid");
     }
 
     dropShaderInMaterial(material);
@@ -2493,7 +2556,7 @@ void Editor::dropShaderInMaterial(Material *material) {
         return;
     }
 
-    auto payload = ImGui::AcceptDragDropPayload(m_extensionDragDrop[DragDropFlags::SHADER], ImGuiDragDropFlags_AcceptBeforeDelivery | ImGuiDragDropFlags_SourceAllowNullID);
+    auto payload = ImGui::AcceptDragDropPayload(m_extensionDragDrop[DragDropFlags::SHADER]);
     if (!payload)
     {
         return ImGui::EndDragDropTarget();
@@ -3108,6 +3171,7 @@ void Editor::renderMeshList() {
     */
 }
 
+/*
 GameObject *Editor::CreatePrimitive(int type) {
     auto go = GameObject::Create("Cube");
 
@@ -3161,10 +3225,9 @@ GameObject *Editor::CreatePrimitive(int type) {
             vertices[indices[i + 2] - 1].normal = Math::normalize(vertices[indices[i + 2] - 1].normal + ABxAC);
         }
 
-        /*
         mesh->setIndices(indices);
         mesh->setVertices(vertices);
-        */
+        
     }
 
     auto mf = go->addComponent<MeshFilter>();
@@ -3179,6 +3242,7 @@ GameObject *Editor::CreatePrimitive(int type) {
 
     return GameObject::Instantiate(go);
 }
+*/
 
 void Editor::SkyboxEditor() {
     auto isOpen = ImGui::BeginPopupModal("##popup_skybox_editor", nullptr, ImGuiWindowFlags_Modal);
@@ -3326,3 +3390,148 @@ void Editor::OutputGameObject(GameObject **ref, GameObject *go) {
 
     go->getEntity()->setEnable(false);
 }
+
+void Editor::refreshDockMenuBar(const std::string &file)
+{
+    if (!File::Exists(file))
+    {
+        return Console::LogError("File settings dock menu bar do not found.");
+    }
+
+    gConfig *config = config_create();
+    if (config == nullptr)
+    {
+        return;
+    }
+
+    config_load(file.c_str(), config);
+
+    config_foreach(config, (ConfigFunc) &Editor::foreach_ini, this);
+
+    config_release(config);
+}
+
+gConfigStep_ Editor::foreach_ini(gConfigType_ type, void *data, void *instance)
+{
+    Editor *editor = static_cast<Editor *>(instance);
+
+    switch (type)
+    {
+        case gConfigType_Section:{
+            struct gSection *section = static_cast<struct gSection *>(data);
+            if (std::strcmp(section->key, "MenuBar") == 0)
+            {
+                std::string name = config_get_string(section, "name");
+
+                editor->mMenuBarList.push_back(MenuBar{name});
+                return gConfigStep_Recuse;
+            }
+            break;
+        }
+        case gConfigType_Subsection: {
+            struct gSection *section = static_cast<struct gSection *>(data);
+            if (std::strcmp(section->name, "MenuItem") == 0)
+            {
+                void (*func)() = nullptr;
+                MenuBar *menu_bar = &editor->mMenuBarList.back();
+
+                auto symbol_addr = config_get_string(section, "addr");
+                auto libname = config_get_string(section, "libname");
+                if (libname != nullptr)
+                {
+                    if (std::strcmp(libname, "runtime") == 0)
+                    {
+                        func = (void (*)(void))m_runtimeFuncAddr[libname];
+                    }
+                }
+                auto name = config_get_string(section, "name");
+
+                menu_bar->items.push_back(MenuItem{name, func});
+            }
+            break;
+        }
+        default:
+            break;
+    }
+    return gConfigStep_Continue;
+}
+
+gConfigStep_ Editor::foreach_settings(gConfigStep_ type, void *data, void *instance)
+{
+    auto editor = static_cast<Editor *>(instance);
+
+    switch (type)
+    {
+        case gConfigType_Section:
+        {
+            auto section = static_cast<struct gSection *>(data);
+            if (std::strcmp(section->name, "Scenes") == 0)
+            {
+                return gConfigStep_Recuse;
+            }
+            break;
+        }
+        case gConfigType_Subsection:
+        {
+            auto section = static_cast<struct gSection *>(data);
+            if (std::strcmp(section->name, "Scene") == 0)
+            {
+                auto name = config_get_string(section, "name");
+
+                AssetsManager::LoadScene(File::GetAsset("/scene/") + name + ".scn", &Editor::ScenePostEcecute, editor);
+            }
+            break;
+        }
+        default:
+            break;
+    }
+    return gConfigStep_Continue;
+}
+
+void Editor::generateConfig(const std::string &file)
+{
+    auto &scenes = Scene::GetScenes();
+    if (!scenes.empty())
+    {
+        auto section = config_find_section(m_settings, "Scenes");
+        if (section != nullptr)
+        {
+            config_remove_section(m_settings, section);
+        }
+
+        section = config_create_section(m_settings, "Scenes", nullptr);
+        
+        for (auto &&[name, scene] : scenes)
+        {
+            auto subsection = config_create_sub_section(section, "Scene", nullptr);
+            config_set_string(subsection, "name", name.c_str());
+        }
+    }
+
+    {
+        auto section = config_find_section(m_settings, "Script");
+        if (section != nullptr)
+        {
+            config_remove_section(m_settings, section);
+        }
+
+        section = config_create_section(m_settings, "Script", nullptr);
+
+        if (config_get_string(section, "libname") == nullptr)
+        {
+            config_set_string(section, "libname", "libgr-component.so");
+        }
+        
+        if (config_get_string(section, "dir") == nullptr)
+        {
+            config_set_string(section, "dir", "/.build/component/lib/");
+        }
+    }
+}
+
+
+
+
+
+
+

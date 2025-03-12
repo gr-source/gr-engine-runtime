@@ -17,23 +17,34 @@
 #include <gr-render/gTexture.h>
 
 #include <gr-base/script/default.hpp>
+#include <vector>
+
+#ifdef __cplusplus
+extern "C" {
+#endif // __cplusplus
+
+#include <gr-ini/config.h>
+
+#ifdef __cplusplus
+}
+#endif // __cplusplus
 
 enum EditorPopupFlags : int64_t {
     EditorPopupFlags_EngineStatus        = 1 << 1,
     EditorPopupFlags_Settings            = 1 << 2,
-    EditorPopupFlags_SkyboxEditor        = 1 << 2,
-    EditorPopupFlags_Plugin              = 1 << 3,
-    EditorPopupFlags_LoadPlugin          = 1 << 4,
-    EditorPopupFlags_PluginEditor        = 1 << 5,
-    EditorPopupFlags_AddComponent        = 1 << 6,
-    EditorPopupFlags_CreateMaterial      = 1 << 7,
-    EditorPopupFlags_CreateMaterialInDir = 1 << 8,
-    EditorPopupFlags_FileManager         = 1 << 9,
-    EditorPopupFlags_DirManager          = 1 << 10,
-    EditorPopupFlags_RenameFileOrDir     = 1 << 11,
-    EditorPopupFlags_CreateNewDir        = 1 << 12,
-    EditorPopupFlags_CreateScript        = 1 << 13,
-    EditorPopupFlags_CreateShader        = 1 << 14,
+    EditorPopupFlags_SkyboxEditor        = 1 << 3,
+    EditorPopupFlags_Plugin              = 1 << 4,
+    EditorPopupFlags_LoadPlugin          = 1 << 5,
+    EditorPopupFlags_PluginEditor        = 1 << 6,
+    EditorPopupFlags_AddComponent        = 1 << 7,
+    EditorPopupFlags_CreateMaterial      = 1 << 8,
+    EditorPopupFlags_CreateMaterialInDir = 1 << 9,
+    EditorPopupFlags_FileManager         = 1 << 10,
+    EditorPopupFlags_DirManager          = 1 << 11,
+    EditorPopupFlags_RenameFileOrDir     = 1 << 12,
+    EditorPopupFlags_CreateNewDir        = 1 << 13,
+    EditorPopupFlags_CreateScript        = 1 << 14,
+    EditorPopupFlags_CreateShader        = 1 << 15,
 };
 
 #define GET_FLAG_NAME(c) #c
@@ -60,6 +71,20 @@ enum IconType : int {
 	ICON_SHADER       = 16,
 	ICON_SCENE        = 17
 };
+
+typedef struct
+{
+    std::string name;
+
+    void (*func)(void);
+} MenuItem;
+
+typedef struct
+{
+    std::string name;
+
+    std::vector<MenuItem> items;
+} MenuBar;
 
 class Editor {
 public:
@@ -88,11 +113,15 @@ public:
 
     Camera *getCamera();
 
+    std::vector<MenuBar> mMenuBarList;
+
 private:
+    static std::map<std::string, void *> m_runtimeFuncAddr;
+
     std::unordered_map<std::string, std::function<void(Entity *)>> mInternalScript;
 
     std::unordered_map<IconType, grr::gTexture *> iconsUI;
-    
+
     GameObject *m_cameraObject;
 
     Camera *m_mainCamera;
@@ -144,6 +173,8 @@ private:
     std::shared_ptr<Config> m_config;
 
     Material *m_materialToRename;
+
+    gConfig *m_settings;
 
     struct LastTransform {
         Vector3 position;
@@ -318,8 +349,6 @@ private:
 
     void renderMeshList();
 
-    static GameObject *CreatePrimitive(int type);
-
     // 
     void SkyboxEditor();
 
@@ -335,6 +364,14 @@ private:
     bool RenderProperty(Args&&... args);
 
     static void OutputGameObject(GameObject **ref, GameObject *go);
+
+    void refreshDockMenuBar(const std::string &file);
+
+    static gConfigStep_ foreach_ini(gConfigType_ type, void *data, void *editor);
+
+    static gConfigStep_ foreach_settings(gConfigType_ type, void *data, void *instance);
+
+    void generateConfig(const std::string &file);
 };
 
 template <typename T, typename... Args>
