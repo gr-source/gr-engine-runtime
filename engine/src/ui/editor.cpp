@@ -12,6 +12,7 @@
 #include "memory.h"
 #include "skybox.h"
 
+#include <cstddef>
 #include <cstring>
 #include <functional>
 #include <gr-base/core/window.hpp>
@@ -77,6 +78,8 @@
 #define IMGUI_PAYLOAD_IMAGE "##playload_image"
 
 #define ITEMS_PER_PAGE 20
+
+#define GET_N_ARRAY(c) sizeof(c) / sizeof(c[0])
 
 enum class DragDropFlags : uint32_t {
     GMDX       = 1 << 1,
@@ -1448,19 +1451,23 @@ void Editor::RenderGuizmo() {
     }
 }
 
-void Editor::DropGameObjectInScene() {
+void Editor::DropGameObjectInScene()
+{
     auto isOpen = ImGui::BeginDragDropTarget();
-    if (!isOpen) {
+    if (!isOpen)
+    {
         return;
     }
 
     auto payload = ImGui::AcceptDragDropPayload(m_extensionDragDrop[DragDropFlags::GMDX]);
-    if (!payload) {
+    if (!payload)
+    {
         return ImGui::EndDragDropTarget();
     }
 
     std::string path(reinterpret_cast<char *>(payload->Data), payload->DataSize);
-    if (path.empty()) {
+    if (path.empty())
+    {
         return ImGui::EndDragDropTarget();
     }
     
@@ -1469,9 +1476,11 @@ void Editor::DropGameObjectInScene() {
     ImGui::EndDragDropTarget();
 }
 
-void Editor::PopupMenuCreateScene() {
+void Editor::PopupMenuCreateScene()
+{
     auto isOpen = ImGui::BeginPopup("##popup_menu_create_scene");
-    if (!isOpen) {
+    if (!isOpen)
+    {
         return;
     }
 
@@ -1480,17 +1489,14 @@ void Editor::PopupMenuCreateScene() {
     if (!ImGui::IsAnyItemActive() && !ImGui::IsMouseClicked(ImGuiMouseButton_Left))
         ImGui::SetKeyboardFocusHere();
 
-    std::string name(256, '\0');
-    if (ImGui::InputText("##popup_create_scene_inputtext", name.data(), name.size(), ImGuiInputTextFlags_EnterReturnsTrue)) {
-        name.erase(std::remove(name.begin(), name.end(), '\0'), name.end());
+    char name[256] = {0};
 
-        if (!name.empty()) {
-            ScenePostEcecute(Scene::Create(name));
-        }
+    if (ImGui::InputText("##popup_create_scene_inputtext", name, GET_N_ARRAY(name), ImGuiInputTextFlags_EnterReturnsTrue))
+    {
+        ScenePostEcecute(Scene::Create(name));
         
         ImGui::CloseCurrentPopup();
     }
-
     ImGui::EndPopup();
 }
 
@@ -1630,15 +1636,17 @@ void Editor::PopupDirManager() {
     ImGui::EndPopup();
 }
 
-void Editor::PopupRenameFileOrDir() {
+void Editor::PopupRenameFileOrDir()
+{
     auto isOpen = ImGui::BeginPopup("##popup_rename_file_or_dir");
-    if (!isOpen) {
+    if (!isOpen)
+    {
         return;
     }
     auto path = mDirSelectedList.back();
 
     ImGui::Text("Rename:");
-    if (!ImGui::IsAnyItemActive() && !ImGui::IsMouseClicked(0))
+    if (!ImGui::IsAnyItemActive() && !ImGui::IsMouseClicked(ImGuiMouseButton_Left))
         ImGui::SetKeyboardFocusHere(0);
 
 
@@ -1661,9 +1669,11 @@ void Editor::PopupRenameFileOrDir() {
     ImGui::EndPopup();
 }
 
-void Editor::PopupCreateDirectory() {
+void Editor::PopupCreateDirectory()
+{
     auto isOpen = ImGui::BeginPopup("##popup_create_new_dir");
-    if (!isOpen) {
+    if (!isOpen)
+    {
         return;
     }
 
@@ -1674,7 +1684,8 @@ void Editor::PopupCreateDirectory() {
         ImGui::SetKeyboardFocusHere(0);
 
     char name[256] = {0};
-    if (ImGui::InputText("##InputDirectoryName", name, 256, ImGuiInputTextFlags_EnterReturnsTrue)) {
+    if (ImGui::InputText("##popup_create_directoty_inputtext", name, 256, ImGuiInputTextFlags_EnterReturnsTrue))
+    {
         File::CreateDirectory(path.string() + "/" + std::string(name));
 
         mDirSelectedList.clear();
@@ -1684,9 +1695,11 @@ void Editor::PopupCreateDirectory() {
     ImGui::EndPopup();
 }
 
-void Editor::PopupCreateScript() {
+void Editor::PopupCreateScript()
+{
     auto isOpen = ImGui::BeginPopup("##popup_create_script");
-    if (!isOpen) {
+    if (!isOpen)
+    {
         return;
     }
 
@@ -1695,7 +1708,8 @@ void Editor::PopupCreateScript() {
     ImGui::Text("Input your script name");
 
     char name[256] = {0};
-    if (ImGui::InputText("##input_text_popup_create_script_name", name, 256, ImGuiInputTextFlags_EnterReturnsTrue)) {
+    if (ImGui::InputText("##input_text_popup_create_script_name", name, 256, ImGuiInputTextFlags_EnterReturnsTrue))
+    {
         CreateScriptTemplate(path.string(), name);
 
         mDirSelectedList.clear();
@@ -1717,7 +1731,8 @@ void Editor::PopupCreateShader()
     auto path = mDirSelectedList.back();
 
     char name[256] = {0};
-    if (ImGui::InputText("##input_text_popup_create_shader_name", name, 256, ImGuiInputTextFlags_EnterReturnsTrue)) {
+    if (ImGui::InputText("##input_text_popup_create_shader_name", name, 256, ImGuiInputTextFlags_EnterReturnsTrue))
+    {
         CreateShaderTemplate(path.string(), name);
 
         mDirSelectedList.clear();
@@ -1845,13 +1860,16 @@ void Editor::RenderFiles()
 }
 
 #include "gr-base/core/task/saveGameObjectTask.hpp"
-void Editor::dropTargetGameObjectInFile(std::string path) {
-    if (!ImGui::BeginDragDropTarget()) {
+void Editor::dropTargetGameObjectInFile(std::string path)
+{
+    if (!ImGui::BeginDragDropTarget())
+    {
         return;
     }
     
     auto payload = ImGui::AcceptDragDropPayload(m_extensionDragDrop[DragDropFlags::GAMEOBJECT]);
-    if (!payload || payload->DataSize <= 0) {
+    if (!payload || payload->DataSize <= 0)
+    {
         return ImGui::EndDragDropTarget();
     }
 
@@ -1864,37 +1882,45 @@ void Editor::dropTargetGameObjectInFile(std::string path) {
     ImGui::EndDragDropTarget();
 }
 
-void Editor::RenderConsoleWindow() {
-    ImGui::Begin("Console");
-    RenderConsole();
+void Editor::RenderConsoleWindow()
+{
+    if (ImGui::Begin("Console"))
+    {
+        RenderConsole();
+    }
+    
     ImGui::End();
 }
 
-void Editor::RenderConsole() {
+void Editor::RenderConsole()
+{
     auto logs = Console::GetListLogs();
 
     std::for_each(logs.begin(), logs.end(), std::bind(&Editor::RenderLog, this, std::placeholders::_1));
     
-    if (Console::bChanged) {
+    if (Console::bChanged)
+    {
         ImGui::SetScrollHereY(1.0f);
         Console::bChanged = false;
     }
 }
 
-void Editor::RenderLog(Log &info) {
+void Editor::RenderLog(Log &info)
+{
     ImVec4 color = {1.0f, 1.0f, 1.0f, 1.0f};
-    switch (info.type) {
-    case Log::LogType::INFO:
-        color = {0.1f, 0.8f, 0.1f, 1.0f};
-        break;
-    case Log::LogType::WARNING:
-        color = {0.8f, 0.8f, 0.1f, 1.0f};
-        break;
-    case Log::LogType::ERROR:
-        color = {0.8f, 0.1f, 0.1f, 1.0f};
-        break;
-    default:
-        break;
+    switch (info.type)
+    {
+        case Log::LogType::INFO:
+            color = {0.1f, 0.8f, 0.1f, 1.0f};
+            break;
+        case Log::LogType::WARNING:
+            color = {0.8f, 0.8f, 0.1f, 1.0f};
+            break;
+        case Log::LogType::ERROR:
+            color = {0.8f, 0.1f, 0.1f, 1.0f};
+            break;
+        default:
+            break;
     }
 
     ImGui::TextColored(color, "%s", info.message.c_str());
@@ -2108,29 +2134,32 @@ void Editor::RenderScriptFromEntity(Entity *entity)
     }
 }
 
-bool Editor::RenderComponents(const std::string &name, Component *component) {
+bool Editor::RenderComponents(const std::string &name, Component *component)
+{
     auto isRender = true;
 
     auto isOpen = ImGui::CollapsingHeader(name.c_str(), &isRender);
-    if (!isRender) {
+    if (!isRender)
+    {
         return false;
     }
 
-    if (!isOpen) {
+    if (!isOpen)
+    {
         return true;
     }
 
-    // auto &baseChunkList = ComponentRegistry::GetAllChunkComponent();
-    
     auto baseChunk = ComponentRegistry::Find(name);
-    if (baseChunk == nullptr) {
+    if (baseChunk == nullptr)
+    {
         Console::LogError("Invalid component: " + name);
         return false;
     }
 
     auto fieldList = baseChunk->getFields();
 
-    for (auto &field : fieldList) {
+    for (auto &field : fieldList)
+    {
         RenderField(field, component);
     }
 
