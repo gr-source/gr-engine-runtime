@@ -559,7 +559,7 @@ void Editor::RenderDocking() {
                 ImGui::EndMenu();
             }
         }
-        /*if (ImGui::BeginMenu("Project")) {
+        if (ImGui::BeginMenu("Project")) {
             if (ImGui::MenuItem("Reconfigure Script")) {
                 ReconfigScript();
             }
@@ -575,7 +575,7 @@ void Editor::RenderDocking() {
             }
             ImGui::EndMenu();
         }
-        
+        /*
         if (ImGui::BeginMenu("View")) {
             bool isSelected = popupFlags & EditorPopupFlags_EngineStatus;
             if (ImGui::MenuItem("Engine status", nullptr, &isSelected)) {

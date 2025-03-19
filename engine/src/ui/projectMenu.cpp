@@ -446,4 +446,4 @@ void ProjectMenu::ThreadJoin() {
 }
 
 // uninstall engine
-// rm -rf ~/.cache/gr-engine ~/.config/gr-engine ~/.local/share/gr-engine ~/gr-project
+// rm -rf ~/.cache/gr-engine ~/.config/gr-engine ~/.local/share/gr-engine

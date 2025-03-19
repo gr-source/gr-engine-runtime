@@ -11,5 +11,5 @@ public:
     ~#name();
 };
 
-REGISTER_COMPONENT(#name)
+REGISTER_COMPONENT(#name, true)
 
