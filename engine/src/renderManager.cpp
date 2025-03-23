@@ -43,9 +43,9 @@ void RenderManager::Process(const Camera *camera, ShadowMap *shadowMap) {
     auto view = camera->getViewmatrix();
     auto position = camera->getPosition();
 
-    static float TIME = 0.0f;
-    TIME += Clock::deltaTime;
-    TIME = std::fmod(TIME, 360.0f);
+    /*static float TIME = 0.0f;*/
+    /*TIME += Clock::deltaTime;*/
+    /*TIME = std::fmod(TIME, 360.0f);*/
 
     int textureID = 4;
 
@@ -57,7 +57,7 @@ void RenderManager::Process(const Camera *camera, ShadowMap *shadowMap) {
         shader->setUniform("u_projection", &projection);
         shader->setUniform("u_view",       &view);
         shader->setUniform("m_eye",        &position);
-        shader->setUniform("TIME",         &TIME);
+        /*shader->setUniform("TIME",         &TIME);*/
         
         if (irradianceMap != nullptr)
         {
@@ -65,7 +65,7 @@ void RenderManager::Process(const Camera *camera, ShadowMap *shadowMap) {
             shader->setUniform("irradianceMap", &textureID);
         }
 
-        SetupLight(shader);
+        /*SetupLight(shader);*/
     }
     Frustum::CalculateFrustum(projection * view);
 }
@@ -106,3 +106,24 @@ void RenderManager::SetupLight(grr::gShader *shader) {
         shader->setUniform(("m_light[" + std::to_string(i) + "].model").c_str(),       &projection);
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -7,6 +7,7 @@
 
 #include <gr-base/core/console.hpp>
 
+#include "gr-base/script/animator.hpp"
 #include "renderer.h"
 #include "Global.h"
 
@@ -305,6 +306,10 @@ private:
     bool OnPropertyRigidbody(Rigidbody *rigidbody);
 
     bool OnPropertyAnimator(Animator* animator);
+
+    void dropArmature(Animator *animator);
+
+    void dropAnimation(Animator *animator);
 
     void TextureInfo(Texture*& texture);
 

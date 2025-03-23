@@ -82,11 +82,12 @@
 #define GET_N_ARRAY(c) sizeof(c) / sizeof(c[0])
 
 enum class DragDropFlags : uint32_t {
-    GMDX       = 1 << 1,
-    SCN        = 1 << 2,
-    SCRIPT     = 1 << 3,
-    SHADER     = 1 << 4,
-    GAMEOBJECT = 1 << 5,
+    GMDX        = 1 << 1,
+    SCN         = 1 << 2,
+    SCRIPT      = 1 << 3,
+    SHADER      = 1 << 4,
+    GAMEOBJECT  = 1 << 5,
+    ANIMATION   = 1 << 6,
 };
 
 static std::map<DragDropFlags, const char *> m_extensionDragDrop =
@@ -96,6 +97,7 @@ static std::map<DragDropFlags, const char *> m_extensionDragDrop =
     {DragDropFlags::SCRIPT,     ".script"},
     {DragDropFlags::SHADER,     ".shader"},
     {DragDropFlags::GAMEOBJECT, ".gameobject"},
+    {DragDropFlags::ANIMATION,  ".anm"},
 };
 
 static std::unordered_map<std::string, DragDropFlags> m_extensionNameToFlag =
@@ -106,6 +108,7 @@ static std::unordered_map<std::string, DragDropFlags> m_extensionNameToFlag =
     {".hpp",        DragDropFlags::SCRIPT},
     {".glsl",       DragDropFlags::SHADER},
     {".gameobject", DragDropFlags::GAMEOBJECT},
+    {".anm",        DragDropFlags::ANIMATION},
 };
 
 std::string getfilesize(std::size_t sz) {
@@ -2761,40 +2764,61 @@ bool Editor::OnPropertyAnimator(Animator *animator) {
 
     ImGui::Text("Armature: %s", armature_name.c_str());
 
-    if (ImGui::BeginDragDropTarget()) {
-        ImGuiDragDropFlags target_flags = 0;
-        target_flags |= ImGuiDragDropFlags_AcceptBeforeDelivery;
-        target_flags |= ImGuiDragDropFlags_SourceAllowNullID;
-
-        if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(IMGUI_PAYLOAD_GAMEOBJECT, target_flags)) {
-            std::string name((char*)payload->Data, payload->DataSize);
-            if (!name.empty()) {
-                animator->setArmature(GameObject::Find(name));
-            }
-        }
-        ImGui::EndDragDropTarget();
-    }
+    dropArmature(animator);
 
     auto animation = animator->getAnimation();
     auto animName = animation != nullptr ? animation->getName() : "No Animation";
 
     ImGui::Text("Animation: %s", animName.c_str());
 
-    if (ImGui::BeginDragDropTarget()) {
-        ImGuiDragDropFlags target_flags = 0;
-        target_flags |= ImGuiDragDropFlags_AcceptBeforeDelivery;
-        target_flags |= ImGuiDragDropFlags_SourceAllowNullID;
-
-        if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(IMGUI_PAYLOAD_ANIMATION, target_flags)) {
-            std::string path((char*)payload->Data, payload->DataSize);
-            if (!path.empty()) {
-                animator->setAnimation(AssetsManager::LoadAnimation(path));
-            }
-        }
-        ImGui::EndDragDropTarget();
-    }
+    dropAnimation(animator);
     
     return false;
+}
+
+void Editor::dropArmature(Animator *animator)
+{
+    if (!ImGui::BeginDragDropTarget())
+    {
+        return;
+    }
+
+    auto payload = ImGui::AcceptDragDropPayload(m_extensionDragDrop[DragDropFlags::GMDX]);
+    
+    if (!payload || payload->DataSize <= 0)
+    {
+        return ImGui::EndDragDropTarget();
+    }
+
+
+    std::string path(reinterpret_cast<char *>(payload->Data), payload->DataSize);
+    if (path.empty())
+    {
+        return ImGui::EndDragDropTarget();
+    }
+    
+    AssetsManager::LoadGameObject(path, &Animator::setArmature, animator);
+
+    ImGui::EndDragDropTarget();
+}
+
+void Editor::dropAnimation(Animator *animator)
+{
+    if (!ImGui::BeginDragDropTarget())
+    {
+        return;
+    }
+
+    auto payload = ImGui::AcceptDragDropPayload(m_extensionDragDrop[DragDropFlags::ANIMATION]);
+    if (!payload || payload->DataSize <= 0) {
+        return ImGui::EndDragDropTarget();
+    }
+    
+    std::string path((char*)payload->Data, payload->DataSize);
+    
+    animator->setAnimation(AssetsManager::LoadAnimation(path));
+    
+    ImGui::EndDragDropTarget();
 }
 
 void Editor::TextureInfo(Texture *&texture) {
