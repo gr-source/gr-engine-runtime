@@ -2783,7 +2783,7 @@ void Editor::dropArmature(Animator *animator)
         return;
     }
 
-    auto payload = ImGui::AcceptDragDropPayload(m_extensionDragDrop[DragDropFlags::GMDX]);
+    auto payload = ImGui::AcceptDragDropPayload(m_extensionDragDrop[DragDropFlags::GAMEOBJECT]);
     
     if (!payload || payload->DataSize <= 0)
     {
@@ -2791,6 +2791,13 @@ void Editor::dropArmature(Animator *animator)
     }
 
 
+    auto transform = *reinterpret_cast<Transform **>(payload->Data);
+    if (transform != nullptr)
+    {
+        animator->setArmature(transform->getGameObject());
+    }
+
+    /*
     std::string path(reinterpret_cast<char *>(payload->Data), payload->DataSize);
     if (path.empty())
     {
@@ -2798,6 +2805,7 @@ void Editor::dropArmature(Animator *animator)
     }
     
     AssetsManager::LoadGameObject(path, &Animator::setArmature, animator);
+    */
 
     ImGui::EndDragDropTarget();
 }
