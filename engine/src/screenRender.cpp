@@ -17,6 +17,8 @@
 
 #include <gr-base/script/camera.hpp>
 
+#include <gr-base/core/file/file.hpp>
+
 grr::gVertexArray *ScreenRender::m_vertexArray = nullptr;
 
 grr::gShader *ScreenRender::m_shader = nullptr;

@@ -2816,7 +2816,7 @@ void Editor::dropAnimation(Animator *animator)
     
     std::string path((char*)payload->Data, payload->DataSize);
     
-    animator->setAnimation(AssetsManager::LoadAnimation(path));
+    AssetsManager::LoadAnimation(path, &Animator::setAnimation, animator);
     
     ImGui::EndDragDropTarget();
 }

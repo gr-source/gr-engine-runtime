@@ -5,6 +5,8 @@
 
 #include <gr-base/script/camera.hpp>
 
+#include <gr-base/core/file/file.hpp>
+
 #include "cubeFramebuffer.hpp"
 #include "postProcessing.hpp"
 

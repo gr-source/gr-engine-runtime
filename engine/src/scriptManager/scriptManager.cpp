@@ -14,14 +14,11 @@
 #include <gr-base/core/scene.hpp>
 #include <gr-base/core/event.hpp>
 
-#include "physics/physicsScene.hpp"
-
 #include <gr-base/ecs/gameObject.hpp>
 #include <gr-base/ecs/entity.hpp>
 
-#include "../memory.h"
+#include <gr-base/core/file/file.hpp>
 
-#include <iostream>
 #include <fstream>
 #include <dlfcn.h>
 
