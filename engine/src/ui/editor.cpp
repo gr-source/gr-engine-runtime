@@ -2759,55 +2759,16 @@ bool Editor::OnPropertyAnimator(Animator *animator) {
         return false;
     }
 
-    auto armature = animator->getArmature();
-    auto armature_name = armature != nullptr ? armature->getName() : "No Armature";
-
-    ImGui::Text("Armature: %s", armature_name.c_str());
-
-    dropArmature(animator);
-
     auto animation = animator->getAnimation();
     auto animName = animation != nullptr ? animation->getName() : "No Animation";
 
     ImGui::Text("Animation: %s", animName.c_str());
 
     dropAnimation(animator);
+
+    ImGui::DragFloat("Factor", &animator->blendFactor, 0.01f, 0.0f, 1.0f);
     
     return false;
-}
-
-void Editor::dropArmature(Animator *animator)
-{
-    if (!ImGui::BeginDragDropTarget())
-    {
-        return;
-    }
-
-    auto payload = ImGui::AcceptDragDropPayload(m_extensionDragDrop[DragDropFlags::GAMEOBJECT]);
-    
-    if (!payload || payload->DataSize <= 0)
-    {
-        return ImGui::EndDragDropTarget();
-    }
-
-
-    auto transform = *reinterpret_cast<Transform **>(payload->Data);
-    if (transform != nullptr)
-    {
-        animator->setArmature(transform->getGameObject());
-    }
-
-    /*
-    std::string path(reinterpret_cast<char *>(payload->Data), payload->DataSize);
-    if (path.empty())
-    {
-        return ImGui::EndDragDropTarget();
-    }
-    
-    AssetsManager::LoadGameObject(path, &Animator::setArmature, animator);
-    */
-
-    ImGui::EndDragDropTarget();
 }
 
 void Editor::dropAnimation(Animator *animator)

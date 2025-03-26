@@ -307,8 +307,6 @@ private:
 
     bool OnPropertyAnimator(Animator* animator);
 
-    void dropArmature(Animator *animator);
-
     void dropAnimation(Animator *animator);
 
     void TextureInfo(Texture*& texture);
