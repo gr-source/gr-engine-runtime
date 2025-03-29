@@ -289,6 +289,8 @@ private:
 
     bool OnPropertyMeshRender(MeshRender *meshRender);
 
+    bool OnPropertySkinnedMeshRender(SkinnedMeshRender *skinnedMeshRender);
+
     // bool OnPropertyMeshCollider(MeshCollider *meshCollider);
 
     bool RenderMaterial(Material *material);

@@ -1,5 +1,6 @@
 #include "editor.hpp"
 
+#include "gr-base/script/default.hpp"
 #include "imgui.h"
 #include "postProcessing.hpp"
 #include "editorController.h"
@@ -40,6 +41,7 @@
 #include "core/screen.hpp"
 #include "core/timer.hpp"
 
+#include <gr-base/script/skinnedMeshRender.hpp>
 #include <gr-base/script/meshCollider.hpp>
 #include <gr-base/script/boxCollider.hpp>
 #include <gr-base/script/meshFilter.hpp>
@@ -71,11 +73,6 @@
 
 #include <gr-base/core/display.hpp>
 #include <vector>
-
-#define IMGUI_PAYLOAD_GAMEOBJECT "##payload_gameobject"
-#define IMGUI_PAYLOAD_ANIMATION "##payload_animation"
-#define IMGUI_PAYLOAD_FILE "##payload_file"
-#define IMGUI_PAYLOAD_IMAGE "##playload_image"
 
 #define ITEMS_PER_PAGE 20
 
@@ -182,6 +179,7 @@ Editor::Editor() : m_viewport(ImGui::GetMainViewport()), mImGuiIO(&ImGui::GetIO(
         INSERT_SCRIPT(Camera),
         INSERT_SCRIPT(Light),
         INSERT_SCRIPT(MeshRender),
+        INSERT_SCRIPT(SkinnedMeshRender),
         INSERT_SCRIPT(MeshFilter),
         // INSERT_SCRIPT(MeshCollider),
         INSERT_SCRIPT(BoxCollider),
@@ -366,7 +364,6 @@ void Editor::LoadScript()
     {
         UnloadScript();
     }
-
 
     auto section_script = config_find_section(m_settings, "Script");
     
@@ -2444,6 +2441,44 @@ bool Editor::OnPropertyMeshRender(MeshRender *meshRender) {
     return false;
 }
 
+bool Editor::OnPropertySkinnedMeshRender(SkinnedMeshRender *skinnedMeshRender) {
+    auto bVisible = true;
+
+    auto isOpen = ImGui::CollapsingHeader("SkinnedMeshRender", &bVisible);
+    if (!bVisible)
+    {
+        return true;
+    }
+    
+    if (ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
+        ImGui::OpenPopup("##game_object_component_menu");
+    }
+
+    if (!isOpen) {
+        return false;
+    }
+   
+    auto avail = ImGui::GetContentRegionAvail();
+    
+    if (ImGui::Button("Create", {avail.x, 0.0f})) {
+        popupFlags |= EditorPopupFlags_CreateMaterial;
+    }
+
+    ImGui::Indent();
+    for (auto material : skinnedMeshRender->getMaterials()) {
+        if (RenderMaterial(material)) {
+            skinnedMeshRender->removeMaterial(material);
+        }
+    }
+    ImGui::Unindent();
+
+    if (m_materialToRename) {
+        ImGui::OpenPopup("##popup_rename_material");
+    }
+
+    return false;
+}
+
 // bool Editor::OnPropertyMeshCollider(MeshCollider *meshCollider)
 // {
 //     return false;
@@ -3025,7 +3060,7 @@ void Editor::CreateMaterial() {
 
     static char name[256] = {0};
     if (ImGui::InputText("##popup_create_material_inputtext", name, 256, ImGuiInputTextFlags_EnterReturnsTrue)) {
-        auto meshRender = s_objectSelected->getComponent<MeshRender>();
+        auto meshRender = s_objectSelected->hasComponent<MeshRender>() ? s_objectSelected->getComponent<MeshRender>() : s_objectSelected->getComponent<SkinnedMeshRender>();
         
         meshRender->addMaterial(name);
 
