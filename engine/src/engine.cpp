@@ -119,7 +119,7 @@ void Engine::Shutdown() {
 void Engine::Idle() {
     m_editor = ProjectMenu::GetEditor();
 
-    auto fps = 60.0f;
+    auto fps = 0.0f;
     static Time time;
     Statistics::m_threadFrame = {time.getFPS(), (fps > 0.0f ? time.sleep(fps) : time.start())};
     Clock::deltaTime = Statistics::m_threadFrame.delta;

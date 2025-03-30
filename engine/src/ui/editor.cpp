@@ -545,7 +545,7 @@ void Editor::RenderDocking() {
 
     if (ImGui::BeginMenuBar())
     {
-        for (auto &menu : mMenuBarList)
+        /*for (auto &menu : mMenuBarList)
         {
             if (ImGui::BeginMenu(menu.name.c_str()))
             {
@@ -559,67 +559,38 @@ void Editor::RenderDocking() {
                 ImGui::EndMenu();
             }
         }
+        */
         if (ImGui::BeginMenu("Project")) {
             if (ImGui::MenuItem("Reconfigure Script")) {
                 ReconfigScript();
             }
-            
-            if (ImGui::MenuItem("Reconfigure Component")) {
-                // ProjectMenu::CloseProject();
-            }
-            
-            if (ImGui::MenuItem("Settings")) {}
-
-            if (ImGui::MenuItem("Close")) {
-                // ProjectMenu::CloseProject();
-            }
             ImGui::EndMenu();
         }
-        /*
-        if (ImGui::BeginMenu("View")) {
+        
+        if (ImGui::BeginMenu("View"))
+        {
             bool isSelected = popupFlags & EditorPopupFlags_EngineStatus;
-            if (ImGui::MenuItem("Engine status", nullptr, &isSelected)) {
-                if (isSelected) {
+            if (ImGui::MenuItem("Engine status", nullptr, &isSelected))
+            {
+                if (isSelected)
+                {
                     popupFlags |= EditorPopupFlags_EngineStatus;
-                } else {
+                } else
+                {
                     popupFlags &= ~EditorPopupFlags_EngineStatus;
                 }
             }
             ImGui::EndMenu();
         }
-        
-        if (ImGui::BeginMenu("Build")) {
-            if (ImGui::MenuItem("compile")) {
-            }
-            ImGui::EndMenu();
-        }
-        
-        if (ImGui::BeginMenu("Preferences")) {
-            if (ImGui::MenuItem("Settings")) {
-                flags |= EditorPopupFlags_Settings;
-            }
-            ImGui::EndMenu();
-        }
 
-        if (ImGui::BeginMenu("Tools")) {
-            if (ImGui::MenuItem("Skybox Editor")) {
-                flags |= EditorPopupFlags_SkyboxEditor;
-            }
-
-            if (ImGui::MenuItem("Plugin")) {
+        if (ImGui::BeginMenu("Tools"))
+        {
+            if (ImGui::MenuItem("Plugin"))
+            {
                 flags |= EditorPopupFlags_Plugin;
             }
-
-            if (ImGui::MenuItem("Shader List")) {
-                bPopupMenuShader = true;
-            }
-
-            if (ImGui::MenuItem("Mesh List")) {
-                bMeshList = true;
-            }
             ImGui::EndMenu();
         }
-        */
 
         ImGui::EndMenuBar();
     }
@@ -1433,7 +1404,8 @@ void Editor::RenderGuizmo() {
 
     if (m_mainCamera && ImGuizmo::Manipulate(m_mainCamera->getViewmatrix().getData(), m_mainCamera->getPerspesctive().getData(), m_guizmoOperation, m_guizmoManipulate, globalMatrix.getData())) {
         auto localMatrix = globalMatrix;
-        if (transform->hasParent()) {
+        if (transform->hasParent())
+        {
             auto parentMat = transform->getParent()->getGlobalMatrix();
             Matrix4x4 m = Matrix4x4::identityMatrix;
 

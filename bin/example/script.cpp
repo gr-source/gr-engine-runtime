@@ -2,14 +2,16 @@
 
 #include <gr-base/core/console.hpp>
 
-#name::#name() {
-    Console::LogWarning("Initialize: #name");
+#name::#name()
+{}
+
+void #name::Init()
+{
+    bCanEnableUpdate = true;
 }
 
-#name::~#name() {
-    Console::LogWarning("Shutdown: #name");
-}
+void #name::Update()
+{}
 
-
-
-
+void #name::Destroy()
+{}
