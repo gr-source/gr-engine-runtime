@@ -31,21 +31,22 @@ extern "C" {
 #endif // __cplusplus
 
 enum EditorPopupFlags : int64_t {
-    EditorPopupFlags_EngineStatus        = 1 << 1,
-    EditorPopupFlags_Settings            = 1 << 2,
-    EditorPopupFlags_SkyboxEditor        = 1 << 3,
-    EditorPopupFlags_Plugin              = 1 << 4,
-    EditorPopupFlags_LoadPlugin          = 1 << 5,
-    EditorPopupFlags_PluginEditor        = 1 << 6,
-    EditorPopupFlags_AddComponent        = 1 << 7,
-    EditorPopupFlags_CreateMaterial      = 1 << 8,
-    EditorPopupFlags_CreateMaterialInDir = 1 << 9,
-    EditorPopupFlags_FileManager         = 1 << 10,
-    EditorPopupFlags_DirManager          = 1 << 11,
-    EditorPopupFlags_RenameFileOrDir     = 1 << 12,
-    EditorPopupFlags_CreateNewDir        = 1 << 13,
-    EditorPopupFlags_CreateScript        = 1 << 14,
-    EditorPopupFlags_CreateShader        = 1 << 15,
+    EditorPopupFlags_EngineStatus           = 1 << 1,
+    EditorPopupFlags_Settings               = 1 << 2,
+    EditorPopupFlags_SkyboxEditor           = 1 << 3,
+    EditorPopupFlags_Plugin                 = 1 << 4,
+    EditorPopupFlags_LoadPlugin             = 1 << 5,
+    EditorPopupFlags_PluginEditor           = 1 << 6,
+    EditorPopupFlags_AddComponent           = 1 << 7,
+    EditorPopupFlags_CreateMaterial         = 1 << 8,
+    EditorPopupFlags_CreateMaterialInDir    = 1 << 9,
+    EditorPopupFlags_FileManager            = 1 << 10,
+    EditorPopupFlags_DirManager             = 1 << 11,
+    EditorPopupFlags_RenameFileOrDir        = 1 << 12,
+    EditorPopupFlags_CreateNewDir           = 1 << 13,
+    EditorPopupFlags_CreateScript           = 1 << 14,
+    EditorPopupFlags_CreateShader           = 1 << 15,
+    EditorPopupFlags_RenameGameObject       = 1 << 16,
 };
 
 #define GET_FLAG_NAME(c) #c

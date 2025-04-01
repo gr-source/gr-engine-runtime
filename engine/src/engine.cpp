@@ -116,13 +116,18 @@ void Engine::Shutdown() {
     Threadpool::Shutdown();
 }
 
-void Engine::Idle() {
+void Engine::Idle()
+{
+    static auto &frameTime = Statistics::FrameTime[FrameTimeID_MainThread];
     m_editor = ProjectMenu::GetEditor();
 
-    auto fps = 0.0f;
     static Time time;
-    Statistics::m_threadFrame = {time.getFPS(), (fps > 0.0f ? time.sleep(fps) : time.start())};
-    Clock::deltaTime = Statistics::m_threadFrame.delta;
+
+    Clock::deltaTime = time.sleep(60.0f);
+
+    frameTime.setDelta(Clock::deltaTime);
+    /*frameTime.setFPS(time.getFPS());*/
+    /*Clock::deltaTime = Statistics::m_threadFrame.delta;*/
 
     if (m_editor != nullptr)
         Engine::Update();
@@ -145,7 +150,7 @@ void Engine::Update() {
 
     mFunctionTimer.end();
 
-    Statistics::m_scriptFrame = {mFunctionTimer.getFps(), mFunctionTimer.getDeltaTime()};
+    /*Statistics::m_scriptFrame = {mFunctionTimer.getFps(), mFunctionTimer.getDeltaTime()};*/
 }
 
 void Engine::Render() {
@@ -156,7 +161,7 @@ void Engine::Render() {
     }
     mFunctionTimer.end();
 
-    Statistics::m_sceneFrame = {mFunctionTimer.getFps(), mFunctionTimer.getDeltaTime()};
+    /*Statistics::m_sceneFrame = {mFunctionTimer.getFps(), mFunctionTimer.getDeltaTime()};*/
 
     if (ImGuiPostProcess) {
         GUIRender();
@@ -374,7 +379,7 @@ void Engine::GUIRender() {
         mFunctionTimer.end();
     }
     
-    Statistics::m_guiFrame = {mFunctionTimer.getFps(), mFunctionTimer.getDeltaTime()};
+    /*Statistics::m_guiFrame = {mFunctionTimer.getFps(), mFunctionTimer.getDeltaTime()};*/
     // m_editor->renderFrame();
 
     ImGuiRender::End();

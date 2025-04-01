@@ -88,7 +88,7 @@ void ProjectMenu::CloseProject() {
 
     m_editor = nullptr;
 
-    Batching::Shutdown();
+    /*Batching::Shutdown();*/
 
     DebugDraw::Shutdown();
 
@@ -325,7 +325,7 @@ void ProjectMenu::ReadProjects() {
 void ProjectMenu::OpenProject(Project &project) {
     File::SetCurrentProject(project.getPath());
 
-    Batching::Initialize();
+    /*Batching::Initialize();*/
 
     DebugDraw::Initialize();
 

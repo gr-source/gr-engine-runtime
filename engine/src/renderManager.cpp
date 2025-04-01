@@ -71,7 +71,7 @@ void RenderManager::Process(const Camera *camera, ShadowMap *shadowMap) {
 }
 
 void RenderManager::Renderer() {
-    Batching::RenderBatches();
+    Batching::Render();
 
     for (int i=0;i<10;i++) {
         grr::gTexture::Unbind(i);

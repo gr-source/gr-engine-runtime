@@ -1,5 +1,6 @@
 #include "editor.hpp"
 
+#include "gr-base/script/baserender.hpp"
 #include "gr-base/script/default.hpp"
 #include "imgui.h"
 #include "postProcessing.hpp"
@@ -437,7 +438,7 @@ void Editor::RenderUI() {
         popupFlags &= ~EditorPopupFlags_PluginEditor;
         break;
     case EditorPopupFlags_CreateMaterial:
-        ImGui::OpenPopup("##popup_create_material");
+        ImGui::OpenPopup(GET_FLAG_NAME(EditorPopupFlags_CreateMaterial));
         popupFlags &= ~EditorPopupFlags_CreateMaterial;
         break;
     case EditorPopupFlags_EngineStatus:
@@ -470,6 +471,10 @@ void Editor::RenderUI() {
     case EditorPopupFlags_CreateShader:
         ImGui::OpenPopup("##popup_create_shader");
         popupFlags &= ~EditorPopupFlags_CreateShader;
+        break;
+    case EditorPopupFlags_RenameGameObject:
+        ImGui::OpenPopup(GET_FLAG_NAME(EditorPopupFlags_RenameGameObject));
+        popupFlags &= ~EditorPopupFlags_RenameGameObject;
         break;
     default:
         break;
@@ -510,6 +515,8 @@ void Editor::RenderUI() {
     PopupCreateScript();
 
     PopupCreateShader();
+
+    PopupRenameGameObject();
 }
 
 void Editor::RenderDocking() {
@@ -662,51 +669,55 @@ void Editor::PopupComponentMenu() {
     ImGui::EndPopup();
 }
 
-void Editor::RenderObjectUI() {
-    ImGui::Begin("Cenario", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
+void Editor::RenderObjectUI()
+{
+    if (ImGui::Begin("Cenario", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+    {
 
-    auto scene = Scene::GetCurrentScene();
+        auto scene = Scene::GetCurrentScene();
 
-    auto name = scene != nullptr ? scene->getName() : "Default";
+        auto name = scene != nullptr ? scene->getName() : "Scene name is empty!";
 
-    ImGui::SetNextItemOpen(true, ImGuiCond_Appearing);
-    if (ImGui::TreeNodeEx(name.empty() ? "Scene name is empty!" : name.c_str(), ImGuiTreeNodeFlags_SpanFullWidth)) {
-        dropGameObjectInHierarchy(scene);
+        ImGui::SetNextItemOpen(true, ImGuiCond_Appearing);
+        if (scene != nullptr && ImGui::TreeNodeEx(name.c_str(), ImGuiTreeNodeFlags_SpanFullWidth))
+        {
+            dropGameObjectInHierarchy(scene);
         
-        if (scene != nullptr)
             RenderSceneObject(scene);
 
-        ImGui::TreePop();
-    }
+            ImGui::TreePop();
+        }
 
-    if (ImGui::IsKeyReleased(ImGuiKey_Delete) && s_objectSelected && !ImGui::IsPopupOpen("##popup_rename_gameobject")) {
-        Event::Add(&Scene::Destoy, s_objectSelected);
-        s_objectSelected = nullptr;
+        if (ImGui::IsKeyReleased(ImGuiKey_Delete) && s_objectSelected && !ImGui::IsPopupOpen("##popup_rename_gameobject")) {
+            Scene::Destoy(s_objectSelected);
+            s_objectSelected = nullptr;
+        }
+    
+        if (ImGui::IsKeyReleased(ImGuiKey_F2) && ImGui::IsWindowHovered() && s_objectSelected)
+        {
+            popupFlags |= EditorPopupFlags_RenameGameObject;
+        }
+
+        if (ImGui::IsKeyReleased(ImGuiKey_Escape) && ImGui::IsWindowHovered()) {
+            s_objectSelected = nullptr;
+        }
+
+        /*
+        if (!bOpenPopupOptionGameObject && ImGui::IsWindowHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
+            ImGui::OpenPopup("##popup_menu_add");
+        }
+
+        if (bOpenPopupOptionGameObject) {
+            ImGui::OpenPopup("##popup_options_gameobject");
+            bOpenPopupOptionGameObject = false;
+        }
+
+        PopupOptionsGameObject();
+
+        PopupMenuAdd();
+        */
     }
     
-    if (ImGui::IsKeyReleased(ImGuiKey_F2) && ImGui::IsWindowHovered() && s_objectSelected) {
-        ImGui::OpenPopup("##popup_rename_gameobject");
-    }
-
-    if (ImGui::IsKeyReleased(ImGuiKey_Escape) && ImGui::IsWindowHovered()) {
-        s_objectSelected = nullptr;
-    }
-
-    if (!bOpenPopupOptionGameObject && ImGui::IsWindowHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
-        ImGui::OpenPopup("##popup_menu_add");
-    }
-
-    if (bOpenPopupOptionGameObject) {
-        ImGui::OpenPopup("##popup_options_gameobject");
-        bOpenPopupOptionGameObject = false;
-    }
-
-    PopupOptionsGameObject();
-
-    PopupRenameGameObject();
-
-    PopupMenuAdd();
-
     ImGui::End();
 }
 
@@ -760,48 +771,59 @@ void Editor::RenderObjectPage(std::vector<GameObject *> list, int page)
     }
 }
 
-void Editor::ReadHierarchy(Transform *transform) {
+void Editor::ReadHierarchy(Transform *transform)
+{
     ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_Selected | ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanFullWidth;
 
     auto gameObject = transform->getGameObject();
-    if (!gameObject) {
+    if (!gameObject)
+    {
         return;
     }
 
     auto name = gameObject->getName();
 
-    if (s_objectSelected != gameObject) {
+    if (s_objectSelected != gameObject)
+    {
         flags &= ~ImGuiTreeNodeFlags_Selected;
     }
 
-    if (transform->hasChildren()) {
+    if (transform->hasChildren())
+    {
         flags &= ~ImGuiTreeNodeFlags_Leaf;
     }
 
     auto isOpen = ImGui::TreeNodeEx(name.c_str(), flags);
 
-    if (ImGui::IsItemClicked(ImGuiMouseButton_Left) && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
+    if (ImGui::IsItemClicked(ImGuiMouseButton_Left) && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+    {
         s_objectSelected = gameObject;
     }
 
-    if (ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
+    if (ImGui::IsItemClicked(ImGuiMouseButton_Right))
+    {
         s_objectSelected = gameObject;
         bOpenPopupOptionGameObject = true;
     }
 
     dragDropGameObject(transform, name);
     
-    if (isOpen) {
-        for (auto& child : transform->getChildren()) {
-            ReadHierarchy(child);
-        }
-        ImGui::TreePop();
+    if (!isOpen)
+    {
+        return;
     }
+    
+    for (auto& child : transform->getChildren())
+    {
+        ReadHierarchy(child);
+    }
+    ImGui::TreePop();
 }
 
 void Editor::dragDropGameObject(Transform *transform, const std::string &name)
 {
-    if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceNoDisableHover | ImGuiDragDropFlags_SourceNoHoldToOpenOthers)) {
+    if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceNoDisableHover | ImGuiDragDropFlags_SourceNoHoldToOpenOthers))
+    {
         ImGui::Text("Moving \"%s\"", name.c_str());
         ImGui::SetDragDropPayload(m_extensionDragDrop[DragDropFlags::GAMEOBJECT], &transform, sizeof(Transform *));
         ImGui::EndDragDropSource();
@@ -819,7 +841,8 @@ void Editor::dragDropGameObject(Transform *transform, const std::string &name)
     }
 
     auto target = *reinterpret_cast<Transform **>(payload->Data);
-    if (target != transform->getParent()) {
+    if (target != transform->getParent())
+    {
         target->setParent(transform);
 
         Scene::Remove(target->getGameObject());
@@ -888,9 +911,11 @@ void Editor::PopupOptionsGameObject() {
     }
 }
 
-void Editor::PopupRenameGameObject() {
-    auto isOpen = ImGui::BeginPopup("##popup_rename_gameobject");
-    if (!isOpen) {
+void Editor::PopupRenameGameObject()
+{
+    auto isOpen = ImGui::BeginPopup(GET_FLAG_NAME(EditorPopupFlags_RenameGameObject));
+    if (!isOpen)
+    {
         return;
     }
     ImGui::Text("Input new name");
@@ -899,11 +924,13 @@ void Editor::PopupRenameGameObject() {
         ImGui::SetKeyboardFocusHere(0);
 
     auto name = s_objectSelected->getName();
-    if (name.size() < 256) {
+    if (name.size() < 256)
+    {
         name.resize(256, '\0');
     }
     
-    if (ImGui::InputText("##input_new_name_gameobject", name.data(), name.size(), ImGuiInputTextFlags_EnterReturnsTrue)) {
+    if (ImGui::InputText("##input_new_name_gameobject", name.data(), name.size(), ImGuiInputTextFlags_EnterReturnsTrue))
+    {
         name.erase(std::remove(name.begin(), name.end(), '\0'), name.end());
 
         GameObject::Rename(s_objectSelected, name);
@@ -1316,7 +1343,7 @@ void Editor::RenderScene() {
 
         ImGui::SetCursorPos(ImVec2(regionAvail.x - textSize.x, cursorPos.y + textSize.y));
 
-        ImGui::TextColored(FPSColor, "FPS: %.2f", Statistics::m_threadFrame.fps);
+        /*ImGui::TextColored(FPSColor, "FPS: %.2f", Statistics::m_threadFrame.fps);*/
     }
 
     ImGui::SetCursorPos({8.0f, cursorPos.y});
@@ -2009,20 +2036,28 @@ void Editor::RenderStatisticsMenu() {
     ImGui::Text("Threads: %ld/%ld", Threadpool::GetThreadCount(), Threadpool::GetThreadAvailable());
 
     ImGui::SeparatorText("FrameTime");
-    ImGui::Text("MainThread:  %fms  | FPS: %.2f",  Statistics::m_threadFrame.delta,  Statistics::m_threadFrame.fps);
-    ImGui::Text("Render:      %fms  | FPS: %.2f",  Statistics::m_sceneFrame.delta,   Statistics::m_sceneFrame.fps);
-    ImGui::Text("GUI:         %fms  | FPS: %.2f",  Statistics::m_guiFrame.delta,     Statistics::m_guiFrame.fps);
-    ImGui::Text("Script:      %fms  | FPS: %.2f",  Statistics::m_scriptFrame.delta,  Statistics::m_scriptFrame.fps);
+    {
+        auto &frameTime = Statistics::FrameTime[FrameTimeID_MainThread];
+        
+        ImGui::Text("MainThread:\t%fms ->(%fms, %fms), FPS: %.2f ->(%f, %f)", frameTime.delta, frameTime.minDelta, frameTime.maxDelta, frameTime.fps, frameTime.minFPS, frameTime.maxFPS);
+    }
+    /*ImGui::Text("Render:      %fms  | FPS: %.2f",  Statistics::m_sceneFrame.delta,   Statistics::m_sceneFrame.fps);*/
+    /*ImGui::Text("GUI:         %fms  | FPS: %.2f",  Statistics::m_guiFrame.delta,     Statistics::m_guiFrame.fps);*/
+    /*ImGui::Text("Script:      %fms  | FPS: %.2f",  Statistics::m_scriptFrame.delta,  Statistics::m_scriptFrame.fps);*/
 
     ImGui::SeparatorText("Renderização");
     ImGui::Text("Luzes: %ld",     Light::GetListLight().size());
     ImGui::Text("Cameras: %ld",     Camera::GetCameras().size());
-    ImGui::Text("BatchRender: %ld/%ld", Batching::GetBatchCount(), Status::BatchRenderCount);
+    /*ImGui::Text("BatchRender: %ld/%ld", Batching::GetBatchCount(), Status::BatchRenderCount);*/
     ImGui::Text("DrawCallCount: %ld/%ld", Status::BatchDrawCallCount, Status::BatchDrawCallRender);
 }
 
-void Editor::RenderObjectInfo() {
-    if (!s_objectSelected) { return; }
+void Editor::RenderObjectInfo()
+{
+    if (s_objectSelected == nullptr)
+    {
+        return;
+    }
 
     auto entity = s_objectSelected->getEntity();
 
@@ -2042,6 +2077,7 @@ void Editor::RenderObjectInfo() {
     
     }
 
+    /*
     {
         auto isStatic = s_objectSelected->getStatic();
 
@@ -2052,12 +2088,14 @@ void Editor::RenderObjectInfo() {
             s_objectSelected->setStatic(isStatic);
         }
     }
+    */
 
     RenderScriptFromEntity(entity);
 
     auto avail = ImGui::GetContentRegionAvail();
 
-    if (ImGui::Button("AddComponent", {avail.x, 0.0f})) {
+    if (ImGui::Button("AddComponent", {avail.x, 0.0f}))
+    {
         popupFlags |= EditorPopupFlags_AddComponent;
     }
 
@@ -2068,12 +2106,14 @@ void Editor::RenderObjectInfo() {
 
 void Editor::dropScriptInAddComponent()
 {
-    if (!ImGui::BeginDragDropTarget() || s_objectSelected == nullptr) {
+    if (s_objectSelected == nullptr || !ImGui::BeginDragDropTarget())
+    {
         return;
     }
     
     auto data = ImGui::AcceptDragDropPayload(m_extensionDragDrop[DragDropFlags::SCRIPT], ImGuiDragDropFlags_None);
-    if (!data) {
+    if (!data)
+    {
         return ImGui::EndDragDropTarget();
     }
 
@@ -2211,7 +2251,8 @@ void Editor::renderDropGameObject(GameObject **ref) {
     ImGui::EndDragDropTarget();
 }
 
-void Editor::PopupAddComponent() {
+void Editor::PopupAddComponent()
+{
     if (!s_objectSelected) {
         return;
     }
@@ -2346,17 +2387,20 @@ bool Editor::OnPropertyCamera(Camera *camera) {
     return false;
 }
 
-bool Editor::OnPropertyMeshFilter(MeshFilter *meshFilter) {
+bool Editor::OnPropertyMeshFilter(MeshFilter *meshFilter)
+{
     auto bExists = true;
 
     auto isOpen = ImGui::CollapsingHeader("MeshFilter", &bExists);
-    if (!bExists) {
+    if (!bExists)
+    {
         return true;
     }
 
     auto meshList = meshFilter->getMesh();
 
-    if (!isOpen || meshList == nullptr) {
+    if (!isOpen || meshList == nullptr)
+    {
         return false;
     }
 
@@ -2375,7 +2419,8 @@ bool Editor::OnPropertyMeshFilter(MeshFilter *meshFilter) {
     return false;
 }
 
-bool Editor::OnPropertyMeshRender(MeshRender *meshRender) {
+bool Editor::OnPropertyMeshRender(MeshRender *meshRender)
+{
     auto bVisible = true;
 
     auto isOpen = ImGui::CollapsingHeader("MeshRender", &bVisible);
@@ -2388,25 +2433,30 @@ bool Editor::OnPropertyMeshRender(MeshRender *meshRender) {
         ImGui::OpenPopup("##game_object_component_menu");
     }
 
-    if (!isOpen) {
+    if (!isOpen)
+    {
         return false;
     }
    
     auto avail = ImGui::GetContentRegionAvail();
     
-    if (ImGui::Button("Create", {avail.x, 0.0f})) {
+    if (ImGui::Button("Create", {avail.x, 0.0f}))
+    {
         popupFlags |= EditorPopupFlags_CreateMaterial;
     }
 
     ImGui::Indent();
-    for (auto material : meshRender->getMaterials()) {
-        if (RenderMaterial(material)) {
-            meshRender->removeMaterial(material);
+    for (auto material : meshRender->getMaterial())
+    {
+        if (RenderMaterial(material))
+        {
+            meshRender->delMaterial(material);
         }
     }
     ImGui::Unindent();
 
-    if (m_materialToRename) {
+    if (m_materialToRename)
+    {
         ImGui::OpenPopup("##popup_rename_material");
     }
 
@@ -2437,9 +2487,11 @@ bool Editor::OnPropertySkinnedMeshRender(SkinnedMeshRender *skinnedMeshRender) {
     }
 
     ImGui::Indent();
-    for (auto material : skinnedMeshRender->getMaterials()) {
-        if (RenderMaterial(material)) {
-            skinnedMeshRender->removeMaterial(material);
+    for (auto material : skinnedMeshRender->getMaterial())
+    {
+        if (RenderMaterial(material))
+        {
+            skinnedMeshRender->delMaterial(material);
         }
     }
     ImGui::Unindent();
@@ -2451,26 +2503,25 @@ bool Editor::OnPropertySkinnedMeshRender(SkinnedMeshRender *skinnedMeshRender) {
     return false;
 }
 
-// bool Editor::OnPropertyMeshCollider(MeshCollider *meshCollider)
-// {
-//     return false;
-// }
-
-bool Editor::RenderMaterial(Material *material) {
+bool Editor::RenderMaterial(Material *material)
+{
     auto bVisible = true;
 
     auto name = AssetsManager::GetRefMaterialToName(material);
 
     auto isOpen = ImGui::CollapsingHeader(name.c_str(), &bVisible);
-    if (!bVisible) {
+    if (!bVisible)
+    {
         return true;
     }
     
-    if (ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
+    if (ImGui::IsItemClicked(ImGuiMouseButton_Right))
+    {
         m_materialToRename = material;
     }
 
-    if (!isOpen) {
+    if (!isOpen)
+    {
         return false;
     }
 
@@ -2482,13 +2533,15 @@ bool Editor::RenderMaterial(Material *material) {
         return false;
     }
 
-    try {
+    try
+    {
         auto shader_name = std::filesystem::path(AssetsManager::GetShaderRefToName(shader)).filename();
 
         ImGui::SameLine();
 
         ImGui::TextColored(ImVec4(0.0f, 255.0f, 0.0f, 255.0f), "%s", shader_name.c_str());
-    } catch (const std::exception &e) {
+    } catch (const std::exception &e)
+    {
         ImGui::TextColored(ImVec4(255.0f, 0.0f, 0.0f, 255.0f), "Invalid");
     }
 
@@ -3020,21 +3073,25 @@ void Editor::RenameMaterial() {
     */
 }
 
-void Editor::CreateMaterial() {
-    auto isOpen = ImGui::BeginPopupModal("##popup_create_material");
-    if (!isOpen || !s_objectSelected) {
+void Editor::CreateMaterial()
+{
+    auto isOpen = ImGui::BeginPopupModal(GET_FLAG_NAME(EditorPopupFlags_CreateMaterial));
+    if (!isOpen || s_objectSelected == nullptr)
+    {
         return;
     }
 
     ImGui::Text("Name");
-    if (!ImGui::IsAnyItemActive() && !ImGui::IsMouseClicked(0))
+    if (!ImGui::IsAnyItemActive() && !ImGui::IsMouseClicked(ImGuiMouseButton_Left))
         ImGui::SetKeyboardFocusHere(0);
 
-    static char name[256] = {0};
-    if (ImGui::InputText("##popup_create_material_inputtext", name, 256, ImGuiInputTextFlags_EnterReturnsTrue)) {
-        auto meshRender = s_objectSelected->hasComponent<MeshRender>() ? s_objectSelected->getComponent<MeshRender>() : s_objectSelected->getComponent<SkinnedMeshRender>();
-        
-        meshRender->addMaterial(name);
+    char name[256] = {0};
+
+    if (ImGui::InputText("##popup_create_material_inputtext", name, GET_N_ARRAY(name), ImGuiInputTextFlags_EnterReturnsTrue))
+    {
+        auto baseRender = s_objectSelected->hasComponent<MeshRender>() ? static_cast<BaseRender *>(s_objectSelected->getComponent<MeshRender>()) : static_cast<BaseRender *>(s_objectSelected->getComponent<SkinnedMeshRender>());
+        if (baseRender != nullptr)
+            baseRender->createMaterial(name);
 
         ImGui::CloseCurrentPopup();
     }
