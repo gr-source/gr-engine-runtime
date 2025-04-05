@@ -411,7 +411,8 @@ void Editor::UnloadScript() {
 }
 
 // ===================================== END =========================================================
-void Editor::RenderUI() {
+void Editor::RenderUI()
+{
     RenderDocking();
 
     RenderViewportUI();
