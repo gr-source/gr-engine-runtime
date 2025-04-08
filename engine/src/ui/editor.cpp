@@ -67,6 +67,8 @@
 #include <gr-base/ecs/manager.hpp>
 
 #include <gr-ini/config.h>
+#include <gr-render/gTexture.h>
+#include <iterator>
 #include <linux/input-event-codes.h>
 #include <filesystem>
 
@@ -140,6 +142,8 @@ std::map<std::string, void *> Editor::m_runtimeFuncAddr = {
 
 Editor::Editor() : m_viewport(ImGui::GetMainViewport()), mImGuiIO(&ImGui::GetIO()), m_currentPath(File::GetAsset("")), m_cameraObject(nullptr), m_mainCamera(nullptr), s_objectSelected(nullptr), m_currentPage(0), m_materialToRename(nullptr), m_plugin(nullptr) {
     s_texturePlayGame = nullptr;
+
+    g_tree_file = nullptr;
 
     s_objectSelected = nullptr;
 
@@ -251,6 +255,13 @@ Editor::Editor() : m_viewport(ImGui::GetMainViewport()), mImGuiIO(&ImGui::GetIO(
     /*}*/
 
     m_config->setCategory(lastCategory);
+
+    root_tree_file.path = File::GetAsset("");
+    root_tree_file.name = "Assets";
+    root_tree_file.bdirectory = true;
+    root_tree_file.icon = nullptr;
+
+    updateFileTree(root_tree_file);
 
     Scene::Initialize();
 
@@ -446,15 +457,15 @@ void Editor::RenderUI()
         PopupMenuProperty();
         break;
     case EditorPopupFlags_FileManager | EditorPopupFlags_DirManager:
-        ImGui::OpenPopup("##popup_file_and_dir_manager");
+        ImGui::OpenPopup(GET_FLAG_NAME(EditorPopupFlags_FileManager | EditorPopupFlags_DirManager));
         popupFlags &= ~(EditorPopupFlags_FileManager | EditorPopupFlags_DirManager);
         break;
     case EditorPopupFlags_FileManager:
-        ImGui::OpenPopup("##popup_file_manager");
+        ImGui::OpenPopup(GET_FLAG_NAME(EditorPopupFlags_FileManager));
         popupFlags &= ~EditorPopupFlags_FileManager;
         break;
     case EditorPopupFlags_DirManager:
-        ImGui::OpenPopup("##popup_dir_manager");
+        ImGui::OpenPopup(GET_FLAG_NAME(EditorPopupFlags_DirManager));
         popupFlags &= ~EditorPopupFlags_DirManager;
         break;
     case EditorPopupFlags_RenameFileOrDir:
@@ -1520,82 +1531,88 @@ void Editor::OpenFileDoubleClick(std::filesystem::path path) {
     system(("xdg-open '" + path.string() + "'").c_str());
 }
 
-void Editor::PopupFileAndDirmanager() {
-    auto isOpen = ImGui::BeginPopup("##popup_file_and_dir_manager");
-    if (!isOpen) {
+void Editor::PopupFileAndDirmanager()
+{
+    auto isOpen = ImGui::BeginPopup(GET_FLAG_NAME(EditorPopupFlags_FileManager | EditorPopupFlags_DirManager));
+    if (!isOpen) 
+    {
         return;
     }
 
-    for (auto &&[path, isSeleceted] : mDirSelectedMap) {
-        ImGui::Text("Dir: %s", path.filename().string().c_str());
+    if (g_tree_file_selected.size() > 1)
+    {
+        if (ImGui::BeginListBox("list_items"))
+        {
+            for (auto &tree_file : g_tree_file_selected)
+            {
+                ImGui::Text("%s", tree_file->name.c_str());
+            }
+            ImGui::EndListBox();
+        }
+    } else {
+        ImGui::Text("%s", g_tree_file_selected.back()->name.c_str());
     }
 
-    //bool bCreateDiretory = false, bCreateScript = false, bRenameFile = false, bCreateMaterial = false;;
-
-    std::array<const char *, 1> item_list{"Delete"};
+    static const char *item_list[] {"Delete"};
 
     int i = 0;
-    if (ImGui::ListBox("##DirManager", &i, item_list.data(), item_list.size())) {
-        switch (i) {
+    if (ImGui::ListBox("##DirManager", &i, item_list, GET_N_ARRAY(item_list)))
+    {
+        switch (i)
+        {
         case 0:
-            for (auto &&[path, isSeleceted] : mDirSelectedMap) {
-                File::Delete(path);
-            }
+            for (auto &tree_file : g_tree_file_selected)
+                File::Delete(tree_file->path);
+
+            g_tree_file_selected.clear();
             break;
-        /*
-        case 1:
-            bRenameFile = true;
-            break;
-        case 2:
-            bCreateDiretory = true;
-            break;
-        case 3:
-            bCreateScript = true;
-            break;
-        case 4:
-            popupFlags |= EditorPopupFlags_CreateMaterialInDir;
-            break;
-            */
         default:
             break;
         }
-        mDirSelectedMap.clear();
+        updateFileTree(root_tree_file);
+        
         ImGui::CloseCurrentPopup();
     }
     ImGui::EndPopup();
-
-    /*
-    if (bRenameFile) {
-        ImGui::OpenPopup("##popup_rename_file");
-    }
-
-    if (bCreateDiretory) {
-        ImGui::OpenPopup("##popup_create_new_dir");
-    }
-
-    if (bCreateScript) {
-        ImGui::OpenPopup("##popup_create_new_script");
-    }
-    */
 }
 
-void Editor::PopupFileManager() {
-    bool isOpenPopup = ImGui::BeginPopup("##popup_file_manager");
-    if (!isOpenPopup) { return; }
+void Editor::PopupFileManager()
+{
+    bool isOpenPopup = ImGui::BeginPopup(GET_FLAG_NAME(EditorPopupFlags_FileManager));
+    if (!isOpenPopup)
+    {
+        return;
+    }
 
-    auto path = mDirSelectedList.back();
+    if (g_tree_file_selected.size() > 1)
+    {
+        if (ImGui::BeginListBox("list_items"))
+        {
+            for (auto &tree_file : g_tree_file_selected)
+            {
+                ImGui::Text("%s", tree_file->name.c_str());
+            }
+            ImGui::EndListBox();
+        }
+    } else {
+        ImGui::Text("%s", g_tree_file_selected.back()->name.c_str());
+    }
 
-    ImGui::Text("%s", path.filename().c_str());
-
-    const char *item_list[4] {"Delete", "Rename", "Move", "Copy"};
+    const char *item_list[] {"Delete", "Rename", "Move", "Copy"};
 
     int i = 0;
-    if (ImGui::ListBox("##FileManager", &i, item_list, 4)) {
+    if (ImGui::ListBox("##FileManager", &i, item_list, GET_N_ARRAY(item_list))) {
         switch (i) {
         case 0:
-            File::Delete(path);
-            mDirSelectedList.clear();
+            {
+                for (auto tree_file : g_tree_file_selected)
+                    File::Delete(tree_file->path);
+
+            g_tree_file_selected.clear();
+
+            updateFileTree(root_tree_file);
             break;
+        }
         case 1:
             popupFlags |= EditorPopupFlags_RenameFileOrDir;
             break;
@@ -1608,23 +1625,31 @@ void Editor::PopupFileManager() {
     ImGui::EndPopup();
 }
 
-void Editor::PopupDirManager() {
-    bool isOpenPopup = ImGui::BeginPopup("##popup_dir_manager");
-    if (!isOpenPopup) { return; }
+void Editor::PopupDirManager()
+{
+    bool isOpenPopup = ImGui::BeginPopup(GET_FLAG_NAME(EditorPopupFlags_DirManager));
+    if (g_tree_file_selected.empty() || !isOpenPopup)
+    {
+        return;
+    }
 
-    auto path = mDirSelectedList.back();
+    auto &file_tree = g_tree_file_selected.back();
 
-    ImGui::Text("%s", path.filename().c_str());
+    ImGui::Text("%s", file_tree->name.c_str());
 
-    const char *item_list[8] {"Delete", "Rename", "Create Dir", "Create Script", "Create Material", "Create Shader", "Move", "Copy"};
+    static const char *item_list[] {"Delete", "Rename", "Create Dir", "Create Script", "Create Material", "Create Shader", "Move", "Copy"};
 
     int i = 0;
-    if (ImGui::ListBox("##FileManager", &i, item_list, 8)) {
+    if (ImGui::ListBox("##FileManager", &i, item_list, GET_N_ARRAY(item_list))) {
         switch (i) {
         case 0:
-            File::Delete(path);
-            mDirSelectedList.clear();
+        {
+            File::Delete(file_tree->path);
+            g_tree_file_selected.clear();
+
+            updateFileTree(root_tree_file);
             break;
+        }
         case 1:
             popupFlags |= EditorPopupFlags_RenameFileOrDir;
             break;
@@ -1760,11 +1785,11 @@ void Editor::RenderOtherUI() {
 
         ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
         if (ImGui::BeginChild("aaa", ImVec2(avail.x / 3.0f, 0), ImGuiChildFlags_AlwaysUseWindowPadding))
-            RenderTreeNodeFile(m_currentPath);
+            RenderTreeNodeFile(root_tree_file);
         ImGui::EndChild();
 
         ImGui::SameLine();
-        if (ImGui::BeginChild("bbb", ImVec2(0.0f, 0.0f), ImGuiChildFlags_AlwaysUseWindowPadding))
+        if (ImGui::BeginChild("bbb", ImVec2(0.0f, 0.0f), ImGuiChildFlags_AlwaysUseWindowPadding) && g_tree_file != nullptr)
             RenderFiles();
         ImGui::EndChild();
     }
@@ -1772,24 +1797,23 @@ void Editor::RenderOtherUI() {
     ImGui::End();
 }
 
-void Editor::RenderTreeNodeFile(std::filesystem::path path)
+void Editor::RenderTreeNodeFile(gtreefile &tree_file)
 {
-    auto filename = path.filename().string();
-    if (filename[0] == '.' || !std::filesystem::is_directory(path))
+    if (!tree_file.bdirectory)
     {
         return;
     }
 
     ImGuiTreeNodeFlags flags = 0;
-    if (path == m_dirSelected)
+    if (g_tree_file == &tree_file)
     {
         flags |= ImGuiTreeNodeFlags_Selected;
     }
 
-    auto isOpen = ImGui::TreeNodeEx(filename.c_str(), flags);
+    auto isOpen = ImGui::TreeNodeEx(tree_file.name.c_str());
     if (ImGui::IsItemClicked(ImGuiMouseButton_Left))
     {
-        m_dirSelected = path;
+        g_tree_file = &tree_file;
     }
 
     if (!isOpen)
@@ -1797,19 +1821,7 @@ void Editor::RenderTreeNodeFile(std::filesystem::path path)
         return;
     }
 
-    std::vector<std::filesystem::directory_entry> dirs;
-    for (auto &file : std::filesystem::directory_iterator(path)) {
-        dirs.push_back(file);
-    }
-
-    std::sort(dirs.begin(), dirs.end(), [](const auto& lhs, const auto& rhs) {
-        if (lhs.is_directory() != rhs.is_directory()) {
-            return lhs.is_directory() > rhs.is_directory();
-        }
-        return lhs.path().filename() < rhs.path().filename();
-    });
-
-    for (auto &file : dirs)
+    for (auto &file : tree_file.children)
         RenderTreeNodeFile(file);
 
     ImGui::TreePop();
@@ -1817,66 +1829,49 @@ void Editor::RenderTreeNodeFile(std::filesystem::path path)
 
 void Editor::RenderFiles()
 {
-    std::vector<std::filesystem::directory_entry> dirs;
-    for (auto &file : std::filesystem::directory_iterator(m_dirSelected)) {
-        dirs.push_back(file);
-    }
-
-    std::sort(dirs.begin(), dirs.end(), [](auto& lhs, auto& rhs) {
-        if (lhs.is_directory() != rhs.is_directory()) {
-            return lhs.is_directory() > rhs.is_directory();
-        }
-        return lhs.path().filename() < rhs.path().filename();
-    });
-
     ImGui::Columns(4, nullptr, false);
-    for (auto entry : dirs)
+    for (auto &entry : g_tree_file->children)
     {
-        if (std::filesystem::is_directory(entry))
+        if (entry.bdirectory || entry.icon == nullptr || *entry.icon == nullptr)
         {
             continue;
         }
 
-        auto path_str = entry.path().string();
-
-        auto filename = entry.path().filename();
-        auto extension = entry.path().extension().string();
-
-        if (View::ImageAndTextButton(reinterpret_cast<ImTextureID>(iconsUI[IconType::ICON_GAMEOBJECT]->getID()), filename.c_str()))
+        if (View::ImageAndTextButton(reinterpret_cast<ImTextureID>((*entry.icon)->getID()), entry.name.c_str()))
         {
         }
 
         if (ImGui::IsItemClicked(ImGuiMouseButton_Right))
         {
             popupFlags |= EditorPopupFlags_FileManager;
-            mDirSelectedList.clear();
+            
+            g_tree_file_selected.clear();
 
-            mDirSelectedList.push_back(path_str);
+            g_tree_file_selected.push_back(&entry);
         }
 
-        dropTargetGameObjectInFile(entry.path().parent_path());
+        // dropTargetGameObjectInFile(entry.path().parent_path());
 
         if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceNoDisableHover | ImGuiDragDropFlags_SourceNoHoldToOpenOthers | ImGuiDragDropFlags_SourceAllowNullID)) {
-            if (m_extensionNameToFlag.find(extension) != m_extensionNameToFlag.end())
+            if (m_extensionNameToFlag.find(entry.extension) != m_extensionNameToFlag.end())
             {
-                ImGui::Text("%s", filename.c_str());
-                ImGui::SetDragDropPayload(m_extensionDragDrop[m_extensionNameToFlag[extension]], path_str.data(), path_str.size());
+                ImGui::Text("%s", entry.name.c_str());
+                ImGui::SetDragDropPayload(m_extensionDragDrop[m_extensionNameToFlag[entry.extension]], entry.path.data(), entry.path.size());
             }
             ImGui::EndDragDropSource();
         }
 
         if (ImGui::IsItemClicked(ImGuiMouseButton_Left) && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
         {
-            OpenFileDoubleClick(path_str);
+            OpenFileDoubleClick(entry.path);
         }
-
-        ImGui::NextColumn();
         
+        ImGui::NextColumn();
     }
 
     if (!(popupFlags & EditorPopupFlags_FileManager) && ImGui::IsWindowHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Right))
     {
-        mDirSelectedList.push_back(m_dirSelected);
+        g_tree_file_selected.push_back(g_tree_file);
         popupFlags |= EditorPopupFlags_DirManager;
     }
 }
@@ -2929,6 +2924,7 @@ void Editor::LoadReources() {
     AssetsManager::LoadTexture(File::GetAsset("/icon/motion-graphics.png", true),                   &Editor::SetupTexture, this, IconType::ICON_ANIMATION);
     AssetsManager::LoadTexture(File::GetAsset("/icon/shade.png", true),                             &Editor::SetupTexture, this, IconType::ICON_SHADER);
     AssetsManager::LoadTexture(File::GetAsset("/icon/studio-set.png", true),                        &Editor::SetupTexture, this, IconType::ICON_SCENE);
+    AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-script-48.png", true),                  &Editor::SetupTexture, this, IconType::ICON_SCRIPT);
 }
 
 void Editor::SetupTexture(IconType type, grr::gTexture *texture) {
@@ -3215,6 +3211,8 @@ void Editor::SaveScene(const std::string &name, Scene *scene) {
     Scene::Use(scene);
 
     scene->save(File::GetAsset("/scene/") + name + ".scn");
+
+    updateFileTree(root_tree_file);
 }
 
 void Editor::showShaderListPopup() {
@@ -3638,8 +3636,66 @@ void Editor::generateConfig(const std::string &file)
     }
 }
 
+void Editor::updateFileTree(gtreefile &tree_file)
+{
+    if (!tree_file.bdirectory)
+    {
+        return;
+    }
+
+    auto &children = tree_file.children;
+
+    std::vector<std::filesystem::directory_entry> files;
+    for (auto &dir : std::filesystem::directory_iterator(tree_file.path))
+    {
+        files.push_back(dir);
+    }
+
+    std::sort(files.begin(), files.end(), [](auto& lhs, auto& rhs) {
+        if (lhs.is_directory() != rhs.is_directory()) {
+            return lhs.is_directory() > rhs.is_directory();
+        }
+        return lhs.path().filename() < rhs.path().filename();
+    });
+
+    children.clear();
+
+    children.resize(files.size());
+    for (std::size_t i=0;i<files.size();i++)
+    {
+        auto &child = children[i];
+
+        child.name          = files[i].path().filename().string();
+        child.path          = files[i].path().string();
+        child.extension     = files[i].path().extension();
+        child.bdirectory    = files[i].is_directory();
+
+        auto extension = files[i].path().extension().string();
 
 
+        auto texture = &iconsUI[IconType::ICON_FILE];
+        if (extension == ".gmdx")
+        {
+            texture = &iconsUI[IconType::ICON_GAMEOBJECT];
+        } else if (extension == ".anm")
+        {
+            texture = &iconsUI[IconType::ICON_ANIMATION];
+        } else if (extension == ".scn")
+        {
+            texture = &iconsUI[IconType::ICON_SCENE];
+        } else if (extension == ".glsl")
+        {
+            texture = &iconsUI[IconType::ICON_SHADER];
+        } else if (extension == ".hpp" || extension == ".cpp")
+        {
+            texture = &iconsUI[IconType::ICON_SCRIPT];
+        }
+
+        child.icon = texture;
+
+        updateFileTree(child);
+    }
+}
 
 
 

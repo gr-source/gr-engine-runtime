@@ -18,6 +18,7 @@
 #include <gr-render/gTexture.h>
 
 #include <gr-base/script/default.hpp>
+#include <string>
 #include <vector>
 
 #ifdef __cplusplus
@@ -55,24 +56,25 @@ enum EditorPopupFlags : int64_t {
 using EditorPopupFlags_ = int;
 
 enum IconType : int {
-    ICON_FOLDER       = 0,
-    ICON_FILE         = 1,
-    ICON_BACK_FILE    = 2,
-    ICON_GAMEOBJECT   = 3,
-	ICON_PENCIL       = 4,
-	ICON_LIGHT        = 5,
-	ICON_TEXTURE      = 6,
-	ICON_PNG          = 7,
-	ICON_PLAY_GAME    = 8,
-	ICON_STOP_GAME    = 9,
-	ICON_BIN          = 10,
-	ICON_IMPORT       = 11,
-	ICON_ASCENDENTE   = 12,
-	ICON_DESCENDENTE  = 13,
-	ICON_EDIT         = 14,
-	ICON_ANIMATION    = 15,
-	ICON_SHADER       = 16,
-	ICON_SCENE        = 17
+    ICON_FOLDER         = 0,
+    ICON_FILE           = 1,
+    ICON_BACK_FILE      = 2,
+    ICON_GAMEOBJECT     = 3,
+	ICON_PENCIL         = 4,
+	ICON_LIGHT          = 5,
+	ICON_TEXTURE        = 6,
+	ICON_PNG            = 7,
+	ICON_PLAY_GAME      = 8,
+	ICON_STOP_GAME      = 9,
+	ICON_BIN            = 10,
+	ICON_IMPORT         = 11,
+	ICON_ASCENDENTE     = 12,
+	ICON_DESCENDENTE    = 13,
+	ICON_EDIT           = 14,
+	ICON_ANIMATION      = 15,
+	ICON_SHADER         = 16,
+	ICON_SCENE          = 17,
+	ICON_SCRIPT         = 18
 };
 
 typedef struct
@@ -88,6 +90,21 @@ typedef struct
 
     std::vector<MenuItem> items;
 } MenuBar;
+
+typedef struct gtreefile
+{
+    std::string path;
+
+    std::string name;
+
+    std::string extension;
+
+    grr::gTexture **icon;
+
+    bool bdirectory;
+
+    std::vector<gtreefile> children;
+} gtreefile;
 
 class Editor {
 public:
@@ -125,6 +142,8 @@ private:
 
     std::unordered_map<IconType, grr::gTexture *> iconsUI;
 
+    std::vector<gtreefile *> g_tree_file_selected;
+
     GameObject *m_cameraObject;
 
     Camera *m_mainCamera;
@@ -160,6 +179,10 @@ private:
     ImVec4 FPSColor;
 
     ImVec2 m_lastViewportSize;
+
+    gtreefile root_tree_file;
+
+    gtreefile *g_tree_file;
 
     ImGuizmo::OPERATION m_guizmoOperation;
 
@@ -245,7 +268,7 @@ private:
 
     void RenderOtherUI();
 
-    void RenderTreeNodeFile(std::filesystem::path path);
+    void RenderTreeNodeFile(gtreefile &tree_file);
 
     void RenderFiles();
 
@@ -379,6 +402,8 @@ private:
     static gConfigStep_ foreach_settings(gConfigType_ type, void *data, void *instance);
 
     void generateConfig(const std::string &file);
+
+    void updateFileTree(gtreefile &tree_file);
 };
 
 template <typename T, typename... Args>
