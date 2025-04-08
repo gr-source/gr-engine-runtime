@@ -470,12 +470,16 @@ void Editor::RenderUI()
         popupFlags &= ~EditorPopupFlags_CreateScript;
         break;
     case EditorPopupFlags_CreateShader:
-        ImGui::OpenPopup("##popup_create_shader");
+        ImGui::OpenPopup(GET_FLAG_NAME(EditorPopupFlags_CreateShader));
         popupFlags &= ~EditorPopupFlags_CreateShader;
         break;
     case EditorPopupFlags_RenameGameObject:
         ImGui::OpenPopup(GET_FLAG_NAME(EditorPopupFlags_RenameGameObject));
         popupFlags &= ~EditorPopupFlags_RenameGameObject;
+        break;
+    case EditorPopupFlags_SceneAddOption:
+        ImGui::OpenPopup(GET_FLAG_NAME(EditorPopupFlags_SceneAddOption));
+        popupFlags &= ~EditorPopupFlags_SceneAddOption;
         break;
     default:
         break;
@@ -518,6 +522,8 @@ void Editor::RenderUI()
     PopupCreateShader();
 
     PopupRenameGameObject();
+
+    PopupMenuAdd();
 }
 
 void Editor::RenderDocking() {
@@ -663,9 +669,13 @@ void Editor::BuildDock(ImGuiID dockspace_id, ImGuiDockNodeFlags dockspace_flags)
 	ImGui::DockBuilderFinish(dockspace_id);
 }
 
-void Editor::PopupComponentMenu() {
+void Editor::PopupComponentMenu()
+{
     auto isOpen = ImGui::BeginPopup("##game_object_component_menu");
-    if (!isOpen) { return; }
+    if (!isOpen)
+    {
+        return;
+    }
 
     ImGui::EndPopup();
 }
@@ -703,11 +713,12 @@ void Editor::RenderObjectUI()
             s_objectSelected = nullptr;
         }
 
-        /*
-        if (!bOpenPopupOptionGameObject && ImGui::IsWindowHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
-            ImGui::OpenPopup("##popup_menu_add");
+        if (ImGui::IsWindowHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Right))
+        {
+            popupFlags |= EditorPopupFlags_SceneAddOption;
         }
 
+        /*
         if (bOpenPopupOptionGameObject) {
             ImGui::OpenPopup("##popup_options_gameobject");
             bOpenPopupOptionGameObject = false;
@@ -715,7 +726,6 @@ void Editor::RenderObjectUI()
 
         PopupOptionsGameObject();
 
-        PopupMenuAdd();
         */
     }
     
@@ -853,7 +863,7 @@ void Editor::dragDropGameObject(Transform *transform, const std::string &name)
 }
 
 void Editor::PopupMenuAdd() {
-    auto isOpen = ImGui::BeginPopup("##popup_menu_add");
+    auto isOpen = ImGui::BeginPopup(GET_FLAG_NAME(EditorPopupFlags_SceneAddOption));
     if (!isOpen) {
         return;
     }
@@ -1651,7 +1661,8 @@ void Editor::PopupRenameFileOrDir()
 
 
     auto name = path.filename().string();
-    if (name.size() < 256) {
+    if (name.size() < 256)
+    {
         name.resize(256, '\0');
     }
 
@@ -1721,7 +1732,7 @@ void Editor::PopupCreateScript()
 
 void Editor::PopupCreateShader()
 {
-    auto isOpen = ImGui::BeginPopup("##popup_create_shader");
+    auto isOpen = ImGui::BeginPopup(GET_FLAG_NAME(EditorPopupFlags_CreateShader));
     if (!isOpen)
     {
         return;
@@ -1748,14 +1759,13 @@ void Editor::RenderOtherUI() {
         auto avail = ImGui::GetContentRegionAvail();
 
         ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
-        ImGui::BeginChild("aaa", ImVec2(avail.x / 3.0f, 0), ImGuiChildFlags_AlwaysUseWindowPadding);
-        RenderTreeNodeFile(m_currentPath);
+        if (ImGui::BeginChild("aaa", ImVec2(avail.x / 3.0f, 0), ImGuiChildFlags_AlwaysUseWindowPadding))
+            RenderTreeNodeFile(m_currentPath);
         ImGui::EndChild();
 
         ImGui::SameLine();
-        ImGui::BeginChild("bbb", ImVec2(0.0f, 0.0f), ImGuiChildFlags_AlwaysUseWindowPadding);
-        
-        RenderFiles();
+        if (ImGui::BeginChild("bbb", ImVec2(0.0f, 0.0f), ImGuiChildFlags_AlwaysUseWindowPadding))
+            RenderFiles();
         ImGui::EndChild();
     }
 
@@ -1807,8 +1817,20 @@ void Editor::RenderTreeNodeFile(std::filesystem::path path)
 
 void Editor::RenderFiles()
 {
+    std::vector<std::filesystem::directory_entry> dirs;
+    for (auto &file : std::filesystem::directory_iterator(m_dirSelected)) {
+        dirs.push_back(file);
+    }
+
+    std::sort(dirs.begin(), dirs.end(), [](auto& lhs, auto& rhs) {
+        if (lhs.is_directory() != rhs.is_directory()) {
+            return lhs.is_directory() > rhs.is_directory();
+        }
+        return lhs.path().filename() < rhs.path().filename();
+    });
+
     ImGui::Columns(4, nullptr, false);
-    for (auto entry : std::filesystem::directory_iterator(m_dirSelected))
+    for (auto entry : dirs)
     {
         if (std::filesystem::is_directory(entry))
         {

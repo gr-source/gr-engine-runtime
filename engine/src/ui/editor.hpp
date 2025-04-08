@@ -47,6 +47,7 @@ enum EditorPopupFlags : int64_t {
     EditorPopupFlags_CreateScript           = 1 << 14,
     EditorPopupFlags_CreateShader           = 1 << 15,
     EditorPopupFlags_RenameGameObject       = 1 << 16,
+    EditorPopupFlags_SceneAddOption         = 1 << 17,
 };
 
 #define GET_FLAG_NAME(c) #c
