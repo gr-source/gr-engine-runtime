@@ -1,5 +1,6 @@
 #include "editor.hpp"
 
+#include "gr-base/core/input.hpp"
 #include "gr-base/script/baserender.hpp"
 #include "gr-base/script/default.hpp"
 #include "imgui.h"
@@ -68,8 +69,6 @@
 
 #include <gr-ini/config.h>
 #include <gr-render/gTexture.h>
-#include <iterator>
-#include <linux/input-event-codes.h>
 #include <filesystem>
 
 #include <gr-base/ecs/componentRegistry.hpp>
@@ -361,13 +360,8 @@ void Editor::ImportImage(const std::string &path) {
     Console::LogInfo("[ Import ] Texture imported.");
 }
 
-void Editor::KeyBoardUp(grm::u32 key) {
-    if (!(bViewPortFocused && key == KEY_ESC)) {
-        return;
-    }
-
-    if (mImGuiIO)
-        mImGuiIO->MouseDrawCursor = !mImGuiIO->MouseDrawCursor;
+void Editor::KeyBoardUp(grm::u32 key)
+{
 }
 
 void Editor::LoadScript()

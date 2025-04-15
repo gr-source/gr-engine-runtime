@@ -1,7 +1,8 @@
 #include <settings.h>
 #include <engine.h>
 
-#include <linux/input-event-codes.h>
+#include <gr-base/core/window.hpp>
+#include <gr-base/core/input.hpp>
 
 #include <GLFW/glfw3.h>
 
@@ -9,7 +10,7 @@
 #define SCREEN_HEIGHT 600
 
 std::unordered_map<int, grm::u32> m_keyMap = {
-    {GLFW_KEY_ESCAPE, KEY_ESC},
+    {GLFW_KEY_ESCAPE, KEY_ESCAPE},
     {GLFW_KEY_W, KEY_W},
     {GLFW_KEY_S, KEY_S},
     {GLFW_KEY_A, KEY_A},
@@ -69,6 +70,63 @@ void error_callback(int error, const char* description) {
     std::cout << "Error: " << description << std::endl;
 }
 
+static void glfw_set_window_title(const char *title)
+{
+    glfwSetWindowTitle(glfwGetCurrentContext(), title);
+}
+
+static void glfw_set_window_size(const gVector2<int> &size)
+{
+    glfwSetWindowSize(glfwGetCurrentContext(), size.x, size.y);
+}
+
+static gVector2<int> glfw_get_window_size()
+{
+    gVector2<int> data = {0, 0};
+    glfwGetWindowSize(glfwGetCurrentContext(), &data.x, &data.y);
+    return data;
+}
+
+// ********** Input ********** //
+static bool glfw_is_key_press(int key)
+{
+    return glfwGetKey(glfwGetCurrentContext(), key) == GLFW_PRESS;
+}
+
+static void glfw_set_cursor_pos(const Vector2 &pos)
+{
+    glfwSetCursorPos(glfwGetCurrentContext(), static_cast<double>(pos.x), static_cast<double>(pos.y));
+}
+
+static Vector2 glfw_get_cursor_pos()
+{
+    double x = 0.0, y = 0.0;
+    glfwGetCursorPos(glfwGetCurrentContext(), &x, &y);
+    return Vector2{static_cast<float>(x), static_cast<float>(y)};
+}
+
+static bool glfw_get_mouse_button(int button)
+{
+    return glfwGetMouseButton(glfwGetCurrentContext(), button) == GLFW_PRESS;
+}
+
+static void config_set_engine_callback()
+{
+    Window::SetWindowTitle  = &glfw_set_window_title;
+
+    Window::SetWindowSize   = &glfw_set_window_size;
+
+    Window::GetWindowSize   = &glfw_get_window_size;
+
+    // ********** Input ********** //
+    Input::IsKeyPress       = &glfw_is_key_press;
+    
+    Input::SetCursorPos     = &glfw_set_cursor_pos;
+    Input::GetCursorPos     = &glfw_get_cursor_pos;
+
+    Input::IsMousePress     = &glfw_get_mouse_button;
+}
+
 static void destroy() {
     Settings::StopPlayEngine();
 
@@ -123,6 +181,8 @@ int main(int argc, char *argv[]) {
 
     glfwInstallCallback(&(*window));
 
+    config_set_engine_callback();
+
     // glfwSetWindowPos(&(*window), 0, 0);
 
     if (!grr::gRender::Initialize()) {
@@ -132,8 +192,6 @@ int main(int argc, char *argv[]) {
         std::cout << "Falied to initialize opengl library." << std::endl;
         return 3;
     }
-
-    Settings::StartPlayEngine();
 
     Engine::HandleEvent(Engine::GR_INITIALIZE, nullptr);
 

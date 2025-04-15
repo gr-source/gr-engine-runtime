@@ -8,6 +8,7 @@
 #include <gr-base/core/input.hpp>
 
 #include <gr-base/ecs/gameObject.hpp>
+#include <gr-math/vector2.hpp>
 
 #include "ui/ImGuiRender.h"
 
@@ -35,7 +36,7 @@ void EditorController::Initialize() {
 void EditorController::Update(Camera *camera) {
     m_mainCamera = camera;
 
-    if (!m_mainCamera || !m_io->MouseDrawCursor) {
+    if (!m_mainCamera) {
         return;
     }
 
@@ -43,16 +44,16 @@ void EditorController::Update(Camera *camera) {
 
     Vector3 diretion = Vector3::zero;
 
-    if (Input::IsKeyPress(InputKey_W)) {
+    if (Input::IsKeyPress(KEY_W)) {
         diretion += transform->getForward();
     }
-    if (Input::IsKeyPress(InputKey_S)) {
+    if (Input::IsKeyPress(KEY_S)) {
         diretion -= transform->getForward();
     }
-    if (Input::IsKeyPress(InputKey_A)) {
+    if (Input::IsKeyPress(KEY_A)) {
         diretion += transform->getRight();
     }
-    if (Input::IsKeyPress(InputKey_D)) {
+    if (Input::IsKeyPress(KEY_D)) {
         diretion -= transform->getRight();
     }
     // if (Input::IsKeyPress(Input::InputKey_UP)) {
@@ -88,21 +89,15 @@ void EditorController::LookAt(Transform *transform) {
 }
 
 void EditorController::UpdateCursor(Transform *transform) {
-    auto cursorPos = Input::GetCursorPos();
-    
-    if (Input::IsMouseDown(InputKey_Mouse_Left) && lastMousePos == Vector2::zero) {
-        lastMousePos = Input::GetCursorPos();
-    }
-    
-    if (Input::IsMouseReleased(InputKey_Mouse_Left)) {
-        lastMousePos = Vector2::zero;
-    }
-
-    if (Math::magnitude(lastMousePos) > 1e-5f) {
+    if (Input::IsMousePress(MOUSE_BUTTON_MIDDLE))
+    {
         auto delta = Input::GetCursorPos() - lastMousePos;
 
         ProcessMouse(delta, transform);
         
+        lastMousePos = Input::GetCursorPos();
+    } else
+    {
         lastMousePos = Input::GetCursorPos();
     }
 }
