@@ -42,11 +42,12 @@ void ScreenRender::Shutdown() {
     }
 }
 
-void ScreenRender::Render(const Camera *camera) {
-    auto texture = camera->getColorTexture();
+#include <gr-render/gl.h>
+void ScreenRender::Render(Camera *camera) {
+    auto &rendertarget = camera->rendertarget;
     auto rect = camera->getRect();
 
-    if (!texture || !texture->isValid() || !m_shader || !m_shader->isValid()) {
+    if (!m_shader || !m_shader->isValid()) {
         return;
     }
 
@@ -64,7 +65,9 @@ void ScreenRender::Render(const Camera *camera) {
 
     int textureID = 0;
 
-    texture->bind(0);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, rendertarget.getTextureID());
+
     m_shader->setUniform("u_texture", (void *)&textureID);
 
     m_shader->bind();
@@ -75,7 +78,7 @@ void ScreenRender::Render(const Camera *camera) {
     grr::gVertexArray::DrawArrays(PrimitiveType::TRIANGLES, 6);
 
     m_vertexArray->unbind();
-    texture->unbind();
+    // texture->unbind();
     m_shader->unbind();
 }
 

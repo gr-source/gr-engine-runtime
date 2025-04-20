@@ -1,6 +1,6 @@
 #include "shadowMap.hpp"
 
-#include <GL/glew.h>
+#include <gr-render/gl.h>
 
 ShadowMap::ShadowMap(grm::u32 width, grm::u32 height) : shadowFBO(0), shadowMap(0) {
     glGenFramebuffers(1, &shadowFBO);
@@ -46,3 +46,5 @@ void ShadowMap::bindTexture(grm::u32 index) {
     glBindTexture(GL_TEXTURE_2D, shadowMap);
     glActiveTexture(GL_TEXTURE0 + index);
 }
+
+

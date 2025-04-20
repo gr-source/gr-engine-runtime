@@ -175,6 +175,8 @@ void Skybox::CreateCubemapBackground(grr::gShader *shader) {
         m_colorbuffer->setTextureAttachment(flags);
     }, m_cubemapTexture, shader);
 
+    m_colorbuffer->unbind();
+
     AssetsManager::LoadShader(
         File::GetAsset("/shader/skybox/background.glsl"),
         RegisterDeafult, &m_shader

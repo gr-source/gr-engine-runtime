@@ -21,6 +21,8 @@
 #include <string>
 #include <vector>
 
+#include "viewlayout.hpp"
+
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
@@ -106,12 +108,13 @@ typedef struct gtreefile
     std::vector<gtreefile> children;
 } gtreefile;
 
-class Editor {
+class Editor : public ViewLayout
+{
 public:
     Editor();
     ~Editor();
 
-    void RenderUI();
+    void render() override;
 
     void DropFile(const std::filesystem::path &path);
 
@@ -208,13 +211,15 @@ private:
         Vector3 scale;
     } mLastTransform;
 
-    void RenderDocking();
+    void create_dock();
 
     void BuildDock(ImGuiID dockspace_id, ImGuiDockNodeFlags dockspace_flags);
 
     void PopupComponentMenu();
 
-    void RenderObjectUI();
+    void create_window_hierarchy();
+
+    void create_render_hierarchy();
 
     void dropGameObjectInHierarchy(Scene *scene);
 
@@ -232,7 +237,9 @@ private:
 
     void PopupRenameGameObject();
 
-    void RenderViewportUI();
+    void create_window_viewport();
+
+    void create_render_viewport();
 
     void DropSceneInViewport();
 
@@ -266,7 +273,9 @@ private:
 
     void PopupCreateShader();
 
-    void RenderOtherUI();
+    void create_window_browser();
+
+    void create_render_browser();
 
     void RenderTreeNodeFile(gtreefile &tree_file);
 
@@ -274,9 +283,9 @@ private:
 
     void dropTargetGameObjectInFile(std::string path);
 
-    void RenderConsoleWindow();
+    void create_window_console();
 
-    void RenderConsole();
+    void create_render_console();
 
     void RenderLog(Log &info);
 
@@ -284,7 +293,13 @@ private:
 
     void ConfigureVSCode();
 
-    void RenderPropertiUI();
+    void create_window_property();
+
+    void create_render_property();
+
+    void create_call_popup();
+
+    void create_popup();
 
     void RenderStatisticsMenu();
 

@@ -10,7 +10,7 @@ public:
 
     static void Shutdown();
 
-    static void Render(const Camera *camera);
+    static void Render(Camera *camera);
 
 private:
     static grr::gVertexArray *m_vertexArray;

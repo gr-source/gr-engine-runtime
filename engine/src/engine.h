@@ -1,34 +1,61 @@
 #pragma once
 
+#include "ui/project.hpp"
+#include "ui/viewlayout.hpp"
 #include "ui/editor.hpp"
+
+#include <memory>
+#include <vector>
 
 class Engine {
 public:
     enum EngineEvent {
-        GR_INITIALIZE     = 1 << 1,
-        GR_DESTROY        = 1 << 2,
-        GR_RESIZE         = 1 << 3,
-        GR_KEYBOARD_DOWN  = 1 << 4,
-        GR_KEYBOARD_UP    = 1 << 5,
-        GR_CURSOR_POS     = 1 << 6,
-        GR_IDLE           = 1 << 7,
-        GR_CURSOR_SCROLL  = 1 << 8,
-        GR_DROFUNC        = 1 << 9
+        INITIALIZE     = 1 << 1,
+        DESTROY        = 1 << 2,
+        RESIZE         = 1 << 3,
+        KEYBOARD_DOWN  = 1 << 4,
+        KEYBOARD_UP    = 1 << 5,
+        CURSOR_POS     = 1 << 6,
+        LOOP           = 1 << 7,
+        CURSOR_SCROLL  = 1 << 8,
+        DROFUNC        = 1 << 9
     };
 
     static void HandleEvent(EngineEvent event, const void* data);
 
-    static PostProcessing *GetImGuiPostprocess();
+    static Engine &GetInstance();
 
-    static PostProcessing *GetMainPostprocess();
+    Engine();
+    ~Engine();
+
+    void set_project(const Project &project);
+
+private:
+    std::vector<std::unique_ptr<ViewLayout>> v_view_list;
+
+    std::unique_ptr<Project> p_current_project;
+
+    ViewLayout *view_layout;
+
+    void init();
+
+    bool check_project_openable();
+
+    void shutdown();
+
+    void save_current_project();
+
+    void loop();
+
+    void update();
+
+    void render();
+
+    void render_cam();
+
+    void render_gui();
 
 protected:
-    static std::shared_ptr<PostProcessing> ImGuiPostProcess;
-
-    static std::shared_ptr<PostProcessing> MainPostProcess;
-
-    static Editor *m_editor;
-    
     static void Reize(grm::u32 width, grm::u32 height);
 
     static void Initialize();
@@ -43,7 +70,7 @@ protected:
 
     static void CameraRenderManager();
 
-    static void PreConfigRenderScene(const Camera *camera);
+    static void PreConfigRenderScene(Camera *camera);
 
     static void GRKeyboardDown(grm::u32 key);
     static void GRKeyboardUp(grm::u32 key);

@@ -1,12 +1,16 @@
 #include "projectMenu.hpp"
 #include "editor.hpp"
 
+#include "engine.h"
+#include "imgui.h"
 #include "screenRender.hpp"
 #include "renderManager.h"
 #include "skybox.h"
 
 #include "core/cmd/cmd.hpp"
 
+#include <chrono>
+#include <cstring>
 #include <gr-base/core/geometry/batching.hpp>
 
 #include <gr-base/core/threadpool.hpp>
@@ -21,7 +25,9 @@
 
 #include <filesystem>
 #include <algorithm>
+#include <gr-ini/config.h>
 #include <iostream>
+#include <thread>
 
 std::array<const std::string, 7> ProjectMenu::m_assetsFile {
     "animation",
@@ -35,17 +41,12 @@ std::array<const std::string, 7> ProjectMenu::m_assetsFile {
 
 ImGuiViewport *ProjectMenu::m_mainViewport = nullptr;
 
-std::vector<Project> ProjectMenu::m_projects;
-
 ImGuiStyle *ProjectMenu::m_style = nullptr;
-
-bool ProjectMenu::bInstalling = false;
 
 ImGuiIO *ProjectMenu::m_io = nullptr;
 
-std::shared_ptr<Editor> ProjectMenu::m_editor = nullptr;
-
-void ProjectMenu::Initialize() {
+ProjectMenu::ProjectMenu(Engine *engine) : m_engine(engine), popup_flags(0)
+{
     m_mainViewport = ImGui::GetMainViewport();
 
     m_style = &ImGui::GetStyle();
@@ -53,40 +54,51 @@ void ProjectMenu::Initialize() {
     m_io = &ImGui::GetIO();
 
     auto config = File::getHomeDirectory() + "/.config/gr-engine";
-    bInstalling = !File::Exists(config);
-    if (bInstalling) {
-        InstallConfig(config);
+    bengine_installed = File::Exists(config);
+    if (!bengine_installed)
+    {
+        Threadpool::AddTask(&ProjectMenu::install_engine, this);
+
         return;
     }
 
-    InitProject();
+    setup_project_list();
 }
 
-void ProjectMenu::Shutdown() {
-    m_editor = nullptr;
-
+ProjectMenu::~ProjectMenu()
+{
     DebugDraw::Shutdown();
 }
 
-void ProjectMenu::Render() {
-    if (bInstalling) {
-        RenderWindowInstalling();
-        return;
+void ProjectMenu::render()
+{
+    if (!bengine_installed)
+    {
+        return create_window_log();
     }
 
-    if (Project::GetCurrent()) {
-        return m_editor->RenderUI();
+    create_window_project_list();
+
+    switch (popup_flags)
+    {
+        case ProjectMenuPopup_CreateProject:
+            ImGui::OpenPopup("##popup_create_new_project");
+            break;
+        default:
+            break;
     }
-    RenderMainMenu();
+
+    popup_create_new_project();
+
+    popup_flags = 0;
 }
 
-void ProjectMenu::CloseProject() {
+void ProjectMenu::close_project()
+{
     auto path = File::GetFile("/config.ini", true);
     if (File::Exists(path)) {
         File::Delete(path);
     }
-
-    m_editor = nullptr;
 
     /*Batching::Shutdown();*/
 
@@ -98,42 +110,31 @@ void ProjectMenu::CloseProject() {
 
     m_projects.clear();
 
-    ReadProjects();
+    read_project_directory();
 }
 
-Editor *ProjectMenu::GetEditor() {
-    return m_editor != nullptr ? &(*m_editor) : nullptr;
-}
+// ********** private ********** //
+void ProjectMenu::create_window_log()
+{
+    ImVec2 window_size = {600.0f, 500.0f};
 
-void ProjectMenu::InitProject() {
-    File::SetConfigPath(File::getHomeDirectory() + "/.config/gr-engine");
-    File::SetCachePath(File::getHomeDirectory() + "/.cache/gr-engine");
-    File::SetUserPath(File::getHomeDirectory() + "/.local/share/gr-engine");
-
-    auto currentProject = GetCurrentDirProject();
-    if (!File::Exists(currentProject)) {
-        if (!File::CreateDirectories(currentProject)) {
-            std::cout << "Falied to create home project directory: " << currentProject << std::endl;
-        }
+    ImGui::SetNextWindowSize(window_size, ImGuiCond_Always);
+    ImGui::SetNextWindowPos((m_mainViewport->WorkSize - window_size) / 2.0f);
+    if (ImGui::Begin("Install", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse))
+    {
+        render_log();
     }
 
-    if (!ReadLastProject()) {
-        return ReadProjects();
-    }
+    ImGui::End();
 }
 
-void ProjectMenu::RenderWindowInstalling() {
-    ImVec2 vWindowSize(600, 500);
+void ProjectMenu::render_log()
+{
+    // const char *text = "Output:";
+    // auto textSize = ImGui::CalcTextSize(text);
 
-    ImGui::SetNextWindowSize(vWindowSize);
-    ImGui::SetNextWindowPos((m_mainViewport->WorkSize - vWindowSize) / 2.0f);
-    ImGui::Begin("Install", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse);
-
-    const char *text = "Output:";
-    auto textSize = ImGui::CalcTextSize(text);
-
-    ImGui::SetCursorPosX((vWindowSize.x - textSize.x) / 2.0f);
-    ImGui::Text("%s", text);
+    // ImGui::SetCursorPosX((window_size.x - textSize.x) / 2.0f);
+    // ImGui::Text("%s", text);
     
     for (auto &log : Console::GetListLogs()) {
         ImVec4 color = {1.0f, 1.0f, 1.0f, 1.0f};
@@ -166,63 +167,61 @@ void ProjectMenu::RenderWindowInstalling() {
         ImGui::SetScrollHereY(1.0f);
         Console::bChanged = false;
     }
-    ImGui::End();
 }
 
-void ProjectMenu::RenderMainMenu() {
-    ImGui::SetNextWindowPos({}, ImGuiCond_Always);
+void ProjectMenu::create_window_project_list()
+{
+    ImGui::SetNextWindowPos(ImVec2{0.0f, 0.0f}, ImGuiCond_Always);
     ImGui::SetNextWindowSize(m_mainViewport->Size, ImGuiCond_Always);
-    ImGui::Begin("##MainMenu", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoTitleBar);
-
-    auto bCreateProject = false;
-    if (ImGui::BeginMenuBar()) {
-        if (ImGui::BeginMenu("Project")) {
-            if (ImGui::MenuItem("Create")) {
-                bCreateProject = true;
-            }
-            ImGui::EndMenu();
-        }
-        ImGui::EndMenuBar();
+    if (ImGui::Begin("##create_window_project_list", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar))
+    {
+        render_project_list();
     }
-    
-    if (bCreateProject) {
-        ImGui::OpenPopup("##create_new_project");
-    }
-
-    CreateProject();
-
-    std::for_each(m_projects.begin(), m_projects.end(), &ProjectMenu::RenderProject);
 
     ImGui::End();
 }
 
-void ProjectMenu::RenderProject(Project &project) {
-    auto name = project.getName();
+void ProjectMenu::render_project_list()
+{
+    auto avail = ImGui::GetContentRegionAvail();
+    if (ImGui::Button("Create New Project", ImVec2{avail.x, 0.0f}))
+    {
+        popup_flags |= ProjectMenuPopup_CreateProject;
+    }
 
-    if (ImGui::Selectable(name.c_str())) {
-        OpenProject(project);
+    for (auto &project : m_projects)
+    {
+        if (ImGui::Selectable(project.getName().c_str()))
+        {
+            m_engine->set_project(project);
+        }
     }
 }
 
-void ProjectMenu::CreateProject() {
-    ImVec2 vWindowSize(300.0f, 400.0f);
+void ProjectMenu::setup_project_list()
+{
 
-    ImGui::SetNextWindowSize(vWindowSize);
-    ImGui::SetNextWindowPos((m_mainViewport->Size / 2.0f) - (vWindowSize / 2.0f));
+    // if (!ReadLastProject())
+    {
+        return read_project_directory();
+    }
+}
 
-    auto isOpen = ImGui::BeginPopupModal("##create_new_project", nullptr, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
-    if (!isOpen) {
+void ProjectMenu::popup_create_new_project()
+{
+    ImVec2 window_size = {300.0f, 400.0f};
+
+    ImGui::SetNextWindowSize(window_size, ImGuiCond_Always);
+    ImGui::SetNextWindowPos((m_mainViewport->Size / 2.0f) - (window_size / 2.0f));
+
+    auto isOpen = ImGui::BeginPopupModal("##popup_create_new_project", nullptr, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+    if (!isOpen)
+    {
         return;
     }
 
-    const char *title = "Create project";
+    ImGui::SeparatorText("Create Project");
 
-    auto textSize = ImGui::CalcTextSize(title);
-
-    ImGui::SetCursorPosX((vWindowSize.x / 2.0f) - (textSize.x / 2.0f));
-    ImGui::Text("%s", title);
-
-    ImGui::Separator();
     ImGui::NewLine();
 
     ImGui::Text("Name: ");
@@ -233,92 +232,122 @@ void ProjectMenu::CreateProject() {
 
     ImGui::NewLine();
 
-    ImGui::Text("Path: ");
-    ImGui::SameLine();
-
-    std::string path = GetCurrentDirProject() + "/" + name;
-    ImGui::InputText("##create_project_input_text_path", path.data(), path.size(), ImGuiInputTextFlags_AlwaysOverwrite);
+    auto avail = ImGui::GetContentRegionAvail();
     
-    textSize = ImGui::CalcTextSize("Create");
-    ImGui::SetCursorPos({(vWindowSize.x / 2.0f) - (textSize.x / 2.0f), vWindowSize.y - (textSize.y + m_style->WindowPadding.y)});
-    if (ImGui::SmallButton("Create")) {
-        path.erase(std::remove(path.begin(), path.end(), '\0'), path.end());
+    if (ImGui::Button("Create", ImVec2{avail.x, 0.0f}))
+    {
+        create_project(name, gfile::get_home_directory() + "/gr-engine/" + name);
+
+        std::memset(name, 0, sizeof(name));
 
         ImGui::CloseCurrentPopup();
-
-        CreateProjectInfo(name, path);
     }
 
     ImGui::EndPopup();
 }
 
-void ProjectMenu::CreateProjectInfo(const std::string name, const std::string path) {
-    if (File::Exists(path)) {
+void ProjectMenu::create_project(const std::string name, const std::string path)
+{
+    if (gfile::exists(path))
+    {
         std::cout << "The project: " << name << " exists, in: " << path << std::endl;
         return;
     }
     
-    if (!File::CreateDirectory(path)) {
+    if (!gfile::create_directory(path))
+    {
         std::cout << "Unable to create project in directory: " << path << std::endl;
         return;
     }
 
-    CreateProjectMetadata(path, name);
+    if (!create_project_metadata(path, name))
+    {
+        gfile::remove(path);
+
+        std::cout << "[ Project ] Fail to create project metadada." << std::endl;
+        return;
+    }
     
     CreateProjectAssets(path);
 
-    RefreshProjectList();
+    m_projects.emplace_back(name, path);
 }
 
-void ProjectMenu::CreateProjectMetadata(const std::string &path, const std::string &name) {
-    Config config(path + "/metadata.ini");
-    config.setValue("name", name);
-    config.save();
-}
-
-void ProjectMenu::CreateProjectAssets(const std::string &path) {
-    for (auto &dir : m_assetsFile) {
-        if (dir.empty()) {
-            continue;
-        }
-        auto fullPath = path + "/assets/" + dir;
-
-        if (File::CreateDirectories(fullPath)) {
-            continue;
-        }
-        
-        std::cout << "Falied to create directory: " << fullPath << std::endl;
+bool ProjectMenu::create_project_metadata(const std::string &path, const std::string &name)
+{
+    auto config = config_create();
+    if (config == nullptr)
+    {
+        return false;
     }
 
-    if (!File::Copy(File::GetAsset("/shader", true), path + "/assets")) {
+    {
+        auto section = config_create_section(config, "project", nullptr);
+        config_set_string(section, "name", name.c_str());
+    }
+
+    config_save((path + "/metadata.ini").c_str(), config);
+
+    config_release(config);
+
+    return true;
+}
+
+void ProjectMenu::CreateProjectAssets(const std::string &path)
+{
+    if (!gfile::exists(path + "/assets"))
+    {
+        gfile::create_directory(path + "/assets");
+    }
+
+    for (auto &dir : m_assetsFile)
+    {
+        auto fullPath = path + "/assets/" + dir;
+
+        if (!gfile::exists(fullPath))
+        {
+            gfile::create_directory(fullPath);
+        }
+    }
+
+    if (!File::Copy(File::GetAsset("/shader", true), path + "/assets"))
+    {
         Console::LogError("[ CreateProject ] " + File::GetError());
     }
 }
 
-void ProjectMenu::ReadProjects() {
-    auto path = GetCurrentDirProject();
-
-    if (!File::Exists(path)) {
+void ProjectMenu::read_project_directory()
+{
+    auto dir = gfile::get_home_directory() + "/gr-engine";
+    if (!gfile::exists(dir))
+    {
         return;
     }
 
-    for (auto &entry : std::filesystem::directory_iterator(path)) {
-        if (!entry.is_directory()) {
+    for (auto &entry : std::filesystem::directory_iterator(dir))
+    {
+        if (!entry.is_directory() || !gfile::exists(entry.path() / "metadata.ini"))
+        {
             continue;
         }
 
-        Config config(entry.path().string() + "/metadata.ini");
-        if (!config.is_open()) {
-            continue;
-        }
-        
-        config.load();
-
-        if (!config.hasKey("name")) {
+        auto config = config_create();
+        if (config == nullptr)
+        {
             continue;
         }
 
-        m_projects.push_back({config.getValue<std::string>("name"), entry.path().string()});
+        config_load((entry.path() / "metadata.ini").c_str(), config);
+        {
+            auto section = config_find_section(config, "project");
+            if (section != nullptr)
+            {
+                auto name = config_get_string(section, "name");
+
+                m_projects.emplace_back(name, entry.path().string());
+            }
+        }
+        config_release(config);
     }
 }
 
@@ -331,70 +360,90 @@ void ProjectMenu::OpenProject(Project &project) {
 
     Project::SetCurrent(&project);
     
-    m_editor = std::make_shared<Editor>();
-
-
     SaveLastProject(project);
 }
 
-void ProjectMenu::RefreshProjectList() {
-    m_projects.clear();
+void ProjectMenu::install_engine()
+{
+    Console::LogInfo("[ Installer ] iniciando instalação...");
 
-    ReadProjects();
+    if (!gfile::exists(gfile::get_home_directory() + "/gr-engine"))
+    {
+        gfile::create_directory(gfile::get_home_directory() + "/gr-engine");
+    }
+
+    if (!gfile::exists(gfile::get_data_directory()))
+    {
+        gfile::create_directory(gfile::get_data_directory());
+    }
+
+    if (!gfile::exists(gfile::get_config_directory()))
+    {
+        gfile::create_directory(gfile::get_config_directory());
+    }
+
+    if (!gfile::exists(gfile::get_cache_directory()))
+    {
+        gfile::create_directory(gfile::get_cache_directory());
+    }
+
+    Console::LogInfo("[ Installer ] copiando arquivos...");
+
+    if (!download_data())
+    {
+        gfile::remove(gfile::get_data_directory());
+        gfile::remove(gfile::get_config_directory());
+        gfile::remove(gfile::get_cache_directory());
+        return;
+    }
+
+    Console::LogInfo("[ Installer ] arquivos copiados com sucesso.");
+
+    std::this_thread::sleep_for(std::chrono::seconds(3));
+    
+    stop_install();
 }
 
-void ProjectMenu::InstallConfig(const std::string &config) {
-    auto cache = File::getHomeDirectory() + "/.cache/gr-engine";
-    auto user = File::getHomeDirectory() + "/.local/share/gr-engine";
+bool ProjectMenu::download_data()
+{
+    std::this_thread::sleep_for(std::chrono::seconds(3));
 
-    File::SetConfigPath(config);
-    File::SetCachePath(cache);
-    File::SetUserPath(user);
-
-    Console::LogInfo("Initializing the installation...");
-
-    Console::LogInfo("Creating cache data...");
-    File::CreateDirectories(cache);
-
-    Console::LogInfo("Creating user data...");
-    File::CreateDirectories(user);
-
-    Console::LogInfo("Installing the base configuration...");
-    if (File::CreateDirectories(config)) {
-        DownloadConfig(config);
-    }
-}
-
-void ProjectMenu::DownloadConfig(const std::string &path) {
-    Console::LogInfo("Importing rendering data...");
-    if (!File::Copy("./assets", path)) {
-        Console::LogError("Falied to import data in: %s, to: %s", File::GetError().c_str(), path.c_str());
-        return;
+    Console::LogInfo("[ Installer ] copiando assets...");
+    if (!File::Copy("./assets", gfile::get_data_directory()))
+    {
+        Console::LogError("[ Installer ] fail to copy assets.");
+        return false;
     }
 
-    Console::LogInfo("Importing config data...");
-    if (!File::Copy("./config", path)) {
-        Console::LogError("Falied to import data: " + File::GetError());
-        return;
+    Console::LogInfo("[ Installer ] copiando arquivos de config...");
+    if (!File::Copy("./config", gfile::get_data_directory()))
+    {
+        Console::LogError("[ Installer ] fail to copy config.");
+        return false;
     }
 
-    Console::LogInfo("Importing script data...");
-    if (!File::Copy("./script", path)) {
-        Console::LogError("Falied to import data: " + File::GetError());
-        return;
+    Console::LogInfo("[ Installer ] copiando scripts...");
+    if (!File::Copy("./script", gfile::get_data_directory()))
+    {
+        Console::LogError("[ Installer ] fail to copy script.");
+        return false;
     }
 
-    Console::LogInfo("Importing component data...");
-    if (!File::Copy("./component", path)) {
-        Console::LogError("Falied to import data: " + File::GetError());
+    Console::LogInfo("[ Installer ] copiando compiler...");
+    if (!File::Copy("./component", gfile::get_data_directory()))
+    {
+        Console::LogError("[ Installer ] fail to copy component.");
+        return false;
     }
 
-    Console::LogInfo("Importing example data...");
-    if (!File::Copy("./example", path)) {
-        Console::LogError("Falied to import data: " + File::GetError());
+    Console::LogInfo("[ Installer ] copiando arquivos de exemplo...");
+    if (!File::Copy("./example", gfile::get_data_directory()))
+    {
+        Console::LogError("[ Installer ] fail to copy examples");
+        return false;
     }
 
-    ThreadJoin();
+    return true;
 }
 
 void ProjectMenu::SaveLastProject(Project &project) {
@@ -427,22 +476,19 @@ bool ProjectMenu::ReadLastProject() {
         return false;
     }
 
-    auto &project = m_projects.emplace_back(config.getValue<std::string>("name"), path);
+    // auto &project = m_projects.emplace_back(config.getValue<std::string>("name"), path);
 
-    OpenProject(project);
+    // OpenProject(project);
     return true;
 }
 
-std::string ProjectMenu::GetCurrentDirProject() {
-    return File::getHomeDirectory() + "/gr-project";
-}
-
-void ProjectMenu::ThreadJoin() {
-    bInstalling = false;
-
+void ProjectMenu::stop_install()
+{
     Console::Shutdown();
 
-    InitProject();
+    setup_project_list();
+
+    bengine_installed = true;
 }
 
 // uninstall engine

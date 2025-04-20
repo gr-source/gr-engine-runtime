@@ -25,32 +25,32 @@ GLFWwindow *CreateWindown(const char* name, int width, int height, GLFWwindow * 
 
 void GLFWframebuffersizefunCallback(GLFWwindow* window, int width, int height) {
     const grm::u32 scale[2]{static_cast<const grm::u32>(width), static_cast<const grm::u32>(height)};
-    Engine::HandleEvent(Engine::GR_RESIZE, scale);
+    Engine::HandleEvent(Engine::RESIZE, scale);
 }
 
 void GLFWkeyfunCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
     if (action == GLFW_PRESS)
-        Engine::HandleEvent(Engine::GR_KEYBOARD_DOWN, reinterpret_cast<const void*>(&m_keyMap[key]));
+        Engine::HandleEvent(Engine::KEYBOARD_DOWN, reinterpret_cast<const void*>(&m_keyMap[key]));
     
     if (action == GLFW_RELEASE)
-        Engine::HandleEvent(Engine::GR_KEYBOARD_UP, reinterpret_cast<const void*>(&m_keyMap[key]));
+        Engine::HandleEvent(Engine::KEYBOARD_UP, reinterpret_cast<const void*>(&m_keyMap[key]));
 }
 
 void GLFWcursorposfunCallback(GLFWwindow* window, double xpos, double ypos) {
     const float pos[2] {static_cast<const float>(xpos), static_cast<const float>(ypos)};
 
-    Engine::HandleEvent(Engine::GR_CURSOR_POS, pos);
+    Engine::HandleEvent(Engine::CURSOR_POS, pos);
 }
 
 void GLFWscrollfunCallback(GLFWwindow* window, double xoffset, double yoffset) {
     const float offset[2] {static_cast<const float>(xoffset), static_cast<const float>(yoffset)};
 
-    Engine::HandleEvent(Engine::GR_CURSOR_SCROLL, offset);
+    Engine::HandleEvent(Engine::CURSOR_SCROLL, offset);
 }
 
 void GLFWdropfunCallback(GLFWwindow* window, int path_count, const char* paths[]) {
     for (int i=0;i<path_count;i++) {
-        Engine::HandleEvent(Engine::GR_DROFUNC, reinterpret_cast<const void *>(paths[i]));
+        Engine::HandleEvent(Engine::DROFUNC, reinterpret_cast<const void *>(paths[i]));
     }
 }
 
@@ -130,7 +130,7 @@ static void config_set_engine_callback()
 static void destroy() {
     Settings::StopPlayEngine();
 
-    Engine::HandleEvent(Engine::GR_DESTROY, nullptr);
+    Engine::HandleEvent(Engine::DESTROY, nullptr);
     
     glfwTerminate();
 }
@@ -193,15 +193,16 @@ int main(int argc, char *argv[]) {
         return 3;
     }
 
-    Engine::HandleEvent(Engine::GR_INITIALIZE, nullptr);
+    Engine::HandleEvent(Engine::INITIALIZE, nullptr);
 
     GLFWframebuffersizefunCallback(&(*window), SCREEN_WIDTH, SCREEN_HEIGHT);
 
-    while (Settings::IsEngineRunning() && !glfwWindowShouldClose(&(*window))) {
+    while (Settings::IsEngineRunning() && !glfwWindowShouldClose(&(*window)))
+    {
         glfwSwapBuffers(&(*window));
         glfwPollEvents();
 
-        Engine::HandleEvent(Engine::GR_IDLE, nullptr);
+        Engine::HandleEvent(Engine::LOOP, nullptr);
     }
 
     window = nullptr;

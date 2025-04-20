@@ -190,32 +190,17 @@ Editor::Editor() : m_viewport(ImGui::GetMainViewport()), mImGuiIO(&ImGui::GetIO(
         INSERT_SCRIPT(Rigidbody),
         INSERT_SCRIPT(Animator),
     };
+    
+    m_viewport = ImGui::GetMainViewport();
 
     m_config = std::make_shared<Config>(File::GetFile("/config.ini"));
     try {
         m_config->load();
 
-        // m_config->setCategory("plugin");
-        // for (auto &&[name, path] : m_config->getValues()) {
-            // PluginManager::Load(path);
-        // }
     } catch (const std::exception &e) {
         Console::LogWarning(e.what());
     }
 
-    // m_config->erase("plugin");
-
-    /*
-    {
-        auto lasCaterogy = m_config->getCategory();
-        m_config->setCategory("viewport");
-        
-        Settings::ViewportSize.x = m_config->hasKey("w") ? m_config->getValue<int>("w") : 0;
-        Settings::ViewportSize.y = m_config->hasKey("h") ? m_config->getValue<int>("h") : 0;
-
-        m_config->setCategory(lasCaterogy);
-    }
-    */
 
     m_settings = config_create();
     if (File::Exists(File::GetFile("/gsettings.ini")))
@@ -247,11 +232,6 @@ Editor::Editor() : m_viewport(ImGui::GetMainViewport()), mImGuiIO(&ImGui::GetIO(
     }
 
     auto lastCategory = m_config->getCategory();
-
-    /*m_config->setCategory("scene");*/
-    /*if (m_config->hasKey("main") && m_config->getValue<std::string>("main") != "default" && !Scene::HasScene()) {*/
-    /*    AssetsManager::LoadScene(File::GetAsset("/scene/" + m_config->getValue<std::string>("main") + ".scn"), &Editor::ScenePostEcecute, this);*/
-    /*}*/
 
     m_config->setCategory(lastCategory);
 
@@ -291,30 +271,6 @@ Editor::~Editor() {
 
     config_release(m_settings);
     
-    /*
-    m_config->setCategory("scene");
-    m_config->setValue<std::string>("main", Scene::HasScene() ?  Scene::GetCurrentScene()->getName() : "default");
-
-    m_config->setCategory("viewport");
-    m_config->setValue("w", Settings::ViewportSize.x);
-    m_config->setValue("h", Settings::ViewportSize.y);
-
-    m_config->setCategory("plugin");
-    for (auto [plugin, path] : PluginManager::GetPluginFile()) {
-        auto info = plugin->getPluginInfo();
-
-        m_config->setValue<std::string>(info.name, path);
-    }
-
-    if (s_objectSelected) {
-        m_config->setCategory("editor");
-        m_config->setValue("GoSelecetd", s_objectSelected->getName());
-    }
-
-    if (m_config) {
-        m_config->save();
-    }
-    */
 
     Scene::Shutdown();
 
@@ -416,240 +372,41 @@ void Editor::UnloadScript() {
 }
 
 // ===================================== END =========================================================
-void Editor::RenderUI()
+void Editor::render()
 {
-    RenderDocking();
+    create_dock();
 
-    RenderViewportUI();
+    create_window_viewport();
 
-    RenderObjectUI();
+    create_window_hierarchy();
 
-    RenderOtherUI();
+    create_window_browser();
 
-    RenderConsoleWindow();
+    create_window_console();
 
-    RenderPropertiUI();
+    create_window_property();
 
-    switch (popupFlags) {
-    case EditorPopupFlags_LoadPlugin:
-        ImGui::OpenPopup(GET_FLAG_NAME(EditorPopupFlags_LoadPlugin));
-        popupFlags &= ~EditorPopupFlags_LoadPlugin;
-        break;
-    case EditorPopupFlags_AddComponent:
-        ImGui::OpenPopup("##popup_add_component");
-        popupFlags &= ~EditorPopupFlags_AddComponent;
-        break;
-    case EditorPopupFlags_PluginEditor:
-        ImGui::OpenPopup("##popup_plugin_editor");
-        popupFlags &= ~EditorPopupFlags_PluginEditor;
-        break;
-    case EditorPopupFlags_CreateMaterial:
-        ImGui::OpenPopup(GET_FLAG_NAME(EditorPopupFlags_CreateMaterial));
-        popupFlags &= ~EditorPopupFlags_CreateMaterial;
-        break;
-    case EditorPopupFlags_EngineStatus:
-        PopupMenuProperty();
-        break;
-    case EditorPopupFlags_FileManager | EditorPopupFlags_DirManager:
-        ImGui::OpenPopup(GET_FLAG_NAME(EditorPopupFlags_FileManager | EditorPopupFlags_DirManager));
-        popupFlags &= ~(EditorPopupFlags_FileManager | EditorPopupFlags_DirManager);
-        break;
-    case EditorPopupFlags_FileManager:
-        ImGui::OpenPopup(GET_FLAG_NAME(EditorPopupFlags_FileManager));
-        popupFlags &= ~EditorPopupFlags_FileManager;
-        break;
-    case EditorPopupFlags_DirManager:
-        ImGui::OpenPopup(GET_FLAG_NAME(EditorPopupFlags_DirManager));
-        popupFlags &= ~EditorPopupFlags_DirManager;
-        break;
-    case EditorPopupFlags_RenameFileOrDir:
-        ImGui::OpenPopup("##popup_rename_file_or_dir");
-        popupFlags &= ~EditorPopupFlags_RenameFileOrDir;
-        break;
-    case EditorPopupFlags_CreateNewDir:
-        ImGui::OpenPopup("##popup_create_new_dir");
-        popupFlags &= ~EditorPopupFlags_CreateNewDir;
-        break;
-    case EditorPopupFlags_CreateScript:
-        ImGui::OpenPopup("##popup_create_script");
-        popupFlags &= ~EditorPopupFlags_CreateScript;
-        break;
-    case EditorPopupFlags_CreateShader:
-        ImGui::OpenPopup(GET_FLAG_NAME(EditorPopupFlags_CreateShader));
-        popupFlags &= ~EditorPopupFlags_CreateShader;
-        break;
-    case EditorPopupFlags_RenameGameObject:
-        ImGui::OpenPopup(GET_FLAG_NAME(EditorPopupFlags_RenameGameObject));
-        popupFlags &= ~EditorPopupFlags_RenameGameObject;
-        break;
-    case EditorPopupFlags_SceneAddOption:
-        ImGui::OpenPopup(GET_FLAG_NAME(EditorPopupFlags_SceneAddOption));
-        popupFlags &= ~EditorPopupFlags_SceneAddOption;
-        break;
-    default:
-        break;
-    }
-    
-    PopupComponentMenu();
+    create_call_popup();
 
-    PopupMenuSettings();
-
-    showShaderListPopup();
-
-    showMeshListPopup();
-
-    PopupAddComponent();
-
-    SkyboxEditor();
-
-    PluginManager();
-
-    PopupPluginLoad();
-
-    PluginEditor();
-
-    RenameMaterial();
-
-    CreateMaterial();
-
-    PopupFileAndDirmanager();
-
-    PopupFileManager();
-
-    PopupDirManager();
-
-    PopupRenameFileOrDir();
-
-    PopupCreateDirectory();
-
-    PopupCreateScript();
-
-    PopupCreateShader();
-
-    PopupRenameGameObject();
-
-    PopupMenuAdd();
+    create_popup();
 }
 
-void Editor::RenderDocking() {
-    if (m_viewport == nullptr)
-        m_viewport = ImGui::GetMainViewport();
+void Editor::create_dock()
+{
+    auto dockID = ImGui::DockSpaceOverViewport(m_viewport);
 
-    ImGui::SetNextWindowPos(m_viewport->WorkPos);
-    ImGui::SetNextWindowSize(m_viewport->WorkSize);
-    ImGui::SetNextWindowViewport(m_viewport->ID);
-
-    ImGuiWindowFlags host_window_flags = 0;
-    host_window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoDocking;
-    host_window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
-    host_window_flags |= ImGuiWindowFlags_MenuBar;
-
-    ImGuiDockNodeFlags dockspace_flags = 0;
-    dockspace_flags |= ImGuiDockNodeFlags_PassthruCentralNode;
-    if (dockspace_flags & ImGuiDockNodeFlags_PassthruCentralNode)
-        host_window_flags |= ImGuiWindowFlags_NoBackground;
-
-    char label[32];
-    ImFormatString(label, IM_ARRAYSIZE(label), "DockSpaceViewport_%08X", m_viewport->ID);
-
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-    ImGui::Begin(label, NULL, host_window_flags);
-    ImGui::PopStyleVar(3);
-
-    EditorPopupFlags_ flags = 0;
-
-    bool bPopupMenuShader = false, bMeshList = false;
-
-    if (ImGui::BeginMenuBar())
+    if (bBuildDock)
     {
-        /*for (auto &menu : mMenuBarList)
-        {
-            if (ImGui::BeginMenu(menu.name.c_str()))
-            {
-                for (auto &item : menu.items)
-                {
-                    if (item.func != nullptr && ImGui::MenuItem(item.name.c_str()))
-                    {
-                        item.func();
-                    }
-                }
-                ImGui::EndMenu();
-            }
-        }
-        */
-        if (ImGui::BeginMenu("Project")) {
-            if (ImGui::MenuItem("Reconfigure Script")) {
-                ReconfigScript();
-            }
-            ImGui::EndMenu();
-        }
-        
-        if (ImGui::BeginMenu("View"))
-        {
-            bool isSelected = popupFlags & EditorPopupFlags_EngineStatus;
-            if (ImGui::MenuItem("Engine status", nullptr, &isSelected))
-            {
-                if (isSelected)
-                {
-                    popupFlags |= EditorPopupFlags_EngineStatus;
-                } else
-                {
-                    popupFlags &= ~EditorPopupFlags_EngineStatus;
-                }
-            }
-            ImGui::EndMenu();
-        }
-
-        if (ImGui::BeginMenu("Tools"))
-        {
-            if (ImGui::MenuItem("Plugin"))
-            {
-                flags |= EditorPopupFlags_Plugin;
-            }
-            ImGui::EndMenu();
-        }
-
-        ImGui::EndMenuBar();
-    }
-
-    ImGuiID dockspace_id = ImGui::GetID("DockSpace");
-    ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
-    ImGui::End();
-
-    if (flags & EditorPopupFlags_Settings) {
-        ImGui::OpenPopup("##popup_menu_settings");
-    }
-
-    if (flags & EditorPopupFlags_SkyboxEditor) {
-        ImGui::OpenPopup("##popup_skybox_editor");
-    }
-
-    if (flags & EditorPopupFlags_Plugin) {
-        ImGui::OpenPopup("##popup_plugin_manager");
-    }
-
-    // /*
-    if (bPopupMenuShader) {
-        ImGui::OpenPopup("##popup_menu_shader_list");
-    }
-
-    if (bMeshList) {
-        ImGui::OpenPopup("##popup_menu_mesh_list");
-    }
-    // */
-
-    if (bBuildDock) {
         return;
     }
 
-    BuildDock(dockspace_id, dockspace_flags);
+    BuildDock(dockID, 0);
 
     bBuildDock = true;
 }
 
-void Editor::BuildDock(ImGuiID dockspace_id, ImGuiDockNodeFlags dockspace_flags) {
+void Editor::BuildDock(ImGuiID dockspace_id, ImGuiDockNodeFlags dockspace_flags)
+{
     ImGui::DockBuilderRemoveNode(dockspace_id); // clear any previous layout
 	ImGui::DockBuilderAddNode(dockspace_id, dockspace_flags | ImGuiDockNodeFlags_DockSpace);
 	ImGui::DockBuilderSetNodeSize(dockspace_id, m_viewport->Size);
@@ -685,43 +442,49 @@ void Editor::PopupComponentMenu()
     ImGui::EndPopup();
 }
 
-void Editor::RenderObjectUI()
+void Editor::create_window_hierarchy()
 {
-    if (ImGui::Begin("Cenario", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+    if (ImGui::Begin("hierarchy"))
     {
+        create_render_hierarchy();
+    }
+    ImGui::End();
+}
 
-        auto scene = Scene::GetCurrentScene();
+void Editor::create_render_hierarchy()
+{
+    auto scene = Scene::GetCurrentScene();
 
-        auto name = scene != nullptr ? scene->getName() : "Scene name is empty!";
+    auto name = scene != nullptr ? scene->getName() : "Scene name is empty!";
 
-        ImGui::SetNextItemOpen(true, ImGuiCond_Appearing);
-        if (scene != nullptr && ImGui::TreeNodeEx(name.c_str(), ImGuiTreeNodeFlags_SpanFullWidth))
-        {
-            dropGameObjectInHierarchy(scene);
+    ImGui::SetNextItemOpen(true, ImGuiCond_Appearing);
+    if (scene != nullptr && ImGui::TreeNodeEx(name.c_str(), ImGuiTreeNodeFlags_SpanFullWidth))
+    {
+        dropGameObjectInHierarchy(scene);
         
-            RenderSceneObject(scene);
+        RenderSceneObject(scene);
 
-            ImGui::TreePop();
-        }
+        ImGui::TreePop();
+    }
 
-        if (ImGui::IsKeyReleased(ImGuiKey_Delete) && s_objectSelected && !ImGui::IsPopupOpen("##popup_rename_gameobject")) {
-            Scene::Destoy(s_objectSelected);
-            s_objectSelected = nullptr;
-        }
+    if (ImGui::IsKeyReleased(ImGuiKey_Delete) && s_objectSelected && !ImGui::IsPopupOpen("##popup_rename_gameobject")) {
+        Scene::Destoy(s_objectSelected);
+        s_objectSelected = nullptr;
+    }
     
-        if (ImGui::IsKeyReleased(ImGuiKey_F2) && ImGui::IsWindowHovered() && s_objectSelected)
-        {
-            popupFlags |= EditorPopupFlags_RenameGameObject;
-        }
+    if (ImGui::IsKeyReleased(ImGuiKey_F2) && ImGui::IsWindowHovered() && s_objectSelected)
+    {
+        popupFlags |= EditorPopupFlags_RenameGameObject;
+    }
 
-        if (ImGui::IsKeyReleased(ImGuiKey_Escape) && ImGui::IsWindowHovered()) {
-            s_objectSelected = nullptr;
-        }
+    if (ImGui::IsKeyReleased(ImGuiKey_Escape) && ImGui::IsWindowHovered()) {
+        s_objectSelected = nullptr;
+    }
 
-        if (ImGui::IsWindowHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Right))
-        {
-            popupFlags |= EditorPopupFlags_SceneAddOption;
-        }
+    if (ImGui::IsWindowHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Right))
+    {
+        popupFlags |= EditorPopupFlags_SceneAddOption;
+    }
 
         /*
         if (bOpenPopupOptionGameObject) {
@@ -732,9 +495,6 @@ void Editor::RenderObjectUI()
         PopupOptionsGameObject();
 
         */
-    }
-    
-    ImGui::End();
 }
 
 void Editor::dropGameObjectInHierarchy(Scene *scene)
@@ -894,7 +654,8 @@ void Editor::PopupMenuAdd() {
 }
 
 void Editor::PopupOptionsGameObject() {
-    if (!s_objectSelected || !m_mainCamera) {
+    if (!s_objectSelected || m_mainCamera == nullptr)
+    {
         return;
     }
 
@@ -956,9 +717,17 @@ void Editor::PopupRenameGameObject()
     ImGui::EndPopup();
 }
 
-void Editor::RenderViewportUI() {
-    ImGui::Begin("Viewport", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
-    
+void Editor::create_window_viewport()
+{
+    if (ImGui::Begin("viewport"))
+    {
+        create_render_viewport();
+    }
+    ImGui::End();
+}
+
+void Editor::create_render_viewport()
+{
     auto bCreateScene = false;
 
     bViewPortFocused = ImGui::IsWindowFocused();
@@ -1012,8 +781,6 @@ void Editor::RenderViewportUI() {
     DropSceneInViewport();
 
     PopupMenuCreateScene();
-
-    ImGui::End();
 }
 
 void Editor::DropSceneInViewport() {
@@ -1295,11 +1062,15 @@ void Editor::RenderScene() {
     auto windowPos = ImGui::GetWindowPos();
     auto cursorPos = ImGui::GetCursorPos();
 
-    auto texture = Engine::GetImGuiPostprocess()->getTextureColor();
-    if (texture) {
-        ImGui::Image(reinterpret_cast<ImTextureID>(texture->getID()), regionAvail, {0.0f, 1.0f}, {1.0f, 0.0f});
+    // auto texture = Engine::GetImGuiPostprocess()->getTextureColor();
+    auto camera = Camera::Current();
+    if (camera != nullptr)
+    {
+        auto &rendertarget = camera->rendertarget;
 
-        if (ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
+        ImGui::Image(reinterpret_cast<ImTextureID>(rendertarget.getTextureID()), regionAvail, {0.0f, 1.0f}, {1.0f, 0.0f});
+
+        /*if (ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
             auto mousePos = ImGui::GetMousePos();
             mousePos -= windowPos + cursorPos;
 
@@ -1319,6 +1090,7 @@ void Editor::RenderScene() {
                 }
             }
         }
+        */
         DropGameObjectInScene();
     }
 
@@ -1347,7 +1119,7 @@ void Editor::RenderScene() {
     ImGuizmo::SetDrawlist();
     ImGuizmo::SetRect(windowPos.x + cursorPos.x, windowPos.y + cursorPos.y, regionAvail.x, regionAvail.y);
 
-    if (m_mainCamera && s_objectSelected && !Settings::bGameRunning) {
+    if (m_mainCamera != nullptr && s_objectSelected && !Settings::bGameRunning) {
         RenderGuizmo();
     }
 
@@ -1388,16 +1160,19 @@ void Editor::RenderScene() {
     }
 }
 
-void Editor::UpdateResizeSceneFramebuffer() {
+void Editor::UpdateResizeSceneFramebuffer()
+{
     ImVec2 regionAvail = ImGui::GetContentRegionAvail();
-    if (m_mainCamera && (m_lastViewportSize.x != regionAvail.x || m_lastViewportSize.y != regionAvail.y && regionAvail.x > 5.0f && regionAvail.y > 5.0f)) {
+    if (m_mainCamera != nullptr && (m_lastViewportSize.x != regionAvail.x || m_lastViewportSize.y != regionAvail.y && regionAvail.x > 5.0f && regionAvail.y > 5.0f))
+    {
         auto &viewport = Settings::ViewportSize = {static_cast<int>(regionAvail.x), static_cast<int>(regionAvail.y)};
-        if (viewport.x > 0 && viewport.y > 0) {
+        if (viewport.x > 0 && viewport.y > 0)
+        {
             Display::SetDisplayRect(Rect{0.0f, 0.0f, (float)Settings::ViewportSize.x, (float)Settings::ViewportSize.y});
 
             m_mainCamera->setAspectRatio(static_cast<float>(viewport.x) / static_cast<float>(viewport.y));
 
-            Engine::GetMainPostprocess()->resize(viewport);
+            // Engine::GetMainPostprocess()->resize(viewport);
             
             m_lastViewportSize = regionAvail;
         }
@@ -1772,23 +1547,32 @@ void Editor::PopupCreateShader()
     ImGui::EndPopup();
 }
 
-void Editor::RenderOtherUI() {
-    if (ImGui::Begin("Navegador", nullptr, ImGuiWindowFlags_AlwaysHorizontalScrollbar | ImGuiWindowFlags_AlwaysAutoResize))
+void Editor::create_window_browser()
+{
+    if (ImGui::Begin("browser"))
     {
-        auto avail = ImGui::GetContentRegionAvail();
-
-        ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
-        if (ImGui::BeginChild("aaa", ImVec2(avail.x / 3.0f, 0), ImGuiChildFlags_AlwaysUseWindowPadding))
-            RenderTreeNodeFile(root_tree_file);
-        ImGui::EndChild();
-
-        ImGui::SameLine();
-        if (ImGui::BeginChild("bbb", ImVec2(0.0f, 0.0f), ImGuiChildFlags_AlwaysUseWindowPadding) && g_tree_file != nullptr)
-            RenderFiles();
-        ImGui::EndChild();
+        create_render_browser();
     }
-
     ImGui::End();
+}
+
+void Editor::create_render_browser()
+{
+    auto avail = ImGui::GetContentRegionAvail();
+
+    ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
+    if (ImGui::BeginChild("aaa", ImVec2(avail.x / 3.0f, 0), ImGuiChildFlags_AlwaysUseWindowPadding))
+    {
+        RenderTreeNodeFile(root_tree_file);
+    }
+    ImGui::EndChild();
+
+    ImGui::SameLine();
+    if (ImGui::BeginChild("bbb", ImVec2(0.0f, 0.0f), ImGuiChildFlags_AlwaysUseWindowPadding) && g_tree_file != nullptr)
+    {
+        RenderFiles();
+    }
+    ImGui::EndChild();
 }
 
 void Editor::RenderTreeNodeFile(gtreefile &tree_file)
@@ -1893,17 +1677,17 @@ void Editor::dropTargetGameObjectInFile(std::string path)
     ImGui::EndDragDropTarget();
 }
 
-void Editor::RenderConsoleWindow()
+void Editor::create_window_console()
 {
     if (ImGui::Begin("Console"))
     {
-        RenderConsole();
+        create_render_console();
     }
     
     ImGui::End();
 }
 
-void Editor::RenderConsole()
+void Editor::create_render_console()
 {
     auto logs = Console::GetListLogs();
 
@@ -2014,9 +1798,17 @@ void Editor::ConfigureVSCode() {
     Console::LogWarning("Visual Studio Code has been configured.");
 }
 
-void Editor::RenderPropertiUI() {
-    ImGui::Begin("Propriedades", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
+void Editor::create_window_property()
+{
+    if (ImGui::Begin("property"))
+    {
+        create_render_property();
+    }
+    ImGui::End();
+}
 
+void Editor::create_render_property()
+{
     if (ImGui::BeginTabBar("##render_properti_ui_tabbar")) {
         RenderObjectInfo();
         
@@ -2028,7 +1820,113 @@ void Editor::RenderPropertiUI() {
         */
         ImGui::EndTabBar();
     }
-    ImGui::End();
+}
+
+void Editor::create_call_popup()
+{
+    switch (popupFlags)
+    {
+    case EditorPopupFlags_LoadPlugin:
+        ImGui::OpenPopup(GET_FLAG_NAME(EditorPopupFlags_LoadPlugin));
+        popupFlags &= ~EditorPopupFlags_LoadPlugin;
+        break;
+    case EditorPopupFlags_AddComponent:
+        ImGui::OpenPopup("##popup_add_component");
+        popupFlags &= ~EditorPopupFlags_AddComponent;
+        break;
+    case EditorPopupFlags_PluginEditor:
+        ImGui::OpenPopup("##popup_plugin_editor");
+        popupFlags &= ~EditorPopupFlags_PluginEditor;
+        break;
+    case EditorPopupFlags_CreateMaterial:
+        ImGui::OpenPopup(GET_FLAG_NAME(EditorPopupFlags_CreateMaterial));
+        popupFlags &= ~EditorPopupFlags_CreateMaterial;
+        break;
+    case EditorPopupFlags_EngineStatus:
+        PopupMenuProperty();
+        break;
+    case EditorPopupFlags_FileManager | EditorPopupFlags_DirManager:
+        ImGui::OpenPopup(GET_FLAG_NAME(EditorPopupFlags_FileManager | EditorPopupFlags_DirManager));
+        popupFlags &= ~(EditorPopupFlags_FileManager | EditorPopupFlags_DirManager);
+        break;
+    case EditorPopupFlags_FileManager:
+        ImGui::OpenPopup(GET_FLAG_NAME(EditorPopupFlags_FileManager));
+        popupFlags &= ~EditorPopupFlags_FileManager;
+        break;
+    case EditorPopupFlags_DirManager:
+        ImGui::OpenPopup(GET_FLAG_NAME(EditorPopupFlags_DirManager));
+        popupFlags &= ~EditorPopupFlags_DirManager;
+        break;
+    case EditorPopupFlags_RenameFileOrDir:
+        ImGui::OpenPopup("##popup_rename_file_or_dir");
+        popupFlags &= ~EditorPopupFlags_RenameFileOrDir;
+        break;
+    case EditorPopupFlags_CreateNewDir:
+        ImGui::OpenPopup("##popup_create_new_dir");
+        popupFlags &= ~EditorPopupFlags_CreateNewDir;
+        break;
+    case EditorPopupFlags_CreateScript:
+        ImGui::OpenPopup("##popup_create_script");
+        popupFlags &= ~EditorPopupFlags_CreateScript;
+        break;
+    case EditorPopupFlags_CreateShader:
+        ImGui::OpenPopup(GET_FLAG_NAME(EditorPopupFlags_CreateShader));
+        popupFlags &= ~EditorPopupFlags_CreateShader;
+        break;
+    case EditorPopupFlags_RenameGameObject:
+        ImGui::OpenPopup(GET_FLAG_NAME(EditorPopupFlags_RenameGameObject));
+        popupFlags &= ~EditorPopupFlags_RenameGameObject;
+        break;
+    case EditorPopupFlags_SceneAddOption:
+        ImGui::OpenPopup(GET_FLAG_NAME(EditorPopupFlags_SceneAddOption));
+        popupFlags &= ~EditorPopupFlags_SceneAddOption;
+        break;
+    default:
+        break;
+    }    
+}
+
+void Editor::create_popup()
+{
+    PopupComponentMenu();
+
+    PopupMenuSettings();
+
+    showShaderListPopup();
+
+    showMeshListPopup();
+
+    PopupAddComponent();
+
+    SkyboxEditor();
+
+    PluginManager();
+
+    PopupPluginLoad();
+
+    PluginEditor();
+
+    RenameMaterial();
+
+    CreateMaterial();
+
+    PopupFileAndDirmanager();
+
+    PopupFileManager();
+
+    PopupDirManager();
+
+    PopupRenameFileOrDir();
+
+    PopupCreateDirectory();
+
+    PopupCreateScript();
+
+    PopupCreateShader();
+
+    PopupRenameGameObject();
+
+    PopupMenuAdd();
 }
 
 #include <gr-base/core/status.hpp>
@@ -2941,7 +2839,8 @@ float Editor::GetFps() {
     return m_config->getValue<bool>("fps_limit") ? 60.0f : -1.0f;
 }
 
-Camera *Editor::getCamera() {
+Camera *Editor::getCamera()
+{
     return m_mainCamera;
 }
 
@@ -3477,13 +3376,11 @@ void Editor::PluginEditor() {
 }
 
 void Editor::ScenePostEcecute(Scene *scene) {
+    if (scene == nullptr) { return; }
+
     m_cameraObject = scene->getCameraObject();
 
     m_mainCamera = scene->getCamera();
-    // m_config->setCategory("editor");
-    // if (!m_config->hasKey("GoSelecetd")) { return; }
-
-    // s_objectSelected = GameObject::Find(m_config->getValue<std::string>("GoSelecetd"));
 }
 
 void Editor::OutputGameObject(GameObject **ref, GameObject *go) {
