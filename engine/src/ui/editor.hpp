@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <filesystem>
 
 #include <gr-base/ecs/componentPool.hpp>
@@ -33,7 +34,10 @@ extern "C" {
 }
 #endif // __cplusplus
 
-enum EditorPopupFlags : int64_t {
+using EditorPopupFlags_ = std::uint32_t;
+
+enum EditorPopupFlags : EditorPopupFlags_
+{
     EditorPopupFlags_EngineStatus           = 1 << 1,
     EditorPopupFlags_Settings               = 1 << 2,
     EditorPopupFlags_SkyboxEditor           = 1 << 3,
@@ -51,11 +55,11 @@ enum EditorPopupFlags : int64_t {
     EditorPopupFlags_CreateShader           = 1 << 15,
     EditorPopupFlags_RenameGameObject       = 1 << 16,
     EditorPopupFlags_SceneAddOption         = 1 << 17,
+    EditorPopupFlags_CreateScene            = 1 << 18,
 };
 
 #define GET_FLAG_NAME(c) #c
 
-using EditorPopupFlags_ = int;
 
 enum IconType : int {
     ICON_FOLDER         = 0,
@@ -132,8 +136,6 @@ public:
     
     void SetupTexture(IconType type, grr::gTexture *texture);
 
-    float GetFps();
-
     Camera *getCamera();
 
     std::vector<MenuBar> mMenuBarList;
@@ -171,8 +173,6 @@ private:
 
     bool bCopyAllFile;
 
-    bool bViewPortFocused;
-
     bool bOpenPopupInfoDir;
 
     bool bOpenPopupOptionGameObject;
@@ -199,17 +199,9 @@ private:
 
     std::filesystem::path m_dirSelected;
 
-    std::shared_ptr<Config> m_config;
-
     Material *m_materialToRename;
 
     gConfig *m_settings;
-
-    struct LastTransform {
-        Vector3 position;
-        Quaternion rotation;
-        Vector3 scale;
-    } mLastTransform;
 
     void create_dock();
 
@@ -241,9 +233,9 @@ private:
 
     void create_render_viewport();
 
-    void DropSceneInViewport();
+    void drop_scene_file_in_viewport();
 
-    void RenderScene();
+    void render_scene(Scene *scene);
 
     void UpdateResizeSceneFramebuffer();
 
@@ -254,8 +246,6 @@ private:
     void RenderGuizmo();
 
     void DropGameObjectInScene();
-
-    void PopupMenuCreateScene();
 
     void OpenFileDoubleClick(std::filesystem::path path);
 
@@ -289,8 +279,6 @@ private:
 
     void RenderLog(Log &info);
 
-    void RenderSettings();
-
     void ConfigureVSCode();
 
     void create_window_property();
@@ -300,6 +288,8 @@ private:
     void create_call_popup();
 
     void create_popup();
+
+    void create_popup_create_scene();
 
     void RenderStatisticsMenu();
 
@@ -318,8 +308,6 @@ private:
     void PopupAddComponent();
 
     void PopupMenuProperty();
-
-    bool ProgressLoad(int max, int current);
 
     bool OnPropertyTransform(Transform *transform);
 
@@ -351,8 +339,6 @@ private:
 
     void dropAnimation(Animator *animator);
 
-    void TextureInfo(Texture*& texture);
-
     // Loader    
     void PostLoadGameObject(GameObject *gameObject);
 
@@ -361,8 +347,6 @@ private:
     void CreateShaderTemplate(const std::string &path, const std::string &name);
 
     // PopupMenu
-    void PopupMenuSettings();
-
     void RenameMaterial();
 
     void CreateMaterial();

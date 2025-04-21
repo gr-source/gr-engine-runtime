@@ -28,45 +28,29 @@
 
 #include "skybox.h"
 
-bool RenderManager::bWireFrame = false;
-
-void RenderManager::Initialize() {}
-
-void RenderManager::Shutdown() {}
-
-void RenderManager::Process(const Camera *camera, ShadowMap *shadowMap) {
-    if (!camera) { return; }
-
-    auto irradianceMap = Skybox::GetTextureIrradiance();
+void RenderManager::Process(const Camera *camera)
+{
+    if (!camera)
+    {
+        return;
+    }
 
     auto projection = camera->getPerspesctive();
     auto view = camera->getViewmatrix();
     auto position = camera->getPosition();
 
-    /*static float TIME = 0.0f;*/
-    /*TIME += Clock::deltaTime;*/
-    /*TIME = std::fmod(TIME, 360.0f);*/
-
-    int textureID = 4;
-
-    for (auto shader : AssetsManager::GetShaderList()) {
-        if (!shader || !shader->isValid()) {
+    for (auto shader : AssetsManager::GetShaderList())
+    {
+        if (!shader || !shader->isValid())
+        {
             continue;
         }
 
         shader->setUniform("u_projection", &projection);
         shader->setUniform("u_view",       &view);
         shader->setUniform("m_eye",        &position);
-        /*shader->setUniform("TIME",         &TIME);*/
-        
-        if (irradianceMap != nullptr)
-        {
-            irradianceMap->bind(textureID);
-            shader->setUniform("irradianceMap", &textureID);
-        }
-
-        /*SetupLight(shader);*/
     }
+
     Frustum::CalculateFrustum(projection * view);
 }
 

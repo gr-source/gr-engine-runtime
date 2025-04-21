@@ -21,12 +21,13 @@ Camera *EditorController::m_mainCamera = nullptr;
 ImGuiIO *EditorController::m_io = nullptr;
 
 float EditorController::movementSpeed = 30.0f;
-float EditorController::mouseSensitivity = 0.1f;
+float EditorController::mouseSensitivity = 10.f;
 
 Vector2 EditorController::lastMousePos = {0.0f, 0.0f};
 Vector2 EditorController::elapsed = {0.0f, 0.0f};
 
-void EditorController::Initialize() {
+void EditorController::Initialize()
+{
     m_io = ImGuiRender::GetIO();
     if (!m_io) {
         throw std::runtime_error("IO pointer do not is valid.");
@@ -103,14 +104,14 @@ void EditorController::UpdateCursor(Transform *transform) {
 }
 
 void EditorController::ProcessMouse(const Vector2 &delta, Transform *transform) {
-    elapsed += delta * mouseSensitivity;
+    elapsed += delta * mouseSensitivity * Clock::deltaTime;
 
     elapsed.y = std::clamp(elapsed.y, -89.0f, 89.0f);
     elapsed.x = std::fmod(elapsed.x, 360.0f);
 
     auto rotation = Math::euler({Math::rad(elapsed.y), Math::rad(-elapsed.x), 0.0f});
 
-    rotation = Math::slerp(transform->getLocalRotation(), rotation, 25.0f * Clock::deltaTime);
+    // rotation = Math::slerp(transform->getLocalRotation(), rotation, 25.0f * Clock::deltaTime);
 
     transform->setLocalRotation(Math::normalize(rotation));
 }

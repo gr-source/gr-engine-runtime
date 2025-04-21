@@ -1,23 +1,19 @@
 #include "editor.hpp"
 
-#include "gr-base/core/input.hpp"
-#include "gr-base/script/baserender.hpp"
-#include "gr-base/script/default.hpp"
-#include "imgui.h"
-#include "postProcessing.hpp"
+#include <gr-base/script/baserender.hpp>
+#include <gr-base/script/default.hpp>
+
 #include "editorController.h"
-#include "projectMenu.hpp"
-#include "renderManager.h"
 #include "screenRender.hpp"
-#include "renderer.h"
+#include "projectMenu.hpp"
 #include "settings.h"
-#include "engine.h"
-#include "memory.h"
 #include "skybox.h"
+#include "imgui.h"
 
 #include <cstddef>
 #include <cstring>
 #include <functional>
+
 #include <gr-base/core/window.hpp>
 
 #include <gr-base/core/filmbox/filmbox.hpp>
@@ -26,22 +22,20 @@
 
 #include <gr-base/core/file/file.hpp>
 
-#include "core/cmd/cmd.hpp"
-
-#include "core/file/initialization.hpp"
-#include "core/file/config.hpp"
-
 #include <gr-base/core/assetsManager.hpp>
 #include <gr-base/core/threadpool.hpp>
-
 #include <gr-base/core/console.hpp>
+#include <gr-base/core/display.hpp>
 #include <gr-base/core/scene.hpp>
 #include <gr-base/core/event.hpp>
 
 #include "plugin/pluginManager.hpp"
+
 #include "core/statistics.hpp"
 #include "core/screen.hpp"
 #include "core/timer.hpp"
+
+#include "core/cmd/cmd.hpp"
 
 #include <gr-base/script/skinnedMeshRender.hpp>
 #include <gr-base/script/meshCollider.hpp>
@@ -54,6 +48,9 @@
 #include <gr-base/script/camera.hpp>
 #include <gr-base/script/light.hpp>
 
+#include <gr-base/ecs/gameObject.hpp>
+#include <gr-base/ecs/manager.hpp>
+
 #include "guizmo/ImGuizmo.h"
 
 #include "ui/ImGuiRender.h"
@@ -64,16 +61,12 @@
 
 #include <gr-base/core/geometry/batching.hpp>
 
-#include <gr-base/ecs/gameObject.hpp>
-#include <gr-base/ecs/manager.hpp>
+#include <gr-base/ecs/componentRegistry.hpp>
 
 #include <gr-ini/config.h>
 #include <gr-render/gTexture.h>
 #include <filesystem>
 
-#include <gr-base/ecs/componentRegistry.hpp>
-
-#include <gr-base/core/display.hpp>
 #include <vector>
 
 #define ITEMS_PER_PAGE 20
@@ -156,8 +149,6 @@ Editor::Editor() : m_viewport(ImGui::GetMainViewport()), mImGuiIO(&ImGui::GetIO(
 
     bCopyAllFile = false;
 
-    bViewPortFocused = false;
-
     bOpenPopupInfoDir = false;
 
     bOpenPopupOptionGameObject = false;
@@ -171,8 +162,6 @@ Editor::Editor() : m_viewport(ImGui::GetMainViewport()), mImGuiIO(&ImGui::GetIO(
     m_guizmoOperation = ImGuizmo::TRANSLATE;
 
     m_guizmoManipulate = ImGuizmo::WORLD;
-
-    mLastTransform = {Vector3::zero, Quaternion::identity, Vector3::one};
 
     mInternalScript = {
         {"Transform", [this](Entity *entity)
@@ -192,15 +181,6 @@ Editor::Editor() : m_viewport(ImGui::GetMainViewport()), mImGuiIO(&ImGui::GetIO(
     };
     
     m_viewport = ImGui::GetMainViewport();
-
-    m_config = std::make_shared<Config>(File::GetFile("/config.ini"));
-    try {
-        m_config->load();
-
-    } catch (const std::exception &e) {
-        Console::LogWarning(e.what());
-    }
-
 
     m_settings = config_create();
     if (File::Exists(File::GetFile("/gsettings.ini")))
@@ -231,10 +211,6 @@ Editor::Editor() : m_viewport(ImGui::GetMainViewport()), mImGuiIO(&ImGui::GetIO(
         Console::LogError("Fatal error in script: " + std::string(e.what()));
     }
 
-    auto lastCategory = m_config->getCategory();
-
-    m_config->setCategory(lastCategory);
-
     root_tree_file.path = File::GetAsset("");
     root_tree_file.name = "Assets";
     root_tree_file.bdirectory = true;
@@ -243,10 +219,6 @@ Editor::Editor() : m_viewport(ImGui::GetMainViewport()), mImGuiIO(&ImGui::GetIO(
     updateFileTree(root_tree_file);
 
     Scene::Initialize();
-
-    RenderManager::Initialize();
-
-    ScreenRender::Initialize();
 
     Skybox::Initialize();
 
@@ -273,8 +245,6 @@ Editor::~Editor() {
     
 
     Scene::Shutdown();
-
-    RenderManager::Shutdown();
 
     Skybox::Shutdown();
 
@@ -350,8 +320,6 @@ void Editor::LoadScript()
 
     Display::SetDisplayRect(Rect{0.0f, 0.0f, (float)Settings::ViewportSize.x, (float)Settings::ViewportSize.y});
 
-    RenderManager::Initialize();
-
     ScreenRender::Initialize();
 
     Scene::CheckRequestReinstanceScript();
@@ -364,8 +332,6 @@ void Editor::LoadScript()
 }
 
 void Editor::UnloadScript() {
-    RenderManager::Shutdown();
-
     ScreenRender::Shutdown();
 
     ScriptManager::Shutdown();
@@ -394,6 +360,22 @@ void Editor::render()
 void Editor::create_dock()
 {
     auto dockID = ImGui::DockSpaceOverViewport(m_viewport);
+    if (ImGui::BeginMainMenuBar())
+    {
+        if (ImGui::BeginMenu("Project"))
+        {
+            if (ImGui::MenuItem("Hello"))
+            {}
+
+            if (ImGui::MenuItem("Rebuild Script"))
+            {
+                ReconfigScript();
+            }
+            ImGui::EndMenu();
+        }
+
+        ImGui::EndMainMenuBar();
+    }
 
     if (bBuildDock)
     {
@@ -407,8 +389,8 @@ void Editor::create_dock()
 
 void Editor::BuildDock(ImGuiID dockspace_id, ImGuiDockNodeFlags dockspace_flags)
 {
-    ImGui::DockBuilderRemoveNode(dockspace_id); // clear any previous layout
-	ImGui::DockBuilderAddNode(dockspace_id, dockspace_flags | ImGuiDockNodeFlags_DockSpace);
+    ImGui::DockBuilderRemoveNode(dockspace_id);
+    ImGui::DockBuilderAddNode(dockspace_id, dockspace_flags | ImGuiDockNodeFlags_DockSpace);
 	ImGui::DockBuilderSetNodeSize(dockspace_id, m_viewport->Size);
 
 	// auto dock_id_center = ImGui::DockBuilderGetCentralNode(dockspace_id);
@@ -503,11 +485,13 @@ void Editor::dropGameObjectInHierarchy(Scene *scene)
     {
         return;
     }
+
     auto payload = ImGui::AcceptDragDropPayload(m_extensionDragDrop[DragDropFlags::GAMEOBJECT]);
     if (!payload || payload->DataSize <= 0)
     {
         return ImGui::EndDragDropTarget();
     }
+
     auto transform = *reinterpret_cast<Transform **>(payload->Data);
     
     transform->setParent(nullptr);
@@ -728,64 +712,68 @@ void Editor::create_window_viewport()
 
 void Editor::create_render_viewport()
 {
-    auto bCreateScene = false;
+    if (!ImGui::BeginTabBar("##create_render_viewport_tabbar_0"))
+    {
+        return;
+    }
 
-    bViewPortFocused = ImGui::IsWindowFocused();
+    auto current_scene = Scene::GetCurrentScene();
+    auto &scenes = Scene::GetScenes();
 
-    if (ImGui::BeginTabBar("##SceneListTabBar")) {
-        auto &scenes = Scene::GetScenes();
+    for (auto it = scenes.begin(); it != scenes.end();)
+    {
+        auto& [name, scene] = *it;
 
-        for (auto it = scenes.begin(); it != scenes.end();) {
-            auto& [name, scene] = *it;
+        bool bactive = true;
+        if (ImGui::BeginTabItem(name.c_str(), &bactive))
+        {
+            if (current_scene != scene.get())
+            {
+                Scene::Use(scene.get());
 
-            ImGuiTabItemFlags flags = ImGuiTabItemFlags_None;
-
-            auto cache_scene = File::GetTempFile("gr-engine/" + name + ".scn.tmp");
-            if (File::Exists(cache_scene)) {
-                flags |= ImGuiTabItemFlags_UnsavedDocument;
-            }
-            
-            bool bactive = true;
-            if (ImGui::BeginTabItem(name.c_str(), &bactive, flags)) {
-                if (Scene::GetCurrentScene() != &(*scene)) {
-                    Scene::Use(&(*scene));
-
-                    s_objectSelected = nullptr;
-                }
-
-                RenderScene();
-
-                ImGui::EndTabItem();
-            }
-
-            if (!bactive) {
                 s_objectSelected = nullptr;
-                Scene::Use(nullptr);
-                
-                it = scenes.erase(it);
-                continue;
+
+                current_scene = scene.get();
             }
-            ++it;
+
+            ImGui::EndTabItem();
         }
 
-        if (ImGui::TabItemButton("+")) {
-            bCreateScene = true;
+        if (!bactive)
+        {
+            if (current_scene == scene.get())
+            {
+                current_scene = nullptr;
+            }
+
+            s_objectSelected = nullptr;
+
+            Scene::Use(nullptr);
+                
+            it = scenes.erase(it);
+            continue;
         }
-        ImGui::EndTabBar();
+        ++it;
     }
 
-    if (bCreateScene) {
-        ImGui::OpenPopup("##popup_menu_create_scene");
+    if (ImGui::TabItemButton("+"))
+    {
+        popupFlags |= EditorPopupFlags_CreateScene;
     }
 
-    DropSceneInViewport();
+    ImGui::EndTabBar();
+    
+    drop_scene_file_in_viewport();
 
-    PopupMenuCreateScene();
+    if (current_scene != nullptr)
+        render_scene(current_scene);
 }
 
-void Editor::DropSceneInViewport() {
+void Editor::drop_scene_file_in_viewport()
+{
     auto isOpen = ImGui::BeginDragDropTarget();
-    if (!isOpen) {
+    if (!isOpen)
+    {
         return;
     }
 
@@ -929,133 +917,8 @@ bool gluInvertMatrix(const float m[16], float invOut[16]) {
     return true;
 }
 
-/*
-bool gluInvertMatrix(const Matrix4x4 &m, Matrix4x4 &invOut) {
-    Matrix4x4 inv = Matrix4x4::identityMatrix;
-
-    inv[0][1] = -m[0][1] * m[2][2] * m[3][3] +
-                m[0][1] * m[2][3] * m[3][2] +
-                m[0][2] * m[2][1] * m[3][3] -
-                m[0][2] * m[2][3] * m[3][1] -
-                m[0][3] * m[2][1] * m[3][2] +
-                m[0][3] * m[2][2] * m[3][1];
-
-    inv[0][2] = m[0][1] * m[1][2] * m[3][3] -
-                m[0][1] * m[1][3] * m[3][2] -
-                m[0][2] * m[1][1] * m[3][3] +
-                m[0][2] * m[1][3] * m[3][1] +
-                m[0][3] * m[1][1] * m[3][2] -
-                m[0][3] * m[1][2] * m[3][1];
-
-    inv[0][3] = -m[0][1] * m[1][2] * m[2][3] +
-                 m[0][1] * m[1][3] * m[2][2] +
-                 m[0][2] * m[1][1] * m[2][3] -
-                 m[0][2] * m[1][3] * m[2][1] -
-                 m[0][3] * m[1][1] * m[2][2] +
-                 m[0][3] * m[1][2] * m[2][1];
-
-    inv[1][0] = -m[1][0] * m[2][2] * m[3][3] +
-                 m[1][0] * m[2][3] * m[3][2] +
-                 m[1][2] * m[2][0] * m[3][3] -
-                 m[1][2] * m[2][3] * m[3][0] -
-                 m[1][3] * m[2][0] * m[3][2] +
-                 m[1][3] * m[2][2] * m[3][0];
-
-    inv[1][1] = m[0][0] * m[2][2] * m[3][3] -
-                m[0][0] * m[2][3] * m[3][2] -
-                m[0][2] * m[2][0] * m[3][3] +
-                m[0][2] * m[2][3] * m[3][0] +
-                m[0][3] * m[2][0] * m[3][2] -
-                m[0][3] * m[2][2] * m[3][0];
-
-    inv[1][2] = -m[0][0] * m[1][2] * m[3][3] +
-                 m[0][0] * m[1][3] * m[3][2] +
-                 m[0][2] * m[1][0] * m[3][3] -
-                 m[0][2] * m[1][3] * m[3][0] -
-                 m[0][3] * m[1][0] * m[3][2] +
-                 m[0][3] * m[1][2] * m[3][0];
-
-    inv[1][3] = m[0][0] * m[1][2] * m[2][3] -
-                m[0][0] * m[1][3] * m[2][2] -
-                m[0][2] * m[1][0] * m[2][3] +
-                m[0][2] * m[1][3] * m[2][0] +
-                m[0][3] * m[1][0] * m[2][2] -
-                m[0][3] * m[1][2] * m[2][0];
-
-    inv[2][0] = m[1][0] * m[2][1] * m[3][3] -
-                m[1][0] * m[2][3] * m[3][1] -
-                m[1][1] * m[2][0] * m[3][3] +
-                m[1][1] * m[2][3] * m[3][0] +
-                m[1][3] * m[2][0] * m[3][1] -
-                m[1][3] * m[2][1] * m[3][0];
-
-    inv[2][1] = -m[0][0] * m[2][1] * m[3][3] +
-                 m[0][0] * m[2][3] * m[3][1] +
-                 m[0][1] * m[2][0] * m[3][3] -
-                 m[0][1] * m[2][3] * m[3][0] -
-                 m[0][3] * m[2][0] * m[3][1] +
-                 m[0][3] * m[2][1] * m[3][0];
-
-    inv[2][2] = m[0][0] * m[1][1] * m[3][3] -
-                m[0][0] * m[1][3] * m[3][1] -
-                m[0][1] * m[1][0] * m[3][3] +
-                m[0][1] * m[1][3] * m[3][0] +
-                m[0][3] * m[1][0] * m[3][1] -
-                m[0][3] * m[1][1] * m[3][0];
-
-    inv[2][3] = -m[0][0] * m[1][1] * m[2][3] +
-                 m[0][0] * m[1][3] * m[2][1] +
-                 m[0][1] * m[1][0] * m[2][3] -
-                 m[0][1] * m[1][3] * m[2][0] -
-                 m[0][3] * m[1][0] * m[2][1] +
-                 m[0][3] * m[1][1] * m[2][0];
-
-    inv[3][0] = -m[1][0] * m[2][1] * m[3][2] +
-                 m[1][0] * m[2][2] * m[3][1] +
-                 m[1][1] * m[2][0] * m[3][2] -
-                 m[1][1] * m[2][2] * m[3][0] -
-                 m[1][2] * m[2][0] * m[3][1] +
-                 m[1][2] * m[2][1] * m[3][0];
-
-    inv[3][1] = m[0][0] * m[2][1] * m[3][2] -
-                m[0][0] * m[2][2] * m[3][1] -
-                m[0][1] * m[2][0] * m[3][2] +
-                m[0][1] * m[2][2] * m[3][0] +
-                m[0][2] * m[2][0] * m[3][1] -
-                m[0][2] * m[2][1] * m[3][0];
-
-    inv[3][2] = -m[0][0] * m[1][1] * m[3][2] +
-                 m[0][0] * m[1][2] * m[3][1] +
-                 m[0][1] * m[1][0] * m[3][2] -
-                 m[0][1] * m[1][2] * m[3][0] -
-                 m[0][2] * m[1][0] * m[3][1] +
-                 m[0][2] * m[1][1] * m[3][0];
-
-    inv[3][3] = m[0][0] * m[1][1] * m[2][2] -
-                m[0][0] * m[1][2] * m[2][1] -
-                m[0][1] * m[1][2] * m[2][0] -
-                m[0][2] * m[1][0] * m[2][1] +
-                m[0][2] * m[1][1] * m[2][0];
-
-
-    auto det = m[0][0] * inv[0][0] + m[0][1] * inv[1][0] + m[0][2] * inv[2][0] + m[0][3] * inv[3][0];
-
-    if (det == 0.0f) {
-        return false;
-    }
-    
-    det = 1.0 / det;
-    for (int i = 0; i < 4; i++) {
-        for (int j = 0; j < 4; j++) {
-            invOut[i][j] = inv[i][j] * det;
-        }
-    }
-
-    return true;
-}
-*/
-
-void Editor::RenderScene() {
+void Editor::render_scene(Scene *scene)
+{
     UpdateResizeSceneFramebuffer();
 
     auto regionAvail = ImGui::GetContentRegionAvail();
@@ -1264,30 +1127,6 @@ void Editor::DropGameObjectInScene()
     AssetsManager::LoadGameObject(path, &Editor::PostLoadGameObject, this);
 
     ImGui::EndDragDropTarget();
-}
-
-void Editor::PopupMenuCreateScene()
-{
-    auto isOpen = ImGui::BeginPopup("##popup_menu_create_scene");
-    if (!isOpen)
-    {
-        return;
-    }
-
-    ImGui::Text("Input scene name");
-
-    if (!ImGui::IsAnyItemActive() && !ImGui::IsMouseClicked(ImGuiMouseButton_Left))
-        ImGui::SetKeyboardFocusHere();
-
-    char name[256] = {0};
-
-    if (ImGui::InputText("##popup_create_scene_inputtext", name, GET_N_ARRAY(name), ImGuiInputTextFlags_EnterReturnsTrue))
-    {
-        ScenePostEcecute(Scene::Create(name));
-        
-        ImGui::CloseCurrentPopup();
-    }
-    ImGui::EndPopup();
 }
 
 void Editor::OpenFileDoubleClick(std::filesystem::path path) {
@@ -1721,47 +1560,6 @@ void Editor::RenderLog(Log &info)
     ImGui::TextColored(color, "%s", info.message.c_str());
 }
 
-void Editor::RenderSettings() {
-    ImGui::SeparatorText("Render");
-    ImGui::Checkbox("Wireframe", &RenderManager::bWireFrame);
-    ImGui::Checkbox("Debug Mode", &DebugDraw::bDebugMode);
-
-    m_config->setCategory("config");
-
-    ImGui::SeparatorText("Editor");
-
-    {
-        const char *editor_name[] {"None", "Visual Studio Code", "Sublime Text"};
-        int len = sizeof(editor_name) / sizeof(editor_name[0]);
-    
-        int item = m_config->hasKey("use_editor") ? m_config->getValue<int>("use_editor") : m_config->setValue<int>("use_editor", 0);
-        if (ImGui::Combo("##render_settings_list_box", &item, editor_name, len)) {
-            m_config->setValue<int>("use_editor", item);
-    
-            switch (item) {
-            case 1: // Visual Studio Code
-                return ConfigureVSCode();
-            }
-            ImGui::CloseCurrentPopup();
-        }
-    
-    }
-    
-    ImGui::SeparatorText("World");
-    {
-        auto bFpsLimited = m_config->hasKey("fps_limit") ? m_config->getValue<bool>("fps_limit") : m_config->setValue<bool>("fps_limit", true);
-        if (ImGui::Checkbox("Fps Limited", &bFpsLimited)) {
-            m_config->setValue<bool>("fps_limit", bFpsLimited);
-        }
-    }
-
-    ImGui::SeparatorText("View");
-
-    auto regionAvail = ImGui::GetContentRegionAvail();
-    if (ImGui::Button("Estatisticas", ImVec2{regionAvail.x, 0.0f})) {
-    }
-}
-
 void Editor::ConfigureVSCode() {
     Console::LogInfo("Initializing Visual Studio Code Setup...");
     
@@ -1809,7 +1607,8 @@ void Editor::create_window_property()
 
 void Editor::create_render_property()
 {
-    if (ImGui::BeginTabBar("##render_properti_ui_tabbar")) {
+    if (ImGui::BeginTabBar("##render_properti_ui_tabbar"))
+    {
         RenderObjectInfo();
         
         /*
@@ -1881,16 +1680,20 @@ void Editor::create_call_popup()
         ImGui::OpenPopup(GET_FLAG_NAME(EditorPopupFlags_SceneAddOption));
         popupFlags &= ~EditorPopupFlags_SceneAddOption;
         break;
+    case EditorPopupFlags_CreateScene:
+        ImGui::OpenPopup(GET_FLAG_NAME(EditorPopupFlags_CreateScene));
     default:
         break;
-    }    
+    }
+
+    popupFlags = 0;
 }
 
 void Editor::create_popup()
 {
-    PopupComponentMenu();
+    create_popup_create_scene();
 
-    PopupMenuSettings();
+    PopupComponentMenu();
 
     showShaderListPopup();
 
@@ -1927,6 +1730,30 @@ void Editor::create_popup()
     PopupRenameGameObject();
 
     PopupMenuAdd();
+}
+
+void Editor::create_popup_create_scene()
+{
+    auto isOpen = ImGui::BeginPopup(GET_FLAG_NAME(EditorPopupFlags_CreateScene));
+    if (!isOpen)
+    {
+        return;
+    }
+
+    ImGui::Text("Input scene name");
+
+    if (!ImGui::IsAnyItemActive() && !ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+        ImGui::SetKeyboardFocusHere();
+
+    char name[256] = {0};
+
+    if (ImGui::InputText("##popup_create_scene_inputtext", name, GET_N_ARRAY(name), ImGuiInputTextFlags_EnterReturnsTrue))
+    {
+        ScenePostEcecute(Scene::Create(name));
+        
+        ImGui::CloseCurrentPopup();
+    }
+    ImGui::EndPopup();
 }
 
 #include <gr-base/core/status.hpp>
@@ -2253,14 +2080,17 @@ bool Editor::OnPropertyTransform(Transform *transform) {
     return false;
 }
 
-bool Editor::OnPropertyCamera(Camera *camera) {
+bool Editor::OnPropertyCamera(Camera *camera)
+{
     bool bactive = true;
     auto isOpen = ImGui::CollapsingHeader("Camera", &bactive);
-    if (!bactive) {
+    if (!bactive)
+    {
         return true;
     }
 
-    if (!isOpen) {
+    if (!isOpen)
+    {
         return false;
     }
 
@@ -2281,17 +2111,19 @@ bool Editor::OnPropertyCamera(Camera *camera) {
     ImGui::Text("h");
     isChanged |= ImGui::DragFloat("##camera_rect_h", &rect.h);
 
-    if (isChanged) {
+    if (isChanged)
+    {
         camera->setRect(rect);
     }
 
-    auto texture = camera->getColorTexture();
-    if (!texture) { return false; }
+    if (ImGui::CollapsingHeader("Render"))
+    {
+        if (camera->get_aspect_ratio() != (64.0f / 64.0f))
+            camera->setAspectRatio(64.0f / 64.0f);
 
-    if (ImGui::TreeNode("Render")) {
-        ImGui::Image(reinterpret_cast<ImTextureID>(texture->getID()), {64.0f, 64.0f}, {0.0f, 1.0f}, {1.0f, 0.0f});
+        auto &rendertarget = camera->rendertarget;
 
-        ImGui::TreePop();
+        ImGui::Image(reinterpret_cast<ImTextureID>(rendertarget.getTextureID()), {64.0f, 64.0f}, {0.0f, 1.0f}, {1.0f, 0.0f});
     }
 
     return false;
@@ -2760,43 +2592,6 @@ void Editor::dropAnimation(Animator *animator)
     ImGui::EndDragDropTarget();
 }
 
-void Editor::TextureInfo(Texture *&texture) {
-    bool IsOpen = true;
-
-    const ImVec2 textureSize(100, 100);
-    const ImVec2 window(300, 400);
-
-    ImGui::SetNextWindowSize(window, ImGuiCond_Appearing);
-    ImGui::SetNextWindowPos(ImVec2((Screen::width / 2) - (window.x / 2), (Screen::height / 2) - (window.y / 2)), ImGuiCond_Appearing);
-    ImGui::Begin("Texture Info", &IsOpen);
-
-    const float width = ImGui::GetWindowWidth();
-
-    // ImGui::SetCursorPosX((width / 2) - (textureSize.x / 2));
-    // ImGui::Image(reinterpret_cast<ImTextureID>(texture->getID()), textureSize);
-
-    // ImGui::Spacing();
-
-    // ImGui::SeparatorText("Path");
-    // ImGui::Text("%s", texture->getpath().c_str());
-
-    // ImGui::SeparatorText("Dimensões");
-    // ImGui::Text("Width: %d", texture->getwidth());
-    // ImGui::Text("Height: %d", texture->getheight());
-
-    ImGui::SeparatorText("Configurações");
-    // ImGui::Text("Espaço de cor: %s", Resources::gettextureformatname(texture->getinternalformat()));
-
-    if (!ImGui::IsWindowFocused()) {
-        texture = nullptr;
-    }
-    ImGui::End();
-
-    if (!IsOpen) {
-        texture = nullptr;
-    }
-}
-
 void Editor::LoadReources() {
     AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-file-30.png", true),                    &Editor::SetupTexture, this, IconType::ICON_FILE);
     AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-folder-50.png", true),                  &Editor::SetupTexture, this, IconType::ICON_FOLDER);
@@ -2827,42 +2622,9 @@ void Editor::SetupTexture(IconType type, grr::gTexture *texture) {
     }
 }
 
-// TODO: Corrigir
-float Editor::GetFps() {
-    if (!m_config) {
-        return -1.0f;
-    }
-    m_config->setCategory("config");
-    if (!m_config || !m_config->hasKey("fps_limit")) {
-        return -1.0f;
-    }
-    return m_config->getValue<bool>("fps_limit") ? 60.0f : -1.0f;
-}
-
 Camera *Editor::getCamera()
 {
     return m_mainCamera;
-}
-
-bool Editor::ProgressLoad(int max, int current) {
-    const ImVec2 windowSize(300, 200);
-
-    ImVec2 displaySize = mImGuiIO->DisplaySize;
-    displaySize.x = (displaySize.x / 2.0f) - windowSize.x / 2.0f;
-    displaySize.y = (displaySize.y / 2.0f) - windowSize.y / 2.0f;
-
-    ImGui::SetNextWindowPos(displaySize);
-    ImGui::SetNextWindowSize(windowSize);
-    ImGui::Begin("GameRender...", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove| ImGuiWindowFlags_NoScrollWithMouse);
-    ImGui::Text("Carregando UI");
-
-    ImGui::ProgressBar(static_cast<float>(current) / static_cast<float>(max), ImVec2(windowSize.x, 16));
-
-    ImGui::Text("%d/%d", max, current);
-
-    ImGui::End();
-
-    return current >= max;
 }
 
 void Editor::PostLoadGameObject(GameObject *gameObject) {
@@ -2929,30 +2691,6 @@ void Editor::CreateShaderTemplate(const std::string &path, const std::string &na
 }
 
 // PopupMenu
-void Editor::PopupMenuSettings() {
-    ImVec2 vViewportWorkSize = m_viewport->WorkSize;
-    ImVec2 vPopupMenuSize(300, 400);
-
-    ImGui::SetNextWindowSize(vPopupMenuSize);
-    ImGui::SetNextWindowPos((vViewportWorkSize / 2.0f) - (vPopupMenuSize / 2.0f));
-    auto isOpen = ImGui::BeginPopup("##popup_menu_settings");
-    if (!isOpen) {
-        return;
-    }
-
-    auto title = "Settings";
-
-    auto textSize = ImGui::CalcTextSize(title);
-
-    ImGui::SetCursorPosX((vPopupMenuSize.x / 2.0f) - (textSize.x / 2.0f));
-    ImGui::Text("%s", title);
-
-    ImGui::NewLine();
-
-    RenderSettings();
-
-    ImGui::EndPopup();
-}
 
 // TODO: Precisa adicionar um suport para renoemar o marterial
 void Editor::RenameMaterial() {
@@ -3025,8 +2763,8 @@ void Editor::BuildProject() {
         Threadpool::AddTask(&Editor::CompileScript, this, path, func);
 }
 
-void Editor::PostBuildScriptFromProject() {
-
+void Editor::PostBuildScriptFromProject()
+{
     Threadpool::AddTask([] {
         std::vector<std::string> cmd = {
             "/home/grsource/Documentos/gr-project/gr-engine-linux-project/bin/gr-engine-linux-project " +
@@ -3255,10 +2993,11 @@ void Editor::SkyboxEditor() {
 
 #include "plugin/pluginManager.hpp"
 
-void Editor::PluginManager() {
+void Editor::PluginManager()
+{
     ImVec2 winSize(200, 300);
     
-    ImGui::SetNextWindowPos(ImVec2{static_cast<float>(Screen::width / 2), static_cast<float>(Screen::height / 2)} - (winSize / 2.0f), ImGuiCond_Always);
+    ImGui::SetNextWindowPos(ImVec2{static_cast<float>(Screen::width) / 2.0f, static_cast<float>(Screen::height) / 2.0f} - (winSize / 2.0f), ImGuiCond_Always);
     ImGui::SetNextWindowSize(winSize, ImGuiCond_Always);
     auto isOpen = ImGui::BeginPopup("##popup_plugin_manager");
     if (!isOpen) { return; }

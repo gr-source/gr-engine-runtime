@@ -9,16 +9,10 @@
 
 class RenderManager {
 public:
-    static void Initialize();
-
-    static void Process(const Camera *camera, ShadowMap *shadowMap);
+    static void Process(const Camera *camera);
 
     static void Renderer();
 
-    static void Shutdown();
-
-    static bool bWireFrame;
-    
 public:
     static void SetupLight(grr::gShader *shader);
 };

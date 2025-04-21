@@ -56,34 +56,10 @@ private:
     void render_gui();
 
 protected:
-    static void Reize(grm::u32 width, grm::u32 height);
-
-    static void Initialize();
-
-    static void Shutdown();
-
-    static void Idle();
-
-    static void Update();
-
-    static void Render();
-
-    static void CameraRenderManager();
-
     static void PreConfigRenderScene(Camera *camera);
-
-    static void GRKeyboardDown(grm::u32 key);
-    static void GRKeyboardUp(grm::u32 key);
-    static void GRCursorPos(float xpos, float ypos);
-    static void GRCursorScrool(float xoffset, float yoffset);
-    static void DropFile(const char* path);
 
     static void OnPhysics();
 
     static void RenderScene(const Camera *camera);
-    
-    static void GUIRender();
-    
-    static void SetupEnable();
 };
 

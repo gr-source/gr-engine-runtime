@@ -1,24 +1,28 @@
 #include "engine.h"
 
 #include "editorController.h"
-#include "gr-base/core/file/file.hpp"
-#include "imgui.h"
-#include "postProcessing.hpp"
-#include "shadowMap.hpp"
 
-#include <complex>
-#include <gr-base/script/meshRender.hpp>
-#include <gr-base/script/camera.hpp>
+#include "shadowMap.hpp"
 
 #include "ui/editor.hpp"
 #include "ui/project.hpp"
 #include "ui/projectMenu.hpp"
 #include "ui/ImGuiRender.h"
 
+#include <gr-base/core/file/file.hpp>
+
 #include <gr-base/core/assetsManager.hpp>
 #include <gr-base/core/threadpool.hpp>
+#include <gr-base/core/window.hpp>
 #include <gr-base/core/event.hpp>
+#include <gr-base/core/clock.hpp>
 #include <gr-base/core/input.hpp>
+
+#include <gr-base/ecs/gameObject.hpp>
+#include <gr-base/ecs/manager.hpp>
+
+#include <gr-base/script/meshRender.hpp>
+#include <gr-base/script/camera.hpp>
 
 #include "core/statistics.hpp"
 #include "core/screen.hpp"
@@ -35,205 +39,18 @@
 #include "skybox.h"
 #include "Global.h"
 
-#include "scriptManager/scriptManager.hpp"
-#include "memory.h"
-
 #include "plugin/pluginManager.hpp"
-
-#include <gr-base/ecs/gameObject.hpp>
-#include <gr-base/ecs/manager.hpp>
 
 #include <gr-base/core/binary/modelhandle.hpp>
 
-#include <gr-base/core/window.hpp>
-#include <gr-base/core/clock.hpp>
-
-#include <filesystem>
 #include <gr-ini/config.h>
-#include <memory>
-
-Shadowbuffer *m_shadowbuffer = nullptr;
-
-std::unique_ptr<ShadowMap> m_shadowMap = nullptr;
 
 static FunctionTimer mFunctionTimer;
-
-void Engine::Reize(grm::u32 width, grm::u32 height) {
-    Screen::SetResolution(width, height);
-
-    iVector2 size((int) width, (int) height);
-
-    Window::SetWindowSize(size);
-
-    // if (ImGuiPostProcess) {
-    //     ImGuiPostProcess->resize(size);
-    // }
-}
-
-void Engine::Initialize() {
-    Threadpool::Initialize();
-
-    ImGuiRender::Initialize("#version 330 core");
-
-    AssetsManager::Initialize();
-
-    // Buffer de renderização.
-    // ImGuiPostProcess = std::make_shared<PostProcessing>(iVector2{1, 1});
-
-    m_shadowMap = std::make_unique<ShadowMap>(1024, 1024);
-
-    SetupEnable();
-
-    PhysicsScene::Initialize();
-
-    EditorController::Initialize();
-
-    Threadpool::AddTask(&Engine::OnPhysics);
-}
-
-void Engine::Shutdown() {
-    // if (ImGuiPostProcess) {
-        // ImGuiPostProcess = nullptr;
-    // }
-
-    ImGuiRender::Shutdown();
-
-    PluginManager::Shutdown();
-
-    PhysicsScene::Shutdown();
-
-    AssetsManager::Shutdown();
-
-    Threadpool::Shutdown();
-}
-
-void Engine::Idle()
-{
-    static auto &frameTime = Statistics::FrameTime[FrameTimeID_MainThread];
-
-    static Time time;
-
-    Clock::deltaTime = time.sleep(60.0f);
-
-    frameTime.setDelta(Clock::deltaTime);
-    /*frameTime.setFPS(time.getFPS());*/
-    /*Clock::deltaTime = Statistics::m_threadFrame.delta;*/
-
-    // if (m_editor != nullptr)
-        // Engine::Update();
-
-    Engine::Render();
-
-    time.end();
-}
-
-void Engine::Update() {
-    Event::Update();
-
-    mFunctionTimer.start();
-
-    if (Settings::bGameRunning) {
-        Manager::Update();
-    } else {
-        // EditorController::Update(m_editor->getCamera());
-    }
-
-    mFunctionTimer.end();
-
-    /*Statistics::m_scriptFrame = {mFunctionTimer.getFps(), mFunctionTimer.getDeltaTime()};*/
-}
-
-void Engine::Render() {
-    mFunctionTimer.start();
-    
-    /*
-    if (m_editor)
-    {
-        CameraRenderManager();
-    }
-    */
-    mFunctionTimer.end();
-
-    /*Statistics::m_sceneFrame = {mFunctionTimer.getFps(), mFunctionTimer.getDeltaTime()};*/
-
-    // if (ImGuiPostProcess) {
-        // GUIRender();
-    // }
-}
-
-void Engine::CameraRenderManager()
-{
-    // shadow
-    /*
-    {
-        m_shadowMap->bind();
-        
-        grr::gRender::SetRenderState(grr::GR_BACKGROUND, grr::GR_DEPTH_BUFFER);
-        grr::gRender::SetRenderState(grr::GR_DEPTH, grr::GR_TRUE);
-        grr::gRender::SetRenderState(grr::GR_CULL, grr::GR_FRONT);
-        grr::gRender::SetRenderState(grr::GR_FRAMEBUFFER_SRGB, grr::GR_FALSE);
-        
-        Batching::RenderShadowPass();
-    
-        m_shadowMap->unbind();
-    }
-    */
-
-
-    /*
-    auto camera_editor = m_editor->getCamera();
-    auto cameras = Camera::GetCameras();
-
-    if (!Settings::bGameRunning && camera_editor != nullptr)
-    {
-        PreConfigRenderScene(camera_editor);
-    } else
-    {
-        for (auto camera : cameras)
-        {
-            if (!camera->getGameObject()->getActive() || camera == camera_editor)
-            {
-                continue;
-            }
-
-            PreConfigRenderScene(camera);
-        }
-    }
-    */
-
-    // Captura de posprocessamento para o imgui
-    // ImGuiPostProcess->bind();
-
-    // renderização da cena 2d e utilização do pos processamento;
-    grr::gRender::SetRenderState(grr::GR_BACKGROUND_COLOR, (void*)&Color::red);
-    grr::gRender::SetRenderState(grr::GR_BACKGROUND, grr::GR_COLOR_BUFFER);
-    grr::gRender::SetRenderState(grr::GR_DEPTH, grr::GR_FALSE);
-    // grr::gRender::SetRenderState(grr::GR_FRAMEBUFFER_SRGB, grr::GR_FALSE);
-
-    /*if (!Settings::bGameRunning && camera_editor != nullptr)
-    {
-        ScreenRender::Render(camera_editor);
-    } else
-    {
-        for (auto camera : cameras)
-        {
-            if (!camera->getGameObject()->getActive() || camera == camera_editor)
-            {
-                continue;
-            }
-    
-            ScreenRender::Render(camera);
-        }
-    }
-    */
-
-    // ImGuiPostProcess->unbind();
-}
 
 void Engine::PreConfigRenderScene(Camera *camera)
 {
     // Seleção de modelos para renderizar
-    RenderManager::Process(camera, &(*m_shadowMap));
+    RenderManager::Process(camera);
 
     camera->rendertarget.bind();
 
@@ -241,29 +58,11 @@ void Engine::PreConfigRenderScene(Camera *camera)
     grr::gRender::SetRenderState(grr::GR_BACKGROUND_COLOR, (void*)&Color::black);
     grr::gRender::SetRenderState(grr::GR_CULL, grr::GR_BACK);
     grr::gRender::SetRenderState(grr::GR_DEPTH, grr::GR_TRUE);
-    grr::gRender::SetRenderState(grr::GR_FRAMEBUFFER_SRGB, grr::GR_FALSE);
+    // grr::gRender::SetRenderState(grr::GR_FRAMEBUFFER_SRGB, grr::GR_FALSE);
 
     RenderScene(camera);
 
     camera->rendertarget.unbind();
-}
-
-void Engine::GRKeyboardDown(grm::u32 key) {
-}
-
-void Engine::GRKeyboardUp(grm::u32 key) {}
-
-void Engine::GRCursorPos(float xpos, float ypos) {}
-
-void Engine::GRCursorScrool(float xoffset, float yoffset) {
-    if (yoffset == -1.0f) {
-        EditorController::movementSpeed += 5.0f;
-    } else if (yoffset == 1.0f) {
-        EditorController::movementSpeed -= 5.0f;
-    }
-}
-
-void Engine::DropFile(const char *path) {
 }
 
 void Engine::OnPhysics() {
@@ -304,42 +103,6 @@ void Engine::RenderScene(const Camera *camera)
 
     grr::gRender::SetRenderState(grr::GR_DEPTH_FUNC, grr::GR_DEPTH_LEQUAL);
     Skybox::Renderer(camera);
-}
-
-void Engine::GUIRender() {
-    iVector2 scale(Screen::width, Screen::height);
-    
-    grr::gRender::SetRenderState(grr::GR_VIEWPORT, (void*)&scale);
-    
-    grr::gRender::SetRenderState(grr::GR_BACKGROUND_COLOR, (void*)&Color::black);
-    grr::gRender::SetRenderState(grr::GR_BACKGROUND, grr::GR_COLOR_BUFFER);
-    
-    ImGuiRender::Begin();
-    
-    {
-        mFunctionTimer.start();
-
-        ModelHandle::Render();
-
-        PluginManager::Render();
-
-        mFunctionTimer.end();
-    }
-    
-    /*Statistics::m_guiFrame = {mFunctionTimer.getFps(), mFunctionTimer.getDeltaTime()};*/
-    // m_editor->renderFrame();
-
-    ImGuiRender::End();
-}
-
-void Engine::SetupEnable() {
-    grr::gRender::SetRenderState(grr::GR_MULTISAMPLE, grr::GR_TRUE);
-
-    grr::gRender::SetRenderState(grr::GR_CULL_FACE, grr::GR_TRUE);
-    grr::gRender::SetRenderState(grr::GR_CULL, grr::GR_BACK);
-
-    grr::gRender::SetRenderState(grr::GR_BLEND, grr::GR_TRUE);
-    grr::gRender::SetRenderState(grr::GR_SRC_ALPHA, grr::GR_ONE_MINUS_SRC_ALPHA);
 }
 
 Engine &Engine::GetInstance()
@@ -446,6 +209,10 @@ void Engine::loop()
 {
     Event::Update();
 
+    static Time time;
+
+    Clock::deltaTime = time.sleep(60.0f);
+
     {
         update();
 
@@ -454,7 +221,15 @@ void Engine::loop()
 }
 
 void Engine::update()
-{}
+{
+    if (Settings::bGameRunning)
+    {
+        Manager::Update();
+    } else
+    {
+        EditorController::Update(Camera::Current());
+    }
+}
 
 void Engine::render()
 {
