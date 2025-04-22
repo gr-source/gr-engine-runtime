@@ -14,6 +14,7 @@
 #include <gr-base/core/assetsManager.hpp>
 #include <gr-base/core/threadpool.hpp>
 #include <gr-base/core/window.hpp>
+#include <gr-base/core/skybox.hpp>
 #include <gr-base/core/event.hpp>
 #include <gr-base/core/clock.hpp>
 #include <gr-base/core/input.hpp>
@@ -36,7 +37,6 @@
 #include "renderManager.h"
 #include "settings.h"
 #include "renderer.h"
-#include "skybox.h"
 #include "Global.h"
 
 #include "plugin/pluginManager.hpp"
@@ -46,6 +46,8 @@
 #include <gr-ini/config.h>
 
 static FunctionTimer mFunctionTimer;
+
+static Skybox m_skybox;
 
 void Engine::PreConfigRenderScene(Camera *camera)
 {
@@ -58,24 +60,23 @@ void Engine::PreConfigRenderScene(Camera *camera)
     grr::gRender::SetRenderState(grr::GR_BACKGROUND_COLOR, (void*)&Color::black);
     grr::gRender::SetRenderState(grr::GR_CULL, grr::GR_BACK);
     grr::gRender::SetRenderState(grr::GR_DEPTH, grr::GR_TRUE);
-    // grr::gRender::SetRenderState(grr::GR_FRAMEBUFFER_SRGB, grr::GR_FALSE);
 
     RenderScene(camera);
 
     camera->rendertarget.unbind();
 }
 
-void Engine::OnPhysics() {
-    Time time;
-    while (Settings::IsEngineRunning()) {
-        auto deltaTime = time.sleep(60.0f);
+void Engine::RenderScene(const Camera *camera)
+{
+    grr::gRender::SetRenderState(grr::GR_DEPTH_FUNC, grr::GR_DEPTH_LESS);
+    RenderManager::Renderer();
 
-        if (Settings::bGameRunning) {
-            PhysicsScene::Update(deltaTime);
-        }
+    grr::gRender::SetRenderState(grr::GR_DEPTH_FUNC, grr::GR_DEPTH_LEQUAL);
+    DebugDraw::Renderer(camera);
 
-        time.end();
-    }
+    grr::gRender::SetRenderState(grr::GR_DEPTH_FUNC, grr::GR_DEPTH_LEQUAL);
+    m_skybox.render(camera);
+    // Skybox::Renderer(camera);
 }
 
 void Engine::HandleEvent(EngineEvent event, const void* data)
@@ -91,18 +92,6 @@ void Engine::HandleEvent(EngineEvent event, const void* data)
     default:
         break;
     }
-}
-
-void Engine::RenderScene(const Camera *camera)
-{
-    grr::gRender::SetRenderState(grr::GR_DEPTH_FUNC, grr::GR_DEPTH_LESS);
-    RenderManager::Renderer();
-
-    grr::gRender::SetRenderState(grr::GR_DEPTH_FUNC, grr::GR_DEPTH_LEQUAL);
-    DebugDraw::Renderer(camera);
-
-    grr::gRender::SetRenderState(grr::GR_DEPTH_FUNC, grr::GR_DEPTH_LEQUAL);
-    Skybox::Renderer(camera);
 }
 
 Engine &Engine::GetInstance()
@@ -146,6 +135,8 @@ void Engine::init()
     {
         view_layout = &(*v_view_list.emplace_back(std::make_unique<ProjectMenu>(this)));
     }
+
+    AssetsManager::LoadTexture("/home/felipy/Downloads/Skyboxes/SunsetSky.png", &Skybox::set_texture, &m_skybox);
 }
 
 bool Engine::check_project_openable()

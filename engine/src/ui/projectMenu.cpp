@@ -5,7 +5,6 @@
 #include "imgui.h"
 #include "screenRender.hpp"
 #include "renderManager.h"
-#include "skybox.h"
 
 #include "core/cmd/cmd.hpp"
 

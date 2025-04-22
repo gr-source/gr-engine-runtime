@@ -7,12 +7,11 @@
 #include "screenRender.hpp"
 #include "projectMenu.hpp"
 #include "settings.h"
-#include "skybox.h"
 #include "imgui.h"
 
+#include <functional>
 #include <cstddef>
 #include <cstring>
-#include <functional>
 
 #include <gr-base/core/window.hpp>
 
@@ -220,8 +219,6 @@ Editor::Editor() : m_viewport(ImGui::GetMainViewport()), mImGuiIO(&ImGui::GetIO(
 
     Scene::Initialize();
 
-    Skybox::Initialize();
-
     auto project = Project::GetCurrent();
     if (project)
     {
@@ -243,10 +240,7 @@ Editor::~Editor() {
 
     config_release(m_settings);
     
-
     Scene::Shutdown();
-
-    Skybox::Shutdown();
 
     ScreenRender::Shutdown();
 
@@ -970,7 +964,7 @@ void Editor::render_scene(Scene *scene)
         
         ImGui::SetCursorPos({regionAvail.x / 2 - cursorPos.x, cursorPos.y + 0.5f});
 
-        if (ImGui::ImageButton(reinterpret_cast<ImTextureID>(s_texturePlayGame->getID()), ImVec2(16, 16))) {
+        if (ImGui::ImageButton(reinterpret_cast<ImTextureID>(s_texturePlayGame->getTextureID()), ImVec2(16, 16))) {
             if (!Settings::bGameRunning) {
                 PlayGame();
             } else {
@@ -1454,7 +1448,7 @@ void Editor::RenderFiles()
             continue;
         }
 
-        if (View::ImageAndTextButton(reinterpret_cast<ImTextureID>((*entry.icon)->getID()), entry.name.c_str()))
+        if (View::ImageAndTextButton(reinterpret_cast<ImTextureID>((*entry.icon)->getTextureID()), entry.name.c_str()))
         {
         }
 
@@ -1802,7 +1796,7 @@ void Editor::RenderObjectInfo()
     ImGui::PushID(objName.c_str());
 
     {
-        ImGui::Image(reinterpret_cast<ImTextureID>(iconsUI[IconType::ICON_GAMEOBJECT]->getID()), ImVec2(16, 16));
+        ImGui::Image(reinterpret_cast<ImTextureID>(iconsUI[IconType::ICON_GAMEOBJECT]->getTextureID()), ImVec2(16, 16));
 
         ImGui::SameLine();
 

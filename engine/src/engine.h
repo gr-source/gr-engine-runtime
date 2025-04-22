@@ -58,8 +58,6 @@ private:
 protected:
     static void PreConfigRenderScene(Camera *camera);
 
-    static void OnPhysics();
-
     static void RenderScene(const Camera *camera);
 };
 

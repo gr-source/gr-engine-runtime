@@ -68,15 +68,12 @@ set(engine_src
     
     src/engine.cpp
     src/Global.cpp
-    src/skybox.cpp
     src/functionTimer.cpp
     src/renderer.cpp
     src/settings.cpp
     src/screenRender.cpp
     src/shadowMap.cpp
     src/renderManager.cpp
-    src/postProcessing.cpp
-    src/cubeFramebuffer.cpp
     src/editorController.cpp
 
     src/ui/view.cpp
@@ -98,14 +95,11 @@ set(engine_hdr
 
     src/engine.h
     src/Global.h
-    src/skybox.h
     src/renderer.h
     src/settings.h
     src/screenRender.hpp
     src/renderManager.h
-    src/postProcessing.hpp
     src/editorController.h
-    src/cubeFramebuffer.hpp
     
     src/ui/view.hpp
     src/ui/editor.hpp

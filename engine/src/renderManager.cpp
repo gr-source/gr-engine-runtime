@@ -26,8 +26,6 @@
 #include <gr-render/gTexture.h>
 #include <gr-render/gError.h>
 
-#include "skybox.h"
-
 void RenderManager::Process(const Camera *camera)
 {
     if (!camera)
