@@ -2,18 +2,12 @@
 
 #define_raster vertex
 
-out vec3 u_fragPos;
-
 void vertex()
 {
-	u_fragPos = in_pos;
-
     u_position = u_projection * u_view * vec4(in_pos, 1.0);
 }
 
 #define_raster fragment
-
-in vec3 u_fragPos;
 
 uniform sampler2D u_texture;
 

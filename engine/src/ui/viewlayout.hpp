@@ -4,7 +4,11 @@ class ViewLayout {
 public:
     virtual ~ViewLayout() {}
 
-    virtual void render() {}
+    virtual void onFocus() {}
+
+    virtual void onBlur() {}
+
+    virtual void onRender() {}
 };
 
 

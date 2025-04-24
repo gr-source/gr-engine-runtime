@@ -10,6 +10,8 @@ public:
     
     static float mouseSensitivity;
 
+    static bool bCanMove;
+
     static void Initialize();
 
     static void Update(Camera *camera);

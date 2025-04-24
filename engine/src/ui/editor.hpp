@@ -8,6 +8,7 @@
 
 #include <gr-base/core/console.hpp>
 
+#include "gr-base/core/scene.hpp"
 #include "gr-base/script/animator.hpp"
 #include "renderer.h"
 #include "Global.h"
@@ -116,17 +117,9 @@ class Editor : public ViewLayout
 {
 public:
     Editor();
-    ~Editor();
+    ~Editor() override;
 
-    void render() override;
-
-    void DropFile(const std::filesystem::path &path);
-
-    void Import3DModel(const std::string &path);
-
-    void ImportImage(const std::string &path);
-
-    void KeyBoardUp(grm::u32 key);
+    void onRender() override;
 
     void LoadScript();
 
@@ -158,8 +151,6 @@ private:
     ImGuiViewport *m_viewport;
 
     grr::gTexture *s_texturePlayGame;
-
-    GameObject *s_objectSelected;
 
     EditorPopupFlags_ popupFlags;
 
@@ -217,9 +208,7 @@ private:
 
     void RenderSceneObject(Scene *scene);
 
-    void RenderObjectPage(std::vector<GameObject *> list, int page);
-
-    void ReadHierarchy(Transform* transform);
+    void ReadHierarchy(Scene *scene, Transform* transform);
 
     void dragDropGameObject(Transform *transform, const std::string &name);
 
@@ -239,11 +228,11 @@ private:
 
     void UpdateResizeSceneFramebuffer();
 
+    void create_render_guizmo(Scene *scene);
+
     void PlayGame();
 
     void StopGame();
-
-    void RenderGuizmo();
 
     void DropGameObjectInScene();
 
@@ -291,9 +280,9 @@ private:
 
     void create_popup_create_scene();
 
-    void RenderStatisticsMenu();
+    void create_popup_add_component();
 
-    void RenderObjectInfo();
+    void RenderStatisticsMenu();
 
     void dropScriptInAddComponent();
 
@@ -304,8 +293,6 @@ private:
     void RenderField(Field &field, Component *component);
 
     void renderDropGameObject(GameObject **ref);
-
-    void PopupAddComponent();
 
     void PopupMenuProperty();
 
@@ -406,9 +393,17 @@ private:
 };
 
 template <typename T, typename... Args>
-inline bool Editor::RenderProperty(Args&&... args) {
-    if (!s_objectSelected->hasComponent<T>()) return false;
+inline bool Editor::RenderProperty(Args&&... args)
+{
+    auto scene = Scene::GetCurrentScene();
+    if (scene == nullptr || !scene->has_object_selected())
+    {
+        return false;
+    }
 
-    return std::invoke(std::bind(std::forward<Args>(args)..., s_objectSelected->getComponent<T>()));
+    auto go = scene->get_object_selected().back();
+    if (!go->hasComponent<T>()) return false;
+
+    return std::invoke(std::bind(std::forward<Args>(args)..., go->getComponent<T>()));
 }
 

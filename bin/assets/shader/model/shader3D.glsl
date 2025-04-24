@@ -20,6 +20,10 @@ layout (location = 3) in int in_entityID;
 
 flat out int u_entityID;
 
+out vec2 u_texCoord;
+out vec3 u_fragPos;
+out vec3 u_normal;
+
 uniform mat4 u_projection;
 uniform mat4 u_view;
 
@@ -55,11 +59,21 @@ void main()
     SkinVertex = vec4(in_pos, 1.0);
 #endif
 
-    #ifdef USE_MODEL
-        u_position = u_projection * u_view * u_model * SkinVertex;
-    #else
-        u_position = u_projection * u_view * SkinVertex;
-    #endif
+	vec4 worldpos = vec4(0.0);
+
+#ifdef USE_MODEL
+    worldpos = u_model * SkinVertex;
+    u_normal = mat3(u_model) * in_normal;
+#else
+    worldpos = SkinVertex;
+    u_normal = in_normal;
+#endif
+
+	u_position = u_projection * u_view * worldpos;
+
+	u_texCoord = in_texCoord;
+	
+	u_fragPos = worldpos.xyz;
 
     vertex();
 
@@ -75,6 +89,12 @@ out int EntityID;
 
 flat in int u_entityID;
 
+in vec2 u_texCoord;
+in vec3 u_fragPos;
+in vec3 u_normal;
+
+uniform vec3 u_eye;
+
 void fragment();
 
 void main()
@@ -83,3 +103,7 @@ void main()
 
     EntityID = u_entityID;
 }
+
+
+
+

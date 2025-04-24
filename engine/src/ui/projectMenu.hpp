@@ -28,7 +28,7 @@ public:
     ProjectMenu(Engine *engine);
     ~ProjectMenu() override;
     
-    void render() override;
+    void onRender() override;
 
     void close_project();
 

@@ -4,6 +4,7 @@
 #include "ui/viewlayout.hpp"
 #include "ui/editor.hpp"
 
+#include <functional>
 #include <memory>
 #include <vector>
 
@@ -25,13 +26,15 @@ public:
 
     static Engine &GetInstance();
 
+    std::function<void ()> f_function_render;
+
     Engine();
     ~Engine();
 
     void set_project(const Project &project);
 
 private:
-    std::vector<std::unique_ptr<ViewLayout>> v_view_list;
+    std::vector<std::tuple<const char *, std::unique_ptr<ViewLayout>>> v_view_list;
 
     std::unique_ptr<Project> p_current_project;
 
@@ -56,6 +59,8 @@ private:
     void render_gui();
 
 protected:
+    void default_render();
+
     static void PreConfigRenderScene(Camera *camera);
 
     static void RenderScene(const Camera *camera);

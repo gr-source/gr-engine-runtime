@@ -1,0 +1,170 @@
+#include "shadereditor.hpp"
+
+#include "editorController.h"
+#include "engine.h"
+
+#include <fstream>
+#include <gr-base/core/scene.hpp>
+
+#include <gr-base/script/camera.hpp>
+#include <iterator>
+
+#include "gr-base/core/assetsManager.hpp"
+#include "gr-base/core/file/file.hpp"
+#include "gr-base/script/meshRender.hpp"
+#include "gr-base/script/skinnedMeshRender.hpp"
+#include "imgui.h"
+
+ShaderEditor::ShaderEditor(Engine *engine) : e_engine(engine), m_currentscene(nullptr), m_last_view_size(0.0f, 0.0f)
+{
+}
+
+ShaderEditor::~ShaderEditor()
+{}
+
+void ShaderEditor::onFocus()
+{
+    m_currentscene = Scene::GetCurrentScene();
+
+    auto objects = m_currentscene->get_object_selected();
+    if (!objects.empty())
+    {
+        auto go = objects.back();
+
+        BaseRender *baserender = nullptr;
+        if (go->hasComponent<MeshRender>())
+        {
+            baserender = static_cast<BaseRender *>(go->getComponent<MeshRender>());
+        } else if (go->hasComponent<SkinnedMeshRender>())
+        {
+            baserender = static_cast<BaseRender *>(go->getComponent<SkinnedMeshRender>());
+        }
+
+        if (baserender != nullptr)
+        {
+            for (auto material : baserender->getMaterial())
+            {
+                auto shader = material->getShader();
+                if (shader == nullptr)
+                {
+                    continue;
+                }
+
+                auto name = AssetsManager::GetShaderRefToName(shader);
+                auto path = name;
+                
+                auto end = name.find(';');
+                if (end != std::string::npos)
+                {
+                    path = name.substr(0, end);
+                }
+
+                auto &&[p, s, texteditor] = v_shader_texeditor.emplace_back(name, shader, std::make_unique<TextEditor>());
+
+                auto content = File::GetFileContent(path);
+
+                texteditor->SetText(content);
+            }
+        }
+    }
+
+    EditorController::bCanMove = false;
+}
+
+void ShaderEditor::onBlur()
+{
+    v_shader_texeditor.clear();
+    
+    EditorController::bCanMove = true;
+}
+
+void ShaderEditor::onRender()
+{
+    create_window_viewport();
+
+    create_window_texeditor();
+}
+
+// ********** private ********** //
+void ShaderEditor::create_window_viewport()
+{
+    if (ImGui::Begin("viewport - se"))
+    {
+        create_render_viewport();
+    }
+    ImGui::End();
+}
+
+void ShaderEditor::create_render_viewport()
+{
+    auto camera = m_currentscene->getCamera();
+
+    auto &rendertarget = camera->rendertarget;
+
+    auto avail = ImGui::GetContentRegionAvail();
+    if (m_last_view_size.x != avail.x || m_last_view_size.y != avail.y)
+    {
+        camera->setAspectRatio(avail.x / avail.y);
+
+        m_last_view_size = avail;
+    }
+
+    ImGui::Image(reinterpret_cast<ImTextureID>(rendertarget.getTextureID()), avail, {0.0f, 1.0f}, {1.0f, 0.0f});
+}
+
+void ShaderEditor::create_window_texeditor()
+{
+    if (ImGui::Begin("texeditor", nullptr, ImGuiWindowFlags_MenuBar))
+    {
+        create_render_texteditor();
+    }
+    create_menubar();
+    
+    ImGui::End();
+}
+
+void ShaderEditor::create_render_texteditor()
+{
+    for (auto &&[path, shader, texteditor] : v_shader_texeditor)
+        texteditor->Render(path.c_str());
+}
+
+void ShaderEditor::create_menubar()
+{
+    if (!ImGui::BeginMenuBar())
+    {
+        return;
+    }
+
+    if (ImGui::MenuItem("Save"))
+    {
+        for (auto &&[name, shader, texteditor] : v_shader_texeditor)
+        {
+            auto path = name;
+            auto end = name.find(';');
+            if (end != std::string::npos)
+            {
+                path = name.substr(0, end);
+            }
+
+            std::ofstream os(path);
+            if (os.is_open())
+            {
+                os << texteditor->GetText() << std::endl;
+
+                os.close();
+            }
+
+            AssetsManager::LoadShader(name, shader);
+        }
+    }
+    ImGui::EndMenuBar();
+}
+
+void ShaderEditor::create_view_render()
+{
+}
+
+
+
+

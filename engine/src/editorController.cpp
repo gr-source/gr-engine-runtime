@@ -26,6 +26,8 @@ float EditorController::mouseSensitivity = 10.f;
 Vector2 EditorController::lastMousePos = {0.0f, 0.0f};
 Vector2 EditorController::elapsed = {0.0f, 0.0f};
 
+bool EditorController::bCanMove = true;
+
 void EditorController::Initialize()
 {
     m_io = ImGuiRender::GetIO();
@@ -37,7 +39,7 @@ void EditorController::Initialize()
 void EditorController::Update(Camera *camera) {
     m_mainCamera = camera;
 
-    if (!m_mainCamera) {
+    if (!m_mainCamera || !bCanMove) {
         return;
     }
 

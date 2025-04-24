@@ -81,6 +81,7 @@ set(engine_src
     src/ui/project.cpp
     src/ui/ImGuiRender.cpp
     src/ui/projectMenu.cpp
+    src/ui/shadereditor.cpp
 )
 
 set(engine_hdr

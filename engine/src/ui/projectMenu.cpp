@@ -1,12 +1,7 @@
 #include "projectMenu.hpp"
-#include "editor.hpp"
 
 #include "engine.h"
 #include "imgui.h"
-#include "screenRender.hpp"
-#include "renderManager.h"
-
-#include "core/cmd/cmd.hpp"
 
 #include <chrono>
 #include <cstring>
@@ -20,11 +15,10 @@
 
 #include "core/file/config.hpp"
 
-#include "scriptManager/scriptManager.hpp"
-
 #include <filesystem>
-#include <algorithm>
+
 #include <gr-ini/config.h>
+
 #include <iostream>
 #include <thread>
 
@@ -69,7 +63,7 @@ ProjectMenu::~ProjectMenu()
     DebugDraw::Shutdown();
 }
 
-void ProjectMenu::render()
+void ProjectMenu::onRender()
 {
     if (!bengine_installed)
     {

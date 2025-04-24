@@ -3,9 +3,7 @@
 #include <gr-base/script/baserender.hpp>
 #include <gr-base/script/default.hpp>
 
-#include "editorController.h"
 #include "screenRender.hpp"
-#include "projectMenu.hpp"
 #include "settings.h"
 #include "imgui.h"
 
@@ -32,7 +30,6 @@
 
 #include "core/statistics.hpp"
 #include "core/screen.hpp"
-#include "core/timer.hpp"
 
 #include "core/cmd/cmd.hpp"
 
@@ -63,6 +60,7 @@
 #include <gr-base/ecs/componentRegistry.hpp>
 
 #include <gr-ini/config.h>
+#include <gr-math/matrix4x4.hpp>
 #include <gr-render/gTexture.h>
 #include <filesystem>
 
@@ -131,12 +129,10 @@ std::map<std::string, void *> Editor::m_runtimeFuncAddr = {
     {"", nullptr}
 };
 
-Editor::Editor() : m_viewport(ImGui::GetMainViewport()), mImGuiIO(&ImGui::GetIO()), m_currentPath(File::GetAsset("")), m_cameraObject(nullptr), m_mainCamera(nullptr), s_objectSelected(nullptr), m_currentPage(0), m_materialToRename(nullptr), m_plugin(nullptr) {
+Editor::Editor() : m_viewport(ImGui::GetMainViewport()), mImGuiIO(&ImGui::GetIO()), m_currentPath(File::GetAsset("")), m_cameraObject(nullptr), m_mainCamera(nullptr), m_currentPage(0), m_materialToRename(nullptr), m_plugin(nullptr) {
     s_texturePlayGame = nullptr;
 
     g_tree_file = nullptr;
-
-    s_objectSelected = nullptr;
 
     m_currentPage = 0;
 
@@ -233,7 +229,8 @@ Editor::Editor() : m_viewport(ImGui::GetMainViewport()), mImGuiIO(&ImGui::GetIO(
     refreshDockMenuBar(File::GetFile("/dock_menu_bar.ini", true));
 }
 
-Editor::~Editor() {
+Editor::~Editor()
+{
     generateConfig(File::GetFile("/gsettings.ini"));
 
     config_save(File::GetFile("/gsettings.ini").c_str(), m_settings);
@@ -253,35 +250,6 @@ Editor::~Editor() {
     Console::Shutdown();
 
     File::Delete(File::GetTempFile("gr-engine"));
-}
-
-void Editor::DropFile(const std::filesystem::path &path) {
-    if (path.extension() == ".fbx") {
-        return Import3DModel(path.string());
-    } else if (path.extension() == ".png" || path.extension() == ".jpg") {
-        return ImportImage(path.string());
-    }
-}
- 
-void Editor::Import3DModel(const std::string &path) {
-    ModelHandle::ImportFBX(path);
-}
-
-void Editor::ImportImage(const std::string &path) {
-    auto assets_texture = File::GetAsset("/texture");
-    if (!File::Exists(assets_texture)) {
-        return Console::LogError("[ Import ] Assets data project do not loaded.");
-    }
-    Console::LogInfo("[ Import ] Importing texture...");
-
-    if (!File::Copy(path, assets_texture)) {
-        return Console::LogError("[ Import ] " + File::GetError());
-    }
-    Console::LogInfo("[ Import ] Texture imported.");
-}
-
-void Editor::KeyBoardUp(grm::u32 key)
-{
 }
 
 void Editor::LoadScript()
@@ -332,7 +300,7 @@ void Editor::UnloadScript() {
 }
 
 // ===================================== END =========================================================
-void Editor::render()
+void Editor::onRender()
 {
     create_dock();
 
@@ -353,8 +321,7 @@ void Editor::render()
 
 void Editor::create_dock()
 {
-    auto dockID = ImGui::DockSpaceOverViewport(m_viewport);
-    if (ImGui::BeginMainMenuBar())
+    /*if (ImGui::BeginMainMenuBar())
     {
         if (ImGui::BeginMenu("Project"))
         {
@@ -370,13 +337,14 @@ void Editor::create_dock()
 
         ImGui::EndMainMenuBar();
     }
+    */
 
     if (bBuildDock)
     {
         return;
     }
 
-    BuildDock(dockID, 0);
+    // BuildDock(dockID, 0);
 
     bBuildDock = true;
 }
@@ -443,18 +411,23 @@ void Editor::create_render_hierarchy()
         ImGui::TreePop();
     }
 
-    if (ImGui::IsKeyReleased(ImGuiKey_Delete) && s_objectSelected && !ImGui::IsPopupOpen("##popup_rename_gameobject")) {
-        Scene::Destoy(s_objectSelected);
-        s_objectSelected = nullptr;
+    if (ImGui::IsKeyReleased(ImGuiKey_Delete) && scene->has_object_selected())
+    {
+        for (auto go : scene->get_object_selected())
+            Scene::Destoy(go);
+
+        scene->deselect_all();
     }
     
-    if (ImGui::IsKeyReleased(ImGuiKey_F2) && ImGui::IsWindowHovered() && s_objectSelected)
+    /*if (ImGui::IsKeyReleased(ImGuiKey_F2) && ImGui::IsWindowHovered() && s_objectSelected)
     {
         popupFlags |= EditorPopupFlags_RenameGameObject;
     }
+    */
 
-    if (ImGui::IsKeyReleased(ImGuiKey_Escape) && ImGui::IsWindowHovered()) {
-        s_objectSelected = nullptr;
+    if (ImGui::IsKeyReleased(ImGuiKey_Escape) && ImGui::IsWindowHovered())
+    {
+        scene->deselect_all();
     }
 
     if (ImGui::IsWindowHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Right))
@@ -503,8 +476,19 @@ void Editor::RenderSceneObject(Scene *scene)
     {
         --m_currentPage;
     }
-    
-    RenderObjectPage(list, m_currentPage);
+
+    {
+
+        int start = m_currentPage * ITEMS_PER_PAGE;
+        int end = std::min(start + ITEMS_PER_PAGE, static_cast<int>(list.size()));
+
+        for (int i = start; i < end; ++i)
+        {
+            auto transform = list[i]->getTransform();
+
+            ReadHierarchy(scene, transform);
+        }
+    }
     
     if (list.size() > ITEMS_PER_PAGE && ImGui::Button("Next"))
     {
@@ -512,22 +496,9 @@ void Editor::RenderSceneObject(Scene *scene)
     }
 }
 
-void Editor::RenderObjectPage(std::vector<GameObject *> list, int page)
+void Editor::ReadHierarchy(Scene *scene, Transform *transform)
 {
-    int start = page * ITEMS_PER_PAGE;
-    int end = std::min(start + ITEMS_PER_PAGE, static_cast<int>(list.size()));
-
-    for (int i = start; i < end; ++i)
-    {
-        auto transform = list[i]->getTransform();
-
-        ReadHierarchy(transform);
-    }
-}
-
-void Editor::ReadHierarchy(Transform *transform)
-{
-    ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_Selected | ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanFullWidth;
+    ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanFullWidth;
 
     auto gameObject = transform->getGameObject();
     if (!gameObject)
@@ -537,10 +508,8 @@ void Editor::ReadHierarchy(Transform *transform)
 
     auto name = gameObject->getName();
 
-    if (s_objectSelected != gameObject)
-    {
-        flags &= ~ImGuiTreeNodeFlags_Selected;
-    }
+    if (scene->object_has_been_selected(gameObject))
+        flags |= ImGuiTreeNodeFlags_Selected;
 
     if (transform->hasChildren())
     {
@@ -549,15 +518,21 @@ void Editor::ReadHierarchy(Transform *transform)
 
     auto isOpen = ImGui::TreeNodeEx(name.c_str(), flags);
 
-    if (ImGui::IsItemClicked(ImGuiMouseButton_Left) && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
-    {
-        s_objectSelected = gameObject;
-    }
 
-    if (ImGui::IsItemClicked(ImGuiMouseButton_Right))
+    if (ImGui::IsKeyDown(ImGuiKey_ModShift) && ImGui::IsItemClicked(ImGuiMouseButton_Left))
     {
-        s_objectSelected = gameObject;
-        bOpenPopupOptionGameObject = true;
+        if (scene->object_has_been_selected(gameObject))
+        {
+            scene->deselect(gameObject);
+        } else
+        {
+            scene->select(gameObject);
+        }
+    } else if (ImGui::IsItemClicked(ImGuiMouseButton_Left) && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+    {
+        scene->deselect_all();
+
+        scene->select(gameObject);
     }
 
     dragDropGameObject(transform, name);
@@ -569,7 +544,7 @@ void Editor::ReadHierarchy(Transform *transform)
     
     for (auto& child : transform->getChildren())
     {
-        ReadHierarchy(child);
+        ReadHierarchy(scene, child);
     }
     ImGui::TreePop();
 }
@@ -620,7 +595,7 @@ void Editor::PopupMenuAdd() {
             /*s_objectSelected = CreatePrimitive(0);*/
             break;
         case 1:
-            s_objectSelected = Scene::GetCurrentScene()->CreateGameObject("Empty");
+            // s_objectSelected = Scene::GetCurrentScene()->CreateGameObject("Empty");
             break;
         default:
             break;
@@ -632,7 +607,7 @@ void Editor::PopupMenuAdd() {
 }
 
 void Editor::PopupOptionsGameObject() {
-    if (!s_objectSelected || m_mainCamera == nullptr)
+    /*if (!s_objectSelected || m_mainCamera == nullptr)
     {
         return;
     }
@@ -664,11 +639,12 @@ void Editor::PopupOptionsGameObject() {
     if (isOpenRename && s_objectSelected) {
         ImGui::OpenPopup("##popup_rename_gameobject");
     }
+    */
 }
 
 void Editor::PopupRenameGameObject()
 {
-    auto isOpen = ImGui::BeginPopup(GET_FLAG_NAME(EditorPopupFlags_RenameGameObject));
+    /*auto isOpen = ImGui::BeginPopup(GET_FLAG_NAME(EditorPopupFlags_RenameGameObject));
     if (!isOpen)
     {
         return;
@@ -693,6 +669,7 @@ void Editor::PopupRenameGameObject()
         ImGui::CloseCurrentPopup();
     }
     ImGui::EndPopup();
+    */
 }
 
 void Editor::create_window_viewport()
@@ -723,9 +700,9 @@ void Editor::create_render_viewport()
         {
             if (current_scene != scene.get())
             {
-                Scene::Use(scene.get());
+                current_scene->deselect_all();
 
-                s_objectSelected = nullptr;
+                Scene::Use(scene.get());
 
                 current_scene = scene.get();
             }
@@ -739,8 +716,6 @@ void Editor::create_render_viewport()
             {
                 current_scene = nullptr;
             }
-
-            s_objectSelected = nullptr;
 
             Scene::Use(nullptr);
                 
@@ -976,8 +951,9 @@ void Editor::render_scene(Scene *scene)
     ImGuizmo::SetDrawlist();
     ImGuizmo::SetRect(windowPos.x + cursorPos.x, windowPos.y + cursorPos.y, regionAvail.x, regionAvail.y);
 
-    if (m_mainCamera != nullptr && s_objectSelected && !Settings::bGameRunning) {
-        RenderGuizmo();
+    if (m_mainCamera != nullptr && scene->has_object_selected() && !Settings::bGameRunning)
+    {
+        create_render_guizmo(scene);
     }
 
     // Fps Draw
@@ -1008,9 +984,10 @@ void Editor::render_scene(Scene *scene)
 
     ImGui::PopStyleColor();
 
-    if (s_objectSelected && !mImGuiIO->MouseDrawCursor && ImGui::IsWindowFocused() && mImGuiIO->KeyShift && ImGui::IsKeyReleased(ImGuiKey_D)) {
+    /*if (s_objectSelected && !mImGuiIO->MouseDrawCursor && ImGui::IsWindowFocused() && mImGuiIO->KeyShift && ImGui::IsKeyReleased(ImGuiKey_D)) {
         s_objectSelected = GameObject::Instantiate(s_objectSelected);
     }
+    */
 
     if (ImGui::IsWindowFocused() && mImGuiIO->KeyCtrl && ImGui::IsKeyReleased(ImGuiKey_S)) {
         Event::Add(&Editor::SaveScene, this, Scene::GetCurrentScene()->getName(), Scene::GetCurrentScene());
@@ -1036,33 +1013,24 @@ void Editor::UpdateResizeSceneFramebuffer()
     }
 }
 
-void Editor::PlayGame() {
-    Threadpool::AddTask(&Editor::BuildScript, this);
-}
-
-void Editor::StopGame() {
-    s_objectSelected = nullptr;
-
-    Settings::bGameRunning = false;
-
-    Scene::DestroyScript();
-
-    Scene::InitializeEngineScript();
-
-    Console::log(Log::DEFAULT, "Game stoped.");
-}
-
-void Editor::RenderGuizmo() {
-    if (!mImGuiIO->MouseDrawCursor && !mImGuiIO->KeyShift && !mImGuiIO->KeyCtrl && ImGui::IsKeyReleased(ImGuiKey_G) && ImGui::IsWindowHovered()) {
-        m_guizmoOperation = ImGuizmo::TRANSLATE;
-    }
+void Editor::create_render_guizmo(Scene *scene)
+{
+    if (ImGui::IsWindowHovered() && !mImGuiIO->KeyShift && !mImGuiIO->KeyCtrl)
+    {
+        if (ImGui::IsKeyReleased(ImGuiKey_G))
+        {
+            m_guizmoOperation = ImGuizmo::TRANSLATE;
+        }
     
-    if (!mImGuiIO->MouseDrawCursor && !mImGuiIO->KeyShift && !mImGuiIO->KeyCtrl && ImGui::IsKeyReleased(ImGuiKey_R) && ImGui::IsWindowHovered()) {
-        m_guizmoOperation = ImGuizmo::ROTATE;
-    }
+        if (ImGui::IsKeyReleased(ImGuiKey_R))
+        {
+            m_guizmoOperation = ImGuizmo::ROTATE;
+        }
     
-    if (!mImGuiIO->MouseDrawCursor && !mImGuiIO->KeyShift && !mImGuiIO->KeyCtrl && ImGui::IsKeyReleased(ImGuiKey_S) && ImGui::IsWindowHovered()) {
-        m_guizmoOperation = ImGuizmo::SCALE;
+        if (ImGui::IsKeyReleased(ImGuiKey_S))
+        {
+            m_guizmoOperation = ImGuizmo::SCALE;
+        }
     }
 
     if (mImGuiIO->KeyCtrl && ImGui::IsKeyReleased(ImGuiKey_Space) && ImGui::IsWindowHovered()) {
@@ -1072,30 +1040,65 @@ void Editor::RenderGuizmo() {
             m_guizmoManipulate = ImGuizmo::WORLD;
         }
     }
-    
-    auto transform = s_objectSelected->getTransform();
 
-    auto globalMatrix = transform->getGlobalMatrix();
+    auto viewmatrix = m_mainCamera->getViewmatrix();
+    auto projection = m_mainCamera->getPerspesctive();
 
-    if (m_mainCamera && ImGuizmo::Manipulate(m_mainCamera->getViewmatrix().getData(), m_mainCamera->getPerspesctive().getData(), m_guizmoOperation, m_guizmoManipulate, globalMatrix.getData())) {
-        auto localMatrix = globalMatrix;
-        if (transform->hasParent())
+    // ImGuizmo::DrawGrid(viewmatrix.getData(), projection.getData(), Matrix4x4::identityMatrix.getData(), 100.f);
+    //
+    auto objects = scene->get_object_selected();
+    for (std::size_t i=0;i<objects.size();i++)
+    {
+        auto go = objects[i];
+
+        ImGuizmo::SetID(i);
+        auto transform = go->getTransform();
+
+        auto globalMatrix = transform->getGlobalMatrix();
+
+
+        if (ImGuizmo::Manipulate(viewmatrix.getData(), projection.getData(), m_guizmoOperation, m_guizmoManipulate, globalMatrix.getData()))
         {
-            auto parentMat = transform->getParent()->getGlobalMatrix();
-            Matrix4x4 m = Matrix4x4::identityMatrix;
+            auto localMatrix = globalMatrix;
+            if (transform->hasParent())
+            {
+                auto parentMat = transform->getParent()->getGlobalMatrix();
+                Matrix4x4 m = Matrix4x4::identityMatrix;
 
-            if (gluInvertMatrix(parentMat.getData(), m.getData()))
-                localMatrix = m * localMatrix;
+                if (gluInvertMatrix(parentMat.getData(), m.getData()))
+                    localMatrix = m * localMatrix;
+            }
+            Vector3 s;
+            Quaternion r;
+            Vector3 t;
+            localMatrix.decompose(s, r, t);
+
+            transform->setLocalScale(s);
+            transform->setLocalRotation(r);
+            transform->setLocalPosition(t);
         }
-        Vector3 s;
-        Quaternion r;
-        Vector3 t;
-        localMatrix.decompose(s, r, t);
-
-        transform->setLocalScale(s);
-        transform->setLocalRotation(r);
-        transform->setLocalPosition(t);
     }
+}
+
+void Editor::PlayGame() {
+    Threadpool::AddTask(&Editor::BuildScript, this);
+}
+
+void Editor::StopGame()
+{
+    auto scene = Scene::GetCurrentScene();
+    if (scene != nullptr)
+    {
+        scene->deselect_all();
+    }
+
+    Settings::bGameRunning = false;
+
+    Scene::DestroyScript();
+
+    Scene::InitializeEngineScript();
+
+    Console::log(Log::DEFAULT, "Game stoped.");
 }
 
 void Editor::DropGameObjectInScene()
@@ -1601,18 +1604,32 @@ void Editor::create_window_property()
 
 void Editor::create_render_property()
 {
-    if (ImGui::BeginTabBar("##render_properti_ui_tabbar"))
+    auto scene = Scene::GetCurrentScene();
+    if (scene == nullptr || !scene->has_object_selected())
     {
-        RenderObjectInfo();
-        
-        /*
-        if (ImGui::BeginTabItem("Estatística", nullptr)) {
-            RenderStatisticsMenu();
-            ImGui::EndTabItem();
-        }
-        */
-        ImGui::EndTabBar();
+        return;
     }
+
+    auto go = scene->get_object_selected().back();
+
+    auto entity = go->getEntity();
+
+    auto objName = go->getName();
+
+    ImGui::SeparatorText(objName.c_str());
+
+    RenderScriptFromEntity(entity);
+
+    auto avail = ImGui::GetContentRegionAvail();
+
+    if (ImGui::Button("AddComponent", {avail.x, 0.0f}))
+    {
+        popupFlags |= EditorPopupFlags_AddComponent;
+    }
+
+    // dropScriptInAddComponent();
+
+    // ImGui::PopID();
 }
 
 void Editor::create_call_popup()
@@ -1624,7 +1641,7 @@ void Editor::create_call_popup()
         popupFlags &= ~EditorPopupFlags_LoadPlugin;
         break;
     case EditorPopupFlags_AddComponent:
-        ImGui::OpenPopup("##popup_add_component");
+        ImGui::OpenPopup(GET_FLAG_NAME(EditorPopupFlags_AddComponent));
         popupFlags &= ~EditorPopupFlags_AddComponent;
         break;
     case EditorPopupFlags_PluginEditor:
@@ -1687,13 +1704,13 @@ void Editor::create_popup()
 {
     create_popup_create_scene();
 
+    create_popup_add_component();
+
     PopupComponentMenu();
 
     showShaderListPopup();
 
     showMeshListPopup();
-
-    PopupAddComponent();
 
     SkyboxEditor();
 
@@ -1750,6 +1767,58 @@ void Editor::create_popup_create_scene()
     ImGui::EndPopup();
 }
 
+void Editor::create_popup_add_component()
+{
+    auto isOpen = ImGui::BeginPopup(GET_FLAG_NAME(EditorPopupFlags_AddComponent));
+    if (!isOpen)
+    {
+        return;
+    }
+
+    auto go = Scene::GetCurrentScene()->get_object_selected().back();
+
+    std::vector<std::string> m_componentName;
+    for (auto &&[name, tuple] : ComponentRegistry::GetAllChunkComponent())
+    {
+        m_componentName.push_back(name);
+    }
+
+    std::sort(m_componentName.begin(), m_componentName.end(), [](const auto &lhs, const auto &rhs) {
+        return lhs < rhs;
+    });
+
+    if (!ImGui::IsAnyItemActive() && !ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+        ImGui::SetKeyboardFocusHere();
+
+    static char componentName[256] = {'\0'};
+    auto bSelect = ImGui::InputText("##popup_add_componnet_inputtext_filter", componentName, sizeof(componentName), ImGuiInputTextFlags_EnterReturnsTrue);
+
+    m_componentName.erase(std::remove_if(m_componentName.begin(), m_componentName.end(), [] (auto &name) {
+        return std::strstr(name.c_str(), componentName) == nullptr;
+    }), m_componentName.end());
+
+    auto regionAvail = ImGui::GetContentRegionAvail();
+
+    for (auto it = m_componentName.begin(); it != m_componentName.end(); ++it) {
+        bool isFirst = (it == m_componentName.begin());
+        if (ImGui::Selectable(it->c_str(), isFirst) || bSelect) {
+            auto component = go->getEntity()->addComponent((*it));
+
+            if (component && (*it) == "Light") {
+                component->Init();
+            }
+
+            std::memset(componentName, '\0', sizeof(componentName));
+
+            ImGui::CloseCurrentPopup();
+            
+            break;
+        }
+    }
+    
+    ImGui::EndPopup();
+}
+
 #include <gr-base/core/status.hpp>
 
 void Editor::RenderStatisticsMenu() {
@@ -1783,61 +1852,9 @@ void Editor::RenderStatisticsMenu() {
     ImGui::Text("DrawCallCount: %ld/%ld", Status::BatchDrawCallCount, Status::BatchDrawCallRender);
 }
 
-void Editor::RenderObjectInfo()
-{
-    if (s_objectSelected == nullptr)
-    {
-        return;
-    }
-
-    auto entity = s_objectSelected->getEntity();
-
-    auto objName = s_objectSelected->getName();
-    ImGui::PushID(objName.c_str());
-
-    {
-        ImGui::Image(reinterpret_cast<ImTextureID>(iconsUI[IconType::ICON_GAMEOBJECT]->getTextureID()), ImVec2(16, 16));
-
-        ImGui::SameLine();
-
-        ImGui::Text("%s", objName.c_str());
-        
-        ImGui::SameLine();
-
-        ImGui::Text("%s", s_objectSelected->getTag().c_str());
-    
-    }
-
-    /*
-    {
-        auto isStatic = s_objectSelected->getStatic();
-
-        ImGui::Text("Static");
-        ImGui::SameLine();
-        if (ImGui::Checkbox("##gameobject_info_static", &isStatic))
-        {
-            s_objectSelected->setStatic(isStatic);
-        }
-    }
-    */
-
-    RenderScriptFromEntity(entity);
-
-    auto avail = ImGui::GetContentRegionAvail();
-
-    if (ImGui::Button("AddComponent", {avail.x, 0.0f}))
-    {
-        popupFlags |= EditorPopupFlags_AddComponent;
-    }
-
-    dropScriptInAddComponent();
-
-    ImGui::PopID();
-}
-
 void Editor::dropScriptInAddComponent()
 {
-    if (s_objectSelected == nullptr || !ImGui::BeginDragDropTarget())
+    /*if (s_objectSelected == nullptr || !ImGui::BeginDragDropTarget())
     {
         return;
     }
@@ -1856,6 +1873,7 @@ void Editor::dropScriptInAddComponent()
         entity->addComponent(file.filename().replace_extension().string());
     }
     ImGui::EndDragDropTarget();
+    */
 }
 
 void Editor::RenderScriptFromEntity(Entity *entity)
@@ -1980,58 +1998,6 @@ void Editor::renderDropGameObject(GameObject **ref) {
     AssetsManager::LoadGameObject(path, &Editor::OutputGameObject, ref);
 
     ImGui::EndDragDropTarget();
-}
-
-void Editor::PopupAddComponent()
-{
-    if (!s_objectSelected) {
-        return;
-    }
-    
-    auto isOpen = ImGui::BeginPopup("##popup_add_component");
-    if (!isOpen) {
-        return;
-    }
-
-    std::vector<std::string> m_componentName;
-    for (auto &&[name, tuple] : ComponentRegistry::GetAllChunkComponent()) {
-        m_componentName.push_back(name);
-    }
-
-    std::sort(m_componentName.begin(), m_componentName.end(), [](const auto &lhs, const auto &rhs) {
-        return lhs < rhs;
-    });
-
-    if (!ImGui::IsAnyItemActive() && !ImGui::IsMouseClicked(ImGuiMouseButton_Left))
-        ImGui::SetKeyboardFocusHere();
-
-    static char componentName[256] = {'\0'};
-    auto bSelect = ImGui::InputText("##popup_add_componnet_inputtext_filter", componentName, sizeof(componentName), ImGuiInputTextFlags_EnterReturnsTrue);
-
-    m_componentName.erase(std::remove_if(m_componentName.begin(), m_componentName.end(), [] (auto &name) {
-        return std::strstr(name.c_str(), componentName) == nullptr;
-    }), m_componentName.end());
-
-    auto regionAvail = ImGui::GetContentRegionAvail();
-
-    for (auto it = m_componentName.begin(); it != m_componentName.end(); ++it) {
-        bool isFirst = (it == m_componentName.begin());
-        if (ImGui::Selectable(it->c_str(), isFirst) || bSelect) {
-            auto component = s_objectSelected->getEntity()->addComponent((*it));
-
-            if (component && (*it) == "Light") {
-                component->Init();
-            }
-
-            std::memset(componentName, '\0', sizeof(componentName));
-
-            ImGui::CloseCurrentPopup();
-            
-            break;
-        }
-    }
-    
-    ImGui::EndPopup();
 }
 
 void Editor::PopupMenuProperty() {
@@ -2625,7 +2591,7 @@ void Editor::PostLoadGameObject(GameObject *gameObject) {
     if (Scene::HasScene())
         Scene::GetCurrentScene()->insert(gameObject);
     
-    s_objectSelected = gameObject;
+    // s_objectSelected = gameObject;
 }
 
 std::string GenerateScriptHeader(const std::string& name) {
@@ -2719,6 +2685,7 @@ void Editor::RenameMaterial() {
 
 void Editor::CreateMaterial()
 {
+    /*
     auto isOpen = ImGui::BeginPopupModal(GET_FLAG_NAME(EditorPopupFlags_CreateMaterial));
     if (!isOpen || s_objectSelected == nullptr)
     {
@@ -2741,6 +2708,7 @@ void Editor::CreateMaterial()
     }
 
     ImGui::EndPopup();
+    */
 }
 
 void Editor::BuildProject() {
@@ -3030,7 +2998,7 @@ void Editor::PluginManager()
 void Editor::PopupPluginLoad() {
     ImVec2 winSize(200, 300);
     
-    ImGui::SetNextWindowPos(ImVec2{static_cast<float>(Screen::width / 2), static_cast<float>(Screen::height / 2)} - (winSize / 2.0f), ImGuiCond_Always);
+    ImGui::SetNextWindowPos(ImVec2{static_cast<float>(Screen::width) / 2.0f, static_cast<float>(Screen::height) / 2.0f} - (winSize / 2.0f), ImGuiCond_Always);
     ImGui::SetNextWindowSize(winSize, ImGuiCond_Always);
     auto isOpen = ImGui::BeginPopup(GET_FLAG_NAME(EditorPopupFlags_LoadPlugin));
     if (!isOpen) { return; }
@@ -3080,7 +3048,7 @@ void Editor::PluginEditor() {
 
     ImVec2 winSize(200, 300);
     
-    ImGui::SetNextWindowPos(ImVec2{static_cast<float>(Screen::width / 2), static_cast<float>(Screen::height / 2)} - (winSize / 2.0f), ImGuiCond_Always);
+    ImGui::SetNextWindowPos(ImVec2{static_cast<float>(Screen::width) / 2.0f, static_cast<float>(Screen::height) / 2.0f} - (winSize / 2.0f), ImGuiCond_Always);
     ImGui::SetNextWindowSize(winSize, ImGuiCond_Always);
 
     auto isOpen = ImGui::BeginPopup("##popup_plugin_editor");

@@ -2,6 +2,7 @@
 
 #include "editorController.h"
 
+#include "imgui.h"
 #include "shadowMap.hpp"
 
 #include "ui/editor.hpp"
@@ -40,44 +41,16 @@
 #include "Global.h"
 
 #include "plugin/pluginManager.hpp"
+#include "ui/shadereditor.hpp"
 
 #include <gr-base/core/binary/modelhandle.hpp>
 
 #include <gr-ini/config.h>
+#include <memory>
 
 static FunctionTimer mFunctionTimer;
 
 static Skybox m_skybox;
-
-void Engine::PreConfigRenderScene(Camera *camera)
-{
-    // Seleção de modelos para renderizar
-    RenderManager::Process(camera);
-
-    camera->rendertarget.bind();
-
-    grr::gRender::SetRenderState(grr::GR_BACKGROUND, grr::GR_DEPTH_BUFFER | grr::GR_COLOR_BUFFER);
-    grr::gRender::SetRenderState(grr::GR_BACKGROUND_COLOR, (void*)&Color::black);
-    grr::gRender::SetRenderState(grr::GR_CULL, grr::GR_BACK);
-    grr::gRender::SetRenderState(grr::GR_DEPTH, grr::GR_TRUE);
-
-    RenderScene(camera);
-
-    camera->rendertarget.unbind();
-}
-
-void Engine::RenderScene(const Camera *camera)
-{
-    grr::gRender::SetRenderState(grr::GR_DEPTH_FUNC, grr::GR_DEPTH_LESS);
-    RenderManager::Renderer();
-
-    grr::gRender::SetRenderState(grr::GR_DEPTH_FUNC, grr::GR_DEPTH_LEQUAL);
-    DebugDraw::Renderer(camera);
-
-    grr::gRender::SetRenderState(grr::GR_DEPTH_FUNC, grr::GR_DEPTH_LEQUAL);
-    m_skybox.render(camera);
-    // Skybox::Renderer(camera);
-}
 
 void Engine::HandleEvent(EngineEvent event, const void* data)
 {
@@ -101,7 +74,7 @@ Engine &Engine::GetInstance()
 }
 
 // ********** public ********** //
-Engine::Engine() : view_layout(nullptr), p_current_project(nullptr)
+Engine::Engine() : view_layout(nullptr), p_current_project(nullptr), f_function_render(nullptr)
 {}
 
 Engine::~Engine()
@@ -115,7 +88,18 @@ void Engine::set_project(const Project &project)
 
     v_view_list.clear();
 
-    view_layout = &(*v_view_list.emplace_back(std::make_unique<Editor>()));
+    // Editor
+    {
+
+        auto &&[name, view] = v_view_list.emplace_back("Editor", std::make_unique<Editor>());
+
+        view_layout = view.get();
+    }
+
+    // ShaderEditor
+    {
+        v_view_list.emplace_back("Shader Editor", std::make_unique<ShaderEditor>(this));
+    }
 }
 
 // ********** private ********** //
@@ -129,11 +113,15 @@ void Engine::init()
 
     Threadpool::Initialize();
 
-    ImGuiRender::Initialize("#version 330 core");
+    ImGuiRender::Initialize("#version 330 core"); 
+
+    f_function_render = std::bind(&Engine::default_render, this);
 
     if (!check_project_openable())
     {
-        view_layout = &(*v_view_list.emplace_back(std::make_unique<ProjectMenu>(this)));
+        auto &&[name, view] =v_view_list.emplace_back("Project Menu", std::make_unique<ProjectMenu>(this));
+        
+        view_layout = view.get();
     }
 
     AssetsManager::LoadTexture("/home/felipy/Downloads/Skyboxes/SunsetSky.png", &Skybox::set_texture, &m_skybox);
@@ -231,11 +219,7 @@ void Engine::render()
 
 void Engine::render_cam()
 {
-    auto cameras = Camera::GetCameras();
-    for (auto camera : cameras)
-    {
-        PreConfigRenderScene(camera);
-    }
+    f_function_render();
 }
 
 void Engine::render_gui()
@@ -245,16 +229,79 @@ void Engine::render_gui()
     
     ImGuiRender::Begin();
 
+    auto dockID = ImGui::DockSpaceOverViewport(ImGui::GetMainViewport());
+    if (ImGui::BeginMainMenuBar())
+    {
+        if (ImGui::BeginTabBar("##render_gui_tab_bar_0"))
+        {
+            for (auto &&[name, view] : v_view_list)
+            {
+                if (ImGui::BeginTabItem(name))
+                {
+                    if (view_layout != view.get())
+                    {
+                        if (view_layout != nullptr)
+                        {
+                            view_layout->onBlur();
+                        }
+
+                        view_layout = view.get();
+                        view_layout->onFocus();
+                    }
+                    
+                    ImGui::EndTabItem();
+                }
+            }
+            ImGui::EndTabBar();
+        }
+        ImGui::EndMainMenuBar();
+    }
+
     if (view_layout != nullptr)
     {
-        view_layout->render();
+        view_layout->onRender();
     }
 
     ImGuiRender::End();
 }
 
+// ********** protected ********** //
+void Engine::default_render()
+{
+    auto cameras = Camera::GetCameras();
+    for (auto camera : cameras)
+    {
+        PreConfigRenderScene(camera);
+    }
+}
 
+void Engine::PreConfigRenderScene(Camera *camera)
+{
+    // Seleção de modelos para renderizar
+    RenderManager::Process(camera);
 
+    camera->rendertarget.bind();
 
+    grr::gRender::SetRenderState(grr::GR_BACKGROUND, grr::GR_DEPTH_BUFFER | grr::GR_COLOR_BUFFER);
+    grr::gRender::SetRenderState(grr::GR_BACKGROUND_COLOR, (void*)&Color::black);
+    grr::gRender::SetRenderState(grr::GR_CULL, grr::GR_BACK);
+    grr::gRender::SetRenderState(grr::GR_DEPTH, grr::GR_TRUE);
+
+    RenderScene(camera);
+
+    camera->rendertarget.unbind();
+}
+
+void Engine::RenderScene(const Camera *camera)
+{
+    grr::gRender::SetRenderState(grr::GR_DEPTH_FUNC, grr::GR_DEPTH_LESS);
+    RenderManager::Renderer();
+
+    grr::gRender::SetRenderState(grr::GR_DEPTH_FUNC, grr::GR_DEPTH_LEQUAL);
+    DebugDraw::Renderer(camera);
+
+    grr::gRender::SetRenderState(grr::GR_DEPTH_FUNC, grr::GR_DEPTH_LEQUAL);
+    m_skybox.render(camera);
+}
 
 
