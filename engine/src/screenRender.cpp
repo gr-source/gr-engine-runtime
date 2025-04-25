@@ -4,14 +4,14 @@
 
 #include <gr-base/core/assetsManager.hpp>
 
-#include "scriptManager/scriptManager.hpp"
-
+#include "gr-base/core/geometry/shader.hpp"
 #include "settings.h"
 
 #include <gr-render/gVertexArray.h>
 #include <gr-render/gTexture.h>
 #include <gr-render/gError.h>
 
+#include <gr-base/core/console.hpp>
 #include <gr-base/core/window.hpp>
 #include <gr-base/core/clock.hpp>
 
@@ -27,8 +27,8 @@ grm::u32 ScreenRender::m_vbo = 0;
 
 void ScreenRender::Initialize() {
     if (!m_shader) {
-        AssetsManager::LoadShader(
-            File::GetAsset("/shader/screen.glsl"),
+        AssetsManager::LoadShader(ShaderOptimize_None,
+            gfile::get_data_directory("/assets/shader/screen.glsl"),
             [](grr::gShader *shader) { ScreenRender::m_shader = shader; }
         );
     }

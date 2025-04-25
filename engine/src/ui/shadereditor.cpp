@@ -4,15 +4,16 @@
 #include "engine.h"
 
 #include <fstream>
+
+#include <gr-base/core/assetsManager.hpp>
 #include <gr-base/core/scene.hpp>
 
-#include <gr-base/script/camera.hpp>
-#include <iterator>
+#include <gr-base/core/file/file.hpp>
 
-#include "gr-base/core/assetsManager.hpp"
-#include "gr-base/core/file/file.hpp"
-#include "gr-base/script/meshRender.hpp"
-#include "gr-base/script/skinnedMeshRender.hpp"
+#include <gr-base/script/skinnedMeshRender.hpp>
+#include <gr-base/script/meshRender.hpp>
+#include <gr-base/script/camera.hpp>
+
 #include "imgui.h"
 
 ShaderEditor::ShaderEditor(Engine *engine) : e_engine(engine), m_currentscene(nullptr), m_last_view_size(0.0f, 0.0f)
@@ -50,7 +51,7 @@ void ShaderEditor::onFocus()
                     continue;
                 }
 
-                auto name = AssetsManager::GetShaderRefToName(shader);
+                auto name = AssetsManager::GetShaderName(shader);
                 auto path = name;
                 
                 auto end = name.find(';');
@@ -136,7 +137,8 @@ void ShaderEditor::create_menubar()
         return;
     }
 
-    if (ImGui::MenuItem("Save"))
+    auto &io = ImGui::GetIO();
+    if (io.KeyCtrl && ImGui::IsKeyReleased(ImGuiKey_S))
     {
         for (auto &&[name, shader, texteditor] : v_shader_texeditor)
         {
@@ -147,15 +149,16 @@ void ShaderEditor::create_menubar()
                 path = name.substr(0, end);
             }
 
-            std::ofstream os(path);
-            if (os.is_open())
             {
+                std::ofstream os(path);
                 os << texteditor->GetText() << std::endl;
-
                 os.close();
             }
 
-            AssetsManager::LoadShader(name, shader);
+
+            std::cout << "Wrong: " << name << std::endl;
+
+            // AssetsManager::LoadShader(AssetShader_Shader3D, name, shader);
         }
     }
     ImGui::EndMenuBar();

@@ -356,16 +356,6 @@ private:
     // Scene
     void SaveScene(const std::string &name, Scene *scene);
 
-    // UI
-    void showShaderListPopup();
-
-    void renderShaderList();
-
-    void showMeshListPopup();
-
-    void renderMeshList();
-
-    // 
     void SkyboxEditor();
 
     void PluginManager();

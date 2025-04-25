@@ -137,7 +137,8 @@ static void destroy() {
 
 #include <sys/signal.h>
 
-void segfault_sigaction(int signal, siginfo_t *si, void *arg) {
+void segfault_sigaction(int signal, siginfo_t *si, void *arg)
+{
     printf("Caught segfault at address %p\n", si->si_addr);
 
     destroy();
@@ -145,7 +146,8 @@ void segfault_sigaction(int signal, siginfo_t *si, void *arg) {
     exit(1);
 }
 
-int main(int argc, char *argv[]) {
+int main(int argc, char *argv[])
+{
     // ===============================
     struct sigaction sa;
 

@@ -1,7 +1,8 @@
 #include "renderManager.h"
+#include "gr-base/core/geometry/shader.hpp"
+#include "gr-base/core/task/shaderTask.hpp"
 
-#include "shadowMap.hpp"
-
+#include <cstddef>
 #include <gr-base/script/meshRender.hpp>
 #include <gr-base/script/meshFilter.hpp>
 #include <gr-base/script/transform.hpp>
@@ -17,8 +18,6 @@
 
 #include <gr-base/core/geometry/batching.hpp>
 
-#include "scriptManager/scriptManager.hpp"
-
 #include <gr-base/core/culling/frustum.hpp>
 
 #include <cstring>
@@ -28,36 +27,31 @@
 
 void RenderManager::Process(const Camera *camera)
 {
-    if (!camera)
-    {
-        return;
-    }
-
     auto projection = camera->getPerspesctive();
     auto view = camera->getViewmatrix();
     auto position = camera->getPosition();
 
-    for (auto shader : AssetsManager::GetShaderList())
+    for (std::size_t i=0;i<IShaderOptmize;i++)
     {
-        if (!shader || !shader->isValid())
+        for (auto shader : AssetsManager::GetShaderList(AssetShader_Shader3D, i))
         {
-            continue;
-        }
+            if (!shader || !shader->isValid())
+            {
+                continue;
+            }
 
-        shader->setUniform("u_projection", &projection);
-        shader->setUniform("u_view",       &view);
-        shader->setUniform("m_eye",        &position);
+            shader->setUniform("u_projection", &projection);
+            shader->setUniform("u_view",       &view);
+            shader->setUniform("u_eye",        &position);
+        }
     }
 
     Frustum::CalculateFrustum(projection * view);
 }
 
-void RenderManager::Renderer() {
+void RenderManager::Renderer()
+{
     Batching::Render();
-
-    for (int i=0;i<10;i++) {
-        grr::gTexture::Unbind(i);
-    }
 }
 
 

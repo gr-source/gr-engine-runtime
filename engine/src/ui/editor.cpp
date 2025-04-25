@@ -1708,10 +1708,6 @@ void Editor::create_popup()
 
     PopupComponentMenu();
 
-    showShaderListPopup();
-
-    showMeshListPopup();
-
     SkyboxEditor();
 
     PluginManager();
@@ -1828,7 +1824,7 @@ void Editor::RenderStatisticsMenu() {
 
     ImGui::SeparatorText("AssetsManager");
     ImGui::Text("Textures: %ld", AssetsManager::GetTextureCount());
-    ImGui::Text("Shaders: %ld", AssetsManager::GetShaderCount());
+    // ImGui::Text("Shaders: %ld", AssetsManager::GetShaderCount());
     ImGui::Text("Mesh: %ld", AssetsManager::GetMeshCount());
     ImGui::Text("Event: %ld", Event::GetCount());
 
@@ -2237,7 +2233,7 @@ bool Editor::RenderMaterial(Material *material)
 
     try
     {
-        auto shader_name = std::filesystem::path(AssetsManager::GetShaderRefToName(shader)).filename();
+        auto shader_name = std::filesystem::path(AssetsManager::GetShaderName(shader)).filename();
 
         ImGui::SameLine();
 
@@ -2362,7 +2358,9 @@ void Editor::dropShaderInMaterial(Material *material) {
         return ImGui::EndDragDropTarget();
     }
 
-    AssetsManager::LoadShader(file, &Material::setShader, material);
+    std::cout << "Wrong: " << file << std::endl;
+
+    // AssetsManager::LoadShader(AssetShader_Shader3D, file, &Material::setShader, material);
 
     ImGui::EndDragDropTarget();
 }
@@ -2806,69 +2804,6 @@ void Editor::SaveScene(const std::string &name, Scene *scene) {
     scene->save(File::GetAsset("/scene/") + name + ".scn");
 
     updateFileTree(root_tree_file);
-}
-
-void Editor::showShaderListPopup() {
-    auto bOpen = ImGui::BeginPopup("##popup_menu_shader_list");
-    if (!bOpen) { return; }
-
-    renderShaderList();
-
-    ImGui::EndPopup();
-}
-
-void Editor::renderShaderList() {
-    auto &shader_list = AssetsManager::GetShaderMap();
-
-    auto regionAvail = ImGui::GetContentRegionAvail();
-    const char *reload_text = "Reload";
-    auto textSize = ImGui::CalcTextSize(reload_text);
-
-    auto button_pos_x = regionAvail.x - textSize.x;
-
-    for (auto &&[name, shader] : shader_list) {
-        ImGui::Text("%s", name.c_str());
-
-        ImGui::SameLine();
-
-        ImGui::SetCursorPosX(button_pos_x);
-        if (ImGui::Button("Reload")) {
-            //
-        }
-    }
-}
-
-void Editor::showMeshListPopup() {
-    auto bOpen = ImGui::BeginPopup("##popup_menu_mesh_list");
-    if (!bOpen) { return; }
-
-    renderMeshList();
-
-    ImGui::EndPopup();
-}
-
-void Editor::renderMeshList() {
-    ImGui::SeparatorText("Mesh List");
-
-    /*
-    auto &mesh_list = AssetsManager::GetMeshListMap();
-    if (mesh_list.empty()) { return; }
-
-    for (auto &&[name, mesh] : mesh_list) {
-        ImGui::Text("%s", name.c_str());
-
-        auto vertices = mesh->getVertices();
-        ImGui::Text("Vertices: %ld", vertices.size());
-        
-        auto indices = mesh->getIndices();
-        ImGui::Text("Indices: %ld", indices.size());
-
-        auto bones = mesh->getBoneWeight();
-        ImGui::Text("Bone: %ld", bones.size());
-
-        ImGui::Separator();
-    }
-    */
 }
 
 /*

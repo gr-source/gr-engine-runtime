@@ -58,6 +58,8 @@ private:
 
     void render_gui();
 
+    void drop_file(const std::string &path);
+
 protected:
     void default_render();
 

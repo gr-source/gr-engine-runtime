@@ -62,6 +62,8 @@ void Engine::HandleEvent(EngineEvent event, const void* data)
         return engine.loop();
     case DESTROY:
         return engine.shutdown();
+    case DROFUNC:
+        return engine.drop_file(static_cast<const char *>(data));
     default:
         break;
     }
@@ -262,7 +264,22 @@ void Engine::render_gui()
         view_layout->onRender();
     }
 
+    ModelHandle::Render();
+
     ImGuiRender::End();
+}
+
+void Engine::drop_file(const std::string &path)
+{
+    if (!gfile::exists(path))
+    {
+        return;
+    }
+
+    if (path.find(".fbx") != std::string::npos)
+    {
+        return ModelHandle::ImportFBX(path);
+    }
 }
 
 // ********** protected ********** //
