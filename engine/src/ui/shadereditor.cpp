@@ -140,25 +140,15 @@ void ShaderEditor::create_menubar()
     auto &io = ImGui::GetIO();
     if (io.KeyCtrl && ImGui::IsKeyReleased(ImGuiKey_S))
     {
-        for (auto &&[name, shader, texteditor] : v_shader_texeditor)
+        for (auto &&[path, shader, texteditor] : v_shader_texeditor)
         {
-            auto path = name;
-            auto end = name.find(';');
-            if (end != std::string::npos)
-            {
-                path = name.substr(0, end);
-            }
-
             {
                 std::ofstream os(path);
                 os << texteditor->GetText() << std::endl;
                 os.close();
             }
 
-
-            std::cout << "Wrong: " << name << std::endl;
-
-            // AssetsManager::LoadShader(AssetShader_Shader3D, name, shader);
+            AssetsManager::LoadShader(path, shader);
         }
     }
     ImGui::EndMenuBar();

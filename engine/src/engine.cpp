@@ -102,6 +102,11 @@ void Engine::set_project(const Project &project)
     {
         v_view_list.emplace_back("Shader Editor", std::make_unique<ShaderEditor>(this));
     }
+
+    if (view_layout != nullptr)
+    {
+        view_layout->onFocus();
+    }
 }
 
 // ********** private ********** //
@@ -232,32 +237,7 @@ void Engine::render_gui()
     ImGuiRender::Begin();
 
     auto dockID = ImGui::DockSpaceOverViewport(ImGui::GetMainViewport());
-    if (ImGui::BeginMainMenuBar())
-    {
-        if (ImGui::BeginTabBar("##render_gui_tab_bar_0"))
-        {
-            for (auto &&[name, view] : v_view_list)
-            {
-                if (ImGui::BeginTabItem(name))
-                {
-                    if (view_layout != view.get())
-                    {
-                        if (view_layout != nullptr)
-                        {
-                            view_layout->onBlur();
-                        }
-
-                        view_layout = view.get();
-                        view_layout->onFocus();
-                    }
-                    
-                    ImGui::EndTabItem();
-                }
-            }
-            ImGui::EndTabBar();
-        }
-        ImGui::EndMainMenuBar();
-    }
+    create_main_tabbar();
 
     if (view_layout != nullptr)
     {
@@ -267,6 +247,37 @@ void Engine::render_gui()
     ModelHandle::Render();
 
     ImGuiRender::End();
+}
+
+void Engine::create_main_tabbar()
+{
+    if (!ImGui::BeginMainMenuBar())
+    {
+        return;
+    }
+    
+    if (ImGui::BeginTabBar("##render_gui_tab_bar_0"))
+    {
+        for (auto &&[name, view] : v_view_list)
+        {
+            if (ImGui::BeginTabItem(name))
+            {
+                if (view_layout != view.get())
+                {
+                    if (view_layout != nullptr)
+                    {
+                        view_layout->onBlur();
+                    }
+
+                    view_layout = view.get();
+                    view_layout->onFocus();
+                }
+                ImGui::EndTabItem();
+            }
+        }
+        ImGui::EndTabBar();
+    }
+    ImGui::EndMainMenuBar();
 }
 
 void Engine::drop_file(const std::string &path)

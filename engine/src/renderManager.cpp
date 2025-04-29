@@ -31,19 +31,20 @@ void RenderManager::Process(const Camera *camera)
     auto view = camera->getViewmatrix();
     auto position = camera->getPosition();
 
-    for (std::size_t i=0;i<IShaderOptmize;i++)
-    {
-        for (auto shader : AssetsManager::GetShaderList(AssetShader_Shader3D, i))
-        {
-            if (!shader || !shader->isValid())
-            {
-                continue;
-            }
+    auto list = AssetsManager::GetShaderList(AssetShader_Shader3D);
 
-            shader->setUniform("u_projection", &projection);
-            shader->setUniform("u_view",       &view);
-            shader->setUniform("u_eye",        &position);
+    for (auto shader : list)
+    {
+        if (!shader || !shader->isValid())
+        {
+            continue;
         }
+
+        shader->setUniform("u_projection", &projection);
+        shader->setUniform("u_view",       &view);
+        shader->setUniform("u_eye",        &position);
+
+        SetupLight(shader);
     }
 
     Frustum::CalculateFrustum(projection * view);
@@ -55,31 +56,39 @@ void RenderManager::Renderer()
 }
 
 
-void RenderManager::SetupLight(grr::gShader *shader) {
+void RenderManager::SetupLight(grr::gShader *shader)
+{
     auto lights = Light::GetListLight();
 
     int numLight = static_cast<int>(lights.size());
 
-    shader->setUniform("m_lightcount", &numLight);
+    if (!shader->setUniform("numLights", &numLight))
+    {
+        return;
+    }
 
     if (lights.empty()) return;
 
-    for (auto i=0;i<lights.size();i++) {
+    for (std::size_t i={};i<lights.size();i++)
+    {
         auto light = lights[i];
 
-        auto position    = light->getPosition();
-        auto color       = light->getColor();
-        auto attenuation = Vector3{light->getAttenuationConstant(), light->getAttenuationLinear(), light->getAttenuationQuadractc()};
-        auto forward     = light->getForward();
-        auto params      = Vector3{light->getInnecone(), light->getOutercone(), (float)light->getType()};
-        auto projection  = light->getProjetion();
+        auto position   = light->getPosition();
+        auto forward    = light->getForward();
+        auto color      = light->getColor();
+        auto type       = light->getType();
 
-        shader->setUniform(("m_light[" + std::to_string(i) + "].position").c_str(),    &position);
-        shader->setUniform(("m_light[" + std::to_string(i) + "].color").c_str(),       &color);
-        shader->setUniform(("m_light[" + std::to_string(i) + "].attenuation").c_str(), &attenuation);
-        shader->setUniform(("m_light[" + std::to_string(i) + "].direction").c_str(),   &forward);
-        shader->setUniform(("m_light[" + std::to_string(i) + "].params").c_str(),      &params);
-        shader->setUniform(("m_light[" + std::to_string(i) + "].model").c_str(),       &projection);
+        // auto attenuation = Vector3{light->getAttenuationConstant(), light->getAttenuationLinear(), light->getAttenuationQuadractc()};
+        // auto params      = Vector3{light->getInnecone(), light->getOutercone(), (float)light->getType()};
+        // auto projection  = light->getProjetion();
+        //
+        //
+        shader->setUniform(("lights[" + std::to_string(i) + "].position").c_str(),    &position);
+        shader->setUniform(("lights[" + std::to_string(i) + "].direction").c_str(),   &forward);
+        shader->setUniform(("lights[" + std::to_string(i) + "].color").c_str(),       &color);
+        // shader->setUniform(("lights[" + std::to_string(i) + "].attenuation").c_str(), &attenuation);
+        // shader->setUniform(("lights[" + std::to_string(i) + "].params").c_str(),      &params);
+        shader->setUniform(("lights[" + std::to_string(i) + "].type").c_str(),       &type);
     }
 }
 

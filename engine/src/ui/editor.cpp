@@ -3,6 +3,7 @@
 #include <gr-base/script/baserender.hpp>
 #include <gr-base/script/default.hpp>
 
+#include "editorController.h"
 #include "screenRender.hpp"
 #include "settings.h"
 #include "imgui.h"
@@ -129,7 +130,10 @@ std::map<std::string, void *> Editor::m_runtimeFuncAddr = {
     {"", nullptr}
 };
 
-Editor::Editor() : m_viewport(ImGui::GetMainViewport()), mImGuiIO(&ImGui::GetIO()), m_currentPath(File::GetAsset("")), m_cameraObject(nullptr), m_mainCamera(nullptr), m_currentPage(0), m_materialToRename(nullptr), m_plugin(nullptr) {
+Editor::Editor() : m_viewport(ImGui::GetMainViewport()), mImGuiIO(&ImGui::GetIO()), m_currentPath(File::GetAsset("")), m_cameraObject(nullptr), m_mainCamera(nullptr), m_currentPage(0), m_materialToRename(nullptr), m_plugin(nullptr)
+{
+    m_scene = nullptr;
+
     s_texturePlayGame = nullptr;
 
     g_tree_file = nullptr;
@@ -137,16 +141,6 @@ Editor::Editor() : m_viewport(ImGui::GetMainViewport()), mImGuiIO(&ImGui::GetIO(
     m_currentPage = 0;
 
     popupFlags = 0;
-
-    bFileDoubleClick = false;
-
-    bCutAllFile = false;
-
-    bCopyAllFile = false;
-
-    bOpenPopupInfoDir = false;
-
-    bOpenPopupOptionGameObject = false;
 
     m_dirSelected = m_currentPath;
 
@@ -203,7 +197,7 @@ Editor::Editor() : m_viewport(ImGui::GetMainViewport()), mImGuiIO(&ImGui::GetIO(
         Display::SetDisplayRect(Rect{0.0f, 0.0f, (float)Settings::ViewportSize.x, (float)Settings::ViewportSize.y});
     } catch (const std::exception &e)
     {
-        Console::LogError("Fatal error in script: " + std::string(e.what()));
+        Console::LogError("Fatal error in script: %s", e.what());
     }
 
     root_tree_file.path = File::GetAsset("");
@@ -225,8 +219,6 @@ Editor::Editor() : m_viewport(ImGui::GetMainViewport()), mImGuiIO(&ImGui::GetIO(
 
         Window::SetWindowTitle(name);
     }
-
-    refreshDockMenuBar(File::GetFile("/dock_menu_bar.ini", true));
 }
 
 Editor::~Editor()
@@ -238,8 +230,6 @@ Editor::~Editor()
     config_release(m_settings);
     
     Scene::Shutdown();
-
-    ScreenRender::Shutdown();
 
     GameObject::Clear();
 
@@ -282,8 +272,6 @@ void Editor::LoadScript()
 
     Display::SetDisplayRect(Rect{0.0f, 0.0f, (float)Settings::ViewportSize.x, (float)Settings::ViewportSize.y});
 
-    ScreenRender::Initialize();
-
     Scene::CheckRequestReinstanceScript();
     
     Scene::InitializeAllScript();
@@ -317,6 +305,15 @@ void Editor::onRender()
     create_call_popup();
 
     create_popup();
+}
+
+void Editor::onFocus()
+{
+    m_scene = Scene::GetCurrentScene();
+}
+
+void Editor::onBlur()
+{
 }
 
 void Editor::create_dock()
@@ -397,26 +394,24 @@ void Editor::create_window_hierarchy()
 
 void Editor::create_render_hierarchy()
 {
-    auto scene = Scene::GetCurrentScene();
-
-    auto name = scene != nullptr ? scene->getName() : "Scene name is empty!";
+    auto name = m_scene != nullptr ? m_scene->getName() : "Scene name is empty!";
 
     ImGui::SetNextItemOpen(true, ImGuiCond_Appearing);
-    if (scene != nullptr && ImGui::TreeNodeEx(name.c_str(), ImGuiTreeNodeFlags_SpanFullWidth))
+    if (m_scene != nullptr && ImGui::TreeNodeEx(name.c_str(), ImGuiTreeNodeFlags_SpanFullWidth))
     {
-        dropGameObjectInHierarchy(scene);
+        dropGameObjectInHierarchy(m_scene);
         
-        RenderSceneObject(scene);
+        RenderSceneObject(m_scene);
 
         ImGui::TreePop();
     }
 
-    if (ImGui::IsKeyReleased(ImGuiKey_Delete) && scene->has_object_selected())
+    if (ImGui::IsKeyReleased(ImGuiKey_Delete) && m_scene->has_object_selected())
     {
-        for (auto go : scene->get_object_selected())
+        for (auto go : m_scene->get_object_selected())
             Scene::Destoy(go);
 
-        scene->deselect_all();
+        m_scene->deselect_all();
     }
     
     /*if (ImGui::IsKeyReleased(ImGuiKey_F2) && ImGui::IsWindowHovered() && s_objectSelected)
@@ -427,7 +422,7 @@ void Editor::create_render_hierarchy()
 
     if (ImGui::IsKeyReleased(ImGuiKey_Escape) && ImGui::IsWindowHovered())
     {
-        scene->deselect_all();
+        m_scene->deselect_all();
     }
 
     if (ImGui::IsWindowHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Right))
@@ -580,11 +575,14 @@ void Editor::dragDropGameObject(Transform *transform, const std::string &name)
     ImGui::EndDragDropTarget();
 }
 
-void Editor::PopupMenuAdd() {
+void Editor::PopupMenuAdd()
+{
     auto isOpen = ImGui::BeginPopup(GET_FLAG_NAME(EditorPopupFlags_SceneAddOption));
-    if (!isOpen) {
+    if (!isOpen)
+    {
         return;
     }
+
     const char* item_name[2] {"Cube", "Empty"};
     auto id = 0;
 
@@ -592,10 +590,9 @@ void Editor::PopupMenuAdd() {
     if (ImGui::ListBox("##popup_menu_menu_add_list_box", &id, item_name, (sizeof(item_name) / sizeof(item_name[0])))) {
         switch (id) {
         case 0:
-            /*s_objectSelected = CreatePrimitive(0);*/
             break;
         case 1:
-            // s_objectSelected = Scene::GetCurrentScene()->CreateGameObject("Empty");
+            PostLoadGameObject(GameObject::Create("Empty"));
             break;
         default:
             break;
@@ -688,7 +685,6 @@ void Editor::create_render_viewport()
         return;
     }
 
-    auto current_scene = Scene::GetCurrentScene();
     auto &scenes = Scene::GetScenes();
 
     for (auto it = scenes.begin(); it != scenes.end();)
@@ -698,13 +694,11 @@ void Editor::create_render_viewport()
         bool bactive = true;
         if (ImGui::BeginTabItem(name.c_str(), &bactive))
         {
-            if (current_scene != scene.get())
+            if (m_scene != scene.get())
             {
-                current_scene->deselect_all();
+                m_scene->deselect_all();
 
-                Scene::Use(scene.get());
-
-                current_scene = scene.get();
+                set_scene(scene.get());
             }
 
             ImGui::EndTabItem();
@@ -712,12 +706,7 @@ void Editor::create_render_viewport()
 
         if (!bactive)
         {
-            if (current_scene == scene.get())
-            {
-                current_scene = nullptr;
-            }
-
-            Scene::Use(nullptr);
+            set_scene(nullptr);
                 
             it = scenes.erase(it);
             continue;
@@ -734,8 +723,8 @@ void Editor::create_render_viewport()
     
     drop_scene_file_in_viewport();
 
-    if (current_scene != nullptr)
-        render_scene(current_scene);
+    if (m_scene != nullptr)
+        render_scene(m_scene);
 }
 
 void Editor::drop_scene_file_in_viewport()
@@ -752,7 +741,7 @@ void Editor::drop_scene_file_in_viewport()
         return ImGui::EndDragDropTarget();
     }
 
-    AssetsManager::LoadScene(std::string((char*)payload->Data, payload->DataSize), &Editor::ScenePostEcecute, this);
+    AssetsManager::LoadScene(std::string((char*)payload->Data, payload->DataSize), &Editor::set_scene, this);
 
     ImGui::EndDragDropTarget();
 }
@@ -980,17 +969,27 @@ void Editor::render_scene(Scene *scene)
     if (ImGui::RadioButton("World", m_guizmoManipulate == ImGuizmo::WORLD)) {
         m_guizmoManipulate = ImGuizmo::WORLD;
     }
+
+    ImGui::SameLine();
+    if (ImGui::RadioButton("Move", EditorController::bCanMove))
+    {
+        EditorController::bCanMove = !EditorController::bCanMove;
+    }
     ImGui::EndGroup();
 
     ImGui::PopStyleColor();
 
-    /*if (s_objectSelected && !mImGuiIO->MouseDrawCursor && ImGui::IsWindowFocused() && mImGuiIO->KeyShift && ImGui::IsKeyReleased(ImGuiKey_D)) {
-        s_objectSelected = GameObject::Instantiate(s_objectSelected);
+    if (m_scene->has_object_selected() && ImGui::IsWindowFocused() && mImGuiIO->KeyShift && ImGui::IsKeyReleased(ImGuiKey_D))
+    {
+        auto temp = m_scene->get_object_selected();
+        m_scene->deselect_all();
+
+        for (auto go : temp)
+            m_scene->select(GameObject::Instantiate(go));
     }
-    */
 
     if (ImGui::IsWindowFocused() && mImGuiIO->KeyCtrl && ImGui::IsKeyReleased(ImGuiKey_S)) {
-        Event::Add(&Editor::SaveScene, this, Scene::GetCurrentScene()->getName(), Scene::GetCurrentScene());
+        Event::Add(&Editor::SaveScene, this, m_scene->getName(), m_scene);
     }
 }
 
@@ -1086,10 +1085,9 @@ void Editor::PlayGame() {
 
 void Editor::StopGame()
 {
-    auto scene = Scene::GetCurrentScene();
-    if (scene != nullptr)
+    if (m_scene != nullptr)
     {
-        scene->deselect_all();
+        m_scene->deselect_all();
     }
 
     Settings::bGameRunning = false;
@@ -1604,13 +1602,12 @@ void Editor::create_window_property()
 
 void Editor::create_render_property()
 {
-    auto scene = Scene::GetCurrentScene();
-    if (scene == nullptr || !scene->has_object_selected())
+    if (!m_scene->has_object_selected())
     {
         return;
     }
 
-    auto go = scene->get_object_selected().back();
+    auto go = m_scene->get_object_selected().back();
 
     auto entity = go->getEntity();
 
@@ -1756,7 +1753,7 @@ void Editor::create_popup_create_scene()
 
     if (ImGui::InputText("##popup_create_scene_inputtext", name, GET_N_ARRAY(name), ImGuiInputTextFlags_EnterReturnsTrue))
     {
-        ScenePostEcecute(Scene::Create(name));
+        set_scene(Scene::Create(name));
         
         ImGui::CloseCurrentPopup();
     }
@@ -1771,7 +1768,7 @@ void Editor::create_popup_add_component()
         return;
     }
 
-    auto go = Scene::GetCurrentScene()->get_object_selected().back();
+    auto go = m_scene->get_object_selected().back();
 
     std::vector<std::string> m_componentName;
     for (auto &&[name, tuple] : ComponentRegistry::GetAllChunkComponent())
@@ -2262,9 +2259,9 @@ void Editor::RenderShaderUniform(Material *material, grr::gShader *shader)
     {
         switch (type)
         {
-        case grr::UniformType_mat3:
-        case grr::UniformType_mat4:
-        case grr::UniformType_none:
+        case UniformVariable::MAT3:
+        case UniformVariable::MAT4:
+        case UniformVariable::NONE:
             continue;
         default:
             break;
@@ -2274,7 +2271,8 @@ void Editor::RenderShaderUniform(Material *material, grr::gShader *shader)
 
         switch (type)
         {
-            case grr::UniformType_vec3: {
+            case UniformVariable::VEC3:
+            {
                 auto value = material->getValue<Vector3>(name);
                 if (value == nullptr)
                 {
@@ -2288,7 +2286,18 @@ void Editor::RenderShaderUniform(Material *material, grr::gShader *shader)
                 ImGui::DragFloat3(("##" + std::string(name)).c_str(), (float *)value);
                 break;
             }
-            /*case grr::UniformType_int: {
+            case UniformVariable::FLOAT:
+            {
+                auto value = material->getValue<float>(name);
+                if (value == nullptr)
+                {
+                    value = material->setValue<float>(name, 0.0f);
+                }
+
+                ImGui::DragFloat(("##" + std::string(name)).c_str(), (float *)value);
+                break;
+            }
+            /*case UniformVariable::int: {
             int value = 0.0f;
             if (uniform.data != nullptr)
                 value = *reinterpret_cast<int *>(uniform.data);
@@ -2299,7 +2308,7 @@ void Editor::RenderShaderUniform(Material *material, grr::gShader *shader)
             }
             break;
         }
-        case grr::UniformType_float: {
+        case UniformVariable::float: {
             float value = 0.0f;
             if (uniform.data != nullptr)
                 value = *reinterpret_cast<float *>(uniform.data);
@@ -2310,7 +2319,7 @@ void Editor::RenderShaderUniform(Material *material, grr::gShader *shader)
             }
             break;
         }
-        case grr::UniformType_vec3: {
+        case UniformVariable::vec3: {
             Vector3 value = Vector3::zero;
             if (uniform.data != nullptr)
                 value = *reinterpret_cast<Vector3 *>(uniform.data);
@@ -2321,7 +2330,7 @@ void Editor::RenderShaderUniform(Material *material, grr::gShader *shader)
             }
             break;
         }
-        case grr::UniformType_vec4: {
+        case UniformVariable::vec4: {
             Vector4 value = Vector4::zero;
             if (uniform.data != nullptr)
                 value = *reinterpret_cast<Vector4 *>(uniform.data);
@@ -2585,11 +2594,16 @@ Camera *Editor::getCamera()
     return m_mainCamera;
 }
 
-void Editor::PostLoadGameObject(GameObject *gameObject) {
-    if (Scene::HasScene())
-        Scene::GetCurrentScene()->insert(gameObject);
-    
-    // s_objectSelected = gameObject;
+void Editor::PostLoadGameObject(GameObject *gameObject)
+{
+    if (m_scene == nullptr)
+    {
+        return;
+    }
+    m_scene->insert(gameObject);
+
+    m_scene->deselect_all();
+    m_scene->select(gameObject);
 }
 
 std::string GenerateScriptHeader(const std::string& name) {
@@ -3011,83 +3025,26 @@ void Editor::PluginEditor() {
     ImGui::EndPopup();
 }
 
-void Editor::ScenePostEcecute(Scene *scene) {
-    if (scene == nullptr) { return; }
+void Editor::set_scene(Scene *scene)
+{
+    if (m_scene == scene)
+    {
+        return;
+    }
 
-    m_cameraObject = scene->getCameraObject();
+    m_cameraObject = scene == nullptr ? nullptr : scene->getCameraObject();
 
-    m_mainCamera = scene->getCamera();
+    m_mainCamera = scene == nullptr ? nullptr : scene->getCamera();
+
+    m_scene = scene;
+
+    Scene::Use(scene);
 }
 
 void Editor::OutputGameObject(GameObject **ref, GameObject *go) {
     *ref = go;
 
     go->getEntity()->setEnable(false);
-}
-
-void Editor::refreshDockMenuBar(const std::string &file)
-{
-    if (!File::Exists(file))
-    {
-        return Console::LogError("File settings dock menu bar do not found.");
-    }
-
-    gConfig *config = config_create();
-    if (config == nullptr)
-    {
-        return;
-    }
-
-    config_load(file.c_str(), config);
-
-    config_foreach(config, (ConfigFunc) &Editor::foreach_ini, this);
-
-    config_release(config);
-}
-
-gConfigStep_ Editor::foreach_ini(gConfigType_ type, void *data, void *instance)
-{
-    Editor *editor = static_cast<Editor *>(instance);
-
-    switch (type)
-    {
-        case gConfigType_Section:{
-            struct gSection *section = static_cast<struct gSection *>(data);
-            if (std::strcmp(section->key, "MenuBar") == 0)
-            {
-                std::string name = config_get_string(section, "name");
-
-                editor->mMenuBarList.push_back(MenuBar{name});
-                return gConfigStep_Recuse;
-            }
-            break;
-        }
-        case gConfigType_Subsection: {
-            struct gSection *section = static_cast<struct gSection *>(data);
-            if (std::strcmp(section->name, "MenuItem") == 0)
-            {
-                void (*func)() = nullptr;
-                MenuBar *menu_bar = &editor->mMenuBarList.back();
-
-                auto symbol_addr = config_get_string(section, "addr");
-                auto libname = config_get_string(section, "libname");
-                if (libname != nullptr)
-                {
-                    if (std::strcmp(libname, "runtime") == 0)
-                    {
-                        func = (void (*)(void))m_runtimeFuncAddr[libname];
-                    }
-                }
-                auto name = config_get_string(section, "name");
-
-                menu_bar->items.push_back(MenuItem{name, func});
-            }
-            break;
-        }
-        default:
-            break;
-    }
-    return gConfigStep_Continue;
 }
 
 gConfigStep_ Editor::foreach_settings(gConfigStep_ type, void *data, void *instance)
@@ -3112,7 +3069,7 @@ gConfigStep_ Editor::foreach_settings(gConfigStep_ type, void *data, void *insta
             {
                 auto name = config_get_string(section, "name");
 
-                AssetsManager::LoadScene(File::GetAsset("/scene/") + name + ".scn", &Editor::ScenePostEcecute, editor);
+                AssetsManager::LoadScene(File::GetAsset("/scene/") + name + ".scn", &Editor::set_scene, editor);
             }
             break;
         }

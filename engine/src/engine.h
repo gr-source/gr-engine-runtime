@@ -58,6 +58,8 @@ private:
 
     void render_gui();
 
+    void create_main_tabbar();
+
     void drop_file(const std::string &path);
 
 protected:

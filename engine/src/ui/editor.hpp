@@ -26,7 +26,8 @@
 #include "viewlayout.hpp"
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif // __cplusplus
 
 #include <gr-ini/config.h>
@@ -84,20 +85,6 @@ enum IconType : int {
 	ICON_SCRIPT         = 18
 };
 
-typedef struct
-{
-    std::string name;
-
-    void (*func)(void);
-} MenuItem;
-
-typedef struct
-{
-    std::string name;
-
-    std::vector<MenuItem> items;
-} MenuBar;
-
 typedef struct gtreefile
 {
     std::string path;
@@ -121,6 +108,10 @@ public:
 
     void onRender() override;
 
+    void onFocus() override;
+
+    void onBlur() override;
+
     void LoadScript();
 
     void UnloadScript();
@@ -131,8 +122,6 @@ public:
 
     Camera *getCamera();
 
-    std::vector<MenuBar> mMenuBarList;
-
 private:
     static std::map<std::string, void *> m_runtimeFuncAddr;
 
@@ -141,6 +130,8 @@ private:
     std::unordered_map<IconType, grr::gTexture *> iconsUI;
 
     std::vector<gtreefile *> g_tree_file_selected;
+
+    Scene *m_scene;
 
     GameObject *m_cameraObject;
 
@@ -158,16 +149,6 @@ private:
 
     grm::u8 m_currentPage;
 
-    bool bFileDoubleClick;
-
-    bool bCutAllFile;
-
-    bool bCopyAllFile;
-
-    bool bOpenPopupInfoDir;
-
-    bool bOpenPopupOptionGameObject;
-
     bool bBuildDock;
 
     ImVec4 FPSColor;
@@ -181,8 +162,6 @@ private:
     ImGuizmo::OPERATION m_guizmoOperation;
 
     ImGuizmo::MODE m_guizmoManipulate;
-
-    std::unordered_map<std::filesystem::path, bool> mDirSelectedMap;
 
     std::vector<std::filesystem::path> mDirSelectedList;
 
@@ -364,16 +343,12 @@ private:
 
     void PluginEditor();
 
-    void ScenePostEcecute(Scene *scene);
+    void set_scene(Scene *scene);
 
     template <typename T, typename... Args>
     bool RenderProperty(Args&&... args);
 
     static void OutputGameObject(GameObject **ref, GameObject *go);
-
-    void refreshDockMenuBar(const std::string &file);
-
-    static gConfigStep_ foreach_ini(gConfigType_ type, void *data, void *editor);
 
     static gConfigStep_ foreach_settings(gConfigType_ type, void *data, void *instance);
 

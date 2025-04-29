@@ -26,7 +26,7 @@ float EditorController::mouseSensitivity = 10.f;
 Vector2 EditorController::lastMousePos = {0.0f, 0.0f};
 Vector2 EditorController::elapsed = {0.0f, 0.0f};
 
-bool EditorController::bCanMove = true;
+bool EditorController::bCanMove = false;
 
 void EditorController::Initialize()
 {
