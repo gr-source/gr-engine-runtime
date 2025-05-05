@@ -4,6 +4,7 @@
 #include <gr-base/script/default.hpp>
 
 #include "editorController.h"
+#include "gr-base/core/clock.hpp"
 #include "screenRender.hpp"
 #include "settings.h"
 #include "imgui.h"
@@ -65,6 +66,7 @@
 #include <gr-render/gTexture.h>
 #include <filesystem>
 
+#include <stdexcept>
 #include <vector>
 
 #define ITEMS_PER_PAGE 20
@@ -953,7 +955,7 @@ void Editor::render_scene(Scene *scene)
 
         ImGui::SetCursorPos(ImVec2(regionAvail.x - textSize.x, cursorPos.y + textSize.y));
 
-        /*ImGui::TextColored(FPSColor, "FPS: %.2f", Statistics::m_threadFrame.fps);*/
+        ImGui::TextColored(FPSColor, "FPS: %.2f", (1.0f / Clock::deltaTime));
     }
 
     ImGui::SetCursorPos({8.0f, cursorPos.y});
@@ -1593,7 +1595,7 @@ void Editor::ConfigureVSCode() {
 
 void Editor::create_window_property()
 {
-    if (ImGui::Begin("property"))
+    if (ImGui::Begin("property") && m_scene != nullptr)
     {
         create_render_property();
     }

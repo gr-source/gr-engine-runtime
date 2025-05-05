@@ -296,10 +296,19 @@ void Engine::drop_file(const std::string &path)
 // ********** protected ********** //
 void Engine::default_render()
 {
-    auto cameras = Camera::GetCameras();
-    for (auto camera : cameras)
+    if (Settings::bGameRunning)
     {
-        PreConfigRenderScene(camera);
+        auto cameras = Camera::GetCameras();
+        for (auto camera : cameras)
+        {
+            PreConfigRenderScene(camera);
+        }
+        return;
+    }
+    auto current = Camera::Current();
+    if (current != nullptr)
+    {
+        PreConfigRenderScene(current);
     }
 }
 

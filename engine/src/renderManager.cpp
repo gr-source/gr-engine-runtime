@@ -1,8 +1,5 @@
 #include "renderManager.h"
-#include "gr-base/core/geometry/shader.hpp"
-#include "gr-base/core/task/shaderTask.hpp"
 
-#include <cstddef>
 #include <gr-base/script/meshRender.hpp>
 #include <gr-base/script/meshFilter.hpp>
 #include <gr-base/script/transform.hpp>
@@ -81,8 +78,7 @@ void RenderManager::SetupLight(grr::gShader *shader)
         // auto attenuation = Vector3{light->getAttenuationConstant(), light->getAttenuationLinear(), light->getAttenuationQuadractc()};
         // auto params      = Vector3{light->getInnecone(), light->getOutercone(), (float)light->getType()};
         // auto projection  = light->getProjetion();
-        //
-        //
+        
         shader->setUniform(("lights[" + std::to_string(i) + "].position").c_str(),    &position);
         shader->setUniform(("lights[" + std::to_string(i) + "].direction").c_str(),   &forward);
         shader->setUniform(("lights[" + std::to_string(i) + "].color").c_str(),       &color);

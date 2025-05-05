@@ -81,6 +81,10 @@ void ShaderEditor::onBlur()
 
 void ShaderEditor::onRender()
 {
+    if (m_currentscene == nullptr)
+    {
+        return;
+    }
     create_window_viewport();
 
     create_window_texeditor();
