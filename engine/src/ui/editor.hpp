@@ -193,10 +193,6 @@ private:
 
     void PopupMenuAdd();
 
-    void PopupOptionsGameObject();
-
-    void PopupRenameGameObject();
-
     void create_window_viewport();
 
     void create_render_viewport();
@@ -260,6 +256,8 @@ private:
     void create_popup_create_scene();
 
     void create_popup_add_component();
+
+    void create_popup_rename_object();
 
     void RenderStatisticsMenu();
 

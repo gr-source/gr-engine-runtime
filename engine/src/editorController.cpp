@@ -26,7 +26,7 @@ float EditorController::mouseSensitivity = 10.f;
 Vector2 EditorController::lastMousePos = {0.0f, 0.0f};
 Vector2 EditorController::elapsed = {0.0f, 0.0f};
 
-bool EditorController::bCanMove = false;
+bool EditorController::bCanMove = true;
 
 void EditorController::Initialize()
 {
@@ -36,10 +36,12 @@ void EditorController::Initialize()
     }
 }
 
-void EditorController::Update(Camera *camera) {
+void EditorController::Update(Camera *camera)
+{
     m_mainCamera = camera;
 
-    if (!m_mainCamera || !bCanMove) {
+    if (!m_mainCamera || !EditorController::bCanMove)
+    {
         return;
     }
 

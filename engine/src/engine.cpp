@@ -46,6 +46,7 @@
 #include <gr-base/core/binary/modelhandle.hpp>
 
 #include <gr-ini/config.h>
+#include <gr-render/gCommon.h>
 #include <memory>
 
 static FunctionTimer mFunctionTimer;
@@ -130,6 +131,12 @@ void Engine::init()
         
         view_layout = view.get();
     }
+
+    grr::gRender::SetRenderState(grr::GR_CULL_FACE, grr::GR_TRUE);
+    grr::gRender::SetRenderState(grr::GR_CULL, grr::GR_BACK);
+
+    grr::gRender::SetRenderState(grr::GR_BLEND, grr::GR_TRUE);
+    grr::gRender::SetRenderState(grr::GR_SRC_ALPHA, grr::GR_ONE_MINUS_SRC_ALPHA);
 
     AssetsManager::LoadTexture("/home/felipy/Downloads/Skyboxes/SunsetSky.png", &Skybox::set_texture, &m_skybox);
 }

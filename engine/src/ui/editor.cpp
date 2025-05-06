@@ -66,6 +66,7 @@
 #include <gr-render/gTexture.h>
 #include <filesystem>
 
+#include <pstl/glue_algorithm_defs.h>
 #include <stdexcept>
 #include <vector>
 
@@ -416,11 +417,10 @@ void Editor::create_render_hierarchy()
         m_scene->deselect_all();
     }
     
-    /*if (ImGui::IsKeyReleased(ImGuiKey_F2) && ImGui::IsWindowHovered() && s_objectSelected)
+    if (ImGui::IsKeyReleased(ImGuiKey_F2) && ImGui::IsWindowHovered() && m_scene->has_object_selected())
     {
         popupFlags |= EditorPopupFlags_RenameGameObject;
     }
-    */
 
     if (ImGui::IsKeyReleased(ImGuiKey_Escape) && ImGui::IsWindowHovered())
     {
@@ -431,16 +431,6 @@ void Editor::create_render_hierarchy()
     {
         popupFlags |= EditorPopupFlags_SceneAddOption;
     }
-
-        /*
-        if (bOpenPopupOptionGameObject) {
-            ImGui::OpenPopup("##popup_options_gameobject");
-            bOpenPopupOptionGameObject = false;
-        }
-
-        PopupOptionsGameObject();
-
-        */
 }
 
 void Editor::dropGameObjectInHierarchy(Scene *scene)
@@ -603,72 +593,6 @@ void Editor::PopupMenuAdd()
     }
 
     ImGui::EndPopup();
-}
-
-void Editor::PopupOptionsGameObject() {
-    /*if (!s_objectSelected || m_mainCamera == nullptr)
-    {
-        return;
-    }
-
-    bool isOpenRename = false;
-    if (ImGui::BeginPopup("##popup_options_gameobject")) {
-        std::vector<const char *> item_name {"Delete", "Rename", "Look at me"};
-
-        auto id = 0;
-        if (ImGui::ListBox("##ListBoxOptionsGame", &id, item_name.data(), item_name.size())) {
-            switch (id) {
-            case 0:
-                Event::Add(&Scene::Destoy, s_objectSelected);
-                s_objectSelected = nullptr;
-                break;
-            case 1:
-                isOpenRename = true;
-                break;
-            case 2:
-                EditorController::LookAt(s_objectSelected->getTransform());
-            default:
-                break;
-            }
-            ImGui::CloseCurrentPopup();
-        }
-        ImGui::EndPopup();
-    }
-
-    if (isOpenRename && s_objectSelected) {
-        ImGui::OpenPopup("##popup_rename_gameobject");
-    }
-    */
-}
-
-void Editor::PopupRenameGameObject()
-{
-    /*auto isOpen = ImGui::BeginPopup(GET_FLAG_NAME(EditorPopupFlags_RenameGameObject));
-    if (!isOpen)
-    {
-        return;
-    }
-    ImGui::Text("Input new name");
-
-    if (!ImGui::IsAnyItemActive() && !ImGui::IsMouseClicked(0))
-        ImGui::SetKeyboardFocusHere(0);
-
-    auto name = s_objectSelected->getName();
-    if (name.size() < 256)
-    {
-        name.resize(256, '\0');
-    }
-    
-    if (ImGui::InputText("##input_new_name_gameobject", name.data(), name.size(), ImGuiInputTextFlags_EnterReturnsTrue))
-    {
-        name.erase(std::remove(name.begin(), name.end(), '\0'), name.end());
-
-        GameObject::Rename(s_objectSelected, name);
-
-        ImGui::CloseCurrentPopup();
-    }
-    ImGui::EndPopup();
-    */
 }
 
 void Editor::create_window_viewport()
@@ -1490,7 +1414,7 @@ void Editor::RenderFiles()
     }
 }
 
-#include "gr-base/core/task/saveGameObjectTask.hpp"
+// #include "gr-base/core/task/saveGameObjectTask.hpp"
 void Editor::dropTargetGameObjectInFile(std::string path)
 {
     if (!ImGui::BeginDragDropTarget())
@@ -1508,7 +1432,9 @@ void Editor::dropTargetGameObjectInFile(std::string path)
     
     path = path[path.size()] == '/' ? path : path + "/";
 
-    SaveGameObjectTask SaveGameObjectTask(transform->getGameObject(), path);
+    std::cerr << "Save: " << path << std::endl;
+
+    // SaveGameObjectTask SaveGameObjectTask(transform->getGameObject(), path);
 
     ImGui::EndDragDropTarget();
 }
@@ -1705,6 +1631,8 @@ void Editor::create_popup()
 
     create_popup_add_component();
 
+    create_popup_rename_object();
+
     PopupComponentMenu();
 
     SkyboxEditor();
@@ -1732,8 +1660,6 @@ void Editor::create_popup()
     PopupCreateScript();
 
     PopupCreateShader();
-
-    PopupRenameGameObject();
 
     PopupMenuAdd();
 }
@@ -1811,6 +1737,43 @@ void Editor::create_popup_add_component()
         }
     }
     
+    ImGui::EndPopup();
+}
+
+void Editor::create_popup_rename_object()
+{
+    auto isopen = ImGui::BeginPopup(GET_FLAG_NAME(EditorPopupFlags_RenameGameObject));
+    if (!isopen)
+    {
+        return;
+    }
+
+    ImGui::SeparatorText("[ Rename ]");
+    auto objectlist = m_scene->get_object_selected();
+
+    auto object = objectlist.back();
+
+    auto name = object->getName();
+    if (name.size() < 256)
+    {
+        name.resize(256, '\0');
+    }
+
+    if (!ImGui::IsAnyItemActive() && !ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+        ImGui::SetKeyboardFocusHere();
+
+    if (ImGui::InputText("##create_popup_rename_object_inputtext_0", name.data(), name.size(), ImGuiInputTextFlags_EnterReturnsTrue))
+    {
+        name.erase(std::remove(name.begin(), name.end(), '\0'), name.end());
+
+        for (auto go : objectlist)
+        {
+            GameObject::Rename(go, name);
+        }
+
+        ImGui::CloseCurrentPopup();
+    }
+
     ImGui::EndPopup();
 }
 
