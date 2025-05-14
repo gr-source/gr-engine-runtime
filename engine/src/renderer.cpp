@@ -33,7 +33,7 @@ void DebugDraw::Initialize() {
 
 void DebugDraw::Shutdown() {
     if (m_primitive) {
-        grr::gVertexArray::Destroy(m_primitive);
+        delete m_primitive;
         m_primitive = nullptr;
     }
 

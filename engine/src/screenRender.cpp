@@ -37,7 +37,7 @@ void ScreenRender::Initialize() {
 
 void ScreenRender::Shutdown() {
     if (m_vertexArray && !Settings::IsEngineRunning()) {
-        grr::gVertexArray::Destroy(m_vertexArray);
+        delete m_vertexArray;
         m_vertexArray = nullptr;
     }
 }
@@ -98,12 +98,14 @@ void ScreenRender::CreateMesh() {
     };
 
     m_vbo = grr::gVertexArray::CreateBuffer(BufferType::VBO);
-    if (!m_vbo) {
+    if (!m_vbo)
+    {
         return Console::log(Log::ERROR, "[ ScreenRender ] Falied to create vbo.");
     }
 
-    m_vertexArray = grr::gVertexArray::Create();
-    if (!m_vertexArray) {
+    m_vertexArray = new grr::gVertexArray();
+    if (!m_vertexArray)
+    {
         return Console::log(Log::ERROR, "[ ScreenRender ] Falied to create vao.");
     }
 

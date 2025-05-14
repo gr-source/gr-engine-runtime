@@ -217,11 +217,10 @@ void Engine::update()
 {
     if (Settings::bGameRunning)
     {
-        Manager::Update();
-    } else
-    {
-        EditorController::Update(Camera::Current());
+        return Manager::Update();
     }
+
+    EditorController::Update(Camera::Current());
 }
 
 void Engine::render()
@@ -312,6 +311,7 @@ void Engine::default_render()
         }
         return;
     }
+
     auto current = Camera::Current();
     if (current != nullptr)
     {
