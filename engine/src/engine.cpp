@@ -250,7 +250,7 @@ void Engine::render_gui()
         view_layout->onRender();
     }
 
-    ModelHandle::Render();
+    AssetsManager::Render();
 
     ImGuiRender::End();
 }
@@ -295,7 +295,7 @@ void Engine::drop_file(const std::string &path)
 
     if (path.find(".fbx") != std::string::npos)
     {
-        return ModelHandle::ImportFBX(path);
+        AssetsManager::LoadFilmbox(path);
     }
 }
 
