@@ -7,7 +7,8 @@
 #include <cstring>
 #include <gr-base/core/geometry/batching.hpp>
 
-#include <gr-base/core/threadpool.hpp>
+#include <gr-base/core/thread/threadpool.hpp>
+
 #include <gr-base/core/console.hpp>
 #include <gr-base/core/scene.hpp>
 

@@ -1,6 +1,7 @@
 #pragma once
 
-class ViewLayout {
+class ViewLayout
+{
 public:
     virtual ~ViewLayout() {}
 
@@ -9,6 +10,8 @@ public:
     virtual void onBlur() {}
 
     virtual void onRender() {}
+
+    virtual void drop(void *data) {}
 };
 
 

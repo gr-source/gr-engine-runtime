@@ -63,6 +63,8 @@ private:
     void drop_file(const std::string &path);
 
 protected:
+    void upload(GameObject *gameObject);
+
     void default_render();
 
     static void PreConfigRenderScene(Camera *camera);

@@ -13,7 +13,6 @@
 #include <gr-base/core/file/file.hpp>
 
 #include <gr-base/core/assetsManager.hpp>
-#include <gr-base/core/threadpool.hpp>
 #include <gr-base/core/window.hpp>
 #include <gr-base/core/skybox.hpp>
 #include <gr-base/core/event.hpp>
@@ -89,6 +88,8 @@ void Engine::set_project(const Project &project)
 
     File::SetCurrentProject(project.getPath());
 
+    gfile::AssetStreamPath = project.getPath() + "/assets";
+
     v_view_list.clear();
 
     // Editor
@@ -118,8 +119,6 @@ void Engine::init()
     File::SetCachePath(gfile::get_cache_directory());
     
     File::SetUserPath(gfile::get_data_directory());
-
-    Threadpool::Initialize();
 
     ImGuiRender::Initialize("#version 330 core"); 
 
@@ -170,8 +169,6 @@ void Engine::shutdown()
     save_current_project();
 
     ImGuiRender::Shutdown();
-
-    Threadpool::Shutdown();
 }
 
 void Engine::save_current_project()
@@ -295,11 +292,21 @@ void Engine::drop_file(const std::string &path)
 
     if (path.find(".fbx") != std::string::npos)
     {
-        AssetsManager::LoadFilmbox(path);
+        AssetsManager::LoadFilmbox(path, &Engine::upload, this, nullptr);
     }
 }
 
 // ********** protected ********** //
+void Engine::upload(GameObject *gameObject)
+{
+    if (view_layout == nullptr)
+    {
+        return;
+    }
+
+    view_layout->drop((void *)gameObject);
+}
+
 void Engine::default_render()
 {
     if (Settings::bGameRunning)

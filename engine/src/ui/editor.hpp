@@ -112,6 +112,8 @@ public:
 
     void onBlur() override;
 
+    void drop(void *data) override;
+
     void LoadScript();
 
     void UnloadScript();

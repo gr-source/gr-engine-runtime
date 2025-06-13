@@ -21,8 +21,9 @@
 
 #include <gr-base/core/file/file.hpp>
 
+#include <gr-base/core/thread/threadpool.hpp>
+
 #include <gr-base/core/assetsManager.hpp>
-#include <gr-base/core/threadpool.hpp>
 #include <gr-base/core/console.hpp>
 #include <gr-base/core/display.hpp>
 #include <gr-base/core/scene.hpp>
@@ -317,6 +318,11 @@ void Editor::onFocus()
 
 void Editor::onBlur()
 {
+}
+
+void Editor::drop(void *data)
+{
+    updateFileTree(root_tree_file);
 }
 
 void Editor::create_dock()
@@ -1236,14 +1242,14 @@ void Editor::PopupRenameFileOrDir()
 
 void Editor::PopupCreateDirectory()
 {
-    auto isOpen = ImGui::BeginPopup("##popup_create_new_dir");
+    auto isOpen = ImGui::BeginPopup(GET_FLAG_NAME(EditorPopupFlags_CreateNewDir));
     if (!isOpen)
     {
         return;
     }
 
-    auto path = mDirSelectedList.back();
-    
+    auto &file_tree = g_tree_file_selected.back();
+
     ImGui::Text("Input directory name:");
     if (!ImGui::IsAnyItemActive() && !ImGui::IsMouseClicked(0))
         ImGui::SetKeyboardFocusHere(0);
@@ -1251,9 +1257,10 @@ void Editor::PopupCreateDirectory()
     char name[256] = {0};
     if (ImGui::InputText("##popup_create_directoty_inputtext", name, 256, ImGuiInputTextFlags_EnterReturnsTrue))
     {
-        File::CreateDirectory(path.string() + "/" + std::string(name));
+        File::CreateDirectory(file_tree->path + "/" + std::string(name));
 
-        mDirSelectedList.clear();
+        updateFileTree(*file_tree);
+
         ImGui::CloseCurrentPopup();
     }
 
@@ -1597,8 +1604,7 @@ void Editor::create_call_popup()
         popupFlags &= ~EditorPopupFlags_RenameFileOrDir;
         break;
     case EditorPopupFlags_CreateNewDir:
-        ImGui::OpenPopup("##popup_create_new_dir");
-        popupFlags &= ~EditorPopupFlags_CreateNewDir;
+        ImGui::OpenPopup(GET_FLAG_NAME(EditorPopupFlags_CreateNewDir));
         break;
     case EditorPopupFlags_CreateScript:
         ImGui::OpenPopup("##popup_create_script");
@@ -1768,7 +1774,7 @@ void Editor::create_popup_rename_object()
 
         for (auto go : objectlist)
         {
-            GameObject::Rename(go, name);
+            go->setName(name);
         }
 
         ImGui::CloseCurrentPopup();
@@ -1791,7 +1797,7 @@ void Editor::RenderStatisticsMenu() {
     ImGui::Text("Event: %ld", Event::GetCount());
 
     ImGui::SeparatorText("Threads");
-    ImGui::Text("Threads: %ld/%ld", Threadpool::GetThreadCount(), Threadpool::GetThreadAvailable());
+    ImGui::Text("Threads: %ld/%ld", Threadpool::GetCount(), Threadpool::GetUsage());
 
     ImGui::SeparatorText("FrameTime");
     {
