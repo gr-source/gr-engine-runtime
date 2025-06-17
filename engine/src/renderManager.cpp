@@ -28,6 +28,7 @@ void RenderManager::Process(const Camera *camera)
     auto view = camera->getViewmatrix();
     auto position = camera->getPosition();
 
+    /*
     auto list = AssetsManager::GetShaderList(AssetShader_Shader3D);
 
     for (auto shader : list)
@@ -43,6 +44,7 @@ void RenderManager::Process(const Camera *camera)
 
         SetupLight(shader);
     }
+    */
 
     Frustum::CalculateFrustum(projection * view);
 }

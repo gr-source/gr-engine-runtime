@@ -26,8 +26,13 @@ grr::gShader *ScreenRender::m_shader = nullptr;
 grm::u32 ScreenRender::m_vbo = 0;
 
 void ScreenRender::Initialize() {
-    if (!m_shader) {
-        AssetsManager::LoadShader(ShaderOptimize_None,
+    if (!m_shader)
+    {
+        ShaderParams shaderParams;
+        shaderParams.name = "screen";
+        shaderParams.flags = ShaderOptimize_static;
+
+        AssetsManager::LoadShader(shaderParams,
             gfile::get_data_directory("/assets/shader/screen.glsl"),
             [](grr::gShader *shader) { ScreenRender::m_shader = shader; }
         );

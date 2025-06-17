@@ -13,6 +13,7 @@
 #include <gr-base/script/skinnedMeshRender.hpp>
 #include <gr-base/script/meshRender.hpp>
 #include <gr-base/script/camera.hpp>
+#include <stdexcept>
 
 #include "imgui.h"
 
@@ -152,7 +153,9 @@ void ShaderEditor::create_menubar()
                 os.close();
             }
 
-            AssetsManager::LoadShader(path, shader);
+            throw std::runtime_error("Falta arrrumar aqui: 55 - ShaderEditor");
+
+            // AssetsManager::LoadShader(path, shader);
         }
     }
     ImGui::EndMenuBar();
