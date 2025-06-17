@@ -229,7 +229,8 @@ void Engine::render()
 
 void Engine::render_cam()
 {
-    f_function_render();
+    default_render();
+    // f_function_render();
 }
 
 void Engine::render_gui()

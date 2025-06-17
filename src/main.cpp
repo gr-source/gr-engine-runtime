@@ -1,3 +1,5 @@
+#include "gr-base/core/thread/asynctask.hpp"
+#include <mutex>
 #include <settings.h>
 #include <engine.h>
 
@@ -5,6 +7,7 @@
 #include <gr-base/core/input.hpp>
 
 #include <GLFW/glfw3.h>
+#include <thread>
 
 #define SCREEN_WIDTH 1024
 #define SCREEN_HEIGHT 600
@@ -145,6 +148,34 @@ void segfault_sigaction(int signal, siginfo_t *si, void *arg)
     
     exit(1);
 }
+
+/*
+class ExampleTask : public AsyncTask
+{
+public:
+    ExampleTask()
+    {
+        std::lock_guard<std::mutex> lock(mutex);
+        std::cout << "ExampleTask: Start" << std::endl;
+    }
+
+    ~ExampleTask()
+    {
+        std::lock_guard<std::mutex> lock(mutex);
+        std::cout << "ExampleTask: Stop" << std::endl;
+    }
+
+    void doInBackground() override
+    {
+        std::lock_guard<std::mutex> lock(mutex);
+        std::cout << "ExampleTask: running..." << std::endl;
+
+        std::this_thread::sleep_for(std::chrono::seconds(6));
+    }
+};
+*/
+
+// #include <gr-base/core/thread/taskmanager.hpp>
 
 int main(int argc, char *argv[])
 {
