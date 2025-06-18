@@ -1797,7 +1797,7 @@ void Editor::RenderStatisticsMenu() {
     ImGui::Text("Event: %ld", Event::GetCount());
 
     ImGui::SeparatorText("Threads");
-    ImGui::Text("Threads: %ld/%ld", Threadpool::GetCount(), Threadpool::GetUsage());
+    // ImGui::Text("Threads: %ld/%ld", Threadpool::GetCount(), Threadpool::GetUsage());
 
     ImGui::SeparatorText("FrameTime");
     {
