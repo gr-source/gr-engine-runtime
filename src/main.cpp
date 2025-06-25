@@ -149,36 +149,61 @@ void segfault_sigaction(int signal, siginfo_t *si, void *arg)
     exit(1);
 }
 
-/*
-class ExampleTask : public AsyncTask
-{
-public:
-    ExampleTask()
-    {
-        std::lock_guard<std::mutex> lock(mutex);
-        std::cout << "ExampleTask: Start" << std::endl;
-    }
-
-    ~ExampleTask()
-    {
-        std::lock_guard<std::mutex> lock(mutex);
-        std::cout << "ExampleTask: Stop" << std::endl;
-    }
-
-    void doInBackground() override
-    {
-        std::lock_guard<std::mutex> lock(mutex);
-        std::cout << "ExampleTask: running..." << std::endl;
-
-        std::this_thread::sleep_for(std::chrono::seconds(6));
-    }
-};
-*/
-
-// #include <gr-base/core/thread/taskmanager.hpp>
+// #include "gr-base/core/geometry/shader.hpp"
 
 int main(int argc, char *argv[])
 {
+    /*
+    {
+        ShaderParams shaderParams;
+        shaderParams.name = "MyShader";
+        shaderParams.base = "/data/shader.glsl";
+        shaderParams.type = ShaderType::SHADER3D;
+        shaderParams.flags = ShaderOptimize_static | ShaderOptimize_instanced;
+
+        auto name = GetShaderParamsName(shaderParams);
+
+        std::cout << "Name: " << name << std::endl;
+
+        shaderParams = GetShaderParamsFromName(name);
+        std::cout << "Name: " << shaderParams.name << std::endl;
+        std::cout << "Base: " << shaderParams.base << std::endl;
+
+        std::cout << "Type: " << static_cast<int>(shaderParams.type) << std::endl;
+        std::cout << "Flags: ";
+
+        std::vector<std::string> flags;
+        if (shaderParams.flags & ShaderOptimize_dynamic)
+        {
+            flags.push_back("dynamic");
+        }
+        if (shaderParams.flags & ShaderOptimize_static)
+        {
+            flags.push_back("static");
+        }
+        if (shaderParams.flags & ShaderOptimize_animated)
+        {
+            flags.push_back("animated");
+        }
+        if (shaderParams.flags & ShaderOptimize_instanced)
+        {
+            flags.push_back("instanced");
+        }
+
+        auto size = flags.size();
+        for (std::size_t i={};i<size;i++)
+        {
+            std::cout << flags[i];
+            if ((i + 1) < size)
+                std::cout << ", ";
+        }
+
+        std::cout << std::endl;
+    }
+
+    return 0;
+    */
+
     // ===============================
     struct sigaction sa;
 

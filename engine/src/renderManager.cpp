@@ -1,4 +1,5 @@
 #include "renderManager.h"
+#include "gr-base/core/geometry/shader.hpp"
 
 #include <gr-base/script/meshRender.hpp>
 #include <gr-base/script/meshFilter.hpp>
@@ -28,9 +29,7 @@ void RenderManager::Process(const Camera *camera)
     auto view = camera->getViewmatrix();
     auto position = camera->getPosition();
 
-    /*
-    auto list = AssetsManager::GetShaderList(AssetShader_Shader3D);
-
+    auto list = AssetsManager::GetShaderList(ShaderType::SHADER3D);
     for (auto shader : list)
     {
         if (!shader || !shader->isValid())
@@ -44,7 +43,6 @@ void RenderManager::Process(const Camera *camera)
 
         SetupLight(shader);
     }
-    */
 
     Frustum::CalculateFrustum(projection * view);
 }

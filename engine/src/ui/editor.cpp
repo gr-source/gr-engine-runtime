@@ -5,6 +5,7 @@
 
 #include "editorController.h"
 #include "gr-base/core/clock.hpp"
+#include "gr-base/core/geometry/shader.hpp"
 #include "screenRender.hpp"
 #include "settings.h"
 #include "imgui.h"
@@ -2199,9 +2200,11 @@ bool Editor::RenderMaterial(Material *material)
         return false;
     }
 
+    auto shaderParams = GetShaderParamsFromName(AssetsManager::GetShaderName(shader));
+
     try
     {
-        auto shader_name = std::filesystem::path(AssetsManager::GetShaderName(shader)).filename();
+        auto shader_name = std::filesystem::path(shaderParams.base).filename();
 
         ImGui::SameLine();
 
@@ -2246,26 +2249,20 @@ void Editor::RenderShaderUniform(Material *material, grr::gShader *shader)
             {
                 auto value = material->getValue<Vector3>(name);
                 if (value == nullptr)
-                {
                     value = material->setValue<Vector3>(name, Vector3::zero);
-                }
-                if (value == nullptr)
-                {
-                    continue;
-                }
 
-                ImGui::DragFloat3(("##" + std::string(name)).c_str(), (float *)value);
+                if (value != nullptr)
+                    ImGui::DragFloat3(("##" + std::string(name)).c_str(), (float *)value);
                 break;
             }
             case UniformVariable::FLOAT:
             {
                 auto value = material->getValue<float>(name);
                 if (value == nullptr)
-                {
                     value = material->setValue<float>(name, 0.0f);
-                }
 
-                ImGui::DragFloat(("##" + std::string(name)).c_str(), (float *)value);
+                if (value != nullptr)
+                    ImGui::DragFloat(("##" + std::string(name)).c_str(), (float *)value);
                 break;
             }
             /*case UniformVariable::int: {
