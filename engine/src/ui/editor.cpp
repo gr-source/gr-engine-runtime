@@ -3,16 +3,15 @@
 #include <gr-base/script/baserender.hpp>
 #include <gr-base/script/default.hpp>
 
+#include "Global.h"
 #include "editorController.h"
 #include "gr-base/core/clock.hpp"
 #include "gr-base/core/geometry/shader.hpp"
+#include "gr-base/core/task/runtime/scenesavetask.hpp"
+#include "gr-base/core/thread/taskmanager.hpp"
 #include "screenRender.hpp"
 #include "settings.h"
 #include "imgui.h"
-
-#include <functional>
-#include <cstddef>
-#include <cstring>
 
 #include <gr-base/core/window.hpp>
 
@@ -25,6 +24,7 @@
 #include <gr-base/core/thread/threadpool.hpp>
 
 #include <gr-base/core/assetsManager.hpp>
+#include <gr-base/core/scenemanager.hpp>
 #include <gr-base/core/console.hpp>
 #include <gr-base/core/display.hpp>
 #include <gr-base/core/scene.hpp>
@@ -212,8 +212,6 @@ Editor::Editor() : m_viewport(ImGui::GetMainViewport()), mImGuiIO(&ImGui::GetIO(
 
     updateFileTree(root_tree_file);
 
-    Scene::Initialize();
-
     auto project = Project::GetCurrent();
     if (project)
     {
@@ -233,8 +231,6 @@ Editor::~Editor()
     config_save(File::GetFile("/gsettings.ini").c_str(), m_settings);
 
     config_release(m_settings);
-    
-    Scene::Shutdown();
 
     GameObject::Clear();
 
@@ -404,7 +400,7 @@ void Editor::create_window_hierarchy()
 
 void Editor::create_render_hierarchy()
 {
-    auto name = m_scene != nullptr ? m_scene->getName() : "Scene name is empty!";
+    std::string name = m_scene != nullptr ? SceneManager::GetSceneName(m_scene) : "Scene name is empty!";
 
     ImGui::SetNextItemOpen(true, ImGuiCond_Appearing);
     if (m_scene != nullptr && ImGui::TreeNodeEx(name.c_str(), ImGuiTreeNodeFlags_SpanFullWidth))
@@ -618,20 +614,19 @@ void Editor::create_render_viewport()
         return;
     }
 
-    auto &scenes = Scene::GetScenes();
-
-    for (auto it = scenes.begin(); it != scenes.end();)
+    for (auto &scene : SceneManager::GetScenes())
     {
-        auto& [name, scene] = *it;
+        auto name = SceneManager::GetSceneName(scene);
 
         bool bactive = true;
-        if (ImGui::BeginTabItem(name.c_str(), &bactive))
+        if (ImGui::BeginTabItem(name, &bactive))
         {
-            if (m_scene != scene.get())
+            if (scene != m_scene)
             {
-                m_scene->deselect_all();
+                if (m_scene != nullptr)
+                    m_scene->deselect_all();
 
-                set_scene(scene.get());
+                m_scene = scene;
             }
 
             ImGui::EndTabItem();
@@ -639,12 +634,12 @@ void Editor::create_render_viewport()
 
         if (!bactive)
         {
-            set_scene(nullptr);
-                
-            it = scenes.erase(it);
-            continue;
+            if (scene == m_scene)
+            {
+                m_scene = nullptr;
+            }
+            SceneManager::Remove(scene);
         }
-        ++it;
     }
 
     if (ImGui::TabItemButton("+"))
@@ -921,8 +916,10 @@ void Editor::render_scene(Scene *scene)
             m_scene->select(GameObject::Instantiate(go));
     }
 
-    if (ImGui::IsWindowFocused() && mImGuiIO->KeyCtrl && ImGui::IsKeyReleased(ImGuiKey_S)) {
-        Event::Add(&Editor::SaveScene, this, m_scene->getName(), m_scene);
+    if (ImGui::IsWindowFocused() && mImGuiIO->KeyCtrl && ImGui::IsKeyReleased(ImGuiKey_S))
+    {
+        for (auto &scene : SceneManager::GetScenes())
+            TaskManager::Add<SceneSaveTask>(File::GetAsset("/scene"), scene);
     }
 }
 
@@ -1685,11 +1682,14 @@ void Editor::create_popup_create_scene()
         ImGui::SetKeyboardFocusHere();
 
     char name[256] = {0};
-
     if (ImGui::InputText("##popup_create_scene_inputtext", name, GET_N_ARRAY(name), ImGuiInputTextFlags_EnterReturnsTrue))
     {
-        set_scene(Scene::Create(name));
-        
+        m_scene = SceneManager::Create(name);
+        m_scene->init();
+        m_scene->create_main_camra();
+
+        set_scene(m_scene);
+
         ImGui::CloseCurrentPopup();
     }
     ImGui::EndPopup();
@@ -2780,14 +2780,6 @@ void Editor::CompileScript(std::string path, std::function<void()> func) {
         Event::Add(func);
 }
 
-void Editor::SaveScene(const std::string &name, Scene *scene) {
-    Scene::Use(scene);
-
-    scene->save(File::GetAsset("/scene/") + name + ".scn");
-
-    updateFileTree(root_tree_file);
-}
-
 /*
 GameObject *Editor::CreatePrimitive(int type) {
     auto go = GameObject::Create("Cube");
@@ -2995,18 +2987,11 @@ void Editor::PluginEditor() {
 
 void Editor::set_scene(Scene *scene)
 {
-    if (m_scene == scene)
-    {
-        return;
-    }
-
     m_cameraObject = scene == nullptr ? nullptr : scene->getCameraObject();
 
     m_mainCamera = scene == nullptr ? nullptr : scene->getCamera();
 
     m_scene = scene;
-
-    Scene::Use(scene);
 }
 
 void Editor::OutputGameObject(GameObject **ref, GameObject *go) {
@@ -3049,7 +3034,7 @@ gConfigStep_ Editor::foreach_settings(gConfigStep_ type, void *data, void *insta
 
 void Editor::generateConfig(const std::string &file)
 {
-    auto &scenes = Scene::GetScenes();
+    auto scenes = SceneManager::GetScenes();
     if (!scenes.empty())
     {
         auto section = config_find_section(m_settings, "Scenes");
@@ -3060,10 +3045,12 @@ void Editor::generateConfig(const std::string &file)
 
         section = config_create_section(m_settings, "Scenes", nullptr);
         
-        for (auto &&[name, scene] : scenes)
+        for (auto &scene : scenes)
         {
+            auto name = SceneManager::GetSceneName(scene);
+
             auto subsection = config_create_sub_section(section, "Scene", nullptr);
-            config_set_string(subsection, "name", name.c_str());
+            config_set_string(subsection, "name", name);
         }
     }
 

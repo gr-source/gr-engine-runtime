@@ -332,9 +332,6 @@ private:
 
     void CompileScript(std::string path, std::function<void()> func);
 
-    // Scene
-    void SaveScene(const std::string &name, Scene *scene);
-
     void SkyboxEditor();
 
     void PluginManager();
@@ -360,13 +357,12 @@ private:
 template <typename T, typename... Args>
 inline bool Editor::RenderProperty(Args&&... args)
 {
-    auto scene = Scene::GetCurrentScene();
-    if (scene == nullptr || !scene->has_object_selected())
+    if (m_scene == nullptr || !m_scene->has_object_selected())
     {
         return false;
     }
 
-    auto go = scene->get_object_selected().back();
+    auto go = m_scene->get_object_selected().back();
     if (!go->hasComponent<T>()) return false;
 
     return std::invoke(std::bind(std::forward<Args>(args)..., go->getComponent<T>()));

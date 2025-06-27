@@ -1,5 +1,5 @@
 #include "gr-base/core/thread/asynctask.hpp"
-#include <mutex>
+
 #include <settings.h>
 #include <engine.h>
 
@@ -7,7 +7,6 @@
 #include <gr-base/core/input.hpp>
 
 #include <GLFW/glfw3.h>
-#include <thread>
 
 #define SCREEN_WIDTH 1024
 #define SCREEN_HEIGHT 600
