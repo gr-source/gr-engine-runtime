@@ -587,7 +587,7 @@ void Editor::PopupMenuAdd()
         case 0:
             break;
         case 1:
-            PostLoadGameObject(GameObject::Create("Empty"));
+            // PostLoadGameObject(GameObject::Create("Empty"));
             break;
         default:
             break;
@@ -1960,7 +1960,9 @@ void Editor::renderDropGameObject(GameObject **ref) {
     
     auto path = std::string((char*)data->Data, data->DataSize);
 
-    AssetsManager::LoadGameObject(path, &Editor::OutputGameObject, ref);
+    std::cout << path << std::endl;
+
+    // AssetsManager::LoadGameObject(path, &Editor::OutputGameObject, ref);
 
     ImGui::EndDragDropTarget();
 }
@@ -2568,10 +2570,12 @@ void Editor::PostLoadGameObject(GameObject *gameObject)
     {
         return;
     }
-    m_scene->insert(gameObject);
+
+    auto instantiate = GameObject::Instantiate(gameObject);
+    GameObject::Destroy(gameObject);
 
     m_scene->deselect_all();
-    m_scene->select(gameObject);
+    m_scene->select(instantiate);
 }
 
 std::string GenerateScriptHeader(const std::string& name) {
