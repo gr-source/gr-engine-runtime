@@ -221,7 +221,9 @@ void Engine::update()
         return Manager::Update();
     }
 
-    EditorController::Update(Camera::Current());
+    auto scene = SceneManager::GetCurrent();
+    if (scene != nullptr && scene->getCamera())
+        EditorController::Update(scene->getCamera());
 }
 
 void Engine::render()
@@ -316,18 +318,17 @@ void Engine::default_render()
 {
     if (Settings::bGameRunning)
     {
-        auto cameras = Camera::GetCameras();
-        for (auto camera : cameras)
+        for (auto &camera : Camera::GetCameras())
         {
             PreConfigRenderScene(camera);
         }
         return;
     }
 
-    auto current = Camera::Current();
-    if (current != nullptr)
+    auto scene = SceneManager::GetCurrent();
+    if (scene != nullptr && scene->getCamera())
     {
-        PreConfigRenderScene(current);
+        PreConfigRenderScene(scene->getCamera());
     }
 }
 

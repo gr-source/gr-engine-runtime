@@ -352,6 +352,10 @@ private:
     void generateConfig(const std::string &file);
 
     void updateFileTree(gtreefile &tree_file);
+
+    Camera *get_camera();
+
+    void LoopPhysics();
 };
 
 template <typename T, typename... Args>

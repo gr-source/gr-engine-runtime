@@ -4,11 +4,13 @@
 #include <gr-base/script/default.hpp>
 
 #include "Global.h"
+#include "core/time.hpp"
 #include "editorController.h"
 #include "gr-base/core/clock.hpp"
 #include "gr-base/core/geometry/shader.hpp"
 #include "gr-base/core/task/runtime/scenesavetask.hpp"
 #include "gr-base/core/thread/taskmanager.hpp"
+#include "physics/physicsScene.hpp"
 #include "screenRender.hpp"
 #include "settings.h"
 #include "imgui.h"
@@ -196,7 +198,7 @@ Editor::Editor() : m_viewport(ImGui::GetMainViewport()), mImGuiIO(&ImGui::GetIO(
         auto section_script = config_find_section(m_settings, "Script");
         if (section_script != nullptr)
         {
-            ScriptManager::Initialize(File::GetFile(config_get_string(section_script, "dir")) + config_get_string(section_script, "libname"));
+            ScriptManager::Load(File::GetFile(config_get_string(section_script, "dir")) + config_get_string(section_script, "libname"));
         }
 
         Display::SetDisplayRect(Rect{0.0f, 0.0f, (float)Settings::ViewportSize.x, (float)Settings::ViewportSize.y});
@@ -234,8 +236,6 @@ Editor::~Editor()
 
     ComponentRegistry::Clear();
 
-    ScriptManager::Shutdown();
-
     Console::Shutdown();
 
     File::Delete(File::GetTempFile("gr-engine"));
@@ -243,12 +243,14 @@ Editor::~Editor()
 
 void Editor::LoadScript()
 {
-    if (ScriptManager::IsValid())
+    if (m_scene == nullptr)
     {
-        UnloadScript();
+        return;
     }
 
     auto section_script = config_find_section(m_settings, "Script");
+
+    ScriptManager::Unload();
     
     if (ScriptManager::CheckScriptLoaded(config_get_string(section_script, "libname")))
     {
@@ -259,11 +261,10 @@ void Editor::LoadScript()
     {
         if (section_script != nullptr)
         {
-            ScriptManager::Initialize(File::GetFile(config_get_string(section_script, "dir")) + config_get_string(section_script, "libname"));
+            ScriptManager::Load(File::GetFile(config_get_string(section_script, "dir")) + config_get_string(section_script, "libname"));
         }
 
         ComponentRegistry::getInstance().CheckScriptRemoved();
-        
     } catch (const std::runtime_error &e)
     {
         Console::LogError(e.what());
@@ -272,18 +273,20 @@ void Editor::LoadScript()
     Display::SetDisplayRect(Rect{0.0f, 0.0f, (float)Settings::ViewportSize.x, (float)Settings::ViewportSize.y});
 
     Scene::CheckRequestReinstanceScript();
-    
-    Scene::InitializeAllScript();
+
+    m_mainCamera->setActive(false);
+
+    m_scene->play();
 
     Settings::bGameRunning = true;
+
+    Threadpool::AddTask(&Editor::LoopPhysics, this);
 
     Console::log(Log::DEFAULT, "Game playing.");
 }
 
 void Editor::UnloadScript() {
     ScreenRender::Shutdown();
-
-    ScriptManager::Shutdown();
 }
 
 // ===================================== END =========================================================
@@ -466,7 +469,6 @@ void Editor::RenderSceneObject(Scene *scene)
     }
 
     {
-
         int start = m_currentPage * ITEMS_PER_PAGE;
         int end = std::min(start + ITEMS_PER_PAGE, static_cast<int>(list.size()));
 
@@ -562,7 +564,7 @@ void Editor::dragDropGameObject(Transform *transform, const std::string &name)
     {
         target->setParent(transform);
 
-        Scene::Remove(target->getGameObject());
+        m_scene->remove(target->getGameObject());
     }
 
     ImGui::EndDragDropTarget();
@@ -585,7 +587,7 @@ void Editor::PopupMenuAdd()
         case 0:
             break;
         case 1:
-            // PostLoadGameObject(GameObject::Create("Empty"));
+            PostLoadGameObject(GameObject::Create("Empty"));
             break;
         default:
             break;
@@ -809,8 +811,30 @@ void Editor::render_scene(Scene *scene)
     auto windowPos = ImGui::GetWindowPos();
     auto cursorPos = ImGui::GetCursorPos();
 
+    // Play button
+    if (s_texturePlayGame) {
+        s_texturePlayGame = iconsUI[ICON_PLAY_GAME];
+        if (Settings::bGameRunning) {
+            if (ImGui::IsKeyReleased(ImGuiKey_Escape) && ImGui::IsWindowHovered()) {
+                StopGame();
+            } else {
+                s_texturePlayGame = iconsUI[ICON_STOP_GAME];
+            }
+        }
+        
+        ImGui::SetCursorPos({regionAvail.x / 2 - cursorPos.x, cursorPos.y + 0.5f});
+
+        if (ImGui::ImageButton(reinterpret_cast<ImTextureID>(s_texturePlayGame->getTextureID()), ImVec2(16, 16))) {
+            if (!Settings::bGameRunning) {
+                PlayGame();
+            } else {
+                StopGame();
+            }
+        }
+    }
+
     // auto texture = Engine::GetImGuiPostprocess()->getTextureColor();
-    auto camera = Camera::Current();
+    auto camera = get_camera();
     if (camera != nullptr)
     {
         auto &rendertarget = camera->rendertarget;
@@ -839,28 +863,6 @@ void Editor::render_scene(Scene *scene)
         }
         */
         DropGameObjectInScene();
-    }
-
-    // Play button
-    if (s_texturePlayGame) {
-        s_texturePlayGame = iconsUI[ICON_PLAY_GAME];
-        if (Settings::bGameRunning) {
-            if (ImGui::IsKeyReleased(ImGuiKey_Escape) && ImGui::IsWindowHovered()) {
-                StopGame();
-            } else {
-                s_texturePlayGame = iconsUI[ICON_STOP_GAME];
-            }
-        }
-        
-        ImGui::SetCursorPos({regionAvail.x / 2 - cursorPos.x, cursorPos.y + 0.5f});
-
-        if (ImGui::ImageButton(reinterpret_cast<ImTextureID>(s_texturePlayGame->getTextureID()), ImVec2(16, 16))) {
-            if (!Settings::bGameRunning) {
-                PlayGame();
-            } else {
-                StopGame();
-            }
-        }
     }
 
     ImGuizmo::SetDrawlist();
@@ -923,6 +925,8 @@ void Editor::render_scene(Scene *scene)
 
 void Editor::UpdateResizeSceneFramebuffer()
 {
+    auto camera = get_camera();
+
     ImVec2 regionAvail = ImGui::GetContentRegionAvail();
     if (m_mainCamera != nullptr && (m_lastViewportSize.x != regionAvail.x || m_lastViewportSize.y != regionAvail.y && regionAvail.x > 5.0f && regionAvail.y > 5.0f))
     {
@@ -1007,7 +1011,8 @@ void Editor::create_render_guizmo(Scene *scene)
     }
 }
 
-void Editor::PlayGame() {
+void Editor::PlayGame()
+{
     Threadpool::AddTask(&Editor::BuildScript, this);
 }
 
@@ -1020,9 +1025,9 @@ void Editor::StopGame()
 
     Settings::bGameRunning = false;
 
-    Scene::DestroyScript();
+    m_scene->stop();
 
-    Scene::InitializeEngineScript();
+    m_mainCamera->setActive(true);
 
     Console::log(Log::DEFAULT, "Game stoped.");
 }
@@ -1727,12 +1732,9 @@ void Editor::create_popup_add_component()
 
     for (auto it = m_componentName.begin(); it != m_componentName.end(); ++it) {
         bool isFirst = (it == m_componentName.begin());
-        if (ImGui::Selectable(it->c_str(), isFirst) || bSelect) {
+        if (ImGui::Selectable(it->c_str(), isFirst) || bSelect && go != nullptr)
+        {
             auto component = go->getEntity()->addComponent((*it));
-
-            if (component && (*it) == "Light") {
-                component->Init();
-            }
 
             std::memset(componentName, '\0', sizeof(componentName));
 
@@ -2048,7 +2050,8 @@ bool Editor::OnPropertyCamera(Camera *camera)
 
         auto &rendertarget = camera->rendertarget;
 
-        ImGui::Image(reinterpret_cast<ImTextureID>(rendertarget.getTextureID()), {64.0f, 64.0f}, {0.0f, 1.0f}, {1.0f, 0.0f});
+        if (rendertarget.is_valid())
+            ImGui::Image(reinterpret_cast<ImTextureID>(rendertarget.getTextureID()), {64.0f, 64.0f}, {0.0f, 1.0f}, {1.0f, 0.0f});
     }
 
     return false;
@@ -2440,21 +2443,25 @@ bool Editor::OnPropertyBoxCollider(BoxCollider *boxCollider) {
     return false;
 }
 
-bool Editor::OnPropertyRigidbody(Rigidbody *rigidbody) {
+bool Editor::OnPropertyRigidbody(Rigidbody *rigidbody)
+{
     auto bExists = true;
 
     auto isOpen = ImGui::CollapsingHeader("Rigidbody", &bExists);
-    if (!bExists) {
+    if (!bExists)
+    {
         return true;
     }
     
     if (!isOpen) {
         return false;
     }
+
     auto mass = rigidbody->getMass();
 
     ImGui::Text("Mass");
-    if (ImGui::DragFloat("##rigidbody_mass", &mass)) {
+    if (ImGui::DragFloat("##rigidbody_mass", &mass))
+    {
         rigidbody->setMass(mass);
     }
 
@@ -3138,6 +3145,23 @@ void Editor::updateFileTree(gtreefile &tree_file)
     }
 }
 
+Camera *Editor::get_camera()
+{
+    return Settings::bGameRunning ? Camera::Current() : m_mainCamera;
+}
 
+void Editor::LoopPhysics()
+{
+    Time time;
+
+    while (Settings::bGameRunning)
+    {
+        auto dt = time.sleep(60.0f);
+
+        PhysicsScene::Update(dt);
+    }
+
+    std::cout << "De" << std::endl;
+}
 
 

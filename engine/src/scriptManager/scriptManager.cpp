@@ -1,4 +1,6 @@
 #include "scriptManager.hpp"
+#include "gr-base/core/console.hpp"
+#include "gr-base/ecs/componentRegistry.hpp"
 
 #include <gr-base/script/meshCollider.hpp>
 #include <gr-base/script/boxCollider.hpp>
@@ -21,65 +23,30 @@
 #include <fstream>
 #include <dlfcn.h>
 
-grm::size ScriptManager::s_lastTime = 0;
-
-std::string ScriptManager::s_path = "";
-
-bool ScriptManager::s_bReload = false;
-
-std::unique_ptr<Script> ScriptManager::m_script = nullptr;
-
-// [ Main ]
-void (*ScriptManager::InitializeScript)();
-void (*ScriptManager::Update)();
-void (*ScriptManager::Destroy)();
-
-void ScriptManager::Initialize(const std::string &path) {
-    if (!File::Exists(path)) {
-        throw std::runtime_error("Script data do not exists: " + path);
-    }
-    s_path = path;
-
-    m_script = std::make_unique<Script>(s_path);
-    if (!m_script->isValid()) {
-        throw std::runtime_error("Script do not is valid: " + path);
-    }
-
-    RegisterApi();
-
-    if (InitializeScript) {
-        Console::log(Log::INFO, "Script initialized.");
-        InitializeScript();
-    }
+void ScriptManager::Load(const std::string &path)
+{
+    return GetInstance().load(path);
 }
 
-void ScriptManager::Shutdown() {
-    Console::log(Log::INFO, "Script destoyed.");
-
-    if (Destroy) {
-        Destroy();
-    }
-
-    m_script = nullptr;
+void ScriptManager::Unload()
+{
+    return GetInstance().unload();
 }
 
-bool ScriptManager::IsValid() {
-    return m_script && m_script->isValid();
-}
-
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wpmf-conversions"
-
-bool ScriptManager::CheckScriptLoaded(const std::string &name) {
+bool ScriptManager::CheckScriptLoaded(const std::string &name)
+{
     std::ifstream is("/proc/self/maps");
-    if (!is.is_open()) {
+    if (!is.is_open())
+    {
         return false;
     }
     bool isValid = false;
     
     std::string line;
-    while (std::getline(is, line)) {
-        if (line.find(name) == std::string::npos) {
+    while (std::getline(is, line))
+    {
+        if (line.find(name) == std::string::npos)
+        {
             continue;
         }
         isValid = true;
@@ -89,16 +56,111 @@ bool ScriptManager::CheckScriptLoaded(const std::string &name) {
     return isValid;
 }
 
-void ScriptManager::RegisterApi() {
-    // Functions Pointer
-    if (!m_script->setRegistry("_ZN8Function19GetFunctionRefrenceB5cxx11Ev")) {
-        return Console::LogError("Falied to register library functions.");
+// private
+ScriptManager::ScriptManager() : m_script(nullptr)
+{}
+
+ScriptManager::~ScriptManager()
+{}
+
+#include <sys/wait.h>
+#include <unistd.h>
+void ScriptManager::load(const std::string &path)
+{
+    if (!gfile::exists(path))
+    {
+        return Console::LogError("[ ScriptManager ] File do not found: %s", path.c_str());
     }
 
-    // First function
-    m_script->registerFunction("Initialize",   reinterpret_cast<void **>(&InitializeScript));
-    m_script->registerFunction("Destroy",      reinterpret_cast<void **>(&Destroy));
+    int pipefd[2];
+    if (pipe(pipefd) == -1)
+    {
+        return Console::LogError("[ ScriptManager ] Fail to create call!");
+    }
 
+    pid_t pid = fork();
+    if (pid == -1)
+    {
+        return Console::LogError("[ ScriptManager ] Fail to create virtual box");
+    } else if (pid == 0)
+    {
+        close(pipefd[0]);
+        dup2(pipefd[1], STDERR_FILENO);
+        close(pipefd[1]);
+        
+        Script script(path);
+        if (!script.isValid())
+        {
+            std::cerr << "Erro dlopen: " << dlerror() << "\n";
+            _exit(1);
+        } else
+        {
+            test();
+
+            _exit(0);
+        }
+    } else {
+        close(pipefd[1]);
+        
+        std::vector<std::string> data;
+        char temp[256];
+        ssize_t count;
+        while ((count = read(pipefd[0], temp, sizeof(temp)-1)) > 0) {
+            temp[count] = '\0';
+
+            data.emplace_back(temp);
+        }
+        close(pipefd[0]);
+
+        int status;
+        waitpid(pid, &status, 0);
+        if (WIFEXITED(status)) {
+            int code = WEXITSTATUS(status);
+            if (code != 0)
+            {
+                Console::LogError("[ ScriptManager ] Fail to load!!!");
+                for (auto &line : data)
+                    Console::LogError("[ ScriptManager ] %s", line.c_str());
+
+                return;
+            }
+        } else
+        {
+            Console::LogError("[ ScriptManager ] Virtual box segmentafult detected!");
+
+            for (auto &line : data)
+                Console::LogError("[ ScriptManager ] %s", line.c_str());
+            return;
+        }
+    }
+
+    m_script = std::make_unique<Script>(path);
+    if (!m_script->isValid()) {
+        throw std::runtime_error("Script do not is valid: " + path);
+    }
 }
-#pragma GCC diagnostic pop
+
+void ScriptManager::unload()
+{
+    m_script = nullptr;
+}
+
+void ScriptManager::test()
+{
+    auto &componentRegistry = ComponentRegistry::getInstance();
+    for (auto &&[name, it] :componentRegistry.GetAllChunkComponent())
+    {
+        auto &&[base, b] = it;
+        auto component = base->allocateComponent(nullptr, nullptr);
+
+        base->deallocate(component);
+    }
+}
+
+// protected
+ScriptManager &ScriptManager::GetInstance()
+{
+    static ScriptManager instance;
+    return instance;
+}
 
