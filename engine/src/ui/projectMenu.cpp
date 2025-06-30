@@ -98,8 +98,6 @@ void ProjectMenu::close_project()
 
     DebugDraw::Shutdown();
 
-    Scene::SetCurrent(nullptr);
-
     Project::SetCurrent(nullptr);
 
     m_projects.clear();

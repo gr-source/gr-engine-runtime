@@ -2,6 +2,7 @@
 
 #include "editorController.h"
 
+#include "gr-base/core/scenemanager.hpp"
 #include "imgui.h"
 #include "shadowMap.hpp"
 
@@ -166,6 +167,9 @@ bool Engine::check_project_openable()
 
 void Engine::shutdown()
 {
+    v_view_list.clear();
+    view_layout = nullptr;
+
     save_current_project();
 
     ImGuiRender::Shutdown();

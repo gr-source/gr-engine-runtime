@@ -26,7 +26,7 @@ ShaderEditor::~ShaderEditor()
 
 void ShaderEditor::onFocus()
 {
-    m_currentscene = Scene::GetCurrentScene();
+    // m_currentscene = Scene::GetCurrentScene();
 
     auto objects = m_currentscene->get_object_selected();
     if (!objects.empty())

@@ -232,8 +232,6 @@ Editor::~Editor()
 
     config_release(m_settings);
 
-    GameObject::Clear();
-
     ComponentRegistry::Clear();
 
     ScriptManager::Shutdown();
@@ -310,7 +308,7 @@ void Editor::onRender()
 
 void Editor::onFocus()
 {
-    m_scene = Scene::GetCurrentScene();
+    // m_scene = Scene::GetCurrentScene();
 }
 
 void Editor::onBlur()
@@ -415,7 +413,7 @@ void Editor::create_render_hierarchy()
     if (ImGui::IsKeyReleased(ImGuiKey_Delete) && m_scene->has_object_selected())
     {
         for (auto go : m_scene->get_object_selected())
-            Scene::Destoy(go);
+            m_scene->destroy(go);
 
         m_scene->deselect_all();
     }
