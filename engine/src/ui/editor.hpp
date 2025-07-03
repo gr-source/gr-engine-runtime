@@ -125,8 +125,6 @@ public:
     Camera *getCamera();
 
 private:
-    static std::map<std::string, void *> m_runtimeFuncAddr;
-
     std::unordered_map<std::string, std::function<void(Entity *)>> mInternalScript;
 
     std::unordered_map<IconType, grr::gTexture *> iconsUI;

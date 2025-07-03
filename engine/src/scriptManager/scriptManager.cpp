@@ -13,7 +13,6 @@
 
 #include <gr-base/core/assetsManager.hpp>
 #include <gr-base/core/scene.hpp>
-#include <gr-base/core/event.hpp>
 
 #include <gr-base/ecs/gameObject.hpp>
 #include <gr-base/ecs/entity.hpp>
@@ -135,6 +134,7 @@ void ScriptManager::load(const std::string &path)
     }
 
     m_script = std::make_unique<Script>(path);
+
     if (!m_script->isValid()) {
         throw std::runtime_error("Script do not is valid: " + path);
     }
@@ -151,9 +151,9 @@ void ScriptManager::test()
     for (auto &&[name, it] :componentRegistry.GetAllChunkComponent())
     {
         auto &&[base, b] = it;
-        auto component = base->allocateComponent(nullptr, nullptr);
+        // auto component = base->allocateComponent(nullptr, nullptr);
 
-        base->deallocate(component);
+        // base->deallocate(component);
     }
 }
 

@@ -13,10 +13,10 @@
 
 #include <gr-base/core/file/file.hpp>
 
+#include <gr-base/core/mainthreaddispatcher.hpp>
 #include <gr-base/core/assetsManager.hpp>
 #include <gr-base/core/window.hpp>
 #include <gr-base/core/skybox.hpp>
-#include <gr-base/core/event.hpp>
 #include <gr-base/core/clock.hpp>
 #include <gr-base/core/input.hpp>
 
@@ -201,7 +201,7 @@ void Engine::save_current_project()
 
 void Engine::loop()
 {
-    Event::Update();
+    MainThreadDispatcher::Update();
 
     static Time time;
 

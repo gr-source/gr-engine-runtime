@@ -5,7 +5,9 @@
 
 #include <dlfcn.h>
 
-Script::Script(const std::string &path) : m_script(nullptr), GetFunctionsReference(nullptr) {
+#include <iostream>
+Script::Script(const std::string &path) : m_script(nullptr), GetFunctionsReference(nullptr)
+{
     if (!File::Exists(path))
     {
         Console::log(Log::ERROR, "Falied to open script file do not found: " + path);

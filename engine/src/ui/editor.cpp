@@ -8,6 +8,8 @@
 #include "editorController.h"
 #include "gr-base/core/clock.hpp"
 #include "gr-base/core/geometry/shader.hpp"
+#include "gr-base/core/mainthreaddispatcher.hpp"
+#include "gr-base/core/task/runtime/gameobjectsavetask.hpp"
 #include "gr-base/core/task/runtime/scenesavetask.hpp"
 #include "gr-base/core/thread/taskmanager.hpp"
 #include "physics/physicsScene.hpp"
@@ -30,7 +32,7 @@
 #include <gr-base/core/console.hpp>
 #include <gr-base/core/display.hpp>
 #include <gr-base/core/scene.hpp>
-#include <gr-base/core/event.hpp>
+// #include <gr-base/core/event.hpp>
 
 #include "plugin/pluginManager.hpp"
 
@@ -132,10 +134,6 @@ std::string getfilesize(std::size_t sz) {
             } \
         } \
     }
-
-std::map<std::string, void *> Editor::m_runtimeFuncAddr = {
-    {"", nullptr}
-};
 
 Editor::Editor() : m_viewport(ImGui::GetMainViewport()), mImGuiIO(&ImGui::GetIO()), m_currentPath(File::GetAsset("")), m_cameraObject(nullptr), m_mainCamera(nullptr), m_currentPage(0), m_materialToRename(nullptr), m_plugin(nullptr)
 {
@@ -1396,7 +1394,9 @@ void Editor::RenderFiles()
             g_tree_file_selected.push_back(&entry);
         }
 
-        // dropTargetGameObjectInFile(entry.path().parent_path());
+        std::filesystem::path path = entry.path;
+
+        dropTargetGameObjectInFile(path.parent_path());
 
         if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceNoDisableHover | ImGuiDragDropFlags_SourceNoHoldToOpenOthers | ImGuiDragDropFlags_SourceAllowNullID)) {
             if (m_extensionNameToFlag.find(entry.extension) != m_extensionNameToFlag.end())
@@ -1422,7 +1422,6 @@ void Editor::RenderFiles()
     }
 }
 
-// #include "gr-base/core/task/saveGameObjectTask.hpp"
 void Editor::dropTargetGameObjectInFile(std::string path)
 {
     if (!ImGui::BeginDragDropTarget())
@@ -1440,9 +1439,7 @@ void Editor::dropTargetGameObjectInFile(std::string path)
     
     path = path[path.size()] == '/' ? path : path + "/";
 
-    std::cerr << "Save: " << path << std::endl;
-
-    // SaveGameObjectTask SaveGameObjectTask(transform->getGameObject(), path);
+    TaskManager::Add<GameObjectSaveTask>(path, transform->getGameObject(), nullptr);
 
     ImGui::EndDragDropTarget();
 }
@@ -1550,6 +1547,10 @@ void Editor::create_render_property()
     auto objName = go->getName();
 
     ImGui::SeparatorText(objName.c_str());
+
+    auto isstatic = go->getStatic();
+    if (ImGui::Checkbox("Static", &isstatic))
+        go->setStatic(isstatic);
 
     RenderScriptFromEntity(entity);
 
@@ -1795,7 +1796,7 @@ void Editor::RenderStatisticsMenu() {
     ImGui::Text("Textures: %ld", AssetsManager::GetTextureCount());
     // ImGui::Text("Shaders: %ld", AssetsManager::GetShaderCount());
     ImGui::Text("Mesh: %ld", AssetsManager::GetMeshCount());
-    ImGui::Text("Event: %ld", Event::GetCount());
+    // ImGui::Text("Event: %ld", Event::GetCount());
 
     ImGui::SeparatorText("Threads");
     // ImGui::Text("Threads: %ld/%ld", Threadpool::GetCount(), Threadpool::GetUsage());
@@ -1960,9 +1961,7 @@ void Editor::renderDropGameObject(GameObject **ref) {
     
     auto path = std::string((char*)data->Data, data->DataSize);
 
-    std::cout << path << std::endl;
-
-    // AssetsManager::LoadGameObject(path, &Editor::OutputGameObject, ref);
+    AssetsManager::LoadGameObject(path, &Editor::OutputGameObject, ref);
 
     ImGui::EndDragDropTarget();
 }
@@ -2786,7 +2785,7 @@ void Editor::CompileScript(std::string path, std::function<void()> func) {
         }
 
     if (func)
-        Event::Add(func);
+        MainThreadDispatcher::Add(func);
 }
 
 /*
@@ -3005,8 +3004,6 @@ void Editor::set_scene(Scene *scene)
 
 void Editor::OutputGameObject(GameObject **ref, GameObject *go) {
     *ref = go;
-
-    go->getEntity()->setEnable(false);
 }
 
 gConfigStep_ Editor::foreach_settings(gConfigStep_ type, void *data, void *instance)
