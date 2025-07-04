@@ -147,6 +147,7 @@ void ScriptManager::unload()
 
 void ScriptManager::test()
 {
+    /*
     auto &componentRegistry = ComponentRegistry::getInstance();
     for (auto &&[name, it] :componentRegistry.GetAllChunkComponent())
     {
@@ -155,6 +156,7 @@ void ScriptManager::test()
 
         // base->deallocate(component);
     }
+    */
 }
 
 // protected

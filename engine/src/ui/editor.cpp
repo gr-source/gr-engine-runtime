@@ -75,6 +75,7 @@
 #include <pstl/glue_algorithm_defs.h>
 #include <stdexcept>
 #include <vector>
+#include <map>
 
 #define ITEMS_PER_PAGE 20
 
@@ -262,7 +263,7 @@ void Editor::LoadScript()
             ScriptManager::Load(File::GetFile(config_get_string(section_script, "dir")) + config_get_string(section_script, "libname"));
         }
 
-        ComponentRegistry::getInstance().CheckScriptRemoved();
+        // ComponentRegistry::getInstance().CheckScriptRemoved();
     } catch (const std::runtime_error &e)
     {
         Console::LogError(e.what());
@@ -1701,6 +1702,7 @@ void Editor::create_popup_create_scene()
 
 void Editor::create_popup_add_component()
 {
+    /*
     auto isOpen = ImGui::BeginPopup(GET_FLAG_NAME(EditorPopupFlags_AddComponent));
     if (!isOpen)
     {
@@ -1746,6 +1748,7 @@ void Editor::create_popup_add_component()
     }
     
     ImGui::EndPopup();
+    */
 }
 
 void Editor::create_popup_rename_object()
@@ -1876,23 +1879,24 @@ bool Editor::RenderComponents(const std::string &name, Component *component)
         return true;
     }
 
-    auto baseChunk = ComponentRegistry::Find(name);
-    if (baseChunk == nullptr)
+    auto icomponentstorage = ComponentRegistry::Find(name);
+    if (icomponentstorage == nullptr)
     {
         Console::LogError("Invalid component: " + name);
         return false;
     }
-
-    auto fieldList = baseChunk->getFields();
+    /*
+    auto fieldList = icomponentstorage->getFields();
 
     for (auto &field : fieldList)
     {
         RenderField(field, component);
     }
+    */
 
     return true;
 }
-
+/*
 void Editor::RenderField(Field &field, Component *component) {
     auto name = field.getName();
 
@@ -1944,7 +1948,7 @@ void Editor::RenderField(Field &field, Component *component) {
         break;
     }
 }
-
+*/
 void Editor::renderDropGameObject(GameObject **ref) {
     if (*ref) {
         ImGui::Text("%s", (*ref)->getName().c_str());

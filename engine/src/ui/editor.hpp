@@ -3,7 +3,6 @@
 #include <cstdint>
 #include <filesystem>
 
-#include <gr-base/ecs/componentPool.hpp>
 #include <gr-base/ecs/gameObject.hpp>
 
 #include <gr-base/core/console.hpp>
@@ -267,7 +266,7 @@ private:
 
     bool RenderComponents(const std::string &name, Component *component);
 
-    void RenderField(Field &field, Component *component);
+    // void RenderField(Field &field, Component *component);
 
     void renderDropGameObject(GameObject **ref);
 
