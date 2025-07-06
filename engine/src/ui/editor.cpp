@@ -11,6 +11,7 @@
 #include "gr-base/core/mainthreaddispatcher.hpp"
 #include "gr-base/core/task/runtime/gameobjectsavetask.hpp"
 #include "gr-base/core/task/runtime/scenesavetask.hpp"
+#include "gr-base/core/thread/asynctask.hpp"
 #include "gr-base/core/thread/taskmanager.hpp"
 #include "physics/physicsScene.hpp"
 #include "screenRender.hpp"
@@ -32,7 +33,6 @@
 #include <gr-base/core/console.hpp>
 #include <gr-base/core/display.hpp>
 #include <gr-base/core/scene.hpp>
-// #include <gr-base/core/event.hpp>
 
 #include "plugin/pluginManager.hpp"
 
@@ -87,6 +87,7 @@ enum class DragDropFlags : uint32_t {
     SHADER      = 1 << 4,
     GAMEOBJECT  = 1 << 5,
     ANIMATION   = 1 << 6,
+    TEXTURE     = 1 << 7,
 };
 
 static std::map<DragDropFlags, const char *> m_extensionDragDrop =
@@ -97,6 +98,7 @@ static std::map<DragDropFlags, const char *> m_extensionDragDrop =
     {DragDropFlags::SHADER,     ".shader"},
     {DragDropFlags::GAMEOBJECT, ".gameobject"},
     {DragDropFlags::ANIMATION,  ".anm"},
+    {DragDropFlags::TEXTURE,    ".png"},
 };
 
 static std::unordered_map<std::string, DragDropFlags> m_extensionNameToFlag =
@@ -108,6 +110,7 @@ static std::unordered_map<std::string, DragDropFlags> m_extensionNameToFlag =
     {".glsl",       DragDropFlags::SHADER},
     {".gameobject", DragDropFlags::GAMEOBJECT},
     {".anm",        DragDropFlags::ANIMATION},
+    {".png",        DragDropFlags::TEXTURE},
 };
 
 std::string getfilesize(std::size_t sz) {
@@ -278,7 +281,7 @@ void Editor::LoadScript()
 
     Settings::bGameRunning = true;
 
-    Threadpool::AddTask(&Editor::LoopPhysics, this);
+    TaskManager::Add<PhysicsTask>();
 
     Console::log(Log::DEFAULT, "Game playing.");
 }
@@ -323,13 +326,10 @@ void Editor::drop(void *data)
 
 void Editor::create_dock()
 {
-    /*if (ImGui::BeginMainMenuBar())
+    if (ImGui::BeginMainMenuBar())
     {
         if (ImGui::BeginMenu("Project"))
         {
-            if (ImGui::MenuItem("Hello"))
-            {}
-
             if (ImGui::MenuItem("Rebuild Script"))
             {
                 ReconfigScript();
@@ -337,10 +337,18 @@ void Editor::create_dock()
             ImGui::EndMenu();
         }
 
+        if (ImGui::BeginMenu("View"))
+        {
+            if (ImGui::MenuItem("Status"))
+            {
+            }
+        }
+
         ImGui::EndMainMenuBar();
     }
-    */
 
+    PopupMenuProperty();
+    
     if (bBuildDock)
     {
         return;
@@ -1266,30 +1274,6 @@ void Editor::PopupCreateDirectory()
     ImGui::EndPopup();
 }
 
-void Editor::PopupCreateScript()
-{
-    auto isOpen = ImGui::BeginPopup("##popup_create_script");
-    if (!isOpen)
-    {
-        return;
-    }
-
-    auto path = mDirSelectedList.back();
-
-    ImGui::Text("Input your script name");
-
-    char name[256] = {0};
-    if (ImGui::InputText("##input_text_popup_create_script_name", name, 256, ImGuiInputTextFlags_EnterReturnsTrue))
-    {
-        CreateScriptTemplate(path.string(), name);
-
-        mDirSelectedList.clear();
-
-        ImGui::CloseCurrentPopup();
-    }
-    ImGui::EndPopup();
-}
-
 void Editor::PopupCreateShader()
 {
     auto isOpen = ImGui::BeginPopup(GET_FLAG_NAME(EditorPopupFlags_CreateShader));
@@ -1586,9 +1570,6 @@ void Editor::create_call_popup()
         ImGui::OpenPopup(GET_FLAG_NAME(EditorPopupFlags_CreateMaterial));
         popupFlags &= ~EditorPopupFlags_CreateMaterial;
         break;
-    case EditorPopupFlags_EngineStatus:
-        PopupMenuProperty();
-        break;
     case EditorPopupFlags_FileManager | EditorPopupFlags_DirManager:
         ImGui::OpenPopup(GET_FLAG_NAME(EditorPopupFlags_FileManager | EditorPopupFlags_DirManager));
         popupFlags &= ~(EditorPopupFlags_FileManager | EditorPopupFlags_DirManager);
@@ -1609,7 +1590,7 @@ void Editor::create_call_popup()
         ImGui::OpenPopup(GET_FLAG_NAME(EditorPopupFlags_CreateNewDir));
         break;
     case EditorPopupFlags_CreateScript:
-        ImGui::OpenPopup("##popup_create_script");
+        ImGui::OpenPopup(GET_FLAG_NAME(EditorPopupFlags_CreateScript));
         popupFlags &= ~EditorPopupFlags_CreateScript;
         break;
     case EditorPopupFlags_CreateShader:
@@ -1641,6 +1622,8 @@ void Editor::create_popup()
 
     create_popup_rename_object();
 
+    create_popup_create_script();
+
     PopupComponentMenu();
 
     SkyboxEditor();
@@ -1664,8 +1647,6 @@ void Editor::create_popup()
     PopupRenameFileOrDir();
 
     PopupCreateDirectory();
-
-    PopupCreateScript();
 
     PopupCreateShader();
 
@@ -1785,21 +1766,46 @@ void Editor::create_popup_rename_object()
     ImGui::EndPopup();
 }
 
+void Editor::create_popup_create_script()
+{
+    auto isOpen = ImGui::BeginPopup(GET_FLAG_NAME(EditorPopupFlags_CreateScript));
+    if (!isOpen)
+    {
+        return;
+    }
+
+    auto &file_tree = g_tree_file_selected.back();
+
+    ImGui::Text("Input your script name");
+
+    char name[256] = {0};
+    if (ImGui::InputText("##input_text_popup_create_script_name", name, 256, ImGuiInputTextFlags_EnterReturnsTrue))
+    {
+        CreateScriptTemplate(file_tree->path, name);
+
+        updateFileTree(*file_tree);
+
+        ImGui::CloseCurrentPopup();
+    }
+    ImGui::EndPopup();
+}
+
+#include <gr-base/ecs/gameobjectmanager.hpp>
 #include <gr-base/core/status.hpp>
 
 void Editor::RenderStatisticsMenu() {
     ImGui::SeparatorText("Scripts");
     ImGui::Text("Entidades: %ld", Manager::GetEntityCount());
-    ImGui::Text("GameObject: %ld", GameObject::GetGameObjectCount());
+    ImGui::Text("GameObject: %ld", GameObjectManager::GetCount());
 
-    ImGui::SeparatorText("AssetsManager");
+    ImGui::SeparatorText("AssetManager");
     ImGui::Text("Textures: %ld", AssetsManager::GetTextureCount());
     // ImGui::Text("Shaders: %ld", AssetsManager::GetShaderCount());
     ImGui::Text("Mesh: %ld", AssetsManager::GetMeshCount());
     // ImGui::Text("Event: %ld", Event::GetCount());
 
     ImGui::SeparatorText("Threads");
-    // ImGui::Text("Threads: %ld/%ld", Threadpool::GetCount(), Threadpool::GetUsage());
+    ImGui::Text("Threads: %ld/%ld", Threadpool::GetThreadCount(), Threadpool::GetCount());
 
     ImGui::SeparatorText("FrameTime");
     {
@@ -3002,7 +3008,11 @@ void Editor::set_scene(Scene *scene)
     m_scene = scene;
 }
 
-void Editor::OutputGameObject(GameObject **ref, GameObject *go) {
+void Editor::OutputGameObject(GameObject **ref, GameObject *go)
+{
+    if ((*ref) != nullptr)
+        GameObject::Destroy(*ref);
+
     *ref = go;
 }
 
@@ -3117,7 +3127,6 @@ void Editor::updateFileTree(gtreefile &tree_file)
 
         auto extension = files[i].path().extension().string();
 
-
         auto texture = &iconsUI[IconType::ICON_FILE];
         if (extension == ".gmdx")
         {
@@ -3134,6 +3143,9 @@ void Editor::updateFileTree(gtreefile &tree_file)
         } else if (extension == ".hpp" || extension == ".cpp")
         {
             texture = &iconsUI[IconType::ICON_SCRIPT];
+        } else if (extension == ".png")
+        {
+            texture = &iconsUI[IconType::ICON_TEXTURE];
         }
 
         child.icon = texture;
@@ -3147,7 +3159,10 @@ Camera *Editor::get_camera()
     return Settings::bGameRunning ? Camera::Current() : m_mainCamera;
 }
 
-void Editor::LoopPhysics()
+PhysicsTask::PhysicsTask() : IAsyncTask<bool>(TaskPriority::HIGH)
+{}
+
+bool PhysicsTask::doInBackground()
 {
     Time time;
 
@@ -3158,7 +3173,7 @@ void Editor::LoopPhysics()
         PhysicsScene::Update(dt);
     }
 
-    std::cout << "De" << std::endl;
+    return true;
 }
 
 

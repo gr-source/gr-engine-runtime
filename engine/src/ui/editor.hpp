@@ -9,6 +9,7 @@
 #include <gr-base/core/console.hpp>
 
 #include "gr-base/core/scene.hpp"
+#include "gr-base/core/thread/asynctask.hpp"
 #include "gr-base/script/animator.hpp"
 #include "renderer.h"
 #include "Global.h"
@@ -223,8 +224,6 @@ private:
 
     void PopupCreateDirectory();
 
-    void PopupCreateScript();
-
     void PopupCreateShader();
 
     void create_window_browser();
@@ -258,6 +257,8 @@ private:
     void create_popup_add_component();
 
     void create_popup_rename_object();
+
+    void create_popup_create_script();
 
     void RenderStatisticsMenu();
 
@@ -352,8 +353,6 @@ private:
     void updateFileTree(gtreefile &tree_file);
 
     Camera *get_camera();
-
-    void LoopPhysics();
 };
 
 template <typename T, typename... Args>
@@ -369,4 +368,14 @@ inline bool Editor::RenderProperty(Args&&... args)
 
     return std::invoke(std::bind(std::forward<Args>(args)..., go->getComponent<T>()));
 }
+
+class PhysicsTask : public IAsyncTask<bool>
+{
+public:
+    PhysicsTask();
+
+private:
+
+    bool doInBackground() override;
+};
 
