@@ -14,7 +14,7 @@
 #include <gr-base/core/console.hpp>
 #include <gr-base/core/clock.hpp>
 
-#include <gr-base/core/geometry/batching.hpp>
+#include <gr-base/core/geometry/batchingmanager.hpp>
 
 #include <gr-base/core/culling/frustum.hpp>
 
@@ -49,7 +49,7 @@ void RenderManager::Process(const Camera *camera)
 
 void RenderManager::Renderer()
 {
-    Batching::Render();
+    BatchingManager::Render();
 }
 
 
