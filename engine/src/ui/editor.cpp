@@ -2123,7 +2123,7 @@ bool Editor::OnPropertyMeshRender(MeshRender *meshRender)
     ImGui::Indent();
     for (auto material : meshRender->getMaterial())
     {
-        if (RenderMaterial(material))
+        if (render_material(material))
         {
             meshRender->delMaterial(material);
         }
@@ -2164,7 +2164,7 @@ bool Editor::OnPropertySkinnedMeshRender(SkinnedMeshRender *skinnedMeshRender) {
     ImGui::Indent();
     for (auto material : skinnedMeshRender->getMaterial())
     {
-        if (RenderMaterial(material))
+        if (render_material(material))
         {
             skinnedMeshRender->delMaterial(material);
         }
@@ -2178,7 +2178,7 @@ bool Editor::OnPropertySkinnedMeshRender(SkinnedMeshRender *skinnedMeshRender) {
     return false;
 }
 
-bool Editor::RenderMaterial(Material *material)
+bool Editor::render_material(Material *material)
 {
     auto bVisible = true;
 
@@ -2200,7 +2200,6 @@ bool Editor::RenderMaterial(Material *material)
         return false;
     }
 
-    ImGui::Text("Shader: ");
     auto shader = material->getShader();
     if (shader == nullptr)
     {
@@ -2210,23 +2209,50 @@ bool Editor::RenderMaterial(Material *material)
 
     auto shaderParams = GetShaderParamsFromName(AssetsManager::GetShaderName(shader));
 
-    try
-    {
-        auto shader_name = std::filesystem::path(shaderParams.base).filename();
+    auto shadername = std::filesystem::path(shaderParams.base).filename();
 
-        ImGui::SameLine();
+    render_shader_property(shadername, material);
 
-        ImGui::TextColored(ImVec4(0.0f, 255.0f, 0.0f, 255.0f), "%s", shader_name.c_str());
-    } catch (const std::exception &e)
-    {
-        ImGui::TextColored(ImVec4(255.0f, 0.0f, 0.0f, 255.0f), "Invalid");
-    }
+    render_material_property(material);
 
     dropShaderInMaterial(material);
 
-    RenderShaderUniform(material, shader);
-
     return false;
+}
+
+void Editor::render_shader_property(const std::string &name, Material *material)
+{
+    auto isopen = ImGui::TreeNode(name.c_str());
+    if (!isopen)
+        return;
+
+    RenderShaderUniform(material, material->getShader());
+
+    ImGui::TreePop();
+}
+
+void Editor::render_material_property(Material *material)
+{
+    auto isopen = ImGui::TreeNode("Property");
+    if (!isopen)
+        return;
+
+    auto tilling = material->get_scalling();
+    auto offset = material->get_offset();
+
+    ImGui::Text("Tilling");
+    if (ImGui::DragFloat2("##render_material_property_tilling", (float *)&tilling, 1.0f, 1.1f))
+    {
+        material->set_scaling(tilling);
+    }
+    
+    ImGui::Text("Offset");
+    if (ImGui::DragFloat2("##render_material_property_offset", (float *)&offset, 1.0f, 1.0f))
+    {
+        material->set_offset(offset);
+    }
+
+    ImGui::TreePop();
 }
 
 void Editor::RenderShaderUniform(Material *material, grr::gShader *shader)

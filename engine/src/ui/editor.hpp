@@ -286,7 +286,11 @@ private:
 
     // bool OnPropertyMeshCollider(MeshCollider *meshCollider);
 
-    bool RenderMaterial(Material *material);
+    bool render_material(Material *material);
+
+    void render_shader_property(const std::string &name, Material *material);
+
+    void render_material_property(Material *material);
 
     void RenderShaderUniform(Material *material, grr::gShader *shader);
 
