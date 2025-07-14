@@ -146,6 +146,9 @@ void segfault_sigaction(int signal, siginfo_t *si, void *arg)
     exit(1);
 }
 
+#include <gr-base/core/clock.hpp>
+#include "core/time.hpp"
+
 int main(int argc, char *argv[])
 {
     struct sigaction sa;
@@ -198,12 +201,18 @@ int main(int argc, char *argv[])
 
     GLFWframebuffersizefunCallback(&(*window), SCREEN_WIDTH, SCREEN_HEIGHT);
 
+    gtimer time;
+
     while (Settings::IsEngineRunning() && !glfwWindowShouldClose(&(*window)))
     {
+        Clock::deltaTime = time.get_delta();
+
         glfwSwapBuffers(&(*window));
         glfwPollEvents();
 
         Engine::HandleEvent(Engine::LOOP, nullptr);
+
+        time.wait();
     }
 
     window = nullptr;

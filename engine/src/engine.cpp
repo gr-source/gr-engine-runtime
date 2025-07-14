@@ -3,8 +3,8 @@
 #include "editorController.h"
 
 #include "gr-base/core/scenemanager.hpp"
+#include "gr-base/ecs/gameobjectmanager.hpp"
 #include "imgui.h"
-#include "shadowMap.hpp"
 
 #include "ui/editor.hpp"
 #include "ui/project.hpp"
@@ -20,27 +20,18 @@
 #include <gr-base/core/clock.hpp>
 #include <gr-base/core/input.hpp>
 
+#include <gr-base/ecs/entitymanager.hpp>
 #include <gr-base/ecs/gameObject.hpp>
-#include <gr-base/ecs/manager.hpp>
 
 #include <gr-base/script/meshRender.hpp>
 #include <gr-base/script/camera.hpp>
 
-#include "core/statistics.hpp"
-#include "core/screen.hpp"
-#include "core/timer.hpp"
-#include "core/time.hpp"
-
-#include "physics/physicsScene.hpp"
-
 #include "functionTimer.hpp"
-#include "screenRender.hpp"
 #include "renderManager.h"
 #include "settings.h"
 #include "renderer.h"
 #include "Global.h"
 
-#include "plugin/pluginManager.hpp"
 #include "ui/shadereditor.hpp"
 
 #include <gr-base/core/binary/modelhandle.hpp>
@@ -121,7 +112,11 @@ void Engine::init()
     
     File::SetUserPath(gfile::get_data_directory());
 
-    ImGuiRender::Initialize("#version 330 core"); 
+    ImGuiRender::Initialize("#version 330 core");
+
+    EntityManager::Initialize();
+
+    GameObjectManager::Initialize();
 
     f_function_render = std::bind(&Engine::default_render, this);
 
@@ -173,6 +168,10 @@ void Engine::shutdown()
     save_current_project();
 
     ImGuiRender::Shutdown();
+
+    GameObjectManager::Shutdown();
+
+    EntityManager::Shutdown();
 }
 
 void Engine::save_current_project()
@@ -203,10 +202,6 @@ void Engine::loop()
 {
     MainThreadDispatcher::Update();
 
-    static Time time;
-
-    Clock::deltaTime = time.sleep(60.0f);
-
     {
         update();
 
@@ -218,7 +213,7 @@ void Engine::update()
 {
     if (Settings::bGameRunning)
     {
-        return Manager::Update();
+        return EntityManager::Update();
     }
 
     auto scene = SceneManager::GetCurrent();

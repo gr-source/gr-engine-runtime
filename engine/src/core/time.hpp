@@ -24,3 +24,24 @@ private:
 
     float m_fps;
 };
+
+
+class gtimer
+{
+public:
+    gtimer(float fps = 60.0f);
+
+    void wait();
+
+    float get_delta() const;
+
+private:
+    float max_fps;
+    
+    double min_frame_time;
+    
+    double last_time;
+
+    float delta;
+};
+

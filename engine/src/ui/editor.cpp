@@ -52,8 +52,8 @@
 #include <gr-base/script/camera.hpp>
 #include <gr-base/script/light.hpp>
 
+#include <gr-base/ecs/entitymanager.hpp>
 #include <gr-base/ecs/gameObject.hpp>
-#include <gr-base/ecs/manager.hpp>
 
 #include "guizmo/ImGuizmo.h"
 
@@ -643,6 +643,7 @@ void Editor::create_render_viewport()
             if (scene == m_scene)
             {
                 m_scene = nullptr;
+                SceneManager::SetActive(nullptr);
             }
             SceneManager::Remove(scene);
         }
@@ -1339,6 +1340,8 @@ void Editor::RenderTreeNodeFile(gtreefile &tree_file)
     }
 
     auto isOpen = ImGui::TreeNodeEx(tree_file.name.c_str());
+    dropTargetGameObjectInFile(tree_file);
+
     if (ImGui::IsItemClicked(ImGuiMouseButton_Left))
     {
         g_tree_file = &tree_file;
@@ -1358,6 +1361,7 @@ void Editor::RenderTreeNodeFile(gtreefile &tree_file)
 void Editor::RenderFiles()
 {
     ImGui::Columns(4, nullptr, false);
+
     for (auto &entry : g_tree_file->children)
     {
         if (entry.bdirectory || entry.icon == nullptr || *entry.icon == nullptr)
@@ -1378,9 +1382,7 @@ void Editor::RenderFiles()
             g_tree_file_selected.push_back(&entry);
         }
 
-        std::filesystem::path path = entry.path;
-
-        dropTargetGameObjectInFile(path.parent_path());
+        dropTargetGameObjectInFile(entry);
 
         if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceNoDisableHover | ImGuiDragDropFlags_SourceNoHoldToOpenOthers | ImGuiDragDropFlags_SourceAllowNullID)) {
             if (m_extensionNameToFlag.find(entry.extension) != m_extensionNameToFlag.end())
@@ -1406,7 +1408,7 @@ void Editor::RenderFiles()
     }
 }
 
-void Editor::dropTargetGameObjectInFile(std::string path)
+void Editor::dropTargetGameObjectInFile(gtreefile &tree_file)
 {
     if (!ImGui::BeginDragDropTarget())
     {
@@ -1420,10 +1422,11 @@ void Editor::dropTargetGameObjectInFile(std::string path)
     }
 
     auto transform = *reinterpret_cast<Transform **>(payload->Data);
-    
-    path = path[path.size()] == '/' ? path : path + "/";
 
-    TaskManager::Add<GameObjectSaveTask>(path, transform->getGameObject(), nullptr);
+    TaskManager::Add<GameObjectSaveTask>(tree_file.path, transform->getGameObject(), [&](GameObject *)
+            {
+                updateFileTree(tree_file);
+            });
 
     ImGui::EndDragDropTarget();
 }
@@ -1599,7 +1602,6 @@ void Editor::create_call_popup()
         break;
     case EditorPopupFlags_RenameGameObject:
         ImGui::OpenPopup(GET_FLAG_NAME(EditorPopupFlags_RenameGameObject));
-        popupFlags &= ~EditorPopupFlags_RenameGameObject;
         break;
     case EditorPopupFlags_SceneAddOption:
         ImGui::OpenPopup(GET_FLAG_NAME(EditorPopupFlags_SceneAddOption));
@@ -1741,24 +1743,17 @@ void Editor::create_popup_rename_object()
     auto objectlist = m_scene->get_object_selected();
 
     auto object = objectlist.back();
+    auto go_name = object->getName();
 
-    auto name = object->getName();
-    if (name.size() < 256)
-    {
-        name.resize(256, '\0');
-    }
+    char name[256] = {0};
+    strcpy(name, go_name.c_str());
 
     if (!ImGui::IsAnyItemActive() && !ImGui::IsMouseClicked(ImGuiMouseButton_Left))
         ImGui::SetKeyboardFocusHere();
 
-    if (ImGui::InputText("##create_popup_rename_object_inputtext_0", name.data(), name.size(), ImGuiInputTextFlags_EnterReturnsTrue))
+    if (ImGui::InputText("##create_popup_rename_object_inputtext_0", name, GET_N_ARRAY(name), ImGuiInputTextFlags_EnterReturnsTrue))
     {
-        name.erase(std::remove(name.begin(), name.end(), '\0'), name.end());
-
-        for (auto go : objectlist)
-        {
-            go->setName(name);
-        }
+        object->setName(name);
 
         ImGui::CloseCurrentPopup();
     }
@@ -1795,7 +1790,7 @@ void Editor::create_popup_create_script()
 
 void Editor::RenderStatisticsMenu() {
     ImGui::SeparatorText("Scripts");
-    ImGui::Text("Entidades: %ld", Manager::GetEntityCount());
+    ImGui::Text("Entidades: %ld", EntityManager::GetCount());
     ImGui::Text("GameObject: %ld", GameObjectManager::GetCount());
 
     ImGui::SeparatorText("AssetManager");

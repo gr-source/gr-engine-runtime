@@ -234,7 +234,7 @@ private:
 
     void RenderFiles();
 
-    void dropTargetGameObjectInFile(std::string path);
+    void dropTargetGameObjectInFile(gtreefile &tree_file);
 
     void create_window_console();
 
