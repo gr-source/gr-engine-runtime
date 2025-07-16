@@ -51,7 +51,7 @@ enum EditorPopupFlags : EditorPopupFlags_
     EditorPopupFlags_CreateMaterial         = 1 << 8,
     EditorPopupFlags_CreateMaterialInDir    = 1 << 9,
     EditorPopupFlags_FileManager            = 1 << 10,
-    EditorPopupFlags_DirManager             = 1 << 11,
+    EditorPopupFlags_CurrentDirManager      = 1 << 11,
     EditorPopupFlags_RenameFileOrDir        = 1 << 12,
     EditorPopupFlags_CreateNewDir           = 1 << 13,
     EditorPopupFlags_CreateScript           = 1 << 14,
@@ -59,6 +59,7 @@ enum EditorPopupFlags : EditorPopupFlags_
     EditorPopupFlags_RenameGameObject       = 1 << 16,
     EditorPopupFlags_SceneAddOption         = 1 << 17,
     EditorPopupFlags_CreateScene            = 1 << 18,
+    EditorPopupFlags_DirManager             = 1 << 19
 };
 
 #define GET_FLAG_NAME(c) #c
@@ -134,6 +135,8 @@ private:
 
     std::vector<gtreefile *> g_tree_file_selected;
 
+    std::unordered_set<gtreefile *> g_tree_file_selected_map;
+
     Scene *m_scene;
 
     GameObject *m_cameraObject;
@@ -160,7 +163,7 @@ private:
 
     gtreefile root_tree_file;
 
-    gtreefile *g_tree_file;
+    gtreefile *g_treefile_dir_selected;
 
     ImGuizmo::OPERATION m_guizmoOperation;
 
@@ -212,15 +215,13 @@ private:
 
     void StopGame();
 
-    void DropGameObjectInScene();
+    void drop_gameobject_in_scene();
 
     void OpenFileDoubleClick(std::filesystem::path path);
 
     void PopupFileAndDirmanager();
 
     void PopupFileManager();
-
-    void PopupDirManager();
 
     void PopupCreateDirectory();
 
@@ -230,9 +231,11 @@ private:
 
     void create_render_browser();
 
-    void RenderTreeNodeFile(gtreefile &tree_file);
+    void render_node_directory(gtreefile *tree_file);
 
-    void RenderFiles();
+    void render_files_on_dir(gtreefile *file);
+
+    void drag_file(gtreefile *file);
 
     void dropTargetGameObjectInFile(gtreefile &tree_file);
 
@@ -261,6 +264,10 @@ private:
     void create_popup_create_script();
 
     void create_popup_rename_filedir();
+
+    void create_popup_info_dir();
+
+    void create_popup_dir_manager();
 
     void RenderStatisticsMenu();
 
@@ -359,6 +366,14 @@ private:
     void updateFileTree(gtreefile &tree_file);
 
     Camera *get_camera();
+
+    void select_file(gtreefile *file);
+
+    void unselect_file(gtreefile *file);
+
+    bool selected_file(gtreefile *file) const;
+
+    void unselect_all_file();
 };
 
 template <typename T, typename... Args>

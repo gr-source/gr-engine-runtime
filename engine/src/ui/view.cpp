@@ -1,4 +1,5 @@
 #include "view.hpp"
+#include "imgui.h"
 
 const bool View::TextureInputUI(const ImColor& color) {
     ImDrawList* drawList = ImGui::GetWindowDrawList();
@@ -91,7 +92,7 @@ bool View::CloseButton() {
     return false;
 }
 
-bool View::ImageAndTextButton(ImTextureID textureID, const char *label, ImVec2 size)
+bool View::ImageAndTextButton(ImTextureID textureID, const char *label, bool selected, ImVec2 size)
 {
     size.x = size.x <= 0.0f ? 40.0f : size.x;
     size.y = size.y <= 0.0f ? 40.0f : size.y;
@@ -109,7 +110,7 @@ bool View::ImageAndTextButton(ImTextureID textureID, const char *label, ImVec2 s
 
     bool press = ImGui::InvisibleButton(label, (size + padding * 2.0f) + textSize);
     
-    window->DrawList->AddImage(textureID, bb.Min + padding, bb.Max - padding, ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), IM_COL32(255, 255, 255, 255));
+    window->DrawList->AddImage(textureID, bb.Min + padding, bb.Max - padding, ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), selected ? IM_COL32(0, 255, 0, 255) : IM_COL32(255, 255, 255, 255));
 
     ImVec2 button_pos{bb.Min.x, bb.Max.y};
 
@@ -117,3 +118,25 @@ bool View::ImageAndTextButton(ImTextureID textureID, const char *label, ImVec2 s
 
     return press;
 }
+
+bool View::ButtonWithComment(const char *name, const char *comment)
+{
+    auto avail = ImGui::GetContentRegionAvail();
+
+    bool press = ImGui::Selectable(name, false, 0);
+
+    ImGui::SameLine();
+
+    float textWidth = ImGui::CalcTextSize(comment).x + ImGui::CalcTextSize(name).x;
+
+    float padding = 5.0f;
+    ImGui::SetCursorPosX(ImGui::GetCursorPosX() + avail.x - textWidth - padding);
+
+    ImGui::TextUnformatted(comment);
+
+    return press;
+}
+
+
+
+

@@ -17,8 +17,9 @@ public:
 
     static bool CloseButton();
 
-    static bool ImageAndTextButton(ImTextureID textureID, const char *label, ImVec2 size = {0.0f, 0.0f});
-    
+    static bool ImageAndTextButton(ImTextureID textureID, const char *label, bool selected = false, ImVec2 size = {0.0f, 0.0f});
+
+    static bool ButtonWithComment(const char *name, const char *comment);
 };
 
 

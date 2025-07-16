@@ -73,10 +73,6 @@
 #include <gr-render/gTexture.h>
 #include <filesystem>
 
-#include <pstl/glue_algorithm_defs.h>
-#include <stdexcept>
-#include <vector>
-
 #define ITEMS_PER_PAGE 20
 
 #define GET_N_ARRAY(c) sizeof(c) / sizeof(c[0])
@@ -145,7 +141,7 @@ Editor::Editor() : m_viewport(ImGui::GetMainViewport()), mImGuiIO(&ImGui::GetIO(
 
     s_texturePlayGame = nullptr;
 
-    g_tree_file = nullptr;
+    g_treefile_dir_selected = nullptr;
 
     m_currentPage = 0;
 
@@ -222,10 +218,7 @@ Editor::Editor() : m_viewport(ImGui::GetMainViewport()), mImGuiIO(&ImGui::GetIO(
     {
         auto projectname = project->getName();
 
-        char name[256];
-        sprintf(name, "GR - %s", projectname.c_str());
-
-        Window::SetWindowTitle(name);
+        Window::SetWindowTitle(String::format("GR - %s", projectname.c_str()).c_str());
     }
 }
 
@@ -871,7 +864,7 @@ void Editor::render_scene(Scene *scene)
             }
         }
         */
-        DropGameObjectInScene();
+        drop_gameobject_in_scene();
     }
 
     ImGuizmo::SetDrawlist();
@@ -1041,7 +1034,7 @@ void Editor::StopGame()
     Console::log(Log::DEFAULT, "Game stoped.");
 }
 
-void Editor::DropGameObjectInScene()
+void Editor::drop_gameobject_in_scene()
 {
     auto isOpen = ImGui::BeginDragDropTarget();
     if (!isOpen)
@@ -1055,13 +1048,23 @@ void Editor::DropGameObjectInScene()
         return ImGui::EndDragDropTarget();
     }
 
+    std::vector<gtreefile *> files(payload->DataSize / sizeof(gtreefile *), nullptr);
+    memcpy(files.data(), payload->Data, payload->DataSize);
+
+    for (auto &file : files)
+    {
+        if (file->extension == ".gmdx")
+            AssetsManager::LoadGameObject(file->path, &Editor::PostLoadGameObject, this);
+    }
+
+    unselect_all_file();
+    /*
     std::string path(reinterpret_cast<char *>(payload->Data), payload->DataSize);
     if (path.empty())
     {
         return ImGui::EndDragDropTarget();
     }
-    
-    AssetsManager::LoadGameObject(path, &Editor::PostLoadGameObject, this);
+    */    
 
     ImGui::EndDragDropTarget();
 }
@@ -1123,94 +1126,24 @@ void Editor::PopupFileAndDirmanager()
 
 void Editor::PopupFileManager()
 {
+    ImGui::SetNextWindowSize({200.0f, 100.0f});
     bool isOpenPopup = ImGui::BeginPopup(GET_FLAG_NAME(EditorPopupFlags_FileManager));
     if (!isOpenPopup)
     {
         return;
     }
 
-    if (g_tree_file_selected.size() > 1)
+    if (View::ButtonWithComment("Remove", "delete"))
     {
-        if (ImGui::BeginListBox("list_items"))
+        for (auto &file : g_tree_file_selected)
         {
-            for (auto &tree_file : g_tree_file_selected)
-            {
-                ImGui::Text("%s", tree_file->name.c_str());
-            }
-            ImGui::EndListBox();
+            File::Delete(file->path);
         }
-    } else {
-        ImGui::Text("%s", g_tree_file_selected.back()->name.c_str());
-    }
 
-    const char *item_list[] {"Delete", "Rename", "Move", "Copy"};
+        unselect_all_file();
 
-    int i = 0;
-    if (ImGui::ListBox("##FileManager", &i, item_list, GET_N_ARRAY(item_list))) {
-        switch (i) {
-        case 0:
-            {
-                for (auto tree_file : g_tree_file_selected)
-                    File::Delete(tree_file->path);
-
-            g_tree_file_selected.clear();
-
-            updateFileTree(root_tree_file);
-            break;
-        }
-        case 1:
-            popupFlags |= EditorPopupFlags_RenameFileOrDir;
-            break;
-        default:
-            break;
-        }
-        ImGui::CloseCurrentPopup();
-    }
-
-    ImGui::EndPopup();
-}
-
-void Editor::PopupDirManager()
-{
-    bool isOpenPopup = ImGui::BeginPopup(GET_FLAG_NAME(EditorPopupFlags_DirManager));
-    if (g_tree_file_selected.empty() || !isOpenPopup)
-    {
-        return;
-    }
-
-    auto &file_tree = g_tree_file_selected.back();
-
-    ImGui::Text("%s", file_tree->name.c_str());
-
-    static const char *item_list[] {"Delete", "Rename", "Create Dir", "Create Script", "Create Material", "Create Shader", "Move", "Copy"};
-
-    int i = 0;
-    if (ImGui::ListBox("##FileManager", &i, item_list, GET_N_ARRAY(item_list))) {
-        switch (i) {
-        case 0:
-        {
-            File::Delete(file_tree->path);
-            g_tree_file_selected.clear();
-
-            updateFileTree(root_tree_file);
-            break;
-        }
-        case 1:
-            popupFlags |= EditorPopupFlags_RenameFileOrDir;
-            break;
-        case 2:
-            popupFlags |= EditorPopupFlags_CreateNewDir;
-            break;
-        case 3:
-            popupFlags |= EditorPopupFlags_CreateScript;
-            break;
-        case 5:
-            popupFlags |= EditorPopupFlags_CreateShader;
-            break;
-        default:
-            break;
-        }
-        ImGui::CloseCurrentPopup();
+        // FIXME: Muito lento
+        updateFileTree(root_tree_file);
     }
 
     ImGui::EndPopup();
@@ -1224,8 +1157,6 @@ void Editor::PopupCreateDirectory()
         return;
     }
 
-    auto &file_tree = g_tree_file_selected.back();
-
     ImGui::Text("Input directory name:");
     if (!ImGui::IsAnyItemActive() && !ImGui::IsMouseClicked(0))
         ImGui::SetKeyboardFocusHere(0);
@@ -1233,9 +1164,9 @@ void Editor::PopupCreateDirectory()
     char name[256] = {0};
     if (ImGui::InputText("##popup_create_directoty_inputtext", name, 256, ImGuiInputTextFlags_EnterReturnsTrue))
     {
-        File::CreateDirectory(file_tree->path + "/" + std::string(name));
+        File::CreateDirectory(g_treefile_dir_selected->path + "/" + std::string(name));
 
-        updateFileTree(*file_tree);
+        updateFileTree(*g_treefile_dir_selected);
 
         ImGui::CloseCurrentPopup();
     }
@@ -1282,37 +1213,43 @@ void Editor::create_render_browser()
     ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
     if (ImGui::BeginChild("aaa", ImVec2(avail.x / 3.0f, 0), ImGuiChildFlags_AlwaysUseWindowPadding))
     {
-        RenderTreeNodeFile(root_tree_file);
+        render_node_directory(&root_tree_file);
     }
     ImGui::EndChild();
 
     ImGui::SameLine();
-    if (ImGui::BeginChild("bbb", ImVec2(0.0f, 0.0f), ImGuiChildFlags_AlwaysUseWindowPadding) && g_tree_file != nullptr)
+    if (ImGui::BeginChild("bbb", ImVec2(0.0f, 0.0f), ImGuiChildFlags_AlwaysUseWindowPadding) && g_treefile_dir_selected != nullptr)
     {
-        RenderFiles();
+        render_files_on_dir(g_treefile_dir_selected);
     }
     ImGui::EndChild();
 }
 
-void Editor::RenderTreeNodeFile(gtreefile &tree_file)
+void Editor::render_node_directory(gtreefile *tree_file)
 {
-    if (!tree_file.bdirectory)
+    if (!tree_file->bdirectory)
     {
         return;
     }
 
     ImGuiTreeNodeFlags flags = 0;
-    if (g_tree_file == &tree_file)
+    if (g_treefile_dir_selected == tree_file)
     {
         flags |= ImGuiTreeNodeFlags_Selected;
     }
 
-    auto isOpen = ImGui::TreeNodeEx(tree_file.name.c_str());
-    dropTargetGameObjectInFile(tree_file);
+    auto isOpen = ImGui::TreeNodeEx(tree_file->name.c_str(), flags);
 
-    if (ImGui::IsItemClicked(ImGuiMouseButton_Left))
+    dropTargetGameObjectInFile(*tree_file);
+
+    if (ImGui::IsItemClicked(ImGuiMouseButton_Right))
     {
-        g_tree_file = &tree_file;
+        g_treefile_dir_selected = tree_file;
+
+        popupFlags |= EditorPopupFlags_DirManager;
+    } else if (ImGui::IsItemClicked(ImGuiMouseButton_Left))
+    {
+        g_treefile_dir_selected = tree_file;
     }
 
     if (!isOpen)
@@ -1320,46 +1257,37 @@ void Editor::RenderTreeNodeFile(gtreefile &tree_file)
         return;
     }
 
-    for (auto &file : tree_file.children)
-        RenderTreeNodeFile(file);
+    for (auto &file : tree_file->children)
+        render_node_directory(&file);
 
     ImGui::TreePop();
 }
 
-void Editor::RenderFiles()
+void Editor::render_files_on_dir(gtreefile *dir)
 {
     ImGui::Columns(4, nullptr, false);
-
-    for (auto &entry : g_tree_file->children)
+    for (auto &entry : dir->children)
     {
         if (entry.bdirectory || entry.icon == nullptr || *entry.icon == nullptr)
         {
             continue;
         }
 
-        if (View::ImageAndTextButton(reinterpret_cast<ImTextureID>((*entry.icon)->getTextureID()), entry.name.c_str()))
+        if (View::ImageAndTextButton(reinterpret_cast<ImTextureID>((*entry.icon)->getTextureID()), entry.name.c_str(), selected_file(&entry)))
         {
         }
 
         if (ImGui::IsItemClicked(ImGuiMouseButton_Right))
         {
-            popupFlags |= EditorPopupFlags_FileManager;
-            
-            g_tree_file_selected.clear();
+            if (!selected_file(&entry))
+                select_file(&entry);
 
-            g_tree_file_selected.push_back(&entry);
+            popupFlags |= EditorPopupFlags_FileManager;
         }
 
         dropTargetGameObjectInFile(entry);
 
-        if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceNoDisableHover | ImGuiDragDropFlags_SourceNoHoldToOpenOthers | ImGuiDragDropFlags_SourceAllowNullID)) {
-            if (m_extensionNameToFlag.find(entry.extension) != m_extensionNameToFlag.end())
-            {
-                ImGui::Text("%s", entry.name.c_str());
-                ImGui::SetDragDropPayload(m_extensionDragDrop[m_extensionNameToFlag[entry.extension]], entry.path.data(), entry.path.size());
-            }
-            ImGui::EndDragDropSource();
-        }
+        drag_file(&entry);
 
         if (ImGui::IsItemClicked(ImGuiMouseButton_Left) && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
         {
@@ -1369,10 +1297,66 @@ void Editor::RenderFiles()
         ImGui::NextColumn();
     }
 
+    if (ImGui::IsWindowHovered())
+    {
+        if (mImGuiIO->KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_A, false))
+        {
+            unselect_all_file();
+
+            for (auto &entry : dir->children)
+            {
+                if (entry.bdirectory)
+                {
+                    continue;
+                }
+
+                select_file(&entry);
+            }
+        }
+        if (ImGui::IsKeyPressed(ImGuiKey_Escape, false))
+        {
+            unselect_all_file();
+        }
+    }
+
     if (!(popupFlags & EditorPopupFlags_FileManager) && ImGui::IsWindowHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Right))
     {
-        g_tree_file_selected.push_back(g_tree_file);
-        popupFlags |= EditorPopupFlags_DirManager;
+        unselect_all_file();
+
+        select_file(dir);
+
+        popupFlags |= EditorPopupFlags_CurrentDirManager;
+    }
+}
+
+void Editor::drag_file(gtreefile *file)
+{
+    if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceNoDisableHover | ImGuiDragDropFlags_SourceNoHoldToOpenOthers | ImGuiDragDropFlags_SourceAllowNullID))
+    {
+        if (m_extensionNameToFlag.find(file->extension) != m_extensionNameToFlag.end())
+        {
+            if (!selected_file(file))
+                select_file(file);
+
+            auto count = g_tree_file_selected.size() > 10 ? 10 : g_tree_file_selected.size();
+
+            auto pos = ImGui::GetCursorPos();
+            auto after = pos;
+
+            for (std::size_t i={};i<count;i++)
+            {
+                int id = i % 2;
+
+                ImGui::SetCursorPos(pos);
+                pos.y -= 5.5f;
+                pos.x = after.x + (id * 5.0f);
+
+                ImGui::Image(reinterpret_cast<ImTextureID>(iconsUI[IconType::ICON_FILE]->getTextureID()), {32, 32});
+            }
+
+            ImGui::SetDragDropPayload(m_extensionDragDrop[m_extensionNameToFlag[file->extension]], g_tree_file_selected.data(), g_tree_file_selected.size() * sizeof(gtreefile *));
+        }
+        ImGui::EndDragDropSource();
     }
 }
 
@@ -1541,17 +1525,18 @@ void Editor::create_call_popup()
         ImGui::OpenPopup(GET_FLAG_NAME(EditorPopupFlags_CreateMaterial));
         popupFlags &= ~EditorPopupFlags_CreateMaterial;
         break;
+        /*
     case EditorPopupFlags_FileManager | EditorPopupFlags_DirManager:
         ImGui::OpenPopup(GET_FLAG_NAME(EditorPopupFlags_FileManager | EditorPopupFlags_DirManager));
         popupFlags &= ~(EditorPopupFlags_FileManager | EditorPopupFlags_DirManager);
         break;
+        */
     case EditorPopupFlags_FileManager:
         ImGui::OpenPopup(GET_FLAG_NAME(EditorPopupFlags_FileManager));
         popupFlags &= ~EditorPopupFlags_FileManager;
         break;
-    case EditorPopupFlags_DirManager:
-        ImGui::OpenPopup(GET_FLAG_NAME(EditorPopupFlags_DirManager));
-        popupFlags &= ~EditorPopupFlags_DirManager;
+    case EditorPopupFlags_CurrentDirManager:
+        ImGui::OpenPopup(GET_FLAG_NAME(EditorPopupFlags_CurrentDirManager));
         break;
     case EditorPopupFlags_RenameFileOrDir:
         ImGui::OpenPopup(GET_FLAG_NAME(EditorPopupFlags_RenameFileOrDir));
@@ -1576,6 +1561,10 @@ void Editor::create_call_popup()
         break;
     case EditorPopupFlags_CreateScene:
         ImGui::OpenPopup(GET_FLAG_NAME(EditorPopupFlags_CreateScene));
+        break;
+    case EditorPopupFlags_DirManager:
+        ImGui::OpenPopup(GET_FLAG_NAME(EditorPopupFlags_DirManager));
+        break;
     default:
         break;
     }
@@ -1595,6 +1584,10 @@ void Editor::create_popup()
 
     create_popup_rename_filedir();
 
+    create_popup_info_dir();
+
+    create_popup_dir_manager();
+
     PopupComponentMenu();
 
     SkyboxEditor();
@@ -1612,8 +1605,6 @@ void Editor::create_popup()
     PopupFileAndDirmanager();
 
     PopupFileManager();
-
-    PopupDirManager();
 
     PopupCreateDirectory();
 
@@ -1777,6 +1768,44 @@ void Editor::create_popup_rename_filedir()
         updateFileTree(*tree_file->parent);
         
         ImGui::CloseCurrentPopup();
+    }
+
+    ImGui::EndPopup();
+}
+
+void Editor::create_popup_info_dir()
+{
+    auto isopen = ImGui::BeginPopup(GET_FLAG_NAME(EditorPopupFlags_CurrentDirManager));
+    if (!isopen)
+        return;
+
+    if (ImGui::Selectable("Create directory"))
+        popupFlags |= EditorPopupFlags_CreateNewDir;
+
+    if (ImGui::Selectable("Create script"))
+        popupFlags |= EditorPopupFlags_CreateScript;
+
+    ImGui::EndPopup();
+}
+
+void Editor::create_popup_dir_manager()
+{
+    auto isopen = ImGui::BeginPopup(GET_FLAG_NAME(EditorPopupFlags_DirManager));
+    if (!isopen)
+        return;
+
+    if (ImGui::Selectable("Create directory"))
+    {
+        popupFlags |= EditorPopupFlags_CreateNewDir;
+    }
+
+    if (ImGui::Selectable("Remove"))
+    {
+        File::Delete(g_treefile_dir_selected->path);
+
+        g_treefile_dir_selected = g_treefile_dir_selected->parent;
+
+        updateFileTree(*g_treefile_dir_selected);
     }
 
     ImGui::EndPopup();
@@ -1956,10 +1985,12 @@ void Editor::renderDropGameObject(GameObject **ref) {
     if (!data) {
         return ImGui::EndDragDropTarget();
     }
-    
-    auto path = std::string((char*)data->Data, data->DataSize);
 
-    AssetsManager::LoadGameObject(path, &Editor::OutputGameObject, ref);
+    std::cout << __FILE__ << ": " << __LINE__ << std::endl;
+    
+    // auto path = std::string((char*)data->Data, data->DataSize);
+
+    // AssetsManager::LoadGameObject(path, &Editor::OutputGameObject, ref);
 
     ImGui::EndDragDropTarget();
 }
@@ -3177,6 +3208,30 @@ void Editor::updateFileTree(gtreefile &tree_file)
 Camera *Editor::get_camera()
 {
     return Settings::bGameRunning ? Camera::Current() : m_mainCamera;
+}
+
+void Editor::select_file(gtreefile *file)
+{
+    auto &&[it, added] = g_tree_file_selected_map.emplace(file);
+    if (added)
+        g_tree_file_selected.push_back(file);
+}
+
+void Editor::unselect_file(gtreefile *file)
+{
+    g_tree_file_selected.erase(std::remove(g_tree_file_selected.begin(), g_tree_file_selected.end(), file), g_tree_file_selected.end());
+    g_tree_file_selected_map.erase(file);
+}
+
+bool Editor::selected_file(gtreefile *file) const
+{
+    return g_tree_file_selected_map.find(file) != g_tree_file_selected_map.end();
+}
+
+void Editor::unselect_all_file()
+{
+    g_tree_file_selected.clear();
+    g_tree_file_selected_map.clear();
 }
 
 PhysicsTask::PhysicsTask() : IAsyncTask<bool>(TaskPriority::HIGH)
