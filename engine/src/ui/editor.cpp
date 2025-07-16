@@ -1,5 +1,6 @@
 #include "editor.hpp"
 
+#include <cstring>
 #include <gr-base/script/baserender.hpp>
 #include <gr-base/script/default.hpp>
 
@@ -210,6 +211,7 @@ Editor::Editor() : m_viewport(ImGui::GetMainViewport()), mImGuiIO(&ImGui::GetIO(
 
     root_tree_file.path = File::GetAsset("");
     root_tree_file.name = "Assets";
+    root_tree_file.parent = nullptr;
     root_tree_file.bdirectory = true;
     root_tree_file.icon = nullptr;
 
@@ -1214,40 +1216,6 @@ void Editor::PopupDirManager()
     ImGui::EndPopup();
 }
 
-void Editor::PopupRenameFileOrDir()
-{
-    auto isOpen = ImGui::BeginPopup("##popup_rename_file_or_dir");
-    if (!isOpen)
-    {
-        return;
-    }
-    auto path = mDirSelectedList.back();
-
-    ImGui::Text("Rename:");
-    if (!ImGui::IsAnyItemActive() && !ImGui::IsMouseClicked(ImGuiMouseButton_Left))
-        ImGui::SetKeyboardFocusHere(0);
-
-
-    auto name = path.filename().string();
-    if (name.size() < 256)
-    {
-        name.resize(256, '\0');
-    }
-
-    if (ImGui::InputText("##popup_rename_file", name.data(), name.size(), ImGuiInputTextFlags_EnterReturnsTrue)) {
-        name.erase(std::remove(name.begin(), name.end(), '\0'), name.end());
-
-        auto temp_path = path;
-        File::rename(path, temp_path.replace_filename(name));
-
-        mDirSelectedList.clear();
-        
-        ImGui::CloseCurrentPopup();
-    }
-
-    ImGui::EndPopup();
-}
-
 void Editor::PopupCreateDirectory()
 {
     auto isOpen = ImGui::BeginPopup(GET_FLAG_NAME(EditorPopupFlags_CreateNewDir));
@@ -1586,8 +1554,7 @@ void Editor::create_call_popup()
         popupFlags &= ~EditorPopupFlags_DirManager;
         break;
     case EditorPopupFlags_RenameFileOrDir:
-        ImGui::OpenPopup("##popup_rename_file_or_dir");
-        popupFlags &= ~EditorPopupFlags_RenameFileOrDir;
+        ImGui::OpenPopup(GET_FLAG_NAME(EditorPopupFlags_RenameFileOrDir));
         break;
     case EditorPopupFlags_CreateNewDir:
         ImGui::OpenPopup(GET_FLAG_NAME(EditorPopupFlags_CreateNewDir));
@@ -1626,6 +1593,8 @@ void Editor::create_popup()
 
     create_popup_create_script();
 
+    create_popup_rename_filedir();
+
     PopupComponentMenu();
 
     SkyboxEditor();
@@ -1645,8 +1614,6 @@ void Editor::create_popup()
     PopupFileManager();
 
     PopupDirManager();
-
-    PopupRenameFileOrDir();
 
     PopupCreateDirectory();
 
@@ -1782,6 +1749,36 @@ void Editor::create_popup_create_script()
 
         ImGui::CloseCurrentPopup();
     }
+    ImGui::EndPopup();
+}
+
+void Editor::create_popup_rename_filedir()
+{
+    auto isOpen = ImGui::BeginPopup(GET_FLAG_NAME(EditorPopupFlags_RenameFileOrDir));
+    if (!isOpen)
+    {
+        return;
+    }
+
+    auto &tree_file = g_tree_file_selected.back();
+
+    ImGui::Text("Rename:");
+    if (!ImGui::IsAnyItemActive() && !ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+        ImGui::SetKeyboardFocusHere(0);
+
+    auto filename = tree_file->name;
+    char name[256] = {0};
+    strcpy(name, filename.c_str());
+
+    if (ImGui::InputText("##popup_rename_file", name, GET_N_ARRAY(name), ImGuiInputTextFlags_EnterReturnsTrue))
+    {
+        File::rename(tree_file->path, tree_file->parent->path + "/" + name);
+
+        updateFileTree(*tree_file->parent);
+        
+        ImGui::CloseCurrentPopup();
+    }
+
     ImGui::EndPopup();
 }
 
@@ -1986,7 +1983,8 @@ bool Editor::OnPropertyTransform(Transform *transform) {
     
     auto position = transform->getLocalPosition();
     ImGui::Text("Position");
-    if (View::DragScalarEx(data, (float *)&position, 3, 1.0f, 0.0f, 0.0f)) {
+    if (View::DragScalarEx(data, (float *)&position, 3, 1.0f, 0.0f, 0.0f))
+    {
         transform->setLocalPosition(position);
     }
     
@@ -3143,6 +3141,7 @@ void Editor::updateFileTree(gtreefile &tree_file)
 
         child.name          = files[i].path().filename().string();
         child.path          = files[i].path().string();
+        child.parent        = &tree_file;
         child.extension     = files[i].path().extension();
         child.bdirectory    = files[i].is_directory();
 

@@ -4,22 +4,9 @@
 
 #include <gr-render/gRender.h>
 
-#define GR_EXPORT __attribute__((visibility("default")))
+__attribute__((constructor))
+static void initialize();
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-// [ Initialzie ]
-void Initialize();
-
-void Destroy();
-
-void SetDeltaTime(float deltaTime);
-
-#ifdef __cplusplus
-}
-#endif
-
-
+__attribute__((destructor))
+static void shutdown();
 

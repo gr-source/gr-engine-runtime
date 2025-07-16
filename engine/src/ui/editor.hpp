@@ -90,6 +90,8 @@ typedef struct gtreefile
 {
     std::string path;
 
+    gtreefile *parent;
+
     std::string name;
 
     std::string extension;
@@ -220,8 +222,6 @@ private:
 
     void PopupDirManager();
 
-    void PopupRenameFileOrDir();
-
     void PopupCreateDirectory();
 
     void PopupCreateShader();
@@ -259,6 +259,8 @@ private:
     void create_popup_rename_object();
 
     void create_popup_create_script();
+
+    void create_popup_rename_filedir();
 
     void RenderStatisticsMenu();
 
