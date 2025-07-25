@@ -34,11 +34,10 @@
 
 #include "ui/shadereditor.hpp"
 
-#include <gr-base/core/binary/modelhandle.hpp>
+#include "task/filmboxmanager.hpp"
 
 #include <gr-ini/config.h>
 #include <gr-render/gCommon.h>
-#include <memory>
 
 static FunctionTimer mFunctionTimer;
 
@@ -249,6 +248,8 @@ void Engine::render_gui()
         view_layout->onRender();
     }
 
+    FilmboxManager::Render();
+
     AssetsManager::Render();
 
     ImGuiRender::End();
@@ -294,7 +295,8 @@ void Engine::drop_file(const std::string &path)
 
     if (path.find(".fbx") != std::string::npos)
     {
-        AssetsManager::LoadFilmbox(path, &Engine::upload, this, nullptr);
+        FilmboxManager::Load(path);
+        // AssetsManager::L(path, &Engine::upload, this, nullptr);
     }
 }
 

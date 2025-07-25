@@ -61,7 +61,7 @@ ProjectMenu::ProjectMenu(Engine *engine) : m_engine(engine), popup_flags(0)
 
 ProjectMenu::~ProjectMenu()
 {
-    DebugDraw::Shutdown();
+    // DebugDraw::Shutdown();
 }
 
 void ProjectMenu::onRender()
@@ -96,7 +96,7 @@ void ProjectMenu::close_project()
 
     /*Batching::Shutdown();*/
 
-    DebugDraw::Shutdown();
+    // DebugDraw::Shutdown();
 
     Project::SetCurrent(nullptr);
 
@@ -348,7 +348,7 @@ void ProjectMenu::OpenProject(Project &project) {
 
     /*Batching::Initialize();*/
 
-    DebugDraw::Initialize();
+    // DebugDraw::Initialize();
 
     Project::SetCurrent(&project);
     

@@ -56,10 +56,29 @@ set(core_cmd_src
     src/core/cmd/cmd.cpp
 )
 
+set(filmbox_src
+    src/filmbox/fbxAnimation.cpp
+    src/filmbox/fbxMaterial.cpp
+    src/filmbox/fbxChannel.cpp
+    src/filmbox/fbxVertex.cpp
+    src/filmbox/fbxScene.cpp
+    src/filmbox/fbxBone.cpp
+    src/filmbox/fbxMesh.cpp
+    src/filmbox/fbxNode.cpp
+    src/filmbox/filmbox.cpp
+)
+
+set(task_src
+    src/task/filmboxmanager.cpp
+    src/task/filmboxtask.cpp
+)
+
 set(engine_src
+    ${task_src}
     ${core_src}
     ${guizmo_src}
     ${octree_src}
+    ${filmbox_src}
     ${core_cmd_src}
     ${animation_src}
     ${core_file_src}
@@ -88,7 +107,6 @@ set(engine_hdr
     ${core_hdr}
     ${guizmo_hdr}
     ${octree_hdr}
-    ${filmbox_hdr}
     ${core_cmd_hdr}
     ${animation_hdr}
     ${core_file_hdr}

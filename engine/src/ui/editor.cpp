@@ -21,10 +21,6 @@
 
 #include <gr-base/core/window.hpp>
 
-#include <gr-base/core/filmbox/filmbox.hpp>
-
-#include <gr-base/core/binary/modelhandle.hpp>
-
 #include <gr-base/core/file/file.hpp>
 
 #include <gr-base/core/thread/threadpool.hpp>
@@ -135,7 +131,7 @@ std::string getfilesize(std::size_t sz) {
         } \
     }
 
-Editor::Editor() : m_viewport(ImGui::GetMainViewport()), mImGuiIO(&ImGui::GetIO()), m_currentPath(File::GetAsset("")), m_cameraObject(nullptr), m_mainCamera(nullptr), m_currentPage(0), m_materialToRename(nullptr), m_plugin(nullptr)
+Editor::Editor() : m_viewport(ImGui::GetMainViewport()), mImGuiIO(&ImGui::GetIO()), m_cameraObject(nullptr), m_mainCamera(nullptr), m_currentPage(0), m_materialToRename(nullptr), m_plugin(nullptr)
 {
     m_scene = nullptr;
 
@@ -146,8 +142,6 @@ Editor::Editor() : m_viewport(ImGui::GetMainViewport()), mImGuiIO(&ImGui::GetIO(
     m_currentPage = 0;
 
     popupFlags = 0;
-
-    m_dirSelected = m_currentPath;
 
     FPSColor = {1.0f, 1.0f, 1.0f, 1.0f};
 
@@ -1176,6 +1170,7 @@ void Editor::PopupCreateDirectory()
 
 void Editor::PopupCreateShader()
 {
+    /*
     auto isOpen = ImGui::BeginPopup(GET_FLAG_NAME(EditorPopupFlags_CreateShader));
     if (!isOpen)
     {
@@ -1195,6 +1190,7 @@ void Editor::PopupCreateShader()
         ImGui::CloseCurrentPopup();
     }
     ImGui::EndPopup();
+    */
 }
 
 void Editor::create_window_browser()
@@ -1283,6 +1279,10 @@ void Editor::render_files_on_dir(gtreefile *dir)
                 select_file(&entry);
 
             popupFlags |= EditorPopupFlags_FileManager;
+        } else if (mImGuiIO->KeyShift && ImGui::IsItemClicked(ImGuiMouseButton_Left))
+        {
+            if (!selected_file(&entry))
+                select_file(&entry);
         }
 
         dropTargetGameObjectInFile(entry);

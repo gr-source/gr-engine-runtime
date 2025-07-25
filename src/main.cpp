@@ -48,7 +48,8 @@ void GLFWscrollfunCallback(GLFWwindow* window, double xoffset, double yoffset) {
     Engine::HandleEvent(Engine::CURSOR_SCROLL, offset);
 }
 
-void GLFWdropfunCallback(GLFWwindow* window, int path_count, const char* paths[]) {
+void GLFWdropfunCallback(GLFWwindow* window, int path_count, const char* paths[])
+{
     for (int i=0;i<path_count;i++) {
         Engine::HandleEvent(Engine::DROFUNC, reinterpret_cast<const void *>(paths[i]));
     }

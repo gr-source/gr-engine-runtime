@@ -11,7 +11,6 @@
 #include "gr-base/core/scene.hpp"
 #include "gr-base/core/thread/asynctask.hpp"
 #include "gr-base/script/animator.hpp"
-#include "renderer.h"
 #include "Global.h"
 
 #include "guizmo/ImGuizmo.h"
@@ -168,12 +167,6 @@ private:
     ImGuizmo::OPERATION m_guizmoOperation;
 
     ImGuizmo::MODE m_guizmoManipulate;
-
-    std::vector<std::filesystem::path> mDirSelectedList;
-
-    std::filesystem::path m_currentPath;
-
-    std::filesystem::path m_dirSelected;
 
     Material *m_materialToRename;
 
