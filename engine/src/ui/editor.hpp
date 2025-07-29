@@ -230,7 +230,7 @@ private:
 
     void drag_file(gtreefile *file);
 
-    void dropTargetGameObjectInFile(gtreefile &tree_file);
+    void drop_gameobject_in_treefile(gtreefile *tree_file);
 
     void create_window_console();
 

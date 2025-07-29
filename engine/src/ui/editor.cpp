@@ -1052,13 +1052,6 @@ void Editor::drop_gameobject_in_scene()
     }
 
     unselect_all_file();
-    /*
-    std::string path(reinterpret_cast<char *>(payload->Data), payload->DataSize);
-    if (path.empty())
-    {
-        return ImGui::EndDragDropTarget();
-    }
-    */    
 
     ImGui::EndDragDropTarget();
 }
@@ -1236,7 +1229,7 @@ void Editor::render_node_directory(gtreefile *tree_file)
 
     auto isOpen = ImGui::TreeNodeEx(tree_file->name.c_str(), flags);
 
-    dropTargetGameObjectInFile(*tree_file);
+    drop_gameobject_in_treefile(tree_file);
 
     if (ImGui::IsItemClicked(ImGuiMouseButton_Right))
     {
@@ -1285,7 +1278,7 @@ void Editor::render_files_on_dir(gtreefile *dir)
                 select_file(&entry);
         }
 
-        dropTargetGameObjectInFile(entry);
+        drop_gameobject_in_treefile(&entry);
 
         drag_file(&entry);
 
@@ -1360,7 +1353,7 @@ void Editor::drag_file(gtreefile *file)
     }
 }
 
-void Editor::dropTargetGameObjectInFile(gtreefile &tree_file)
+void Editor::drop_gameobject_in_treefile(gtreefile *tree_file)
 {
     if (!ImGui::BeginDragDropTarget())
     {
@@ -1375,9 +1368,9 @@ void Editor::dropTargetGameObjectInFile(gtreefile &tree_file)
 
     auto transform = *reinterpret_cast<Transform **>(payload->Data);
 
-    TaskManager::Add<GameObjectSaveTask>(tree_file.path, transform->getGameObject(), [&](GameObject *)
+    TaskManager::Add<GameObjectSaveTask>(tree_file->path, transform->getGameObject(), [&](GameObject *)
             {
-                updateFileTree(tree_file);
+                updateFileTree(*tree_file);
             });
 
     ImGui::EndDragDropTarget();
