@@ -14,9 +14,6 @@ public:
         INITIALIZE     = 1 << 1,
         DESTROY        = 1 << 2,
         RESIZE         = 1 << 3,
-        KEYBOARD_DOWN  = 1 << 4,
-        KEYBOARD_UP    = 1 << 5,
-        CURSOR_POS     = 1 << 6,
         LOOP           = 1 << 7,
         CURSOR_SCROLL  = 1 << 8,
         DROFUNC        = 1 << 9

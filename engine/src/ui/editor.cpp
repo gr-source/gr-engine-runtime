@@ -64,6 +64,8 @@
 
 #include <gr-base/ecs/componentRegistry.hpp>
 
+#include <gr-base/core/culling/octreemanager.hpp>
+
 #include <gr-ini/config.h>
 #include <gr-math/matrix4x4.hpp>
 #include <gr-render/gTexture.h>
@@ -106,21 +108,6 @@ static std::unordered_map<std::string, DragDropFlags> m_extensionNameToFlag =
     {".png",        DragDropFlags::TEXTURE},
 };
 
-std::string getfilesize(std::size_t sz) {
-    float kb = sz / 1024.0f;
-    float mb = kb / 1024.0f;
-    float gb = mb / 1024.0f;
-
-    if (gb >= 1.0f) {
-        return std::to_string(gb) + "GB";
-    } else if (mb >= 1.0f) {
-        return std::to_string(mb) + "MB";
-    } else if (kb >= 1.0f) {
-        return std::to_string(kb) + "KB";
-    }
-    return std::to_string(sz) + "B";
-}
-
 #define INSERT_SCRIPT(object) \
     {#object, [this](Entity *entity) \
         { \
@@ -151,7 +138,7 @@ Editor::Editor() : m_viewport(ImGui::GetMainViewport()), mImGuiIO(&ImGui::GetIO(
 
     m_guizmoManipulate = ImGuizmo::WORLD;
 
-    mInternalScript = {
+    m_guiscriptmap = {
         {"Transform", [this](Entity *entity)
             {
                 RenderProperty<Transform>(&Editor::OnPropertyTransform, this);
@@ -378,9 +365,7 @@ void Editor::PopupComponentMenu()
 {
     auto isOpen = ImGui::BeginPopup("##game_object_component_menu");
     if (!isOpen)
-    {
         return;
-    }
 
     ImGui::EndPopup();
 }
@@ -388,9 +373,8 @@ void Editor::PopupComponentMenu()
 void Editor::create_window_hierarchy()
 {
     if (ImGui::Begin("hierarchy"))
-    {
         create_render_hierarchy();
-    }
+
     ImGui::End();
 }
 
@@ -411,7 +395,11 @@ void Editor::create_render_hierarchy()
     if (ImGui::IsKeyReleased(ImGuiKey_Delete) && m_scene->has_object_selected())
     {
         for (auto go : m_scene->get_object_selected())
+        {
+            OctreeManager::Remove(go->getTransform());
+
             m_scene->destroy(go);
+        }
 
         m_scene->deselect_all();
     }
@@ -435,15 +423,11 @@ void Editor::create_render_hierarchy()
 void Editor::dropGameObjectInHierarchy(Scene *scene)
 {
     if (!ImGui::BeginDragDropTarget())
-    {
         return;
-    }
 
     auto payload = ImGui::AcceptDragDropPayload(m_extensionDragDrop[DragDropFlags::GAMEOBJECT]);
     if (!payload || payload->DataSize <= 0)
-    {
         return ImGui::EndDragDropTarget();
-    }
 
     auto transform = *reinterpret_cast<Transform **>(payload->Data);
     
@@ -971,18 +955,18 @@ void Editor::create_render_guizmo(Scene *scene)
     auto viewmatrix = m_mainCamera->getViewmatrix();
     auto projection = m_mainCamera->getPerspesctive();
 
-    // ImGuizmo::DrawGrid(viewmatrix.getData(), projection.getData(), Matrix4x4::identityMatrix.getData(), 100.f);
-    //
+    static std::unordered_set<Transform *> nodeup;
     auto objects = scene->get_object_selected();
     for (std::size_t i=0;i<objects.size();i++)
     {
         auto go = objects[i];
 
+        auto name = go->getName();
+
         ImGuizmo::SetID(i);
         auto transform = go->getTransform();
 
         auto globalMatrix = transform->getGlobalMatrix();
-
 
         if (ImGuizmo::Manipulate(viewmatrix.getData(), projection.getData(), m_guizmoOperation, m_guizmoManipulate, globalMatrix.getData()))
         {
@@ -1003,8 +987,28 @@ void Editor::create_render_guizmo(Scene *scene)
             transform->setLocalScale(s);
             transform->setLocalRotation(r);
             transform->setLocalPosition(t);
+
+            nodeup.emplace(transform);
         }
     }
+    
+    static bool wasUsingGuizmoLastFrame = false;
+
+    bool isUsingGuizmoNow = ImGuizmo::IsUsingAny();
+
+    if (wasUsingGuizmoLastFrame && !isUsingGuizmoNow)
+    {
+        for (auto &transform : nodeup)
+        {
+            OctreeManager::Remove(transform);
+
+            OctreeManager::Insert(transform);
+        }
+
+        nodeup.clear();
+    }
+
+    wasUsingGuizmoLastFrame = isUsingGuizmoNow;
 }
 
 void Editor::PlayGame()
@@ -1864,12 +1868,12 @@ void Editor::dropScriptInAddComponent()
 
 void Editor::RenderScriptFromEntity(Entity *entity)
 {
-    for (auto [name, component] : entity->getComponentMap())
+    for (auto &&[name, component] : entity->getComponentMap())
     {
         ImGui::PushID(name.c_str());
 
-        auto it = mInternalScript.find(name);
-        if (it != mInternalScript.end())
+        auto it = m_guiscriptmap.find(name);
+        if (it != m_guiscriptmap.end())
         {
             it->second(entity);
         } else if (!RenderComponents(name, &(*component)))
@@ -2629,6 +2633,8 @@ void Editor::PostLoadGameObject(GameObject *gameObject)
 
     m_scene->deselect_all();
     m_scene->select(instantiate);
+
+    OctreeManager::Insert(instantiate->getTransform());
 }
 
 std::string GenerateScriptHeader(const std::string& name) {

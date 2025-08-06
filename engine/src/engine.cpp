@@ -26,10 +26,11 @@
 #include <gr-base/script/meshRender.hpp>
 #include <gr-base/script/camera.hpp>
 
+#include <gr-base/core/debugdraw.hpp>
+
 #include "functionTimer.hpp"
 #include "renderManager.h"
 #include "settings.h"
-#include "renderer.h"
 #include "Global.h"
 
 #include "ui/shadereditor.hpp"
@@ -85,7 +86,6 @@ void Engine::set_project(const Project &project)
 
     // Editor
     {
-
         auto &&[name, view] = v_view_list.emplace_back("Editor", std::make_unique<Editor>());
 
         view_layout = view.get();
@@ -311,8 +311,12 @@ void Engine::upload(GameObject *gameObject)
     view_layout->drop((void *)gameObject);
 }
 
+#include <gr-base/core/culling/octreemanager.hpp>
+
 void Engine::default_render()
 {
+    OctreeManager::Render();
+
     if (Settings::bGameRunning)
     {
         for (auto &camera : Camera::GetCameras())
@@ -352,7 +356,7 @@ void Engine::RenderScene(const Camera *camera)
     RenderManager::Renderer();
 
     grr::gRender::SetRenderState(grr::GR_DEPTH_FUNC, grr::GR_DEPTH_LEQUAL);
-    DebugDraw::Renderer(camera);
+    DebugDraw::Render(camera);
 
     grr::gRender::SetRenderState(grr::GR_DEPTH_FUNC, grr::GR_DEPTH_LEQUAL);
     m_skybox.render(camera);

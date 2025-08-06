@@ -9,14 +9,6 @@ set(guizmo_hdr
     src/guizmo/ImGuizmo.h
 )
 
-set(octree_src
-    src/octree/octree.cpp
-)
-
-set(octree_hdr
-    src/octree/octree.h
-)
-
 set(scriptManager_cpp
     src/scriptManager/scriptManager.cpp
     src/scriptManager/script.cpp
@@ -77,7 +69,6 @@ set(engine_src
     ${task_src}
     ${core_src}
     ${guizmo_src}
-    ${octree_src}
     ${filmbox_src}
     ${core_cmd_src}
     ${animation_src}
@@ -88,7 +79,6 @@ set(engine_src
     src/engine.cpp
     src/Global.cpp
     src/functionTimer.cpp
-    src/renderer.cpp
     src/settings.cpp
     src/screenRender.cpp
     src/shadowMap.cpp
@@ -106,7 +96,6 @@ set(engine_src
 set(engine_hdr
     ${core_hdr}
     ${guizmo_hdr}
-    ${octree_hdr}
     ${core_cmd_hdr}
     ${animation_hdr}
     ${core_file_hdr}
@@ -114,7 +103,6 @@ set(engine_hdr
 
     src/engine.h
     src/Global.h
-    src/renderer.h
     src/settings.h
     src/screenRender.hpp
     src/renderManager.h

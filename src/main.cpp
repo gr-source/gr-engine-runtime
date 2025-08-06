@@ -9,40 +9,21 @@
 #define SCREEN_WIDTH 1024
 #define SCREEN_HEIGHT 600
 
-std::unordered_map<int, grm::u32> m_keyMap = {
-    {GLFW_KEY_ESCAPE, KEY_ESCAPE},
-    {GLFW_KEY_W, KEY_W},
-    {GLFW_KEY_S, KEY_S},
-    {GLFW_KEY_A, KEY_A},
-    {GLFW_KEY_D, KEY_D}
-};
-
-GLFWwindow *CreateWindown(const char* name, int width, int height, GLFWwindow * share, bool isVisible) {
+GLFWwindow *CreateWindown(const char* name, int width, int height, GLFWwindow * share, bool isVisible)
+{
     glfwWindowHint(GLFW_VISIBLE, isVisible ? GL_TRUE : GL_FALSE);
 
     return glfwCreateWindow(width, height, name, nullptr, share);
 }
 
-void GLFWframebuffersizefunCallback(GLFWwindow* window, int width, int height) {
+void GLFWframebuffersizefunCallback(GLFWwindow* window, int width, int height)
+{
     const grm::u32 scale[2]{static_cast<const grm::u32>(width), static_cast<const grm::u32>(height)};
     Engine::HandleEvent(Engine::RESIZE, scale);
 }
 
-void GLFWkeyfunCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
-    if (action == GLFW_PRESS)
-        Engine::HandleEvent(Engine::KEYBOARD_DOWN, reinterpret_cast<const void*>(&m_keyMap[key]));
-    
-    if (action == GLFW_RELEASE)
-        Engine::HandleEvent(Engine::KEYBOARD_UP, reinterpret_cast<const void*>(&m_keyMap[key]));
-}
-
-void GLFWcursorposfunCallback(GLFWwindow* window, double xpos, double ypos) {
-    const float pos[2] {static_cast<const float>(xpos), static_cast<const float>(ypos)};
-
-    Engine::HandleEvent(Engine::CURSOR_POS, pos);
-}
-
-void GLFWscrollfunCallback(GLFWwindow* window, double xoffset, double yoffset) {
+void GLFWscrollfunCallback(GLFWwindow* window, double xoffset, double yoffset)
+{
     const float offset[2] {static_cast<const float>(xoffset), static_cast<const float>(yoffset)};
 
     Engine::HandleEvent(Engine::CURSOR_SCROLL, offset);
@@ -57,10 +38,6 @@ void GLFWdropfunCallback(GLFWwindow* window, int path_count, const char* paths[]
 
 void glfwInstallCallback(GLFWwindow * window) {
     glfwSetFramebufferSizeCallback(window, GLFWframebuffersizefunCallback);
-
-    glfwSetKeyCallback(window, GLFWkeyfunCallback);
-
-    glfwSetCursorPosCallback(window, GLFWcursorposfunCallback);
 
     glfwSetScrollCallback(window, GLFWscrollfunCallback);
 

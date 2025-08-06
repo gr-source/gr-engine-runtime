@@ -128,7 +128,7 @@ public:
     Camera *getCamera();
 
 private:
-    std::unordered_map<std::string, std::function<void(Entity *)>> mInternalScript;
+    std::unordered_map<std::string, std::function<void(Entity *)>> m_guiscriptmap;
 
     std::unordered_map<IconType, grr::gTexture *> iconsUI;
 
