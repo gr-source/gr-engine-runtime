@@ -152,7 +152,7 @@ private:
 
     ImGuiIO *mImGuiIO;
 
-    grm::u8 m_currentPage;
+    grm::uint8 m_currentPage;
 
     bool bBuildDock;
 
@@ -285,6 +285,8 @@ private:
     bool OnPropertyMeshRender(MeshRender *meshRender);
 
     bool OnPropertySkinnedMeshRender(SkinnedMeshRender *skinnedMeshRender);
+
+    bool OnPropertyMeshLOD(MeshLOD *meshlod);
 
     // bool OnPropertyMeshCollider(MeshCollider *meshCollider);
 

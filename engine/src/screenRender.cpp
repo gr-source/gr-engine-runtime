@@ -23,7 +23,7 @@ grr::gVertexArray *ScreenRender::m_vertexArray = nullptr;
 
 grr::gShader *ScreenRender::m_shader = nullptr;
 
-grm::u32 ScreenRender::m_vbo = 0;
+grm::uint32 ScreenRender::m_vbo = 0;
 
 void ScreenRender::Initialize() {
     if (!m_shader)

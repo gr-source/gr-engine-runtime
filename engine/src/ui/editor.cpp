@@ -46,6 +46,7 @@
 #include <gr-base/script/transform.hpp>
 #include <gr-base/script/rigidbody.hpp>
 #include <gr-base/script/animator.hpp>
+#include <gr-base/script/meshLOD.hpp>
 #include <gr-base/script/camera.hpp>
 #include <gr-base/script/light.hpp>
 
@@ -160,7 +161,7 @@ Editor::Editor() : m_viewport(ImGui::GetMainViewport()), mImGuiIO(&ImGui::GetIO(
         INSERT_SCRIPT(MeshRender),
         INSERT_SCRIPT(SkinnedMeshRender),
         INSERT_SCRIPT(MeshFilter),
-        // INSERT_SCRIPT(MeshCollider),
+        INSERT_SCRIPT(MeshLOD),
         INSERT_SCRIPT(BoxCollider),
         INSERT_SCRIPT(Rigidbody),
         INSERT_SCRIPT(Animator),
@@ -329,6 +330,7 @@ void Editor::create_dock()
             if (ImGui::MenuItem("Status"))
             {
             }
+            ImGui::EndMenu();
         }
 
         ImGui::EndMainMenuBar();
@@ -930,7 +932,7 @@ void Editor::UpdateResizeSceneFramebuffer()
     ImVec2 regionAvail = ImGui::GetContentRegionAvail();
     if (m_mainCamera != nullptr && (m_lastViewportSize.x != regionAvail.x || m_lastViewportSize.y != regionAvail.y && regionAvail.x > 5.0f && regionAvail.y > 5.0f))
     {
-        auto &viewport = Settings::ViewportSize = {static_cast<int>(regionAvail.x), static_cast<int>(regionAvail.y)};
+        auto &viewport = Settings::ViewportSize = {regionAvail.x, regionAvail.y};
         if (viewport.x > 0 && viewport.y > 0)
         {
             Display::SetDisplayRect(Rect{0.0f, 0.0f, (float)Settings::ViewportSize.x, (float)Settings::ViewportSize.y});
@@ -2227,6 +2229,34 @@ bool Editor::OnPropertySkinnedMeshRender(SkinnedMeshRender *skinnedMeshRender) {
     return false;
 }
 
+bool Editor::OnPropertyMeshLOD(MeshLOD *meshlod)
+{
+    auto bVisible = true;
+
+    auto isOpen = ImGui::CollapsingHeader("MeshLOD", &bVisible);
+    if (!bVisible)
+    {
+        return true;
+    }
+    
+    if (ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
+        ImGui::OpenPopup("##game_object_component_menu");
+    }
+
+    if (!isOpen) {
+        return false;
+    }
+   
+    auto avail = ImGui::GetContentRegionAvail();
+    
+    if (ImGui::Button("Bake", {avail.x, 0.0f}))
+    {
+        meshlod->Calculate();
+    }
+
+    return false;
+}
+
 bool Editor::render_material(Material *material)
 {
     auto bVisible = true;
@@ -2963,8 +2993,10 @@ void Editor::SkyboxEditor() {
 void Editor::PluginManager()
 {
     ImVec2 winSize(200, 300);
+
+    auto &resolution = Screen::GetResolution();
     
-    ImGui::SetNextWindowPos(ImVec2{static_cast<float>(Screen::width) / 2.0f, static_cast<float>(Screen::height) / 2.0f} - (winSize / 2.0f), ImGuiCond_Always);
+    ImGui::SetNextWindowPos(ImVec2{resolution.x / 2.0f, resolution.y / 2.0f} - (winSize / 2.0f), ImGuiCond_Always);
     ImGui::SetNextWindowSize(winSize, ImGuiCond_Always);
     auto isOpen = ImGui::BeginPopup("##popup_plugin_manager");
     if (!isOpen) { return; }
@@ -3002,8 +3034,10 @@ void Editor::PluginManager()
 
 void Editor::PopupPluginLoad() {
     ImVec2 winSize(200, 300);
+
+    auto &resolution = Screen::GetResolution();
     
-    ImGui::SetNextWindowPos(ImVec2{static_cast<float>(Screen::width) / 2.0f, static_cast<float>(Screen::height) / 2.0f} - (winSize / 2.0f), ImGuiCond_Always);
+    ImGui::SetNextWindowPos(ImVec2{resolution.x / 2.0f, resolution.y / 2.0f} - (winSize / 2.0f), ImGuiCond_Always);
     ImGui::SetNextWindowSize(winSize, ImGuiCond_Always);
     auto isOpen = ImGui::BeginPopup(GET_FLAG_NAME(EditorPopupFlags_LoadPlugin));
     if (!isOpen) { return; }
@@ -3052,8 +3086,10 @@ void Editor::PluginEditor() {
     if (!m_plugin) { return; }
 
     ImVec2 winSize(200, 300);
+
+    auto &resolution = Screen::GetResolution();
     
-    ImGui::SetNextWindowPos(ImVec2{static_cast<float>(Screen::width) / 2.0f, static_cast<float>(Screen::height) / 2.0f} - (winSize / 2.0f), ImGuiCond_Always);
+    ImGui::SetNextWindowPos(ImVec2{resolution.x / 2.0f, resolution.y / 2.0f} - (winSize / 2.0f), ImGuiCond_Always);
     ImGui::SetNextWindowSize(winSize, ImGuiCond_Always);
 
     auto isOpen = ImGui::BeginPopup("##popup_plugin_editor");

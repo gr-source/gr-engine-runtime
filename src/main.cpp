@@ -1,3 +1,4 @@
+#include <gr-math/gmath.hpp>
 #include <settings.h>
 #include <engine.h>
 
@@ -18,7 +19,7 @@ GLFWwindow *CreateWindown(const char* name, int width, int height, GLFWwindow * 
 
 void GLFWframebuffersizefunCallback(GLFWwindow* window, int width, int height)
 {
-    const grm::u32 scale[2]{static_cast<const grm::u32>(width), static_cast<const grm::u32>(height)};
+    const grm::uint32 scale[2]{static_cast<const grm::uint32>(width), static_cast<const grm::uint32>(height)};
     Engine::HandleEvent(Engine::RESIZE, scale);
 }
 
@@ -31,7 +32,8 @@ void GLFWscrollfunCallback(GLFWwindow* window, double xoffset, double yoffset)
 
 void GLFWdropfunCallback(GLFWwindow* window, int path_count, const char* paths[])
 {
-    for (int i=0;i<path_count;i++) {
+    for (int i=0;i<path_count;i++)
+    {
         Engine::HandleEvent(Engine::DROFUNC, reinterpret_cast<const void *>(paths[i]));
     }
 }
@@ -53,16 +55,16 @@ static void glfw_set_window_title(const char *title)
     glfwSetWindowTitle(glfwGetCurrentContext(), title);
 }
 
-static void glfw_set_window_size(const gVector2<int> &size)
+static void glfw_set_window_size(const Vector2 &size)
 {
     glfwSetWindowSize(glfwGetCurrentContext(), size.x, size.y);
 }
 
-static gVector2<int> glfw_get_window_size()
+static Vector2 glfw_get_window_size()
 {
-    gVector2<int> data = {0, 0};
-    glfwGetWindowSize(glfwGetCurrentContext(), &data.x, &data.y);
-    return data;
+    int x, y;
+    glfwGetWindowSize(glfwGetCurrentContext(), &x, &y);
+    return Vector2{static_cast<float>(x), static_cast<float>(y)};
 }
 
 // ********** Input ********** //

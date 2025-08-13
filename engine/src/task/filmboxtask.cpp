@@ -143,7 +143,8 @@ void FilmboxTask::generateMesh(FbxScene *scene, const FbxNode *node, GameObject 
             }
         }
 
-        for (auto &indice : fbxMesh->getIndices()) {
+        for (auto &indice : fbxMesh->getIndices())
+        {
             mesh.addIndice(indice);
         }
 

@@ -2,13 +2,22 @@
 
 #include <gr-math/gmath.hpp>
 
-class Screen {
+class Screen
+{
 public:
-    static int width;
-    static int height;
+    static void SetResolution(const Vector2 &value);
 
-    static void SetResolution(int width, int height);
+    static const Vector2 &GetResolution();
 
-    static const iVector2 GetResolution();
+public:
+    static Screen &GetInstance();
+
+    Vector2 s_Resolution;
+
+    Screen();
+
+    void setResolution(const Vector2 &value);
+
+    const Vector2 &getResolution() const;
 };
 

@@ -176,7 +176,8 @@ void Filmbox::ProcessTexture(aiMaterial *iMaterial, FbxMaterial &fbxMaterial) {
 }
 
 void Filmbox::LoadMesh(const aiScene *scene, FbxScene *fbxScene, std::unordered_map<std::string, Matrix4x4> &boneMap, std::unordered_map<std::string, int> &boneIndex) {
-    for (auto i=0;i<scene->mNumMeshes;++i) {
+    for (auto i=0;i<scene->mNumMeshes;++i)
+    {
         ProcessMesh(scene->mMeshes[i], fbxScene, boneMap, boneIndex);
     }
 }
@@ -218,17 +219,14 @@ void Filmbox::InserMesh(FbxMesh *fbxMesh, aiMesh *mMesh, std::unordered_map<std:
         }
     }
 
-    /*
-    if (mMesh->HasFaces()) {
-        for (auto i = 0; i < mMesh->mNumFaces; ++i) {
-            auto &mFace = mMesh->mFaces[i];
-
-            for (auto j = 0; j < mFace.mNumIndices; ++j) {
-                fbxMesh->addIndice(fbxMesh->getVertices().size() + mFace.mIndices[j]);
-            }
+    for (unsigned int i = 0; i < mMesh->mNumFaces; ++i)
+    {
+        const aiFace& face = mMesh->mFaces[i];
+        if (face.mNumIndices == 3)
+        {
+            fbxMesh->addTriangle(face.mIndices[0], face.mIndices[1], face.mIndices[2]);
         }
     }
-    */
 
     if (mMesh->HasBones()) {
         for (auto i=0;i<mMesh->mNumBones;++i) {
@@ -240,10 +238,6 @@ void Filmbox::InserMesh(FbxMesh *fbxMesh, aiMesh *mMesh, std::unordered_map<std:
             {
                 boneIndex.emplace(name.C_Str(), i);
             }
-
-            // if (fbxMesh->findBone(name.C_Str()) != nullptr) {
-            //     continue;
-            // }
 
             aiVector3D scale;
             aiQuaternion rotation;
