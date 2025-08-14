@@ -46,7 +46,7 @@
 #include <gr-base/script/transform.hpp>
 #include <gr-base/script/rigidbody.hpp>
 #include <gr-base/script/animator.hpp>
-#include <gr-base/script/meshLOD.hpp>
+#include <gr-base/script/LODGroup.hpp>
 #include <gr-base/script/camera.hpp>
 #include <gr-base/script/light.hpp>
 
@@ -161,7 +161,7 @@ Editor::Editor() : m_viewport(ImGui::GetMainViewport()), mImGuiIO(&ImGui::GetIO(
         INSERT_SCRIPT(MeshRender),
         INSERT_SCRIPT(SkinnedMeshRender),
         INSERT_SCRIPT(MeshFilter),
-        INSERT_SCRIPT(MeshLOD),
+        INSERT_SCRIPT(LODGroup),
         INSERT_SCRIPT(BoxCollider),
         INSERT_SCRIPT(Rigidbody),
         INSERT_SCRIPT(Animator),
@@ -398,7 +398,14 @@ void Editor::create_render_hierarchy()
     ImGui::SetNextItemOpen(true, ImGuiCond_Appearing);
     if (m_scene != nullptr && ImGui::TreeNodeEx(name.c_str(), ImGuiTreeNodeFlags_SpanFullWidth))
     {
-        dropGameObjectInHierarchy(m_scene);
+        drop_gameobject([this](GameObject *gameobject)
+                {
+                    Transform *transform = gameobject->getTransform();
+
+                    transform->setParent(nullptr);
+        
+                    m_scene->insert(transform->getGameObject());
+                });
         
         RenderSceneObject(m_scene);
 
@@ -442,7 +449,7 @@ void Editor::create_render_hierarchy()
     }
 }
 
-void Editor::dropGameObjectInHierarchy(Scene *scene)
+void Editor::drop_gameobject(std::function<void (GameObject *)> func)
 {
     if (!ImGui::BeginDragDropTarget())
         return;
@@ -453,9 +460,7 @@ void Editor::dropGameObjectInHierarchy(Scene *scene)
 
     auto transform = *reinterpret_cast<Transform **>(payload->Data);
     
-    transform->setParent(nullptr);
-        
-    scene->insert(transform->getGameObject());
+    func(transform->getGameObject());
 
     ImGui::EndDragDropTarget();
 }
@@ -1346,13 +1351,26 @@ void Editor::render_files_on_dir(gtreefile *dir)
         }
     }
 
-    if (!(popupFlags & EditorPopupFlags_FileManager) && ImGui::IsWindowHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Right))
+    if (ImGui::IsWindowHovered())
     {
-        unselect_all_file();
+        if (ImGui::IsKeyPressed(ImGuiKey_Delete, false))
+        {
+            for (auto &selected : g_tree_file_selected)
+            {
+                File::Delete(selected->path);
+            }
+            unselect_all_file();
 
-        select_file(dir);
+            updateFileTree(root_tree_file);
+        }
+        else if (!(popupFlags & EditorPopupFlags_FileManager) && ImGui::IsMouseClicked(ImGuiMouseButton_Right))
+        {
+            unselect_all_file();
 
-        popupFlags |= EditorPopupFlags_CurrentDirManager;
+            select_file(dir);
+
+            popupFlags |= EditorPopupFlags_CurrentDirManager;
+        }
     }
 }
 
@@ -2198,19 +2216,18 @@ bool Editor::OnPropertySkinnedMeshRender(SkinnedMeshRender *skinnedMeshRender) {
         return true;
     }
     
-    if (ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
+    if (ImGui::IsItemClicked(ImGuiMouseButton_Right))
+    {
         ImGui::OpenPopup("##game_object_component_menu");
     }
 
-    if (!isOpen) {
+    if (!isOpen)
         return false;
-    }
-   
+
     auto avail = ImGui::GetContentRegionAvail();
     
-    if (ImGui::Button("Create", {avail.x, 0.0f})) {
+    if (ImGui::Button("Create", {avail.x, 0.0f}))
         popupFlags |= EditorPopupFlags_CreateMaterial;
-    }
 
     ImGui::Indent();
     for (auto material : skinnedMeshRender->getMaterial())
@@ -2222,39 +2239,66 @@ bool Editor::OnPropertySkinnedMeshRender(SkinnedMeshRender *skinnedMeshRender) {
     }
     ImGui::Unindent();
 
-    if (m_materialToRename) {
+    if (m_materialToRename)
+    {
         ImGui::OpenPopup("##popup_rename_material");
     }
 
     return false;
 }
 
-bool Editor::OnPropertyMeshLOD(MeshLOD *meshlod)
+bool Editor::OnPropertyLODGroup(LODGroup *LodGroup)
 {
-    auto bVisible = true;
+    bool bVisible = true;
 
-    auto isOpen = ImGui::CollapsingHeader("MeshLOD", &bVisible);
-    if (!bVisible)
+    if (!ImGui::CollapsingHeader("MeshLOD", &bVisible))
+        return !bVisible;
+
+    static int selectedLOD = 0;
+    int lodCount = LodGroup->GetLODCount();
+
+    if (ImGui::BeginCombo("LOD Level", ("LOD " + std::to_string(selectedLOD)).c_str())) {
+        for (int i = 0; i < lodCount; ++i)
+        {
+            bool isSelected = (selectedLOD == i);
+            if (ImGui::Selectable(("LOD " + std::to_string(i)).c_str(), isSelected))
+            {
+                selectedLOD = i;
+            }
+
+            if (isSelected)
+                ImGui::SetItemDefaultFocus();
+        }
+        ImGui::EndCombo();
+    }
+
+    ImGui::SeparatorText(("LOD " + std::to_string(selectedLOD) + " Properties").c_str());
+
+    auto& lod = LodGroup->GetLOD(selectedLOD);
+
+    // Exemplo de propriedades
+    ImGui::InputFloat("Activation Distance", &lod.distance);
+    // ImGui::InputInt("Triangle Count", &lod.triangleCount, 0, 0, ImGuiInputTextFlags_ReadOnly);
+    // ImGui::Checkbox("Is Active", &lod.isActive);
+
+    ImGui::Separator();
+
+    ImGui::Button("Add LOD");
+    drop_gameobject([&](GameObject *gameObject)
+            {
+                gameObject->setActive(false);
+
+                LodGroup->AddLOD(0.0f, gameObject);
+            });
+
+    ImGui::SameLine();
+    if (ImGui::Button("Remove LOD") && lodCount > 1)
     {
-        return true;
-    }
-    
-    if (ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
-        ImGui::OpenPopup("##game_object_component_menu");
+        LodGroup->Remove(selectedLOD);
+        selectedLOD = std::max(0, selectedLOD - 1);
     }
 
-    if (!isOpen) {
-        return false;
-    }
-   
-    auto avail = ImGui::GetContentRegionAvail();
-    
-    if (ImGui::Button("Bake", {avail.x, 0.0f}))
-    {
-        meshlod->Calculate();
-    }
-
-    return false;
+    return !bVisible;
 }
 
 bool Editor::render_material(Material *material)
@@ -3300,6 +3344,37 @@ void Editor::unselect_all_file()
 {
     g_tree_file_selected.clear();
     g_tree_file_selected_map.clear();
+}
+
+void Editor::drop_gmdx(std::function<void (std::string)> func)
+{
+    auto isOpen = ImGui::BeginDragDropTarget();
+    if (!isOpen)
+    {
+        return;
+    }
+
+    auto payload = ImGui::AcceptDragDropPayload(m_extensionDragDrop[DragDropFlags::GMDX]);
+    if (!payload)
+    {
+        return ImGui::EndDragDropTarget();
+    }
+
+    std::vector<gtreefile *> files(payload->DataSize / sizeof(gtreefile *), nullptr);
+    memcpy(files.data(), payload->Data, payload->DataSize);
+
+    for (auto &file : files)
+    {
+        if (file->extension == ".gmdx")
+        {
+            func(file->path);
+            // AssetsManager::LoadGameObject(file->path, &Editor::PostLoadGameObject, this);
+        }
+    }
+
+    unselect_all_file();
+
+    ImGui::EndDragDropTarget();
 }
 
 PhysicsTask::PhysicsTask() : IAsyncTask<bool>(TaskPriority::HIGH)

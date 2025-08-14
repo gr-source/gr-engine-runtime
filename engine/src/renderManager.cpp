@@ -68,7 +68,7 @@ void RenderManager::SetupLight(grr::gShader *shader)
 
     for (std::size_t i={};i<lights.size();i++)
     {
-        auto light = lights[i];
+        auto &light = lights[i];
 
         auto position   = light->getPosition();
         auto forward    = light->getForward();

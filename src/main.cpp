@@ -25,9 +25,9 @@ void GLFWframebuffersizefunCallback(GLFWwindow* window, int width, int height)
 
 void GLFWscrollfunCallback(GLFWwindow* window, double xoffset, double yoffset)
 {
-    const float offset[2] {static_cast<const float>(xoffset), static_cast<const float>(yoffset)};
+    Vector2 offset{static_cast<float>(xoffset), static_cast<float>(yoffset)};
 
-    Engine::HandleEvent(Engine::CURSOR_SCROLL, offset);
+    std::cout << offset.x << ", " << offset.y << std::endl;
 }
 
 void GLFWdropfunCallback(GLFWwindow* window, int path_count, const char* paths[])

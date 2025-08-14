@@ -182,7 +182,7 @@ private:
 
     void create_render_hierarchy();
 
-    void dropGameObjectInHierarchy(Scene *scene);
+    void drop_gameobject(std::function<void (GameObject *)> func);
 
     void RenderSceneObject(Scene *scene);
 
@@ -286,7 +286,7 @@ private:
 
     bool OnPropertySkinnedMeshRender(SkinnedMeshRender *skinnedMeshRender);
 
-    bool OnPropertyMeshLOD(MeshLOD *meshlod);
+    bool OnPropertyLODGroup(LODGroup *LodGroup);
 
     // bool OnPropertyMeshCollider(MeshCollider *meshCollider);
 
@@ -369,6 +369,8 @@ private:
     bool selected_file(gtreefile *file) const;
 
     void unselect_all_file();
+
+    void drop_gmdx(std::function<void (std::string)> func);
 };
 
 template <typename T, typename... Args>

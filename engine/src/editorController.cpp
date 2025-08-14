@@ -8,20 +8,14 @@
 #include <gr-base/core/input.hpp>
 
 #include <gr-base/ecs/gameObject.hpp>
-#include <gr-math/vector2.hpp>
 
 #include "ui/ImGuiRender.h"
-
-#include "core/screen.hpp"
-#include "core/timer.hpp"
-
-#include "settings.h"
 
 Camera *EditorController::m_mainCamera = nullptr;
 ImGuiIO *EditorController::m_io = nullptr;
 
 float EditorController::movementSpeed = 30.0f;
-float EditorController::mouseSensitivity = 10.f;
+float EditorController::mouseSensitivity = 0.2f;
 
 Vector2 EditorController::lastMousePos = {0.0f, 0.0f};
 Vector2 EditorController::elapsed = {0.0f, 0.0f};
@@ -108,14 +102,14 @@ void EditorController::UpdateCursor(Transform *transform) {
 }
 
 void EditorController::ProcessMouse(const Vector2 &delta, Transform *transform) {
-    elapsed += delta * mouseSensitivity * Clock::deltaTime;
+    elapsed += delta * mouseSensitivity;
 
     elapsed.y = std::clamp(elapsed.y, -89.0f, 89.0f);
     elapsed.x = std::fmod(elapsed.x, 360.0f);
 
     auto rotation = Math::euler({Math::rad(elapsed.y), Math::rad(-elapsed.x), 0.0f});
 
-    // rotation = Math::slerp(transform->getLocalRotation(), rotation, 25.0f * Clock::deltaTime);
+    rotation = Math::slerp(transform->getLocalRotation(), rotation, 12.0f * Clock::deltaTime);
 
     transform->setLocalRotation(Math::normalize(rotation));
 }

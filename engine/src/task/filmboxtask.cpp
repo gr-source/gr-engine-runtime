@@ -166,10 +166,12 @@ void FilmboxTask::generateMesh(FbxScene *scene, const FbxNode *node, GameObject 
         bonesList[bone.getID()] = bone;
     }
 
-    auto m_mesh = AssetsManager::FindMesh(mesh_name);
-    if (!m_mesh) {
-        m_mesh = AssetsManager::CreateMesh(mesh_name);
-        for (auto &mesh : meshMap) {
+    auto m_mesh = AssetsManager::FindMesh(mesh_name + '_' + node->getName());
+    if (!m_mesh)
+    {
+        m_mesh = AssetsManager::CreateMesh(mesh_name + '_' + node->getName());
+        for (auto &mesh : meshMap)
+        {
             m_mesh->emplace_back(mesh);
         }
     }
