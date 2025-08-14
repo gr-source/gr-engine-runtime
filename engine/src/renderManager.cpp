@@ -30,7 +30,7 @@ void RenderManager::Process(const Camera *camera)
     auto position = camera->getPosition();
 
     auto list = AssetsManager::GetShaderList(ShaderType::SHADER3D);
-    for (auto shader : list)
+    for (auto &shader : list)
     {
         if (!shader || !shader->isValid())
         {

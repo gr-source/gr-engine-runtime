@@ -416,12 +416,10 @@ void Editor::create_render_hierarchy()
     {
         for (auto go : m_scene->get_object_selected())
         {
-            /*
             for_each(go->getTransform(), [](Transform *transform)
                     {
                         OctreeManager::Remove(OctreeManager::GetRoot(), transform);
                     });
-            */
 
             m_scene->destroy(go);
         }
@@ -1025,7 +1023,6 @@ void Editor::create_render_guizmo(Scene *scene)
 
     if (wasUsingGuizmoLastFrame && !isUsingGuizmoNow)
     {
-        /*
         for (auto &transform : nodeup)
             for_each(transform, [](Transform *transform)
                     {
@@ -1038,7 +1035,6 @@ void Editor::create_render_guizmo(Scene *scene)
                     {
                         OctreeManager::Insert(OctreeManager::GetRoot(), transform);
                     });
-        */
 
         nodeup.clear();
     }
@@ -2736,12 +2732,10 @@ void Editor::PostLoadGameObject(GameObject *gameObject)
     m_scene->deselect_all();
     m_scene->select(instantiate);
 
-    /*
     for_each(instantiate->getTransform(), [](Transform *transform)
             {
                 OctreeManager::Insert(OctreeManager::GetRoot(), transform);
             });
-    */
 }
 
 std::string GenerateScriptHeader(const std::string& name) {
