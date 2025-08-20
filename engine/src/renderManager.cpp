@@ -1,4 +1,5 @@
 #include "renderManager.h"
+#include "gr-base/core/culling/octreemanager.hpp"
 #include "gr-base/core/geometry/shader.hpp"
 
 #include <gr-base/script/meshRender.hpp>
@@ -18,10 +19,8 @@
 
 #include <gr-base/core/culling/frustum.hpp>
 
-#include <cstring>
 
-#include <gr-render/gTexture.h>
-#include <gr-render/gError.h>
+#include <gr-base/ecs/gameObject.hpp>
 
 void RenderManager::Process(const Camera *camera)
 {
@@ -45,6 +44,8 @@ void RenderManager::Process(const Camera *camera)
     }
 
     Frustum::CalculateFrustum(projection * view);
+
+    // OctreeManager::Foreach(&RenderManager::CheckNodeOnCamFrustum);
 }
 
 void RenderManager::Renderer()
@@ -52,6 +53,34 @@ void RenderManager::Renderer()
     BatchingManager::Render();
 }
 
+bool RenderManager::CheckNodeOnCamFrustum(OctreeNode *node)
+{
+    Vector3 position = node->position;
+    float radius = node->radius;
+
+    Vector3 min = position - Vector3{radius, radius, radius};
+    Vector3 max = position + Vector3{radius, radius, radius};
+
+    if (!Frustum::IsCubeInFrustumAABB(min, max))
+        return true;
+    
+    for (int i=0;i<node->count;i++)
+    {
+        nquery &query = node->data[i];
+
+        /*
+        GameObject *gameObject = query.transform->getGameObject();
+        if (gameObject->hasComponent<MeshRender>())
+        {
+            MeshRender *meshRender = gameObject->getComponent<MeshRender>();
+
+            if (meshRender->batchingdynamic != nullptr)
+                meshRender->batchingdynamic->insert(query.transform);
+        }
+        */
+    }
+    return false;
+}
 
 void RenderManager::SetupLight(grr::gShader *shader)
 {

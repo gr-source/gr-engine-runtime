@@ -2,6 +2,8 @@
 
 #include "editorController.h"
 
+#include <gr-base/broadphase/bvhtree.hpp>
+
 #include "gr-base/core/scenemanager.hpp"
 #include "gr-base/ecs/gameobjectmanager.hpp"
 #include "imgui.h"
@@ -296,7 +298,6 @@ void Engine::drop_file(const std::string &path)
     if (path.find(".fbx") != std::string::npos)
     {
         FilmboxManager::Load(path);
-        // AssetsManager::L(path, &Engine::upload, this, nullptr);
     }
 }
 
@@ -315,7 +316,10 @@ void Engine::upload(GameObject *gameObject)
 
 void Engine::default_render()
 {
-    OctreeManager::Render();
+// #if OCREE_DEBUG
+    // OctreeManager::Render();
+    bvh::Tree::Render();
+// #endif
 
     if (Settings::bGameRunning)
     {
@@ -335,6 +339,7 @@ void Engine::default_render()
 
 void Engine::PreConfigRenderScene(Camera *camera)
 {
+    // camera->setActive(true);
     // Seleção de modelos para renderizar
     RenderManager::Process(camera);
 

@@ -65,7 +65,8 @@
 
 #include <gr-base/ecs/componentRegistry.hpp>
 
-#include <gr-base/core/culling/octreemanager.hpp>
+#include <gr-base/broadphase/bvhtree.hpp>
+// #include <gr-base/core/culling/octreemanager.hpp>
 
 #include <gr-ini/config.h>
 #include <gr-math/matrix4x4.hpp>
@@ -416,10 +417,12 @@ void Editor::create_render_hierarchy()
     {
         for (auto go : m_scene->get_object_selected())
         {
+            /*
             for_each(go->getTransform(), [](Transform *transform)
                     {
                         OctreeManager::Remove(OctreeManager::GetRoot(), transform);
                     });
+            */
 
             m_scene->destroy(go);
         }
@@ -1023,6 +1026,7 @@ void Editor::create_render_guizmo(Scene *scene)
 
     if (wasUsingGuizmoLastFrame && !isUsingGuizmoNow)
     {
+        /*
         for (auto &transform : nodeup)
             for_each(transform, [](Transform *transform)
                     {
@@ -1035,6 +1039,7 @@ void Editor::create_render_guizmo(Scene *scene)
                     {
                         OctreeManager::Insert(OctreeManager::GetRoot(), transform);
                     });
+        */
 
         nodeup.clear();
     }
@@ -2734,7 +2739,19 @@ void Editor::PostLoadGameObject(GameObject *gameObject)
 
     for_each(instantiate->getTransform(), [](Transform *transform)
             {
-                OctreeManager::Insert(OctreeManager::GetRoot(), transform);
+                auto gameObject = transform->getGameObject();
+                if (gameObject->hasComponent<MeshFilter>())
+                {
+                    auto meshFilter = gameObject->getComponent<MeshFilter>();
+                    
+                    auto &boundbox = meshFilter->getBoundbox();
+
+                    auto &model = transform->getGlobalMatrix();
+                    auto min = model * Vector4{boundbox.min.x, boundbox.min.y, boundbox.min.z, 1.0f};
+                    auto max = model * Vector4{boundbox.max.x, boundbox.max.y, boundbox.max.z, 1.0f};
+
+                    bvh::Tree::Insert(bvh::Bounds{{min.x, min.y, min.z}, {max.x, max.y, max.z}}, transform->getGameObject());
+                }
             });
 }
 

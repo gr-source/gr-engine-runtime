@@ -6,6 +6,7 @@
 
 #include "default.hpp"
 #include "common.h"
+#include "gr-base/core/culling/octreemanager.hpp"
 
 class RenderManager {
 public:
@@ -14,5 +15,7 @@ public:
     static void Renderer();
 
 public:
+    static bool CheckNodeOnCamFrustum(OctreeNode *node);
+
     static void SetupLight(grr::gShader *shader);
 };
