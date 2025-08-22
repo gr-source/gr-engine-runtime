@@ -6,6 +6,7 @@
 
 #include "default.hpp"
 #include "common.h"
+#include "gr-base/broadphase/bvhtree.hpp"
 #include "gr-base/core/culling/octreemanager.hpp"
 
 class RenderManager {
@@ -15,7 +16,7 @@ public:
     static void Renderer();
 
 public:
-    static bool CheckNodeOnCamFrustum(OctreeNode *node);
+    static bool CheckNodeOnCamFrustum(struct bvh::Node<void *> *node);
 
     static void SetupLight(grr::gShader *shader);
 };

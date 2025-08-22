@@ -1,4 +1,5 @@
 #include "renderManager.h"
+#include "gr-base/broadphase/bvhtree.hpp"
 #include "gr-base/core/culling/octreemanager.hpp"
 #include "gr-base/core/geometry/shader.hpp"
 
@@ -45,7 +46,7 @@ void RenderManager::Process(const Camera *camera)
 
     Frustum::CalculateFrustum(projection * view);
 
-    // OctreeManager::Foreach(&RenderManager::CheckNodeOnCamFrustum);
+    bvh::Tree::For_each(&RenderManager::CheckNodeOnCamFrustum);
 }
 
 void RenderManager::Renderer()
@@ -53,31 +54,23 @@ void RenderManager::Renderer()
     BatchingManager::Render();
 }
 
-bool RenderManager::CheckNodeOnCamFrustum(OctreeNode *node)
+bool RenderManager::CheckNodeOnCamFrustum(struct bvh::Node<void *> *node)
 {
-    Vector3 position = node->position;
-    float radius = node->radius;
+    auto boundary = node->boundary;
 
-    Vector3 min = position - Vector3{radius, radius, radius};
-    Vector3 max = position + Vector3{radius, radius, radius};
-
-    if (!Frustum::IsCubeInFrustumAABB(min, max))
+    if (!Frustum::IsCubeInFrustumAABB(boundary.min, boundary.max))
         return true;
-    
-    for (int i=0;i<node->count;i++)
-    {
-        nquery &query = node->data[i];
 
-        /*
-        GameObject *gameObject = query.transform->getGameObject();
+    if (node->isLeaf())
+    {
+        GameObject *gameObject = (GameObject *)node->data;
+
         if (gameObject->hasComponent<MeshRender>())
         {
-            MeshRender *meshRender = gameObject->getComponent<MeshRender>();
+            auto meshRender = gameObject->getComponent<MeshRender>();
 
-            if (meshRender->batchingdynamic != nullptr)
-                meshRender->batchingdynamic->insert(query.transform);
+            meshRender->build();
         }
-        */
     }
     return false;
 }
