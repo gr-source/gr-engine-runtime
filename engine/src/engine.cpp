@@ -327,21 +327,22 @@ void Engine::default_render()
         {
             PreConfigRenderScene(camera);
         }
-        return;
+    } else
+    {
+        auto scene = SceneManager::GetCurrent();
+        if (scene != nullptr && scene->getCamera())
+        {
+            PreConfigRenderScene(scene->getCamera());
+        }
     }
 
-    auto scene = SceneManager::GetCurrent();
-    if (scene != nullptr && scene->getCamera())
-    {
-        PreConfigRenderScene(scene->getCamera());
-    }
+    RenderManager::PosRender();
 }
 
 void Engine::PreConfigRenderScene(Camera *camera)
 {
-    // camera->setActive(true);
     // Seleção de modelos para renderizar
-    RenderManager::Process(camera);
+    RenderManager::PreRender(camera);
 
     camera->rendertarget.bind();
 
@@ -358,7 +359,7 @@ void Engine::PreConfigRenderScene(Camera *camera)
 void Engine::RenderScene(const Camera *camera)
 {
     grr::gRender::SetRenderState(grr::GR_DEPTH_FUNC, grr::GR_DEPTH_LESS);
-    RenderManager::Renderer();
+    RenderManager::Render();
 
     grr::gRender::SetRenderState(grr::GR_DEPTH_FUNC, grr::GR_DEPTH_LEQUAL);
     DebugDraw::Render(camera);

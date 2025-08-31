@@ -1,4 +1,46 @@
 #include "renderManager.h"
+
+// public
+void RenderManager::PreRender(const Camera *camera)
+{
+    return GetInstance().preRender(camera);
+}
+
+void RenderManager::Render()
+{
+    return GetInstance().render();
+}
+
+void RenderManager::PosRender()
+{
+    return GetInstance().posRender();
+}
+
+// private
+RenderManager &RenderManager::GetInstance()
+{
+    static RenderManager instance;
+    return instance;
+}
+
+RenderManager::RenderManager()
+{}
+
+RenderManager::~RenderManager()
+{}
+
+void RenderManager::preRender(const Camera *camera)
+{}
+
+void RenderManager::posRender()
+{}
+
+void RenderManager::render()
+{}
+
+
+/*
+#include "renderManager.h"
 #include "gr-base/broadphase/bvhtree.hpp"
 #include "gr-base/core/culling/octreemanager.hpp"
 #include "gr-base/core/geometry/shader.hpp"
@@ -23,7 +65,7 @@
 
 #include <gr-base/ecs/gameObject.hpp>
 
-void RenderManager::Process(const Camera *camera)
+void RenderManager::PreRender(const Camera *camera)
 {
     auto projection = camera->getPerspesctive();
     auto view = camera->getViewmatrix();
@@ -49,10 +91,13 @@ void RenderManager::Process(const Camera *camera)
     bvh::Tree::For_each(&RenderManager::CheckNodeOnCamFrustum);
 }
 
-void RenderManager::Renderer()
+void RenderManager::Render()
 {
     BatchingManager::Render();
 }
+
+void RenderManager::PosRender()
+{}
 
 bool RenderManager::CheckNodeOnCamFrustum(struct bvh::Node<void *> *node)
 {
@@ -113,6 +158,24 @@ void RenderManager::SetupLight(grr::gShader *shader)
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+*/
 
 
 
