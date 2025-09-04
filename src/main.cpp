@@ -129,6 +129,8 @@ void segfault_sigaction(int signal, siginfo_t *si, void *arg)
 #include <gr-base/core/clock.hpp>
 #include "core/time.hpp"
 
+#include <gr-base/core/task/materialmanager.hpp>
+
 int main(int argc, char *argv[])
 {
     struct sigaction sa;

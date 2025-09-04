@@ -8,6 +8,7 @@
 
 #include <gr-base/core/console.hpp>
 
+#include "gr-base/core/geometry/default.hpp"
 #include "gr-base/core/scene.hpp"
 #include "gr-base/core/thread/asynctask.hpp"
 #include "gr-base/script/animator.hpp"
@@ -168,7 +169,7 @@ private:
 
     ImGuizmo::MODE m_guizmoManipulate;
 
-    Material *m_materialToRename;
+    MaterialID m_materialToRename;
 
     gConfig *m_settings;
 
@@ -290,7 +291,7 @@ private:
 
     // bool OnPropertyMeshCollider(MeshCollider *meshCollider);
 
-    bool render_material(Material *material);
+    bool render_material(MaterialID id);
 
     void render_shader_property(const std::string &name, Material *material);
 

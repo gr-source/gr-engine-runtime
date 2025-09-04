@@ -20,6 +20,7 @@
 #include <gr-base/script/meshFilter.hpp>
 #include <gr-base/script/transform.hpp>
 #include <gr-base/script/animator.hpp>
+#include <string>
 
 FilmboxTask::FilmboxTask(const std::string &path, FilmboxManager *filmboxManager) : m_path(path), m_filmboxManager(filmboxManager), m_objectroot(nullptr)
 {}
@@ -113,18 +114,37 @@ void FilmboxTask::generateMesh(FbxScene *scene, const FbxNode *node, GameObject 
     std::unordered_map<std::string, FbxBone> m_bones;
     std::vector<FbxBone> bonesList;
 
-    std::vector<FbxMaterial> materialList;
-    std::vector<Mesh> meshMap;
-    std::string mesh_name;
+    MeshFilter *meshFilter = go->hasComponent<MeshFilter>() ? go->getComponent<MeshFilter>() : go->addComponent<MeshFilter>();
+    // MeshRender *meshRender = go->hasComponent<MeshRender>() ? go->getComponent<MeshRender>() : go->addComponent<MeshRender>();
 
-    for (auto fbxMesh : node->getMeshes())
+    ShaderParams shaderParams;
+    shaderParams.name = "simple_model";
+    shaderParams.base = File::GetAsset("/shader/model/simple_model.glsl");
+    shaderParams.flags = ShaderOptimize_dynamic;
+    shaderParams.type = ShaderType::SHADER3D;
+
+    auto name = GetShaderParamsName(shaderParams);
+
+    auto shader = AssetsManager::FindShader(name);
+    if (shader == nullptr)
     {
-        auto &mesh = meshMap.emplace_back(fbxMesh->getName());
+        auto info = AssetsManager::LoadShader(shaderParams,
+                [&](grr::gShader *current)
+                {
+                    shader = current;
+                });
+        info->wait();
+    }
+    
+    auto meshes = node->getMeshes();
+    for (std::size_t i=0;i<meshes.size();i++)
+    {
+        auto &fbxMesh = meshes[i];
 
-        if (mesh_name.empty())
-            mesh_name = fbxMesh->getName();
+        auto meshID = AssetsManager::CreateMesh(fbxMesh->getName() + "_" + node->getName() + "_" + std::to_string(i));
+        meshFilter->addMesh(meshID);
 
-        materialList.push_back(scene->getMaterials()[fbxMesh->getMaterialIndex()]);
+        auto &mesh = AssetsManager::GetMesh(meshID);
 
         for (auto &vertice : fbxMesh->getVertices()) {
             mesh.addVertex(vertice.position, vertice.normal, vertice.texCoord);
@@ -166,6 +186,7 @@ void FilmboxTask::generateMesh(FbxScene *scene, const FbxNode *node, GameObject 
         bonesList[bone.getID()] = bone;
     }
 
+    /*
     auto m_mesh = AssetsManager::FindMesh(mesh_name + '_' + node->getName());
     if (!m_mesh)
     {
@@ -180,9 +201,34 @@ void FilmboxTask::generateMesh(FbxScene *scene, const FbxNode *node, GameObject 
     if (!meshFilter) { return; }
 
     meshFilter->setMesh(m_mesh);
+    */
 
     auto renderer = m_bones.empty() ? static_cast<BaseRender *>(go->addComponent<MeshRender>()) : static_cast<BaseRender *>(go->addComponent<SkinnedMeshRender>());
     if (!renderer) { return; }
+
+    for (auto &fbxMesh : node->getMeshes())
+    {
+        auto &fbxMaterial = scene->getMaterials()[fbxMesh->getMaterialIndex()];
+
+        auto materialID = AssetsManager::CreateMaterial(fbxMaterial.getName(), shader);
+        renderer->addMaterial(materialID);
+
+        auto texturepath = fbxMaterial.getTextures();
+
+        auto &material = AssetsManager::GetMaterial(materialID);
+        material.setValue("albedo", fbxMaterial.getColor());
+        material.setValue("metallic", fbxMaterial.metallic);
+        material.setValue("roughness", fbxMaterial.roughness);
+        material.setValue("ambientocclusion", fbxMaterial.ao);
+
+        if (!texturepath[TextureType_Albedo].empty())
+        {
+            auto path = texturepath[TextureType_Albedo];
+            path = path.find('/') != std::string::npos ? path : gfile::get_parent(m_path) + '/' + path;
+
+            AssetsManager::LoadTexture(path, &Material::setTexture, &material, 0);
+        }
+    }
 
     if (!m_bones.empty()) {
         auto animator = go->addComponent<Animator>();
@@ -198,44 +244,6 @@ void FilmboxTask::generateMesh(FbxScene *scene, const FbxNode *node, GameObject 
             skinnedMeshRender->getBone(i)->setPosition(bonesList[i].getPosition());
 
             skinnedMeshRender->getBone(i)->setParentIndex(bonesList[i].getParentIndex());
-        }
-    }
-
-    ShaderParams shaderParams;
-    shaderParams.name = "simple_model";
-    shaderParams.base = File::GetAsset("/shader/model/simple_model.glsl");
-    shaderParams.flags = ShaderOptimize_dynamic;
-    shaderParams.type = ShaderType::SHADER3D;
-
-    auto name = GetShaderParamsName(shaderParams);
-
-    auto shader = AssetsManager::FindShader(name);
-    if (shader == nullptr)
-    {
-        auto info = AssetsManager::LoadShader(shaderParams,
-                [&](grr::gShader *current)
-                {
-                    shader = current;
-                });
-        info->wait();
-    }
-
-    for (auto &fbxMaterial : materialList)
-    {
-        auto texturepath = fbxMaterial.getTextures();
-
-        auto material = renderer->createMaterial(fbxMaterial.getName(), shader);
-        material->setValue("albedo", fbxMaterial.getColor());
-        material->setValue("metallic", fbxMaterial.metallic);
-        material->setValue("roughness", fbxMaterial.roughness);
-        material->setValue("ambientocclusion", fbxMaterial.ao);
-
-        if (!texturepath[TextureType_Albedo].empty())
-        {
-            auto path = texturepath[TextureType_Albedo];
-            path = path.find('/') != std::string::npos ? path : gfile::get_parent(m_path) + '/' + path;
-
-            AssetsManager::LoadTexture(path, &Material::setTexture, material, 0);
         }
     }
 }

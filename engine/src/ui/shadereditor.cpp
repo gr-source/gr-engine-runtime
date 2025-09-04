@@ -44,9 +44,11 @@ void ShaderEditor::onFocus()
 
         if (baserender != nullptr)
         {
-            for (auto material : baserender->getMaterial())
+            for (auto &materialID : baserender->getMaterial())
             {
-                auto shader = material->getShader();
+                auto &material = AssetsManager::GetMaterial(materialID);
+
+                auto shader = material.getShader();
                 if (shader == nullptr)
                 {
                     continue;

@@ -131,7 +131,7 @@ static void for_each(Transform *transform, std::function<void (Transform *)> fun
     }
 }
 
-Editor::Editor() : m_viewport(ImGui::GetMainViewport()), mImGuiIO(&ImGui::GetIO()), m_cameraObject(nullptr), m_mainCamera(nullptr), m_currentPage(0), m_materialToRename(nullptr), m_plugin(nullptr)
+Editor::Editor() : m_viewport(ImGui::GetMainViewport()), mImGuiIO(&ImGui::GetIO()), m_cameraObject(nullptr), m_mainCamera(nullptr), m_currentPage(0), m_materialToRename(nill), m_plugin(nullptr)
 {
     m_scene = nullptr;
 
@@ -2142,25 +2142,20 @@ bool Editor::OnPropertyMeshFilter(MeshFilter *meshFilter)
         return true;
     }
 
-    auto meshList = meshFilter->getMesh();
-
-    if (!isOpen || meshList == nullptr)
-    {
+    if (!isOpen)
         return false;
-    }
 
-    auto name = AssetsManager::GetMeshListRefToName(meshList);
-
-    if (ImGui::TreeNode(name.c_str()))
+    if (ImGui::TreeNode("Mesh"))
     {
-        for (std::size_t i=0;i<meshList->size();i++)
+        for (auto &meshID : meshFilter->getMesh())
         {
-            auto &mesh = (*meshList)[i];
+            auto name = AssetsManager::GetMeshName(meshID);
 
-            ImGui::Text("ID: %ld Name: %s", i, mesh.getName().c_str());
+            ImGui::Text("%s", name.c_str());
         }
         ImGui::TreePop();
     }
+
     return false;
 }
 
@@ -2186,16 +2181,15 @@ bool Editor::OnPropertyMeshRender(MeshRender *meshRender)
     auto avail = ImGui::GetContentRegionAvail();
     
     if (ImGui::Button("Create", {avail.x, 0.0f}))
-    {
         popupFlags |= EditorPopupFlags_CreateMaterial;
-    }
 
     ImGui::Indent();
-    for (auto material : meshRender->getMaterial())
+    for (auto &materialID : meshRender->getMaterial())
     {
-        if (render_material(material))
+        if (render_material(materialID))
         {
-            meshRender->delMaterial(material);
+            std::cout << "Remove Material: " << materialID << std::endl;
+            // meshRender->delMaterial(material);
         }
     }
     ImGui::Unindent();
@@ -2231,11 +2225,12 @@ bool Editor::OnPropertySkinnedMeshRender(SkinnedMeshRender *skinnedMeshRender) {
         popupFlags |= EditorPopupFlags_CreateMaterial;
 
     ImGui::Indent();
-    for (auto material : skinnedMeshRender->getMaterial())
+    for (auto &materialID : skinnedMeshRender->getMaterial())
     {
-        if (render_material(material))
+        if (render_material(materialID))
         {
-            skinnedMeshRender->delMaterial(material);
+            std::cout << "Remove material: " << materialID << std::endl;
+            // skinnedMeshRender->delMaterial(material);
         }
     }
     ImGui::Unindent();
@@ -2302,11 +2297,11 @@ bool Editor::OnPropertyLODGroup(LODGroup *LodGroup)
     return !bVisible;
 }
 
-bool Editor::render_material(Material *material)
+bool Editor::render_material(MaterialID id)
 {
     auto bVisible = true;
 
-    auto name = AssetsManager::GetRefMaterialToName(material);
+    auto name = AssetsManager::GetMaterialName(id);
 
     auto isOpen = ImGui::CollapsingHeader(name.c_str(), &bVisible);
     if (!bVisible)
@@ -2315,19 +2310,17 @@ bool Editor::render_material(Material *material)
     }
     
     if (ImGui::IsItemClicked(ImGuiMouseButton_Right))
-    {
-        m_materialToRename = material;
-    }
+        m_materialToRename = id;
 
     if (!isOpen)
-    {
         return false;
-    }
 
-    auto shader = material->getShader();
+    auto &material = AssetsManager::GetMaterial(id);
+
+    auto shader = material.getShader();
     if (shader == nullptr)
     {
-        dropShaderInMaterial(material);
+        dropShaderInMaterial(&material);
         return false;
     }
 
@@ -2335,11 +2328,11 @@ bool Editor::render_material(Material *material)
 
     auto shadername = std::filesystem::path(shaderParams.base).filename();
 
-    render_shader_property(shadername, material);
+    render_shader_property(shadername, &material);
 
-    render_material_property(material);
+    render_material_property(&material);
 
-    dropShaderInMaterial(material);
+    dropShaderInMaterial(&material);
 
     return false;
 }

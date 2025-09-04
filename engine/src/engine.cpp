@@ -70,7 +70,7 @@ Engine &Engine::GetInstance()
 }
 
 // ********** public ********** //
-Engine::Engine() : view_layout(nullptr), p_current_project(nullptr), f_function_render(nullptr)
+Engine::Engine() : view_layout(nullptr), p_current_project(nullptr)
 {}
 
 Engine::~Engine()
@@ -118,8 +118,6 @@ void Engine::init()
     EntityManager::Initialize();
 
     GameObjectManager::Initialize();
-
-    f_function_render = std::bind(&Engine::default_render, this);
 
     if (!check_project_openable())
     {
@@ -229,12 +227,6 @@ void Engine::render()
     render_gui();
 }
 
-void Engine::render_cam()
-{
-    default_render();
-    // f_function_render();
-}
-
 void Engine::render_gui()
 {
     grr::gRender::SetRenderState(grr::GR_BACKGROUND_COLOR, (void*)&Color::black);
@@ -314,11 +306,13 @@ void Engine::upload(GameObject *gameObject)
 
 #include <gr-base/core/culling/octreemanager.hpp>
 
-void Engine::default_render()
+void Engine::render_cam()
 {
 // #if OCREE_DEBUG
     // OctreeManager::Render();
-    bvh::Tree::Render();
+    // bvh::Tree::Render();
+
+
 // #endif
 
     if (Settings::bGameRunning)
@@ -335,6 +329,8 @@ void Engine::default_render()
             PreConfigRenderScene(scene->getCamera());
         }
     }
+
+    DebugDraw::PosRender();
 
     RenderManager::PosRender();
 }

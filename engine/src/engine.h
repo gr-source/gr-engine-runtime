@@ -23,8 +23,6 @@ public:
 
     static Engine &GetInstance();
 
-    std::function<void ()> f_function_render;
-
     Engine();
     ~Engine();
 
@@ -51,8 +49,6 @@ private:
 
     void render();
 
-    void render_cam();
-
     void render_gui();
 
     void create_main_tabbar();
@@ -62,7 +58,7 @@ private:
 protected:
     void upload(GameObject *gameObject);
 
-    void default_render();
+    void render_cam();
 
     static void PreConfigRenderScene(Camera *camera);
 

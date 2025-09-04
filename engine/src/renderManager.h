@@ -2,6 +2,10 @@
 
 #include "gr-base/script/default.hpp"
 
+#include "gr-base/broadphase/default.hpp"
+
+#include <gr-render/gCommon.h>
+
 class RenderManager {
 public:
     static void PreRender(const Camera *camera);
@@ -21,4 +25,6 @@ private:
     void posRender();
 
     void render();
+
+    void setuplight(grr::gShader *shader);
 };
