@@ -178,6 +178,8 @@ void FilmboxTask::generateMesh(FbxScene *scene, const FbxNode *node, GameObject 
                 m_bones.emplace(bone.getName(), bone);
             }
         }
+
+        mesh.CalculateLocalBounds();
     }
 
     bonesList.resize(m_bones.size(), {"", 0});

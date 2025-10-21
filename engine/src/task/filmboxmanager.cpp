@@ -48,7 +48,7 @@ void FilmboxManager::render()
 
     bool isOpen = true;
 
-    auto mainWindowSize = Window::GetWindowSize() / 2;
+    auto mainWindowSize = Window::GetWindowSize() / 2.0f;
     auto beginSize = ImVec2{400, 300};
 
     ImGui::SetNextWindowSize(beginSize);

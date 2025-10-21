@@ -17,6 +17,7 @@
 
 #include <gr-base/core/mainthreaddispatcher.hpp>
 #include <gr-base/core/assetsManager.hpp>
+#include <gr-base/core/rendermanager.hpp>
 #include <gr-base/core/window.hpp>
 #include <gr-base/core/skybox.hpp>
 #include <gr-base/core/clock.hpp>
@@ -31,7 +32,6 @@
 #include <gr-base/core/debugdraw.hpp>
 
 #include "functionTimer.hpp"
-#include "renderManager.h"
 #include "settings.h"
 #include "Global.h"
 
@@ -310,7 +310,7 @@ void Engine::render_cam()
 {
 // #if OCREE_DEBUG
     // OctreeManager::Render();
-    // bvh::Tree::Render();
+    bvh::Tree::Render();
 
 
 // #endif
@@ -337,7 +337,6 @@ void Engine::render_cam()
 
 void Engine::PreConfigRenderScene(Camera *camera)
 {
-    // Seleção de modelos para renderizar
     RenderManager::PreRender(camera);
 
     camera->rendertarget.bind();

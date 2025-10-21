@@ -2076,7 +2076,7 @@ bool Editor::OnPropertyTransform(Transform *transform) {
     if (View::DragScalarEx(data, (float *)&euler, 3, 1.0f, -360.0f, 360.0f)) {
         euler.y = std::clamp(euler.y, -89.0f, 89.0f);
 
-        transform->setLocalRotation(Math::normalize(Math::euler({Math::rad(euler)})));
+        transform->setLocalRotation(Math::normalize(Math::euler(Vector3{Math::rad(euler.x), Math::rad(euler.y), Math::rad(euler.z)})));
     }
     
     return false;
@@ -2729,7 +2729,8 @@ void Editor::PostLoadGameObject(GameObject *gameObject)
 
     m_scene->deselect_all();
     m_scene->select(instantiate);
-
+    
+    /*
     for_each(instantiate->getTransform(), [](Transform *transform)
             {
                 auto gameObject = transform->getGameObject();
@@ -2746,6 +2747,7 @@ void Editor::PostLoadGameObject(GameObject *gameObject)
                     bvh::Tree::Insert(bvh::Bounds{{min.x, min.y, min.z}, {max.x, max.y, max.z}}, transform->getGameObject());
                 }
             });
+    */
 }
 
 std::string GenerateScriptHeader(const std::string& name) {

@@ -325,7 +325,7 @@ void Filmbox::AddKeys(aiNodeAnim *mNodeAnim, FbxChannel *channel) {
 
     for (auto i=0;i<mNodeAnim->mNumRotationKeys;++i) {
         auto key = mNodeAnim->mRotationKeys[i];
-        channel->addKeyRotation(static_cast<float>(key.mTime), Quaternion(key.mValue.w, key.mValue.x, key.mValue.y, key.mValue.z));
+        channel->addKeyRotation(static_cast<float>(key.mTime), Quaternion{key.mValue.w, key.mValue.x, key.mValue.y, key.mValue.z});
     }
 }
 

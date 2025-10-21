@@ -82,7 +82,6 @@ set(engine_src
     src/settings.cpp
     src/screenRender.cpp
     src/shadowMap.cpp
-    src/renderManager.cpp
     src/editorController.cpp
 
     src/ui/view.cpp
@@ -105,7 +104,6 @@ set(engine_hdr
     src/Global.h
     src/settings.h
     src/screenRender.hpp
-    src/renderManager.h
     src/editorController.h
     
     src/ui/view.hpp
