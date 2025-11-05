@@ -226,8 +226,6 @@ Editor::~Editor()
 
     ComponentRegistry::Clear();
 
-    Console::Shutdown();
-
     File::Delete(File::GetTempFile("gr-engine"));
 }
 
@@ -272,7 +270,7 @@ void Editor::LoadScript()
 
     TaskManager::Add<PhysicsTask>();
 
-    Console::log(Log::DEFAULT, "Game playing.");
+    Console::LogDefault("Game playing.");
 }
 
 void Editor::UnloadScript() {
@@ -417,13 +415,6 @@ void Editor::create_render_hierarchy()
     {
         for (auto go : m_scene->get_object_selected())
         {
-            /*
-            for_each(go->getTransform(), [](Transform *transform)
-                    {
-                        OctreeManager::Remove(OctreeManager::GetRoot(), transform);
-                    });
-            */
-
             m_scene->destroy(go);
         }
 
@@ -833,8 +824,10 @@ void Editor::render_scene(Scene *scene)
         ImGui::SetCursorPos({regionAvail.x / 2 - cursorPos.x, cursorPos.y + 0.5f});
 
         if (ImGui::ImageButton(reinterpret_cast<ImTextureID>(s_texturePlayGame->getTextureID()), ImVec2(16, 16))) {
-            if (!Settings::bGameRunning) {
-                PlayGame();
+            if (!Settings::bGameRunning)
+            {
+                // Console::LogInfo("")
+                // PlayGame();
             } else {
                 StopGame();
             }
@@ -1049,7 +1042,7 @@ void Editor::create_render_guizmo(Scene *scene)
 
 void Editor::PlayGame()
 {
-    Threadpool::AddTask(&Editor::BuildScript, this);
+    Threadpool::AddTask(&Editor::onBuildScript, this);
 }
 
 void Editor::StopGame()
@@ -1065,7 +1058,7 @@ void Editor::StopGame()
 
     m_mainCamera->setActive(true);
 
-    Console::log(Log::DEFAULT, "Game stoped.");
+    Console::LogDefault("Game stoped.");
 }
 
 void Editor::drop_gameobject_in_scene()
@@ -1282,9 +1275,7 @@ void Editor::render_node_directory(gtreefile *tree_file)
     }
 
     if (!isOpen)
-    {
         return;
-    }
 
     for (auto &file : tree_file->children)
         render_node_directory(&file);
@@ -1441,14 +1432,14 @@ void Editor::create_window_console()
 
 void Editor::create_render_console()
 {
-    auto logs = Console::GetListLogs();
+    auto logs = Console::GetLogs();
 
     std::for_each(logs.begin(), logs.end(), std::bind(&Editor::RenderLog, this, std::placeholders::_1));
     
-    if (Console::bChanged)
+    if (Console::IsChanged())
     {
         ImGui::SetScrollHereY(1.0f);
-        Console::bChanged = false;
+        Console::StopChange();
     }
 }
 
@@ -2919,38 +2910,39 @@ void Editor::ReconfigScript() {
     PlayGame();
 }
 
-void Editor::BuildScript() {
-    Console::LogInfo("[ Build ] Initialize");
+void Editor::onBuildScript()
+{
+    Console::LogInfo("[ Build ] Starting pre-build scripting...");
 
     auto path = File::GetFile("/.build");
-    if (!File::Exists(path)) {
-        return Console::LogError("[ Build ] Falied to build project, internal data not found.");
-    }
+    if (!File::Exists(path))
+        return Console::LogError("[ Build ] Falied to build script this directory don't has cache!");
 
     CompileScript(path, std::bind(&Editor::LoadScript, this));
 }
 
-void Editor::CompileScript(std::string path, std::function<void()> func) {
+void Editor::CompileScript(std::string path, std::function<void()> func)
+{
     auto build = File::GetFile("/script/build.sh", true);
-    if (!File::Exists(build)) {
+    if (!File::Exists(build))
         return Console::LogError("Build script do not found.");
-    }
 
     auto project_path = File::GetFile("");
-    if (!File::Exists(project_path)) {
+    if (!File::Exists(project_path))
         return Console::LogError("Project do not found.");
-    }
 
     std::vector<std::string> command {
         "chmod +x " + build,
         "sh " + build + " '" + project_path + "'"
     };
 
-    if (!Command::exec(command, [](std::string line) {
-            Console::LogWarning(line);
-        })) {
-            Console::LogError("[ Editor ] Falied to execute build.");
-        }
+    bool retVal = Command::exec(command, [](std::string line)
+    {
+        Console::LogWarning(line);
+    });
+
+    if (!retVal)
+        return Console::LogError("[ Build ] Falied to build script, fatal error!!!");
 
     if (func)
         MainThreadDispatcher::Add(func);

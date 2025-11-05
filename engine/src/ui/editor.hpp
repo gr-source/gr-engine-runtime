@@ -336,7 +336,7 @@ private:
     // Script
     void ReconfigScript();
 
-    void BuildScript();
+    void onBuildScript();
 
     void CompileScript(std::string path, std::function<void()> func);
 

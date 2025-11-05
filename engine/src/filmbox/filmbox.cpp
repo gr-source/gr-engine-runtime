@@ -52,7 +52,7 @@ void Filmbox::SceneLoader(const aiScene *scene, FbxScene *fbxScene)
 {
     if (scene->HasMaterials())
     {
-        Console::log(Log::WARNING, "Loading material...");
+        Console::LogWarning("Loading material...");
         LoadMaterial(scene, fbxScene);
     }
 
@@ -61,17 +61,17 @@ void Filmbox::SceneLoader(const aiScene *scene, FbxScene *fbxScene)
 
     if (scene->HasMeshes())
     {
-        Console::log(Log::WARNING, "Loading Mesh...");
+        Console::LogWarning("Loading Mesh...");
         LoadMesh(scene, fbxScene, boneMap, boneIndex);
     }
 
     if (scene->HasAnimations())
     {
-        Console::log(Log::WARNING, "Loading Animations...");
+        Console::LogWarning("Loading Animations...");
         LoadAnimation(scene, fbxScene, boneIndex);
     }
 
-    Console::log(Log::WARNING, "Loading Node...");
+    Console::LogWarning("Loading Node...");
 
     auto mRootNode = scene->mRootNode;
     auto& fRootNode = fbxScene->m_rootNode;

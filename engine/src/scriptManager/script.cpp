@@ -5,22 +5,21 @@
 
 #include <dlfcn.h>
 
-#include <iostream>
 Script::Script(const std::string &path) : m_script(nullptr), GetFunctionsReference(nullptr)
 {
     if (!File::Exists(path))
     {
-        Console::log(Log::ERROR, "Falied to open script file do not found: " + path);
+        Console::LogError("Falied to open script file do not found: " + path);
         return;
     }
 
     m_script = dlopen(path.c_str(), RTLD_LAZY);
     if (!m_script) {
-        Console::log(Log::ERROR, "Falied to load script: " + std::string(dlerror()));
+        Console::LogError("Falied to load script: " + std::string(dlerror()));
         return;
     }
 
-    Console::log(Log::INFO, "Script laoded sucess full.");
+    Console::LogInfo("Script laoded sucess full.");
 }
 
 Script::~Script() {
@@ -33,7 +32,7 @@ Script::~Script() {
     m_funcMap.clear();
 
     if (dlclose(m_script) != 0) {
-        Console::log(Log::ERROR, "Falied to close script: " + std::string(dlerror()));
+        Console::LogError("Falied to close script: " + std::string(dlerror()));
     }
     m_script = nullptr;
 }

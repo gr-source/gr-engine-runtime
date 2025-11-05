@@ -151,12 +151,16 @@ bool Engine::check_project_openable()
             return false;
         }
 
-        set_project(Project(config_get_string(section, "name"), config_get_string(section, "path")));
+        auto path = config_get_string(section, "path");
+        auto name = config_get_string(section, "name");
+
+        if (gfile::exists(path))
+            set_project(Project(name, path));
     }
 
     config_release(config);
 
-    return true;
+    return p_current_project != nullptr;
 }
 
 void Engine::shutdown()
@@ -176,15 +180,11 @@ void Engine::shutdown()
 void Engine::save_current_project()
 {
     if (p_current_project == nullptr)
-    {
         return;
-    }
 
     auto config = config_create();
     if (config == nullptr)
-    {
         return;
-    }
 
     {
         auto section = config_create_section(config, "project", nullptr);

@@ -128,7 +128,8 @@ void ProjectMenu::render_log()
     // ImGui::SetCursorPosX((window_size.x - textSize.x) / 2.0f);
     // ImGui::Text("%s", text);
     
-    for (auto &log : Console::GetListLogs()) {
+    for (auto &log : Console::GetLogs())
+    {
         ImVec4 color = {1.0f, 1.0f, 1.0f, 1.0f};
         std::string type = "[ DEFAULT ]";
 
@@ -155,9 +156,10 @@ void ProjectMenu::render_log()
 
     }
 
-    if (Console::bChanged) {
+    if (Console::IsChanged())
+    {
         ImGui::SetScrollHereY(1.0f);
-        Console::bChanged = false;
+        Console::StopChange();
     }
 }
 
@@ -476,8 +478,6 @@ bool ProjectMenu::ReadLastProject() {
 
 void ProjectMenu::stop_install()
 {
-    Console::Shutdown();
-
     setup_project_list();
 
     bengine_installed = true;
