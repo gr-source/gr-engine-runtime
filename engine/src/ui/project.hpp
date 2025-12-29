@@ -20,5 +20,9 @@ public:
     std::string getPath() const;
 
     std::string getName() const;
+
+    void save();
+
+    bool load();
 };
 

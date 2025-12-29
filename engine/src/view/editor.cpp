@@ -173,7 +173,7 @@ Editor::Editor() : m_viewport(ImGui::GetMainViewport()), mImGuiIO(&ImGui::GetIO(
     m_settings = config_create();
     if (File::Exists(File::GetFile("/gsettings.ini")))
     {
-        config_load(File::GetFile("/gsettings.ini").c_str(), m_settings);
+        config_load(m_settings, File::GetFile("/gsettings.ini").c_str());
             
         config_foreach(m_settings, static_cast<ConfigFunc>(&Editor::foreach_settings), this);
     } else
@@ -220,7 +220,7 @@ Editor::~Editor()
 {
     generateConfig(File::GetFile("/gsettings.ini"));
 
-    config_save(File::GetFile("/gsettings.ini").c_str(), m_settings);
+    config_save(m_settings, File::GetFile("/gsettings.ini").c_str());
 
     config_release(m_settings);
 
@@ -3210,6 +3210,7 @@ gConfigStep_ Editor::foreach_settings(gConfigStep_ type, void *data, void *insta
 
 void Editor::generateConfig(const std::string &file)
 {
+    /*
     auto scenes = SceneManager::GetScenes();
     if (!scenes.empty())
     {
@@ -3249,6 +3250,7 @@ void Editor::generateConfig(const std::string &file)
             config_set_string(section, "dir", "/.build/component/lib/");
         }
     }
+    */
 }
 
 void Editor::updateFileTree(gtreefile &tree_file)

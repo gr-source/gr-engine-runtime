@@ -43,7 +43,7 @@ class Terrain;
 class Texture;
 class Material;
 class Animation;
-class GameObject;
+// class GameObject;
 class ScreenBuffer;
 class ScreenRender;
 class BufferManager;

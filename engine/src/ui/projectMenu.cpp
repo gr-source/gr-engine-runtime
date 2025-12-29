@@ -18,10 +18,13 @@
 
 #include <filesystem>
 
-#include <gr-ini/config.h>
-
 #include <iostream>
 #include <thread>
+
+extern "C"
+{
+#include <gr-ini/config.h>
+}
 
 std::array<const std::string, 7> ProjectMenu::m_assetsFile {
     "animation",
@@ -39,22 +42,13 @@ ImGuiStyle *ProjectMenu::m_style = nullptr;
 
 ImGuiIO *ProjectMenu::m_io = nullptr;
 
-ProjectMenu::ProjectMenu(Engine *engine) : m_engine(engine), popup_flags(0)
+ProjectMenu::ProjectMenu() : m_engine(&Engine::GetInstance()), popup_flags(0)
 {
     m_mainViewport = ImGui::GetMainViewport();
 
     m_style = &ImGui::GetStyle();
 
     m_io = &ImGui::GetIO();
-
-    auto config = File::getHomeDirectory() + "/.config/gr-engine";
-    bengine_installed = File::Exists(config);
-    if (!bengine_installed)
-    {
-        Threadpool::AddTask(&ProjectMenu::install_engine, this);
-
-        return;
-    }
 
     setup_project_list();
 }
@@ -66,11 +60,6 @@ ProjectMenu::~ProjectMenu()
 
 void ProjectMenu::onRender()
 {
-    if (!bengine_installed)
-    {
-        return create_window_log();
-    }
-
     create_window_project_list();
 
     switch (popup_flags)
@@ -90,13 +79,8 @@ void ProjectMenu::onRender()
 void ProjectMenu::close_project()
 {
     auto path = File::GetFile("/config.ini", true);
-    if (File::Exists(path)) {
+    if (File::Exists(path))
         File::Delete(path);
-    }
-
-    /*Batching::Shutdown();*/
-
-    // DebugDraw::Shutdown();
 
     Project::SetCurrent(nullptr);
 
@@ -106,71 +90,12 @@ void ProjectMenu::close_project()
 }
 
 // ********** private ********** //
-void ProjectMenu::create_window_log()
-{
-    ImVec2 window_size = {600.0f, 500.0f};
-
-    ImGui::SetNextWindowSize(window_size, ImGuiCond_Always);
-    ImGui::SetNextWindowPos((m_mainViewport->WorkSize - window_size) / 2.0f);
-    if (ImGui::Begin("Install", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse))
-    {
-        render_log();
-    }
-
-    ImGui::End();
-}
-
-void ProjectMenu::render_log()
-{
-    // const char *text = "Output:";
-    // auto textSize = ImGui::CalcTextSize(text);
-
-    // ImGui::SetCursorPosX((window_size.x - textSize.x) / 2.0f);
-    // ImGui::Text("%s", text);
-    
-    for (auto &log : Console::GetLogs())
-    {
-        ImVec4 color = {1.0f, 1.0f, 1.0f, 1.0f};
-        std::string type = "[ DEFAULT ]";
-
-        switch (log.type) {
-        case Log::LogType::INFO:
-            color = {0.0f, 1.0f, 0.0f, 1.0f};
-            type = "[ INFO ]";
-            break;
-        case Log::LogType::WARNING:
-            color = {1.0f, 1.0f, 0.0f, 1.0f};
-            type = "[ WARNING ]";
-            break;
-        case Log::LogType::ERROR:
-            color = {1.0f, 0.0f, 0.0f, 1.0f};
-            type = "[ ERROR ]";
-            break;
-        default:
-            break;
-        }
-
-        ImGui::TextColored(color, "%s", type.c_str());
-        ImGui::SameLine();
-        ImGui::Text("%s", log.message.c_str());
-
-    }
-
-    if (Console::IsChanged())
-    {
-        ImGui::SetScrollHereY(1.0f);
-        Console::StopChange();
-    }
-}
-
 void ProjectMenu::create_window_project_list()
 {
     ImGui::SetNextWindowPos(ImVec2{0.0f, 0.0f}, ImGuiCond_Always);
     ImGui::SetNextWindowSize(m_mainViewport->Size, ImGuiCond_Always);
     if (ImGui::Begin("##create_window_project_list", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar))
-    {
         render_project_list();
-    }
 
     ImGui::End();
 }
@@ -179,9 +104,7 @@ void ProjectMenu::render_project_list()
 {
     auto avail = ImGui::GetContentRegionAvail();
     if (ImGui::Button("Create New Project", ImVec2{avail.x, 0.0f}))
-    {
         popup_flags |= ProjectMenuPopup_CreateProject;
-    }
 
     for (auto &project : m_projects)
     {
@@ -280,7 +203,7 @@ bool ProjectMenu::create_project_metadata(const std::string &path, const std::st
         config_set_string(section, "name", name.c_str());
     }
 
-    config_save((path + "/metadata.ini").c_str(), config);
+    config_save(config, (path + "/metadata.ini").c_str());
 
     config_release(config);
 
@@ -321,17 +244,13 @@ void ProjectMenu::read_project_directory()
     for (auto &entry : std::filesystem::directory_iterator(dir))
     {
         if (!entry.is_directory() || !gfile::exists(entry.path() / "metadata.ini"))
-        {
             continue;
-        }
 
         auto config = config_create();
         if (config == nullptr)
-        {
             continue;
-        }
 
-        config_load((entry.path() / "metadata.ini").c_str(), config);
+        config_load(config, (entry.path() / "metadata.ini").c_str());
         {
             auto section = config_find_section(config, "project");
             if (section != nullptr)
@@ -357,6 +276,7 @@ void ProjectMenu::OpenProject(Project &project) {
     SaveLastProject(project);
 }
 
+/*
 void ProjectMenu::install_engine()
 {
     Console::LogInfo("[ Installer ] iniciando instalação...");
@@ -400,38 +320,36 @@ void ProjectMenu::install_engine()
 
 bool ProjectMenu::download_data()
 {
-    std::this_thread::sleep_for(std::chrono::seconds(3));
-
     Console::LogInfo("[ Installer ] copiando assets...");
-    if (!File::Copy("./assets", gfile::get_data_directory()))
+    if (!File::Copy("./bin/assets", gfile::get_data_directory()))
     {
         Console::LogError("[ Installer ] fail to copy assets.");
         return false;
     }
 
     Console::LogInfo("[ Installer ] copiando arquivos de config...");
-    if (!File::Copy("./config", gfile::get_data_directory()))
+    if (!File::Copy("./bin/config", gfile::get_data_directory()))
     {
         Console::LogError("[ Installer ] fail to copy config.");
         return false;
     }
 
     Console::LogInfo("[ Installer ] copiando scripts...");
-    if (!File::Copy("./script", gfile::get_data_directory()))
+    if (!File::Copy("./bin/script", gfile::get_data_directory()))
     {
         Console::LogError("[ Installer ] fail to copy script.");
         return false;
     }
 
     Console::LogInfo("[ Installer ] copiando compiler...");
-    if (!File::Copy("./component", gfile::get_data_directory()))
+    if (!File::Copy("./bin/component", gfile::get_data_directory()))
     {
         Console::LogError("[ Installer ] fail to copy component.");
         return false;
     }
 
     Console::LogInfo("[ Installer ] copiando arquivos de exemplo...");
-    if (!File::Copy("./example", gfile::get_data_directory()))
+    if (!File::Copy("./bin/example", gfile::get_data_directory()))
     {
         Console::LogError("[ Installer ] fail to copy examples");
         return false;
@@ -439,6 +357,7 @@ bool ProjectMenu::download_data()
 
     return true;
 }
+*/
 
 void ProjectMenu::SaveLastProject(Project &project) {
     Config config(File::GetFile("/config.ini", true));
@@ -476,12 +395,13 @@ bool ProjectMenu::ReadLastProject() {
     return true;
 }
 
+/*
 void ProjectMenu::stop_install()
 {
     setup_project_list();
 
-    bengine_installed = true;
+    // bengine_installed = true;
 }
-
+*/
 // uninstall engine
 // rm -rf ~/.cache/gr-engine ~/.config/gr-engine ~/.local/share/gr-engine

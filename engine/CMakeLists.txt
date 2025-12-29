@@ -1,5 +1,6 @@
 project(engine VERSION 0.1.0 LANGUAGES C CXX)
 
+set(GR_BASE_PATH "/home/NoirVoid/AppProjects/gr-base")
 
 set(guizmo_src
     src/guizmo/ImGuizmo.cpp
@@ -65,6 +66,15 @@ set(task_src
     src/task/filmboxtask.cpp
 )
 
+set(managers_src
+    src/managers/viewmanager.cpp
+)
+
+set(view_src
+    src/view/installer.cpp
+    src/view/editor.cpp
+)
+
 set(engine_src
     ${task_src}
     ${core_src}
@@ -75,6 +85,8 @@ set(engine_src
     ${core_file_src}
     ${simplexNoise_src}
     ${scriptManager_cpp}
+    ${managers_src}
+    ${view_src}
     
     src/engine.cpp
     src/Global.cpp
@@ -85,7 +97,6 @@ set(engine_src
     src/editorController.cpp
 
     src/ui/view.cpp
-    src/ui/editor.cpp
     src/ui/project.cpp
     src/ui/ImGuiRender.cpp
     src/ui/projectMenu.cpp
@@ -107,7 +118,6 @@ set(engine_hdr
     src/editorController.h
     
     src/ui/view.hpp
-    src/ui/editor.hpp
     src/ui/project.hpp
     src/ui/ImGuiRender.h
     src/ui/projectMenu.hpp
@@ -121,10 +131,10 @@ set(plugin
 add_library(${PROJECT_NAME} STATIC ${engine_src} ${plugin} ${engine_hdr})
 
 target_include_directories(${PROJECT_NAME} PUBLIC
-    /home/felipy/Documentos/gr-projects/gr-base/include
+    ${GR_BASE_PATH}/include
     $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/${PROJECT_NAME}/src>
 )
 
-target_link_libraries(${PROJECT_NAME} PRIVATE /home/felipy/Documentos/gr-projects/gr-base/lib/libgr-base.so)
+target_link_libraries(${PROJECT_NAME} PRIVATE ${GR_BASE_PATH}/lib/libgr-base.so)
 
 target_compile_definitions(${PROJECT_NAME} PUBLIC INTERNAL_REGISTER_SCRIPT)

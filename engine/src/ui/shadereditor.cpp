@@ -13,7 +13,8 @@
 #include <gr-base/script/skinnedMeshRender.hpp>
 #include <gr-base/script/meshRender.hpp>
 #include <gr-base/script/camera.hpp>
-#include <stdexcept>
+
+#include <gr-base/ecs/gameObject.hpp>
 
 #include "imgui.h"
 

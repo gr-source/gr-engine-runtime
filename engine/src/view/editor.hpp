@@ -24,7 +24,7 @@
 #include <string>
 #include <vector>
 
-#include "viewlayout.hpp"
+#include "ui/viewlayout.hpp"
 
 #ifdef __cplusplus
 extern "C"

@@ -2,11 +2,10 @@
 
 #include "ui/project.hpp"
 #include "ui/viewlayout.hpp"
-#include "ui/editor.hpp"
 
-#include <functional>
-#include <memory>
-#include <vector>
+#include <gr-base/script/default.hpp>
+
+#include <gr-base/ecs/default.hpp>
 
 class Engine {
 public:
@@ -28,20 +27,18 @@ public:
 
     void set_project(const Project &project);
 
-private:
-    std::vector<std::tuple<const char *, std::unique_ptr<ViewLayout>>> v_view_list;
+    void init_menu();
 
+private:
     std::unique_ptr<Project> p_current_project;
 
-    ViewLayout *view_layout;
-
     void init();
+
+    bool check_installed();
 
     bool check_project_openable();
 
     void shutdown();
-
-    void save_current_project();
 
     void loop();
 
@@ -51,7 +48,7 @@ private:
 
     void render_gui();
 
-    void create_main_tabbar();
+    // void create_main_tabbar();
 
     void drop_file(const std::string &path);
 

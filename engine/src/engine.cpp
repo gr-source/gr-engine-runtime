@@ -8,7 +8,6 @@
 #include "gr-base/ecs/gameobjectmanager.hpp"
 #include "imgui.h"
 
-#include "ui/editor.hpp"
 #include "ui/project.hpp"
 #include "ui/projectMenu.hpp"
 #include "ui/ImGuiRender.h"
@@ -38,6 +37,13 @@
 #include "ui/shadereditor.hpp"
 
 #include "task/filmboxmanager.hpp"
+
+// Managers
+#include "managers/viewmanager.hpp"
+
+// Views
+#include "view/installer.hpp"
+#include "view/editor.hpp"
 
 #include <gr-ini/config.h>
 #include <gr-render/gCommon.h>
@@ -70,7 +76,7 @@ Engine &Engine::GetInstance()
 }
 
 // ********** public ********** //
-Engine::Engine() : view_layout(nullptr), p_current_project(nullptr)
+Engine::Engine() : p_current_project(nullptr)
 {}
 
 Engine::~Engine()
@@ -84,24 +90,15 @@ void Engine::set_project(const Project &project)
 
     gfile::AssetStreamPath = project.getPath() + "/assets";
 
-    v_view_list.clear();
+    ViewManager::Add<Editor>();
+    // ViewManager::Add<ShaderEditor>(this);
+}
 
-    // Editor
-    {
-        auto &&[name, view] = v_view_list.emplace_back("Editor", std::make_unique<Editor>());
-
-        view_layout = view.get();
-    }
-
-    // ShaderEditor
-    {
-        v_view_list.emplace_back("Shader Editor", std::make_unique<ShaderEditor>(this));
-    }
-
-    if (view_layout != nullptr)
-    {
-        view_layout->onFocus();
-    }
+void Engine::init_menu()
+{
+    if (!check_project_openable())
+        ViewManager::Add<ProjectMenu>();
+    // AssetsManager::LoadTexture("/home/NoirVoid/Downloads/sky_17_2k/sky_17_2k.png", &Skybox::set_texture, &m_skybox);
 }
 
 // ********** private ********** //
@@ -115,16 +112,11 @@ void Engine::init()
 
     ImGuiRender::Initialize("#version 330 core");
 
+    ViewManager::Initialize();
+
     EntityManager::Initialize();
 
     GameObjectManager::Initialize();
-
-    if (!check_project_openable())
-    {
-        auto &&[name, view] =v_view_list.emplace_back("Project Menu", std::make_unique<ProjectMenu>(this));
-        
-        view_layout = view.get();
-    }
 
     grr::gRender::SetRenderState(grr::GR_CULL_FACE, grr::GR_TRUE);
     grr::gRender::SetRenderState(grr::GR_CULL, grr::GR_BACK);
@@ -132,24 +124,29 @@ void Engine::init()
     grr::gRender::SetRenderState(grr::GR_BLEND, grr::GR_TRUE);
     grr::gRender::SetRenderState(grr::GR_SRC_ALPHA, grr::GR_ONE_MINUS_SRC_ALPHA);
 
-    AssetsManager::LoadTexture("/home/felipy/Downloads/Skyboxes/SunsetSky.png", &Skybox::set_texture, &m_skybox);
+    if (!check_installed())
+        return ViewManager::Add<Installer>();
+    else
+        init_menu();
+}
+
+bool Engine::check_installed()
+{
+    return gfile::exists(gfile::get_home_directory() + "/.config/gr-engine");
 }
 
 bool Engine::check_project_openable()
 {
     auto config = config_create();
     if (config == nullptr)
-    {
         return false;
-    }
-    config_load((gfile::get_config_directory() + "/config.ini").c_str(), config);
+
+    config_load(config, (gfile::get_config_directory() + "/config.ini").c_str());
 
     {
         auto section = config_find_section(config, "project");
         if (section == nullptr)
-        {
             return false;
-        }
 
         auto path = config_get_string(section, "path");
         auto name = config_get_string(section, "name");
@@ -165,24 +162,25 @@ bool Engine::check_project_openable()
 
 void Engine::shutdown()
 {
-    v_view_list.clear();
-    view_layout = nullptr;
-
-    save_current_project();
+    if (p_current_project != nullptr)
+        p_current_project->save();
 
     ImGuiRender::Shutdown();
+
+    ViewManager::Shutdown();
 
     GameObjectManager::Shutdown();
 
     EntityManager::Shutdown();
 }
 
+/*
 void Engine::save_current_project()
 {
     if (p_current_project == nullptr)
         return;
 
-    auto config = config_create();
+    auto config = config_Create();
     if (config == nullptr)
         return;
 
@@ -196,7 +194,7 @@ void Engine::save_current_project()
 
     config_release(config);
 }
-
+*/
 void Engine::loop()
 {
     MainThreadDispatcher::Update();
@@ -234,50 +232,13 @@ void Engine::render_gui()
     
     ImGuiRender::Begin();
 
-    auto dockID = ImGui::DockSpaceOverViewport(ImGui::GetMainViewport());
-    create_main_tabbar();
-
-    if (view_layout != nullptr)
-    {
-        view_layout->onRender();
-    }
+    ViewManager::Renderer();
 
     FilmboxManager::Render();
 
     AssetsManager::Render();
 
     ImGuiRender::End();
-}
-
-void Engine::create_main_tabbar()
-{
-    if (!ImGui::BeginMainMenuBar())
-    {
-        return;
-    }
-    
-    if (ImGui::BeginTabBar("##render_gui_tab_bar_0"))
-    {
-        for (auto &&[name, view] : v_view_list)
-        {
-            if (ImGui::BeginTabItem(name))
-            {
-                if (view_layout != view.get())
-                {
-                    if (view_layout != nullptr)
-                    {
-                        view_layout->onBlur();
-                    }
-
-                    view_layout = view.get();
-                    view_layout->onFocus();
-                }
-                ImGui::EndTabItem();
-            }
-        }
-        ImGui::EndTabBar();
-    }
-    ImGui::EndMainMenuBar();
 }
 
 void Engine::drop_file(const std::string &path)
@@ -296,12 +257,12 @@ void Engine::drop_file(const std::string &path)
 // ********** protected ********** //
 void Engine::upload(GameObject *gameObject)
 {
+    /*
     if (view_layout == nullptr)
-    {
         return;
-    }
 
     view_layout->drop((void *)gameObject);
+    */
 }
 
 #include <gr-base/core/culling/octreemanager.hpp>

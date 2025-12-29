@@ -25,7 +25,7 @@ enum ProjectMenuPopup : ProjectMenuPopup_
 class ProjectMenu : public ViewLayout
 {
 public:
-    ProjectMenu(Engine *engine);
+    ProjectMenu();
     ~ProjectMenu() override;
     
     void onRender() override;
@@ -43,15 +43,13 @@ private:
 
     static ImGuiStyle *m_style;
 
-    bool bengine_installed;
-
     ProjectMenuPopup_ popup_flags;
 
     static ImGuiIO *m_io;
 
-    void create_window_log();
+    // void create_window_log();
 
-    void render_log();
+    // void render_log();
 
     void create_window_project_list();
 
@@ -71,15 +69,15 @@ private:
 
     static void OpenProject(Project &project);
 
-    void install_engine();
+    // void install_engine();
 
-    bool download_data();
+    // bool download_data();
 
     static void SaveLastProject(Project &project);
 
     static bool ReadLastProject();
 
-    void stop_install();
+    // void stop_install();
 };
 
 

@@ -5,6 +5,8 @@
 #include <gr-base/core/window.hpp>
 #include <gr-base/core/input.hpp>
 
+#include <string.h>
+
 #include <GLFW/glfw3.h>
 
 #define SCREEN_WIDTH 1024
@@ -25,9 +27,7 @@ void GLFWframebuffersizefunCallback(GLFWwindow* window, int width, int height)
 
 void GLFWscrollfunCallback(GLFWwindow* window, double xoffset, double yoffset)
 {
-    Vector2 offset{static_cast<float>(xoffset), static_cast<float>(yoffset)};
-
-    std::cout << offset.x << ", " << offset.y << std::endl;
+    // Vector2 offset{static_cast<float>(xoffset), static_cast<float>(yoffset)};
 }
 
 void GLFWdropfunCallback(GLFWwindow* window, int path_count, const char* paths[])
