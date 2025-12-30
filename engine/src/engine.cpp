@@ -2,8 +2,10 @@
 
 #include "editorController.h"
 
+#include <cstddef>
 #include <gr-base/broadphase/bvhtree.hpp>
 
+#include "gr-base/core/console.hpp"
 #include "gr-base/core/scenemanager.hpp"
 #include "gr-base/ecs/gameobjectmanager.hpp"
 #include "imgui.h"
@@ -45,12 +47,11 @@
 #include "view/installer.hpp"
 #include "view/editor.hpp"
 
-#include <gr-ini/config.h>
 #include <gr-render/gCommon.h>
 
 static FunctionTimer mFunctionTimer;
 
-static Skybox m_skybox;
+// static Skybox m_skybox;
 
 void Engine::HandleEvent(EngineEvent event, const void* data)
 {
@@ -76,29 +77,75 @@ Engine &Engine::GetInstance()
 }
 
 // ********** public ********** //
-Engine::Engine() : p_current_project(nullptr)
+Engine::Engine() : bHasProject(false)
 {}
 
 Engine::~Engine()
 {}
 
-void Engine::set_project(const Project &project)
-{
-    p_current_project = std::make_unique<Project>(project);
-
-    File::SetCurrentProject(project.getPath());
-
-    gfile::AssetStreamPath = project.getPath() + "/assets";
-
-    ViewManager::Add<Editor>();
-    // ViewManager::Add<ShaderEditor>(this);
-}
-
 void Engine::init_menu()
 {
+    std::string project_path;
+
+    gConfig* config = config_create();
+    if (config != NULL)
+    {
+        std::string path = gfile::get_config_directory() + "/config.ini";
+
+        if (config_load(config, path.c_str()))
+        {
+            gSection* section = config_find_section(config, "project");
+            if (section != NULL)
+            {
+                const char* path = config_get_string(section, "path");
+                if (path != NULL && gfile::exists(path))
+                    project_path = path;
+            }
+        }
+        config_release(config);
+    }
+
+    init_project(project_path);
+
+    /*
     if (!check_project_openable())
-        ViewManager::Add<ProjectMenu>();
+        
     // AssetsManager::LoadTexture("/home/NoirVoid/Downloads/sky_17_2k/sky_17_2k.png", &Skybox::set_texture, &m_skybox);
+    */
+}
+
+void Engine::init_project(const std::string& path)
+{
+    if (bHasProject && !path.empty())
+    {
+        std::cout << "[!] J'a existe um projeto carregado" << std::endl;
+        return;
+    }
+
+    bHasProject = m_project.load(path);
+
+    ViewManager::RemoveAllView();
+    if (!bHasProject)
+    {
+        ViewManager::Add<ProjectMenu>();
+    } else
+    {
+        File::SetCurrentProject(m_project.path);
+
+        gfile::AssetStreamPath = m_project.path + "/assets";
+
+        ViewManager::Add<Editor>();
+    }
+}
+
+Project& Engine::get_project()
+{
+    return m_project;
+}
+
+bool Engine::has_project() const
+{
+    return bHasProject;
 }
 
 // ********** private ********** //
@@ -126,8 +173,8 @@ void Engine::init()
 
     if (!check_installed())
         return ViewManager::Add<Installer>();
-    else
-        init_menu();
+
+    init_menu();
 }
 
 bool Engine::check_installed()
@@ -135,35 +182,9 @@ bool Engine::check_installed()
     return gfile::exists(gfile::get_home_directory() + "/.config/gr-engine");
 }
 
-bool Engine::check_project_openable()
-{
-    auto config = config_create();
-    if (config == nullptr)
-        return false;
-
-    config_load(config, (gfile::get_config_directory() + "/config.ini").c_str());
-
-    {
-        auto section = config_find_section(config, "project");
-        if (section == nullptr)
-            return false;
-
-        auto path = config_get_string(section, "path");
-        auto name = config_get_string(section, "name");
-
-        if (gfile::exists(path))
-            set_project(Project(name, path));
-    }
-
-    config_release(config);
-
-    return p_current_project != nullptr;
-}
-
 void Engine::shutdown()
 {
-    if (p_current_project != nullptr)
-        p_current_project->save();
+    save_engine_config();
 
     ImGuiRender::Shutdown();
 
@@ -174,27 +195,23 @@ void Engine::shutdown()
     EntityManager::Shutdown();
 }
 
-/*
-void Engine::save_current_project()
+void Engine::save_engine_config()
 {
-    if (p_current_project == nullptr)
+    auto config = config_create();
+    if (config == NULL)
         return;
 
-    auto config = config_Create();
-    if (config == nullptr)
-        return;
-
+    if (has_project())
     {
-        auto section = config_create_section(config, "project", nullptr);
-        config_set_string(section, "name", p_current_project->getName().c_str());
-        config_set_string(section, "path", p_current_project->getPath().c_str());
+        auto section = config_create_section(config, "project");
+        config_set_string(section, "path", (m_project.path + "/metadata.ini").c_str());
     }
 
-    config_save((gfile::get_config_directory() + "/config.ini").c_str(), config);
+    config_save(config, (gfile::get_config_directory() + "/config.ini").c_str());
 
     config_release(config);
 }
-*/
+
 void Engine::loop()
 {
     MainThreadDispatcher::Update();
@@ -321,7 +338,7 @@ void Engine::RenderScene(const Camera *camera)
     DebugDraw::Render(camera);
 
     grr::gRender::SetRenderState(grr::GR_DEPTH_FUNC, grr::GR_DEPTH_LEQUAL);
-    m_skybox.render(camera);
+    // m_skybox.render(camera);
 }
 
 

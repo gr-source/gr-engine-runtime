@@ -7,6 +7,7 @@
 #include "Global.h"
 #include "core/time.hpp"
 #include "editorController.h"
+#include "engine.h"
 #include "gr-base/core/clock.hpp"
 #include "gr-base/core/geometry/shader.hpp"
 #include "gr-base/core/mainthreaddispatcher.hpp"
@@ -175,7 +176,7 @@ Editor::Editor() : m_viewport(ImGui::GetMainViewport()), mImGuiIO(&ImGui::GetIO(
     {
         config_load(m_settings, File::GetFile("/gsettings.ini").c_str());
             
-        config_foreach(m_settings, static_cast<ConfigFunc>(&Editor::foreach_settings), this);
+        // config_foreach(m_settings, static_cast<ConfigFunc>(&Editor::foreach_settings), this);
     } else
     {
         generateConfig(File::GetFile("/gsettings.ini"));
@@ -207,12 +208,13 @@ Editor::Editor() : m_viewport(ImGui::GetMainViewport()), mImGuiIO(&ImGui::GetIO(
 
     updateFileTree(root_tree_file);
 
-    auto project = Project::GetCurrent();
-    if (project)
-    {
-        auto projectname = project->getName();
+    auto& engine = Engine::GetInstance();
 
-        Window::SetWindowTitle(String::format("GR - %s", projectname.c_str()).c_str());
+    if (engine.has_project())
+    {
+        auto& project = engine.get_project();
+
+        Window::SetWindowTitle(String::format("GR - %s", project.name.c_str()).c_str());
     }
 }
 
@@ -278,8 +280,15 @@ void Editor::UnloadScript() {
 }
 
 // ===================================== END =========================================================
+const char* Editor::getName() const
+{
+    return "Editor";
+}
+
 void Editor::onRender()
 {
+    ImGui::DockSpaceOverViewport(ImGui::GetMainViewport());
+
     create_dock();
 
     create_window_viewport();
@@ -320,6 +329,10 @@ void Editor::create_dock()
             if (ImGui::MenuItem("Rebuild Script"))
             {
                 ReconfigScript();
+            }
+            if (ImGui::MenuItem("Close"))
+            {
+                Engine::GetInstance().init_project("");
             }
             ImGui::EndMenu();
         }
@@ -3174,38 +3187,6 @@ void Editor::OutputGameObject(GameObject **ref, GameObject *go)
         GameObject::Destroy(*ref);
 
     *ref = go;
-}
-
-gConfigStep_ Editor::foreach_settings(gConfigStep_ type, void *data, void *instance)
-{
-    auto editor = static_cast<Editor *>(instance);
-
-    switch (type)
-    {
-        case gConfigType_Section:
-        {
-            auto section = static_cast<struct gSection *>(data);
-            if (std::strcmp(section->name, "Scenes") == 0)
-            {
-                return gConfigStep_Recuse;
-            }
-            break;
-        }
-        case gConfigType_Subsection:
-        {
-            auto section = static_cast<struct gSection *>(data);
-            if (std::strcmp(section->name, "Scene") == 0)
-            {
-                auto name = config_get_string(section, "name");
-
-                AssetsManager::LoadScene(File::GetAsset("/scene/") + name + ".scn", &Editor::set_scene, editor);
-            }
-            break;
-        }
-        default:
-            break;
-    }
-    return gConfigStep_Continue;
 }
 
 void Editor::generateConfig(const std::string &file)

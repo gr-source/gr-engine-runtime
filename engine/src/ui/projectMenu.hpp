@@ -27,10 +27,10 @@ class ProjectMenu : public ViewLayout
 public:
     ProjectMenu();
     ~ProjectMenu() override;
+
+    const char* getName() const override;
     
     void onRender() override;
-
-    void close_project();
 
 private:
     static std::array<const std::string, 7> m_assetsFile;
@@ -47,37 +47,21 @@ private:
 
     static ImGuiIO *m_io;
 
-    // void create_window_log();
-
-    // void render_log();
-
     void create_window_project_list();
 
     void render_project_list();
 
-    void setup_project_list();
-
     void popup_create_new_project();
 
-    void create_project(const std::string name, const std::string path);
+    bool create_project(const std::string& name);
 
-    bool create_project_metadata(const std::string &path, const std::string &name);
+    bool create_project_metadata();
 
     static void CreateProjectAssets(const std::string &path);
 
     void read_project_directory();
 
-    static void OpenProject(Project &project);
-
-    // void install_engine();
-
-    // bool download_data();
-
-    static void SaveLastProject(Project &project);
-
     static bool ReadLastProject();
-
-    // void stop_install();
 };
 
 

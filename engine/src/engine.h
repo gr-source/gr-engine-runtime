@@ -25,20 +25,26 @@ public:
     Engine();
     ~Engine();
 
-    void set_project(const Project &project);
-
     void init_menu();
 
+    void init_project(const std::string& path);
+
+    Project &get_project();
+
+    bool has_project() const;
+
 private:
-    std::unique_ptr<Project> p_current_project;
+    Project m_project;
+
+    bool bHasProject;
 
     void init();
 
     bool check_installed();
 
-    bool check_project_openable();
-
     void shutdown();
+
+    void save_engine_config();
 
     void loop();
 

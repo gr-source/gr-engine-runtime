@@ -17,6 +17,11 @@ Installer::Installer() : bFinnish(false)
     Threadpool::AddTask(&Installer::doInBackground, this);
 }
 
+const char* Installer::getName() const
+{
+    return "Installer";
+}
+
 void Installer::onRender()
 {
     auto mainViewport = ImGui::GetMainViewport();
@@ -67,7 +72,7 @@ void Installer::onRender()
     {
         bFinnish = false;
 
-        MainThreadDispatcher::Add(&Installer::DoInForegroundFinnishInstaller, this);
+        MainThreadDispatcher::Add(&Engine::init_menu, Engine::GetInstance());
     }
     ImGui::End();
 }
@@ -152,13 +157,6 @@ bool Installer::download_data()
     }
 
     return true;
-}
-
-void Installer::DoInForegroundFinnishInstaller(ViewLayout* view)
-{
-    ViewManager::Remove(view);
-
-    Engine::GetInstance().init_menu();
 }
 
 

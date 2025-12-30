@@ -3,7 +3,6 @@
 #include "engine.h"
 #include "imgui.h"
 
-#include <chrono>
 #include <cstring>
 #include <gr-base/core/geometry/batching.hpp>
 
@@ -19,7 +18,6 @@
 #include <filesystem>
 
 #include <iostream>
-#include <thread>
 
 extern "C"
 {
@@ -50,12 +48,17 @@ ProjectMenu::ProjectMenu() : m_engine(&Engine::GetInstance()), popup_flags(0)
 
     m_io = &ImGui::GetIO();
 
-    setup_project_list();
+    read_project_directory();
 }
 
 ProjectMenu::~ProjectMenu()
 {
     // DebugDraw::Shutdown();
+}
+
+const char* ProjectMenu::getName() const
+{
+    return "ProjectMenu";
 }
 
 void ProjectMenu::onRender()
@@ -74,19 +77,6 @@ void ProjectMenu::onRender()
     popup_create_new_project();
 
     popup_flags = 0;
-}
-
-void ProjectMenu::close_project()
-{
-    auto path = File::GetFile("/config.ini", true);
-    if (File::Exists(path))
-        File::Delete(path);
-
-    Project::SetCurrent(nullptr);
-
-    m_projects.clear();
-
-    read_project_directory();
 }
 
 // ********** private ********** //
@@ -108,19 +98,8 @@ void ProjectMenu::render_project_list()
 
     for (auto &project : m_projects)
     {
-        if (ImGui::Selectable(project.getName().c_str()))
-        {
-            m_engine->set_project(project);
-        }
-    }
-}
-
-void ProjectMenu::setup_project_list()
-{
-
-    // if (!ReadLastProject())
-    {
-        return read_project_directory();
+        if (ImGui::Selectable(project.name.c_str()))
+            m_engine->init_project(project.path + "/metadata.ini");
     }
 }
 
@@ -133,9 +112,7 @@ void ProjectMenu::popup_create_new_project()
 
     auto isOpen = ImGui::BeginPopupModal("##popup_create_new_project", nullptr, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
     if (!isOpen)
-    {
         return;
-    }
 
     ImGui::SeparatorText("Create Project");
 
@@ -153,7 +130,7 @@ void ProjectMenu::popup_create_new_project()
     
     if (ImGui::Button("Create", ImVec2{avail.x, 0.0f}))
     {
-        create_project(name, gfile::get_home_directory() + "/gr-engine/" + name);
+        create_project(name);
 
         std::memset(name, 0, sizeof(name));
 
@@ -163,47 +140,57 @@ void ProjectMenu::popup_create_new_project()
     ImGui::EndPopup();
 }
 
-void ProjectMenu::create_project(const std::string name, const std::string path)
+bool ProjectMenu::create_project(const std::string& name)
 {
+    std::string path = gfile::get_home_directory() + "/gr-engine/" + name;
     if (gfile::exists(path))
     {
         std::cout << "The project: " << name << " exists, in: " << path << std::endl;
-        return;
+        return false;
     }
     
     if (!gfile::create_directory(path))
     {
         std::cout << "Unable to create project in directory: " << path << std::endl;
-        return;
+        return false;
     }
 
-    if (!create_project_metadata(path, name))
+    auto& project = m_projects.emplace_back();
+    project.name = name;
+    project.path = path;
+    project.version = "0.1.0";
+
+    if (!create_project_metadata())
     {
         gfile::remove(path);
 
+        m_projects.pop_back();
+
         std::cout << "[ Project ] Fail to create project metadada." << std::endl;
-        return;
+        return false;
     }
     
     CreateProjectAssets(path);
 
-    m_projects.emplace_back(name, path);
+    return true;
 }
 
-bool ProjectMenu::create_project_metadata(const std::string &path, const std::string &name)
+bool ProjectMenu::create_project_metadata()
 {
     auto config = config_create();
     if (config == nullptr)
-    {
         return false;
-    }
+
+    auto& project = m_projects.back();
 
     {
-        auto section = config_create_section(config, "project", nullptr);
-        config_set_string(section, "name", name.c_str());
+        auto section = config_create_section(config, "project");
+        config_set_string(section, "name", project.name.c_str());
+        config_set_string(section, "path", project.path.c_str());
+        config_set_string(section, "version", project.version.c_str());
     }
 
-    config_save(config, (path + "/metadata.ini").c_str());
+    config_save(config, (project.path + "/metadata.ini").c_str());
 
     config_release(config);
 
@@ -237,9 +224,7 @@ void ProjectMenu::read_project_directory()
 {
     auto dir = gfile::get_home_directory() + "/gr-engine";
     if (!gfile::exists(dir))
-    {
         return;
-    }
 
     for (auto &entry : std::filesystem::directory_iterator(dir))
     {
@@ -256,117 +241,21 @@ void ProjectMenu::read_project_directory()
             if (section != nullptr)
             {
                 auto name = config_get_string(section, "name");
+                auto path = config_get_string(section, "path");
+                auto version = config_get_string(section, "version");
 
-                m_projects.emplace_back(name, entry.path().string());
+                auto& project = m_projects.emplace_back();
+                project.name = name;
+                project.path = path;
+                project.version = version;
             }
         }
         config_release(config);
     }
 }
 
-void ProjectMenu::OpenProject(Project &project) {
-    File::SetCurrentProject(project.getPath());
-
-    /*Batching::Initialize();*/
-
-    // DebugDraw::Initialize();
-
-    Project::SetCurrent(&project);
-    
-    SaveLastProject(project);
-}
-
-/*
-void ProjectMenu::install_engine()
+bool ProjectMenu::ReadLastProject()
 {
-    Console::LogInfo("[ Installer ] iniciando instalação...");
-
-    if (!gfile::exists(gfile::get_home_directory() + "/gr-engine"))
-    {
-        gfile::create_directory(gfile::get_home_directory() + "/gr-engine");
-    }
-
-    if (!gfile::exists(gfile::get_data_directory()))
-    {
-        gfile::create_directory(gfile::get_data_directory());
-    }
-
-    if (!gfile::exists(gfile::get_config_directory()))
-    {
-        gfile::create_directory(gfile::get_config_directory());
-    }
-
-    if (!gfile::exists(gfile::get_cache_directory()))
-    {
-        gfile::create_directory(gfile::get_cache_directory());
-    }
-
-    Console::LogInfo("[ Installer ] copiando arquivos...");
-
-    if (!download_data())
-    {
-        gfile::remove(gfile::get_data_directory());
-        gfile::remove(gfile::get_config_directory());
-        gfile::remove(gfile::get_cache_directory());
-        return;
-    }
-
-    Console::LogInfo("[ Installer ] arquivos copiados com sucesso.");
-
-    std::this_thread::sleep_for(std::chrono::seconds(3));
-    
-    stop_install();
-}
-
-bool ProjectMenu::download_data()
-{
-    Console::LogInfo("[ Installer ] copiando assets...");
-    if (!File::Copy("./bin/assets", gfile::get_data_directory()))
-    {
-        Console::LogError("[ Installer ] fail to copy assets.");
-        return false;
-    }
-
-    Console::LogInfo("[ Installer ] copiando arquivos de config...");
-    if (!File::Copy("./bin/config", gfile::get_data_directory()))
-    {
-        Console::LogError("[ Installer ] fail to copy config.");
-        return false;
-    }
-
-    Console::LogInfo("[ Installer ] copiando scripts...");
-    if (!File::Copy("./bin/script", gfile::get_data_directory()))
-    {
-        Console::LogError("[ Installer ] fail to copy script.");
-        return false;
-    }
-
-    Console::LogInfo("[ Installer ] copiando compiler...");
-    if (!File::Copy("./bin/component", gfile::get_data_directory()))
-    {
-        Console::LogError("[ Installer ] fail to copy component.");
-        return false;
-    }
-
-    Console::LogInfo("[ Installer ] copiando arquivos de exemplo...");
-    if (!File::Copy("./bin/example", gfile::get_data_directory()))
-    {
-        Console::LogError("[ Installer ] fail to copy examples");
-        return false;
-    }
-
-    return true;
-}
-*/
-
-void ProjectMenu::SaveLastProject(Project &project) {
-    Config config(File::GetFile("/config.ini", true));
-    config.setValue("name", project.getName());
-    config.setValue("path", project.getPath());
-    config.save();
-}
-
-bool ProjectMenu::ReadLastProject() {
     auto path = File::GetFile("/config.ini", true);
     if (!File::Exists(path)) {
         return false;
@@ -389,19 +278,8 @@ bool ProjectMenu::ReadLastProject() {
         return false;
     }
 
-    // auto &project = m_projects.emplace_back(config.getValue<std::string>("name"), path);
-
-    // OpenProject(project);
     return true;
 }
 
-/*
-void ProjectMenu::stop_install()
-{
-    setup_project_list();
-
-    // bengine_installed = true;
-}
-*/
 // uninstall engine
 // rm -rf ~/.cache/gr-engine ~/.config/gr-engine ~/.local/share/gr-engine

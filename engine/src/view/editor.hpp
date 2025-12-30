@@ -110,6 +110,8 @@ public:
     Editor();
     ~Editor() override;
 
+    const char *getName() const override;
+
     void onRender() override;
 
     void onFocus() override;
@@ -354,8 +356,6 @@ private:
     bool RenderProperty(Args&&... args);
 
     static void OutputGameObject(GameObject **ref, GameObject *go);
-
-    static gConfigStep_ foreach_settings(gConfigType_ type, void *data, void *instance);
 
     void generateConfig(const std::string &file);
 

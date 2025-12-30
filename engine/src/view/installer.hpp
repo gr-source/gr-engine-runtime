@@ -7,6 +7,8 @@ class Installer : public ViewLayout
 public:
     Installer();
 
+    const char* getName() const override;
+
     void onRender() override;
 
 private:
@@ -15,7 +17,5 @@ private:
     void doInBackground();
 
     bool download_data();
-
-    static void DoInForegroundFinnishInstaller(ViewLayout* view);
 };
 

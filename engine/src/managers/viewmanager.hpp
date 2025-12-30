@@ -15,6 +15,8 @@ public:
 
     static void Renderer();
 
+    static void RemoveAllView();
+
     template <typename T, typename... Args>
     static void Add(Args&&... args);
 
@@ -35,6 +37,8 @@ private:
     void add(ViewLayout* view);
 
     void remove(ViewLayout* view);
+
+    void removeAllView();
 
     void renderer();
 

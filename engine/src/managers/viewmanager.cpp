@@ -1,5 +1,6 @@
 #include "viewmanager.hpp"
 
+#include <cstddef>
 #include <imgui.h>
 
 #include <algorithm>
@@ -21,6 +22,11 @@ void ViewManager::Shutdown()
 void ViewManager::Renderer()
 {
     s_ViewManager->renderer();
+}
+
+void ViewManager::RemoveAllView()
+{
+    s_ViewManager->removeAllView();
 }
 
 void ViewManager::Remove(ViewLayout *view)
@@ -62,13 +68,23 @@ void ViewManager::remove(ViewLayout* view)
     delete view;
 }
 
+void ViewManager::removeAllView()
+{
+    auto temp = s_registry;
+    for (auto& view : temp)
+        delete view;
+
+    s_mapRegistry.clear();
+    s_registry.clear();
+
+    s_current = nullptr;
+}
+
 void ViewManager::renderer()
 {
     bool bEnableDockSpace = s_registry.size() > 1;
     if (bEnableDockSpace)
     {
-        auto dockID = ImGui::DockSpaceOverViewport(ImGui::GetMainViewport());
-
         render_tabbar();
     }
 
@@ -79,9 +95,7 @@ void ViewManager::renderer()
 void ViewManager::render_tabbar()
 {
     if (!ImGui::BeginMainMenuBar())
-    {
         return;
-    }
     
     if (ImGui::BeginTabBar("##render_gui_tab_bar_0"))
     {

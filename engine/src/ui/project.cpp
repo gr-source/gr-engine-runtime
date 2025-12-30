@@ -1,4 +1,5 @@
 #include "project.hpp"
+#include <cstddef>
 
 extern "C"
 {
@@ -7,26 +8,6 @@ extern "C"
 
 #include <gr-base/core/file/file.hpp>
 
-Project *Project::m_current = nullptr;
-
-void Project::SetCurrent(Project *project) {
-    m_current = project;
-}
-
-Project *Project::GetCurrent() {
-    return m_current;
-}
-
-Project::Project(const std::string &name, const std::string &path) : m_name(name), m_path(path) {}
-
-std::string Project::getPath() const {
-    return m_path;
-}
-
-std::string Project::getName() const {
-    return m_name;
-}
-
 void Project::save()
 {
     auto config = config_create();
@@ -34,9 +15,10 @@ void Project::save()
         return;
 
     {
-        auto section = config_create_section(config, "project", nullptr);
-        config_set_string(section, "name", m_name.c_str());
-        config_set_string(section, "path", m_path.c_str());
+        auto section = config_create_section(config, "project");
+        config_set_string(section, "name", name.c_str());
+        config_set_string(section, "path", path.c_str());
+        config_set_string(section, "version", version.c_str());
     }
 
     config_save(config, (gfile::get_config_directory() + "/config.ini").c_str());
@@ -44,9 +26,42 @@ void Project::save()
     config_release(config);
 }
 
-bool Project::load()
+bool Project::load(const std::string& file)
 {
-    return true;
+    gConfig* config = config_create();
+    if (config == NULL)
+        return false;
+
+    bool success = true;
+    if (!config_load(config, file.c_str()))
+    {
+        success = false;
+    } else
+    {
+        gSection* section = config_find_section(config, "project");
+        if (section == NULL)
+        {
+            success = false;
+        } else
+        {
+            const char* c_name = config_get_string(section, "name");
+            const char* c_path = config_get_string(section, "path");
+            const char* c_version = config_get_string(section, "version");
+
+            if (c_name == NULL || c_path == NULL || c_version == NULL || !gfile::exists(c_path))
+            {
+                success = false;
+            } else
+            {
+                name = c_name;
+                path = c_path;
+                version = c_version;
+            }
+        }
+    }
+
+    config_release(config);
+    return success;
 }
 
 
