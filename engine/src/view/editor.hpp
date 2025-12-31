@@ -112,6 +112,8 @@ public:
 
     const char *getName() const override;
 
+    void onUpdate() override;
+
     void onRender() override;
 
     void onFocus() override;
@@ -155,7 +157,7 @@ private:
 
     ImGuiIO *mImGuiIO;
 
-    grm::uint8 m_currentPage;
+    u8 m_currentPage;
 
     bool bBuildDock;
 

@@ -19,6 +19,11 @@ void ViewManager::Shutdown()
         delete s_ViewManager;
 }
 
+void ViewManager::Update()
+{
+    s_ViewManager->update();
+}
+
 void ViewManager::Renderer()
 {
     s_ViewManager->renderer();
@@ -78,6 +83,12 @@ void ViewManager::removeAllView()
     s_registry.clear();
 
     s_current = nullptr;
+}
+
+void ViewManager::update()
+{
+    if (s_current != nullptr)
+        s_current->onUpdate();
 }
 
 void ViewManager::renderer()

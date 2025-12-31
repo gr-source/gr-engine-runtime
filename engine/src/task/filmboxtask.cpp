@@ -5,7 +5,8 @@
 #include "filmbox/fbxMaterial.hpp"
 #include "filmbox/filmbox.hpp"
 
-#include <gr-base/core/assetsManager.hpp>
+#include <gr-base/managers/assetsManager.hpp>
+
 #include <gr-base/core/console.hpp>
 
 #include <gr-base/core/file/file.hpp>

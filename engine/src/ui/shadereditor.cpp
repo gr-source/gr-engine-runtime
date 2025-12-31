@@ -5,7 +5,8 @@
 
 #include <fstream>
 
-#include <gr-base/core/assetsManager.hpp>
+#include <gr-base/managers/assetsManager.hpp>
+
 #include <gr-base/core/scene.hpp>
 
 #include <gr-base/core/file/file.hpp>

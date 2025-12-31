@@ -6,19 +6,19 @@ class ShadowMap {
 public:
     ShadowMap() = delete;
 
-    ShadowMap(grm::uint32 width, grm::uint32 height);
+    ShadowMap(u32 width, u32 height);
     ~ShadowMap();
 
     void bind();
 
     void unbind();
 
-    void bindTexture(grm::uint32 index);
+    void bindTexture(u32 index);
 
 private:
-    grm::uint32 shadowFBO;
+    u32 shadowFBO;
 
-    grm::uint32 shadowMap;
+    u32 shadowMap;
 };
 
 

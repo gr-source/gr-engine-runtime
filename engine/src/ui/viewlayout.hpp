@@ -11,6 +11,8 @@ public:
 
     virtual void onBlur() {}
 
+    virtual void onUpdate() {}
+
     virtual void onRender() {}
 
     virtual void drop(void *data) {}

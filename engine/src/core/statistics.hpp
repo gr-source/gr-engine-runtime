@@ -35,11 +35,11 @@ enum FrameTimeID
 
 class Statistics {
 public:
-    static grm::size m_drawRenderCount;
+    static usize m_drawRenderCount;
 
-    static grm::size m_drawCallCount;
+    static usize m_drawCallCount;
 
-    static grm::size m_totalRender;
+    static usize m_totalRender;
 
     static gFrameTime FrameTime[FrameTimeID_Count];
 };

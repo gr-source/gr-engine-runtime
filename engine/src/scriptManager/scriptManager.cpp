@@ -11,7 +11,6 @@
 
 #include <gr-base/core/geometry/batching.hpp>
 
-#include <gr-base/core/assetsManager.hpp>
 #include <gr-base/core/scene.hpp>
 
 #include <gr-base/ecs/gameObject.hpp>

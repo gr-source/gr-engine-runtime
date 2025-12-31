@@ -1,3 +1,4 @@
+#include "gr-base/core/thread/threadpool.hpp"
 #include <gr-math/gmath.hpp>
 #include <settings.h>
 #include <engine.h>
@@ -21,7 +22,7 @@ GLFWwindow *CreateWindown(const char* name, int width, int height, GLFWwindow * 
 
 void GLFWframebuffersizefunCallback(GLFWwindow* window, int width, int height)
 {
-    const grm::uint32 scale[2]{static_cast<const grm::uint32>(width), static_cast<const grm::uint32>(height)};
+    const u32 scale[2]{static_cast<const u32>(width), static_cast<const u32>(height)};
     Engine::HandleEvent(Engine::RESIZE, scale);
 }
 
@@ -179,6 +180,8 @@ int main(int argc, char *argv[])
         return 3;
     }
 
+    Threadpool::Initialize();
+
     Engine::HandleEvent(Engine::INITIALIZE, nullptr);
 
     GLFWframebuffersizefunCallback(&(*window), SCREEN_WIDTH, SCREEN_HEIGHT);
@@ -196,6 +199,8 @@ int main(int argc, char *argv[])
 
         time.wait();
     }
+
+    Threadpool::Shutdown();
 
     window = nullptr;
 

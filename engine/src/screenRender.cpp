@@ -2,7 +2,7 @@
 
 #include <gr-base/core/geometry/vertex2D.hpp>
 
-#include <gr-base/core/assetsManager.hpp>
+#include <gr-base/managers/assetsManager.hpp>
 
 #include "gr-base/core/geometry/shader.hpp"
 #include "settings.h"
@@ -23,7 +23,7 @@ grr::gVertexArray *ScreenRender::m_vertexArray = nullptr;
 
 grr::gShader *ScreenRender::m_shader = nullptr;
 
-grm::uint32 ScreenRender::m_vbo = 0;
+u32 ScreenRender::m_vbo = 0;
 
 void ScreenRender::Initialize() {
     if (!m_shader)

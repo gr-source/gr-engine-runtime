@@ -13,6 +13,8 @@ public:
 
     static void Shutdown();
 
+    static void Update();
+
     static void Renderer();
 
     static void RemoveAllView();
@@ -39,6 +41,8 @@ private:
     void remove(ViewLayout* view);
 
     void removeAllView();
+
+    void update();
 
     void renderer();
 

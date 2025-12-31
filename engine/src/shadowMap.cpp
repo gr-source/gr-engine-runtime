@@ -2,7 +2,7 @@
 
 #include <gr-render/gl.h>
 
-ShadowMap::ShadowMap(grm::uint32 width, grm::uint32 height) : shadowFBO(0), shadowMap(0) {
+ShadowMap::ShadowMap(u32 width, u32 height) : shadowFBO(0), shadowMap(0) {
     glGenFramebuffers(1, &shadowFBO);
 
     glGenTextures(1, &shadowMap);
@@ -42,7 +42,7 @@ void ShadowMap::unbind() {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void ShadowMap::bindTexture(grm::uint32 index) {
+void ShadowMap::bindTexture(u32 index) {
     glBindTexture(GL_TEXTURE_2D, shadowMap);
     glActiveTexture(GL_TEXTURE0 + index);
 }

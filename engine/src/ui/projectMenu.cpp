@@ -1,6 +1,7 @@
 #include "projectMenu.hpp"
 
 #include "engine.h"
+#include "gr-base/core/mainthreaddispatcher.hpp"
 #include "imgui.h"
 
 #include <cstring>
@@ -99,7 +100,7 @@ void ProjectMenu::render_project_list()
     for (auto &project : m_projects)
     {
         if (ImGui::Selectable(project.name.c_str()))
-            m_engine->init_project(project.path + "/metadata.ini");
+            MainThreadDispatcher::Add(&Engine::init_project, m_engine, project.path + "/metadata.ini");
     }
 }
 

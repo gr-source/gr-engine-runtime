@@ -6,7 +6,6 @@
 #include <gr-base/broadphase/bvhtree.hpp>
 
 #include "gr-base/core/console.hpp"
-#include "gr-base/core/scenemanager.hpp"
 #include "gr-base/ecs/gameobjectmanager.hpp"
 #include "imgui.h"
 
@@ -17,8 +16,6 @@
 #include <gr-base/core/file/file.hpp>
 
 #include <gr-base/core/mainthreaddispatcher.hpp>
-#include <gr-base/core/assetsManager.hpp>
-#include <gr-base/core/rendermanager.hpp>
 #include <gr-base/core/window.hpp>
 #include <gr-base/core/skybox.hpp>
 #include <gr-base/core/clock.hpp>
@@ -43,11 +40,16 @@
 // Managers
 #include "managers/viewmanager.hpp"
 
+// gr-base managers
+#include <gr-base/managers/rendermanager.hpp>
+#include <gr-base/managers/sceneManager.hpp>
+
 // Views
 #include "view/installer.hpp"
 #include "view/editor.hpp"
 
 #include <gr-render/gCommon.h>
+#include <thread>
 
 static FunctionTimer mFunctionTimer;
 
@@ -116,15 +118,16 @@ void Engine::init_menu()
 
 void Engine::init_project(const std::string& path)
 {
-    if (bHasProject && !path.empty())
+    ViewManager::RemoveAllView();
+    if (bHasProject)
     {
-        std::cout << "[!] J'a existe um projeto carregado" << std::endl;
-        return;
+        bHasProject = false;
+
+        return ViewManager::Add<ProjectMenu>();
     }
 
     bHasProject = m_project.load(path);
 
-    ViewManager::RemoveAllView();
     if (!bHasProject)
     {
         ViewManager::Add<ProjectMenu>();
@@ -161,14 +164,10 @@ void Engine::init()
 
     ViewManager::Initialize();
 
-    EntityManager::Initialize();
-
-    GameObjectManager::Initialize();
-
-    grr::gRender::SetRenderState(grr::GR_CULL_FACE, grr::GR_TRUE);
+    grr::gRender::SetEnable(GR_CULL_FACE, true);
     grr::gRender::SetRenderState(grr::GR_CULL, grr::GR_BACK);
 
-    grr::gRender::SetRenderState(grr::GR_BLEND, grr::GR_TRUE);
+    grr::gRender::SetEnable(GR_BLEND, true);
     grr::gRender::SetRenderState(grr::GR_SRC_ALPHA, grr::GR_ONE_MINUS_SRC_ALPHA);
 
     if (!check_installed())
@@ -189,10 +188,6 @@ void Engine::shutdown()
     ImGuiRender::Shutdown();
 
     ViewManager::Shutdown();
-
-    GameObjectManager::Shutdown();
-
-    EntityManager::Shutdown();
 }
 
 void Engine::save_engine_config()
@@ -230,9 +225,7 @@ void Engine::update()
         return EntityManager::Update();
     }
 
-    auto scene = SceneManager::GetCurrent();
-    if (scene != nullptr && scene->getCamera())
-        EditorController::Update(scene->getCamera());
+    ViewManager::Update();
 }
 
 void Engine::render()
@@ -244,7 +237,7 @@ void Engine::render()
 
 void Engine::render_gui()
 {
-    grr::gRender::SetRenderState(grr::GR_BACKGROUND_COLOR, (void*)&Color::black);
+    // grr::gRender::SetRenderState(grr::GR_BACKGROUND_COLOR, (void*)&Color::black);
     grr::gRender::SetRenderState(grr::GR_BACKGROUND, grr::GR_COLOR_BUFFER);
     
     ImGuiRender::Begin();
@@ -252,8 +245,6 @@ void Engine::render_gui()
     ViewManager::Renderer();
 
     FilmboxManager::Render();
-
-    AssetsManager::Render();
 
     ImGuiRender::End();
 }
@@ -296,20 +287,16 @@ void Engine::render_cam()
     if (Settings::bGameRunning)
     {
         for (auto &camera : Camera::GetCameras())
-        {
             PreConfigRenderScene(camera);
-        }
     } else
     {
         auto scene = SceneManager::GetCurrent();
         if (scene != nullptr && scene->getCamera())
-        {
             PreConfigRenderScene(scene->getCamera());
-        }
     }
 
-    DebugDraw::PosRender();
-
+    // DebugDraw::PosRender();
+    //
     RenderManager::PosRender();
 }
 
@@ -320,9 +307,11 @@ void Engine::PreConfigRenderScene(Camera *camera)
     camera->rendertarget.bind();
 
     grr::gRender::SetRenderState(grr::GR_BACKGROUND, grr::GR_DEPTH_BUFFER | grr::GR_COLOR_BUFFER);
-    grr::gRender::SetRenderState(grr::GR_BACKGROUND_COLOR, (void*)&Color::black);
+    
+    grr::gRender::SetBackgroundColor(camera->background);
+
     grr::gRender::SetRenderState(grr::GR_CULL, grr::GR_BACK);
-    grr::gRender::SetRenderState(grr::GR_DEPTH, grr::GR_TRUE);
+    grr::gRender::SetEnable(GR_DEPTH, true);
 
     RenderScene(camera);
 
@@ -335,9 +324,9 @@ void Engine::RenderScene(const Camera *camera)
     RenderManager::Render();
 
     grr::gRender::SetRenderState(grr::GR_DEPTH_FUNC, grr::GR_DEPTH_LEQUAL);
-    DebugDraw::Render(camera);
+    // DebugDraw::Render(camera);
 
-    grr::gRender::SetRenderState(grr::GR_DEPTH_FUNC, grr::GR_DEPTH_LEQUAL);
+    // grr::gRender::SetRenderState(grr::GR_DEPTH_FUNC, grr::GR_DEPTH_LEQUAL);
     // m_skybox.render(camera);
 }
 

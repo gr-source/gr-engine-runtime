@@ -11,6 +11,7 @@
 #include "gr-base/core/clock.hpp"
 #include "gr-base/core/geometry/shader.hpp"
 #include "gr-base/core/mainthreaddispatcher.hpp"
+
 #include "gr-base/core/task/runtime/gameobjectsavetask.hpp"
 #include "gr-base/core/task/runtime/scenesavetask.hpp"
 #include "gr-base/core/thread/asynctask.hpp"
@@ -26,11 +27,16 @@
 
 #include <gr-base/core/thread/threadpool.hpp>
 
-#include <gr-base/core/assetsManager.hpp>
-#include <gr-base/core/scenemanager.hpp>
+#include <gr-base/managers/assetsManager.hpp>
+#include <gr-base/managers/rendermanager.hpp>
+#include <gr-base/managers/sceneManager.hpp>
+
 #include <gr-base/core/console.hpp>
 #include <gr-base/core/display.hpp>
 #include <gr-base/core/scene.hpp>
+
+#include <gr-base/ecs/gameobjectmanager.hpp>
+#include <gr-base/ecs/entitymanager.hpp>
 
 #include "plugin/pluginManager.hpp"
 
@@ -73,6 +79,7 @@
 #include <gr-math/matrix4x4.hpp>
 #include <gr-render/gTexture.h>
 #include <filesystem>
+#include <iostream>
 
 #define ITEMS_PER_PAGE 20
 
@@ -171,12 +178,23 @@ Editor::Editor() : m_viewport(ImGui::GetMainViewport()), mImGuiIO(&ImGui::GetIO(
     
     m_viewport = ImGui::GetMainViewport();
 
+    // Initialize
+    {
+        GameObjectManager::Initialize();
+
+        RenderManager::Initialize();
+
+        EntityManager::Initialize();
+
+        AssetsManager::Initialize();
+
+        SceneManager::Initialize();
+    }
+
     m_settings = config_create();
     if (File::Exists(File::GetFile("/gsettings.ini")))
     {
         config_load(m_settings, File::GetFile("/gsettings.ini").c_str());
-            
-        // config_foreach(m_settings, static_cast<ConfigFunc>(&Editor::foreach_settings), this);
     } else
     {
         generateConfig(File::GetFile("/gsettings.ini"));
@@ -228,6 +246,18 @@ Editor::~Editor()
 
     ComponentRegistry::Clear();
 
+    {
+        RenderManager::Shutdown();
+
+        SceneManager::Shutdown();
+
+        GameObjectManager::Shutdown();
+
+        EntityManager::Shutdown();
+
+        AssetsManager::Shutdown();
+    }
+
     File::Delete(File::GetTempFile("gr-engine"));
 }
 
@@ -262,7 +292,7 @@ void Editor::LoadScript()
 
     Display::SetDisplayRect(Rect{0.0f, 0.0f, (float)Settings::ViewportSize.x, (float)Settings::ViewportSize.y});
 
-    Scene::CheckRequestReinstanceScript();
+    // Scene::CheckRequestReinstanceScript();
 
     m_mainCamera->setActive(false);
 
@@ -283,6 +313,13 @@ void Editor::UnloadScript() {
 const char* Editor::getName() const
 {
     return "Editor";
+}
+
+void Editor::onUpdate()
+{
+    auto scene = SceneManager::GetCurrent();
+    if (scene != nullptr && scene->getCamera())
+        EditorController::Update(scene->getCamera());
 }
 
 void Editor::onRender()
@@ -332,7 +369,13 @@ void Editor::create_dock()
             }
             if (ImGui::MenuItem("Close"))
             {
-                Engine::GetInstance().init_project("");
+                for (auto& scene : SceneManager::GetScenes())
+                {
+                    scene->Clear();
+                    scene->setCamera(nullptr);
+                }
+
+                MainThreadDispatcher::Add(&Engine::init_project, &Engine::GetInstance(), "");
             }
             ImGui::EndMenu();
         }
@@ -2091,14 +2134,12 @@ bool Editor::OnPropertyCamera(Camera *camera)
     bool bactive = true;
     auto isOpen = ImGui::CollapsingHeader("Camera", &bactive);
     if (!bactive)
-    {
         return true;
-    }
 
     if (!isOpen)
-    {
         return false;
-    }
+
+    auto avail = ImGui::GetContentRegionAvail();
 
     bool isChanged = false;
 
@@ -2106,20 +2147,36 @@ bool Editor::OnPropertyCamera(Camera *camera)
     auto rect = camera->getRect();
 
     ImGui::Text("x");
+    ImGui::SameLine();
+
     isChanged |= ImGui::DragFloat("##camera_rect_x", &rect.x);
 
     ImGui::Text("y");
+    ImGui::SameLine();
+
     isChanged |= ImGui::DragFloat("##camera_rect_y", &rect.y);
 
     ImGui::Text("w");
+    ImGui::SameLine();
+
     isChanged |= ImGui::DragFloat("##camera_rect_w", &rect.w);
 
     ImGui::Text("h");
+    ImGui::SameLine();
+
     isChanged |= ImGui::DragFloat("##camera_rect_h", &rect.h);
 
     if (isChanged)
-    {
         camera->setRect(rect);
+
+    ImGui::Text("Background");
+    if (ImGui::ColorButton("##camera_background", (*(ImVec4*)&camera->background), ImGuiColorEditFlags_NoLabel, ImVec2(avail.x, 0.0f)))
+        ImGui::OpenPopup("##camera_background_popup");
+
+    if (ImGui::BeginPopup("##camera_background_popup"))
+    {
+        ImGui::ColorPicker4("##camera_background_colorpicker", camera->background.data);
+        ImGui::EndPopup();
     }
 
     if (ImGui::CollapsingHeader("Render"))
@@ -2680,8 +2737,10 @@ void Editor::dropAnimation(Animator *animator)
     }
     
     std::string path((char*)payload->Data, payload->DataSize);
+
+    std::cerr << "LoadAnimation: " << path << std::endl;
     
-    AssetsManager::LoadAnimation(path, &Animator::play, animator, true);
+    // AssetsManager::LoadAnimation(path, &Animator::play, animator, true);
     
     ImGui::EndDragDropTarget();
 }
