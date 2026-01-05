@@ -6,9 +6,10 @@
 #include <gr-base/broadphase/bvhtree.hpp>
 
 #include "gr-base/core/console.hpp"
-#include "gr-base/ecs/gameobjectmanager.hpp"
+#include "gr-base/core/thread/taskmanager.hpp"
 #include "imgui.h"
 
+#include "task/filmboxtask.hpp"
 #include "ui/project.hpp"
 #include "ui/projectMenu.hpp"
 #include "ui/ImGuiRender.h"
@@ -21,7 +22,6 @@
 #include <gr-base/core/clock.hpp>
 #include <gr-base/core/input.hpp>
 
-#include <gr-base/ecs/entitymanager.hpp>
 #include <gr-base/ecs/gameObject.hpp>
 
 #include <gr-base/script/meshRender.hpp>
@@ -30,26 +30,18 @@
 #include <gr-base/core/debugdraw.hpp>
 
 #include "functionTimer.hpp"
-#include "settings.h"
 #include "Global.h"
 
 #include "ui/shadereditor.hpp"
 
-#include "task/filmboxmanager.hpp"
-
 // Managers
 #include "managers/viewmanager.hpp"
-
-// gr-base managers
-#include <gr-base/managers/rendermanager.hpp>
-#include <gr-base/managers/sceneManager.hpp>
 
 // Views
 #include "view/installer.hpp"
 #include "view/editor.hpp"
 
 #include <gr-render/gCommon.h>
-#include <thread>
 
 static FunctionTimer mFunctionTimer;
 
@@ -129,16 +121,9 @@ void Engine::init_project(const std::string& path)
     bHasProject = m_project.load(path);
 
     if (!bHasProject)
-    {
-        ViewManager::Add<ProjectMenu>();
-    } else
-    {
-        File::SetCurrentProject(m_project.path);
+        return ViewManager::Add<ProjectMenu>();
 
-        gfile::AssetStreamPath = m_project.path + "/assets";
-
-        ViewManager::Add<Editor>();
-    }
+    ViewManager::Add<Editor>();
 }
 
 Project& Engine::get_project()
@@ -220,31 +205,24 @@ void Engine::loop()
 
 void Engine::update()
 {
-    if (Settings::bGameRunning)
-    {
-        return EntityManager::Update();
-    }
-
     ViewManager::Update();
 }
 
 void Engine::render()
 {
-    render_cam();
+    ViewManager::Renderer3D();
 
     render_gui();
 }
 
 void Engine::render_gui()
 {
-    // grr::gRender::SetRenderState(grr::GR_BACKGROUND_COLOR, (void*)&Color::black);
+    grr::gRender::SetBackgroundColor(Color::blue);
     grr::gRender::SetRenderState(grr::GR_BACKGROUND, grr::GR_COLOR_BUFFER);
     
     ImGuiRender::Begin();
 
-    ViewManager::Renderer();
-
-    FilmboxManager::Render();
+    ViewManager::RendererUI();
 
     ImGuiRender::End();
 }
@@ -257,9 +235,7 @@ void Engine::drop_file(const std::string &path)
     }
 
     if (path.find(".fbx") != std::string::npos)
-    {
-        FilmboxManager::Load(path);
-    }
+        TaskManager::Add<FilmboxLoadTask>(path);
 }
 
 // ********** protected ********** //
@@ -271,63 +247,6 @@ void Engine::upload(GameObject *gameObject)
 
     view_layout->drop((void *)gameObject);
     */
-}
-
-#include <gr-base/core/culling/octreemanager.hpp>
-
-void Engine::render_cam()
-{
-// #if OCREE_DEBUG
-    // OctreeManager::Render();
-    bvh::Tree::Render();
-
-
-// #endif
-
-    if (Settings::bGameRunning)
-    {
-        for (auto &camera : Camera::GetCameras())
-            PreConfigRenderScene(camera);
-    } else
-    {
-        auto scene = SceneManager::GetCurrent();
-        if (scene != nullptr && scene->getCamera())
-            PreConfigRenderScene(scene->getCamera());
-    }
-
-    // DebugDraw::PosRender();
-    //
-    RenderManager::PosRender();
-}
-
-void Engine::PreConfigRenderScene(Camera *camera)
-{
-    RenderManager::PreRender(camera);
-
-    camera->rendertarget.bind();
-
-    grr::gRender::SetRenderState(grr::GR_BACKGROUND, grr::GR_DEPTH_BUFFER | grr::GR_COLOR_BUFFER);
-    
-    grr::gRender::SetBackgroundColor(camera->background);
-
-    grr::gRender::SetRenderState(grr::GR_CULL, grr::GR_BACK);
-    grr::gRender::SetEnable(GR_DEPTH, true);
-
-    RenderScene(camera);
-
-    camera->rendertarget.unbind();
-}
-
-void Engine::RenderScene(const Camera *camera)
-{
-    grr::gRender::SetRenderState(grr::GR_DEPTH_FUNC, grr::GR_DEPTH_LESS);
-    RenderManager::Render();
-
-    grr::gRender::SetRenderState(grr::GR_DEPTH_FUNC, grr::GR_DEPTH_LEQUAL);
-    // DebugDraw::Render(camera);
-
-    // grr::gRender::SetRenderState(grr::GR_DEPTH_FUNC, grr::GR_DEPTH_LEQUAL);
-    // m_skybox.render(camera);
 }
 
 

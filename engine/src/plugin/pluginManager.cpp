@@ -15,15 +15,14 @@ std::unordered_map<std::string, Plugin *> pluginPath;
 
 std::vector<Plugin *> PluginManager::pluginList;
 
-void PluginManager::Load(const std::string &path) {
+void PluginManager::Load(const std::string &path)
+{
     auto it = pluginMap.find(path);
-    if (it != pluginMap.end()) {
+    if (it != pluginMap.end())
         throw std::runtime_error("plugin has be loaded.");
-    }
 
-    if (!File::Exists(path)) {
+    if (!gfile::exists(path))
         throw std::runtime_error("plugin do not exists.");
-    }
 
     auto handle = dlopen(path.c_str(), RTLD_LAZY);
     if (!handle) {

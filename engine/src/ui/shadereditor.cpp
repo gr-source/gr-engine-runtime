@@ -19,7 +19,7 @@
 
 #include "imgui.h"
 
-ShaderEditor::ShaderEditor(Engine *engine) : e_engine(engine), m_currentscene(nullptr), m_last_view_size(0.0f, 0.0f)
+ShaderEditor::ShaderEditor() : e_engine(&Engine::GetInstance()), m_currentscene(nullptr), m_last_view_size(0.0f, 0.0f)
 {
 }
 
@@ -30,6 +30,7 @@ void ShaderEditor::onFocus()
 {
     // m_currentscene = Scene::GetCurrentScene();
 
+    /*
     auto objects = m_currentscene->get_object_selected();
     if (!objects.empty())
     {
@@ -73,6 +74,7 @@ void ShaderEditor::onFocus()
             }
         }
     }
+    */
 
     EditorController::bCanMove = false;
 }
@@ -84,7 +86,7 @@ void ShaderEditor::onBlur()
     EditorController::bCanMove = true;
 }
 
-void ShaderEditor::onRender()
+void ShaderEditor::onRenderUI()
 {
     if (m_currentscene == nullptr)
     {

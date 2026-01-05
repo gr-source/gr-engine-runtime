@@ -22,7 +22,7 @@ const char* Installer::getName() const
     return "Installer";
 }
 
-void Installer::onRender()
+void Installer::onRenderUI()
 {
     auto mainViewport = ImGui::GetMainViewport();
 
@@ -122,35 +122,35 @@ void Installer::doInBackground()
 bool Installer::download_data()
 {
     Console::LogInfo("[ Installer ] copiando assets...");
-    if (!File::Copy("./bin/assets", gfile::get_data_directory()))
+    if (!gfile::copy("./bin/assets", gfile::get_data_directory().c_str()))
     {
         Console::LogError("[ Installer ] fail to copy assets.");
         return false;
     }
 
     Console::LogInfo("[ Installer ] copiando arquivos de config...");
-    if (!File::Copy("./bin/config", gfile::get_data_directory()))
+    if (!gfile::copy("./bin/config", gfile::get_data_directory().c_str()))
     {
         Console::LogError("[ Installer ] fail to copy config.");
         return false;
     }
 
     Console::LogInfo("[ Installer ] copiando scripts...");
-    if (!File::Copy("./bin/script", gfile::get_data_directory()))
+    if (!gfile::copy("./bin/script", gfile::get_data_directory().c_str()))
     {
         Console::LogError("[ Installer ] fail to copy script.");
         return false;
     }
 
     Console::LogInfo("[ Installer ] copiando compiler...");
-    if (!File::Copy("./bin/component", gfile::get_data_directory()))
+    if (!gfile::copy("./bin/component", gfile::get_data_directory().c_str()))
     {
         Console::LogError("[ Installer ] fail to copy component.");
         return false;
     }
 
     Console::LogInfo("[ Installer ] copiando arquivos de exemplo...");
-    if (!File::Copy("./bin/example", gfile::get_data_directory()))
+    if (!gfile::copy("./bin/example", gfile::get_data_directory().c_str()))
     {
         Console::LogError("[ Installer ] fail to copy examples");
         return false;

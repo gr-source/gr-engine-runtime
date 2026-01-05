@@ -62,7 +62,7 @@ const char* ProjectMenu::getName() const
     return "ProjectMenu";
 }
 
-void ProjectMenu::onRender()
+void ProjectMenu::onRenderUI()
 {
     create_window_project_list();
 
@@ -215,10 +215,9 @@ void ProjectMenu::CreateProjectAssets(const std::string &path)
         }
     }
 
-    if (!File::Copy(File::GetAsset("/shader", true), path + "/assets"))
-    {
-        Console::LogError("[ CreateProject ] " + File::GetError());
-    }
+    std::string internal_asset_path = gfile::get_data_directory() + "/assets";
+
+    gfile::copy((internal_asset_path + "/shader").c_str(), (path + "/assets").c_str());
 }
 
 void ProjectMenu::read_project_directory()
@@ -257,29 +256,26 @@ void ProjectMenu::read_project_directory()
 
 bool ProjectMenu::ReadLastProject()
 {
+    /*
     auto path = File::GetFile("/config.ini", true);
-    if (!File::Exists(path)) {
+    if (!gfile::exists(path))
         return false;
-    }
 
     Config config(path);
-    if (!config.is_open()) {
+    if (!config.is_open())
         return false;
-    }
 
     config.load();
 
-    if (!config.hasKey("name") || !config.hasKey("path")) {
+    if (!config.hasKey("name") || !config.hasKey("path"))
         return false;
-    }
 
     path = config.getValue<std::string>("path");
 
-    if (!File::Exists(path)) {
+    if (!gfile::exists(path))
         return false;
-    }
-
-    return true;
+    */
+    return false;
 }
 
 // uninstall engine

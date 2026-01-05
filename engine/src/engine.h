@@ -1,7 +1,6 @@
 #pragma once
 
 #include "ui/project.hpp"
-#include "ui/viewlayout.hpp"
 
 #include <gr-base/script/default.hpp>
 
@@ -54,17 +53,9 @@ private:
 
     void render_gui();
 
-    // void create_main_tabbar();
-
     void drop_file(const std::string &path);
 
 protected:
     void upload(GameObject *gameObject);
-
-    void render_cam();
-
-    static void PreConfigRenderScene(Camera *camera);
-
-    static void RenderScene(const Camera *camera);
 };
 

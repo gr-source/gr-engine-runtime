@@ -27,6 +27,9 @@
 
 #include <gr-base/core/thread/threadpool.hpp>
 
+
+#include <gr-base/managers/gameobjectmanager.hpp>
+#include <gr-base/managers/entitymanager.hpp>
 #include <gr-base/managers/assetsManager.hpp>
 #include <gr-base/managers/rendermanager.hpp>
 #include <gr-base/managers/sceneManager.hpp>
@@ -35,8 +38,6 @@
 #include <gr-base/core/display.hpp>
 #include <gr-base/core/scene.hpp>
 
-#include <gr-base/ecs/gameobjectmanager.hpp>
-#include <gr-base/ecs/entitymanager.hpp>
 
 #include "plugin/pluginManager.hpp"
 
@@ -57,7 +58,6 @@
 #include <gr-base/script/camera.hpp>
 #include <gr-base/script/light.hpp>
 
-#include <gr-base/ecs/entitymanager.hpp>
 #include <gr-base/ecs/gameObject.hpp>
 
 #include "guizmo/ImGuizmo.h"
@@ -141,6 +141,8 @@ static void for_each(Transform *transform, std::function<void (Transform *)> fun
 
 Editor::Editor() : m_viewport(ImGui::GetMainViewport()), mImGuiIO(&ImGui::GetIO()), m_cameraObject(nullptr), m_mainCamera(nullptr), m_currentPage(0), m_materialToRename(nill), m_plugin(nullptr)
 {
+    m_cameraObjectSelected = nullptr;
+
     m_scene = nullptr;
 
     s_texturePlayGame = nullptr;
@@ -158,6 +160,10 @@ Editor::Editor() : m_viewport(ImGui::GetMainViewport()), mImGuiIO(&ImGui::GetIO(
     m_guizmoOperation = ImGuizmo::TRANSLATE;
 
     m_guizmoManipulate = ImGuizmo::WORLD;
+
+    Engine& engine = Engine::GetInstance();
+
+    m_project = &engine.get_project();
 
     m_guiscriptmap = {
         {"Transform", [this](Entity *entity)
@@ -191,26 +197,30 @@ Editor::Editor() : m_viewport(ImGui::GetMainViewport()), mImGuiIO(&ImGui::GetIO(
         SceneManager::Initialize();
     }
 
+    /*
     m_settings = config_create();
-    if (File::Exists(File::GetFile("/gsettings.ini")))
+    if (gfile::exists(File::GetFile("/gsettings.ini")))
     {
         config_load(m_settings, File::GetFile("/gsettings.ini").c_str());
     } else
     {
         generateConfig(File::GetFile("/gsettings.ini"));
     }
+    */
 
-    bBuildDock = File::Exists("imgui.ini");
+    bBuildDock = gfile::exists("imgui.ini");
 
     LoadReources();
 
     try
     {
+        /*
         auto section_script = config_find_section(m_settings, "Script");
         if (section_script != nullptr)
         {
             ScriptManager::Load(File::GetFile(config_get_string(section_script, "dir")) + config_get_string(section_script, "libname"));
         }
+        */
 
         Display::SetDisplayRect(Rect{0.0f, 0.0f, (float)Settings::ViewportSize.x, (float)Settings::ViewportSize.y});
     } catch (const std::exception &e)
@@ -218,7 +228,7 @@ Editor::Editor() : m_viewport(ImGui::GetMainViewport()), mImGuiIO(&ImGui::GetIO(
         Console::LogError("Fatal error in script: %s", e.what());
     }
 
-    root_tree_file.path = File::GetAsset("");
+    root_tree_file.path = m_project->path + "/assets";
     root_tree_file.name = "Assets";
     root_tree_file.parent = nullptr;
     root_tree_file.bdirectory = true;
@@ -226,23 +236,16 @@ Editor::Editor() : m_viewport(ImGui::GetMainViewport()), mImGuiIO(&ImGui::GetIO(
 
     updateFileTree(root_tree_file);
 
-    auto& engine = Engine::GetInstance();
-
-    if (engine.has_project())
-    {
-        auto& project = engine.get_project();
-
-        Window::SetWindowTitle(String::format("GR - %s", project.name.c_str()).c_str());
-    }
+    Window::SetWindowTitle(String::format("GR - %s", m_project->name.c_str()).c_str());
 }
 
 Editor::~Editor()
 {
-    generateConfig(File::GetFile("/gsettings.ini"));
+    // generateConfig(File::GetFile("/gsettings.ini"));
 
-    config_save(m_settings, File::GetFile("/gsettings.ini").c_str());
+    // config_save(m_settings, File::GetFile("/gsettings.ini").c_str());
 
-    config_release(m_settings);
+    // config_release(m_settings);
 
     ComponentRegistry::Clear();
 
@@ -257,12 +260,11 @@ Editor::~Editor()
 
         AssetsManager::Shutdown();
     }
-
-    File::Delete(File::GetTempFile("gr-engine"));
 }
 
 void Editor::LoadScript()
 {
+    /*
     if (m_scene == nullptr)
     {
         return;
@@ -281,7 +283,7 @@ void Editor::LoadScript()
     {
         if (section_script != nullptr)
         {
-            ScriptManager::Load(File::GetFile(config_get_string(section_script, "dir")) + config_get_string(section_script, "libname"));
+            // ScriptManager::Load(File::GetFile(config_get_string(section_script, "dir")) + config_get_string(section_script, "libname"));
         }
 
         ComponentRegistry::CheckScriptRemoved();
@@ -303,6 +305,7 @@ void Editor::LoadScript()
     TaskManager::Add<PhysicsTask>();
 
     Console::LogDefault("Game playing.");
+    */
 }
 
 void Editor::UnloadScript() {
@@ -317,12 +320,62 @@ const char* Editor::getName() const
 
 void Editor::onUpdate()
 {
+    if (Settings::bGameRunning)
+        return EntityManager::Update();
+
     auto scene = SceneManager::GetCurrent();
     if (scene != nullptr && scene->getCamera())
         EditorController::Update(scene->getCamera());
 }
 
-void Editor::onRender()
+void Editor::onRender3D()
+{
+    if (!Settings::bGameRunning)
+    {
+        auto scene = SceneManager::GetCurrent();
+        if (scene != nullptr && scene->getCamera())
+            on_pre_config_render_scene(scene->getCamera());
+
+        if (m_cameraObjectSelected != nullptr)
+            on_pre_config_render_scene(m_cameraObjectSelected);
+
+        return;
+    }
+
+    for (auto &camera : Camera::GetCameras())
+        on_pre_config_render_scene(camera);
+}
+
+void Editor::on_pre_config_render_scene(Camera* camera)
+{
+    RenderManager::PreRender(camera);
+
+    camera->rendertarget.bind();
+
+    grr::gRender::SetRenderState(grr::GR_CULL, grr::GR_BACK);
+    grr::gRender::SetEnable(GR_DEPTH, true);
+
+    grr::gRender::SetBackgroundColor(camera->background);
+    grr::gRender::SetRenderState(grr::GR_BACKGROUND, grr::GR_DEPTH_BUFFER | grr::GR_COLOR_BUFFER);
+
+    on_render_scene(camera);
+
+    camera->rendertarget.unbind();
+}
+
+void Editor::on_render_scene(Camera* camera)
+{
+    grr::gRender::SetRenderState(grr::GR_DEPTH_FUNC, grr::GR_DEPTH_LESS);
+    RenderManager::Render();
+
+    grr::gRender::SetRenderState(grr::GR_DEPTH_FUNC, grr::GR_DEPTH_LEQUAL);
+    // DebugDraw::Render(camera);
+
+    // grr::gRender::SetRenderState(grr::GR_DEPTH_FUNC, grr::GR_DEPTH_LEQUAL);
+    // m_skybox.render(camera);
+}
+
+void Editor::onRenderUI()
 {
     ImGui::DockSpaceOverViewport(ImGui::GetMainViewport());
 
@@ -427,15 +480,6 @@ void Editor::BuildDock(ImGuiID dockspace_id, ImGuiDockNodeFlags dockspace_flags)
 	ImGui::DockBuilderDockWindow("Viewport", dockspace_id);
 
 	ImGui::DockBuilderFinish(dockspace_id);
-}
-
-void Editor::PopupComponentMenu()
-{
-    auto isOpen = ImGui::BeginPopup("##game_object_component_menu");
-    if (!isOpen)
-        return;
-
-    ImGui::EndPopup();
 }
 
 void Editor::create_window_hierarchy()
@@ -698,9 +742,7 @@ void Editor::create_render_viewport()
     }
 
     if (ImGui::TabItemButton("+"))
-    {
         popupFlags |= EditorPopupFlags_CreateScene;
-    }
 
     ImGui::EndTabBar();
     
@@ -975,8 +1017,10 @@ void Editor::render_scene(Scene *scene)
 
     if (ImGui::IsWindowFocused() && mImGuiIO->KeyCtrl && ImGui::IsKeyReleased(ImGuiKey_S))
     {
+        std::string path = m_project->path + "/assets/Scene";
+
         for (auto &scene : SceneManager::GetScenes())
-            TaskManager::Add<SceneSaveTask>(File::GetAsset("/scene"), scene);
+            TaskManager::Add<SceneSaveTask>(path, scene);
     }
 }
 
@@ -1186,7 +1230,7 @@ void Editor::PopupFileAndDirmanager()
         {
         case 0:
             for (auto &tree_file : g_tree_file_selected)
-                File::Delete(tree_file->path);
+                gfile::remove(tree_file->path);
 
             g_tree_file_selected.clear();
             break;
@@ -1213,7 +1257,7 @@ void Editor::PopupFileManager()
     {
         for (auto &file : g_tree_file_selected)
         {
-            File::Delete(file->path);
+            gfile::remove(file->path);
         }
 
         unselect_all_file();
@@ -1240,7 +1284,7 @@ void Editor::PopupCreateDirectory()
     char name[256] = {0};
     if (ImGui::InputText("##popup_create_directoty_inputtext", name, 256, ImGuiInputTextFlags_EnterReturnsTrue))
     {
-        File::CreateDirectory(g_treefile_dir_selected->path + "/" + std::string(name));
+        gfile::create_directories(g_treefile_dir_selected->path + "/" + std::string(name));
 
         updateFileTree(*g_treefile_dir_selected);
 
@@ -1312,9 +1356,7 @@ void Editor::render_node_directory(gtreefile *tree_file)
 
     ImGuiTreeNodeFlags flags = 0;
     if (g_treefile_dir_selected == tree_file)
-    {
         flags |= ImGuiTreeNodeFlags_Selected;
-    }
 
     auto isOpen = ImGui::TreeNodeEx(tree_file->name.c_str(), flags);
 
@@ -1405,7 +1447,7 @@ void Editor::render_files_on_dir(gtreefile *dir)
         {
             for (auto &selected : g_tree_file_selected)
             {
-                File::Delete(selected->path);
+                gfile::remove(selected->path);
             }
             unselect_all_file();
 
@@ -1520,58 +1562,16 @@ void Editor::RenderLog(Log &info)
     ImGui::TextColored(color, "%s", info.message.c_str());
 }
 
-void Editor::ConfigureVSCode() {
-    Console::LogInfo("Initializing Visual Studio Code Setup...");
-    
-    auto internal_vscode = File::GetFile("/config/vscode/c_cpp_properties.json", true);
-    if (!File::Exists(internal_vscode)) {
-        return Console::LogError("Falied to load internal data config.");
-    }
-
-    auto header = File::GetFile("/.build/component/include");
-    if (!File::Exists(header)) {
-        return Console::LogError("Project do not configured.");
-    }
-
-    auto source = File::GetFileContent(internal_vscode);
-    if (source.empty()) {
-        return Console::LogError("Falied to read internal data.");
-    }
-
-    source = String::replace_all(source, "${header_internal_script}", header);
-
-    auto dest_vscode = File::GetAsset("/.vscode");
-    if (File::Exists(dest_vscode)) {
-        File::Delete(dest_vscode);
-    }
-
-    if (!File::CreateDirectory(dest_vscode)) {
-        return Console::LogError("Falied to create config in project.");
-    }
-
-    std::ofstream os(File::GetAsset("/.vscode/c_cpp_properties.json"));
-    os << source << std::endl;
-    os.close();
-
-    Console::LogWarning("Visual Studio Code has been configured.");
-}
-
 void Editor::create_window_property()
 {
-    if (ImGui::Begin("property") && m_scene != nullptr)
-    {
+    if (ImGui::Begin("property") && m_scene != nullptr && m_scene->has_object_selected())
         create_render_property();
-    }
+
     ImGui::End();
 }
 
 void Editor::create_render_property()
 {
-    if (!m_scene->has_object_selected())
-    {
-        return;
-    }
-
     auto go = m_scene->get_object_selected().back();
 
     auto entity = go->getEntity();
@@ -1589,13 +1589,7 @@ void Editor::create_render_property()
     auto avail = ImGui::GetContentRegionAvail();
 
     if (ImGui::Button("AddComponent", {avail.x, 0.0f}))
-    {
         popupFlags |= EditorPopupFlags_AddComponent;
-    }
-
-    // dropScriptInAddComponent();
-
-    // ImGui::PopID();
 }
 
 void Editor::create_call_popup()
@@ -1604,19 +1598,15 @@ void Editor::create_call_popup()
     {
     case EditorPopupFlags_LoadPlugin:
         ImGui::OpenPopup(GET_FLAG_NAME(EditorPopupFlags_LoadPlugin));
-        popupFlags &= ~EditorPopupFlags_LoadPlugin;
         break;
     case EditorPopupFlags_AddComponent:
         ImGui::OpenPopup(GET_FLAG_NAME(EditorPopupFlags_AddComponent));
-        popupFlags &= ~EditorPopupFlags_AddComponent;
         break;
     case EditorPopupFlags_PluginEditor:
         ImGui::OpenPopup("##popup_plugin_editor");
-        popupFlags &= ~EditorPopupFlags_PluginEditor;
         break;
     case EditorPopupFlags_CreateMaterial:
         ImGui::OpenPopup(GET_FLAG_NAME(EditorPopupFlags_CreateMaterial));
-        popupFlags &= ~EditorPopupFlags_CreateMaterial;
         break;
         /*
     case EditorPopupFlags_FileManager | EditorPopupFlags_DirManager:
@@ -1626,7 +1616,6 @@ void Editor::create_call_popup()
         */
     case EditorPopupFlags_FileManager:
         ImGui::OpenPopup(GET_FLAG_NAME(EditorPopupFlags_FileManager));
-        popupFlags &= ~EditorPopupFlags_FileManager;
         break;
     case EditorPopupFlags_CurrentDirManager:
         ImGui::OpenPopup(GET_FLAG_NAME(EditorPopupFlags_CurrentDirManager));
@@ -1639,18 +1628,15 @@ void Editor::create_call_popup()
         break;
     case EditorPopupFlags_CreateScript:
         ImGui::OpenPopup(GET_FLAG_NAME(EditorPopupFlags_CreateScript));
-        popupFlags &= ~EditorPopupFlags_CreateScript;
         break;
     case EditorPopupFlags_CreateShader:
         ImGui::OpenPopup(GET_FLAG_NAME(EditorPopupFlags_CreateShader));
-        popupFlags &= ~EditorPopupFlags_CreateShader;
         break;
     case EditorPopupFlags_RenameGameObject:
         ImGui::OpenPopup(GET_FLAG_NAME(EditorPopupFlags_RenameGameObject));
         break;
     case EditorPopupFlags_SceneAddOption:
         ImGui::OpenPopup(GET_FLAG_NAME(EditorPopupFlags_SceneAddOption));
-        popupFlags &= ~EditorPopupFlags_SceneAddOption;
         break;
     case EditorPopupFlags_CreateScene:
         ImGui::OpenPopup(GET_FLAG_NAME(EditorPopupFlags_CreateScene));
@@ -1681,7 +1667,7 @@ void Editor::create_popup()
 
     create_popup_dir_manager();
 
-    PopupComponentMenu();
+    create_popup_new_material();
 
     SkyboxEditor();
 
@@ -1692,8 +1678,6 @@ void Editor::create_popup()
     PluginEditor();
 
     RenameMaterial();
-
-    CreateMaterial();
 
     PopupFileAndDirmanager();
 
@@ -1878,6 +1862,9 @@ void Editor::create_popup_info_dir()
     if (ImGui::Selectable("Create script"))
         popupFlags |= EditorPopupFlags_CreateScript;
 
+    if (ImGui::Selectable("Create material"))
+        popupFlags |= EditorPopupFlags_CreateMaterial;
+
     ImGui::EndPopup();
 }
 
@@ -1894,7 +1881,7 @@ void Editor::create_popup_dir_manager()
 
     if (ImGui::Selectable("Remove"))
     {
-        File::Delete(g_treefile_dir_selected->path);
+        gfile::remove(g_treefile_dir_selected->path);
 
         g_treefile_dir_selected = g_treefile_dir_selected->parent;
 
@@ -1904,7 +1891,33 @@ void Editor::create_popup_dir_manager()
     ImGui::EndPopup();
 }
 
-#include <gr-base/ecs/gameobjectmanager.hpp>
+void Editor::create_popup_new_material()
+{
+    auto isOpen = ImGui::BeginPopup(GET_FLAG_NAME(EditorPopupFlags_CreateMaterial));
+    if (!isOpen)
+        return;
+
+    ImGui::SeparatorText("Create Material");
+
+    ImGui::Text("Name");
+    if (!ImGui::IsAnyItemActive() && !ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+        ImGui::SetKeyboardFocusHere(0);
+
+    char name[256] = {0};
+
+    if (ImGui::InputText("##popup_create_material_inputtext", name, GET_N_ARRAY(name), ImGuiInputTextFlags_EnterReturnsTrue))
+    {
+        std::string path = m_project->path + "/assets/material/" + name;
+        /*
+        auto baseRender = s_objectSelected->hasComponent<MeshRender>() ? static_cast<BaseRender *>(s_objectSelected->getComponent<MeshRender>()) : static_cast<BaseRender *>(s_objectSelected->getComponent<SkinnedMeshRender>());
+        if (baseRender != nullptr)
+            baseRender->createMaterial(name);
+        */
+        ImGui::CloseCurrentPopup();
+    }
+    ImGui::EndPopup();
+}
+
 #include <gr-base/core/status.hpp>
 
 void Editor::RenderStatisticsMenu() {
@@ -2179,7 +2192,9 @@ bool Editor::OnPropertyCamera(Camera *camera)
         ImGui::EndPopup();
     }
 
-    if (ImGui::CollapsingHeader("Render"))
+    m_cameraObjectSelected = ImGui::CollapsingHeader("Render") ? camera : nullptr;
+
+    if (m_cameraObjectSelected != nullptr)
     {
         if (camera->get_aspect_ratio() != (64.0f / 64.0f))
             camera->setAspectRatio(64.0f / 64.0f);
@@ -2226,39 +2241,25 @@ bool Editor::OnPropertyMeshRender(MeshRender *meshRender)
 
     auto isOpen = ImGui::CollapsingHeader("MeshRender", &bVisible);
     if (!bVisible)
-    {
         return true;
-    }
     
-    if (ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
-        ImGui::OpenPopup("##game_object_component_menu");
-    }
-
     if (!isOpen)
-    {
         return false;
-    }
-   
+ 
     auto avail = ImGui::GetContentRegionAvail();
     
     if (ImGui::Button("Create", {avail.x, 0.0f}))
         popupFlags |= EditorPopupFlags_CreateMaterial;
 
     ImGui::Indent();
-    for (auto &materialID : meshRender->getMaterial())
+    for (auto materialID : meshRender->getMaterialIDs())
     {
         if (render_material(materialID))
         {
-            std::cout << "Remove Material: " << materialID << std::endl;
-            // meshRender->delMaterial(material);
+            meshRender->removeMaterial(materialID);
         }
     }
     ImGui::Unindent();
-
-    if (m_materialToRename)
-    {
-        ImGui::OpenPopup("##popup_rename_material");
-    }
 
     return false;
 }
@@ -2286,12 +2287,11 @@ bool Editor::OnPropertySkinnedMeshRender(SkinnedMeshRender *skinnedMeshRender) {
         popupFlags |= EditorPopupFlags_CreateMaterial;
 
     ImGui::Indent();
-    for (auto &materialID : skinnedMeshRender->getMaterial())
+    for (auto materialID : skinnedMeshRender->getMaterialIDs())
     {
         if (render_material(materialID))
         {
-            std::cout << "Remove material: " << materialID << std::endl;
-            // skinnedMeshRender->delMaterial(material);
+            skinnedMeshRender->removeMaterial(materialID);
         }
     }
     ImGui::Unindent();
@@ -2360,15 +2360,13 @@ bool Editor::OnPropertyLODGroup(LODGroup *LodGroup)
 
 bool Editor::render_material(MaterialID id)
 {
-    auto bVisible = true;
+    bool bVisible = true;
 
     auto name = AssetsManager::GetMaterialName(id);
 
     auto isOpen = ImGui::CollapsingHeader(name.c_str(), &bVisible);
     if (!bVisible)
-    {
         return true;
-    }
     
     if (ImGui::IsItemClicked(ImGuiMouseButton_Right))
         m_materialToRename = id;
@@ -2745,26 +2743,32 @@ void Editor::dropAnimation(Animator *animator)
     ImGui::EndDragDropTarget();
 }
 
-void Editor::LoadReources() {
-    AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-file-30.png", true),                    &Editor::SetupTexture, this, IconType::ICON_FILE);
-    AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-folder-50.png", true),                  &Editor::SetupTexture, this, IconType::ICON_FOLDER);
-    AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-go-back-50.png", true),                 &Editor::SetupTexture, this, IconType::ICON_BACK_FILE);
-    AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-3d-object-50.png", true),               &Editor::SetupTexture, this, IconType::ICON_GAMEOBJECT);
-    AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-lápis-30.png", true),                   &Editor::SetupTexture, this, IconType::ICON_PENCIL);
-    AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-lâmpada-globular-64.png", true),        &Editor::SetupTexture, this, IconType::ICON_LIGHT);
-    AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-textura-de-renderização-32.png", true), &Editor::SetupTexture, this, IconType::ICON_TEXTURE);
-    AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-png-24.png", true),                     &Editor::SetupTexture, this, IconType::ICON_PNG);
-    AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-reproduzir-30.png", true),              &Editor::SetupTexture, this, IconType::ICON_PLAY_GAME);
-    AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-parar-50.png", true),                   &Editor::SetupTexture, this, IconType::ICON_STOP_GAME);
-    AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-resíduos-50.png", true),                &Editor::SetupTexture, this, IconType::ICON_BIN);
-    AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-importar-50.png", true),                &Editor::SetupTexture, this, IconType::ICON_IMPORT);
-    AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-ordenar-para-a-direita-50.png", true),  &Editor::SetupTexture, this, IconType::ICON_ASCENDENTE);
-    AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-ordem-descendente-50.png", true),       &Editor::SetupTexture, this, IconType::ICON_DESCENDENTE);
-    AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-editar-24.png", true),                  &Editor::SetupTexture, this, IconType::ICON_EDIT);
-    AssetsManager::LoadTexture(File::GetAsset("/icon/motion-graphics.png", true),                   &Editor::SetupTexture, this, IconType::ICON_ANIMATION);
-    AssetsManager::LoadTexture(File::GetAsset("/icon/shade.png", true),                             &Editor::SetupTexture, this, IconType::ICON_SHADER);
-    AssetsManager::LoadTexture(File::GetAsset("/icon/studio-set.png", true),                        &Editor::SetupTexture, this, IconType::ICON_SCENE);
-    AssetsManager::LoadTexture(File::GetAsset("/icon/icons8-script-48.png", true),                  &Editor::SetupTexture, this, IconType::ICON_SCRIPT);
+void Editor::LoadReources()
+{
+    std::string internal_assets_path = gfile::get_data_directory() + "/assets";
+
+    #define LOAD_ICON(path, icon_type) \
+        AssetsManager::LoadTexture(internal_assets_path + path, &Editor::SetupTexture, this, icon_type)
+
+    LOAD_ICON("/icon/icons8-file-30.png",                    IconType::ICON_FILE);
+    LOAD_ICON("/icon/icons8-folder-50.png",                  IconType::ICON_FOLDER);
+    LOAD_ICON("/icon/icons8-go-back-50.png",                 IconType::ICON_BACK_FILE);
+    LOAD_ICON("/icon/icons8-3d-object-50.png",               IconType::ICON_GAMEOBJECT);
+    LOAD_ICON("/icon/icons8-lápis-30.png",                   IconType::ICON_PENCIL);
+    LOAD_ICON("/icon/icons8-lâmpada-globular-64.png",        IconType::ICON_LIGHT);
+    LOAD_ICON("/icon/icons8-textura-de-renderização-32.png", IconType::ICON_TEXTURE);
+    LOAD_ICON("/icon/icons8-png-24.png",                     IconType::ICON_PNG);
+    LOAD_ICON("/icon/icons8-reproduzir-30.png",              IconType::ICON_PLAY_GAME);
+    LOAD_ICON("/icon/icons8-parar-50.png",                   IconType::ICON_STOP_GAME);
+    LOAD_ICON("/icon/icons8-resíduos-50.png",                IconType::ICON_BIN);
+    LOAD_ICON("/icon/icons8-importar-50.png",                IconType::ICON_IMPORT);
+    LOAD_ICON("/icon/icons8-ordenar-para-a-direita-50.png",  IconType::ICON_ASCENDENTE);
+    LOAD_ICON("/icon/icons8-ordem-descendente-50.png",       IconType::ICON_DESCENDENTE);
+    LOAD_ICON("/icon/icons8-editar-24.png",                  IconType::ICON_EDIT);
+    LOAD_ICON("/icon/motion-graphics.png",                   IconType::ICON_ANIMATION);
+    LOAD_ICON("/icon/shade.png",                             IconType::ICON_SHADER);
+    LOAD_ICON("/icon/studio-set.png",                        IconType::ICON_SCENE);
+    #undef LOAD_ICON
 }
 
 void Editor::SetupTexture(IconType type, grr::gTexture *texture) {
@@ -2812,8 +2816,9 @@ void Editor::PostLoadGameObject(GameObject *gameObject)
             });
     */
 }
-
-std::string GenerateScriptHeader(const std::string& name) {
+/*
+std::string GenerateScriptHeader(const std::string& name)
+{
     auto source = File::GetFileContent(File::GetFile("/example/script.hpp", true));
     if (source.empty()) {
         Console::LogError("[ SCRIPT ] falied to generate source file.");
@@ -2832,8 +2837,10 @@ std::string GenerateScriptSource(const std::string& name) {
     source = String::replace_all(source, "#name", name);
     return source;
 }
-
-void Editor::CreateScriptTemplate(const std::string &path, const std::string &name) {
+*/
+void Editor::CreateScriptTemplate(const std::string &path, const std::string &name)
+{
+    /*
     auto script_hpp = GenerateScriptHeader(name);
     if (script_hpp.empty()) {
         return;
@@ -2860,6 +2867,7 @@ void Editor::CreateScriptTemplate(const std::string &path, const std::string &na
     }
 
     Command::exec("code '" + path  + "/" + name + ".hpp" + "'");
+    */
 }
 
 void Editor::CreateShaderTemplate(const std::string &path, const std::string &name)
@@ -2902,50 +2910,25 @@ void Editor::RenameMaterial() {
     */
 }
 
-void Editor::CreateMaterial()
+void Editor::BuildProject()
 {
     /*
-    auto isOpen = ImGui::BeginPopupModal(GET_FLAG_NAME(EditorPopupFlags_CreateMaterial));
-    if (!isOpen || s_objectSelected == nullptr)
-    {
-        return;
-    }
-
-    ImGui::Text("Name");
-    if (!ImGui::IsAnyItemActive() && !ImGui::IsMouseClicked(ImGuiMouseButton_Left))
-        ImGui::SetKeyboardFocusHere(0);
-
-    char name[256] = {0};
-
-    if (ImGui::InputText("##popup_create_material_inputtext", name, GET_N_ARRAY(name), ImGuiInputTextFlags_EnterReturnsTrue))
-    {
-        auto baseRender = s_objectSelected->hasComponent<MeshRender>() ? static_cast<BaseRender *>(s_objectSelected->getComponent<MeshRender>()) : static_cast<BaseRender *>(s_objectSelected->getComponent<SkinnedMeshRender>());
-        if (baseRender != nullptr)
-            baseRender->createMaterial(name);
-
-        ImGui::CloseCurrentPopup();
-    }
-
-    ImGui::EndPopup();
-    */
-}
-
-void Editor::BuildProject() {
     Console::LogInfo("[ Build ] Initialize");
 
     auto path = File::GetFile("/.build");
-    if (!File::Exists(path)) {
+    if (!gfile::exists(path))
         return Console::LogError("[ Build ] Falied to build project, internal data not found.");
-    }
 
     std::function<void()> func = std::bind(&Editor::PostBuildScriptFromProject, this);
 
     if (func)
         Threadpool::AddTask(&Editor::CompileScript, this, path, func);
+    */
 }
 
 void Editor::PostBuildScriptFromProject()
 {
+    /*
     Threadpool::AddTask([] {
         std::vector<std::string> cmd = {
             "/home/grsource/Documentos/gr-project/gr-engine-linux-project/bin/gr-engine-linux-project " +
@@ -2956,51 +2939,55 @@ void Editor::PostBuildScriptFromProject()
             Console::LogWarning(line);
         });
     });
+    */
 }
 
-void Editor::ReconfigScript() {
+void Editor::ReconfigScript()
+{
+    /*
     Console::LogInfo("[ BUILD ] Initialized reconfigation...");
 
     auto component = File::GetFile("/component", true);
-    if (!File::Exists(component)) {
+    if (!gfile::exists(component))
         return Console::LogError("[ BULD ] Falied to load internal data component.");
-    }
 
     auto path = File::GetFile("/.build");
-    if (File::Exists(path)) {
-        File::Delete(path);
-    }
+    if (gfile::exists(path))
+        gfile::remove(path);
 
-    File::CreateDirectory(path);
+    gfile::create_directory(path);
 
-    if (!File::Copy(component, path)) {
+    if (!gfile::copy(component.c_str(), path.c_str()))
         return Console::LogError("[ BULD ]" + File::GetError());
-    }
 
     Console::LogInfo("[ BUILD ] building scipt...");
 
     PlayGame();
+    */
 }
 
 void Editor::onBuildScript()
 {
+    /*
     Console::LogInfo("[ Build ] Starting pre-build scripting...");
 
     auto path = File::GetFile("/.build");
-    if (!File::Exists(path))
+    if (!gfile::exists(path))
         return Console::LogError("[ Build ] Falied to build script this directory don't has cache!");
 
     CompileScript(path, std::bind(&Editor::LoadScript, this));
+    */
 }
 
 void Editor::CompileScript(std::string path, std::function<void()> func)
 {
+    /*
     auto build = File::GetFile("/script/build.sh", true);
-    if (!File::Exists(build))
+    if (!gfile::exists(build))
         return Console::LogError("Build script do not found.");
 
     auto project_path = File::GetFile("");
-    if (!File::Exists(project_path))
+    if (!gfile::exists(project_path))
         return Console::LogError("Project do not found.");
 
     std::vector<std::string> command {
@@ -3018,6 +3005,7 @@ void Editor::CompileScript(std::string path, std::function<void()> func)
 
     if (func)
         MainThreadDispatcher::Add(func);
+    */
 }
 
 /*
@@ -3146,7 +3134,9 @@ void Editor::PluginManager()
     ImGui::EndPopup();
 }
 
-void Editor::PopupPluginLoad() {
+void Editor::PopupPluginLoad()
+{
+    /*
     ImVec2 winSize(200, 300);
 
     auto &resolution = Screen::GetResolution();
@@ -3194,6 +3184,7 @@ void Editor::PopupPluginLoad() {
     }
 
     ImGui::EndPopup();
+    */
 }
 
 void Editor::PluginEditor() {
@@ -3296,9 +3287,7 @@ void Editor::generateConfig(const std::string &file)
 void Editor::updateFileTree(gtreefile &tree_file)
 {
     if (!tree_file.bdirectory)
-    {
         return;
-    }
 
     auto &children = tree_file.children;
 

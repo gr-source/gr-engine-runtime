@@ -9,7 +9,7 @@ public:
 
     const char* getName() const override;
 
-    void onRender() override;
+    void onRenderUI() override;
 
 private:
     std::atomic<bool> bFinnish;

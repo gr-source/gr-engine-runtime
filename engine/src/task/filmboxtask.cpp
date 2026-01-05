@@ -1,103 +1,83 @@
 #include "filmboxtask.hpp"
 
-#include "filmboxmanager.hpp"
-
-#include "filmbox/fbxMaterial.hpp"
 #include "filmbox/filmbox.hpp"
-
-#include <gr-base/managers/assetsManager.hpp>
-
-#include <gr-base/core/console.hpp>
+#include "managers/viewmanager.hpp"
+#include "view/popup/filmboximport.hpp"
 
 #include <gr-base/core/file/file.hpp>
 
-#include <gr-base/core/geometry/material.hpp>
-#include <gr-base/core/geometry/mesh.hpp>
-
 #include <gr-base/ecs/gameObject.hpp>
+
+#include <gr-base/core/console.hpp>
 
 #include <gr-base/script/skinnedMeshRender.hpp>
 #include <gr-base/script/meshRender.hpp>
 #include <gr-base/script/meshFilter.hpp>
 #include <gr-base/script/transform.hpp>
 #include <gr-base/script/animator.hpp>
-#include <string>
 
-FilmboxTask::FilmboxTask(const std::string &path, FilmboxManager *filmboxManager) : m_path(path), m_filmboxManager(filmboxManager), m_objectroot(nullptr)
+#include <gr-base/managers/assetsManager.hpp>
+
+FilmboxLoadTask::FilmboxLoadTask(const std::string& file) : m_file(file)
 {}
 
-int FilmboxTask::doInBackground()
+GameObject* FilmboxLoadTask::doInBackground()
 {
-    Console::LogInfo("[ FilmboxTask ] Loading: %s", m_path.c_str());
+    Console::LogInfo("[ FilmboxTask ] Loading: %s", m_file.c_str());
 
     Filmbox filmbox;
     try
     {
-        filmbox.load(m_path);
+        filmbox.load(m_file);
     }
     catch (const std::exception &e)
     {
         Console::LogError("[ FilmboxTask ] %s.", e.what());
-        return 1;
+        return nullptr;
     }
 
     auto scene = filmbox.get_scene();
 
-    load_object(scene.get());
-
-    return 0;
+    return load_object(scene.get());
 }
 
-#include <filesystem>
-void FilmboxTask::onPostExecute(int result)
+void FilmboxLoadTask::onPostExecute(GameObject* result)
 {
-    if (result != 0)
-    {
-        return Console::LogError("[ FilmboxTask ] Fail to load fbx!");
-    }
-    Console::LogInfo("Loaded: %s", m_path.c_str());
+    if (result == nullptr)
+        return;
 
-    std::filesystem::path path = m_path;
-
-    m_filmboxManager->create_save(path.filename().c_str(), m_objectroot);
-
-    AssetsManager::RemoveTask(m_path);
+    ViewManager::AddPopup<FilmboxImport>(result);
 }
 
-void FilmboxTask::load_object(FbxScene *fbxscene)
+GameObject* FilmboxLoadTask::load_object(FbxScene *fbxscene)
 {
     auto &root = fbxscene->getRootNode();
 
-    std::filesystem::path path = m_path;
-
-    m_objectroot = GameObject::Create(path.filename().string());
+    GameObject* first = GameObject::Create(gfile::getname(m_file.c_str()));
     
     for (auto &node : root.getChildren())
     {
-        auto go = create_from(fbxscene, node, m_objectroot->getTransform());
+        auto go = create_from(fbxscene, node, first->getTransform());
         if (go == nullptr)
             break;
     }
+    return first;
 }
 
-GameObject *FilmboxTask::create_from(FbxScene *scene, const FbxNode &node, Transform *parent)
+GameObject *FilmboxLoadTask::create_from(FbxScene *scene, const FbxNode &node, Transform *parent)
 {
     auto go = GameObject::Create(node.getName());
     
     auto transform = go->getTransform();
     if (parent != nullptr)
-    {
         transform->setParent(parent);
-    }
 
     transform->setLocalPosition(node.getPosition());
     transform->setLocalRotation(node.getRotation());
     transform->setLocalScale(node.getScale());
 
     if (node.hasMeshe())
-    {
         generateMesh(scene, &node, go);
-    }
 
     for (auto &children : node.getChildren())
     {
@@ -110,7 +90,7 @@ GameObject *FilmboxTask::create_from(FbxScene *scene, const FbxNode &node, Trans
     return go;
 }
 
-void FilmboxTask::generateMesh(FbxScene *scene, const FbxNode *node, GameObject *go)
+void FilmboxLoadTask::generateMesh(FbxScene *scene, const FbxNode *node, GameObject *go)
 {
     std::unordered_map<std::string, FbxBone> m_bones;
     std::vector<FbxBone> bonesList;
@@ -120,7 +100,7 @@ void FilmboxTask::generateMesh(FbxScene *scene, const FbxNode *node, GameObject 
 
     ShaderParams shaderParams;
     shaderParams.name = "simple_model";
-    shaderParams.base = File::GetAsset("/shader/model/simple_model.glsl");
+    shaderParams.base = gfile::get_data_directory() + "/assets/shader/model/simple_model.glsl";
     shaderParams.flags = ShaderOptimize_dynamic;
     shaderParams.type = ShaderType::SHADER3D;
 
@@ -227,7 +207,7 @@ void FilmboxTask::generateMesh(FbxScene *scene, const FbxNode *node, GameObject 
         if (!texturepath[TextureType_Albedo].empty())
         {
             auto path = texturepath[TextureType_Albedo];
-            path = path.find('/') != std::string::npos ? path : gfile::get_parent(m_path) + '/' + path;
+            path = path.find('/') != std::string::npos ? path : gfile::get_parent(m_file) + '/' + path;
 
             AssetsManager::LoadTexture(path, &Material::setTexture, &material, 0);
         }
@@ -250,7 +230,6 @@ void FilmboxTask::generateMesh(FbxScene *scene, const FbxNode *node, GameObject 
         }
     }
 }
-
 
 
 

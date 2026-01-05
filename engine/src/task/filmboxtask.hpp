@@ -1,5 +1,33 @@
 #pragma once
 
+#include "filmbox/default.hpp"
+
+#include <gr-base/core/thread/asynctask.hpp>
+
+#include <gr-base/script/default.hpp>
+
+#include <gr-base/ecs/default.hpp>
+
+class FilmboxLoadTask : public IAsyncTask<GameObject*>
+{
+public:
+    FilmboxLoadTask(const std::string& file);
+
+private:
+    std::string m_file;
+
+    GameObject* doInBackground() override;
+
+    void onPostExecute(GameObject* result) override;
+
+    GameObject* load_object(FbxScene *fbxscene);
+
+    GameObject* create_from(FbxScene *scene, const FbxNode &node, Transform *parent);
+
+    void generateMesh(FbxScene *scene, const FbxNode *node, GameObject *go);
+};
+
+/*
 #include "default.hpp"
 
 #include "gr-base/core/thread/asynctask.hpp"
@@ -36,6 +64,7 @@ private:
 
     void generateMesh(FbxScene *scene, const FbxNode *node, GameObject *go);
 };
+*/
 
 
 

@@ -2,6 +2,8 @@ project(engine VERSION 0.1.0 LANGUAGES C CXX)
 
 set(GR_BASE_PATH "/home/NoirVoid/AppProjects/gr-base")
 
+set(GR_LABS_PATH "/home/NoirVoid/AppProjects/gr-labs")
+
 set(guizmo_src
     src/guizmo/ImGuizmo.cpp
 )
@@ -62,7 +64,6 @@ set(filmbox_src
 )
 
 set(task_src
-    src/task/filmboxmanager.cpp
     src/task/filmboxtask.cpp
 )
 
@@ -71,6 +72,8 @@ set(managers_src
 )
 
 set(view_src
+    src/view/popup/filmboximport.cpp
+
     src/view/installer.cpp
     src/view/editor.cpp
 )
@@ -87,6 +90,10 @@ set(engine_src
     ${scriptManager_cpp}
     ${managers_src}
     ${view_src}
+
+    ${GR_LABS_PATH}/array.c
+    ${GR_LABS_PATH}/ntree.c
+    ${GR_LABS_PATH}/file.c
     
     src/engine.cpp
     src/Global.cpp
@@ -133,6 +140,7 @@ add_library(${PROJECT_NAME} STATIC ${engine_src} ${plugin} ${engine_hdr})
 target_include_directories(${PROJECT_NAME} PUBLIC
     ${GR_BASE_PATH}/include
     $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/${PROJECT_NAME}/src>
+    ${GR_LABS_PATH}
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE ${GR_BASE_PATH}/lib/libgr-base.so)

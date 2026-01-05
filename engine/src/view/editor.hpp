@@ -24,6 +24,8 @@
 #include <string>
 #include <vector>
 
+#include "ui/default.hpp"
+
 #include "ui/viewlayout.hpp"
 
 #ifdef __cplusplus
@@ -41,25 +43,25 @@ using EditorPopupFlags_ = std::uint32_t;
 
 enum EditorPopupFlags : EditorPopupFlags_
 {
-    EditorPopupFlags_EngineStatus           = 1 << 1,
-    EditorPopupFlags_Settings               = 1 << 2,
-    EditorPopupFlags_SkyboxEditor           = 1 << 3,
-    EditorPopupFlags_Plugin                 = 1 << 4,
-    EditorPopupFlags_LoadPlugin             = 1 << 5,
-    EditorPopupFlags_PluginEditor           = 1 << 6,
-    EditorPopupFlags_AddComponent           = 1 << 7,
-    EditorPopupFlags_CreateMaterial         = 1 << 8,
-    EditorPopupFlags_CreateMaterialInDir    = 1 << 9,
-    EditorPopupFlags_FileManager            = 1 << 10,
-    EditorPopupFlags_CurrentDirManager      = 1 << 11,
-    EditorPopupFlags_RenameFileOrDir        = 1 << 12,
-    EditorPopupFlags_CreateNewDir           = 1 << 13,
-    EditorPopupFlags_CreateScript           = 1 << 14,
-    EditorPopupFlags_CreateShader           = 1 << 15,
-    EditorPopupFlags_RenameGameObject       = 1 << 16,
-    EditorPopupFlags_SceneAddOption         = 1 << 17,
-    EditorPopupFlags_CreateScene            = 1 << 18,
-    EditorPopupFlags_DirManager             = 1 << 19
+    EditorPopupFlags_EngineStatus           = 1,
+    EditorPopupFlags_Settings               = 2,
+    EditorPopupFlags_SkyboxEditor           = 3,
+    EditorPopupFlags_Plugin                 = 4,
+    EditorPopupFlags_LoadPlugin             = 5,
+    EditorPopupFlags_PluginEditor           = 6,
+    EditorPopupFlags_AddComponent           = 7,
+    EditorPopupFlags_CreateMaterial         = 8,
+    EditorPopupFlags_CreateMaterialInDir    = 9,
+    EditorPopupFlags_FileManager            = 10,
+    EditorPopupFlags_CurrentDirManager      = 11,
+    EditorPopupFlags_RenameFileOrDir        = 12,
+    EditorPopupFlags_CreateNewDir           = 13,
+    EditorPopupFlags_CreateScript           = 14,
+    EditorPopupFlags_CreateShader           = 15,
+    EditorPopupFlags_RenameGameObject       = 16,
+    EditorPopupFlags_SceneAddOption         = 17,
+    EditorPopupFlags_CreateScene            = 18,
+    EditorPopupFlags_DirManager             = 19
 };
 
 #define GET_FLAG_NAME(c) #c
@@ -114,7 +116,13 @@ public:
 
     void onUpdate() override;
 
-    void onRender() override;
+    void onRender3D() override;
+
+    void on_pre_config_render_scene(Camera* camera);
+
+    void on_render_scene(Camera* camera);
+
+    void onRenderUI() override;
 
     void onFocus() override;
 
@@ -141,11 +149,15 @@ private:
 
     std::unordered_set<gtreefile *> g_tree_file_selected_map;
 
+    Project* m_project;
+
     Scene *m_scene;
 
     GameObject *m_cameraObject;
 
     Camera *m_mainCamera;
+
+    Camera* m_cameraObjectSelected;
 
     Plugin *m_plugin;
 
@@ -153,7 +165,7 @@ private:
 
     grr::gTexture *s_texturePlayGame;
 
-    EditorPopupFlags_ popupFlags;
+    uint32_t popupFlags;
 
     ImGuiIO *mImGuiIO;
 
@@ -175,13 +187,9 @@ private:
 
     MaterialID m_materialToRename;
 
-    gConfig *m_settings;
-
     void create_dock();
 
     void BuildDock(ImGuiID dockspace_id, ImGuiDockNodeFlags dockspace_flags);
-
-    void PopupComponentMenu();
 
     void create_window_hierarchy();
 
@@ -243,8 +251,6 @@ private:
 
     void RenderLog(Log &info);
 
-    void ConfigureVSCode();
-
     void create_window_property();
 
     void create_render_property();
@@ -266,6 +272,8 @@ private:
     void create_popup_info_dir();
 
     void create_popup_dir_manager();
+
+    void create_popup_new_material();
 
     void RenderStatisticsMenu();
 
@@ -326,11 +334,6 @@ private:
 
     // PopupMenu
     void RenameMaterial();
-
-    void CreateMaterial();
-
-    void PopupCreateMaterial();
-
 
     // Project
     void BuildProject();

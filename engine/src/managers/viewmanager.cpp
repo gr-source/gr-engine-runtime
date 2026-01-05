@@ -1,6 +1,5 @@
 #include "viewmanager.hpp"
 
-#include <cstddef>
 #include <imgui.h>
 
 #include <algorithm>
@@ -24,9 +23,14 @@ void ViewManager::Update()
     s_ViewManager->update();
 }
 
-void ViewManager::Renderer()
+void ViewManager::Renderer3D()
 {
-    s_ViewManager->renderer();
+    s_ViewManager->renderer3D();
+}
+
+void ViewManager::RendererUI()
+{
+    s_ViewManager->rendererUI();
 }
 
 void ViewManager::RemoveAllView()
@@ -45,27 +49,28 @@ ViewManager::ViewManager() : s_current(nullptr)
 
 ViewManager::~ViewManager()
 {
-    auto temp = s_registry;
+    auto temp = s_viewRegistry;
     for (auto& view : temp)
         remove(view);
 }
 
 void ViewManager::add(ViewLayout* view)
 {
-    s_registry.push_back(view);
-    s_mapRegistry.emplace(view);
+    s_viewRegistry.push_back(view);
 
     if (s_current == nullptr)
-        s_current = s_registry.back();
+        s_current = s_viewRegistry.back();
+}
+
+void ViewManager::addPopup(ViewLayout* view)
+{
+    s_viewRegistryPopup.push_back(view);
 }
 
 void ViewManager::remove(ViewLayout* view)
 {
-    if (s_mapRegistry.find(view) == s_mapRegistry.end())
-        return;
-
-    s_mapRegistry.erase(view);
-    s_registry.erase(std::remove(s_registry.begin(), s_registry.end(), view), s_registry.end());
+    s_viewRegistryPopup.erase(std::remove(s_viewRegistryPopup.begin(), s_viewRegistryPopup.end(), view), s_viewRegistryPopup.end());
+    s_viewRegistry.erase(std::remove(s_viewRegistry.begin(), s_viewRegistry.end(), view), s_viewRegistry.end());
 
     if (s_current == view)
         s_current = nullptr;
@@ -75,12 +80,21 @@ void ViewManager::remove(ViewLayout* view)
 
 void ViewManager::removeAllView()
 {
-    auto temp = s_registry;
-    for (auto& view : temp)
-        delete view;
+    {
+        auto temp = s_viewRegistry;
+        for (auto& view : temp)
+            delete view;
 
-    s_mapRegistry.clear();
-    s_registry.clear();
+        s_viewRegistry.clear();
+    }
+
+    {
+        auto temp = s_viewRegistryPopup;
+        for (auto& view : temp)
+            delete view;
+
+        s_viewRegistryPopup.clear();
+    }
 
     s_current = nullptr;
 }
@@ -91,16 +105,23 @@ void ViewManager::update()
         s_current->onUpdate();
 }
 
-void ViewManager::renderer()
+void ViewManager::renderer3D()
 {
-    bool bEnableDockSpace = s_registry.size() > 1;
+    if (s_current != nullptr)
+        s_current->onRender3D();
+}
+
+void ViewManager::rendererUI()
+{
+    bool bEnableDockSpace = s_viewRegistry.size() > 1;
     if (bEnableDockSpace)
-    {
         render_tabbar();
-    }
 
     if (s_current != nullptr)
-        s_current->onRender();
+        s_current->onRenderUI();
+
+    for (auto& view : s_viewRegistryPopup)
+        view->onRenderUI();
 }
 
 void ViewManager::render_tabbar()
@@ -110,7 +131,7 @@ void ViewManager::render_tabbar()
     
     if (ImGui::BeginTabBar("##render_gui_tab_bar_0"))
     {
-        for (auto& view : s_registry)
+        for (auto& view : s_viewRegistry)
         {
             if (ImGui::BeginTabItem(view->getName()))
             {

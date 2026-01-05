@@ -30,7 +30,7 @@ public:
 
     const char* getName() const override;
     
-    void onRender() override;
+    void onRenderUI() override;
 
 private:
     static std::array<const std::string, 7> m_assetsFile;

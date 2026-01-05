@@ -16,14 +16,14 @@
 class ShaderEditor :  public ViewLayout
 {
 public:
-    ShaderEditor(Engine *engine);
+    ShaderEditor();
     ~ShaderEditor() override;
 
     void onFocus() override;
 
     void onBlur() override;
 
-    void onRender() override;
+    void onRenderUI() override;
 
 private:
     std::vector<std::tuple<std::string, grr::gShader *, std::unique_ptr<TextEditor>>> v_shader_texeditor;
