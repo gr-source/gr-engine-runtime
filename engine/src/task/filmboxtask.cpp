@@ -6,7 +6,7 @@
 
 #include <gr-base/core/file/file.hpp>
 
-#include <gr-base/ecs/gameObject.hpp>
+#include <gr-base/core/gameObject.hpp>
 
 #include <gr-base/core/console.hpp>
 
@@ -14,7 +14,7 @@
 #include <gr-base/script/meshRender.hpp>
 #include <gr-base/script/meshFilter.hpp>
 #include <gr-base/script/transform.hpp>
-#include <gr-base/script/animator.hpp>
+// #include <gr-base/script/animator.hpp>
 
 #include <gr-base/managers/assetsManager.hpp>
 
@@ -83,9 +83,7 @@ GameObject *FilmboxLoadTask::create_from(FbxScene *scene, const FbxNode &node, T
     {
         auto child = create_from(scene, children, transform);
         if (child == nullptr)
-        {
             break;
-        }
     }
     return go;
 }
@@ -95,7 +93,7 @@ void FilmboxLoadTask::generateMesh(FbxScene *scene, const FbxNode *node, GameObj
     std::unordered_map<std::string, FbxBone> m_bones;
     std::vector<FbxBone> bonesList;
 
-    MeshFilter *meshFilter = go->hasComponent<MeshFilter>() ? go->getComponent<MeshFilter>() : go->addComponent<MeshFilter>();
+    MeshFilter *meshFilter = go->getComponent<MeshFilter>() ? go->getComponent<MeshFilter>() : go->addComponent<MeshFilter>();
     // MeshRender *meshRender = go->hasComponent<MeshRender>() ? go->getComponent<MeshRender>() : go->addComponent<MeshRender>();
 
     ShaderParams shaderParams;
@@ -213,7 +211,9 @@ void FilmboxLoadTask::generateMesh(FbxScene *scene, const FbxNode *node, GameObj
         }
     }
 
-    if (!m_bones.empty()) {
+    /*
+    if (!m_bones.empty())
+    {
         auto animator = go->addComponent<Animator>();
         if (!animator) { return; }
 
@@ -229,6 +229,7 @@ void FilmboxLoadTask::generateMesh(FbxScene *scene, const FbxNode *node, GameObj
             skinnedMeshRender->getBone(i)->setParentIndex(bonesList[i].getParentIndex());
         }
     }
+    */
 }
 
 

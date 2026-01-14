@@ -2,13 +2,7 @@
 
 #include "script.hpp"
 
-#include <gr-base/ecs/componentPool.hpp>
-
-#include "default.hpp"
-
-#include <gr-base/core/console.hpp>
-
-#include <gr-render/gShader.h>
+#include <memory>
 
 class ScriptManager
 {

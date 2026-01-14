@@ -22,8 +22,6 @@
 #include <gr-base/core/clock.hpp>
 #include <gr-base/core/input.hpp>
 
-#include <gr-base/ecs/gameObject.hpp>
-
 #include <gr-base/script/meshRender.hpp>
 #include <gr-base/script/camera.hpp>
 

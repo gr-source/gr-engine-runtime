@@ -15,7 +15,7 @@
 #include <gr-base/script/meshRender.hpp>
 #include <gr-base/script/camera.hpp>
 
-#include <gr-base/ecs/gameObject.hpp>
+// #include <gr-base/ecs/gameObject.hpp>
 
 #include "imgui.h"
 

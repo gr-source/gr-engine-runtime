@@ -5,7 +5,9 @@
 
 #include <bullet/btBulletDynamicsCommon.h>
 
-#include <gr-base/ecs/default.hpp>
+#include <gr-base/core/default.hpp>
+
+#include <gr-math/gmath.hpp>
 
 #define VEC3_TO_BTVEC3(vec) btVector3(vec.x, vec.y, vec.z)
 #define QUAT_TO_BTQUAT(q) btQuaternion(q.x, q.y, q.z, q.w)

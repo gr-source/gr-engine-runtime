@@ -2,7 +2,7 @@
 
 #include "ui/viewlayout.hpp"
 
-#include <gr-base/ecs/default.hpp>
+#include <gr-base/core/default.hpp>
 
 class FilmboxImport : public ViewLayout
 {

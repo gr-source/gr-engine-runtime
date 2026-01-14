@@ -6,7 +6,7 @@
 
 #include <gr-base/script/transform.hpp>
 
-#include <gr-base/ecs/gameObject.hpp>
+#include <gr-base/core/gameObject.hpp>
 
 #include <imgui.h>
 
@@ -34,7 +34,7 @@ void FilmboxImport::onRenderUI()
 
             for (auto &child : transform->getChildren())
             {
-                render_tree_node(child->getGameObject());
+                render_tree_node(child->GetGameObject());
             }
         }
     }
@@ -64,14 +64,14 @@ void FilmboxImport::render_tree_node(const GameObject *gameObject)
         return;
 
     for (auto &child : transform->getChildren())
-        render_tree_node(child->getGameObject());
+        render_tree_node(child->GetGameObject());
 
     ImGui::TreePop();
 }
 
 void FilmboxImport::onSavedGameObject(GameObject *gameObject)
 {
-    GameObject::Destroy(gameObject);
+    GameObject::DestroyImediate(gameObject);
 
     ViewManager::Remove(this);
 }

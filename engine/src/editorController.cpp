@@ -1,13 +1,14 @@
 #include "editorController.h"
 
+#include <cassert>
 #include <gr-base/script/transform.hpp>
 #include <gr-base/script/camera.hpp>
 
+#include <gr-base/core/gameObject.hpp>
 #include <gr-base/core/console.hpp>
 #include <gr-base/core/clock.hpp>
 #include <gr-base/core/input.hpp>
 
-#include <gr-base/ecs/gameObject.hpp>
 
 #include "ui/ImGuiRender.h"
 
@@ -39,7 +40,12 @@ void EditorController::Update(Camera *camera)
         return;
     }
 
-    auto transform = m_mainCamera->getGameObject()->getTransform();
+    assert(m_mainCamera && "Camera");
+    assert(m_mainCamera->GetGameObject() && "Obj");
+
+    auto transform = m_mainCamera->GetGameObject()->getTransform();
+
+    assert(transform && "TTT");
 
     Vector3 diretion = Vector3::zero;
 

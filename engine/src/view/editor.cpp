@@ -1,5 +1,6 @@
 #include "editor.hpp"
 
+#include <cstdio>
 #include <cstring>
 #include <gr-base/script/baserender.hpp>
 #include <gr-base/script/default.hpp>
@@ -29,7 +30,6 @@
 
 
 #include <gr-base/managers/gameobjectmanager.hpp>
-#include <gr-base/managers/entitymanager.hpp>
 #include <gr-base/managers/assetsManager.hpp>
 #include <gr-base/managers/rendermanager.hpp>
 #include <gr-base/managers/sceneManager.hpp>
@@ -44,21 +44,19 @@
 #include "core/statistics.hpp"
 #include "core/screen.hpp"
 
-#include "core/cmd/cmd.hpp"
-
 #include <gr-base/script/skinnedMeshRender.hpp>
-#include <gr-base/script/meshCollider.hpp>
-#include <gr-base/script/boxCollider.hpp>
+// #include <gr-base/script/meshCollider.hpp>
+// #include <gr-base/script/boxCollider.hpp>
 #include <gr-base/script/meshFilter.hpp>
 #include <gr-base/script/meshRender.hpp>
 #include <gr-base/script/transform.hpp>
-#include <gr-base/script/rigidbody.hpp>
-#include <gr-base/script/animator.hpp>
-#include <gr-base/script/LODGroup.hpp>
+// #include <gr-base/script/rigidbody.hpp>
+// #include <gr-base/script/animator.hpp>
+// #include <gr-base/script/LODGroup.hpp>
 #include <gr-base/script/camera.hpp>
 #include <gr-base/script/light.hpp>
 
-#include <gr-base/ecs/gameObject.hpp>
+#include <gr-base/core/gameObject.hpp>
 
 #include "guizmo/ImGuizmo.h"
 
@@ -70,7 +68,7 @@
 
 #include <gr-base/core/geometry/batching.hpp>
 
-#include <gr-base/ecs/componentRegistry.hpp>
+// #include <gr-base/ecs/componentRegistry.hpp>
 
 #include <gr-base/broadphase/bvhtree.hpp>
 // #include <gr-base/core/culling/octreemanager.hpp>
@@ -123,7 +121,6 @@ static std::unordered_map<std::string, DragDropFlags> m_extensionNameToFlag =
         { \
             if (RenderProperty<object>(&Editor::OnProperty##object, this)) \
             { \
-                entity->destroy(#object); \
             } \
         } \
     }
@@ -176,10 +173,10 @@ Editor::Editor() : m_viewport(ImGui::GetMainViewport()), mImGuiIO(&ImGui::GetIO(
         INSERT_SCRIPT(MeshRender),
         INSERT_SCRIPT(SkinnedMeshRender),
         INSERT_SCRIPT(MeshFilter),
-        INSERT_SCRIPT(LODGroup),
-        INSERT_SCRIPT(BoxCollider),
-        INSERT_SCRIPT(Rigidbody),
-        INSERT_SCRIPT(Animator),
+        // INSERT_SCRIPT(LODGroup),
+        // INSERT_SCRIPT(BoxCollider),
+        // INSERT_SCRIPT(Rigidbody),
+        // INSERT_SCRIPT(Animator),
     };
     
     m_viewport = ImGui::GetMainViewport();
@@ -189,8 +186,6 @@ Editor::Editor() : m_viewport(ImGui::GetMainViewport()), mImGuiIO(&ImGui::GetIO(
         GameObjectManager::Initialize();
 
         RenderManager::Initialize();
-
-        EntityManager::Initialize();
 
         AssetsManager::Initialize();
 
@@ -247,16 +242,12 @@ Editor::~Editor()
 
     // config_release(m_settings);
 
-    ComponentRegistry::Clear();
-
     {
         RenderManager::Shutdown();
 
         SceneManager::Shutdown();
 
         GameObjectManager::Shutdown();
-
-        EntityManager::Shutdown();
 
         AssetsManager::Shutdown();
     }
@@ -321,7 +312,7 @@ const char* Editor::getName() const
 void Editor::onUpdate()
 {
     if (Settings::bGameRunning)
-        return EntityManager::Update();
+        return;
 
     auto scene = SceneManager::GetCurrent();
     if (scene != nullptr && scene->getCamera())
@@ -503,7 +494,7 @@ void Editor::create_render_hierarchy()
 
                     transform->setParent(nullptr);
         
-                    m_scene->insert(transform->getGameObject());
+                    m_scene->insert(transform->GetGameObject());
                 });
         
         RenderSceneObject(m_scene);
@@ -536,9 +527,7 @@ void Editor::create_render_hierarchy()
     }
 
     if (ImGui::IsWindowHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Right))
-    {
         popupFlags |= EditorPopupFlags_SceneAddOption;
-    }
 }
 
 void Editor::drop_gameobject(std::function<void (GameObject *)> func)
@@ -552,7 +541,7 @@ void Editor::drop_gameobject(std::function<void (GameObject *)> func)
 
     auto transform = *reinterpret_cast<Transform **>(payload->Data);
     
-    func(transform->getGameObject());
+    func(transform->GetGameObject());
 
     ImGui::EndDragDropTarget();
 }
@@ -588,7 +577,7 @@ void Editor::ReadHierarchy(Scene *scene, Transform *transform)
 {
     ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanFullWidth;
 
-    auto gameObject = transform->getGameObject();
+    auto gameObject = transform->GetGameObject();
     if (!gameObject)
     {
         return;
@@ -662,7 +651,7 @@ void Editor::dragDropGameObject(Transform *transform, const std::string &name)
     {
         target->setParent(transform);
 
-        m_scene->remove(target->getGameObject());
+        m_scene->remove(target->GetGameObject());
     }
 
     ImGui::EndDragDropTarget();
@@ -672,9 +661,7 @@ void Editor::PopupMenuAdd()
 {
     auto isOpen = ImGui::BeginPopup(GET_FLAG_NAME(EditorPopupFlags_SceneAddOption));
     if (!isOpen)
-    {
         return;
-    }
 
     const char* item_name[2] {"Cube", "Empty"};
     auto id = 0;
@@ -1148,9 +1135,7 @@ void Editor::PlayGame()
 void Editor::StopGame()
 {
     if (m_scene != nullptr)
-    {
         m_scene->deselect_all();
-    }
 
     Settings::bGameRunning = false;
 
@@ -1498,19 +1483,15 @@ void Editor::drag_file(gtreefile *file)
 void Editor::drop_gameobject_in_treefile(gtreefile *tree_file)
 {
     if (!ImGui::BeginDragDropTarget())
-    {
         return;
-    }
     
     auto payload = ImGui::AcceptDragDropPayload(m_extensionDragDrop[DragDropFlags::GAMEOBJECT]);
     if (!payload || payload->DataSize <= 0)
-    {
         return ImGui::EndDragDropTarget();
-    }
 
     auto transform = *reinterpret_cast<Transform **>(payload->Data);
 
-    TaskManager::Add<GameObjectSaveTask>(tree_file->path, transform->getGameObject(), [&](GameObject *)
+    TaskManager::Add<GameObjectSaveTask>(tree_file->path, transform->GetGameObject(), [&](GameObject *)
             {
                 updateFileTree(*tree_file);
             });
@@ -1574,17 +1555,17 @@ void Editor::create_render_property()
 {
     auto go = m_scene->get_object_selected().back();
 
-    auto entity = go->getEntity();
-
     auto objName = go->getName();
 
     ImGui::SeparatorText(objName.c_str());
 
+    /*
     auto isstatic = go->getStatic();
     if (ImGui::Checkbox("Static", &isstatic))
         go->setStatic(isstatic);
+    */
 
-    RenderScriptFromEntity(entity);
+    RenderScriptFromEntity(go);
 
     auto avail = ImGui::GetContentRegionAvail();
 
@@ -1728,9 +1709,15 @@ void Editor::create_popup_add_component()
     auto go = m_scene->get_object_selected().back();
 
     std::vector<std::string> m_componentName;
-    for (auto &componentInfo : ComponentRegistry::GetComponentInfoList())
+
+    array* hashtable = ComponentManager::GetBehaviorInfos();
+
+    ComponentInfo* infos = (ComponentInfo*)hashtable->vector;
+    for (auto &id : ComponentManager::GetActiveBehaviorIDs())
     {
-        m_componentName.push_back(componentInfo->name);
+        ComponentInfo& info = infos[id];
+
+        m_componentName.push_back(info.name);
     }
 
     std::sort(m_componentName.begin(), m_componentName.end(), [](const auto &lhs, const auto &rhs) {
@@ -1753,7 +1740,7 @@ void Editor::create_popup_add_component()
         bool isFirst = (it == m_componentName.begin());
         if (ImGui::Selectable(it->c_str(), isFirst) || bSelect && go != nullptr)
         {
-            auto component = go->getEntity()->addComponent((*it));
+            auto component = go->addComponent(it->c_str());
 
             std::memset(componentName, '\0', sizeof(componentName));
 
@@ -1920,16 +1907,14 @@ void Editor::create_popup_new_material()
 
 #include <gr-base/core/status.hpp>
 
-void Editor::RenderStatisticsMenu() {
+void Editor::RenderStatisticsMenu()
+{
     ImGui::SeparatorText("Scripts");
-    ImGui::Text("Entidades: %ld", EntityManager::GetCount());
     ImGui::Text("GameObject: %ld", GameObjectManager::GetCount());
 
     ImGui::SeparatorText("AssetManager");
     ImGui::Text("Textures: %ld", AssetsManager::GetTextureCount());
-    // ImGui::Text("Shaders: %ld", AssetsManager::GetShaderCount());
     ImGui::Text("Mesh: %ld", AssetsManager::GetMeshCount());
-    // ImGui::Text("Event: %ld", Event::GetCount());
 
     ImGui::SeparatorText("Threads");
     ImGui::Text("Threads: %ld/%ld", Threadpool::GetThreadCount(), Threadpool::GetCount());
@@ -1940,14 +1925,10 @@ void Editor::RenderStatisticsMenu() {
         
         ImGui::Text("MainThread:\t%fms ->(%fms, %fms), FPS: %.2f ->(%f, %f)", frameTime.delta, frameTime.minDelta, frameTime.maxDelta, frameTime.fps, frameTime.minFPS, frameTime.maxFPS);
     }
-    /*ImGui::Text("Render:      %fms  | FPS: %.2f",  Statistics::m_sceneFrame.delta,   Statistics::m_sceneFrame.fps);*/
-    /*ImGui::Text("GUI:         %fms  | FPS: %.2f",  Statistics::m_guiFrame.delta,     Statistics::m_guiFrame.fps);*/
-    /*ImGui::Text("Script:      %fms  | FPS: %.2f",  Statistics::m_scriptFrame.delta,  Statistics::m_scriptFrame.fps);*/
 
     ImGui::SeparatorText("Renderização");
     ImGui::Text("Luzes: %ld",     Light::GetListLight().size());
     ImGui::Text("Cameras: %ld",     Camera::GetCameras().size());
-    /*ImGui::Text("BatchRender: %ld/%ld", Batching::GetBatchCount(), Status::BatchRenderCount);*/
     ImGui::Text("DrawCallCount: %ld/%ld", Status::BatchDrawCallCount, Status::BatchDrawCallRender);
 }
 
@@ -1977,24 +1958,37 @@ void Editor::dropScriptInAddComponent()
 
 void Editor::RenderScriptFromEntity(Entity *entity)
 {
-    for (auto &&[name, component] : entity->getComponentMap())
-    {
-        ImGui::PushID(name.c_str());
+    array* hashtable = ComponentManager::GetBehaviorInfos();
 
-        auto it = m_guiscriptmap.find(name);
+    ComponentInfo* infos = (ComponentInfo*)hashtable->vector;
+    for (auto &hash : entity->GetHashes())
+    {
+        size_t poolID = hash % COMPONENT_TABLE_SIZE;
+
+        ComponentInfo& info = infos[poolID];
+        if (info.hash != hash)
+            continue;
+
+        char name[512] = {0};
+        sprintf(name, "%s %lu", info.name, info.hash);
+
+        ImGui::PushID(info.name);
+
+        auto it = m_guiscriptmap.find(info.name);
         if (it != m_guiscriptmap.end())
         {
-            it->second(entity);
-        } else if (!RenderComponents(name, &(*component)))
+            if (ImGui::CollapsingHeader(name))
+                it->second(entity);
+        } else if (!RenderComponents(info.name, entity->getComponent(hash)))
         {
-            entity->destroy(name);
+            // entity->destroy(name);
         }
 
         ImGui::PopID();
     }
 }
 
-bool Editor::RenderComponents(const std::string &name, Component *component)
+bool Editor::RenderComponents(const std::string &name, Behavior *behavior)
 {
     auto isRender = true;
 
@@ -2009,7 +2003,8 @@ bool Editor::RenderComponents(const std::string &name, Component *component)
         return true;
     }
 
-    auto baseChunk = ComponentRegistry::Find(name);
+    /*
+    auto baseChunk = ComponentManager::Find(name);
     if (baseChunk == nullptr)
     {
         Console::LogError("Invalid component: " + name);
@@ -2022,10 +2017,12 @@ bool Editor::RenderComponents(const std::string &name, Component *component)
     {
         RenderField(field, component);
     }
+    */
 
     return true;
 }
 
+/*
 void Editor::RenderField(Field &field, Component *component) {
     auto name = field.getName();
 
@@ -2077,6 +2074,7 @@ void Editor::RenderField(Field &field, Component *component) {
         break;
     }
 }
+*/
 
 void Editor::renderDropGameObject(GameObject **ref) {
     if (*ref) {
@@ -2110,12 +2108,8 @@ void Editor::PopupMenuProperty() {
 }
 
 /* ********** Propriedades ********** */
-bool Editor::OnPropertyTransform(Transform *transform) {
-    auto isOpen = ImGui::CollapsingHeader("Transform");
-    if (!isOpen) {
-        return false;
-    }
-
+bool Editor::OnPropertyTransform(Transform *transform)
+{
     const char *data[3] = {"X:", "Y:", "Z:"};
     
     auto position = transform->getLocalPosition();
@@ -2144,14 +2138,6 @@ bool Editor::OnPropertyTransform(Transform *transform) {
 
 bool Editor::OnPropertyCamera(Camera *camera)
 {
-    bool bactive = true;
-    auto isOpen = ImGui::CollapsingHeader("Camera", &bactive);
-    if (!bactive)
-        return true;
-
-    if (!isOpen)
-        return false;
-
     auto avail = ImGui::GetContentRegionAvail();
 
     bool isChanged = false;
@@ -2210,17 +2196,6 @@ bool Editor::OnPropertyCamera(Camera *camera)
 
 bool Editor::OnPropertyMeshFilter(MeshFilter *meshFilter)
 {
-    auto bExists = true;
-
-    auto isOpen = ImGui::CollapsingHeader("MeshFilter", &bExists);
-    if (!bExists)
-    {
-        return true;
-    }
-
-    if (!isOpen)
-        return false;
-
     if (ImGui::TreeNode("Mesh"))
     {
         for (auto &meshID : meshFilter->getMesh())
@@ -2237,15 +2212,6 @@ bool Editor::OnPropertyMeshFilter(MeshFilter *meshFilter)
 
 bool Editor::OnPropertyMeshRender(MeshRender *meshRender)
 {
-    auto bVisible = true;
-
-    auto isOpen = ImGui::CollapsingHeader("MeshRender", &bVisible);
-    if (!bVisible)
-        return true;
-    
-    if (!isOpen)
-        return false;
- 
     auto avail = ImGui::GetContentRegionAvail();
     
     if (ImGui::Button("Create", {avail.x, 0.0f}))
@@ -2265,21 +2231,10 @@ bool Editor::OnPropertyMeshRender(MeshRender *meshRender)
 }
 
 bool Editor::OnPropertySkinnedMeshRender(SkinnedMeshRender *skinnedMeshRender) {
-    auto bVisible = true;
-
-    auto isOpen = ImGui::CollapsingHeader("SkinnedMeshRender", &bVisible);
-    if (!bVisible)
-    {
-        return true;
-    }
-    
     if (ImGui::IsItemClicked(ImGuiMouseButton_Right))
     {
         ImGui::OpenPopup("##game_object_component_menu");
     }
-
-    if (!isOpen)
-        return false;
 
     auto avail = ImGui::GetContentRegionAvail();
     
@@ -2306,11 +2261,7 @@ bool Editor::OnPropertySkinnedMeshRender(SkinnedMeshRender *skinnedMeshRender) {
 
 bool Editor::OnPropertyLODGroup(LODGroup *LodGroup)
 {
-    bool bVisible = true;
-
-    if (!ImGui::CollapsingHeader("MeshLOD", &bVisible))
-        return !bVisible;
-
+    /*
     static int selectedLOD = 0;
     int lodCount = LodGroup->GetLODCount();
 
@@ -2354,25 +2305,17 @@ bool Editor::OnPropertyLODGroup(LODGroup *LodGroup)
         LodGroup->Remove(selectedLOD);
         selectedLOD = std::max(0, selectedLOD - 1);
     }
+    */
 
-    return !bVisible;
+    return false;
 }
 
 bool Editor::render_material(MaterialID id)
 {
-    bool bVisible = true;
-
     auto name = AssetsManager::GetMaterialName(id);
 
-    auto isOpen = ImGui::CollapsingHeader(name.c_str(), &bVisible);
-    if (!bVisible)
-        return true;
-    
     if (ImGui::IsItemClicked(ImGuiMouseButton_Right))
         m_materialToRename = id;
-
-    if (!isOpen)
-        return false;
 
     auto &material = AssetsManager::GetMaterial(id);
 
@@ -2552,18 +2495,8 @@ void Editor::dropShaderInMaterial(Material *material) {
     ImGui::EndDragDropTarget();
 }
 
-bool Editor::OnPropertyLight(Light *light) {
-    auto bExists = true;
-
-    auto isOpen = ImGui::CollapsingHeader("Light", &bExists);
-    if (!bExists) {
-        return true;
-    }
-
-    if (!isOpen) {
-        return false;
-    }
-
+bool Editor::OnPropertyLight(Light *light)
+{
     int elem = light->getType();
     
     const char* elems_names[3] = {"Directional", "Point", "Spot"};
@@ -2626,18 +2559,9 @@ bool Editor::OnPropertyLight(Light *light) {
     return false;
 }
 
-bool Editor::OnPropertyBoxCollider(BoxCollider *boxCollider) {
-    auto bExists = true;
-
-    auto isOpen = ImGui::CollapsingHeader("BoxCollider", &bExists);
-    if (!bExists) {
-        return true;
-    }
-
-    if (!isOpen) {
-        return false;
-    }
-
+bool Editor::OnPropertyBoxCollider(BoxCollider *boxCollider)
+{
+    /*
     const char* text[] {"X", "Y", "Z"};
 
     auto size = boxCollider->getBoxSize();
@@ -2645,25 +2569,15 @@ bool Editor::OnPropertyBoxCollider(BoxCollider *boxCollider) {
     if (ImGui::DragFloatEx("##boxcollider_size", text, reinterpret_cast<float *>(&size), 1.0f, 0.0f, 0.0f, "%.3f")) {
         boxCollider->setBoxSize(size);
     }
-
+    */
 
     return false;
 }
 
 bool Editor::OnPropertyRigidbody(Rigidbody *rigidbody)
 {
-    auto bExists = true;
 
-    auto isOpen = ImGui::CollapsingHeader("Rigidbody", &bExists);
-    if (!bExists)
-    {
-        return true;
-    }
-    
-    if (!isOpen) {
-        return false;
-    }
-
+    /*
     auto mass = rigidbody->getMass();
 
     ImGui::Text("Mass");
@@ -2693,23 +2607,13 @@ bool Editor::OnPropertyRigidbody(Rigidbody *rigidbody)
     if (ImGui::DragFloat("##rigidbody_ccd_sphereradius", &fSweptSphereRadius, 0.4f, 0.0f, 5.0f)) {
         rigidbody->setSweptSphereRadius(fSweptSphereRadius);
     }
+    */
 
     return false;
 }
 
 bool Editor::OnPropertyAnimator(Animator *animator) {
-    auto bVisible = true;
-
-    auto bOpen = ImGui::CollapsingHeader("Animator", &bVisible);
-
-    if (!bVisible) {
-        return true;
-    }
-
-    if (!bOpen) {
-        return false;
-    }
-
+    /*
     auto animation = animator->getAnimation();
     auto animName = animation != nullptr ? animation->getName() : "No Animation";
 
@@ -2718,6 +2622,7 @@ bool Editor::OnPropertyAnimator(Animator *animator) {
     dropAnimation(animator);
 
     ImGui::DragFloat("Factor", &animator->blendFactor, 0.01f, 0.0f, 1.0f);
+    */
     
     return false;
 }
@@ -2787,34 +2692,13 @@ Camera *Editor::getCamera()
 void Editor::PostLoadGameObject(GameObject *gameObject)
 {
     if (m_scene == nullptr)
-    {
         return;
-    }
 
     auto instantiate = GameObject::Instantiate(gameObject);
-    GameObject::Destroy(gameObject);
+    GameObject::DestroyImediate(gameObject);
 
     m_scene->deselect_all();
     m_scene->select(instantiate);
-    
-    /*
-    for_each(instantiate->getTransform(), [](Transform *transform)
-            {
-                auto gameObject = transform->getGameObject();
-                if (gameObject->hasComponent<MeshFilter>())
-                {
-                    auto meshFilter = gameObject->getComponent<MeshFilter>();
-                    
-                    auto &boundbox = meshFilter->getBoundbox();
-
-                    auto &model = transform->getGlobalMatrix();
-                    auto min = model * Vector4{boundbox.min.x, boundbox.min.y, boundbox.min.z, 1.0f};
-                    auto max = model * Vector4{boundbox.max.x, boundbox.max.y, boundbox.max.z, 1.0f};
-
-                    bvh::Tree::Insert(bvh::Bounds{{min.x, min.y, min.z}, {max.x, max.y, max.z}}, transform->getGameObject());
-                }
-            });
-    */
 }
 /*
 std::string GenerateScriptHeader(const std::string& name)

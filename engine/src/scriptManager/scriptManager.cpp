@@ -1,20 +1,9 @@
 #include "scriptManager.hpp"
-#include "gr-base/core/console.hpp"
-#include "gr-base/ecs/componentRegistry.hpp"
-
-#include <gr-base/script/meshCollider.hpp>
-#include <gr-base/script/boxCollider.hpp>
-#include <gr-base/script/meshRender.hpp>
-#include <gr-base/script/rigidbody.hpp>
-#include <gr-base/script/animator.hpp>
-#include <gr-base/script/camera.hpp>
 
 #include <gr-base/core/geometry/batching.hpp>
 
+#include <gr-base/core/console.hpp>
 #include <gr-base/core/scene.hpp>
-
-#include <gr-base/ecs/gameObject.hpp>
-#include <gr-base/ecs/entity.hpp>
 
 #include <gr-base/core/file/file.hpp>
 

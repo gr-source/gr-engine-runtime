@@ -1,5 +1,11 @@
 #include "gr-base/core/thread/threadpool.hpp"
+#include "gr-base/managers/gameobjectmanager.hpp"
+#include "gr-base/script/camera.hpp"
+
 #include <gr-math/gmath.hpp>
+
+#include <gr-render/gRender.h>
+
 #include <settings.h>
 #include <engine.h>
 
@@ -130,10 +136,33 @@ void segfault_sigaction(int signal, siginfo_t *si, void *arg)
 #include <gr-base/core/clock.hpp>
 #include "core/time.hpp"
 
-#include <gr-base/core/task/materialmanager.hpp>
+#include <gr-base/core/gameObject.hpp>
 
 int main(int argc, char *argv[])
 {
+    /*
+    GameObjectManager::Initialize();
+    Threadpool::Initialize();
+
+    // for (int i=0;i<10;i++)
+    {
+        auto gameObject = GameObject::Create("Hello");
+
+        auto camera = gameObject->addComponent<Camera>();
+
+        std::cout << "Transform: " << (camera->GetGameObject() != nullptr ? "Yes" : "no") << std::endl;
+
+        // std::cout << "Name: " << gameObject->getName() << " | " << gameObject->getCacheID() << std::endl;
+
+        GameObject::DestroyImediate(gameObject);
+    }
+
+    Threadpool::Shutdown();
+    GameObjectManager::Shutdown();
+
+    return 0;
+    */
+
     struct sigaction sa;
 
     memset(&sa, 0, sizeof(struct sigaction));

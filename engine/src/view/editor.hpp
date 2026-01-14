@@ -3,15 +3,12 @@
 #include <cstdint>
 #include <filesystem>
 
-#include <gr-base/ecs/componentPool.hpp>
-#include <gr-base/ecs/gameObject.hpp>
-
+#include <gr-base/core/gameObject.hpp>
 #include <gr-base/core/console.hpp>
 
 #include "gr-base/core/geometry/default.hpp"
 #include "gr-base/core/scene.hpp"
 #include "gr-base/core/thread/asynctask.hpp"
-#include "gr-base/script/animator.hpp"
 #include "Global.h"
 
 #include "guizmo/ImGuizmo.h"
@@ -281,9 +278,9 @@ private:
 
     void RenderScriptFromEntity(Entity *entity);
 
-    bool RenderComponents(const std::string &name, Component *component);
+    bool RenderComponents(const std::string &name, Behavior *behavior);
 
-    void RenderField(Field &field, Component *component);
+    // void RenderField(Field &field, Component *component);
 
     void renderDropGameObject(GameObject **ref);
 
@@ -388,7 +385,7 @@ inline bool Editor::RenderProperty(Args&&... args)
     }
 
     auto go = m_scene->get_object_selected().back();
-    if (!go->hasComponent<T>()) return false;
+    if (!go->getComponent<T>()) return false;
 
     return std::invoke(std::bind(std::forward<Args>(args)..., go->getComponent<T>()));
 }

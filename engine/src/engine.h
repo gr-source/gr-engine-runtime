@@ -4,7 +4,7 @@
 
 #include <gr-base/script/default.hpp>
 
-#include <gr-base/ecs/default.hpp>
+#include <gr-base/core/default.hpp>
 
 class Engine {
 public:
