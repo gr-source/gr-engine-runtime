@@ -33,7 +33,7 @@ void ScreenRender::Initialize() {
         shaderParams.base = gfile::get_data_directory("/assets/shader/screen.glsl");
         shaderParams.flags = ShaderOptimize_static;
 
-        AssetsManager::LoadShader(shaderParams,
+        AssetsManager::LoadShaderAsync(shaderParams,
             [](grr::gShader *shader) { ScreenRender::m_shader = shader; }
         );
     }

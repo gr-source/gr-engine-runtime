@@ -8,6 +8,8 @@
 
 #include <gr-base/core/default.hpp>
 
+#include <string>
+
 class FilmboxLoadTask : public IAsyncTask<GameObject*>
 {
 public:

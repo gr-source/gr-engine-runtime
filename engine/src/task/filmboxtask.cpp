@@ -107,12 +107,8 @@ void FilmboxLoadTask::generateMesh(FbxScene *scene, const FbxNode *node, GameObj
     auto shader = AssetsManager::FindShader(name);
     if (shader == nullptr)
     {
-        auto info = AssetsManager::LoadShader(shaderParams,
-                [&](grr::gShader *current)
-                {
-                    shader = current;
-                });
-        info->wait();
+        auto info = AssetsManager::LoadShaderAsync(shaderParams);
+        shader = info->get();
     }
     
     auto meshes = node->getMeshes();

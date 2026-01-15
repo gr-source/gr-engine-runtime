@@ -49,7 +49,7 @@ void FilmboxImport::onRenderUI()
         
         auto dir = project.path + "/assets/model";
 
-        TaskManager::Add<GameObjectSaveTask>(dir, m_gameObject, std::bind(&FilmboxImport::onSavedGameObject, this, std::placeholders::_1));
+        TaskManager::Add<int, GameObjectSaveTask>(dir, m_gameObject, std::bind(&FilmboxImport::onSavedGameObject, this, std::placeholders::_1));
     }
 
     ImGui::End();

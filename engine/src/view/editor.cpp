@@ -686,18 +686,14 @@ void Editor::PopupMenuAdd()
 void Editor::create_window_viewport()
 {
     if (ImGui::Begin("viewport"))
-    {
         create_render_viewport();
-    }
     ImGui::End();
 }
 
 void Editor::create_render_viewport()
 {
     if (!ImGui::BeginTabBar("##create_render_viewport_tabbar_0"))
-    {
         return;
-    }
 
     for (auto &scene : SceneManager::GetScenes())
     {
@@ -1007,7 +1003,7 @@ void Editor::render_scene(Scene *scene)
         std::string path = m_project->path + "/assets/Scene";
 
         for (auto &scene : SceneManager::GetScenes())
-            TaskManager::Add<SceneSaveTask>(path, scene);
+            TaskManager::Add<int, SceneSaveTask>(path, scene);
     }
 }
 
@@ -1150,15 +1146,11 @@ void Editor::drop_gameobject_in_scene()
 {
     auto isOpen = ImGui::BeginDragDropTarget();
     if (!isOpen)
-    {
         return;
-    }
 
     auto payload = ImGui::AcceptDragDropPayload(m_extensionDragDrop[DragDropFlags::GMDX]);
     if (!payload)
-    {
         return ImGui::EndDragDropTarget();
-    }
 
     std::vector<gtreefile *> files(payload->DataSize / sizeof(gtreefile *), nullptr);
     memcpy(files.data(), payload->Data, payload->DataSize);
@@ -1491,7 +1483,7 @@ void Editor::drop_gameobject_in_treefile(gtreefile *tree_file)
 
     auto transform = *reinterpret_cast<Transform **>(payload->Data);
 
-    TaskManager::Add<GameObjectSaveTask>(tree_file->path, transform->GetGameObject(), [&](GameObject *)
+    TaskManager::Add<int, GameObjectSaveTask>(tree_file->path, transform->GetGameObject(), [&](GameObject *)
             {
                 updateFileTree(*tree_file);
             });
@@ -2328,7 +2320,7 @@ bool Editor::render_material(MaterialID id)
 
     auto shaderParams = GetShaderParamsFromName(AssetsManager::GetShaderName(shader));
 
-    auto shadername = std::filesystem::path(shaderParams.base).filename();
+    auto shadername = gfile::getname(shaderParams.base.c_str());
 
     render_shader_property(shadername, &material);
 
@@ -2378,9 +2370,7 @@ void Editor::RenderShaderUniform(Material *material, grr::gShader *shader)
 {
     auto property = AssetsManager::GetShaderProperty(shader);
     if (property == nullptr)
-    {
         return;
-    }
 
     for (auto &&[object, name, type] : property->getProperty())
     {
