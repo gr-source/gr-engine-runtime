@@ -7,7 +7,9 @@
 
 #include <gr-base/core/file/file.hpp>
 
+#include <iostream>
 #include <fstream>
+
 #include <dlfcn.h>
 
 void ScriptManager::Load(const std::string &path)
