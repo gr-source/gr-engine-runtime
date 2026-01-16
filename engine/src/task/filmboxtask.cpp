@@ -1,6 +1,7 @@
 #include "filmboxtask.hpp"
 
 #include "filmbox/filmbox.hpp"
+#include "gr-base/core/default.hpp"
 #include "managers/viewmanager.hpp"
 #include "view/popup/filmboximport.hpp"
 
@@ -21,7 +22,7 @@
 FilmboxLoadTask::FilmboxLoadTask(const std::string& file) : m_file(file)
 {}
 
-GameObject* FilmboxLoadTask::doInBackground()
+GameObjectID FilmboxLoadTask::doInBackground()
 {
     Console::LogInfo("[ FilmboxTask ] Loading: %s", m_file.c_str());
 
@@ -33,7 +34,7 @@ GameObject* FilmboxLoadTask::doInBackground()
     catch (const std::exception &e)
     {
         Console::LogError("[ FilmboxTask ] %s.", e.what());
-        return nullptr;
+        return GID_INVALID;
     }
 
     auto scene = filmbox.get_scene();
@@ -41,34 +42,37 @@ GameObject* FilmboxLoadTask::doInBackground()
     return load_object(scene.get());
 }
 
-void FilmboxLoadTask::onPostExecute(GameObject* result)
+void FilmboxLoadTask::onPostExecute(GameObjectID result)
 {
-    if (result == nullptr)
+    if (result == GID_INVALID)
         return;
 
     ViewManager::AddPopup<FilmboxImport>(result);
 }
 
-GameObject* FilmboxLoadTask::load_object(FbxScene *fbxscene)
+GameObjectID FilmboxLoadTask::load_object(FbxScene *fbxscene)
 {
     auto &root = fbxscene->getRootNode();
 
-    GameObject* first = GameObject::Create(gfile::getname(m_file.c_str()));
-    
+    GameObjectID first = GameObject::Create(gfile::getname(m_file.c_str()));
+
     for (auto &node : root.getChildren())
     {
-        auto go = create_from(fbxscene, node, first->getTransform());
-        if (go == nullptr)
+        auto gameObject = GameObject::Get(first);
+
+        auto gameObjectID = create_from(fbxscene, node, gameObject->getTransform());
+        if (gameObjectID == GID_INVALID)
             break;
     }
     return first;
 }
 
-GameObject *FilmboxLoadTask::create_from(FbxScene *scene, const FbxNode &node, Transform *parent)
+GameObjectID FilmboxLoadTask::create_from(FbxScene *scene, const FbxNode &node, Transform *parent)
 {
-    auto go = GameObject::Create(node.getName());
+    auto gameObjectID = GameObject::Create(node.getName());
     
-    auto transform = go->getTransform();
+    auto gameObject = GameObject::Get(gameObjectID);
+    auto transform = gameObject->getTransform();
     if (parent != nullptr)
         transform->setParent(parent);
 
@@ -77,15 +81,15 @@ GameObject *FilmboxLoadTask::create_from(FbxScene *scene, const FbxNode &node, T
     transform->setLocalScale(node.getScale());
 
     if (node.hasMeshe())
-        generateMesh(scene, &node, go);
+        generateMesh(scene, &node, gameObject);
 
     for (auto &children : node.getChildren())
     {
         auto child = create_from(scene, children, transform);
-        if (child == nullptr)
+        if (child == GID_INVALID)
             break;
     }
-    return go;
+    return gameObjectID;
 }
 
 void FilmboxLoadTask::generateMesh(FbxScene *scene, const FbxNode *node, GameObject *go)

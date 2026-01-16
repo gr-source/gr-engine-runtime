@@ -140,29 +140,6 @@ void segfault_sigaction(int signal, siginfo_t *si, void *arg)
 
 int main(int argc, char *argv[])
 {
-    /*
-    GameObjectManager::Initialize();
-    Threadpool::Initialize();
-
-    // for (int i=0;i<10;i++)
-    {
-        auto gameObject = GameObject::Create("Hello");
-
-        auto camera = gameObject->addComponent<Camera>();
-
-        std::cout << "Transform: " << (camera->GetGameObject() != nullptr ? "Yes" : "no") << std::endl;
-
-        // std::cout << "Name: " << gameObject->getName() << " | " << gameObject->getCacheID() << std::endl;
-
-        GameObject::DestroyImediate(gameObject);
-    }
-
-    Threadpool::Shutdown();
-    GameObjectManager::Shutdown();
-
-    return 0;
-    */
-
     struct sigaction sa;
 
     memset(&sa, 0, sizeof(struct sigaction));
@@ -229,11 +206,11 @@ int main(int argc, char *argv[])
         time.wait();
     }
 
-    Threadpool::Shutdown();
-
     window = nullptr;
 
     destroy();
+
+    Threadpool::Shutdown();
 }
 
 

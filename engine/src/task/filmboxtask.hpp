@@ -10,7 +10,7 @@
 
 #include <string>
 
-class FilmboxLoadTask : public IAsyncTask<GameObject*>
+class FilmboxLoadTask : public IAsyncTask<GameObjectID>
 {
 public:
     FilmboxLoadTask(const std::string& file);
@@ -18,13 +18,13 @@ public:
 private:
     std::string m_file;
 
-    GameObject* doInBackground() override;
+    GameObjectID doInBackground() override;
 
-    void onPostExecute(GameObject* result) override;
+    void onPostExecute(GameObjectID result) override;
 
-    GameObject* load_object(FbxScene *fbxscene);
+    GameObjectID load_object(FbxScene *fbxscene);
 
-    GameObject* create_from(FbxScene *scene, const FbxNode &node, Transform *parent);
+    GameObjectID create_from(FbxScene *scene, const FbxNode &node, Transform *parent);
 
     void generateMesh(FbxScene *scene, const FbxNode *node, GameObject *go);
 };

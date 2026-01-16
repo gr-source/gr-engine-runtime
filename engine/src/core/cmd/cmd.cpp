@@ -4,15 +4,16 @@
 
 #include <stdio.h>
 
-bool Command::exec(const std::string &cmd) {
-    FILE *pipe = popen(cmd.c_str(), "r");
+bool Command::exec(const std::string &cmd, std::function<void(std::string)> out)
+{
+    FILE *pipe = popen(std::string(cmd + " 2>&1").c_str(), "r");
 
     if (pipe == nullptr)
         return false;
 
     char line[256] = {0};
     while (fgets(line, 256, pipe))
-        Console::LogWarning("%s", line);
+        out(line);
 
     int status = pclose(pipe);
 

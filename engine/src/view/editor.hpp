@@ -127,7 +127,7 @@ public:
 
     void drop(void *data) override;
 
-    void LoadScript();
+    void loadScript(const std::string& dir);
 
     void UnloadScript();
 
@@ -150,7 +150,7 @@ private:
 
     Scene *m_scene;
 
-    GameObject *m_cameraObject;
+    GameObjectID m_cameraObject;
 
     Camera *m_mainCamera;
 
@@ -323,26 +323,15 @@ private:
     void dropAnimation(Animator *animator);
 
     // Loader    
-    void PostLoadGameObject(GameObject *gameObject);
-
-    void CreateScriptTemplate(const std::string &path, const std::string &name);
+    void PostLoadGameObject(GameObjectID gameObjectID);
 
     void CreateShaderTemplate(const std::string &path, const std::string &name);
 
     // PopupMenu
     void RenameMaterial();
 
-    // Project
-    void BuildProject();
-
-    void PostBuildScriptFromProject();
-
     // Script
-    void ReconfigScript();
-
     void onBuildScript();
-
-    void CompileScript(std::string path, std::function<void()> func);
 
     void SkyboxEditor();
 
@@ -384,7 +373,7 @@ inline bool Editor::RenderProperty(Args&&... args)
         return false;
     }
 
-    auto go = m_scene->get_object_selected().back();
+    auto go = GameObject::Get(m_scene->get_object_selected().back());
     if (!go->getComponent<T>()) return false;
 
     return std::invoke(std::bind(std::forward<Args>(args)..., go->getComponent<T>()));

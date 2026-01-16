@@ -4,11 +4,11 @@
 #include <vector>
 #include <string>
 
-class Command {
-public:
-    static bool exec(const std::string &cmd);
+namespace Command
+{
+    bool exec(const std::string &cmd, std::function<void(std::string)> out);
 
-    static bool exec(const std::vector<std::string> &list, std::function<void(std::string)> out = nullptr);
+    bool exec(const std::vector<std::string> &list, std::function<void(std::string)> out = nullptr);
 };
 
 

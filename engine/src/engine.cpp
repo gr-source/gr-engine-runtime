@@ -233,18 +233,8 @@ void Engine::drop_file(const std::string &path)
     }
 
     if (path.find(".fbx") != std::string::npos)
-        TaskManager::Add<GameObject*, FilmboxLoadTask>(path);
+        TaskManager::Add<GameObjectID, FilmboxLoadTask>(path);
 }
 
-// ********** protected ********** //
-void Engine::upload(GameObject *gameObject)
-{
-    /*
-    if (view_layout == nullptr)
-        return;
-
-    view_layout->drop((void *)gameObject);
-    */
-}
 
 

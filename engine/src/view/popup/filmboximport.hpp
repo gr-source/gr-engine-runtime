@@ -7,17 +7,16 @@
 class FilmboxImport : public ViewLayout
 {
 public:
-    FilmboxImport(GameObject* gameObject);
+    FilmboxImport(GameObjectID gameObjectID);
 
 private:
-    GameObject* m_gameObject;
+    GameObjectID m_gameObjectID;
 
     void onRenderUI() override;
 
     void render_tree_node(const GameObject *gameObject);
 
-
-    void onSavedGameObject(GameObject *gameObject);
+    void onSavedGameObject(GameObjectID gameObject);
 };
 
 

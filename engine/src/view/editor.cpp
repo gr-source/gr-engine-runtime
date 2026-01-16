@@ -6,6 +6,7 @@
 #include <gr-base/script/default.hpp>
 
 #include "Global.h"
+#include "core/cmd/cmd.hpp"
 #include "core/time.hpp"
 #include "editorController.h"
 #include "engine.h"
@@ -27,7 +28,6 @@
 #include <gr-base/core/file/file.hpp>
 
 #include <gr-base/core/thread/threadpool.hpp>
-
 
 #include <gr-base/managers/gameobjectmanager.hpp>
 #include <gr-base/managers/assetsManager.hpp>
@@ -136,7 +136,7 @@ static void for_each(Transform *transform, std::function<void (Transform *)> fun
     }
 }
 
-Editor::Editor() : m_viewport(ImGui::GetMainViewport()), mImGuiIO(&ImGui::GetIO()), m_cameraObject(nullptr), m_mainCamera(nullptr), m_currentPage(0), m_materialToRename(nill), m_plugin(nullptr)
+Editor::Editor() : m_viewport(ImGui::GetMainViewport()), mImGuiIO(&ImGui::GetIO()), m_cameraObject(GID_INVALID), m_mainCamera(nullptr), m_currentPage(0), m_materialToRename(nill), m_plugin(nullptr)
 {
     m_cameraObjectSelected = nullptr;
 
@@ -192,30 +192,17 @@ Editor::Editor() : m_viewport(ImGui::GetMainViewport()), mImGuiIO(&ImGui::GetIO(
         SceneManager::Initialize();
     }
 
-    /*
-    m_settings = config_create();
-    if (gfile::exists(File::GetFile("/gsettings.ini")))
-    {
-        config_load(m_settings, File::GetFile("/gsettings.ini").c_str());
-    } else
-    {
-        generateConfig(File::GetFile("/gsettings.ini"));
-    }
-    */
-
     bBuildDock = gfile::exists("imgui.ini");
 
     LoadReources();
 
     try
     {
-        /*
-        auto section_script = config_find_section(m_settings, "Script");
-        if (section_script != nullptr)
+        auto libdir = m_project->path + "/.build/lib/libscript.so";
+        if (gfile::exists(libdir))
         {
-            ScriptManager::Load(File::GetFile(config_get_string(section_script, "dir")) + config_get_string(section_script, "libname"));
+            ScriptManager::Load(libdir);
         }
-        */
 
         Display::SetDisplayRect(Rect{0.0f, 0.0f, (float)Settings::ViewportSize.x, (float)Settings::ViewportSize.y});
     } catch (const std::exception &e)
@@ -253,50 +240,43 @@ Editor::~Editor()
     }
 }
 
-void Editor::LoadScript()
+void Editor::loadScript(const std::string& dir)
 {
-    /*
     if (m_scene == nullptr)
-    {
         return;
-    }
-
-    auto section_script = config_find_section(m_settings, "Script");
 
     ScriptManager::Unload();
     
-    if (ScriptManager::CheckScriptLoaded(config_get_string(section_script, "libname")))
-    {
+    if (ScriptManager::CheckScriptLoaded("libscript.so"))
         return Console::LogError("[ Script ] Fatal error data not unloaded.");
-    }
 
+    ScriptManager::Load(dir + "/libscript.so");
+
+    /*
     try
     {
-        if (section_script != nullptr)
-        {
-            // ScriptManager::Load(File::GetFile(config_get_string(section_script, "dir")) + config_get_string(section_script, "libname"));
-        }
+        ScriptManager::Load(File::GetFile(config_get_string(section_script, "dir")) + config_get_string(section_script, "libname"));
 
         ComponentRegistry::CheckScriptRemoved();
     } catch (const std::runtime_error &e)
     {
         Console::LogError(e.what());
     }
+    */
 
     Display::SetDisplayRect(Rect{0.0f, 0.0f, (float)Settings::ViewportSize.x, (float)Settings::ViewportSize.y});
 
     // Scene::CheckRequestReinstanceScript();
 
-    m_mainCamera->setActive(false);
+    // m_mainCamera->setActive(false);
 
-    m_scene->play();
+    // m_scene->play();
 
-    Settings::bGameRunning = true;
+    // Settings::bGameRunning = true;
 
-    TaskManager::Add<PhysicsTask>();
+    // TaskManager::Add<PhysicsTask>();
 
     Console::LogDefault("Game playing.");
-    */
 }
 
 void Editor::UnloadScript() {
@@ -385,6 +365,34 @@ void Editor::onRenderUI()
     create_call_popup();
 
     create_popup();
+
+    if (ImGui::Begin("Test"))
+    {
+        if (ImGui::Button("Spawn"))
+        {
+            std::string model = m_project->path + "/assets/model/Suzanne.gmdx";
+
+            AssetsManager::LoadGameObject(model, [this](GameObjectID prefabID)
+            {
+                int num = 100;
+                for (int x=0;x<num;x++)
+                {
+                    for (int z=0;z<num;z++)
+                    {
+                        auto prefab = GameObject::Get(prefabID);
+
+                        auto gameobjectID = GameObject::Instantiate(prefab);
+                        auto gameObject = GameObject::Get(gameobjectID);
+
+                        auto transform = gameObject->getTransform();
+                        transform->setLocalPosition({(float)x * 2.5f, 0.0f, (float)z * 2.5f});
+                    }
+                }
+                GameObject::DestroyImediate(GameObject::Get(prefabID));
+            });
+        }
+    }
+    ImGui::End();
 }
 
 void Editor::onFocus()
@@ -407,16 +415,12 @@ void Editor::create_dock()
     {
         if (ImGui::BeginMenu("Project"))
         {
-            if (ImGui::MenuItem("Rebuild Script"))
-            {
-                ReconfigScript();
-            }
             if (ImGui::MenuItem("Close"))
             {
                 for (auto& scene : SceneManager::GetScenes())
                 {
                     scene->Clear();
-                    scene->setCamera(nullptr);
+                    scene->setCamera(GID_INVALID);
                 }
 
                 MainThreadDispatcher::Add(&Engine::init_project, &Engine::GetInstance(), "");
@@ -494,7 +498,7 @@ void Editor::create_render_hierarchy()
 
                     transform->setParent(nullptr);
         
-                    m_scene->insert(transform->GetGameObject());
+                    m_scene->insert(transform->GetGameObject()->getCacheID());
                 });
         
         RenderSceneObject(m_scene);
@@ -561,7 +565,7 @@ void Editor::RenderSceneObject(Scene *scene)
 
         for (int i = start; i < end; ++i)
         {
-            auto transform = list[i]->getTransform();
+            auto transform = GameObject::Get(list[i])->getTransform();
 
             ReadHierarchy(scene, transform);
         }
@@ -579,13 +583,11 @@ void Editor::ReadHierarchy(Scene *scene, Transform *transform)
 
     auto gameObject = transform->GetGameObject();
     if (!gameObject)
-    {
         return;
-    }
 
     auto name = gameObject->getName();
 
-    if (scene->object_has_been_selected(gameObject))
+    if (scene->object_has_been_selected(gameObject->getCacheID()))
         flags |= ImGuiTreeNodeFlags_Selected;
 
     if (transform->hasChildren())
@@ -598,18 +600,18 @@ void Editor::ReadHierarchy(Scene *scene, Transform *transform)
 
     if (ImGui::IsKeyDown(ImGuiKey_ModShift) && ImGui::IsItemClicked(ImGuiMouseButton_Left))
     {
-        if (scene->object_has_been_selected(gameObject))
+        if (scene->object_has_been_selected(gameObject->getCacheID()))
         {
-            scene->deselect(gameObject);
+            scene->deselect(gameObject->getCacheID());
         } else
         {
-            scene->select(gameObject);
+            scene->select(gameObject->getCacheID());
         }
     } else if (ImGui::IsItemClicked(ImGuiMouseButton_Left) && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
     {
         scene->deselect_all();
 
-        scene->select(gameObject);
+        scene->select(gameObject->getCacheID());
     }
 
     dragDropGameObject(transform, name);
@@ -651,7 +653,7 @@ void Editor::dragDropGameObject(Transform *transform, const std::string &name)
     {
         target->setParent(transform);
 
-        m_scene->remove(target->GetGameObject());
+        m_scene->remove(target->GetGameObject()->getCacheID());
     }
 
     ImGui::EndDragDropTarget();
@@ -907,8 +909,7 @@ void Editor::render_scene(Scene *scene)
         if (ImGui::ImageButton(reinterpret_cast<ImTextureID>(s_texturePlayGame->getTextureID()), ImVec2(16, 16))) {
             if (!Settings::bGameRunning)
             {
-                // Console::LogInfo("")
-                // PlayGame();
+                PlayGame();
             } else {
                 StopGame();
             }
@@ -995,7 +996,7 @@ void Editor::render_scene(Scene *scene)
         m_scene->deselect_all();
 
         for (auto go : temp)
-            m_scene->select(GameObject::Instantiate(go));
+            m_scene->select(GameObject::Instantiate(GameObject::Get(go)));
     }
 
     if (ImGui::IsWindowFocused() && mImGuiIO->KeyCtrl && ImGui::IsKeyReleased(ImGuiKey_S))
@@ -1063,7 +1064,7 @@ void Editor::create_render_guizmo(Scene *scene)
     auto objects = scene->get_object_selected();
     for (std::size_t i=0;i<objects.size();i++)
     {
-        auto go = objects[i];
+        auto go = GameObject::Get(objects[i]);
 
         auto name = go->getName();
 
@@ -1483,7 +1484,7 @@ void Editor::drop_gameobject_in_treefile(gtreefile *tree_file)
 
     auto transform = *reinterpret_cast<Transform **>(payload->Data);
 
-    TaskManager::Add<int, GameObjectSaveTask>(tree_file->path, transform->GetGameObject(), [&](GameObject *)
+    TaskManager::Add<int, GameObjectSaveTask>(tree_file->path, transform->GetGameObject()->getCacheID(), [&](GameObjectID id)
             {
                 updateFileTree(*tree_file);
             });
@@ -1545,7 +1546,7 @@ void Editor::create_window_property()
 
 void Editor::create_render_property()
 {
-    auto go = m_scene->get_object_selected().back();
+    auto go = GameObject::Get(m_scene->get_object_selected().back());
 
     auto objName = go->getName();
 
@@ -1730,9 +1731,11 @@ void Editor::create_popup_add_component()
 
     for (auto it = m_componentName.begin(); it != m_componentName.end(); ++it) {
         bool isFirst = (it == m_componentName.begin());
-        if (ImGui::Selectable(it->c_str(), isFirst) || bSelect && go != nullptr)
+        if (ImGui::Selectable(it->c_str(), isFirst) || bSelect && go != GID_INVALID)
         {
-            auto component = go->addComponent(it->c_str());
+            auto gameObject = GameObject::Get(go);
+
+            auto component = gameObject->addComponent(it->c_str());
 
             std::memset(componentName, '\0', sizeof(componentName));
 
@@ -1756,7 +1759,7 @@ void Editor::create_popup_rename_object()
     ImGui::SeparatorText("[ Rename ]");
     auto objectlist = m_scene->get_object_selected();
 
-    auto object = objectlist.back();
+    auto object = GameObject::Get(objectlist.back());
     auto go_name = object->getName();
 
     char name[256] = {0};
@@ -1790,8 +1793,6 @@ void Editor::create_popup_create_script()
     char name[256] = {0};
     if (ImGui::InputText("##input_text_popup_create_script_name", name, 256, ImGuiInputTextFlags_EnterReturnsTrue))
     {
-        CreateScriptTemplate(file_tree->path, name);
-
         updateFileTree(*file_tree);
 
         ImGui::CloseCurrentPopup();
@@ -2679,69 +2680,16 @@ Camera *Editor::getCamera()
     return m_mainCamera;
 }
 
-void Editor::PostLoadGameObject(GameObject *gameObject)
+void Editor::PostLoadGameObject(GameObjectID gameObjectID)
 {
     if (m_scene == nullptr)
         return;
 
-    auto instantiate = GameObject::Instantiate(gameObject);
-    GameObject::DestroyImediate(gameObject);
+    auto instantiate = GameObject::Instantiate(GameObject::Get(gameObjectID));
+    GameObject::DestroyImediate(GameObject::Get(gameObjectID));
 
     m_scene->deselect_all();
     m_scene->select(instantiate);
-}
-/*
-std::string GenerateScriptHeader(const std::string& name)
-{
-    auto source = File::GetFileContent(File::GetFile("/example/script.hpp", true));
-    if (source.empty()) {
-        Console::LogError("[ SCRIPT ] falied to generate source file.");
-        return "";
-    }
-    source = String::replace_all(source, "#name", name);
-    return source;
-}
-
-std::string GenerateScriptSource(const std::string& name) {
-    auto source = File::GetFileContent(File::GetFile("/example/script.cpp", true));
-    if (source.empty()) {
-        Console::LogError("[ SCRIPT ] falied to generate source file.");
-        return "";
-    }
-    source = String::replace_all(source, "#name", name);
-    return source;
-}
-*/
-void Editor::CreateScriptTemplate(const std::string &path, const std::string &name)
-{
-    /*
-    auto script_hpp = GenerateScriptHeader(name);
-    if (script_hpp.empty()) {
-        return;
-    }
-
-    auto script_cpp = GenerateScriptSource(name);
-    if (script_cpp.empty()) {
-        return;
-    }
-
-    // write .hpp
-
-    {
-        std::ofstream os_header(path  + "/" + name + ".hpp");
-        os_header << script_hpp << std::endl;
-        os_header.close();
-    }
-
-    // write .cpp
-    {
-        std::ofstream os_source(path + "/" + name + ".cpp");
-        os_source << script_cpp << std::endl;
-        os_source.close();
-    }
-
-    Command::exec("code '" + path  + "/" + name + ".hpp" + "'");
-    */
 }
 
 void Editor::CreateShaderTemplate(const std::string &path, const std::string &name)
@@ -2784,102 +2732,51 @@ void Editor::RenameMaterial() {
     */
 }
 
-void Editor::BuildProject()
-{
-    /*
-    Console::LogInfo("[ Build ] Initialize");
-
-    auto path = File::GetFile("/.build");
-    if (!gfile::exists(path))
-        return Console::LogError("[ Build ] Falied to build project, internal data not found.");
-
-    std::function<void()> func = std::bind(&Editor::PostBuildScriptFromProject, this);
-
-    if (func)
-        Threadpool::AddTask(&Editor::CompileScript, this, path, func);
-    */
-}
-
-void Editor::PostBuildScriptFromProject()
-{
-    /*
-    Threadpool::AddTask([] {
-        std::vector<std::string> cmd = {
-            "/home/grsource/Documentos/gr-project/gr-engine-linux-project/bin/gr-engine-linux-project " +
-                File::GetFile("")
-        };
-        
-        Command::exec(cmd, [](std::string line) {
-            Console::LogWarning(line);
-        });
-    });
-    */
-}
-
-void Editor::ReconfigScript()
-{
-    /*
-    Console::LogInfo("[ BUILD ] Initialized reconfigation...");
-
-    auto component = File::GetFile("/component", true);
-    if (!gfile::exists(component))
-        return Console::LogError("[ BULD ] Falied to load internal data component.");
-
-    auto path = File::GetFile("/.build");
-    if (gfile::exists(path))
-        gfile::remove(path);
-
-    gfile::create_directory(path);
-
-    if (!gfile::copy(component.c_str(), path.c_str()))
-        return Console::LogError("[ BULD ]" + File::GetError());
-
-    Console::LogInfo("[ BUILD ] building scipt...");
-
-    PlayGame();
-    */
-}
-
 void Editor::onBuildScript()
 {
-    /*
     Console::LogInfo("[ Build ] Starting pre-build scripting...");
 
-    auto path = File::GetFile("/.build");
-    if (!gfile::exists(path))
-        return Console::LogError("[ Build ] Falied to build script this directory don't has cache!");
+    auto builddir = m_project->path + "/.build";
+    if (!gfile::exists(builddir))
+    {
+        if (!gfile::create_directory(builddir))
+            return Console::LogError("[ Build ] fail to create directory: %s", builddir.c_str());
 
-    CompileScript(path, std::bind(&Editor::LoadScript, this));
-    */
-}
+        auto templatedir = gfile::get_data_directory() + "/assets/script";
 
-void Editor::CompileScript(std::string path, std::function<void()> func)
-{
-    /*
-    auto build = File::GetFile("/script/build.sh", true);
-    if (!gfile::exists(build))
-        return Console::LogError("Build script do not found.");
+        gfile::copy(templatedir.c_str(), builddir.c_str());
+    }
 
-    auto project_path = File::GetFile("");
-    if (!gfile::exists(project_path))
-        return Console::LogError("Project do not found.");
+    auto cmakebuild = builddir + "/build";
+    if (!gfile::exists(cmakebuild))
+    {
+        if (!gfile::create_directory(cmakebuild))
+            return Console::LogError("[ Build ] fail to create directory: %s", cmakebuild.c_str());
 
-    std::vector<std::string> command {
-        "chmod +x " + build,
-        "sh " + build + " '" + project_path + "'"
-    };
+        std::string cmd = "cd " + cmakebuild + " && cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON ..";
 
-    bool retVal = Command::exec(command, [](std::string line)
+        bool retVal = Command::exec(cmd, [](std::string line)
+        {
+            Console::LogWarning(line);
+        });
+
+        if (!retVal)
+            return Console::LogError("[ Build ] Falied in to configure build");
+    }
+
+    std::string cmd = "cmake --build " + cmakebuild;
+
+    bool retVal = Command::exec(cmd, [](std::string line)
     {
         Console::LogWarning(line);
     });
 
     if (!retVal)
-        return Console::LogError("[ Build ] Falied to build script, fatal error!!!");
+        return Console::LogError("[ Build ] Falied in to build script");
 
-    if (func)
-        MainThreadDispatcher::Add(func);
-    */
+    Console::LogInfo("[ Build ] Script compiled sucess fully.");
+
+    MainThreadDispatcher::Add(&Editor::loadScript, this, builddir + "/lib");
 }
 
 /*
@@ -3098,7 +2995,7 @@ void Editor::PluginEditor() {
 
 void Editor::set_scene(Scene *scene)
 {
-    m_cameraObject = scene == nullptr ? nullptr : scene->getCameraObject();
+    m_cameraObject = scene == nullptr ? GID_INVALID : scene->getCameraObject();
 
     m_mainCamera = scene == nullptr ? nullptr : scene->getCamera();
 

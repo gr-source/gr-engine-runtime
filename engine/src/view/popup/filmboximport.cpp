@@ -10,7 +10,7 @@
 
 #include <imgui.h>
 
-FilmboxImport::FilmboxImport(GameObject* gameObject) : m_gameObject(gameObject)
+FilmboxImport::FilmboxImport(GameObjectID gameObjectID) : m_gameObjectID(gameObjectID)
 {}
 
 void FilmboxImport::onRenderUI()
@@ -26,11 +26,12 @@ void FilmboxImport::onRenderUI()
 
     // for (auto &gameObject : resultTask)
     {
-        auto name = m_gameObject->getName();
+        auto gameObject = GameObject::Get(m_gameObjectID);
+        auto name = gameObject->getName();
 
         if (ImGui::CollapsingHeader(name.c_str()))
         {
-            auto transform = m_gameObject->getTransform();
+            auto transform = gameObject->getTransform();
 
             for (auto &child : transform->getChildren())
             {
@@ -49,7 +50,7 @@ void FilmboxImport::onRenderUI()
         
         auto dir = project.path + "/assets/model";
 
-        TaskManager::Add<int, GameObjectSaveTask>(dir, m_gameObject, std::bind(&FilmboxImport::onSavedGameObject, this, std::placeholders::_1));
+        TaskManager::Add<int, GameObjectSaveTask>(dir, m_gameObjectID, std::bind(&FilmboxImport::onSavedGameObject, this, std::placeholders::_1));
     }
 
     ImGui::End();
@@ -69,9 +70,9 @@ void FilmboxImport::render_tree_node(const GameObject *gameObject)
     ImGui::TreePop();
 }
 
-void FilmboxImport::onSavedGameObject(GameObject *gameObject)
+void FilmboxImport::onSavedGameObject(GameObjectID gameObject)
 {
-    GameObject::DestroyImediate(gameObject);
+    GameObject::DestroyImediate(GameObject::Get(gameObject));
 
     ViewManager::Remove(this);
 }
