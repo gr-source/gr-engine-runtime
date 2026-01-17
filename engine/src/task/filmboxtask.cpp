@@ -99,21 +99,6 @@ void FilmboxLoadTask::generateMesh(FbxScene *scene, const FbxNode *node, GameObj
 
     MeshFilter *meshFilter = go->getComponent<MeshFilter>() ? go->getComponent<MeshFilter>() : go->addComponent<MeshFilter>();
     // MeshRender *meshRender = go->hasComponent<MeshRender>() ? go->getComponent<MeshRender>() : go->addComponent<MeshRender>();
-
-    ShaderParams shaderParams;
-    shaderParams.name = "simple_model";
-    shaderParams.base = gfile::get_data_directory() + "/assets/shader/model/simple_model.glsl";
-    shaderParams.flags = ShaderOptimize_dynamic;
-    shaderParams.type = ShaderType::SHADER3D;
-
-    auto name = GetShaderParamsName(shaderParams);
-
-    auto shader = AssetsManager::FindShader(name);
-    if (shader == nullptr)
-    {
-        auto info = AssetsManager::LoadShaderAsync(shaderParams);
-        shader = info->get();
-    }
     
     auto meshes = node->getMeshes();
     for (std::size_t i=0;i<meshes.size();i++)
@@ -184,6 +169,43 @@ void FilmboxLoadTask::generateMesh(FbxScene *scene, const FbxNode *node, GameObj
     meshFilter->setMesh(m_mesh);
     */
 
+
+    grr::gShader* shader = nullptr;
+    grr::gShader* shaderInstanced = nullptr;
+    {
+        ShaderParams shaderParams;
+        shaderParams.name = "simple_model";
+        shaderParams.base = gfile::get_data_directory() + "/assets/shader/model/simple_model.glsl";
+        shaderParams.flags = ShaderOptimize_dynamic;
+        shaderParams.type = ShaderType::SHADER3D;
+
+        auto name = GetShaderParamsName(shaderParams);
+
+        shader = AssetsManager::FindShader(name);
+        if (shader == nullptr)
+        {
+            auto info = AssetsManager::LoadShaderAsync(shaderParams);
+            shader = info->get();
+        }
+    }
+
+    {
+        ShaderParams shaderParams;
+        shaderParams.name = "simple_model";
+        shaderParams.base = gfile::get_data_directory() + "/assets/shader/model/simple_model.glsl";
+        shaderParams.flags = ShaderOptimize_dynamic | ShaderOptimize_instanced;
+        shaderParams.type = ShaderType::SHADER3D;
+
+        auto name = GetShaderParamsName(shaderParams);
+
+        shaderInstanced = AssetsManager::FindShader(name);
+        if (shaderInstanced == nullptr)
+        {
+            auto info = AssetsManager::LoadShaderAsync(shaderParams);
+            shaderInstanced = info->get();
+        }
+    }
+
     auto renderer = m_bones.empty() ? static_cast<BaseRender *>(go->addComponent<MeshRender>()) : static_cast<BaseRender *>(go->addComponent<SkinnedMeshRender>());
     if (!renderer) { return; }
 
@@ -191,12 +213,15 @@ void FilmboxLoadTask::generateMesh(FbxScene *scene, const FbxNode *node, GameObj
     {
         auto &fbxMaterial = scene->getMaterials()[fbxMesh->getMaterialIndex()];
 
-        auto materialID = AssetsManager::CreateMaterial(fbxMaterial.getName(), shader);
+        auto materialID = AssetsManager::CreateMaterial(fbxMaterial.getName());
         renderer->addMaterial(materialID);
 
         auto texturepath = fbxMaterial.getTextures();
 
         auto &material = AssetsManager::GetMaterial(materialID);
+        material.SetShader(shader, false);
+        material.SetShader(shaderInstanced, true);
+
         material.setValue("albedo", fbxMaterial.getColor());
         material.setValue("metallic", fbxMaterial.metallic);
         material.setValue("roughness", fbxMaterial.roughness);

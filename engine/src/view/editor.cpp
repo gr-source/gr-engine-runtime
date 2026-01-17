@@ -339,7 +339,7 @@ void Editor::on_render_scene(Camera* camera)
     grr::gRender::SetRenderState(grr::GR_DEPTH_FUNC, grr::GR_DEPTH_LESS);
     RenderManager::Render();
 
-    grr::gRender::SetRenderState(grr::GR_DEPTH_FUNC, grr::GR_DEPTH_LEQUAL);
+    // grr::gRender::SetRenderState(grr::GR_DEPTH_FUNC, grr::GR_DEPTH_LEQUAL);
     // DebugDraw::Render(camera);
 
     // grr::gRender::SetRenderState(grr::GR_DEPTH_FUNC, grr::GR_DEPTH_LEQUAL);
@@ -2312,7 +2312,7 @@ bool Editor::render_material(MaterialID id)
 
     auto &material = AssetsManager::GetMaterial(id);
 
-    auto shader = material.getShader();
+    auto shader = material.GetShader(false);
     if (shader == nullptr)
     {
         dropShaderInMaterial(&material);
@@ -2338,7 +2338,7 @@ void Editor::render_shader_property(const std::string &name, Material *material)
     if (!isopen)
         return;
 
-    RenderShaderUniform(material, material->getShader());
+    RenderShaderUniform(material, material->GetShader(false));
 
     ImGui::TreePop();
 }
@@ -2685,11 +2685,11 @@ void Editor::PostLoadGameObject(GameObjectID gameObjectID)
     if (m_scene == nullptr)
         return;
 
-    auto instantiate = GameObject::Instantiate(GameObject::Get(gameObjectID));
+    auto instantiateID = GameObject::Instantiate(GameObject::Get(gameObjectID));
     GameObject::DestroyImediate(GameObject::Get(gameObjectID));
 
     m_scene->deselect_all();
-    m_scene->select(instantiate);
+    m_scene->select(instantiateID);
 }
 
 void Editor::CreateShaderTemplate(const std::string &path, const std::string &name)
