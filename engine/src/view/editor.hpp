@@ -296,7 +296,7 @@ private:
 
     bool OnPropertySkinnedMeshRender(SkinnedMeshRender *skinnedMeshRender);
 
-    bool OnPropertyLODGroup(LODGroup *LodGroup);
+    bool OnPropertyLODComponent(LODComponent* lodComponent);
 
     // bool OnPropertyMeshCollider(MeshCollider *meshCollider);
 

@@ -11,6 +11,7 @@
 #include "editorController.h"
 #include "engine.h"
 #include "gr-base/core/clock.hpp"
+#include "gr-base/core/debugdraw.hpp"
 #include "gr-base/core/geometry/shader.hpp"
 #include "gr-base/core/mainthreaddispatcher.hpp"
 
@@ -45,6 +46,7 @@
 #include "core/screen.hpp"
 
 #include <gr-base/script/skinnedMeshRender.hpp>
+#include <gr-base/script/LODComponent.hpp>
 // #include <gr-base/script/meshCollider.hpp>
 // #include <gr-base/script/boxCollider.hpp>
 #include <gr-base/script/meshFilter.hpp>
@@ -52,7 +54,6 @@
 #include <gr-base/script/transform.hpp>
 // #include <gr-base/script/rigidbody.hpp>
 // #include <gr-base/script/animator.hpp>
-// #include <gr-base/script/LODGroup.hpp>
 #include <gr-base/script/camera.hpp>
 #include <gr-base/script/light.hpp>
 
@@ -173,7 +174,7 @@ Editor::Editor() : m_viewport(ImGui::GetMainViewport()), mImGuiIO(&ImGui::GetIO(
         INSERT_SCRIPT(MeshRender),
         INSERT_SCRIPT(SkinnedMeshRender),
         INSERT_SCRIPT(MeshFilter),
-        // INSERT_SCRIPT(LODGroup),
+        INSERT_SCRIPT(LODComponent),
         // INSERT_SCRIPT(BoxCollider),
         // INSERT_SCRIPT(Rigidbody),
         // INSERT_SCRIPT(Animator),
@@ -299,8 +300,11 @@ void Editor::onUpdate()
         EditorController::Update(scene->getCamera());
 }
 
+#include "gr-base/core/culling/octreemanager.hpp"
 void Editor::onRender3D()
 {
+    // OctreeManager::Render();
+
     if (!Settings::bGameRunning)
     {
         auto scene = SceneManager::GetCurrent();
@@ -309,12 +313,12 @@ void Editor::onRender3D()
 
         if (m_cameraObjectSelected != nullptr)
             on_pre_config_render_scene(m_cameraObjectSelected);
-
-        return;
+    } else
+    {
+        for (auto &camera : Camera::GetCameras())
+            on_pre_config_render_scene(camera);
     }
-
-    for (auto &camera : Camera::GetCameras())
-        on_pre_config_render_scene(camera);
+    DebugDraw::PosRender();
 }
 
 void Editor::on_pre_config_render_scene(Camera* camera)
@@ -339,8 +343,8 @@ void Editor::on_render_scene(Camera* camera)
     grr::gRender::SetRenderState(grr::GR_DEPTH_FUNC, grr::GR_DEPTH_LESS);
     RenderManager::Render();
 
-    // grr::gRender::SetRenderState(grr::GR_DEPTH_FUNC, grr::GR_DEPTH_LEQUAL);
-    // DebugDraw::Render(camera);
+    grr::gRender::SetRenderState(grr::GR_DEPTH_FUNC, grr::GR_DEPTH_LEQUAL);
+    DebugDraw::Render(camera);
 
     // grr::gRender::SetRenderState(grr::GR_DEPTH_FUNC, grr::GR_DEPTH_LEQUAL);
     // m_skybox.render(camera);
@@ -381,11 +385,11 @@ void Editor::onRenderUI()
                     {
                         auto prefab = GameObject::Get(prefabID);
 
+                        auto transform = prefab->getTransform();
+                        transform->setLocalPosition({(float)x * 2.5f, 0.0f, (float)z * 2.5f});
+
                         auto gameobjectID = GameObject::Instantiate(prefab);
                         auto gameObject = GameObject::Get(gameobjectID);
-
-                        auto transform = gameObject->getTransform();
-                        transform->setLocalPosition({(float)x * 2.5f, 0.0f, (float)z * 2.5f});
                     }
                 }
                 GameObject::DestroyImediate(GameObject::Get(prefabID));
@@ -2252,7 +2256,7 @@ bool Editor::OnPropertySkinnedMeshRender(SkinnedMeshRender *skinnedMeshRender) {
     return false;
 }
 
-bool Editor::OnPropertyLODGroup(LODGroup *LodGroup)
+bool Editor::OnPropertyLODComponent(LODComponent* lodComponent)
 {
     /*
     static int selectedLOD = 0;
