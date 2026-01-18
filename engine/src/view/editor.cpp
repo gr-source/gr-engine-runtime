@@ -381,7 +381,7 @@ void Editor::onRenderUI()
 
             AssetsManager::LoadGameObject(model, [this](GameObjectID prefabID)
             {
-                int num = 300;
+                int num = 100;
                 for (int x=0;x<num;x++)
                 {
                     for (int z=0;z<num;z++)
@@ -2250,45 +2250,45 @@ bool Editor::OnPropertyLODComponent(LODComponent* lodComponent)
 {
     auto avail = ImGui::GetContentRegionAvail();
 
-    for (auto& meshLOD : lodComponent->meshesLOD)
+    for (auto& lod : lodComponent->meshesLOD)
     {
-        for (auto& level : meshLOD.levels)
+        ImGui::PushID(&lod);
+
+        ImGui::Text("Distance");
+
+        ImGui::SliderFloat("##lodComponent_levels_distance", &lod.minDistance, 0.0f, 1000.0f);
+
+        for (auto& meshID : lod.meshes)
         {
-            auto meshName = AssetsManager::GetMeshName(level.meshID);
-            ImGui::PushID(meshName.c_str());
+            auto meshName = AssetsManager::GetMeshName(meshID);
 
             ImGui::Text("Mesh: %s", meshName.c_str());
-
-            ImGui::Text("Distance");
-
-            ImGui::SliderFloat("##lodComponent_levels_distance", &level.minDistance, 0.0f, 1000.0f);
-
-            ImGui::PopID();
         }
+
+        if (ImGui::BeginDragDropTarget())
+        {
+            auto payload = ImGui::AcceptDragDropPayload(m_extensionDragDrop[DragDropFlags::MESH]);
+            if (payload != NULL && payload->DataSize > 0)
+            {
+                std::vector<gtreefile *> files(payload->DataSize / sizeof(gtreefile *), nullptr);
+                memcpy(files.data(), payload->Data, payload->DataSize);
+
+                for (auto file : files)
+                {
+                    TaskManager::Add<MeshID, MeshLoadTask>(file->path, [ld = std::forward<LODMesh*>(&lod)](MeshID id)
+                    {
+                        ld->meshes.push_back(id);
+                    });
+                }
+            }
+            ImGui::EndDragDropTarget();
+        }
+
+        ImGui::PopID();
     }
 
     if (ImGui::Button("Add", ImVec2{avail.x, 0.0f}))
         lodComponent->meshesLOD.push_back({});
-
-    if (ImGui::BeginDragDropTarget())
-    {
-        auto payload = ImGui::AcceptDragDropPayload(m_extensionDragDrop[DragDropFlags::MESH]);
-        if (payload != NULL && payload->DataSize > 0)
-        {
-            std::vector<gtreefile *> files(payload->DataSize / sizeof(gtreefile *), nullptr);
-            memcpy(files.data(), payload->Data, payload->DataSize);
-
-            for (auto file : files)
-            {
-                TaskManager::Add<MeshID, MeshLoadTask>(file->path, [lodComponent = std::forward<LODComponent*>(lodComponent)](MeshID id)
-                {
-                    lodComponent->meshesLOD[0].levels.push_back({id, 10.0f});
-                });
-            }
-        }
-
-        ImGui::EndDragDropTarget();
-    }
 
     return false;
 }
