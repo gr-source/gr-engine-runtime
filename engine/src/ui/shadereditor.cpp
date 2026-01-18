@@ -109,6 +109,7 @@ void ShaderEditor::create_window_viewport()
 
 void ShaderEditor::create_render_viewport()
 {
+    /*
     auto camera = m_currentscene->getCamera();
 
     auto &rendertarget = camera->rendertarget;
@@ -122,6 +123,7 @@ void ShaderEditor::create_render_viewport()
     }
 
     ImGui::Image(reinterpret_cast<ImTextureID>(rendertarget.getTextureID()), avail, {0.0f, 1.0f}, {1.0f, 0.0f});
+    */
 }
 
 void ShaderEditor::create_window_texeditor()

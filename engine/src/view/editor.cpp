@@ -33,6 +33,7 @@
 #include <gr-base/managers/gameobjectmanager.hpp>
 #include <gr-base/managers/assetsManager.hpp>
 #include <gr-base/managers/rendermanager.hpp>
+#include <gr-base/managers/octreemanager.hpp>
 #include <gr-base/managers/sceneManager.hpp>
 
 #include <gr-base/core/console.hpp>
@@ -303,7 +304,6 @@ void Editor::onUpdate()
         EditorController::Update(scene->getCamera());
 }
 
-#include "gr-base/core/culling/octreemanager.hpp"
 void Editor::onRender3D()
 {
     // OctreeManager::Render();
@@ -328,7 +328,9 @@ void Editor::on_pre_config_render_scene(Camera* camera)
 {
     RenderManager::PreRender(camera);
 
-    camera->rendertarget.bind();
+    auto rendertarget = camera->getRenderTarget();
+
+    rendertarget->bind();
 
     grr::gRender::SetRenderState(grr::GR_CULL, grr::GR_BACK);
     grr::gRender::SetEnable(GR_DEPTH, true);
@@ -338,7 +340,7 @@ void Editor::on_pre_config_render_scene(Camera* camera)
 
     on_render_scene(camera);
 
-    camera->rendertarget.unbind();
+    rendertarget->unbind();
 }
 
 void Editor::on_render_scene(Camera* camera)
@@ -375,13 +377,16 @@ void Editor::onRenderUI()
 
     if (ImGui::Begin("Test"))
     {
+        static int num = 100;
+
+        ImGui::InputInt("Num", &num);
+
         if (ImGui::Button("Spawn"))
         {
             std::string model = m_project->path + "/assets/model/Test.gmdx";
 
             AssetsManager::LoadGameObject(model, [this](GameObjectID prefabID)
             {
-                int num = 100;
                 for (int x=0;x<num;x++)
                 {
                     for (int z=0;z<num;z++)
@@ -516,9 +521,7 @@ void Editor::create_render_hierarchy()
     if (ImGui::IsKeyReleased(ImGuiKey_Delete) && m_scene->has_object_selected())
     {
         for (auto go : m_scene->get_object_selected())
-        {
             m_scene->destroy(go);
-        }
 
         m_scene->deselect_all();
 
@@ -913,9 +916,9 @@ void Editor::render_scene(Scene *scene)
     auto camera = get_camera();
     if (camera != nullptr)
     {
-        auto &rendertarget = camera->rendertarget;
+        auto rendertarget = camera->getRenderTarget();
 
-        ImGui::Image(reinterpret_cast<ImTextureID>(rendertarget.getTextureID()), regionAvail, {0.0f, 1.0f}, {1.0f, 0.0f});
+        ImGui::Image(reinterpret_cast<ImTextureID>(rendertarget->getTextureID()), regionAvail, {0.0f, 1.0f}, {1.0f, 0.0f});
 
         /*if (ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
             auto mousePos = ImGui::GetMousePos();
@@ -1013,7 +1016,7 @@ void Editor::UpdateResizeSceneFramebuffer()
         {
             Display::SetDisplayRect(Rect{0.0f, 0.0f, (float)Settings::ViewportSize.x, (float)Settings::ViewportSize.y});
 
-            m_mainCamera->setAspectRatio(static_cast<float>(viewport.x) / static_cast<float>(viewport.y));
+            m_mainCamera->setRect(Display::GetDisplayRect());
 
             // Engine::GetMainPostprocess()->resize(viewport);
             
@@ -2168,13 +2171,12 @@ bool Editor::OnPropertyCamera(Camera *camera)
 
     if (m_cameraObjectSelected != nullptr)
     {
-        if (camera->get_aspect_ratio() != (64.0f / 64.0f))
-            camera->setAspectRatio(64.0f / 64.0f);
+        m_mainCamera->setRect(Rect{0.0f, 0.0f, 64.0f, 64.0f});
 
-        auto &rendertarget = camera->rendertarget;
+        auto rendertarget = camera->getRenderTarget();
 
-        if (rendertarget.is_valid())
-            ImGui::Image(reinterpret_cast<ImTextureID>(rendertarget.getTextureID()), {64.0f, 64.0f}, {0.0f, 1.0f}, {1.0f, 0.0f});
+        if (rendertarget->is_valid())
+            ImGui::Image(reinterpret_cast<ImTextureID>(rendertarget->getTextureID()), {64.0f, 64.0f}, {0.0f, 1.0f}, {1.0f, 0.0f});
     }
 
     return false;

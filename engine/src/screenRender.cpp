@@ -49,12 +49,13 @@ void ScreenRender::Shutdown() {
 
 #include <gr-render/gl.h>
 void ScreenRender::Render(Camera *camera) {
-    auto &rendertarget = camera->rendertarget;
-    auto rect = camera->getRect();
+    auto rendertarget = camera->getRenderTarget();
 
     if (!m_shader || !m_shader->isValid()) {
         return;
     }
+
+    auto rect = camera->getRect();
 
     auto windowsize = Window::GetWindowSize();
 
@@ -71,7 +72,7 @@ void ScreenRender::Render(Camera *camera) {
     int textureID = 0;
 
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, rendertarget.getTextureID());
+    glBindTexture(GL_TEXTURE_2D, rendertarget->getTextureID());
 
     m_shader->setUniform("u_texture", (void *)&textureID);
 
