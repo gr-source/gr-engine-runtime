@@ -22,25 +22,6 @@ set(core_src
     src/core/string.cpp
     src/core/screen.cpp
     src/core/time.cpp
-    src/core/timer.cpp
-)
-
-set(core_hdr
-    src/core/statistics.hpp
-    src/core/string.hpp
-    src/core/screen.hpp
-    src/core/time.hpp
-    src/core/timer.hpp
-)
-
-set(core_file_src
-    src/core/file/initialization.cpp
-    src/core/file/config.cpp
-)
-
-set(core_file_hdr
-    src/core/file/initialization.hpp
-    src/core/file/config.hpp
 )
 
 set(core_cmd_hdr
@@ -85,7 +66,6 @@ set(engine_src
     ${filmbox_src}
     ${core_cmd_src}
     ${animation_src}
-    ${core_file_src}
     ${simplexNoise_src}
     ${scriptManager_cpp}
     ${managers_src}
@@ -111,11 +91,9 @@ set(engine_src
 )
 
 set(engine_hdr
-    ${core_hdr}
     ${guizmo_hdr}
     ${core_cmd_hdr}
     ${animation_hdr}
-    ${core_file_hdr}
     ${scriptManager_hdr}
 
     src/engine.h

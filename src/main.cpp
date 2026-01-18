@@ -192,18 +192,21 @@ int main(int argc, char *argv[])
 
     GLFWframebuffersizefunCallback(&(*window), SCREEN_WIDTH, SCREEN_HEIGHT);
 
-    gtimer time;
+    gtimer time(60.0f);
 
     while (Settings::IsEngineRunning() && !glfwWindowShouldClose(&(*window)))
     {
+        time.begin_frame();
+
         Clock::deltaTime = time.get_delta();
+        Clock::time += Clock::deltaTime;
 
         glfwSwapBuffers(&(*window));
         glfwPollEvents();
 
         Engine::HandleEvent(Engine::LOOP, nullptr);
 
-        time.wait();
+        time.end_frame();
     }
 
     window = nullptr;

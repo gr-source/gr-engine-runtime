@@ -14,8 +14,6 @@
 
 #include <gr-base/core/file/file.hpp>
 
-#include "core/file/config.hpp"
-
 #include <filesystem>
 
 #include <iostream>

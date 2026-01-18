@@ -69,7 +69,7 @@ void EditorController::Update(Camera *camera)
     // }
 
     if (Math::magnitude(diretion) > 0.0f) {
-        transform->addLocalPosition(Math::normalize(diretion) * movementSpeed * Clock::deltaTime);
+        transform->addLocalPosition(Math::normalize(diretion) * movementSpeed * (float)Clock::deltaTime);
     }
 
     UpdateCursor(transform);

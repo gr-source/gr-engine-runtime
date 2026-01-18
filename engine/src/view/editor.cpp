@@ -3174,13 +3174,15 @@ PhysicsTask::PhysicsTask() : IAsyncTask<bool>(TaskPriority::HIGH)
 
 bool PhysicsTask::doInBackground()
 {
-    Time time;
+    gtimer time(60.0f);
 
     while (Settings::bGameRunning)
     {
-        auto dt = time.sleep(60.0f);
+        time.begin_frame();
 
-        PhysicsScene::Update(dt);
+        PhysicsScene::Update(time.get_delta());
+
+        time.end_frame();
     }
 
     return true;
