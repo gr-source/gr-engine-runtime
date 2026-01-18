@@ -2,6 +2,8 @@
 
 #include "filmbox/default.hpp"
 
+#include "gr-base/core/geometry/default.hpp"
+
 #include <gr-base/core/thread/asynctask.hpp>
 
 #include <gr-base/script/default.hpp>
@@ -16,6 +18,8 @@ public:
     FilmboxLoadTask(const std::string& file);
 
 private:
+    std::vector<MeshID> m_meshes;
+
     std::string m_file;
 
     GameObjectID doInBackground() override;

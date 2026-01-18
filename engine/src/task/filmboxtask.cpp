@@ -47,7 +47,7 @@ void FilmboxLoadTask::onPostExecute(GameObjectID result)
     if (result == GID_INVALID)
         return;
 
-    ViewManager::AddPopup<FilmboxImport>(result);
+    ViewManager::AddPopup<FilmboxImport>(result, m_meshes);
 }
 
 GameObjectID FilmboxLoadTask::load_object(FbxScene *fbxscene)
@@ -105,19 +105,22 @@ void FilmboxLoadTask::generateMesh(FbxScene *scene, const FbxNode *node, GameObj
     {
         auto &fbxMesh = meshes[i];
 
-        auto meshID = AssetsManager::CreateMesh(fbxMesh->getName() + "_" + node->getName() + "_" + std::to_string(i));
+        MeshID meshID = AssetsManager::CreateMesh(fbxMesh->getName() + "_" + node->getName() + "_" + std::to_string(i));
+        m_meshes.push_back(meshID);
+
         meshFilter->addMesh(meshID);
 
-        auto &mesh = AssetsManager::GetMesh(meshID);
+        Mesh* mesh = AssetsManager::GetMesh(meshID);
 
-        for (auto &vertice : fbxMesh->getVertices()) {
-            mesh.addVertex(vertice.position, vertice.normal, vertice.texCoord);
+        for (auto &vertice : fbxMesh->getVertices())
+        {
+            mesh->addVertex(vertice.position, vertice.normal, vertice.texCoord);
 
             if (!fbxMesh->hasBone()) {
                 continue;
             }
 
-            auto& boneWeight = mesh.addBoneWeight();
+            auto& boneWeight = mesh->addBoneWeight();
 
             float norm = vertice.weight[0] + vertice.weight[1] + vertice.weight[2] + vertice.weight[3];
 
@@ -129,7 +132,7 @@ void FilmboxLoadTask::generateMesh(FbxScene *scene, const FbxNode *node, GameObj
 
         for (auto &indice : fbxMesh->getIndices())
         {
-            mesh.addIndice(indice);
+            mesh->addIndice(indice);
         }
 
         if (fbxMesh->hasBone())
@@ -143,7 +146,7 @@ void FilmboxLoadTask::generateMesh(FbxScene *scene, const FbxNode *node, GameObj
             }
         }
 
-        mesh.CalculateLocalBounds();
+        mesh->CalculateLocalBounds();
     }
 
     bonesList.resize(m_bones.size(), {"", 0});

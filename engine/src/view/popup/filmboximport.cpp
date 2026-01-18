@@ -1,16 +1,21 @@
 #include "view/popup/filmboximport.hpp"
-#include "engine.h"
+
 #include "gr-base/core/task/runtime/gameobjectsavetask.hpp"
+#include "gr-base/core/task/runtime/meshSaveTask.hpp"
+
 #include "gr-base/core/thread/taskmanager.hpp"
+
 #include "managers/viewmanager.hpp"
 
 #include <gr-base/script/transform.hpp>
 
 #include <gr-base/core/gameObject.hpp>
 
+#include "engine.h"
+
 #include <imgui.h>
 
-FilmboxImport::FilmboxImport(GameObjectID gameObjectID) : m_gameObjectID(gameObjectID)
+FilmboxImport::FilmboxImport(GameObjectID gameObjectID, std::vector<MeshID> meshes) : m_gameObjectID(gameObjectID), m_meshes(meshes)
 {}
 
 void FilmboxImport::onRenderUI()
@@ -48,9 +53,14 @@ void FilmboxImport::onRenderUI()
 
         Project& project = engine.get_project();
         
-        auto dir = project.path + "/assets/model";
+        TaskManager::Add<int, GameObjectSaveTask>(
+                project.path + "/assets/model",
+                m_gameObjectID,
+                std::bind(&FilmboxImport::onSavedGameObject, this, std::placeholders::_1)
+            );
 
-        TaskManager::Add<int, GameObjectSaveTask>(dir, m_gameObjectID, std::bind(&FilmboxImport::onSavedGameObject, this, std::placeholders::_1));
+        for (auto& meshID : m_meshes)
+            TaskManager::Add<MeshID, MeshSaveTask>(project.path + "/assets/mesh", meshID, nullptr);
     }
 
     ImGui::End();

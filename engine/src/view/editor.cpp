@@ -92,6 +92,7 @@ enum class DragDropFlags : uint32_t {
     GAMEOBJECT  = 1 << 5,
     ANIMATION   = 1 << 6,
     TEXTURE     = 1 << 7,
+    MESH        = 1 << 8,
 };
 
 static std::map<DragDropFlags, const char *> m_extensionDragDrop =
@@ -103,6 +104,7 @@ static std::map<DragDropFlags, const char *> m_extensionDragDrop =
     {DragDropFlags::GAMEOBJECT, ".gameobject"},
     {DragDropFlags::ANIMATION,  ".anm"},
     {DragDropFlags::TEXTURE,    ".png"},
+    {DragDropFlags::MESH,       ".gmsh"},
 };
 
 static std::unordered_map<std::string, DragDropFlags> m_extensionNameToFlag =
@@ -115,6 +117,7 @@ static std::unordered_map<std::string, DragDropFlags> m_extensionNameToFlag =
     {".gameobject", DragDropFlags::GAMEOBJECT},
     {".anm",        DragDropFlags::ANIMATION},
     {".png",        DragDropFlags::TEXTURE},
+    {".gmsh",       DragDropFlags::MESH},
 };
 
 #define INSERT_SCRIPT(object) \
@@ -374,11 +377,11 @@ void Editor::onRenderUI()
     {
         if (ImGui::Button("Spawn"))
         {
-            std::string model = m_project->path + "/assets/model/Suzanne.gmdx";
+            std::string model = m_project->path + "/assets/model/Test.gmdx";
 
             AssetsManager::LoadGameObject(model, [this](GameObjectID prefabID)
             {
-                int num = 100;
+                int num = 300;
                 for (int x=0;x<num;x++)
                 {
                     for (int z=0;z<num;z++)
@@ -386,7 +389,7 @@ void Editor::onRenderUI()
                         auto prefab = GameObject::Get(prefabID);
 
                         auto transform = prefab->getTransform();
-                        transform->setLocalPosition({(float)x * 2.5f, 0.0f, (float)z * 2.5f});
+                        transform->setLocalPosition({(float)x * 5.5f, 0.0f, (float)z * 4.5f});
 
                         auto gameobjectID = GameObject::Instantiate(prefab);
                         auto gameObject = GameObject::Get(gameobjectID);
@@ -568,11 +571,7 @@ void Editor::RenderSceneObject(Scene *scene)
         int end = std::min(start + ITEMS_PER_PAGE, static_cast<int>(list.size()));
 
         for (int i = start; i < end; ++i)
-        {
-            auto transform = GameObject::Get(list[i])->getTransform();
-
-            ReadHierarchy(scene, transform);
-        }
+            ReadHierarchy(scene, GameObject::Get(list[i]));
     }
     
     if (list.size() > ITEMS_PER_PAGE && ImGui::Button("Next"))
@@ -581,26 +580,20 @@ void Editor::RenderSceneObject(Scene *scene)
     }
 }
 
-void Editor::ReadHierarchy(Scene *scene, Transform *transform)
+void Editor::ReadHierarchy(Scene *scene, GameObject* gameObject)
 {
     ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanFullWidth;
 
-    auto gameObject = transform->GetGameObject();
-    if (!gameObject)
-        return;
-
+    auto transform = gameObject->getTransform();
     auto name = gameObject->getName();
 
     if (scene->object_has_been_selected(gameObject->getCacheID()))
         flags |= ImGuiTreeNodeFlags_Selected;
 
     if (transform->hasChildren())
-    {
         flags &= ~ImGuiTreeNodeFlags_Leaf;
-    }
 
     auto isOpen = ImGui::TreeNodeEx(name.c_str(), flags);
-
 
     if (ImGui::IsKeyDown(ImGuiKey_ModShift) && ImGui::IsItemClicked(ImGuiMouseButton_Left))
     {
@@ -621,14 +614,10 @@ void Editor::ReadHierarchy(Scene *scene, Transform *transform)
     dragDropGameObject(transform, name);
     
     if (!isOpen)
-    {
         return;
-    }
     
     for (auto& child : transform->getChildren())
-    {
-        ReadHierarchy(scene, child);
-    }
+        ReadHierarchy(scene, child->GetGameObject());
     ImGui::TreePop();
 }
 
@@ -2256,53 +2245,50 @@ bool Editor::OnPropertySkinnedMeshRender(SkinnedMeshRender *skinnedMeshRender) {
     return false;
 }
 
+#include <gr-base/core/task/runtime/meshLoadTask.hpp>
 bool Editor::OnPropertyLODComponent(LODComponent* lodComponent)
 {
-    /*
-    static int selectedLOD = 0;
-    int lodCount = LodGroup->GetLODCount();
+    auto avail = ImGui::GetContentRegionAvail();
 
-    if (ImGui::BeginCombo("LOD Level", ("LOD " + std::to_string(selectedLOD)).c_str())) {
-        for (int i = 0; i < lodCount; ++i)
-        {
-            bool isSelected = (selectedLOD == i);
-            if (ImGui::Selectable(("LOD " + std::to_string(i)).c_str(), isSelected))
-            {
-                selectedLOD = i;
-            }
-
-            if (isSelected)
-                ImGui::SetItemDefaultFocus();
-        }
-        ImGui::EndCombo();
-    }
-
-    ImGui::SeparatorText(("LOD " + std::to_string(selectedLOD) + " Properties").c_str());
-
-    auto& lod = LodGroup->GetLOD(selectedLOD);
-
-    // Exemplo de propriedades
-    ImGui::InputFloat("Activation Distance", &lod.distance);
-    // ImGui::InputInt("Triangle Count", &lod.triangleCount, 0, 0, ImGuiInputTextFlags_ReadOnly);
-    // ImGui::Checkbox("Is Active", &lod.isActive);
-
-    ImGui::Separator();
-
-    ImGui::Button("Add LOD");
-    drop_gameobject([&](GameObject *gameObject)
-            {
-                gameObject->setActive(false);
-
-                LodGroup->AddLOD(0.0f, gameObject);
-            });
-
-    ImGui::SameLine();
-    if (ImGui::Button("Remove LOD") && lodCount > 1)
+    for (auto& meshLOD : lodComponent->meshesLOD)
     {
-        LodGroup->Remove(selectedLOD);
-        selectedLOD = std::max(0, selectedLOD - 1);
+        for (auto& level : meshLOD.levels)
+        {
+            auto meshName = AssetsManager::GetMeshName(level.meshID);
+            ImGui::PushID(meshName.c_str());
+
+            ImGui::Text("Mesh: %s", meshName.c_str());
+
+            ImGui::Text("Distance");
+
+            ImGui::SliderFloat("##lodComponent_levels_distance", &level.minDistance, 0.0f, 1000.0f);
+
+            ImGui::PopID();
+        }
     }
-    */
+
+    if (ImGui::Button("Add", ImVec2{avail.x, 0.0f}))
+        lodComponent->meshesLOD.push_back({});
+
+    if (ImGui::BeginDragDropTarget())
+    {
+        auto payload = ImGui::AcceptDragDropPayload(m_extensionDragDrop[DragDropFlags::MESH]);
+        if (payload != NULL && payload->DataSize > 0)
+        {
+            std::vector<gtreefile *> files(payload->DataSize / sizeof(gtreefile *), nullptr);
+            memcpy(files.data(), payload->Data, payload->DataSize);
+
+            for (auto file : files)
+            {
+                TaskManager::Add<MeshID, MeshLoadTask>(file->path, [lodComponent = std::forward<LODComponent*>(lodComponent)](MeshID id)
+                {
+                    lodComponent->meshesLOD[0].levels.push_back({id, 10.0f});
+                });
+            }
+        }
+
+        ImGui::EndDragDropTarget();
+    }
 
     return false;
 }

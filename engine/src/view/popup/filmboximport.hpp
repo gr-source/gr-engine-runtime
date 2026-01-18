@@ -2,14 +2,20 @@
 
 #include "ui/viewlayout.hpp"
 
+#include <gr-base/core/geometry/default.hpp>
+
 #include <gr-base/core/default.hpp>
+
+#include <vector>
 
 class FilmboxImport : public ViewLayout
 {
 public:
-    FilmboxImport(GameObjectID gameObjectID);
+    FilmboxImport(GameObjectID gameObjectID, std::vector<MeshID> meshes);
 
 private:
+    std::vector<MeshID> m_meshes;
+    
     GameObjectID m_gameObjectID;
 
     void onRenderUI() override;

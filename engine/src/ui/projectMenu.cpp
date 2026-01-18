@@ -25,12 +25,13 @@ extern "C"
 #include <gr-ini/config.h>
 }
 
-std::array<const std::string, 7> ProjectMenu::m_assetsFile {
+static const std::array<const std::string, 8> m_assetsFile {
     "animation",
     "material",
     "texture",
     "shader",
     "script",
+    "mesh",
     "scene",
     "model",
 };

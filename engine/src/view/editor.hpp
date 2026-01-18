@@ -196,7 +196,7 @@ private:
 
     void RenderSceneObject(Scene *scene);
 
-    void ReadHierarchy(Scene *scene, Transform* transform);
+    void ReadHierarchy(Scene *scene, GameObject* gameObject);
 
     void dragDropGameObject(Transform *transform, const std::string &name);
 
