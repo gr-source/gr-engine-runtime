@@ -12,3 +12,9 @@ set(imgui_src
 )
 
 add_library(${PROJECT_NAME} SHARED ${imgui_src} ${imgui_hdr})
+
+target_include_directories(${PROJECT_NAME} PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/${PROJECT_NAME}/src>
+)
+
+

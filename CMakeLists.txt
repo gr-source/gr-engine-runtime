@@ -6,22 +6,7 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
 
-set(CMAKE_CXX_STANDARD 17)
-
-# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pg")
-
-# Encontrando as bibliotecas necessárias
-find_package(glfw3 QUIET)
-if(NOT glfw3_FOUND)
-    message(FATAL_ERROR "Please install libglfw3-dev")
-    return()
-endif()
-
-find_package(GLEW QUIET)
-if(NOT GLEW_FOUND)
-    message(FATAL_ERROR "Please install libglew-dev")
-    return()
-endif()
+set(GR_BASE_PATH "/home/NoirVoid/AppProjects/gr-base")
 
 find_package(OpenGL     REQUIRED)
 find_package(gr-math    REQUIRED)
@@ -40,22 +25,27 @@ if(NOT assimp_FOUND)
     return()
 endif()
 
-add_executable(${PROJECT_NAME} src/main.cpp)
+find_package(glfw3 QUIET)
+if(NOT glfw3_FOUND)
+    message(FATAL_ERROR "Please install libglfw3-dev")
+    return()
+endif()
 
-# Adicionando subdiretórios
-add_subdirectory(engine)
+find_package(GLEW QUIET)
+if(NOT GLEW_FOUND)
+    message(FATAL_ERROR "Please install GLEW.")
+    return()
+endif()
+
+file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS "src/*.cpp")
+
+add_executable(${CMAKE_PROJECT_NAME} ${SOURCES})
+
 add_subdirectory(imgui)
+add_subdirectory(${GR_BASE_PATH} gr-base)
 
-#### ENGINE ####
-target_include_directories(engine PRIVATE imgui/src imgui/src/backends ${BULLET_INCLUDE_DIRS} ${OPENGL_INCLUDE_DIRS} ${GLEW_INCLUDE_DIRS})
+include_directories(include)
 
-target_link_libraries(engine PRIVATE ${OPENGL_LIBRARIES} ${GRINI_LIBRARIES} ${GRMATH_LIBRARIES} ${GRRENDER_LIBRARIES} ${BULLET_LIBRARIES})
+target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE ${OPENGL_LIBRARIES} ${GRINI_LIBRARIES} ${GRMATH_LIBRARIES} ${GRRENDER_LIBRARIES} ${BULLET_LIBRARIES} ${GLEW_LIBRARIES} gr-base imgui glfw assimp)
 
-#### IMGUI ####
-target_include_directories(imgui PRIVATE imgui/src imgui/src/backends)
-
-#### MAIN ####
-target_include_directories(${PROJECT_NAME} PRIVATE imgui/src imgui/src/backends engine/src)
-
-target_link_libraries(${PROJECT_NAME} PRIVATE engine glfw imgui assimp ${GLEW_LIBRARIES} ${OPENGL_LIBRARIES} ${GRINI_LIBRARIES})
 

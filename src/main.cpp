@@ -6,8 +6,8 @@
 
 #include <gr-render/gRender.h>
 
-#include <settings.h>
-#include <engine.h>
+#include "gr-engine/settings.h"
+#include "gr-engine/engine.h"
 
 #include <gr-base/core/window.hpp>
 #include <gr-base/core/input.hpp>
@@ -134,9 +134,7 @@ void segfault_sigaction(int signal, siginfo_t *si, void *arg)
 }
 
 #include <gr-base/core/clock.hpp>
-#include "core/time.hpp"
-
-#include <gr-base/core/gameObject.hpp>
+#include "gr-engine/core/time.hpp"
 
 int main(int argc, char *argv[])
 {
