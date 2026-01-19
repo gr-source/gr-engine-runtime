@@ -76,6 +76,7 @@
 // #include <gr-base/core/culling/octreemanager.hpp>
 
 #include <gr-ini/config.h>
+#include <gr-math/gmath.hpp>
 #include <gr-math/matrix4x4.hpp>
 #include <gr-render/gTexture.h>
 #include <filesystem>
@@ -306,7 +307,7 @@ void Editor::onUpdate()
 
 void Editor::onRender3D()
 {
-    // OctreeManager::Render();
+    OctreeManager::Render();
 
     if (!Settings::bGameRunning)
     {
@@ -885,6 +886,9 @@ void Editor::render_scene(Scene *scene)
 {
     UpdateResizeSceneFramebuffer();
 
+
+    EditorController::bCanMove = ImGui::IsWindowHovered();
+
     auto regionAvail = ImGui::GetContentRegionAvail();
     auto windowPos = ImGui::GetWindowPos();
     auto cursorPos = ImGui::GetCursorPos();
@@ -968,20 +972,13 @@ void Editor::render_scene(Scene *scene)
     ImGui::PushStyleColor(ImGuiCol_Text, {0.0f, 0.0f, 1.0f, 1.0f});
 
     ImGui::BeginGroup();
-    if (ImGui::RadioButton("Local", m_guizmoManipulate == ImGuizmo::LOCAL)) {
+    if (ImGui::RadioButton("Local", m_guizmoManipulate == ImGuizmo::LOCAL))
         m_guizmoManipulate = ImGuizmo::LOCAL;
-    }
     
     ImGui::SameLine();
-    if (ImGui::RadioButton("World", m_guizmoManipulate == ImGuizmo::WORLD)) {
+    if (ImGui::RadioButton("World", m_guizmoManipulate == ImGuizmo::WORLD))
         m_guizmoManipulate = ImGuizmo::WORLD;
-    }
 
-    ImGui::SameLine();
-    if (ImGui::RadioButton("Move", EditorController::bCanMove))
-    {
-        EditorController::bCanMove = !EditorController::bCanMove;
-    }
     ImGui::EndGroup();
 
     ImGui::PopStyleColor();
@@ -997,7 +994,7 @@ void Editor::render_scene(Scene *scene)
 
     if (ImGui::IsWindowFocused() && mImGuiIO->KeyCtrl && ImGui::IsKeyReleased(ImGuiKey_S))
     {
-        std::string path = m_project->path + "/assets/Scene";
+        std::string path = m_project->path + "/assets/scene";
 
         for (auto &scene : SceneManager::GetScenes())
             TaskManager::Add<int, SceneSaveTask>(path, scene);
@@ -1045,31 +1042,26 @@ void Editor::create_render_guizmo(Scene *scene)
         }
     }
 
-    if (mImGuiIO->KeyCtrl && ImGui::IsKeyReleased(ImGuiKey_Space) && ImGui::IsWindowHovered()) {
-        if (m_guizmoManipulate == ImGuizmo::WORLD) {
-            m_guizmoManipulate = ImGuizmo::LOCAL;
-        } else if (m_guizmoManipulate == ImGuizmo::LOCAL) {
-            m_guizmoManipulate = ImGuizmo::WORLD;
-        }
-    }
-
     auto viewmatrix = m_mainCamera->getViewmatrix();
     auto projection = m_mainCamera->getPerspesctive();
 
+    static bool IsMoving = false;
     static std::unordered_set<Transform *> nodeup;
-    auto objects = scene->get_object_selected();
-    for (std::size_t i=0;i<objects.size();i++)
+    for (auto gameObjectID : scene->get_object_selected())
     {
-        auto go = GameObject::Get(objects[i]);
+        auto go = GameObject::Get(gameObjectID);
 
         auto name = go->getName();
 
-        ImGuizmo::SetID(i);
+        ImGuizmo::SetID(gameObjectID);
         auto transform = go->getTransform();
+
+        auto lastPosition = transform->getLocalPosition();
 
         auto globalMatrix = transform->getGlobalMatrix();
 
-        if (ImGuizmo::Manipulate(viewmatrix.getData(), projection.getData(), m_guizmoOperation, m_guizmoManipulate, globalMatrix.getData()))
+        bool bChanged = ImGuizmo::Manipulate(viewmatrix.getData(), projection.getData(), m_guizmoOperation, m_guizmoManipulate, globalMatrix.getData());
+        if (bChanged)
         {
             auto localMatrix = globalMatrix;
             if (transform->hasParent())
@@ -1080,6 +1072,7 @@ void Editor::create_render_guizmo(Scene *scene)
                 if (gluInvertMatrix(parentMat.getData(), m.getData()))
                     localMatrix = m * localMatrix;
             }
+
             Vector3 s;
             Quaternion r;
             Vector3 t;
@@ -1090,6 +1083,22 @@ void Editor::create_render_guizmo(Scene *scene)
             transform->setLocalPosition(t);
 
             nodeup.emplace(transform);
+
+            IsMoving = true;
+        }
+
+        static bool isDragging = false;
+        if (ImGuizmo::IsUsing() && !isDragging) 
+        {
+            isDragging = true;
+
+            RenderManager::MarkDirt(gameObjectID, lastPosition);
+        }
+        if (isDragging && !ImGuizmo::IsUsing()) 
+        {
+            isDragging = false;
+
+            RenderManager::Insert(gameObjectID);
         }
     }
     

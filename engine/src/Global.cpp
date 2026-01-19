@@ -1,7 +1,5 @@
 #include "Global.h"
 
-std::mutex glMutex;
-
 const char* getDragDrop(const DragDrop& type) {
     switch (type) {
     case DragDrop::TEXTURE:
