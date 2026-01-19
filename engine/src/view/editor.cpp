@@ -191,9 +191,9 @@ Editor::Editor() : m_viewport(ImGui::GetMainViewport()), mImGuiIO(&ImGui::GetIO(
     {
         GameObjectManager::Initialize();
 
-        RenderManager::Initialize();
-
         AssetsManager::Initialize();
+
+        RenderManager::Initialize();
 
         SceneManager::Initialize();
     }
@@ -307,7 +307,7 @@ void Editor::onUpdate()
 
 void Editor::onRender3D()
 {
-    OctreeManager::Render();
+    // OctreeManager::Render();
 
     if (!Settings::bGameRunning)
     {
@@ -1673,9 +1673,7 @@ void Editor::create_popup_create_scene()
 {
     auto isOpen = ImGui::BeginPopup(GET_FLAG_NAME(EditorPopupFlags_CreateScene));
     if (!isOpen)
-    {
         return;
-    }
 
     ImGui::Text("Input scene name");
 
@@ -2180,7 +2178,7 @@ bool Editor::OnPropertyCamera(Camera *camera)
 
     if (m_cameraObjectSelected != nullptr)
     {
-        m_mainCamera->setRect(Rect{0.0f, 0.0f, 64.0f, 64.0f});
+        camera->setRect(Rect{0.0f, 0.0f, 64.0f, 64.0f});
 
         auto rendertarget = camera->getRenderTarget();
 
