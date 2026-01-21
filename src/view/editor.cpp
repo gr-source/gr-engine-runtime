@@ -43,10 +43,8 @@
 #include <gr-base/core/display.hpp>
 #include <gr-base/core/scene.hpp>
 
-
 #include "gr-engine/plugin/pluginManager.hpp"
 
-#include "gr-engine/core/statistics.hpp"
 #include "gr-engine/core/screen.hpp"
 
 #include <gr-base/script/skinnedMeshRender.hpp>
@@ -73,10 +71,7 @@
 
 #include <gr-base/core/geometry/batching.hpp>
 
-// #include <gr-base/ecs/componentRegistry.hpp>
-
 #include <gr-base/broadphase/bvhtree.hpp>
-// #include <gr-base/core/culling/octreemanager.hpp>
 
 #include <gr-ini/config.h>
 #include <gr-math/gmath.hpp>
@@ -239,9 +234,9 @@ Editor::~Editor()
     // config_release(m_settings);
 
     {
-        RenderManager::Shutdown();
-
         SceneManager::Shutdown();
+
+        RenderManager::Shutdown();
 
         GameObjectManager::Shutdown();
 
@@ -261,35 +256,9 @@ void Editor::loadScript(const std::string& dir)
 
     ScriptManager::Load(dir + "/libscript.so");
 
-    /*
-    try
-    {
-        ScriptManager::Load(File::GetFile(config_get_string(section_script, "dir")) + config_get_string(section_script, "libname"));
-
-        ComponentRegistry::CheckScriptRemoved();
-    } catch (const std::runtime_error &e)
-    {
-        Console::LogError(e.what());
-    }
-    */
-
     Display::SetDisplayRect(Rect{0.0f, 0.0f, (float)Settings::ViewportSize.x, (float)Settings::ViewportSize.y});
 
-    // Scene::CheckRequestReinstanceScript();
-
-    // m_mainCamera->setActive(false);
-
-    // m_scene->play();
-
-    // Settings::bGameRunning = true;
-
-    // TaskManager::Add<PhysicsTask>();
-
     Console::LogDefault("Game playing.");
-}
-
-void Editor::UnloadScript() {
-    ScreenRender::Shutdown();
 }
 
 // ===================================== END =========================================================
@@ -301,7 +270,7 @@ const char* Editor::getName() const
 void Editor::onUpdate()
 {
     if (Settings::bGameRunning)
-        return;
+        return ComponentManager::Update();
 
     auto scene = SceneManager::GetCurrent();
     if (scene != nullptr && scene->getCamera())
@@ -322,8 +291,8 @@ void Editor::onRender3D()
             on_pre_config_render_scene(m_cameraObjectSelected);
     } else
     {
-        for (auto &camera : Camera::GetCameras())
-            on_pre_config_render_scene(camera);
+        for (auto &cameraID : m_scene->GetCameras())
+            on_pre_config_render_scene(ComponentManager::GetComponent<Camera>(cameraID));
     }
     DebugDraw::PosRender();
 }
@@ -379,6 +348,7 @@ void Editor::onRenderUI()
 
     create_popup();
 
+    /*
     if (ImGui::Begin("Test"))
     {
         static int num = 100;
@@ -409,6 +379,7 @@ void Editor::onRenderUI()
         }
     }
     ImGui::End();
+    */
 }
 
 void Editor::onFocus()
@@ -747,11 +718,13 @@ void Editor::drop_scene_file_in_viewport()
 
     auto payload = ImGui::AcceptDragDropPayload(m_extensionDragDrop[DragDropFlags::SCN]);
     if (payload == nullptr)
-    {
         return ImGui::EndDragDropTarget();
-    }
 
-    AssetsManager::LoadScene(std::string((char*)payload->Data, payload->DataSize), &Editor::set_scene, this);
+    std::vector<gtreefile *> files(payload->DataSize / sizeof(gtreefile *), nullptr);
+    memcpy(files.data(), payload->Data, payload->DataSize);
+
+    for (auto file : files)
+        AssetsManager::LoadScene(file->path, &Editor::set_scene, this);
 
     ImGui::EndDragDropTarget();
 }
@@ -901,7 +874,7 @@ void Editor::render_scene(Scene *scene)
         s_texturePlayGame = iconsUI[ICON_PLAY_GAME];
         if (Settings::bGameRunning) {
             if (ImGui::IsKeyReleased(ImGuiKey_Escape) && ImGui::IsWindowHovered()) {
-                StopGame();
+                MainThreadDispatcher::Add(&Editor::StopGame, this);
             } else {
                 s_texturePlayGame = iconsUI[ICON_STOP_GAME];
             }
@@ -912,9 +885,9 @@ void Editor::render_scene(Scene *scene)
         if (ImGui::ImageButton(reinterpret_cast<ImTextureID>(s_texturePlayGame->getTextureID()), ImVec2(16, 16))) {
             if (!Settings::bGameRunning)
             {
-                PlayGame();
+                Threadpool::AddTask(&Editor::PlayGame, this);
             } else {
-                StopGame();
+                MainThreadDispatcher::Add(&Editor::StopGame, this);
             }
         }
     }
@@ -961,13 +934,14 @@ void Editor::render_scene(Scene *scene)
 
     // Fps Draw
     {
-        const char *fps_text = "FPS: 000.00f";
+        char fps_text[256] = {0};
+        sprintf(fps_text, "FPS: %.2f", (1.0f / Clock::deltaTime));
 
         auto textSize = ImGui::CalcTextSize(fps_text);
 
         ImGui::SetCursorPos(ImVec2(regionAvail.x - textSize.x, cursorPos.y + textSize.y));
 
-        ImGui::TextColored(FPSColor, "FPS: %.2f", (1.0f / Clock::deltaTime));
+        ImGui::TextColored(FPSColor, "%s", fps_text);
     }
 
     ImGui::SetCursorPos({8.0f, cursorPos.y});
@@ -1106,19 +1080,55 @@ void Editor::create_render_guizmo(Scene *scene)
 
 void Editor::PlayGame()
 {
-    Threadpool::AddTask(&Editor::onBuildScript, this);
+    Console::LogInfo("[ Build ] Starting pre-build scripting...");
+
+    auto builddir = m_project->path + "/.build";
+    if (!gfile::exists(builddir))
+    {
+        if (!gfile::create_directory(builddir))
+            return Console::LogError("[ Build ] fail to create directory: %s", builddir.c_str());
+
+        auto templatedir = gfile::get_data_directory() + "/assets/script";
+
+        gfile::copy(templatedir.c_str(), builddir.c_str());
+    }
+
+    auto cmakebuild = builddir + "/build";
+    if (!gfile::exists(cmakebuild))
+    {
+        if (!gfile::create_directory(cmakebuild))
+            return Console::LogError("[ Build ] fail to create directory: %s", cmakebuild.c_str());
+
+        std::string cmd = "cd " + cmakebuild + " && cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON ..";
+
+        bool retVal = Command::exec(cmd, [](std::string line)
+        {
+            Console::LogWarning(line);
+        });
+
+        if (!retVal)
+            return Console::LogError("[ Build ] Falied in to configure build");
+    }
+
+    std::string cmd = "cmake --build " + cmakebuild;
+
+    bool retVal = Command::exec(cmd, [](std::string line)
+    {
+        Console::LogWarning(line);
+    });
+
+    if (!retVal)
+        return Console::LogError("[ Build ] Falied in to build script");
+
+    Console::LogInfo("[ Build ] Script compiled sucess fully.");
+
+    MainThreadDispatcher::Add(&Editor::loadScript, this, builddir + "/lib");
 }
 
 void Editor::StopGame()
 {
     if (m_scene != nullptr)
         m_scene->deselect_all();
-
-    Settings::bGameRunning = false;
-
-    m_scene->stop();
-
-    m_mainCamera->setActive(true);
 
     Console::LogDefault("Game stoped.");
 }
@@ -1890,16 +1900,12 @@ void Editor::RenderStatisticsMenu()
     ImGui::SeparatorText("Threads");
     ImGui::Text("Threads: %ld/%ld", Threadpool::GetThreadCount(), Threadpool::GetCount());
 
-    ImGui::SeparatorText("FrameTime");
-    {
-        auto &frameTime = Statistics::FrameTime[FrameTimeID_MainThread];
-        
-        ImGui::Text("MainThread:\t%fms ->(%fms, %fms), FPS: %.2f ->(%f, %f)", frameTime.delta, frameTime.minDelta, frameTime.maxDelta, frameTime.fps, frameTime.minFPS, frameTime.maxFPS);
-    }
-
     ImGui::SeparatorText("Renderização");
-    ImGui::Text("Luzes: %ld",     Light::GetListLight().size());
-    ImGui::Text("Cameras: %ld",     Camera::GetCameras().size());
+    if (m_scene != nullptr)
+    {
+        ImGui::Text("Luzes: %ld",       m_scene->GetLights().size());
+        ImGui::Text("Cameras: %ld",     m_scene->GetCameras().size());
+    }
     ImGui::Text("DrawCallCount: %ld/%ld", Status::BatchDrawCallCount, Status::BatchDrawCallRender);
 }
 
@@ -2694,53 +2700,6 @@ void Editor::RenameMaterial() {
 
     ImGui::EndPopup();
     */
-}
-
-void Editor::onBuildScript()
-{
-    Console::LogInfo("[ Build ] Starting pre-build scripting...");
-
-    auto builddir = m_project->path + "/.build";
-    if (!gfile::exists(builddir))
-    {
-        if (!gfile::create_directory(builddir))
-            return Console::LogError("[ Build ] fail to create directory: %s", builddir.c_str());
-
-        auto templatedir = gfile::get_data_directory() + "/assets/script";
-
-        gfile::copy(templatedir.c_str(), builddir.c_str());
-    }
-
-    auto cmakebuild = builddir + "/build";
-    if (!gfile::exists(cmakebuild))
-    {
-        if (!gfile::create_directory(cmakebuild))
-            return Console::LogError("[ Build ] fail to create directory: %s", cmakebuild.c_str());
-
-        std::string cmd = "cd " + cmakebuild + " && cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON ..";
-
-        bool retVal = Command::exec(cmd, [](std::string line)
-        {
-            Console::LogWarning(line);
-        });
-
-        if (!retVal)
-            return Console::LogError("[ Build ] Falied in to configure build");
-    }
-
-    std::string cmd = "cmake --build " + cmakebuild;
-
-    bool retVal = Command::exec(cmd, [](std::string line)
-    {
-        Console::LogWarning(line);
-    });
-
-    if (!retVal)
-        return Console::LogError("[ Build ] Falied in to build script");
-
-    Console::LogInfo("[ Build ] Script compiled sucess fully.");
-
-    MainThreadDispatcher::Add(&Editor::loadScript, this, builddir + "/lib");
 }
 
 /*

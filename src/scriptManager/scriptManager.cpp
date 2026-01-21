@@ -60,7 +60,7 @@ void ScriptManager::load(const std::string &path)
     {
         return Console::LogError("[ ScriptManager ] File do not found: %s", path.c_str());
     }
-
+    /*
     int pipefd[2];
     if (pipe(pipefd) == -1)
     {
@@ -122,6 +122,7 @@ void ScriptManager::load(const std::string &path)
             return;
         }
     }
+    */
 
     m_script = std::make_unique<Script>(path);
 

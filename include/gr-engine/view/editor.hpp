@@ -130,8 +130,6 @@ public:
 
     void loadScript(const std::string& dir);
 
-    void UnloadScript();
-
     void LoadReources();
     
     void SetupTexture(IconType type, grr::gTexture *texture);
@@ -330,9 +328,6 @@ private:
 
     // PopupMenu
     void RenameMaterial();
-
-    // Script
-    void onBuildScript();
 
     void SkyboxEditor();
 

@@ -99,6 +99,7 @@ static bool glfw_get_mouse_button(int button)
 
 static void config_set_engine_callback()
 {
+    // ********** Window ********** //
     Window::SetWindowTitle  = &glfw_set_window_title;
 
     Window::SetWindowSize   = &glfw_set_window_size;
