@@ -19,9 +19,11 @@
 #include <gr-render/gTexture.h>
 
 #include <gr-base/script/default.hpp>
+#include <memory>
 #include <string>
 #include <vector>
 
+#include "gr-engine/runtime/editorRuntime.hpp"
 #include "gr-engine/ui/default.hpp"
 
 #include "gr-engine/ui/viewlayout.hpp"
@@ -87,6 +89,12 @@ enum IconType : int {
 	ICON_SCRIPT         = 18
 };
 
+enum class EngineState
+{
+    Edit,
+    Play,
+};
+
 typedef struct gtreefile
 {
     std::string path;
@@ -134,8 +142,6 @@ public:
     
     void SetupTexture(IconType type, grr::gTexture *texture);
 
-    Camera *getCamera();
-
 private:
     std::unordered_map<std::string, std::function<void(Entity *)>> m_guiscriptmap;
 
@@ -145,13 +151,19 @@ private:
 
     std::unordered_set<gtreefile *> g_tree_file_selected_map;
 
+    ComponentID m_cameraID;
+
+    Runtime* m_runtime;
+
+    std::unique_ptr<Runtime> m_editMode;
+
+    std::unique_ptr<Runtime> m_playMode;
+
+    EngineState m_state;
+
     Project* m_project;
 
     Scene *m_scene;
-
-    GameObjectID m_cameraObject;
-
-    Camera *m_mainCamera;
 
     Camera* m_cameraObjectSelected;
 
@@ -213,9 +225,15 @@ private:
 
     void create_render_guizmo(Scene *scene);
 
-    void PlayGame();
+    void OnPlayButton();
 
-    void StopGame();
+    void OnBuildScript();
+
+    void OnPostSaveSnapshot(std::string file);
+
+    void OnPostLoadSnapshot(Scene* scene);
+
+    void OnStopButton();
 
     void drop_gameobject_in_scene();
 
@@ -347,8 +365,6 @@ private:
     void generateConfig(const std::string &file);
 
     void updateFileTree(gtreefile &tree_file);
-
-    Camera *get_camera();
 
     void select_file(gtreefile *file);
 

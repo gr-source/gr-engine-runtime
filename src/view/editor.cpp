@@ -6,7 +6,6 @@
 #include <gr-base/script/default.hpp>
 
 #include "gr-engine/Global.h"
-#include "gr-engine/core/cmd/cmd.hpp"
 #include "gr-engine/core/time.hpp"
 #include "gr-engine/editorController.h"
 #include "gr-engine/engine.h"
@@ -21,8 +20,10 @@
 #include "gr-base/core/thread/asynctask.hpp"
 #include "gr-base/core/thread/taskmanager.hpp"
 
+#include "gr-base/ecs/behaviorStorage.hpp"
+
 #include "gr-engine/physics/physicsScene.hpp"
-#include "gr-engine/screenRender.hpp"
+#include "gr-engine/runtime/editorRuntime.hpp"
 #include "gr-engine/settings.h"
 
 #include "imgui.h"
@@ -140,7 +141,15 @@ static void for_each(Transform *transform, std::function<void (Transform *)> fun
     }
 }
 
-Editor::Editor() : m_viewport(ImGui::GetMainViewport()), mImGuiIO(&ImGui::GetIO()), m_cameraObject(GID_INVALID), m_mainCamera(nullptr), m_currentPage(0), m_materialToRename(nill), m_plugin(nullptr)
+Editor::Editor()
+    : m_viewport(ImGui::GetMainViewport()),
+    mImGuiIO(&ImGui::GetIO()),
+    m_currentPage(0),
+    m_materialToRename(nill),
+    m_plugin(nullptr),
+    m_state(EngineState::Edit),
+    m_runtime(nullptr),
+    m_playMode(nullptr)
 {
     m_cameraObjectSelected = nullptr;
 
@@ -185,15 +194,29 @@ Editor::Editor() : m_viewport(ImGui::GetMainViewport()), mImGuiIO(&ImGui::GetIO(
     
     m_viewport = ImGui::GetMainViewport();
 
+    m_editMode = std::make_unique<EditorRuntime>();
+
+    m_runtime = m_editMode.get();
+    m_runtime->initialize();
+
+    {
+        GameObjectID gameObjectID = GameObject::Create("Camera");
+
+        GameObject* gameObject = GameObject::Get(gameObjectID);
+        gameObject->addComponent<Camera>();
+
+        m_cameraID = gameObject->GetID<Camera>();
+    }
+
     // Initialize
     {
-        GameObjectManager::Initialize();
+        // GameObjectManager::Initialize();
 
         AssetsManager::Initialize();
 
         RenderManager::Initialize();
 
-        SceneManager::Initialize();
+        // SceneManager::Initialize();
     }
 
     bBuildDock = gfile::exists("imgui.ini");
@@ -204,9 +227,7 @@ Editor::Editor() : m_viewport(ImGui::GetMainViewport()), mImGuiIO(&ImGui::GetIO(
     {
         auto libdir = m_project->path + "/.build/lib/libscript.so";
         if (gfile::exists(libdir))
-        {
             ScriptManager::Load(libdir);
-        }
 
         Display::SetDisplayRect(Rect{0.0f, 0.0f, (float)Settings::ViewportSize.x, (float)Settings::ViewportSize.y});
     } catch (const std::exception &e)
@@ -227,28 +248,20 @@ Editor::Editor() : m_viewport(ImGui::GetMainViewport()), mImGuiIO(&ImGui::GetIO(
 
 Editor::~Editor()
 {
-    // generateConfig(File::GetFile("/gsettings.ini"));
+    m_playMode = nullptr;
+    m_editMode = nullptr;
 
-    // config_save(m_settings, File::GetFile("/gsettings.ini").c_str());
+    // SceneManager::Shutdown();
 
-    // config_release(m_settings);
+    RenderManager::Shutdown();
 
-    {
-        SceneManager::Shutdown();
+    // GameObjectManager::Shutdown();
 
-        RenderManager::Shutdown();
-
-        GameObjectManager::Shutdown();
-
-        AssetsManager::Shutdown();
-    }
+    AssetsManager::Shutdown();
 }
 
 void Editor::loadScript(const std::string& dir)
 {
-    if (m_scene == nullptr)
-        return;
-
     ScriptManager::Unload();
     
     if (ScriptManager::CheckScriptLoaded("libscript.so"))
@@ -258,7 +271,9 @@ void Editor::loadScript(const std::string& dir)
 
     Display::SetDisplayRect(Rect{0.0f, 0.0f, (float)Settings::ViewportSize.x, (float)Settings::ViewportSize.y});
 
-    Console::LogDefault("Game playing.");
+    std::string temp = gfile::get_cache_directory() + "/snapshot.scn";
+
+    AssetsManager::SceneSaveAsync(temp, m_scene, &Editor::OnPostSaveSnapshot, this, temp);
 }
 
 // ===================================== END =========================================================
@@ -270,7 +285,7 @@ const char* Editor::getName() const
 void Editor::onUpdate()
 {
     if (Settings::bGameRunning)
-        return ComponentManager::Update();
+        return BehaviorStorage::Update();
 
     auto scene = SceneManager::GetCurrent();
     if (scene != nullptr && scene->getCamera())
@@ -289,10 +304,10 @@ void Editor::onRender3D()
 
         if (m_cameraObjectSelected != nullptr)
             on_pre_config_render_scene(m_cameraObjectSelected);
-    } else
+    } else if (m_scene != nullptr)
     {
         for (auto &cameraID : m_scene->GetCameras())
-            on_pre_config_render_scene(ComponentManager::GetComponent<Camera>(cameraID));
+            on_pre_config_render_scene(BehaviorStorage::GetComponent<Camera>(cameraID));
     }
     DebugDraw::PosRender();
 }
@@ -403,15 +418,7 @@ void Editor::create_dock()
         if (ImGui::BeginMenu("Project"))
         {
             if (ImGui::MenuItem("Close"))
-            {
-                for (auto& scene : SceneManager::GetScenes())
-                {
-                    scene->Clear();
-                    scene->setCamera(GID_INVALID);
-                }
-
                 MainThreadDispatcher::Add(&Engine::init_project, &Engine::GetInstance(), "");
-            }
             ImGui::EndMenu();
         }
 
@@ -874,7 +881,7 @@ void Editor::render_scene(Scene *scene)
         s_texturePlayGame = iconsUI[ICON_PLAY_GAME];
         if (Settings::bGameRunning) {
             if (ImGui::IsKeyReleased(ImGuiKey_Escape) && ImGui::IsWindowHovered()) {
-                MainThreadDispatcher::Add(&Editor::StopGame, this);
+                OnStopButton();
             } else {
                 s_texturePlayGame = iconsUI[ICON_STOP_GAME];
             }
@@ -885,15 +892,15 @@ void Editor::render_scene(Scene *scene)
         if (ImGui::ImageButton(reinterpret_cast<ImTextureID>(s_texturePlayGame->getTextureID()), ImVec2(16, 16))) {
             if (!Settings::bGameRunning)
             {
-                Threadpool::AddTask(&Editor::PlayGame, this);
+                OnPlayButton();
             } else {
-                MainThreadDispatcher::Add(&Editor::StopGame, this);
+                OnStopButton();
             }
         }
     }
 
     // auto texture = Engine::GetImGuiPostprocess()->getTextureColor();
-    auto camera = get_camera();
+    auto camera = m_scene->getCamera();
     if (camera != nullptr)
     {
         auto rendertarget = camera->getRenderTarget();
@@ -927,10 +934,8 @@ void Editor::render_scene(Scene *scene)
     ImGuizmo::SetDrawlist();
     ImGuizmo::SetRect(windowPos.x + cursorPos.x, windowPos.y + cursorPos.y, regionAvail.x, regionAvail.y);
 
-    if (m_mainCamera != nullptr && scene->has_object_selected() && !Settings::bGameRunning)
-    {
+    if (camera != nullptr && scene->has_object_selected() && !Settings::bGameRunning)
         create_render_guizmo(scene);
-    }
 
     // Fps Draw
     {
@@ -974,23 +979,23 @@ void Editor::render_scene(Scene *scene)
         std::string path = m_project->path + "/assets/scene";
 
         for (auto &scene : SceneManager::GetScenes())
-            TaskManager::Add<int, SceneSaveTask>(path, scene);
+            TaskManager::Add<int, SceneSaveTask>(path + "/" + SceneManager::GetSceneName(scene) + ".scn", scene);
     }
 }
 
 void Editor::UpdateResizeSceneFramebuffer()
 {
-    auto camera = get_camera();
+    auto camera = m_scene->getCamera();
 
     ImVec2 regionAvail = ImGui::GetContentRegionAvail();
-    if (m_mainCamera != nullptr && (m_lastViewportSize.x != regionAvail.x || m_lastViewportSize.y != regionAvail.y && regionAvail.x > 5.0f && regionAvail.y > 5.0f))
+    if (camera != nullptr && (m_lastViewportSize.x != regionAvail.x || m_lastViewportSize.y != regionAvail.y && regionAvail.x > 5.0f && regionAvail.y > 5.0f))
     {
         auto &viewport = Settings::ViewportSize = {regionAvail.x, regionAvail.y};
         if (viewport.x > 0 && viewport.y > 0)
         {
             Display::SetDisplayRect(Rect{0.0f, 0.0f, (float)Settings::ViewportSize.x, (float)Settings::ViewportSize.y});
 
-            m_mainCamera->setRect(Display::GetDisplayRect());
+            camera->setRect(Display::GetDisplayRect());
 
             // Engine::GetMainPostprocess()->resize(viewport);
             
@@ -1019,8 +1024,10 @@ void Editor::create_render_guizmo(Scene *scene)
         }
     }
 
-    auto viewmatrix = m_mainCamera->getViewmatrix();
-    auto projection = m_mainCamera->getPerspesctive();
+    auto camera = m_scene->getCamera();
+
+    auto viewmatrix = camera->getViewmatrix();
+    auto projection = camera->getPerspesctive();
 
     static bool IsMoving = false;
     static std::unordered_set<Transform *> nodeup;
@@ -1078,7 +1085,13 @@ void Editor::create_render_guizmo(Scene *scene)
     }
 }
 
-void Editor::PlayGame()
+void Editor::OnPlayButton()
+{
+    Threadpool::AddTask(&Editor::OnBuildScript, this);
+}
+
+#include "gr-engine/core/cmd/cmd.hpp"
+void Editor::OnBuildScript()
 {
     Console::LogInfo("[ Build ] Starting pre-build scripting...");
 
@@ -1125,12 +1138,52 @@ void Editor::PlayGame()
     MainThreadDispatcher::Add(&Editor::loadScript, this, builddir + "/lib");
 }
 
-void Editor::StopGame()
+void Editor::OnPostSaveSnapshot(std::string file)
 {
-    if (m_scene != nullptr)
-        m_scene->deselect_all();
+    std::cout << "PlayGame" << std::endl;
 
-    Console::LogDefault("Game stoped.");
+    m_playMode = std::make_unique<EditorRuntime>();
+    m_runtime = m_playMode.get();
+    m_runtime->initialize();
+
+    m_scene = nullptr;
+
+    AssetsManager::LoadScene(file, &Editor::OnPostLoadSnapshot, this);
+}
+
+void Editor::OnPostLoadSnapshot(Scene* scene)
+{
+    m_scene = scene;
+
+    Settings::bGameRunning = true;
+
+    BehaviorStorage::Start();
+
+    // set_scene(scene);
+}
+
+void Editor::OnStopButton()
+{
+    MainThreadDispatcher::Add([&]
+    {
+
+        if (m_scene != nullptr)
+            m_scene->deselect_all();
+
+        m_state = EngineState::Edit;
+
+        m_playMode = nullptr;
+
+        m_runtime = m_editMode.get();
+        m_runtime->initialize();
+
+        m_scene = SceneManager::GetCurrent();
+        m_scene->SetCamera(m_cameraID);
+
+        Settings::bGameRunning = false;
+
+        Console::LogDefault("Game stoped.");
+    });
 }
 
 void Editor::drop_gameobject_in_scene()
@@ -1669,10 +1722,9 @@ void Editor::create_popup_create_scene()
     if (ImGui::InputText("##popup_create_scene_inputtext", name, GET_N_ARRAY(name), ImGuiInputTextFlags_EnterReturnsTrue))
     {
         m_scene = SceneManager::Create(name);
-        m_scene->init();
-        m_scene->create_main_camra();
+        m_scene->SetCamera(m_cameraID);
 
-        set_scene(m_scene);
+        // set_scene(m_scene);
 
         ImGui::CloseCurrentPopup();
     }
@@ -1691,14 +1743,14 @@ void Editor::create_popup_add_component()
 
     std::vector<std::string> m_componentName;
 
-    array* hashtable = ComponentManager::GetBehaviorInfos();
+    array* hashtable = BehaviorRegistry::GetBehaviorInfos();
 
     ComponentInfo* infos = (ComponentInfo*)hashtable->vector;
-    for (auto &id : ComponentManager::GetActiveBehaviorIDs())
+    for (auto hash : BehaviorRegistry::GetActiveBehaviorActive())
     {
-        ComponentInfo& info = infos[id];
+        ComponentInfo* info = BehaviorRegistry::Get(hash);
 
-        m_componentName.push_back(info.name);
+        m_componentName.push_back(info->name);
     }
 
     std::sort(m_componentName.begin(), m_componentName.end(), [](const auto &lhs, const auto &rhs) {
@@ -1935,7 +1987,7 @@ void Editor::dropScriptInAddComponent()
 
 void Editor::RenderScriptFromEntity(Entity *entity)
 {
-    array* hashtable = ComponentManager::GetBehaviorInfos();
+    array* hashtable = BehaviorRegistry::GetBehaviorInfos();
 
     ComponentInfo* infos = (ComponentInfo*)hashtable->vector;
     for (auto &hash : entity->GetHashes())
@@ -2645,11 +2697,6 @@ void Editor::SetupTexture(IconType type, grr::gTexture *texture) {
     }
 }
 
-Camera *Editor::getCamera()
-{
-    return m_mainCamera;
-}
-
 void Editor::PostLoadGameObject(GameObjectID gameObjectID)
 {
     if (m_scene == nullptr)
@@ -2918,11 +2965,9 @@ void Editor::PluginEditor() {
 
 void Editor::set_scene(Scene *scene)
 {
-    m_cameraObject = scene == nullptr ? GID_INVALID : scene->getCameraObject();
-
-    m_mainCamera = scene == nullptr ? nullptr : scene->getCamera();
-
     m_scene = scene;
+
+    scene->SetCamera(m_cameraID);
 }
 
 void Editor::OutputGameObject(GameObject **ref, GameObject *go)
@@ -3038,11 +3083,6 @@ void Editor::updateFileTree(gtreefile &tree_file)
 
         updateFileTree(child);
     }
-}
-
-Camera *Editor::get_camera()
-{
-    return Settings::bGameRunning ? Camera::Current() : m_mainCamera;
 }
 
 void Editor::select_file(gtreefile *file)
