@@ -74,7 +74,7 @@ void Installer::onRenderUI()
     {
         bFinnish = false;
 
-        MainThreadDispatcher::Add(&Engine::init_menu, Engine::GetInstance());
+        MainThreadDispatcher::Add(Priority::NORMAL, &Engine::init_menu, Engine::GetInstance());
     }
     ImGui::End();
 }

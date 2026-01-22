@@ -100,7 +100,7 @@ void ProjectMenu::render_project_list()
     for (auto &project : m_projects)
     {
         if (ImGui::Selectable(project.name.c_str()))
-            MainThreadDispatcher::Add(&Engine::init_project, m_engine, project.path + "/metadata.ini");
+            MainThreadDispatcher::Add(Priority::LOW, &Engine::init_project, m_engine, project.path + "/metadata.ini");
     }
 }
 

@@ -1,5 +1,7 @@
 #include "gr-engine/view/editor.hpp"
 
+#include <atomic>
+#include <chrono>
 #include <cstdio>
 #include <cstring>
 #include <gr-base/script/baserender.hpp>
@@ -80,6 +82,7 @@
 #include <gr-render/gTexture.h>
 #include <filesystem>
 #include <iostream>
+#include <thread>
 
 #define ITEMS_PER_PAGE 20
 
@@ -363,9 +366,19 @@ void Editor::onRenderUI()
 
     create_popup();
 
-    /*
     if (ImGui::Begin("Test"))
     {
+        if (ImGui::Button("Create Task"))
+        {
+            static std::atomic<int> count;
+            Threadpool::AddTask([&]
+                    {
+                        Console::LogWarning("In Thread: %d", count++);
+                        std::this_thread::sleep_for(std::chrono::seconds(2));
+                        Console::LogWarning("Finished");
+                    });
+        }
+        /*
         static int num = 100;
 
         ImGui::InputInt("Num", &num);
@@ -392,9 +405,9 @@ void Editor::onRenderUI()
                 GameObject::DestroyImediate(GameObject::Get(prefabID));
             });
         }
+        */
     }
     ImGui::End();
-    */
 }
 
 void Editor::onFocus()
@@ -418,7 +431,7 @@ void Editor::create_dock()
         if (ImGui::BeginMenu("Project"))
         {
             if (ImGui::MenuItem("Close"))
-                MainThreadDispatcher::Add(&Engine::init_project, &Engine::GetInstance(), "");
+                MainThreadDispatcher::Add(Priority::LOW, &Engine::init_project, &Engine::GetInstance(), "");
             ImGui::EndMenu();
         }
 
@@ -1135,7 +1148,7 @@ void Editor::OnBuildScript()
 
     Console::LogInfo("[ Build ] Script compiled sucess fully.");
 
-    MainThreadDispatcher::Add(&Editor::loadScript, this, builddir + "/lib");
+    MainThreadDispatcher::Add(Priority::NORMAL, &Editor::loadScript, this, builddir + "/lib");
 }
 
 void Editor::OnPostSaveSnapshot(std::string file)
@@ -1164,7 +1177,7 @@ void Editor::OnPostLoadSnapshot(Scene* scene)
 
 void Editor::OnStopButton()
 {
-    MainThreadDispatcher::Add([&]
+    MainThreadDispatcher::Add(Priority::HIGHT, [&]
     {
 
         if (m_scene != nullptr)
