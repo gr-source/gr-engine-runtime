@@ -366,19 +366,19 @@ void Editor::onRenderUI()
 
     create_popup();
 
+    /*
     if (ImGui::Begin("Test"))
     {
         if (ImGui::Button("Create Task"))
         {
             static std::atomic<int> count;
-            Threadpool::AddTask([&]
+            MainThreadDispatcher::AddDelayed(2.0f, [&]
                     {
                         Console::LogWarning("In Thread: %d", count++);
-                        std::this_thread::sleep_for(std::chrono::seconds(2));
-                        Console::LogWarning("Finished");
+                        // std::this_thread::sleep_for(std::chrono::seconds(2));
+                        // Console::LogWarning("Finished");
                     });
         }
-        /*
         static int num = 100;
 
         ImGui::InputInt("Num", &num);
@@ -405,9 +405,9 @@ void Editor::onRenderUI()
                 GameObject::DestroyImediate(GameObject::Get(prefabID));
             });
         }
-        */
     }
     ImGui::End();
+    */
 }
 
 void Editor::onFocus()
@@ -502,9 +502,11 @@ void Editor::create_render_hierarchy()
         drop_gameobject([this](GameObject *gameobject)
                 {
                     Transform *transform = gameobject->getTransform();
+                    if (transform->hasParent())
+                        std::cout << transform->getParent()->GetGameObject()->getName() << std::endl;
 
                     transform->setParent(nullptr);
-        
+
                     m_scene->insert(transform->GetGameObject()->getCacheID());
                 });
         
@@ -560,9 +562,7 @@ void Editor::RenderSceneObject(Scene *scene)
     auto list = scene->getObjectList();
 
     if (m_currentPage > 0 && ImGui::Button("Before"))
-    {
         --m_currentPage;
-    }
 
     {
         int start = m_currentPage * ITEMS_PER_PAGE;
@@ -573,9 +573,7 @@ void Editor::RenderSceneObject(Scene *scene)
     }
     
     if (list.size() > ITEMS_PER_PAGE && ImGui::Button("Next"))
-    {
         ++m_currentPage;
-    }
 }
 
 void Editor::ReadHierarchy(Scene *scene, GameObject* gameObject)
@@ -629,15 +627,11 @@ void Editor::dragDropGameObject(Transform *transform, const std::string &name)
     }
 
     if (!ImGui::BeginDragDropTarget())
-    {
         return;
-    }
 
     auto payload = ImGui::AcceptDragDropPayload(m_extensionDragDrop[DragDropFlags::GAMEOBJECT]);
     if (!payload || payload->DataSize <= 0)
-    {
         return ImGui::EndDragDropTarget();
-    }
 
     auto target = *reinterpret_cast<Transform **>(payload->Data);
     if (target != transform->getParent())

@@ -151,7 +151,7 @@ private:
 
     std::unordered_set<gtreefile *> g_tree_file_selected_map;
 
-    ComponentID m_cameraID;
+    ComponentHandle m_cameraID;
 
     Runtime* m_runtime;
 

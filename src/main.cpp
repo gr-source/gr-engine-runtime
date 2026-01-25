@@ -1,4 +1,6 @@
 #include "gr-base/core/thread/threadpool.hpp"
+#include "gr-base/ecs/behavior.hpp"
+#include "gr-base/ecs/utils.hpp"
 #include "gr-base/managers/gameobjectmanager.hpp"
 #include "gr-base/script/camera.hpp"
 
@@ -134,11 +136,56 @@ void segfault_sigaction(int signal, siginfo_t *si, void *arg)
     exit(1);
 }
 
+#include <gr-base/ecs/behaviorStorage.hpp>
+
 #include <gr-base/core/clock.hpp>
+
 #include "gr-engine/core/time.hpp"
+
+/*
+class PlayerController : public BehaviorImpl<PlayerController>
+{
+public:
+    PlayerController()
+    {
+        // std::cout << "PlayerController::PlayerController" << std::endl;
+    }
+
+    ~PlayerController()
+    {
+        // std::cout << "PlayerController::~PlayerController" << std::endl;
+    }
+};
+
+REGISTER_COMPONENT(PlayerController)
+*/
 
 int main(int argc, char *argv[])
 {
+    /*
+    BehaviorStorage storage;
+    BehaviorStorage::SetInstance(&storage);
+
+    uint64_t hash = GetHashByType<PlayerController>(nullptr);
+
+    // for (int i=0;i<10;i++)
+    // {
+        ComponentHandle handle1 = BehaviorStorage::Allocate(hash, INVALID_COMPONENT_ID);
+        ComponentHandle handle2 = BehaviorStorage::Allocate(hash, INVALID_COMPONENT_ID);
+        ComponentHandle handle3 = BehaviorStorage::Allocate(hash, INVALID_COMPONENT_ID);
+        // std::cout << "Handle: " << GetHandleID(handle) << " " << GetHandleVersion(handle) << std::endl;
+
+        // if (i % 2)
+            BehaviorStorage::Deallocate(hash, handle1);
+
+        // auto transform = BehaviorStorage::GetComponent<PlayerController>(handle);
+
+        // std::cout << "Transform: " << (transform != nullptr ? "valid" : "invalid") << std::endl;
+    // }
+
+    return 0;
+    */
+
     struct sigaction sa;
 
     memset(&sa, 0, sizeof(struct sigaction));
