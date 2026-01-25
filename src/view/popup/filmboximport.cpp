@@ -5,6 +5,7 @@
 
 #include "gr-base/core/thread/taskmanager.hpp"
 
+#include "gr-base/ecs/behaviorStorage.hpp"
 #include "gr-engine/managers/viewmanager.hpp"
 
 #include <gr-base/script/transform.hpp>
@@ -40,7 +41,7 @@ void FilmboxImport::onRenderUI()
 
             for (auto &child : transform->getChildren())
             {
-                render_tree_node(child->GetGameObject());
+                render_tree_node(BehaviorStorage::GetComponent<Transform>(child)->GetGameObject());
             }
         }
     }
@@ -52,15 +53,17 @@ void FilmboxImport::onRenderUI()
         Engine& engine = Engine::GetInstance();
 
         Project& project = engine.get_project();
+
+        auto gameObject = GameObject::Get(m_gameObjectID);
         
         TaskManager::Add<int, GameObjectSaveTask>(
-                project.path + "/assets/model",
+                project.path + "/assets/model/" + gameObject->getName() + ".gmdx",
                 m_gameObjectID,
                 std::bind(&FilmboxImport::onSavedGameObject, this, std::placeholders::_1)
             );
 
-        for (auto& meshID : m_meshes)
-            TaskManager::Add<MeshID, MeshSaveTask>(project.path + "/assets/mesh", meshID, nullptr);
+        // for (auto& meshID : m_meshes)
+        //     TaskManager::Add<MeshID, MeshSaveTask>(project.path + "/assets/mesh", meshID, nullptr);
     }
 
     ImGui::End();
@@ -75,7 +78,7 @@ void FilmboxImport::render_tree_node(const GameObject *gameObject)
         return;
 
     for (auto &child : transform->getChildren())
-        render_tree_node(child->GetGameObject());
+        render_tree_node(BehaviorStorage::GetComponent<Transform>(child)->GetGameObject());
 
     ImGui::TreePop();
 }

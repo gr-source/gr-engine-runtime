@@ -134,15 +134,15 @@ static std::unordered_map<std::string, DragDropFlags> m_extensionNameToFlag =
     }
 
 
-static void for_each(Transform *transform, std::function<void (Transform *)> func)
-{
-    func(transform);
-
-    for (auto &child : transform->getChildren())
-    {
-        for_each(child, func);
-    }
-}
+// static void for_each(Transform *transform, std::function<void (Transform *)> func)
+// {
+//     func(transform);
+//
+//     for (auto &child : transform->getChildren())
+//     {
+//         for_each(child, func);
+//     }
+// }
 
 Editor::Editor()
     : m_viewport(ImGui::GetMainViewport()),
@@ -502,9 +502,6 @@ void Editor::create_render_hierarchy()
         drop_gameobject([this](GameObject *gameobject)
                 {
                     Transform *transform = gameobject->getTransform();
-                    if (transform->hasParent())
-                        std::cout << transform->getParent()->GetGameObject()->getName() << std::endl;
-
                     transform->setParent(nullptr);
 
                     m_scene->insert(transform->GetGameObject()->getCacheID());
@@ -589,6 +586,8 @@ void Editor::ReadHierarchy(Scene *scene, GameObject* gameObject)
     if (transform->hasChildren())
         flags &= ~ImGuiTreeNodeFlags_Leaf;
 
+    ImGui::PushID(transform);
+
     auto isOpen = ImGui::TreeNodeEx(name.c_str(), flags);
 
     if (ImGui::IsKeyDown(ImGuiKey_ModShift) && ImGui::IsItemClicked(ImGuiMouseButton_Left))
@@ -609,12 +608,17 @@ void Editor::ReadHierarchy(Scene *scene, GameObject* gameObject)
 
     dragDropGameObject(transform, name);
     
-    if (!isOpen)
-        return;
-    
-    for (auto& child : transform->getChildren())
-        ReadHierarchy(scene, child->GetGameObject());
-    ImGui::TreePop();
+    if (isOpen)
+    {
+        auto children = transform->getChildren();
+
+        for (auto& child : children)
+            ReadHierarchy(scene, BehaviorStorage::GetComponent<Transform>(child)->GetGameObject());
+
+        ImGui::TreePop();
+    }
+
+    ImGui::PopID();
 }
 
 void Editor::dragDropGameObject(Transform *transform, const std::string &name)
@@ -1534,7 +1538,9 @@ void Editor::drop_gameobject_in_treefile(gtreefile *tree_file)
 
     auto transform = *reinterpret_cast<Transform **>(payload->Data);
 
-    TaskManager::Add<int, GameObjectSaveTask>(tree_file->path, transform->GetGameObject()->getCacheID(), [&](GameObjectID id)
+    auto gameobject = transform->GetGameObject();
+
+    TaskManager::Add<int, GameObjectSaveTask>(tree_file->path + "/" + gameobject->getName() + ".gmdx", gameobject->getCacheID(), [&](GameObjectID id)
             {
                 updateFileTree(*tree_file);
             });
