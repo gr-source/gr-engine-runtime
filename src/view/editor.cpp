@@ -1166,6 +1166,8 @@ void Editor::OnPostLoadSnapshot(Scene* scene)
 {
     m_scene = scene;
 
+    m_scene->bRunning = true;
+
     Settings::bGameRunning = true;
 
     BehaviorStorage::Start();

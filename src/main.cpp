@@ -34,9 +34,13 @@ void GLFWframebuffersizefunCallback(GLFWwindow* window, int width, int height)
     Engine::HandleEvent(Engine::RESIZE, scale);
 }
 
+static Vector2 current_scroll_offset = Vector2::zero;
+static Vector2 mouse_scroll = Vector2::zero;
+
 void GLFWscrollfunCallback(GLFWwindow* window, double xoffset, double yoffset)
 {
-    // Vector2 offset{static_cast<float>(xoffset), static_cast<float>(yoffset)};
+    current_scroll_offset.x += static_cast<float>(xoffset);
+    current_scroll_offset.y += static_cast<float>(yoffset);
 }
 
 void GLFWdropfunCallback(GLFWwindow* window, int path_count, const char* paths[])
@@ -99,6 +103,32 @@ static bool glfw_get_mouse_button(int button)
     return glfwGetMouseButton(glfwGetCurrentContext(), button) == GLFW_PRESS;
 }
 
+static Vector2 last_mouse_pos = Vector2::zero;
+static Vector2 mouse_delta = Vector2::zero;
+
+static Vector2 glfw_get_mouse_delta()
+{
+    return mouse_delta;
+}
+
+static Vector2 glfw_get_mouse_scroll()
+{
+    return mouse_scroll;
+}
+
+static void update_input_states()
+{
+    Vector2 current_pos = glfw_get_cursor_pos();
+    
+    mouse_delta.x = current_pos.x - last_mouse_pos.x;
+    mouse_delta.y = current_pos.y - last_mouse_pos.y;
+
+    last_mouse_pos = current_pos;
+
+    mouse_scroll = current_scroll_offset;
+    current_scroll_offset = Vector2::zero;
+}
+
 static void config_set_engine_callback()
 {
     // ********** Window ********** //
@@ -115,6 +145,9 @@ static void config_set_engine_callback()
     Input::GetCursorPos     = &glfw_get_cursor_pos;
 
     Input::IsMousePress     = &glfw_get_mouse_button;
+
+    Input::GetMouseDelta    = &glfw_get_mouse_delta;
+    Input::GetMouseScroll   = &glfw_get_mouse_scroll;
 }
 
 static void destroy() {
@@ -136,56 +169,12 @@ void segfault_sigaction(int signal, siginfo_t *si, void *arg)
     exit(1);
 }
 
-#include <gr-base/ecs/behaviorStorage.hpp>
-
 #include <gr-base/core/clock.hpp>
 
 #include "gr-engine/core/time.hpp"
 
-/*
-class PlayerController : public BehaviorImpl<PlayerController>
-{
-public:
-    PlayerController()
-    {
-        // std::cout << "PlayerController::PlayerController" << std::endl;
-    }
-
-    ~PlayerController()
-    {
-        // std::cout << "PlayerController::~PlayerController" << std::endl;
-    }
-};
-
-REGISTER_COMPONENT(PlayerController)
-*/
-
 int main(int argc, char *argv[])
 {
-    /*
-    BehaviorStorage storage;
-    BehaviorStorage::SetInstance(&storage);
-
-    uint64_t hash = GetHashByType<PlayerController>(nullptr);
-
-    // for (int i=0;i<10;i++)
-    // {
-        ComponentHandle handle1 = BehaviorStorage::Allocate(hash, INVALID_COMPONENT_ID);
-        ComponentHandle handle2 = BehaviorStorage::Allocate(hash, INVALID_COMPONENT_ID);
-        ComponentHandle handle3 = BehaviorStorage::Allocate(hash, INVALID_COMPONENT_ID);
-        // std::cout << "Handle: " << GetHandleID(handle) << " " << GetHandleVersion(handle) << std::endl;
-
-        // if (i % 2)
-            BehaviorStorage::Deallocate(hash, handle1);
-
-        // auto transform = BehaviorStorage::GetComponent<PlayerController>(handle);
-
-        // std::cout << "Transform: " << (transform != nullptr ? "valid" : "invalid") << std::endl;
-    // }
-
-    return 0;
-    */
-
     struct sigaction sa;
 
     memset(&sa, 0, sizeof(struct sigaction));
@@ -240,6 +229,8 @@ int main(int argc, char *argv[])
 
     gtimer time(60.0f);
 
+    srand(*(int*)(void*)&Settings::IconSize);
+
     while (Settings::IsEngineRunning() && !glfwWindowShouldClose(&(*window)))
     {
         time.begin_frame();
@@ -249,6 +240,8 @@ int main(int argc, char *argv[])
 
         glfwSwapBuffers(&(*window));
         glfwPollEvents();
+
+        update_input_states();
 
         Engine::HandleEvent(Engine::LOOP, nullptr);
 

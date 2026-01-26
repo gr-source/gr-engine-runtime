@@ -17,7 +17,6 @@ ImGuiIO *EditorController::m_io = nullptr;
 float EditorController::movementSpeed = 30.0f;
 float EditorController::mouseSensitivity = 0.2f;
 
-Vector2 EditorController::lastMousePos = {0.0f, 0.0f};
 Vector2 EditorController::elapsed = {0.0f, 0.0f};
 
 bool EditorController::bCanMove = true;
@@ -94,16 +93,7 @@ void EditorController::LookAt(Transform *transform) {
 
 void EditorController::UpdateCursor(Transform *transform) {
     if (Input::IsMousePress(MOUSE_BUTTON_MIDDLE))
-    {
-        auto delta = Input::GetCursorPos() - lastMousePos;
-
-        ProcessMouse(delta, transform);
-        
-        lastMousePos = Input::GetCursorPos();
-    } else
-    {
-        lastMousePos = Input::GetCursorPos();
-    }
+        ProcessMouse(Input::GetMouseDelta(), transform);
 }
 
 void EditorController::ProcessMouse(const Vector2 &delta, Transform *transform) {

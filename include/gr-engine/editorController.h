@@ -23,8 +23,6 @@ private:
     
     static Camera *m_mainCamera;
 
-    static Vector2 lastMousePos;
-
     static Vector2 elapsed;
 
     static Vector2 start;
