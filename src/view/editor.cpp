@@ -2716,6 +2716,7 @@ void Editor::PostLoadGameObject(GameObjectID gameObjectID)
         return;
 
     auto instantiateID = GameObject::Instantiate(GameObject::Get(gameObjectID));
+
     GameObject::DestroyImediate(GameObject::Get(gameObjectID));
 
     m_scene->deselect_all();
