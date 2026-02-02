@@ -584,6 +584,7 @@ void Editor::ReadHierarchy(Scene *scene, GameObject* gameObject)
 
     auto transform = gameObject->getTransform();
     auto name = gameObject->getName();
+    bool isstatic = gameObject->GetIsStatic();
 
     if (scene->object_has_been_selected(gameObject->getCacheID()))
         flags |= ImGuiTreeNodeFlags_Selected;
@@ -1618,11 +1619,12 @@ void Editor::create_render_property()
 
     ImGui::SeparatorText(objName.c_str());
 
-    /*
-    auto isstatic = go->getStatic();
-    if (ImGui::Checkbox("Static", &isstatic))
-        go->setStatic(isstatic);
-    */
+    bool isStatic = go->GetIsStatic();
+    if (ImGui::Checkbox("static", &isStatic))
+        go->SetIsStatic(isStatic);
+
+    if (ImGui::IsItemHovered())
+        ImGui::SetTooltip("Definir como Estático");
 
     RenderScriptFromEntity(go);
 
