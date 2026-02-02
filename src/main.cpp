@@ -60,7 +60,7 @@ void glfwInstallCallback(GLFWwindow * window) {
 }
 
 void error_callback(int error, const char* description) {
-    std::cout << "Error: " << description << std::endl;
+    std::cerr << "Error: " << description << std::endl;
 }
 
 static void glfw_set_window_title(const char *title)
@@ -185,10 +185,10 @@ int main(int argc, char *argv[])
     sigaction(SIGSEGV, &sa, NULL);
 
     // ===============================
-    
     glfwSetErrorCallback(error_callback);
 
-    if (glfwInit() != GLFW_TRUE) {
+    if (glfwInit() != GLFW_TRUE)
+    {
         std::cout << "GLFW not initialized." << std::endl;
         return 1;
     }
@@ -198,7 +198,8 @@ int main(int argc, char *argv[])
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
     std::unique_ptr<GLFWwindow, decltype(&glfwDestroyWindow)> window(CreateWindown("GR - GameEngine", SCREEN_WIDTH, SCREEN_HEIGHT, nullptr, true), glfwDestroyWindow);
-    if (!window) {
+    if (!window)
+    {
         std::cout << "Falied to create window." << std::endl;
         return 2;
     }
@@ -213,7 +214,8 @@ int main(int argc, char *argv[])
 
     // glfwSetWindowPos(&(*window), 0, 0);
 
-    if (!grr::gRender::Initialize()) {
+    if (!grr::gRender::Initialize())
+    {
         window = nullptr;
 
         glfwTerminate();

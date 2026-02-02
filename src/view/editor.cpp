@@ -2,6 +2,7 @@
 
 #include <atomic>
 #include <chrono>
+#include <cstddef>
 #include <cstdio>
 #include <cstring>
 #include <gr-base/script/baserender.hpp>
@@ -566,7 +567,11 @@ void Editor::RenderSceneObject(Scene *scene)
         int end = std::min(start + ITEMS_PER_PAGE, static_cast<int>(list.size()));
 
         for (int i = start; i < end; ++i)
-            ReadHierarchy(scene, GameObject::Get(list[i]));
+        {
+            auto gameObject = GameObject::Get(list[i]);
+            if (gameObject != NULL)
+                ReadHierarchy(scene, gameObject);
+        }
     }
     
     if (list.size() > ITEMS_PER_PAGE && ImGui::Button("Next"))
@@ -914,6 +919,9 @@ void Editor::render_scene(Scene *scene)
     auto camera = m_scene->getCamera();
     if (camera != nullptr)
     {
+        regionAvail = ImGui::GetContentRegionAvail();
+        cursorPos = ImGui::GetCursorPos();
+
         auto rendertarget = camera->getRenderTarget();
 
         ImGui::Image(reinterpret_cast<ImTextureID>(rendertarget->getTextureID()), regionAvail, {0.0f, 1.0f}, {1.0f, 0.0f});
