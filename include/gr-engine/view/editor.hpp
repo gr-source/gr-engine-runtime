@@ -315,7 +315,7 @@ private:
 
     bool OnPropertyLODComponent(LODComponent* lodComponent);
 
-    // bool OnPropertyMeshCollider(MeshCollider *meshCollider);
+    bool OnPropertyMeshCollider(MeshCollider *meshCollider);
 
     bool render_material(MaterialID id);
 
@@ -391,13 +391,12 @@ inline bool Editor::RenderProperty(Args&&... args)
     return std::invoke(std::bind(std::forward<Args>(args)..., go->getComponent<T>()));
 }
 
-class PhysicsTask : public IAsyncTask<bool>
+class PhysicsTask : public IAsyncTask<int>
 {
 public:
     PhysicsTask();
 
 private:
-
-    bool doInBackground() override;
+    int doInBackground() override;
 };
 

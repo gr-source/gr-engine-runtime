@@ -25,7 +25,8 @@
 
 #include "gr-base/ecs/behaviorStorage.hpp"
 
-#include "gr-engine/physics/physicsScene.hpp"
+#include "gr-base/physics/physicsScene.hpp"
+
 #include "gr-engine/runtime/editorRuntime.hpp"
 #include "gr-engine/settings.h"
 
@@ -53,12 +54,12 @@
 
 #include <gr-base/script/skinnedMeshRender.hpp>
 #include <gr-base/script/LODComponent.hpp>
-// #include <gr-base/script/meshCollider.hpp>
-// #include <gr-base/script/boxCollider.hpp>
+#include <gr-base/script/meshCollider.hpp>
+#include <gr-base/script/boxCollider.hpp>
 #include <gr-base/script/meshFilter.hpp>
 #include <gr-base/script/meshRender.hpp>
 #include <gr-base/script/transform.hpp>
-// #include <gr-base/script/rigidbody.hpp>
+#include <gr-base/script/rigidbody.hpp>
 // #include <gr-base/script/animator.hpp>
 #include <gr-base/script/camera.hpp>
 #include <gr-base/script/light.hpp>
@@ -83,7 +84,6 @@
 #include <gr-render/gTexture.h>
 #include <filesystem>
 #include <iostream>
-#include <thread>
 
 #define ITEMS_PER_PAGE 20
 
@@ -191,8 +191,9 @@ Editor::Editor()
         INSERT_SCRIPT(SkinnedMeshRender),
         INSERT_SCRIPT(MeshFilter),
         INSERT_SCRIPT(LODComponent),
-        // INSERT_SCRIPT(BoxCollider),
-        // INSERT_SCRIPT(Rigidbody),
+        INSERT_SCRIPT(MeshCollider),
+        INSERT_SCRIPT(BoxCollider),
+        INSERT_SCRIPT(Rigidbody),
         // INSERT_SCRIPT(Animator),
     };
     
@@ -1178,6 +1179,8 @@ void Editor::OnPostLoadSnapshot(Scene* scene)
     m_scene->bRunning = true;
 
     Settings::bGameRunning = true;
+
+    TaskManager::Add<int, PhysicsTask>();
 
     BehaviorStorage::Start();
 
@@ -2597,25 +2600,26 @@ bool Editor::OnPropertyLight(Light *light)
     return false;
 }
 
+
+bool Editor::OnPropertyMeshCollider(MeshCollider* meshCollider)
+{
+    return false;
+}
+
 bool Editor::OnPropertyBoxCollider(BoxCollider *boxCollider)
 {
-    /*
     const char* text[] {"X", "Y", "Z"};
 
     auto size = boxCollider->getBoxSize();
     ImGui::Text("Size");
-    if (ImGui::DragFloatEx("##boxcollider_size", text, reinterpret_cast<float *>(&size), 1.0f, 0.0f, 0.0f, "%.3f")) {
+    if (ImGui::DragFloatEx("##boxcollider_size", text, reinterpret_cast<float *>(&size), 1.0f, 0.0f, 0.0f, "%.3f"))
         boxCollider->setBoxSize(size);
-    }
-    */
 
     return false;
 }
 
 bool Editor::OnPropertyRigidbody(Rigidbody *rigidbody)
 {
-
-    /*
     auto mass = rigidbody->getMass();
 
     ImGui::Text("Mass");
@@ -2645,7 +2649,6 @@ bool Editor::OnPropertyRigidbody(Rigidbody *rigidbody)
     if (ImGui::DragFloat("##rigidbody_ccd_sphereradius", &fSweptSphereRadius, 0.4f, 0.0f, 5.0f)) {
         rigidbody->setSweptSphereRadius(fSweptSphereRadius);
     }
-    */
 
     return false;
 }
@@ -3166,10 +3169,10 @@ void Editor::drop_gmdx(std::function<void (std::string)> func)
     ImGui::EndDragDropTarget();
 }
 
-PhysicsTask::PhysicsTask() : IAsyncTask<bool>(TaskPriority::HIGH)
+PhysicsTask::PhysicsTask()
 {}
 
-bool PhysicsTask::doInBackground()
+int PhysicsTask::doInBackground()
 {
     gtimer time(60.0f);
 
@@ -3182,7 +3185,7 @@ bool PhysicsTask::doInBackground()
         time.end_frame();
     }
 
-    return true;
+    return 0;
 }
 
 
