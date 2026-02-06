@@ -128,9 +128,7 @@ static std::unordered_map<std::string, DragDropFlags> m_extensionNameToFlag =
 #define INSERT_SCRIPT(object) \
     {#object, [this](Entity *entity) \
         { \
-            if (RenderProperty<object>(&Editor::OnProperty##object, this)) \
-            { \
-            } \
+            RenderProperty<object>(&Editor::OnProperty##object, this); \
         } \
     }
 
@@ -168,8 +166,6 @@ Editor::Editor()
     popupFlags = 0;
 
     FPSColor = {1.0f, 1.0f, 1.0f, 1.0f};
-
-    m_lastViewportSize = {0.0f, 0.0f};
 
     m_guizmoOperation = ImGuizmo::TRANSLATE;
 
@@ -1008,19 +1004,21 @@ void Editor::UpdateResizeSceneFramebuffer()
 {
     auto camera = m_scene->getCamera();
 
+    auto rect = camera->getRect();
+
     ImVec2 regionAvail = ImGui::GetContentRegionAvail();
-    if (camera != nullptr && (m_lastViewportSize.x != regionAvail.x || m_lastViewportSize.y != regionAvail.y && regionAvail.x > 5.0f && regionAvail.y > 5.0f))
+    if (camera != nullptr && (rect.w != regionAvail.x || rect.h != regionAvail.y && regionAvail.x > 5.0f && regionAvail.y > 5.0f))
     {
         auto &viewport = Settings::ViewportSize = {regionAvail.x, regionAvail.y};
         if (viewport.x > 0 && viewport.y > 0)
         {
             Display::SetDisplayRect(Rect{0.0f, 0.0f, (float)Settings::ViewportSize.x, (float)Settings::ViewportSize.y});
 
-            camera->setRect(Display::GetDisplayRect());
+            std::cout << "resize: " << viewport.x << " " << viewport.y << std::endl;
 
             // Engine::GetMainPostprocess()->resize(viewport);
             
-            m_lastViewportSize = regionAvail;
+            camera->setRect(Rect{0.0f, 0.0f, regionAvail.x, regionAvail.y});
         }
     }
 }
@@ -2155,7 +2153,7 @@ void Editor::PopupMenuProperty() {
 }
 
 /* ********** Propriedades ********** */
-bool Editor::OnPropertyTransform(Transform *transform)
+void Editor::OnPropertyTransform(Transform *transform)
 {
     const char *data[3] = {"X:", "Y:", "Z:"};
     
@@ -2179,11 +2177,9 @@ bool Editor::OnPropertyTransform(Transform *transform)
 
         transform->setLocalRotation(Math::normalize(Math::euler(Vector3{Math::rad(euler.x), Math::rad(euler.y), Math::rad(euler.z)})));
     }
-    
-    return false;
 }
 
-bool Editor::OnPropertyCamera(Camera *camera)
+void Editor::OnPropertyCamera(Camera *camera)
 {
     auto avail = ImGui::GetContentRegionAvail();
 
@@ -2236,11 +2232,9 @@ bool Editor::OnPropertyCamera(Camera *camera)
         if (rendertarget->is_valid())
             ImGui::Image(reinterpret_cast<ImTextureID>(rendertarget->getTextureID()), {64.0f, 64.0f}, {0.0f, 1.0f}, {1.0f, 0.0f});
     }
-
-    return false;
 }
 
-bool Editor::OnPropertyMeshFilter(MeshFilter *meshFilter)
+void Editor::OnPropertyMeshFilter(MeshFilter *meshFilter)
 {
     if (ImGui::TreeNode("Mesh"))
     {
@@ -2252,11 +2246,9 @@ bool Editor::OnPropertyMeshFilter(MeshFilter *meshFilter)
         }
         ImGui::TreePop();
     }
-
-    return false;
 }
 
-bool Editor::OnPropertyMeshRender(MeshRender *meshRender)
+void Editor::OnPropertyMeshRender(MeshRender *meshRender)
 {
     auto avail = ImGui::GetContentRegionAvail();
     
@@ -2272,11 +2264,9 @@ bool Editor::OnPropertyMeshRender(MeshRender *meshRender)
         }
     }
     ImGui::Unindent();
-
-    return false;
 }
 
-bool Editor::OnPropertySkinnedMeshRender(SkinnedMeshRender *skinnedMeshRender) {
+void Editor::OnPropertySkinnedMeshRender(SkinnedMeshRender *skinnedMeshRender) {
     if (ImGui::IsItemClicked(ImGuiMouseButton_Right))
     {
         ImGui::OpenPopup("##game_object_component_menu");
@@ -2301,12 +2291,10 @@ bool Editor::OnPropertySkinnedMeshRender(SkinnedMeshRender *skinnedMeshRender) {
     {
         ImGui::OpenPopup("##popup_rename_material");
     }
-
-    return false;
 }
 
 #include <gr-base/core/task/runtime/meshLoadTask.hpp>
-bool Editor::OnPropertyLODComponent(LODComponent* lodComponent)
+void Editor::OnPropertyLODComponent(LODComponent* lodComponent)
 {
     auto avail = ImGui::GetContentRegionAvail();
 
@@ -2349,8 +2337,6 @@ bool Editor::OnPropertyLODComponent(LODComponent* lodComponent)
 
     if (ImGui::Button("Add", ImVec2{avail.x, 0.0f}))
         lodComponent->meshesLOD.push_back({});
-
-    return false;
 }
 
 bool Editor::render_material(MaterialID id)
@@ -2536,7 +2522,7 @@ void Editor::dropShaderInMaterial(Material *material) {
     ImGui::EndDragDropTarget();
 }
 
-bool Editor::OnPropertyLight(Light *light)
+void Editor::OnPropertyLight(Light *light)
 {
     int elem = light->getType();
     
@@ -2596,17 +2582,14 @@ bool Editor::OnPropertyLight(Light *light)
         }
         ImGui::EndPopup();
     }
-
-    return false;
 }
 
 
-bool Editor::OnPropertyMeshCollider(MeshCollider* meshCollider)
+void Editor::OnPropertyMeshCollider(MeshCollider* meshCollider)
 {
-    return false;
 }
 
-bool Editor::OnPropertyBoxCollider(BoxCollider *boxCollider)
+void Editor::OnPropertyBoxCollider(BoxCollider *boxCollider)
 {
     const char* text[] {"X", "Y", "Z"};
 
@@ -2614,11 +2597,9 @@ bool Editor::OnPropertyBoxCollider(BoxCollider *boxCollider)
     ImGui::Text("Size");
     if (ImGui::DragFloatEx("##boxcollider_size", text, reinterpret_cast<float *>(&size), 1.0f, 0.0f, 0.0f, "%.3f"))
         boxCollider->setBoxSize(size);
-
-    return false;
 }
 
-bool Editor::OnPropertyRigidbody(Rigidbody *rigidbody)
+void Editor::OnPropertyRigidbody(Rigidbody *rigidbody)
 {
     auto mass = rigidbody->getMass();
 
@@ -2649,11 +2630,9 @@ bool Editor::OnPropertyRigidbody(Rigidbody *rigidbody)
     if (ImGui::DragFloat("##rigidbody_ccd_sphereradius", &fSweptSphereRadius, 0.4f, 0.0f, 5.0f)) {
         rigidbody->setSweptSphereRadius(fSweptSphereRadius);
     }
-
-    return false;
 }
 
-bool Editor::OnPropertyAnimator(Animator *animator) {
+void Editor::OnPropertyAnimator(Animator *animator) {
     /*
     auto animation = animator->getAnimation();
     auto animName = animation != nullptr ? animation->getName() : "No Animation";
@@ -2664,8 +2643,6 @@ bool Editor::OnPropertyAnimator(Animator *animator) {
 
     ImGui::DragFloat("Factor", &animator->blendFactor, 0.01f, 0.0f, 1.0f);
     */
-    
-    return false;
 }
 
 void Editor::dropAnimation(Animator *animator)

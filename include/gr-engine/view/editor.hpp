@@ -183,8 +183,6 @@ private:
 
     ImVec4 FPSColor;
 
-    ImVec2 m_lastViewportSize;
-
     gtreefile root_tree_file;
 
     gtreefile *g_treefile_dir_selected;
@@ -303,19 +301,19 @@ private:
 
     void PopupMenuProperty();
 
-    bool OnPropertyTransform(Transform *transform);
+    void OnPropertyTransform(Transform *transform);
 
-    bool OnPropertyCamera(Camera *camera);
+    void OnPropertyCamera(Camera *camera);
     
-    bool OnPropertyMeshFilter(MeshFilter *meshFilter);
+    void OnPropertyMeshFilter(MeshFilter *meshFilter);
 
-    bool OnPropertyMeshRender(MeshRender *meshRender);
+    void OnPropertyMeshRender(MeshRender *meshRender);
 
-    bool OnPropertySkinnedMeshRender(SkinnedMeshRender *skinnedMeshRender);
+    void OnPropertySkinnedMeshRender(SkinnedMeshRender *skinnedMeshRender);
 
-    bool OnPropertyLODComponent(LODComponent* lodComponent);
+    void OnPropertyLODComponent(LODComponent* lodComponent);
 
-    bool OnPropertyMeshCollider(MeshCollider *meshCollider);
+    void OnPropertyMeshCollider(MeshCollider *meshCollider);
 
     bool render_material(MaterialID id);
 
@@ -329,13 +327,13 @@ private:
 
     void InsertTexture(Material *material);
 
-    bool OnPropertyLight(Light *light);
+    void OnPropertyLight(Light *light);
 
-    bool OnPropertyBoxCollider(BoxCollider *boxCollider);
+    void OnPropertyBoxCollider(BoxCollider *boxCollider);
 
-    bool OnPropertyRigidbody(Rigidbody *rigidbody);
+    void OnPropertyRigidbody(Rigidbody *rigidbody);
 
-    bool OnPropertyAnimator(Animator* animator);
+    void OnPropertyAnimator(Animator* animator);
 
     void dropAnimation(Animator *animator);
 
@@ -358,7 +356,7 @@ private:
     void set_scene(Scene *scene);
 
     template <typename T, typename... Args>
-    bool RenderProperty(Args&&... args);
+    void RenderProperty(Args&&... args);
 
     static void OutputGameObject(GameObject **ref, GameObject *go);
 
@@ -378,17 +376,16 @@ private:
 };
 
 template <typename T, typename... Args>
-inline bool Editor::RenderProperty(Args&&... args)
+inline void Editor::RenderProperty(Args&&... args)
 {
     if (m_scene == nullptr || !m_scene->has_object_selected())
-    {
-        return false;
-    }
+        return;
 
     auto go = GameObject::Get(m_scene->get_object_selected().back());
-    if (!go->getComponent<T>()) return false;
+    if (!go->getComponent<T>())
+        return;
 
-    return std::invoke(std::bind(std::forward<Args>(args)..., go->getComponent<T>()));
+    std::invoke(std::bind(std::forward<Args>(args)..., go->getComponent<T>()));
 }
 
 class PhysicsTask : public IAsyncTask<int>
