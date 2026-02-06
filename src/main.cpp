@@ -1,8 +1,4 @@
 #include "gr-base/core/thread/threadpool.hpp"
-#include "gr-base/ecs/behavior.hpp"
-#include "gr-base/ecs/utils.hpp"
-#include "gr-base/managers/gameobjectmanager.hpp"
-#include "gr-base/script/camera.hpp"
 
 #include <gr-math/gmath.hpp>
 

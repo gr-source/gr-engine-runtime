@@ -211,6 +211,8 @@ Editor::Editor()
         gameObject->addComponent<Camera>();
 
         m_cameraID = gameObject->GetID<Camera>();
+
+        gameObject->Init();
     }
 
     // Initialize
@@ -737,9 +739,7 @@ void Editor::drop_scene_file_in_viewport()
 {
     auto isOpen = ImGui::BeginDragDropTarget();
     if (!isOpen)
-    {
         return;
-    }
 
     auto payload = ImGui::AcceptDragDropPayload(m_extensionDragDrop[DragDropFlags::SCN]);
     if (payload == nullptr)
