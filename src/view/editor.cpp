@@ -1093,7 +1093,7 @@ void Editor::create_render_guizmo(Scene *scene)
         {
             isDragging = true;
 
-            RenderManager::MarkDirt(gameObjectID, lastPosition);
+            RenderManager::Remove(gameObjectID);
         }
         if (isDragging && !ImGuizmo::IsUsing()) 
         {
@@ -1622,7 +1622,11 @@ void Editor::create_render_property()
 
     bool isStatic = go->GetIsStatic();
     if (ImGui::Checkbox("static", &isStatic))
+    {
         go->SetIsStatic(isStatic);
+
+        RenderManager::SwitchTo(go->getCacheID(), isStatic);
+    }
 
     if (ImGui::IsItemHovered())
         ImGui::SetTooltip("Definir como Estático");
