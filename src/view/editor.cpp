@@ -8,6 +8,7 @@
 #include <gr-base/script/baserender.hpp>
 #include <gr-base/script/default.hpp>
 
+#include "gr-base/managers/bvhtreemanager.hpp"
 #include "gr-engine/Global.h"
 #include "gr-engine/core/time.hpp"
 #include "gr-engine/editorController.h"
@@ -76,7 +77,7 @@
 
 #include <gr-base/core/geometry/batching.hpp>
 
-#include <gr-base/broadphase/bvhtree.hpp>
+// #include <gr-base/broadphase/bvhtree.hpp>
 
 #include <gr-ini/config.h>
 #include <gr-math/gmath.hpp>
@@ -298,6 +299,8 @@ void Editor::onUpdate()
 void Editor::onRender3D()
 {
     // OctreeManager::Render();
+
+    Tree::Render();
 
     if (!Settings::bGameRunning)
     {

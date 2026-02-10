@@ -2,9 +2,6 @@
 
 #include "gr-engine/editorController.h"
 
-#include <cstddef>
-#include <gr-base/broadphase/bvhtree.hpp>
-
 #include "gr-base/core/console.hpp"
 #include "gr-base/core/thread/taskmanager.hpp"
 #include "imgui.h"

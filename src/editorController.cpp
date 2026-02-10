@@ -8,6 +8,7 @@
 #include <gr-base/core/console.hpp>
 #include <gr-base/core/clock.hpp>
 #include <gr-base/core/input.hpp>
+#include <numeric>
 
 #include "gr-engine/ui/ImGuiRender.h"
 
@@ -59,6 +60,8 @@ void EditorController::Update(Camera *camera)
     if (Input::IsKeyPress(KEY_D)) {
         diretion -= transform->getRight();
     }
+
+    auto position = transform->getLocalPosition();
     // if (Input::IsKeyPress(Input::InputKey_UP)) {
     //     diretion.y += 1.0f;
     // }
@@ -67,7 +70,7 @@ void EditorController::Update(Camera *camera)
     // }
 
     if (Math::magnitude(diretion) > 0.0f) {
-        transform->addLocalPosition(Math::normalize(diretion) * movementSpeed * (float)Clock::deltaTime);
+        transform->setLocalPosition(position + (Math::normalize(diretion) * movementSpeed * (float)Clock::deltaTime));
     }
 
     UpdateCursor(transform);
