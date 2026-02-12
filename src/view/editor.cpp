@@ -144,6 +144,7 @@ static std::unordered_map<std::string, DragDropFlags> m_extensionNameToFlag =
 //     }
 // }
 
+#include <gr-base/managers/batchingmanager.hpp>
 Editor::Editor()
     : m_viewport(ImGui::GetMainViewport()),
     mImGuiIO(&ImGui::GetIO()),
@@ -214,13 +215,9 @@ Editor::Editor()
 
     // Initialize
     {
-        // GameObjectManager::Initialize();
-
         AssetsManager::Initialize();
-
-        RenderManager::Initialize();
-
-        // SceneManager::Initialize();
+        BatchingManager::Initialize();
+        DebugDraw::Initialize();
     }
 
     bBuildDock = gfile::exists("imgui.ini");
@@ -255,11 +252,8 @@ Editor::~Editor()
     m_playMode = nullptr;
     m_editMode = nullptr;
 
-    // SceneManager::Shutdown();
-
-    RenderManager::Shutdown();
-
-    // GameObjectManager::Shutdown();
+    BatchingManager::Shutdown();
+    DebugDraw::Shutdown();
 
     AssetsManager::Shutdown();
 }
@@ -1017,10 +1011,6 @@ void Editor::UpdateResizeSceneFramebuffer()
         {
             Display::SetDisplayRect(Rect{0.0f, 0.0f, (float)Settings::ViewportSize.x, (float)Settings::ViewportSize.y});
 
-            std::cout << "resize: " << viewport.x << " " << viewport.y << std::endl;
-
-            // Engine::GetMainPostprocess()->resize(viewport);
-            
             camera->setRect(Rect{0.0f, 0.0f, regionAvail.x, regionAvail.y});
         }
     }

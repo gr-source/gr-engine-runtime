@@ -4,6 +4,7 @@
 #include "gr-base/managers/gameobjectmanager.hpp"
 #include "gr-base/managers/octreemanager.hpp"
 #include "gr-base/managers/bvhtreemanager.hpp"
+#include "gr-base/managers/rendermanager.hpp"
 #include "gr-base/managers/sceneManager.hpp"
 
 class Runtime
@@ -17,6 +18,8 @@ public:
 
     std::unique_ptr<Tree> s_BVHTreeManager;
 
+    std::unique_ptr<RenderManager> s_RenderManager;
+
     std::unique_ptr<SceneManager> s_SceneManager;
 
     inline Runtime()
@@ -24,6 +27,7 @@ public:
         s_BehaviorStorage(std::make_unique<BehaviorStorage>()),
         s_OctreeManager(std::make_unique<OctreeManager>()),
         s_BVHTreeManager(std::make_unique<Tree>()),
+        s_RenderManager(std::make_unique<RenderManager>()),
         s_SceneManager(std::make_unique<SceneManager>())
     {}
 

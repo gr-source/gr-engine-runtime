@@ -9,6 +9,7 @@ EditorRuntime::~EditorRuntime()
     s_BVHTreeManager = nullptr;
     s_OctreeManager = nullptr;
     s_GameObjectManager = nullptr;
+    s_RenderManager = nullptr;
     s_BehaviorStorage = nullptr;
 }
 
@@ -18,6 +19,7 @@ void EditorRuntime::initialize()
     GameObjectManager::SetInstance(s_GameObjectManager.get());
     BehaviorStorage::SetInstance(s_BehaviorStorage.get());
     OctreeManager::SetInstance(s_OctreeManager.get());
+    RenderManager::SetInstance(s_RenderManager.get());
     Tree::SetInstance(s_BVHTreeManager.get());
 }
 
