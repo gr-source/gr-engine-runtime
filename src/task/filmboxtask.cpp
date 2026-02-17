@@ -63,7 +63,7 @@ GameObjectID FilmboxLoadTask::load_object(FbxScene *fbxscene)
     {
         auto gameObject = GameObject::Get(first);
 
-        auto gameObjectID = create_from(fbxscene, node, gameObject->getTransform());
+        auto gameObjectID = create_from(fbxscene, node, gameObject->GetTransform());
         if (gameObjectID == GID_INVALID)
             break;
     }
@@ -75,7 +75,7 @@ GameObjectID FilmboxLoadTask::create_from(FbxScene *scene, const FbxNode &node, 
     auto gameObjectID = GameObject::Create(node.getName());
     
     auto gameObject = GameObject::Get(gameObjectID);
-    auto transform = gameObject->getTransform();
+    auto transform = gameObject->GetTransform();
     if (parent != nullptr)
         transform->setParent(parent);
 

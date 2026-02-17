@@ -42,7 +42,7 @@ void EditorController::Update(Camera *camera)
     assert(m_mainCamera && "Camera");
     assert(m_mainCamera->GetGameObject() && "Obj");
 
-    auto transform = m_mainCamera->GetGameObject()->getTransform();
+    auto transform = m_mainCamera->GetGameObject()->GetTransform();
 
     assert(transform && "TTT");
 

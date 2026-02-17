@@ -37,7 +37,7 @@ void FilmboxImport::onRenderUI()
 
         if (ImGui::CollapsingHeader(name.c_str()))
         {
-            auto transform = gameObject->getTransform();
+            auto transform = gameObject->GetTransform();
 
             for (auto &child : transform->getChildren())
             {
@@ -71,7 +71,7 @@ void FilmboxImport::onRenderUI()
 
 void FilmboxImport::render_tree_node(const GameObject *gameObject)
 {
-    auto transform = gameObject->getTransform();
+    auto transform = gameObject->GetTransform();
 
     auto isOpen = ImGui::TreeNodeEx(gameObject->getName().c_str(), !transform->hasChildren() ? ImGuiTreeNodeFlags_Leaf : 0);
     if (!isOpen)

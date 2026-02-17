@@ -210,8 +210,6 @@ Editor::Editor()
         gameObject->addComponent<Camera>();
 
         m_cameraID = gameObject->GetID<Camera>();
-
-        gameObject->Init();
     }
 
     // Initialize
@@ -318,7 +316,6 @@ void Editor::on_pre_config_render_scene(Camera* camera)
     RenderManager::PreRender(camera);
 
     auto rendertarget = camera->getRenderTarget();
-
     rendertarget->bind();
 
     grr::gRender::SetRenderState(grr::GR_CULL, grr::GR_BACK);
@@ -490,7 +487,7 @@ void Editor::create_render_hierarchy()
     {
         drop_gameobject([this](GameObject *gameobject)
                 {
-                    Transform *transform = gameobject->getTransform();
+                    Transform *transform = gameobject->GetTransform();
                     transform->setParent(nullptr);
 
                     m_scene->insert(transform->GetGameObject()->getCacheID());
@@ -570,7 +567,7 @@ void Editor::ReadHierarchy(Scene *scene, GameObject* gameObject)
 {
     ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanFullWidth;
 
-    auto transform = gameObject->getTransform();
+    auto transform = gameObject->GetTransform();
     auto name = gameObject->getName();
     bool isstatic = gameObject->GetIsStatic();
 
@@ -1042,7 +1039,7 @@ void Editor::create_render_guizmo(Scene *scene)
         auto go = GameObject::Get(gameObjectID);
 
         ImGuizmo::SetID(gameObjectID);
-        auto transform = go->getTransform();
+        auto transform = go->GetTransform();
 
         auto lastPosition = transform->getLocalPosition();
 
