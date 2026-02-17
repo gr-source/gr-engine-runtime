@@ -16,7 +16,7 @@ public:
 
     std::unique_ptr<OctreeManager> s_OctreeManager;
 
-    std::unique_ptr<Tree> s_BVHTreeManager;
+    std::unique_ptr<BVHTreeManager> s_BVHTreeManager;
 
     std::unique_ptr<RenderManager> s_RenderManager;
 
@@ -26,7 +26,7 @@ public:
         : s_GameObjectManager(std::make_unique<GameObjectManager>()),
         s_BehaviorStorage(std::make_unique<BehaviorStorage>()),
         s_OctreeManager(std::make_unique<OctreeManager>()),
-        s_BVHTreeManager(std::make_unique<Tree>()),
+        s_BVHTreeManager(std::make_unique<BVHTreeManager>()),
         s_RenderManager(std::make_unique<RenderManager>()),
         s_SceneManager(std::make_unique<SceneManager>())
     {}

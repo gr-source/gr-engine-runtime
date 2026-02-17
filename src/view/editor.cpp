@@ -85,6 +85,7 @@
 #include <gr-render/gTexture.h>
 #include <filesystem>
 #include <iostream>
+#include <string>
 
 #define ITEMS_PER_PAGE 20
 
@@ -292,9 +293,9 @@ void Editor::onUpdate()
 
 void Editor::onRender3D()
 {
-    // OctreeManager::Render();
+    OctreeManager::Render();
 
-    Tree::Render();
+    // BVHTreeManager::Render();
 
     if (!Settings::bGameRunning)
     {
@@ -366,16 +367,6 @@ void Editor::onRenderUI()
     /*
     if (ImGui::Begin("Test"))
     {
-        if (ImGui::Button("Create Task"))
-        {
-            static std::atomic<int> count;
-            MainThreadDispatcher::AddDelayed(2.0f, [&]
-                    {
-                        Console::LogWarning("In Thread: %d", count++);
-                        // std::this_thread::sleep_for(std::chrono::seconds(2));
-                        // Console::LogWarning("Finished");
-                    });
-        }
         static int num = 100;
 
         ImGui::InputInt("Num", &num);
@@ -391,6 +382,7 @@ void Editor::onRenderUI()
                     for (int z=0;z<num;z++)
                     {
                         auto prefab = GameObject::Get(prefabID);
+                        prefab->setName("Test[" + std::to_string(x) + "][" + std::to_string(z) + "]");
 
                         auto transform = prefab->getTransform();
                         transform->setLocalPosition({(float)x * 5.5f, 0.0f, (float)z * 4.5f});
@@ -1000,6 +992,8 @@ void Editor::render_scene(Scene *scene)
 void Editor::UpdateResizeSceneFramebuffer()
 {
     auto camera = m_scene->getCamera();
+    if (camera == nullptr)
+        return;
 
     auto rect = camera->getRect();
 

@@ -20,7 +20,7 @@ void EditorRuntime::initialize()
     BehaviorStorage::SetInstance(s_BehaviorStorage.get());
     OctreeManager::SetInstance(s_OctreeManager.get());
     RenderManager::SetInstance(s_RenderManager.get());
-    Tree::SetInstance(s_BVHTreeManager.get());
+    BVHTreeManager::SetInstance(s_BVHTreeManager.get());
 }
 
 
