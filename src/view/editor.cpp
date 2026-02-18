@@ -869,7 +869,6 @@ void Editor::render_scene(Scene *scene)
 {
     UpdateResizeSceneFramebuffer();
 
-
     EditorController::bCanMove = ImGui::IsWindowHovered();
 
     auto regionAvail = ImGui::GetContentRegionAvail();
@@ -1599,6 +1598,8 @@ void Editor::create_window_property()
 void Editor::create_render_property()
 {
     auto go = GameObject::Get(m_scene->get_object_selected().back());
+    if (go == nullptr)
+        return;
 
     auto objName = go->getName();
 
@@ -1971,6 +1972,7 @@ void Editor::RenderStatisticsMenu()
     {
         ImGui::Text("Luzes: %ld",       m_scene->GetLights().size());
         ImGui::Text("Cameras: %ld",     m_scene->GetCameras().size());
+        ImGui::Text("Objects: %ld",     m_scene->getObjectList().size());
     }
     ImGui::Text("DrawCallCount: %ld/%ld", Status::BatchDrawCallCount, Status::BatchDrawCallRender);
 }
