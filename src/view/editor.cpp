@@ -150,7 +150,7 @@ Editor::Editor()
     : m_viewport(ImGui::GetMainViewport()),
     mImGuiIO(&ImGui::GetIO()),
     m_currentPage(0),
-    m_materialToRename(nill),
+    m_materialToRename(ID_INVALID),
     m_plugin(nullptr),
     m_state(EngineState::Edit),
     m_runtime(nullptr),
@@ -1967,6 +1967,7 @@ void Editor::RenderStatisticsMenu()
 
     ImGui::SeparatorText("AssetManager");
     ImGui::Text("Textures: %ld", AssetsManager::GetTextureCount());
+    ImGui::Text("Material: %ld", AssetsManager::GetMaterialCount());
     ImGui::Text("Mesh: %ld", AssetsManager::GetMeshCount());
 
     ImGui::SeparatorText("Threads");
@@ -2341,12 +2342,12 @@ bool Editor::render_material(MaterialID id)
     if (ImGui::IsItemClicked(ImGuiMouseButton_Right))
         m_materialToRename = id;
 
-    auto &material = AssetsManager::GetMaterial(id);
+    auto material = AssetsManager::GetMaterial(id);
 
-    auto shader = material.GetShader(false);
+    auto shader = material->GetShader(false);
     if (shader == nullptr)
     {
-        dropShaderInMaterial(&material);
+        dropShaderInMaterial(material);
         return false;
     }
 
@@ -2354,11 +2355,11 @@ bool Editor::render_material(MaterialID id)
 
     auto shadername = gfile::getname(shaderParams.base.c_str());
 
-    render_shader_property(shadername, &material);
+    render_shader_property(shadername, material);
 
-    render_material_property(&material);
+    render_material_property(material);
 
-    dropShaderInMaterial(&material);
+    dropShaderInMaterial(material);
 
     return false;
 }

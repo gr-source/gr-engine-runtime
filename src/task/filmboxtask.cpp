@@ -224,21 +224,21 @@ void FilmboxLoadTask::generateMesh(FbxScene *scene, const FbxNode *node, GameObj
 
         auto texturepath = fbxMaterial.getTextures();
 
-        auto &material = AssetsManager::GetMaterial(materialID);
-        material.SetShader(shader, false);
-        material.SetShader(shaderInstanced, true);
+        auto material = AssetsManager::GetMaterial(materialID);
+        material->SetShader(shader, false);
+        material->SetShader(shaderInstanced, true);
 
-        material.setValue("albedo", fbxMaterial.getColor());
-        material.setValue("metallic", fbxMaterial.metallic);
-        material.setValue("roughness", fbxMaterial.roughness);
-        material.setValue("ambientocclusion", fbxMaterial.ao);
+        material->setValue("albedo", fbxMaterial.getColor());
+        material->setValue("metallic", fbxMaterial.metallic);
+        material->setValue("roughness", fbxMaterial.roughness);
+        material->setValue("ambientocclusion", fbxMaterial.ao);
 
         if (!texturepath[TextureType_Albedo].empty())
         {
             auto path = texturepath[TextureType_Albedo];
             path = path.find('/') != std::string::npos ? path : gfile::get_parent(m_file) + '/' + path;
 
-            AssetsManager::LoadTexture(path, &Material::setTexture, &material, 0);
+            AssetsManager::LoadTexture(path, &Material::setTexture, material, 0);
         }
     }
 
