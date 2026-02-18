@@ -291,7 +291,7 @@ void Editor::onUpdate()
 
 void Editor::onRender3D()
 {
-    OctreeManager::Render();
+    // OctreeManager::Render();
 
     // BVHTreeManager::Render();
 
@@ -1075,12 +1075,12 @@ void Editor::create_render_guizmo(Scene *scene)
         if (ImGuizmo::IsUsing() && !isDragging) 
         {
             isDragging = true;
-
-            RenderManager::Remove(gameObjectID);
         }
         if (isDragging && !ImGuizmo::IsUsing()) 
         {
             isDragging = false;
+
+            RenderManager::Remove(gameObjectID);
 
             RenderManager::Insert(gameObjectID);
         }
