@@ -204,7 +204,7 @@ Editor::Editor()
     m_runtime->initialize();
 
     {
-        GameObjectID gameObjectID = GameObject::Create("Camera");
+        GameObjectHandle gameObjectID = GameObject::Create("Camera");
 
         GameObject* gameObject = GameObject::Get(gameObjectID);
         gameObject->addComponent<Camera>();
@@ -261,7 +261,7 @@ void Editor::loadScript(const std::string& dir)
 {
     ScriptManager::Unload();
     
-    if (ScriptManager::CheckScriptLoaded("libscript.so"))
+    if (ScriptManager::CheckScriptHasInMemory("libscript.so"))
         return Console::LogError("[ Script ] Fatal error data not unloaded.");
 
     ScriptManager::Load(dir + "/libscript.so");
@@ -282,11 +282,16 @@ const char* Editor::getName() const
 void Editor::onUpdate()
 {
     if (Settings::bGameRunning)
-        return BehaviorStorage::Update();
+    {
+        BehaviorStorage::Update();
+    } else
+    {
+        auto scene = SceneManager::GetCurrent();
+        if (scene != nullptr && scene->getCamera())
+            EditorController::Update(scene->getCamera());
+    }
 
-    auto scene = SceneManager::GetCurrent();
-    if (scene != nullptr && scene->getCamera())
-        EditorController::Update(scene->getCamera());
+    GameObjectManager::Cleanup();
 }
 
 void Editor::onRender3D()
@@ -372,7 +377,7 @@ void Editor::onRenderUI()
         {
             std::string model = m_project->path + "/assets/model/Test.gmdx";
 
-            AssetsManager::LoadGameObject(model, [this](GameObjectID prefabID)
+            AssetsManager::LoadGameObject(model, [this](GameObjectHandle prefabID)
             {
                 for (int x=0;x<num;x++)
                 {
@@ -1535,7 +1540,7 @@ void Editor::drop_gameobject_in_treefile(gtreefile *tree_file)
 
     auto gameobject = transform->GetGameObject();
 
-    TaskManager::Add<int, GameObjectSaveTask>(tree_file->path + "/" + gameobject->getName() + ".gmdx", gameobject->getCacheID(), [&](GameObjectID id)
+    TaskManager::Add<int, GameObjectSaveTask>(tree_file->path + "/" + gameobject->getName() + ".gmdx", gameobject->getCacheID(), [&](GameObjectHandle id)
             {
                 updateFileTree(*tree_file);
             });
@@ -2692,7 +2697,7 @@ void Editor::SetupTexture(IconType type, grr::gTexture *texture) {
     }
 }
 
-void Editor::PostLoadGameObject(GameObjectID gameObjectID)
+void Editor::PostLoadGameObject(GameObjectHandle gameObjectID)
 {
     if (m_scene == nullptr)
         return;

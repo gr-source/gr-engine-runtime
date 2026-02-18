@@ -11,18 +11,18 @@
 class FilmboxImport : public ViewLayout
 {
 public:
-    FilmboxImport(GameObjectID gameObjectID, std::vector<MeshID> meshes);
+    FilmboxImport(GameObjectHandle gameObjectID, std::vector<MeshID> meshes);
 
 private:
     std::vector<MeshID> m_meshes;
     
-    GameObjectID m_gameObjectID;
+    GameObjectHandle m_gameObjectID;
 
     void onRenderUI() override;
 
     void render_tree_node(const GameObject *gameObject);
 
-    void onSavedGameObject(GameObjectID gameObject);
+    void onSavedGameObject(GameObjectHandle gameObject);
 };
 
 

@@ -11,7 +11,7 @@ public:
 
     static void Unload();
 
-    static bool CheckScriptLoaded(const std::string &name);
+    static bool CheckScriptHasInMemory(const char* name);
 
 private:
     std::unique_ptr<Script> m_script;

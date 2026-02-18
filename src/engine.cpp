@@ -38,27 +38,6 @@
 
 #include <gr-render/gCommon.h>
 
-static FunctionTimer mFunctionTimer;
-
-// static Skybox m_skybox;
-
-void Engine::HandleEvent(EngineEvent event, const void* data)
-{
-    auto &engine = GetInstance();
-    switch (event) {
-    case INITIALIZE:
-        return engine.init();
-    case LOOP:
-        return engine.loop();
-    case DESTROY:
-        return engine.shutdown();
-    case DROFUNC:
-        return engine.drop_file(static_cast<const char *>(data));
-    default:
-        break;
-    }
-}
-
 Engine &Engine::GetInstance()
 {
     static Engine engine;
@@ -187,15 +166,13 @@ void Engine::save_engine_config()
     config_release(config);
 }
 
-void Engine::loop()
+void Engine::process()
 {
-    MainThreadDispatcher::Update();
+    MainThreadDispatcher::Process();
 
-    {
-        update();
+    update();
 
-        render();
-    }
+    render();
 }
 
 void Engine::update()
@@ -230,7 +207,7 @@ void Engine::drop_file(const std::string &path)
     }
 
     if (path.find(".fbx") != std::string::npos)
-        TaskManager::Add<GameObjectID, FilmboxLoadTask>(path);
+        TaskManager::Add<GameObjectHandle, FilmboxLoadTask>(path);
 }
 
 

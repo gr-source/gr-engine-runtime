@@ -1,5 +1,6 @@
 #include "gr-engine/scriptManager/scriptManager.hpp"
 
+#include <cstdio>
 #include <gr-base/core/geometry/batching.hpp>
 
 #include <gr-base/core/console.hpp>
@@ -22,26 +23,28 @@ void ScriptManager::Unload()
     return GetInstance().unload();
 }
 
-bool ScriptManager::CheckScriptLoaded(const std::string &name)
+#include <string.h>
+bool ScriptManager::CheckScriptHasInMemory(const char* name)
 {
-    std::ifstream is("/proc/self/maps");
-    if (!is.is_open())
+    FILE* fp = fopen("/proc/self/maps", "r");
+    if (fp == NULL)
     {
+        perror(__FUNCTION__);
         return false;
     }
+
     bool isValid = false;
     
-    std::string line;
-    while (std::getline(is, line))
+    char line[512];
+    while (fgets(line, sizeof(line), fp) != NULL)
     {
-        if (line.find(name) == std::string::npos)
-        {
+        if (strstr(line, name) == NULL)
             continue;
-        }
+
         isValid = true;
         break;
     }
-    is.close();
+    fclose(fp);
     return isValid;
 }
 

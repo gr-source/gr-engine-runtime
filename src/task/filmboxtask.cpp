@@ -25,7 +25,7 @@
 FilmboxLoadTask::FilmboxLoadTask(const std::string& file) : m_file(file)
 {}
 
-GameObjectID FilmboxLoadTask::doInBackground()
+GameObjectHandle FilmboxLoadTask::doInBackground()
 {
     Console::LogInfo("[ FilmboxTask ] Loading: %s", m_file.c_str());
 
@@ -45,7 +45,7 @@ GameObjectID FilmboxLoadTask::doInBackground()
     return load_object(scene.get());
 }
 
-void FilmboxLoadTask::onPostExecute(GameObjectID result)
+void FilmboxLoadTask::onPostExecute(GameObjectHandle result)
 {
     if (result == GID_INVALID)
         return;
@@ -53,11 +53,11 @@ void FilmboxLoadTask::onPostExecute(GameObjectID result)
     ViewManager::AddPopup<FilmboxImport>(result, m_meshes);
 }
 
-GameObjectID FilmboxLoadTask::load_object(FbxScene *fbxscene)
+GameObjectHandle FilmboxLoadTask::load_object(FbxScene *fbxscene)
 {
     auto &root = fbxscene->getRootNode();
 
-    GameObjectID first = GameObject::Create(gfile::getname(m_file.c_str()));
+    GameObjectHandle first = GameObject::Create(gfile::getname(m_file.c_str()));
 
     for (auto &node : root.getChildren())
     {
@@ -70,7 +70,7 @@ GameObjectID FilmboxLoadTask::load_object(FbxScene *fbxscene)
     return first;
 }
 
-GameObjectID FilmboxLoadTask::create_from(FbxScene *scene, const FbxNode &node, Transform *parent)
+GameObjectHandle FilmboxLoadTask::create_from(FbxScene *scene, const FbxNode &node, Transform *parent)
 {
     auto gameObjectID = GameObject::Create(node.getName());
     

@@ -26,8 +26,6 @@ GLFWwindow *CreateWindown(const char* name, int width, int height, GLFWwindow * 
 
 void GLFWframebuffersizefunCallback(GLFWwindow* window, int width, int height)
 {
-    const u32 scale[2]{static_cast<const u32>(width), static_cast<const u32>(height)};
-    Engine::HandleEvent(Engine::RESIZE, scale);
 }
 
 static Vector2 current_scroll_offset = Vector2::zero;
@@ -43,7 +41,7 @@ void GLFWdropfunCallback(GLFWwindow* window, int path_count, const char* paths[]
 {
     for (int i=0;i<path_count;i++)
     {
-        Engine::HandleEvent(Engine::DROFUNC, reinterpret_cast<const void *>(paths[i]));
+        // Engine::HandleEvent(Engine::DROFUNC, reinterpret_cast<const void *>(paths[i]));
     }
 }
 
@@ -149,7 +147,8 @@ static void config_set_engine_callback()
 static void destroy() {
     Settings::StopPlayEngine();
 
-    Engine::HandleEvent(Engine::DESTROY, nullptr);
+    auto& engine = Engine::GetInstance();
+    engine.shutdown();
     
     glfwTerminate();
 }
@@ -221,7 +220,8 @@ int main(int argc, char *argv[])
 
     Threadpool::Initialize();
 
-    Engine::HandleEvent(Engine::INITIALIZE, nullptr);
+    auto &engine = Engine::GetInstance();
+    engine.init();
 
     GLFWframebuffersizefunCallback(&(*window), SCREEN_WIDTH, SCREEN_HEIGHT);
 
@@ -241,7 +241,7 @@ int main(int argc, char *argv[])
 
         update_input_states();
 
-        Engine::HandleEvent(Engine::LOOP, nullptr);
+        engine.process();
 
         time.end_frame();
     }

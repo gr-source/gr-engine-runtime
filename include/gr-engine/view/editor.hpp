@@ -338,7 +338,7 @@ private:
     void dropAnimation(Animator *animator);
 
     // Loader    
-    void PostLoadGameObject(GameObjectID gameObjectID);
+    void PostLoadGameObject(GameObjectHandle gameObjectID);
 
     void CreateShaderTemplate(const std::string &path, const std::string &name);
 

@@ -16,7 +16,7 @@
 
 #include <imgui.h>
 
-FilmboxImport::FilmboxImport(GameObjectID gameObjectID, std::vector<MeshID> meshes) : m_gameObjectID(gameObjectID), m_meshes(meshes)
+FilmboxImport::FilmboxImport(GameObjectHandle gameObjectID, std::vector<MeshID> meshes) : m_gameObjectID(gameObjectID), m_meshes(meshes)
 {}
 
 void FilmboxImport::onRenderUI()
@@ -83,7 +83,7 @@ void FilmboxImport::render_tree_node(const GameObject *gameObject)
     ImGui::TreePop();
 }
 
-void FilmboxImport::onSavedGameObject(GameObjectID gameObject)
+void FilmboxImport::onSavedGameObject(GameObjectHandle gameObject)
 {
     GameObject::DestroyImediate(GameObject::Get(gameObject));
 

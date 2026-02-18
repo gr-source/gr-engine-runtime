@@ -17,12 +17,16 @@ public:
         DROFUNC        = 1 << 9
     };
 
-    static void HandleEvent(EngineEvent event, const void* data);
-
     static Engine &GetInstance();
 
     Engine();
     ~Engine();
+
+    void init();
+
+    void process();
+
+    void shutdown();
 
     void init_menu();
 
@@ -37,15 +41,9 @@ private:
 
     bool bHasProject;
 
-    void init();
-
     bool check_installed();
 
-    void shutdown();
-
     void save_engine_config();
-
-    void loop();
 
     void update();
 
