@@ -366,7 +366,6 @@ void Editor::onRenderUI()
 
     create_popup();
 
-    /*
     if (ImGui::Begin("Test"))
     {
         static int num = 100;
@@ -375,7 +374,7 @@ void Editor::onRenderUI()
 
         if (ImGui::Button("Spawn"))
         {
-            std::string model = m_project->path + "/assets/model/Test.gmdx";
+            std::string model = m_project->path + "/assets/model/Cubo.gmdx";
 
             AssetsManager::LoadGameObject(model, [this](GameObjectHandle prefabID)
             {
@@ -386,19 +385,18 @@ void Editor::onRenderUI()
                         auto prefab = GameObject::Get(prefabID);
                         prefab->setName("Test[" + std::to_string(x) + "][" + std::to_string(z) + "]");
 
-                        auto transform = prefab->getTransform();
+                        auto transform = prefab->GetTransform();
                         transform->setLocalPosition({(float)x * 5.5f, 0.0f, (float)z * 4.5f});
 
                         auto gameobjectID = GameObject::Instantiate(prefab);
                         auto gameObject = GameObject::Get(gameobjectID);
                     }
                 }
-                GameObject::DestroyImediate(GameObject::Get(prefabID));
+                GameObject::DestroyImediate(prefabID);
             });
         }
     }
     ImGui::End();
-    */
 }
 
 void Editor::onFocus()
@@ -1980,7 +1978,8 @@ void Editor::RenderStatisticsMenu()
         ImGui::Text("Cameras: %ld",     m_scene->GetCameras().size());
         ImGui::Text("Objects: %ld",     m_scene->getObjectList().size());
     }
-    ImGui::Text("DrawCallCount: %ld/%ld", Status::BatchDrawCallCount, Status::BatchDrawCallRender);
+    ImGui::Text("DrawCall Count: %ld", Status::BatchDrawCallCount);
+    ImGui::Text("Render Count: %ld", Status::BatchRenderCount);
 }
 
 void Editor::dropScriptInAddComponent()

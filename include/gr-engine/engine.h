@@ -36,6 +36,8 @@ public:
 
     bool has_project() const;
 
+    void drop_file(const std::string &path);
+
 private:
     Project m_project;
 
@@ -50,7 +52,5 @@ private:
     void render();
 
     void render_gui();
-
-    void drop_file(const std::string &path);
 };
 

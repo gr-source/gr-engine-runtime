@@ -39,10 +39,9 @@ void GLFWscrollfunCallback(GLFWwindow* window, double xoffset, double yoffset)
 
 void GLFWdropfunCallback(GLFWwindow* window, int path_count, const char* paths[])
 {
+    Engine& engine = Engine::GetInstance();
     for (int i=0;i<path_count;i++)
-    {
-        // Engine::HandleEvent(Engine::DROFUNC, reinterpret_cast<const void *>(paths[i]));
-    }
+        engine.drop_file(paths[i]);
 }
 
 void glfwInstallCallback(GLFWwindow * window) {

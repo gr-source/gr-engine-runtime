@@ -3,6 +3,7 @@
 #include "gr-engine/filmbox/default.hpp"
 
 #include "gr-base/core/geometry/default.hpp"
+#include "gr-engine/filmbox/fbxScene.hpp"
 
 #include <gr-base/core/thread/asynctask.hpp>
 
@@ -10,7 +11,14 @@
 
 #include <gr-base/core/default.hpp>
 
+#include <gr-base/core/geometry/material.hpp>
+#include <gr-base/core/geometry/mesh.hpp>
+
+#include <gr-base/ecs/default.hpp>
+
 #include <string>
+#include <unordered_map>
+#include <vector>
 
 class FilmboxLoadTask : public IAsyncTask<GameObjectHandle>
 {
@@ -22,15 +30,56 @@ private:
 
     std::string m_file;
 
+    struct MaterialDataCache
+    {
+        std::string name;
+        Material material;
+    };
+
+    struct MeshDataCache
+    {
+        std::string name;
+        Mesh mesh;
+    };
+
+
+    struct GameObjectDataCache
+    {
+        std::string name;
+
+        Vector3 position;
+        Quaternion rotation;
+        Vector3 scale;
+
+
+        std::vector<std::string> materialsName;
+        std::vector<std::string> meshesName;
+
+        std::vector<std::unique_ptr<GameObjectDataCache>> children;
+    };
+
+    std::vector<MaterialDataCache> m_materialCacheList;
+
+    std::vector<MeshDataCache> m_meshCacheList;
+
+    std::unordered_map<std::string, MeshID> m_meshMapLookUp;
+
+    std::unordered_map<std::string, MaterialID> m_materialMapLookUp;
+
+
+    std::vector<std::unique_ptr<GameObjectDataCache>> m_gameObjectCacheList;
+
     GameObjectHandle doInBackground() override;
+
+    std::unique_ptr<GameObjectDataCache> foreach_node(const FbxScene* scene, const FbxNode* node);
 
     void onPostExecute(GameObjectHandle result) override;
 
-    GameObjectHandle load_object(FbxScene *fbxscene);
+    void CreateGameObjectFromCache(GameObjectDataCache* cache, ComponentHandle parent);
 
-    GameObjectHandle create_from(FbxScene *scene, const FbxNode &node, Transform *parent);
+    // GameObjectHandle load_object(FbxScene *fbxscene);
 
-    void generateMesh(FbxScene *scene, const FbxNode *node, GameObject *go);
+    // void generateMesh(FbxScene *scene, const FbxNode *node, GameObject *go);
 };
 
 /*

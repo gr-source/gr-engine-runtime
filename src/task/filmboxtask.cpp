@@ -1,5 +1,6 @@
 #include "gr-engine/task/filmboxtask.hpp"
 
+#include "gr-base/ecs/behaviorStorage.hpp"
 #include "gr-engine/filmbox/filmbox.hpp"
 
 #include "gr-base/core/default.hpp"
@@ -21,6 +22,7 @@
 // #include <gr-base/script/animator.hpp>
 
 #include <gr-base/managers/assetsManager.hpp>
+#include <utility>
 
 FilmboxLoadTask::FilmboxLoadTask(const std::string& file) : m_file(file)
 {}
@@ -40,19 +42,206 @@ GameObjectHandle FilmboxLoadTask::doInBackground()
         return HANDLE_INVALID;
     }
 
-    auto scene = filmbox.get_scene();
+    auto scene = std::move(filmbox.get_scene());
 
-    return load_object(scene.get());
+    auto& root = scene->getRootNode();
+    for (auto& node : root.getChildren())
+        m_gameObjectCacheList.push_back(std::move(foreach_node(scene.get(), &node)));
+
+    return 1;  // load_object(scene.get());
+}
+
+std::unique_ptr<FilmboxLoadTask::GameObjectDataCache> FilmboxLoadTask::foreach_node(const FbxScene* scene, const FbxNode* node)
+{
+    grr::gShader* shader = nullptr;
+    grr::gShader* shaderInstanced = nullptr;
+    {
+        ShaderParams shaderParams;
+        shaderParams.name = "simple_model";
+        shaderParams.base = gfile::get_data_directory() + "/assets/shader/model/simple_model.glsl";
+        shaderParams.flags = ShaderOptimize_dynamic;
+        shaderParams.type = ShaderType::SHADER3D;
+
+        auto name = GetShaderParamsName(shaderParams);
+
+        shader = AssetsManager::FindShader(name);
+        if (shader == nullptr)
+        {
+            auto info = AssetsManager::LoadShaderAsync(shaderParams);
+            shader = info->get();
+        }
+    }
+
+    {
+        ShaderParams shaderParams;
+        shaderParams.name = "simple_model";
+        shaderParams.base = gfile::get_data_directory() + "/assets/shader/model/simple_model.glsl";
+        shaderParams.flags = ShaderOptimize_dynamic | ShaderOptimize_instanced;
+        shaderParams.type = ShaderType::SHADER3D;
+
+        auto name = GetShaderParamsName(shaderParams);
+
+        shaderInstanced = AssetsManager::FindShader(name);
+        if (shaderInstanced == nullptr)
+        {
+            auto info = AssetsManager::LoadShaderAsync(shaderParams);
+            shaderInstanced = info->get();
+        }
+    }
+
+    std::vector<std::string> materialsName;
+    for (auto &fbxMesh : node->getMeshes())
+    {
+        auto &fbxMaterial = scene->getMaterials()[fbxMesh->getMaterialIndex()];
+
+        auto& cache = m_materialCacheList.emplace_back();
+        cache.name = fbxMaterial.getName();
+        materialsName.push_back(cache.name);
+
+        auto& material = cache.material;
+        material.SetShader(shader, false);
+        material.SetShader(shaderInstanced, true);
+
+        material.setValue("albedo", fbxMaterial.getColor());
+        material.setValue("metallic", fbxMaterial.metallic);
+        material.setValue("roughness", fbxMaterial.roughness);
+        material.setValue("ambientocclusion", fbxMaterial.ao);
+    }
+
+    std::vector<std::string> meshesName;
+    for (auto& fbxMesh : node->getMeshes())
+    {
+        auto& cache = m_meshCacheList.emplace_back();
+        cache.name = fbxMesh->getName() + "_" + node->getName() + "_" + std::to_string(*reinterpret_cast<int*>(&fbxMesh));
+        meshesName.push_back(cache.name);
+
+        Mesh& mesh = cache.mesh;
+
+        for (auto &vertice : fbxMesh->getVertices())
+        {
+            mesh.addVertex(vertice.position, vertice.normal, vertice.texCoord);
+
+            if (!fbxMesh->hasBone())
+                continue;
+
+            auto& boneWeight = mesh.addBoneWeight();
+
+            float norm = vertice.weight[0] + vertice.weight[1] + vertice.weight[2] + vertice.weight[3];
+
+            for (auto k=0;k<4;++k) {
+                boneWeight.insert<int>(k, vertice.boneIndex[k]);
+                boneWeight.insert<float>(k, norm > 0.0f ? vertice.weight[k] / norm : vertice.weight[k]);
+            }
+        }
+
+        for (auto &indice : fbxMesh->getIndices())
+            mesh.addIndice(indice);
+
+
+        /*
+        if (fbxMesh->hasBone())
+        {
+            for (auto &bone : fbxMesh->getBones())
+            {
+                if (m_bones.find(bone.getName()) != m_bones.end())
+                    continue;
+
+                m_bones.emplace(bone.getName(), bone);
+            }
+        }
+        */
+
+        mesh.CalculateLocalBounds();
+    }
+
+    auto cache = std::make_unique<GameObjectDataCache>();
+    cache->name = node->getName();
+
+    cache->position = node->getPosition();
+    cache->rotation = node->getRotation();
+    cache->scale = node->getScale();
+
+    cache->materialsName = materialsName;
+    cache->meshesName = meshesName;
+
+    for (auto& child : node->getChildren())
+    {
+        cache->children.push_back(std::move(foreach_node(scene, &child)));
+    }
+
+    return cache;
 }
 
 void FilmboxLoadTask::onPostExecute(GameObjectHandle result)
 {
-    if (result == HANDLE_INVALID)
-        return;
+    for (auto& cache : m_materialCacheList)
+    {
+        MaterialID materialID = AssetsManager::FindMaterial(cache.name);
+        if (materialID == ID_INVALID)
+            materialID = AssetsManager::CreateMaterial(cache.name, &cache.material);
 
-    ViewManager::AddPopup<FilmboxImport>(result, m_meshes);
+        m_materialMapLookUp[cache.name] = materialID;
+    }
+
+    for (auto& cache : m_meshCacheList)
+    {
+        MeshID meshID = AssetsManager::FindMesh(cache.name);
+        if (meshID == ID_INVALID)
+            meshID = AssetsManager::CreateMesh(cache.name, &cache.mesh);
+
+        m_meshMapLookUp.emplace(cache.name, meshID);
+    }
+
+
+    GameObjectHandle first = GameObject::Create(gfile::getname(m_file.c_str()));
+
+    for (auto &cache : m_gameObjectCacheList)
+    {
+        auto gameObject = GameObject::Get(first);
+
+        CreateGameObjectFromCache(cache.get(), gameObject->GetID<Transform>());
+    }
+
+    ViewManager::AddPopup<FilmboxImport>(first, m_meshes);
 }
 
+void FilmboxLoadTask::CreateGameObjectFromCache(GameObjectDataCache* cache, ComponentHandle parent)
+{
+    GameObjectHandle gameObjectID = GameObject::Create(cache->name);
+
+    auto gameObject = GameObject::Get(gameObjectID);
+    gameObject->SetIsStatic(true);
+
+    auto transform = gameObject->GetTransform();
+    transform->setParent(BehaviorStorage::GetComponent<Transform>(parent));
+
+    parent = gameObject->GetID<Transform>();
+
+    transform->setLocalPosition(cache->position);
+    transform->setLocalRotation(cache->rotation);
+    transform->setLocalScale(cache->scale);
+
+    auto& meshes = cache->meshesName;
+    if (!meshes.empty())
+    {
+        auto meshFilter = gameObject->addComponent<MeshFilter>();
+        for (auto& name : meshes)
+            meshFilter->addMesh(m_meshMapLookUp[name]);
+    }
+
+    auto& materials = cache->materialsName;
+    if (!materials.empty())
+    {
+        auto meshRender = gameObject->addComponent<MeshRender>();
+        for (auto& name : materials)
+            meshRender->addMaterial(m_materialMapLookUp[name]);
+    }
+
+    for (auto& child : cache->children)
+        CreateGameObjectFromCache(child.get(), parent);
+}
+
+/*
 GameObjectHandle FilmboxLoadTask::load_object(FbxScene *fbxscene)
 {
     auto &root = fbxscene->getRootNode();
@@ -63,21 +252,23 @@ GameObjectHandle FilmboxLoadTask::load_object(FbxScene *fbxscene)
     {
         auto gameObject = GameObject::Get(first);
 
-        auto gameObjectID = create_from(fbxscene, node, gameObject->GetTransform());
+        auto gameObjectID = create_from(fbxscene, node, gameObject->GetID<Transform>());
         if (gameObjectID == HANDLE_INVALID)
             break;
     }
     return first;
 }
 
-GameObjectHandle FilmboxLoadTask::create_from(FbxScene *scene, const FbxNode &node, Transform *parent)
+GameObjectHandle FilmboxLoadTask::create_from(FbxScene *scene, const FbxNode &node, ComponentHandle parent)
 {
     auto gameObjectID = GameObject::Create(node.getName());
     
     auto gameObject = GameObject::Get(gameObjectID);
+
     auto transform = gameObject->GetTransform();
-    if (parent != nullptr)
-        transform->setParent(parent);
+    transform->setParent(BehaviorStorage::GetComponent<Transform>(parent));
+
+    parent = gameObject->GetID<Transform>();
 
     transform->setLocalPosition(node.getPosition());
     transform->setLocalRotation(node.getRotation());
@@ -88,7 +279,7 @@ GameObjectHandle FilmboxLoadTask::create_from(FbxScene *scene, const FbxNode &no
 
     for (auto &children : node.getChildren())
     {
-        auto child = create_from(scene, children, transform);
+        auto child = create_from(scene, children, parent);
         if (child == HANDLE_INVALID)
             break;
     }
@@ -100,9 +291,7 @@ void FilmboxLoadTask::generateMesh(FbxScene *scene, const FbxNode *node, GameObj
     std::unordered_map<std::string, FbxBone> m_bones;
     std::vector<FbxBone> bonesList;
 
-    MeshFilter *meshFilter = go->getComponent<MeshFilter>() ? go->getComponent<MeshFilter>() : go->addComponent<MeshFilter>();
-    // MeshRender *meshRender = go->hasComponent<MeshRender>() ? go->getComponent<MeshRender>() : go->addComponent<MeshRender>();
-    
+    MeshFilter *meshFilter = go->addComponent<MeshFilter>();
     auto meshes = node->getMeshes();
     for (std::size_t i=0;i<meshes.size();i++)
     {
@@ -158,7 +347,6 @@ void FilmboxLoadTask::generateMesh(FbxScene *scene, const FbxNode *node, GameObj
         bonesList[bone.getID()] = bone;
     }
 
-    /*
     auto m_mesh = AssetsManager::FindMesh(mesh_name + '_' + node->getName());
     if (!m_mesh)
     {
@@ -173,7 +361,6 @@ void FilmboxLoadTask::generateMesh(FbxScene *scene, const FbxNode *node, GameObj
     if (!meshFilter) { return; }
 
     meshFilter->setMesh(m_mesh);
-    */
 
 
     grr::gShader* shader = nullptr;
@@ -260,8 +447,8 @@ void FilmboxLoadTask::generateMesh(FbxScene *scene, const FbxNode *node, GameObj
             skinnedMeshRender->getBone(i)->setParentIndex(bonesList[i].getParentIndex());
         }
     }
-    */
 }
+*/
 
 
 
