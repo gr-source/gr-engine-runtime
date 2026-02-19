@@ -1967,7 +1967,7 @@ void Editor::RenderStatisticsMenu()
 
     ImGui::SeparatorText("AssetManager");
     ImGui::Text("Textures: %ld", AssetsManager::GetTextureCount());
-    ImGui::Text("Material: %ld", AssetsManager::GetMaterialCount());
+    ImGui::Text("Material: %d", AssetsManager::GetMaterialCount());
     ImGui::Text("Mesh: %ld", AssetsManager::GetMeshCount());
 
     ImGui::SeparatorText("Threads");
@@ -2705,7 +2705,7 @@ void Editor::PostLoadGameObject(GameObjectHandle gameObjectID)
 
     auto instantiateID = GameObject::Instantiate(GameObject::Get(gameObjectID));
 
-    GameObject::DestroyImediate(GameObject::Get(gameObjectID));
+    GameObject::DestroyImediate(gameObjectID);
 
     m_scene->deselect_all();
     m_scene->select(instantiateID);
@@ -2975,7 +2975,7 @@ void Editor::set_scene(Scene *scene)
 void Editor::OutputGameObject(GameObject **ref, GameObject *go)
 {
     if ((*ref) != nullptr)
-        GameObject::Destroy(*ref);
+        GameObject::Destroy((*ref)->getCacheID());
 
     *ref = go;
 }

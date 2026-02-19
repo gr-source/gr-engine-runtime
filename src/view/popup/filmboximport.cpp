@@ -85,7 +85,7 @@ void FilmboxImport::render_tree_node(const GameObject *gameObject)
 
 void FilmboxImport::onSavedGameObject(GameObjectHandle gameObject)
 {
-    GameObject::DestroyImediate(GameObject::Get(gameObject));
+    GameObject::DestroyImediate(gameObject);
 
     ViewManager::Remove(this);
 }
