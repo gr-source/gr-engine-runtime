@@ -1791,7 +1791,7 @@ void Editor::create_popup_add_component()
 
     for (auto it = m_componentName.begin(); it != m_componentName.end(); ++it) {
         bool isFirst = (it == m_componentName.begin());
-        if (ImGui::Selectable(it->c_str(), isFirst) || bSelect && go != GID_INVALID)
+        if (ImGui::Selectable(it->c_str(), isFirst) || bSelect && go != HANDLE_INVALID)
         {
             auto gameObject = GameObject::Get(go);
 

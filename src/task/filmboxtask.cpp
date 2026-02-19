@@ -37,7 +37,7 @@ GameObjectHandle FilmboxLoadTask::doInBackground()
     catch (const std::exception &e)
     {
         Console::LogError("[ FilmboxTask ] %s.", e.what());
-        return GID_INVALID;
+        return HANDLE_INVALID;
     }
 
     auto scene = filmbox.get_scene();
@@ -47,7 +47,7 @@ GameObjectHandle FilmboxLoadTask::doInBackground()
 
 void FilmboxLoadTask::onPostExecute(GameObjectHandle result)
 {
-    if (result == GID_INVALID)
+    if (result == HANDLE_INVALID)
         return;
 
     ViewManager::AddPopup<FilmboxImport>(result, m_meshes);
@@ -64,7 +64,7 @@ GameObjectHandle FilmboxLoadTask::load_object(FbxScene *fbxscene)
         auto gameObject = GameObject::Get(first);
 
         auto gameObjectID = create_from(fbxscene, node, gameObject->GetTransform());
-        if (gameObjectID == GID_INVALID)
+        if (gameObjectID == HANDLE_INVALID)
             break;
     }
     return first;
@@ -89,7 +89,7 @@ GameObjectHandle FilmboxLoadTask::create_from(FbxScene *scene, const FbxNode &no
     for (auto &children : node.getChildren())
     {
         auto child = create_from(scene, children, transform);
-        if (child == GID_INVALID)
+        if (child == HANDLE_INVALID)
             break;
     }
     return gameObjectID;
