@@ -2,8 +2,8 @@
 
 #include <gr-math/gmath.hpp>
 
-class FbxVertex {
-public:
+typedef struct FbxVertex
+{
     Vector3 position;
     Vector3 normal;
     Vector2 texCoord;
@@ -11,8 +11,6 @@ public:
 
     float weight[4];
     int boneIndex[4];
-
-    FbxVertex(const Vector3 &position = Vector3::zero, const Vector3 &normal = Vector3::zero, const Vector2 &texCoord = Vector2::zero, int index = 0);
-};
+} FbxVertex;
 
 

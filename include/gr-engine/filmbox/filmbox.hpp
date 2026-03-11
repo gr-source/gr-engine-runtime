@@ -24,17 +24,17 @@ public:
 private:
     std::unique_ptr<FbxScene> m_scene;
 
-    static void SceneLoader(const aiScene *scene, FbxScene *fbxScene);
+    void loadSceneToCache(const aiScene *scene, FbxScene *fbxScene);
 
     static void ProcessNode(aiNode *mNode, FbxNode& node, const aiScene *scene, FbxScene *fbxScene, std::unordered_map<std::string, Matrix4x4> &boneMap);
 
-    static void LoadMaterial(const aiScene *scene, FbxScene *fbxScene);
+    void loadMaterial(const aiScene *scene, FbxScene *fbxScene);
 
-    static void ProcessTexture(aiMaterial *iMaterial, FbxMaterial& fbxMaterial);
+    static void ProcessTexture(const aiMaterial *iMaterial, FbxMaterial& fbxMaterial);
 
-    static void LoadMesh(const aiScene *scene, FbxScene *fbxScene, std::unordered_map<std::string, Matrix4x4> &boneMap, std::unordered_map<std::string, int> &boneIndex);
+    void loadMesh(const aiScene *scene, FbxScene *fbxScene, std::unordered_map<std::string, Matrix4x4> &boneMap, std::unordered_map<std::string, int> &boneIndex);
 
-    static void ProcessMesh(aiMesh *mMesh, FbxScene *fbxScene, std::unordered_map<std::string, Matrix4x4> &boneMap, std::unordered_map<std::string, int> &boneIndex);
+    void setupMesh(const aiMesh *mMesh, FbxMesh* fbxMesh, std::unordered_map<std::string, Matrix4x4> &boneMap, std::unordered_map<std::string, int> &boneIndex);
 
     static void InserMesh(FbxMesh *fbxMesh, aiMesh *mMesh, std::unordered_map<std::string, Matrix4x4> &boneMap, std::unordered_map<std::string, int> &boneIndex);
 

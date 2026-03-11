@@ -6,30 +6,6 @@ const std::vector<FbxAnimation> &FbxScene::getAnimations() const {
     return m_animation;
 }
 
-const FbxMaterial &FbxScene::getMaterial(int idx) const {
-    if (idx >= m_materials.size()) {
-        throw std::runtime_error("[ FbxMaterial ] Falied to search material. id=" + std::to_string(idx));
-    }
-    return m_materials[idx];
-}
-
-const std::vector<FbxMaterial> &FbxScene::getMaterials() const {
-    return m_materials;
-}
-
-const std::size_t FbxScene::getMaterialCount() const {
-    return m_materials.size();
-}
-
-FbxMesh *FbxScene::getMesh(int index) const {
-    return &(*m_meshes[index]);
-}
-
-const std::size_t FbxScene::getMeshCount() const {
-
-    return m_meshes.size();
-}
-
 const FbxNode &FbxScene::getRootNode() const {
     return m_rootNode;
 }

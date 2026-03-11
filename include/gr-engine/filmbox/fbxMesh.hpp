@@ -7,28 +7,30 @@
 #include <vector>
 #include <memory>
 
-class FbxMesh {
+class FbxMesh
+{
 public:
-    FbxMesh(const std::string &name = "default");
+    FbxMesh() = default;
 
-    const std::string &getName() const;
+    inline void SetName(const std::string& name)
+    {
+        m_name = name;
+    }
+
+    inline const std::string &GetName() const
+    {
+        return m_name;
+    }
     
-    template <typename ...Args>
-    FbxVertex &addVertice(Args &&...args);
+    inline uint32_t GetMaterialID() const
+    {
+        return m_materialID;
+    }
 
-    FbxVertex &getVertice(int idx);
-
-    const std::vector<FbxVertex> &getVertices() const;
-
-    void addIndice(int idx);
-    
-    void addTriangle(int ia, int ib, int ic);
-
-    const std::vector<int> &getIndices() const;
-
-    uint32_t getMaterialIndex() const;
-
-    void setMaterialIndex(uint32_t index);
+    inline void SetMaterialID(uint32_t id)
+    {
+        m_materialID = id;
+    }
 
     template <typename ...Args>
     FbxBone &addBone(Args &&...args);
@@ -38,23 +40,19 @@ public:
     std::vector<FbxBone> getBones() const;
 
     bool hasBone() const;
+
+    std::vector<FbxVertex> vertices;
+
+    std::vector<uint32_t> indices;
     
 private:
-    uint32_t m_materialIndex;
+    uint32_t m_materialID;
 
     std::string m_name;
-
-    std::vector<FbxVertex> m_vertices;
-
-    std::vector<int> m_indices;
 
     std::vector<FbxBone> m_bones;
 };
 
-template <typename... Args>
-inline FbxVertex &FbxMesh::addVertice(Args &&...args) {
-    return m_vertices.emplace_back(std::forward<Args>(args)...);
-}
 
 template <typename... Args>
 inline FbxBone &FbxMesh::addBone(Args &&...args) {

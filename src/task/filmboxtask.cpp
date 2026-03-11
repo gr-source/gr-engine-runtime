@@ -90,51 +90,55 @@ std::unique_ptr<FilmboxLoadTask::GameObjectDataCache> FilmboxLoadTask::foreach_n
     }
 
     std::vector<std::string> materialsName;
-    for (auto &fbxMesh : node->getMeshes())
+    for (auto &fbxMeshID : node->GetMesheIDs())
     {
-        auto &fbxMaterial = scene->getMaterials()[fbxMesh->getMaterialIndex()];
+        auto& fbxMesh = scene->meshes[fbxMeshID];
+
+        auto &fbxMaterial = scene->materials[fbxMesh.GetMaterialID()];
 
         auto& cache = m_materialCacheList.emplace_back();
-        cache.name = fbxMaterial.getName();
+        cache.name = fbxMaterial.name;
         materialsName.push_back(cache.name);
 
         auto& material = cache.material;
         material.SetShader(shader, false);
         material.SetShader(shaderInstanced, true);
 
-        material.setValue("albedo", fbxMaterial.getColor());
+        material.setValue("albedo", fbxMaterial.albedo);
         material.setValue("metallic", fbxMaterial.metallic);
         material.setValue("roughness", fbxMaterial.roughness);
         material.setValue("ambientocclusion", fbxMaterial.ao);
     }
 
     std::vector<std::string> meshesName;
-    for (auto& fbxMesh : node->getMeshes())
+    for (auto& fbxMeshID : node->GetMesheIDs())
     {
+        auto& fbxMesh = scene->meshes[fbxMeshID];
+
         auto& cache = m_meshCacheList.emplace_back();
-        cache.name = fbxMesh->getName() + "_" + node->getName() + "_" + std::to_string(*reinterpret_cast<int*>(&fbxMesh));
+        cache.name = fbxMesh.GetName() + "_" + node->getName() + "_" + std::to_string(fbxMeshID);
         meshesName.push_back(cache.name);
 
         Mesh& mesh = cache.mesh;
 
-        for (auto &vertice : fbxMesh->getVertices())
+        for (auto &vertex : fbxMesh.vertices)
         {
-            mesh.addVertex(vertice.position, vertice.normal, vertice.texCoord);
+            mesh.addVertex(vertex.position, vertex.normal, vertex.texCoord);
 
-            if (!fbxMesh->hasBone())
+            if (!fbxMesh.hasBone())
                 continue;
 
             auto& boneWeight = mesh.addBoneWeight();
 
-            float norm = vertice.weight[0] + vertice.weight[1] + vertice.weight[2] + vertice.weight[3];
+            float norm = vertex.weight[0] + vertex.weight[1] + vertex.weight[2] + vertex.weight[3];
 
             for (auto k=0;k<4;++k) {
-                boneWeight.insert<int>(k, vertice.boneIndex[k]);
-                boneWeight.insert<float>(k, norm > 0.0f ? vertice.weight[k] / norm : vertice.weight[k]);
+                boneWeight.insert<int>(k, vertex.boneIndex[k]);
+                boneWeight.insert<float>(k, norm > 0.0f ? vertex.weight[k] / norm : vertex.weight[k]);
             }
         }
 
-        for (auto &indice : fbxMesh->getIndices())
+        for (auto &indice : fbxMesh.indices)
             mesh.addIndice(indice);
 
 

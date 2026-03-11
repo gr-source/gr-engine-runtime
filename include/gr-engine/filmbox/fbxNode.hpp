@@ -7,15 +7,15 @@
 
 class FbxNode {
 public:
-    FbxNode(const std::string &name = "default", FbxNode *parent = nullptr);
+    FbxNode(const std::string &name = "default");
 
     std::string getName() const;
 
-    void addMesh(FbxMesh *mesh);
+    void AddMesh(uint32_t id);
 
-    std::vector<FbxMesh *> getMeshes() const;
+    std::vector<uint32_t> GetMesheIDs() const;
 
-    bool hasMeshe() const;
+    bool HasMeshe() const;
 
     template <typename ...Args>
     FbxNode &addNode(Args &&...args);
@@ -39,9 +39,7 @@ private:
 
     std::vector<FbxNode> m_children;
 
-    std::vector<FbxMesh *> m_meshes;
-
-    FbxNode *m_parent;
+    std::vector<uint32_t> m_mesheIDs;
 
     Vector3 m_position;
 

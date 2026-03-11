@@ -10,11 +10,12 @@ enum TextureType {
     TextureType_Albedo
 };
 
-class FbxMaterial {
+class FbxMaterial
+{
 public:
-    FbxMaterial(const std::string &name = "default");
+    FbxMaterial() = default;
 
-    const Color &getColor() const;
+    std::string name;
 
     Color albedo;
 
@@ -24,15 +25,12 @@ public:
 
     float ao;
 
-    const std::string &getName() const;
-
     template <typename ...Args>
     void addTexture(Args &&...args);
 
     const std::unordered_map<TextureType, const std::string> &getTextures() const;
 
 private:
-    std::string m_name;
 
     std::unordered_map<TextureType, const std::string> m_textures;
 };

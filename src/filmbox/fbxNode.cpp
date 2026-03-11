@@ -1,21 +1,25 @@
 #include "gr-engine/filmbox/fbxNode.hpp"
 
-FbxNode::FbxNode(const std::string &name, FbxNode *parent) : m_name(name), m_parent(parent) {}
+FbxNode::FbxNode(const std::string &name) : m_name(name)
+{}
 
 std::string FbxNode::getName() const {
     return m_name;
 }
 
-void FbxNode::addMesh(FbxMesh *mesh) {
-    m_meshes.push_back(mesh);
+void FbxNode::AddMesh(uint32_t id)
+{
+    m_mesheIDs.push_back(id);
 }
 
-std::vector<FbxMesh *> FbxNode::getMeshes() const {
-    return m_meshes;
+std::vector<uint32_t> FbxNode::GetMesheIDs() const
+{
+    return m_mesheIDs;
 }
 
-bool FbxNode::hasMeshe() const {
-    return !m_meshes.empty();
+bool FbxNode::HasMeshe() const
+{
+    return !m_mesheIDs.empty();
 }
 
 const std::vector<FbxNode> &FbxNode::getChildren() const {
