@@ -296,9 +296,9 @@ void Editor::onUpdate()
 
 void Editor::onRender3D()
 {
-    // OctreeManager::Render();
+    OctreeManager::Render();
 
-    // BVHTreeManager::Render();
+    BVHTreeManager::Render();
 
     if (!Settings::bGameRunning)
     {
@@ -1047,7 +1047,7 @@ void Editor::create_render_guizmo(Scene *scene)
 
         auto globalMatrix = transform->getGlobalMatrix();
 
-        bool bChanged = ImGuizmo::Manipulate(viewmatrix.getData(), projection.getData(), m_guizmoOperation, m_guizmoManipulate, globalMatrix.getData());
+        bool bChanged = ImGuizmo::Manipulate(&viewmatrix[0][0], &projection[0][0], m_guizmoOperation, m_guizmoManipulate, &globalMatrix[0][0]);
         if (bChanged)
         {
             auto localMatrix = globalMatrix;
@@ -1056,8 +1056,10 @@ void Editor::create_render_guizmo(Scene *scene)
                 auto parentMat = transform->getParent()->getGlobalMatrix();
                 Matrix4x4 m = Matrix4x4::identityMatrix;
 
-                if (gluInvertMatrix(parentMat.getData(), m.getData()))
+                if (gluInvertMatrix(&parentMat[0][0], &m[0][0]))
+                {
                     localMatrix = m * localMatrix;
+                }
             }
 
             Vector3 s;
