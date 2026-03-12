@@ -72,7 +72,7 @@ void ScreenRender::Render(Camera *camera) {
     int textureID = 0;
 
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, rendertarget->getTextureID());
+    glBindTexture(GL_TEXTURE_2D, rendertarget->GetTextureID());
 
     m_shader->setUniform("u_texture", (void *)&textureID);
 

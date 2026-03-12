@@ -28,9 +28,11 @@
 
 #include "gr-base/physics/physicsScene.hpp"
 
+#include "gr-engine/managers/viewmanager.hpp"
 #include "gr-engine/runtime/editorRuntime.hpp"
 #include "gr-engine/settings.h"
 
+#include "gr-engine/ui/viewlayout.hpp"
 #include "imgui.h"
 
 #include <gr-base/core/window.hpp>
@@ -135,17 +137,84 @@ static std::unordered_map<std::string, DragDropFlags> m_extensionNameToFlag =
     }
 
 
-// static void for_each(Transform *transform, std::function<void (Transform *)> func)
-// {
-//     func(transform);
-//
-//     for (auto &child : transform->getChildren())
-//     {
-//         for_each(child, func);
-//     }
-// }
-
 #include <gr-base/managers/batchingmanager.hpp>
+
+class TestPopup : public ViewLayout
+{
+    Project* m_project;
+
+    int numInstances;
+
+    std::vector<GameObjectHandle> m_instances;
+
+public:
+    TestPopup() : m_project(nullptr), numInstances(100)
+    {
+        m_project = &Engine::GetInstance().get_project();
+    }
+
+    const char* getName() const override
+    {
+        return "TestPopup";
+    }
+
+    void onRenderUI() override
+    {
+        ImGui::Begin("Test");
+
+        ImGui::InputInt("Num", &numInstances);
+
+        if (ImGui::Button("Spawn"))
+        {
+            if (!m_instances.empty())
+            {
+                for (auto& handle : m_instances)
+                    GameObject::DestroyImediate(handle);
+
+                m_instances.clear();
+            }
+
+            std::string model = m_project->path + "/assets/model/Cubo.gmdx";
+
+            AssetsManager::LoadGameObject(model, [this](GameObjectHandle prefabID)
+            {
+                int distance = numInstances / 2;
+
+                for (int x=-distance;x<distance;x++)
+                {
+                    for (int z=-distance;z<distance;z++)
+                    {
+                        auto prefab = GameObject::Get(prefabID);
+
+                        auto gameobjectID = GameObject::Instantiate(prefab);
+
+                        auto gameObject = GameObject::Get(gameobjectID);
+                        gameObject->setName("Test[" + std::to_string(x) + "][" + std::to_string(z) + "]");
+
+                        auto transform = gameObject->GetTransform();
+                        transform->setLocalPosition({(float)x * 5.5f, 0.0f, (float)z * 4.5f});
+
+                        m_instances.push_back(gameobjectID);
+                    }
+                }
+                GameObject::DestroyImediate(prefabID);
+            });
+        }
+
+        ImGui::SameLine();
+
+        if (ImGui::Button("Despawn"))
+        {
+            for (auto& handle : m_instances)
+                GameObject::DestroyImediate(handle);
+
+            m_instances.clear();
+        }
+
+        ImGui::End();
+    }
+};
+
 Editor::Editor()
     : m_viewport(ImGui::GetMainViewport()),
     mImGuiIO(&ImGui::GetIO()),
@@ -244,6 +313,8 @@ Editor::Editor()
     updateFileTree(root_tree_file);
 
     Window::SetWindowTitle(String::format("GR - %s", m_project->name.c_str()).c_str());
+
+    ViewManager::AddPopup<TestPopup>();
 }
 
 Editor::~Editor()
@@ -251,8 +322,9 @@ Editor::~Editor()
     m_playMode = nullptr;
     m_editMode = nullptr;
 
-    BatchingManager::Shutdown();
     DebugDraw::Shutdown();
+
+    BatchingManager::Shutdown();
 
     AssetsManager::Shutdown();
 }
@@ -279,6 +351,7 @@ const char* Editor::getName() const
     return "Editor";
 }
 
+#include <gr-base/core/renderSystem.hpp>
 void Editor::onUpdate()
 {
     if (Settings::bGameRunning)
@@ -292,13 +365,15 @@ void Editor::onUpdate()
     }
 
     GameObjectManager::Cleanup();
+
+    RenderSystem::Update();
 }
 
 void Editor::onRender3D()
 {
-    OctreeManager::Render();
+    // OctreeManager::Render();
 
-    BVHTreeManager::Render();
+    // BVHTreeManager::Render();
 
     if (!Settings::bGameRunning)
     {
@@ -313,7 +388,8 @@ void Editor::onRender3D()
         for (auto &cameraID : m_scene->GetCameras())
             on_pre_config_render_scene(BehaviorStorage::GetComponent<Camera>(cameraID));
     }
-    DebugDraw::PosRender();
+
+    DebugDraw::Clear();
 }
 
 void Editor::on_pre_config_render_scene(Camera* camera)
@@ -365,38 +441,6 @@ void Editor::onRenderUI()
     create_call_popup();
 
     create_popup();
-
-    if (ImGui::Begin("Test"))
-    {
-        static int num = 100;
-
-        ImGui::InputInt("Num", &num);
-
-        if (ImGui::Button("Spawn"))
-        {
-            std::string model = m_project->path + "/assets/model/Cubo.gmdx";
-
-            AssetsManager::LoadGameObject(model, [this](GameObjectHandle prefabID)
-            {
-                for (int x=0;x<num;x++)
-                {
-                    for (int z=0;z<num;z++)
-                    {
-                        auto prefab = GameObject::Get(prefabID);
-                        prefab->setName("Test[" + std::to_string(x) + "][" + std::to_string(z) + "]");
-
-                        auto transform = prefab->GetTransform();
-                        transform->setLocalPosition({(float)x * 5.5f, 0.0f, (float)z * 4.5f});
-
-                        auto gameobjectID = GameObject::Instantiate(prefab);
-                        auto gameObject = GameObject::Get(gameobjectID);
-                    }
-                }
-                GameObject::DestroyImediate(prefabID);
-            });
-        }
-    }
-    ImGui::End();
 }
 
 void Editor::onFocus()
@@ -910,7 +954,7 @@ void Editor::render_scene(Scene *scene)
 
         auto rendertarget = camera->getRenderTarget();
 
-        ImGui::Image(reinterpret_cast<ImTextureID>(rendertarget->getTextureID()), regionAvail, {0.0f, 1.0f}, {1.0f, 0.0f});
+        ImGui::Image(reinterpret_cast<ImTextureID>(rendertarget->GetTextureID()), regionAvail, {0.0f, 1.0f}, {1.0f, 0.0f});
 
         /*if (ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
             auto mousePos = ImGui::GetMousePos();
@@ -1085,9 +1129,11 @@ void Editor::create_render_guizmo(Scene *scene)
         {
             isDragging = false;
 
+            /*
             RenderManager::Remove(gameObjectID);
 
             RenderManager::Insert(gameObjectID);
+            */
         }
     }
 }
@@ -2227,7 +2273,7 @@ void Editor::OnPropertyCamera(Camera *camera)
         auto rendertarget = camera->getRenderTarget();
 
         if (rendertarget->is_valid())
-            ImGui::Image(reinterpret_cast<ImTextureID>(rendertarget->getTextureID()), {64.0f, 64.0f}, {0.0f, 1.0f}, {1.0f, 0.0f});
+            ImGui::Image(reinterpret_cast<ImTextureID>(rendertarget->GetTextureID()), {64.0f, 64.0f}, {0.0f, 1.0f}, {1.0f, 0.0f});
     }
 }
 
