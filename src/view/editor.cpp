@@ -9,6 +9,7 @@
 #include <gr-base/script/default.hpp>
 
 #include "gr-base/managers/bvhtreemanager.hpp"
+#include "gr-base/managers/chunkmanager.hpp"
 #include "gr-engine/Global.h"
 #include "gr-engine/core/time.hpp"
 #include "gr-engine/editorController.h"
@@ -18,6 +19,7 @@
 #include "gr-base/core/debugdraw.hpp"
 #include "gr-base/core/geometry/shader.hpp"
 #include "gr-base/core/mainthreaddispatcher.hpp"
+#include "gr-base/core/assetReference.hpp"
 
 #include "gr-base/core/task/runtime/gameobjectsavetask.hpp"
 #include "gr-base/core/task/runtime/scenesavetask.hpp"
@@ -141,17 +143,13 @@ static std::unordered_map<std::string, DragDropFlags> m_extensionNameToFlag =
 
 class TestPopup : public ViewLayout
 {
-    Project* m_project;
-
     int numInstances;
 
     std::vector<GameObjectHandle> m_instances;
 
 public:
-    TestPopup() : m_project(nullptr), numInstances(100)
-    {
-        m_project = &Engine::GetInstance().get_project();
-    }
+    TestPopup() : numInstances(100)
+    {}
 
     const char* getName() const override
     {
@@ -174,9 +172,9 @@ public:
                 m_instances.clear();
             }
 
-            std::string model = m_project->path + "/assets/model/Cubo.gmdx";
+            std::string file = AssetsManager::GetAssetDir() + "/model/Cubo.gmdx";
 
-            AssetsManager::LoadGameObject(model, [this](GameObjectHandle prefabID)
+            AssetsManager::LoadGameObject(file, [this](GameObjectHandle prefabID)
             {
                 int distance = numInstances / 2;
 
@@ -272,6 +270,21 @@ Editor::Editor()
     m_runtime = m_editMode.get();
     m_runtime->initialize();
 
+    // Initialize
+    {
+        AssetReference::Initialize();
+
+        AssetsManager::Initialize();
+
+        BatchingManager::Initialize();
+        
+        DebugDraw::Initialize();
+    }
+
+    AssetsManager::SetAssetDir(m_project->path + "/assets");
+
+    AssetReference::Load(m_project->path + "/asset.txt");
+
     {
         GameObjectHandle gameObjectID = GameObject::Create("Camera");
 
@@ -279,13 +292,6 @@ Editor::Editor()
         gameObject->addComponent<Camera>();
 
         m_cameraID = gameObject->GetID<Camera>();
-    }
-
-    // Initialize
-    {
-        AssetsManager::Initialize();
-        BatchingManager::Initialize();
-        DebugDraw::Initialize();
     }
 
     bBuildDock = gfile::exists("imgui.ini");
@@ -304,7 +310,7 @@ Editor::Editor()
         Console::LogError("Fatal error in script: %s", e.what());
     }
 
-    root_tree_file.path = m_project->path + "/assets";
+    root_tree_file.path = AssetsManager::GetAssetDir();
     root_tree_file.name = "Assets";
     root_tree_file.parent = nullptr;
     root_tree_file.bdirectory = true;
@@ -322,9 +328,13 @@ Editor::~Editor()
     m_playMode = nullptr;
     m_editMode = nullptr;
 
+    AssetReference::Save(m_project->path + "/asset.txt");
+
     DebugDraw::Shutdown();
 
     BatchingManager::Shutdown();
+
+    AssetReference::Shutdown();
 
     AssetsManager::Shutdown();
 }
@@ -337,6 +347,8 @@ void Editor::loadScript(const std::string& dir)
         return Console::LogError("[ Script ] Fatal error data not unloaded.");
 
     ScriptManager::Load(dir + "/libscript.so");
+
+    // BehaviorStorage::Reinstantiate();
 
     Display::SetDisplayRect(Rect{0.0f, 0.0f, (float)Settings::ViewportSize.x, (float)Settings::ViewportSize.y});
 
@@ -354,15 +366,20 @@ const char* Editor::getName() const
 #include <gr-base/core/renderSystem.hpp>
 void Editor::onUpdate()
 {
+    auto scene = SceneManager::GetCurrent();
     if (Settings::bGameRunning)
     {
         BehaviorStorage::Update();
     } else
     {
-        auto scene = SceneManager::GetCurrent();
         if (scene != nullptr && scene->getCamera())
             EditorController::Update(scene->getCamera());
     }
+
+    ChunkManager::Update();
+
+    // if (scene != nullptr)
+        // scene->Update();
 
     GameObjectManager::Cleanup();
 
@@ -374,6 +391,8 @@ void Editor::onRender3D()
     // OctreeManager::Render();
 
     // BVHTreeManager::Render();
+
+    // ChunkManager::Render();
 
     if (!Settings::bGameRunning)
     {
@@ -1082,7 +1101,10 @@ void Editor::create_render_guizmo(Scene *scene)
     static std::unordered_set<Transform *> nodeup;
     for (auto gameObjectID : scene->get_object_selected())
     {
+        // TODO: Não deveria ser assim por que o objeto ainda permanece na lista ?
         auto go = GameObject::Get(gameObjectID);
+        if (go == nullptr)
+            continue;
 
         ImGuizmo::SetID(gameObjectID);
         auto transform = go->GetTransform();
@@ -2299,7 +2321,7 @@ void Editor::OnPropertyMeshRender(MeshRender *meshRender)
         popupFlags |= EditorPopupFlags_CreateMaterial;
 
     ImGui::Indent();
-    for (auto materialID : meshRender->getMaterialIDs())
+    for (MaterialID &materialID : meshRender->getMaterialIDs())
     {
         if (render_material(materialID))
         {
@@ -2398,6 +2420,9 @@ bool Editor::render_material(MaterialID id)
         return false;
     }
 
+    if (!ImGui::TreeNode(name.c_str()))
+        return false;
+
     auto shaderParams = GetShaderParamsFromName(AssetsManager::GetShaderName(shader));
 
     auto shadername = gfile::getname(shaderParams.base.c_str());
@@ -2407,6 +2432,8 @@ bool Editor::render_material(MaterialID id)
     render_material_property(material);
 
     dropShaderInMaterial(material);
+
+    ImGui::TreePop();
 
     return false;
 }
@@ -2745,17 +2772,40 @@ void Editor::SetupTexture(IconType type, grr::gTexture *texture) {
     }
 }
 
+#include <gr-base/managers/chunkmanager.hpp>
 void Editor::PostLoadGameObject(GameObjectHandle gameObjectID)
 {
     if (m_scene == nullptr)
         return;
 
-    auto instantiateID = GameObject::Instantiate(GameObject::Get(gameObjectID));
+    auto gameobject = GameObject::Get(gameObjectID);
 
-    GameObject::DestroyImediate(gameObjectID);
+    auto transform = gameobject->GetTransform();
+    auto position = transform->getPosition();
+
+    int chunkIdX = floor(position.x / CHUNK_SIZE);
+    int chunkIdZ = floor(position.z / CHUNK_SIZE);
+
+    std::string key = std::to_string(chunkIdX) + "_" + std::to_string(chunkIdZ);
+
+    ChunkID chunkID = ChunkManager::Find(key);
+    if (chunkID == INVALID_CHUNK)
+    {
+        chunkID = ChunkManager::Create(key);
+
+        StreamChunk* chunk = ChunkManager::Get(chunkID);
+        chunk->position = Vector2{(float)chunkIdX, (float)chunkIdZ};
+        chunk->objects = nullptr;
+    }
+
+    StreamChunk* chunk = ChunkManager::Get(chunkID);
+    chunk->dirty = true;
+    vector_push(chunk->objects, gameObjectID);
+
+    m_scene->insert(gameObjectID);
 
     m_scene->deselect_all();
-    m_scene->select(instantiateID);
+    m_scene->select(gameObjectID);
 }
 
 void Editor::CreateShaderTemplate(const std::string &path, const std::string &name)
