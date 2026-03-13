@@ -345,8 +345,6 @@ private:
     // PopupMenu
     void RenameMaterial();
 
-    void SkyboxEditor();
-
     void PluginManager();
 
     void PopupPluginLoad();

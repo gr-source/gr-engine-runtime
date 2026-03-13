@@ -145,10 +145,12 @@ class TestPopup : public ViewLayout
 {
     int numInstances;
 
+    Vector2 position;
+
     std::vector<GameObjectHandle> m_instances;
 
 public:
-    TestPopup() : numInstances(100)
+    TestPopup() : numInstances(100), position({0.0f, 0.0f})
     {}
 
     const char* getName() const override
@@ -174,29 +176,7 @@ public:
 
             std::string file = AssetsManager::GetAssetDir() + "/model/Cubo.gmdx";
 
-            AssetsManager::LoadGameObject(file, [this](GameObjectHandle prefabID)
-            {
-                int distance = numInstances / 2;
-
-                for (int x=-distance;x<distance;x++)
-                {
-                    for (int z=-distance;z<distance;z++)
-                    {
-                        auto prefab = GameObject::Get(prefabID);
-
-                        auto gameobjectID = GameObject::Instantiate(prefab);
-
-                        auto gameObject = GameObject::Get(gameobjectID);
-                        gameObject->setName("Test[" + std::to_string(x) + "][" + std::to_string(z) + "]");
-
-                        auto transform = gameObject->GetTransform();
-                        transform->setLocalPosition({(float)x * 5.5f, 0.0f, (float)z * 4.5f});
-
-                        m_instances.push_back(gameobjectID);
-                    }
-                }
-                GameObject::DestroyImediate(prefabID);
-            });
+            AssetsManager::LoadGameObject(file, &TestPopup::SetPrefab, this);
         }
 
         ImGui::SameLine();
@@ -210,6 +190,44 @@ public:
         }
 
         ImGui::End();
+    }
+
+    void SetPrefab(GameObjectHandle prefabID)
+    {
+        Spawn(prefabID);
+    }
+
+    void Spawn(GameObjectHandle prefabID)
+    {
+        int distance = numInstances / 2;
+
+        int currentX = floor(position.x / 16.0f);
+        int currentZ = floor(position.y / 16.0f);
+
+        for (int x=-distance;x<distance;x++)
+        {
+            for (int z=-distance;z<distance;z++)
+            {
+                int targetX = (currentX + x);
+                int targetZ = (currentZ + z);
+
+                auto prefab = GameObject::Get(prefabID);
+
+                auto gameobjectID = GameObject::Instantiate(prefab);
+
+                auto gameObject = GameObject::Get(gameobjectID);
+                gameObject->setName("Test[" + std::to_string(targetX) + "][" + std::to_string(targetZ) + "]");
+
+                auto transform = gameObject->GetTransform();
+                transform->setLocalPosition({(float)targetX * 5.5f, 0.0f, (float)targetZ * 4.5f});
+
+                m_instances.push_back(gameobjectID);
+            }
+        }
+
+        position += Vector2{(float)distance * 16.0f * 2.0f, 0.0f};
+
+        MainThreadDispatcher::AddDelayed(10.0f, &TestPopup::Spawn, this, prefabID);
     }
 };
 
@@ -487,10 +505,37 @@ void Editor::create_dock()
             ImGui::EndMenu();
         }
 
-        if (ImGui::BeginMenu("View"))
+        if (ImGui::BeginMenu("Scene"))
         {
-            if (ImGui::MenuItem("Status"))
+            if (ImGui::MenuItem("Bake"))
             {
+                for (auto& gameObjectID : m_scene->getObjectList())
+                {
+                    auto gameobject = GameObject::Get(gameObjectID);
+
+                    auto transform = gameobject->GetTransform();
+                    auto position = transform->getPosition();
+
+                    int chunkIdX = floor(position.x / CHUNK_SIZE);
+                    int chunkIdZ = floor(position.z / CHUNK_SIZE);
+
+                    std::string key = std::to_string(chunkIdX) + "_" + std::to_string(chunkIdZ);
+
+                    ChunkID chunkID = ChunkManager::Find(key);
+                    if (chunkID == INVALID_CHUNK)
+                    {
+                        chunkID = ChunkManager::Create(key);
+
+                        StreamChunk* chunk = ChunkManager::Get(chunkID);
+                        chunk->position = Vector2{(float)chunkIdX, (float)chunkIdZ};
+                        chunk->objects = nullptr;
+                        chunk->dirty = false;
+                    }
+
+                    StreamChunk* chunk = ChunkManager::Get(chunkID);
+                    chunk->dirty = true;
+                    vector_push(chunk->objects, gameObjectID);
+                }
             }
             ImGui::EndMenu();
         }
@@ -1774,8 +1819,6 @@ void Editor::create_popup()
 
     create_popup_new_material();
 
-    SkyboxEditor();
-
     PluginManager();
 
     PopupPluginLoad();
@@ -2780,6 +2823,7 @@ void Editor::PostLoadGameObject(GameObjectHandle gameObjectID)
 
     auto gameobject = GameObject::Get(gameObjectID);
 
+    /*
     auto transform = gameobject->GetTransform();
     auto position = transform->getPosition();
 
@@ -2801,6 +2845,7 @@ void Editor::PostLoadGameObject(GameObjectHandle gameObjectID)
     StreamChunk* chunk = ChunkManager::Get(chunkID);
     chunk->dirty = true;
     vector_push(chunk->objects, gameObjectID);
+    */
 
     m_scene->insert(gameObjectID);
 
@@ -2920,15 +2965,6 @@ GameObject *Editor::CreatePrimitive(int type) {
     return GameObject::Instantiate(go);
 }
 */
-
-void Editor::SkyboxEditor() {
-    auto isOpen = ImGui::BeginPopupModal("##popup_skybox_editor", nullptr, ImGuiWindowFlags_Modal);
-    if (!isOpen) { return; }
-
-    ImGui::Text("Teste");
-
-    ImGui::EndPopup();
-}
 
 #include "gr-engine/plugin/pluginManager.hpp"
 
