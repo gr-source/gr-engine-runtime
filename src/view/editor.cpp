@@ -227,7 +227,9 @@ public:
 
         position += Vector2{(float)distance * 16.0f * 2.0f, 0.0f};
 
-        MainThreadDispatcher::AddDelayed(10.0f, &TestPopup::Spawn, this, prefabID);
+        GameObject::DestroyImediate(prefabID);
+
+        // MainThreadDispatcher::AddDelayed(10.0f, &TestPopup::Spawn, this, prefabID);
     }
 };
 
@@ -2821,33 +2823,9 @@ void Editor::PostLoadGameObject(GameObjectHandle gameObjectID)
     if (m_scene == nullptr)
         return;
 
-    auto gameobject = GameObject::Get(gameObjectID);
+    GameObject::Instantiate(GameObject::Get(gameObjectID));
 
-    /*
-    auto transform = gameobject->GetTransform();
-    auto position = transform->getPosition();
-
-    int chunkIdX = floor(position.x / CHUNK_SIZE);
-    int chunkIdZ = floor(position.z / CHUNK_SIZE);
-
-    std::string key = std::to_string(chunkIdX) + "_" + std::to_string(chunkIdZ);
-
-    ChunkID chunkID = ChunkManager::Find(key);
-    if (chunkID == INVALID_CHUNK)
-    {
-        chunkID = ChunkManager::Create(key);
-
-        StreamChunk* chunk = ChunkManager::Get(chunkID);
-        chunk->position = Vector2{(float)chunkIdX, (float)chunkIdZ};
-        chunk->objects = nullptr;
-    }
-
-    StreamChunk* chunk = ChunkManager::Get(chunkID);
-    chunk->dirty = true;
-    vector_push(chunk->objects, gameObjectID);
-    */
-
-    m_scene->insert(gameObjectID);
+    GameObject::DestroyImediate(gameObjectID);
 
     m_scene->deselect_all();
     m_scene->select(gameObjectID);
