@@ -27,7 +27,7 @@
 FilmboxLoadTask::FilmboxLoadTask(const std::string& file) : m_file(file)
 {}
 
-GameObjectHandle FilmboxLoadTask::doInBackground()
+int FilmboxLoadTask::doInBackground()
 {
     Console::LogInfo("[ FilmboxTask ] Loading: %s", m_file.c_str());
 
@@ -38,8 +38,7 @@ GameObjectHandle FilmboxLoadTask::doInBackground()
     }
     catch (const std::exception &e)
     {
-        Console::LogError("[ FilmboxTask ] %s.", e.what());
-        return HANDLE_INVALID;
+        return 1;
     }
 
     auto scene = std::move(filmbox.get_scene());
@@ -48,7 +47,44 @@ GameObjectHandle FilmboxLoadTask::doInBackground()
     for (auto& node : root.getChildren())
         m_gameObjectCacheList.push_back(std::move(foreach_node(scene.get(), &node)));
 
-    return 1;  // load_object(scene.get());
+    return 0;
+}
+
+void FilmboxLoadTask::onPostExecute(int result)
+{
+    if (result != 0)
+        return Console::LogError("[FilmboxLoadTask] fail in to load '%s' error code: %d", m_file.c_str(), result);
+
+    for (auto& cache : m_materialCacheList)
+    {
+        MaterialID materialID = AssetsManager::FindMaterial(cache.name);
+        if (materialID == ID_INVALID)
+            materialID = AssetsManager::CreateMaterial(cache.name, &cache.material);
+
+        m_materialMapLookUp[cache.name] = materialID;
+    }
+
+    for (auto& cache : m_meshCacheList)
+    {
+        MeshID meshID = AssetsManager::FindMesh(cache.name);
+        if (meshID == ID_INVALID)
+            meshID = AssetsManager::CreateMesh(cache.name, &cache.mesh);
+
+        m_meshMapLookUp.emplace(cache.name, meshID);
+    }
+
+
+    GameObjectHandle first = GameObject::Create(gfile::getname(m_file.c_str()));
+
+    for (auto &cache : m_gameObjectCacheList)
+    {
+        auto gameObject = GameObject::Get(first);
+        gameObject->SetIsPrefab(true);
+
+        CreateGameObjectFromCache(cache.get(), gameObject->GetID<Transform>());
+    }
+
+    ViewManager::AddPopup<FilmboxImport>(first, m_meshes);
 }
 
 std::unique_ptr<FilmboxLoadTask::GameObjectDataCache> FilmboxLoadTask::foreach_node(const FbxScene* scene, const FbxNode* node)
@@ -176,45 +212,13 @@ std::unique_ptr<FilmboxLoadTask::GameObjectDataCache> FilmboxLoadTask::foreach_n
     return cache;
 }
 
-void FilmboxLoadTask::onPostExecute(GameObjectHandle result)
-{
-    for (auto& cache : m_materialCacheList)
-    {
-        MaterialID materialID = AssetsManager::FindMaterial(cache.name);
-        if (materialID == ID_INVALID)
-            materialID = AssetsManager::CreateMaterial(cache.name, &cache.material);
-
-        m_materialMapLookUp[cache.name] = materialID;
-    }
-
-    for (auto& cache : m_meshCacheList)
-    {
-        MeshID meshID = AssetsManager::FindMesh(cache.name);
-        if (meshID == ID_INVALID)
-            meshID = AssetsManager::CreateMesh(cache.name, &cache.mesh);
-
-        m_meshMapLookUp.emplace(cache.name, meshID);
-    }
-
-
-    GameObjectHandle first = GameObject::Create(gfile::getname(m_file.c_str()));
-
-    for (auto &cache : m_gameObjectCacheList)
-    {
-        auto gameObject = GameObject::Get(first);
-
-        CreateGameObjectFromCache(cache.get(), gameObject->GetID<Transform>());
-    }
-
-    ViewManager::AddPopup<FilmboxImport>(first, m_meshes);
-}
-
 void FilmboxLoadTask::CreateGameObjectFromCache(GameObjectDataCache* cache, ComponentHandle parent)
 {
     GameObjectHandle gameObjectID = GameObject::Create(cache->name);
 
     auto gameObject = GameObject::Get(gameObjectID);
     gameObject->SetIsStatic(true);
+    gameObject->SetIsPrefab(true);
 
     auto transform = gameObject->GetTransform();
     transform->setParent(BehaviorStorage::GetComponent<Transform>(parent));

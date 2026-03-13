@@ -20,7 +20,7 @@
 #include <unordered_map>
 #include <vector>
 
-class FilmboxLoadTask : public IAsyncTask<GameObjectHandle>
+class FilmboxLoadTask : public IAsyncTask<int>
 {
 public:
     FilmboxLoadTask(const std::string& file);
@@ -69,11 +69,11 @@ private:
 
     std::vector<std::unique_ptr<GameObjectDataCache>> m_gameObjectCacheList;
 
-    GameObjectHandle doInBackground() override;
+    int doInBackground() override;
+
+    void onPostExecute(int result) override;
 
     std::unique_ptr<GameObjectDataCache> foreach_node(const FbxScene* scene, const FbxNode* node);
-
-    void onPostExecute(GameObjectHandle result) override;
 
     void CreateGameObjectFromCache(GameObjectDataCache* cache, ComponentHandle parent);
 

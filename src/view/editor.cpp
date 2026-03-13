@@ -10,6 +10,8 @@
 
 #include "gr-base/managers/bvhtreemanager.hpp"
 #include "gr-base/managers/chunkmanager.hpp"
+#include <gr-base/managers/eventManager.hpp>
+
 #include "gr-engine/Global.h"
 #include "gr-engine/core/time.hpp"
 #include "gr-engine/editorController.h"
@@ -336,11 +338,14 @@ Editor::Editor()
     root_tree_file.bdirectory = true;
     root_tree_file.icon = nullptr;
 
-    updateFileTree(root_tree_file);
+    updateFileTree(&root_tree_file);
 
     Window::SetWindowTitle(String::format("GR - %s", m_project->name.c_str()).c_str());
 
     ViewManager::AddPopup<TestPopup>();
+
+    EventManager::Attach("delete_file_selected", &Editor::delete_file_selected, this);
+    EventManager::Attach("editor_update_tree_file", &Editor::updateFileTree, this, &root_tree_file);
 }
 
 Editor::~Editor()
@@ -493,7 +498,7 @@ void Editor::onBlur()
 
 void Editor::drop(void *data)
 {
-    updateFileTree(root_tree_file);
+    updateFileTree(&root_tree_file);
 }
 
 void Editor::create_dock()
@@ -1384,7 +1389,7 @@ void Editor::PopupFileAndDirmanager()
         default:
             break;
         }
-        updateFileTree(root_tree_file);
+        updateFileTree(&root_tree_file);
         
         ImGui::CloseCurrentPopup();
     }
@@ -1410,7 +1415,7 @@ void Editor::PopupFileManager()
         unselect_all_file();
 
         // FIXME: Muito lento
-        updateFileTree(root_tree_file);
+        updateFileTree(&root_tree_file);
     }
 
     ImGui::EndPopup();
@@ -1433,7 +1438,7 @@ void Editor::PopupCreateDirectory()
     {
         gfile::create_directories(g_treefile_dir_selected->path + "/" + std::string(name));
 
-        updateFileTree(*g_treefile_dir_selected);
+        updateFileTree(g_treefile_dir_selected);
 
         ImGui::CloseCurrentPopup();
     }
@@ -1592,13 +1597,7 @@ void Editor::render_files_on_dir(gtreefile *dir)
     {
         if (ImGui::IsKeyPressed(ImGuiKey_Delete, false))
         {
-            for (auto &selected : g_tree_file_selected)
-            {
-                gfile::remove(selected->path);
-            }
-            unselect_all_file();
-
-            updateFileTree(root_tree_file);
+            EventManager::Notify("delete_file_selected");
         }
         else if (!(popupFlags & EditorPopupFlags_FileManager) && ImGui::IsMouseClicked(ImGuiMouseButton_Right))
         {
@@ -1655,9 +1654,10 @@ void Editor::drop_gameobject_in_treefile(gtreefile *tree_file)
 
     auto gameobject = transform->GetGameObject();
 
+
     TaskManager::Add<int, GameObjectSaveTask>(tree_file->path + "/" + gameobject->getName() + ".gmdx", gameobject->getCacheID(), [&](GameObjectHandle id)
             {
-                updateFileTree(*tree_file);
+                EventManager::Notify("editor_update_tree_file");
             });
 
     ImGui::EndDragDropTarget();
@@ -1730,7 +1730,7 @@ void Editor::create_render_property()
     {
         go->SetIsStatic(isStatic);
 
-        RenderManager::SwitchTo(go->getCacheID(), isStatic);
+        // RenderManager::SwitchTo(go->getCacheID(), isStatic);
     }
 
     if (ImGui::IsItemHovered())
@@ -1966,7 +1966,7 @@ void Editor::create_popup_create_script()
     char name[256] = {0};
     if (ImGui::InputText("##input_text_popup_create_script_name", name, 256, ImGuiInputTextFlags_EnterReturnsTrue))
     {
-        updateFileTree(*file_tree);
+        updateFileTree(file_tree);
 
         ImGui::CloseCurrentPopup();
     }
@@ -1995,7 +1995,7 @@ void Editor::create_popup_rename_filedir()
     {
         File::rename(tree_file->path, tree_file->parent->path + "/" + name);
 
-        updateFileTree(*tree_file->parent);
+        updateFileTree(tree_file->parent);
         
         ImGui::CloseCurrentPopup();
     }
@@ -2038,7 +2038,7 @@ void Editor::create_popup_dir_manager()
 
         g_treefile_dir_selected = g_treefile_dir_selected->parent;
 
-        updateFileTree(*g_treefile_dir_selected);
+        updateFileTree(g_treefile_dir_selected);
     }
 
     ImGui::EndPopup();
@@ -2818,14 +2818,14 @@ void Editor::SetupTexture(IconType type, grr::gTexture *texture) {
 }
 
 #include <gr-base/managers/chunkmanager.hpp>
-void Editor::PostLoadGameObject(GameObjectHandle gameObjectID)
+void Editor::PostLoadGameObject(GameObjectHandle prefabID)
 {
     if (m_scene == nullptr)
         return;
 
-    GameObject::Instantiate(GameObject::Get(gameObjectID));
+    GameObjectHandle gameObjectID = GameObject::Instantiate(GameObject::Get(prefabID));
 
-    GameObject::DestroyImediate(gameObjectID);
+    GameObject::DestroyImediate(prefabID);
 
     m_scene->deselect_all();
     m_scene->select(gameObjectID);
@@ -3136,15 +3136,15 @@ void Editor::generateConfig(const std::string &file)
     */
 }
 
-void Editor::updateFileTree(gtreefile &tree_file)
+void Editor::updateFileTree(gtreefile *tree_file)
 {
-    if (!tree_file.bdirectory)
+    if (!tree_file->bdirectory)
         return;
 
-    auto &children = tree_file.children;
+    auto &children = tree_file->children;
 
     std::vector<std::filesystem::directory_entry> files;
-    for (auto &dir : std::filesystem::directory_iterator(tree_file.path))
+    for (auto &dir : std::filesystem::directory_iterator(tree_file->path))
     {
         files.push_back(dir);
     }
@@ -3165,7 +3165,7 @@ void Editor::updateFileTree(gtreefile &tree_file)
 
         child.name          = files[i].path().filename().string();
         child.path          = files[i].path().string();
-        child.parent        = &tree_file;
+        child.parent        = tree_file;
         child.extension     = files[i].path().extension();
         child.bdirectory    = files[i].is_directory();
 
@@ -3194,7 +3194,7 @@ void Editor::updateFileTree(gtreefile &tree_file)
 
         child.icon = texture;
 
-        updateFileTree(child);
+        updateFileTree(&child);
     }
 }
 
@@ -3220,6 +3220,16 @@ void Editor::unselect_all_file()
 {
     g_tree_file_selected.clear();
     g_tree_file_selected_map.clear();
+}
+
+void Editor::delete_file_selected()
+{
+    for (auto &selected : g_tree_file_selected)
+        gfile::remove(selected->path);
+
+    unselect_all_file();
+
+    updateFileTree(&root_tree_file);
 }
 
 void Editor::drop_gmdx(std::function<void (std::string)> func)

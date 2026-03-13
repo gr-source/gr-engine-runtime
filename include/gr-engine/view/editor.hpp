@@ -360,7 +360,7 @@ private:
 
     void generateConfig(const std::string &file);
 
-    void updateFileTree(gtreefile &tree_file);
+    void updateFileTree(gtreefile *tree_file);
 
     void select_file(gtreefile *file);
 
@@ -369,6 +369,8 @@ private:
     bool selected_file(gtreefile *file) const;
 
     void unselect_all_file();
+
+    void delete_file_selected();
 
     void drop_gmdx(std::function<void (std::string)> func);
 };

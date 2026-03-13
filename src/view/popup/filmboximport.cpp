@@ -6,6 +6,7 @@
 #include "gr-base/core/thread/taskmanager.hpp"
 
 #include "gr-base/ecs/behaviorStorage.hpp"
+#include "gr-base/managers/eventManager.hpp"
 #include "gr-engine/managers/viewmanager.hpp"
 
 #include <gr-base/script/transform.hpp>
@@ -88,6 +89,8 @@ void FilmboxImport::onSavedGameObject(GameObjectHandle gameObject)
     GameObject::DestroyImediate(gameObject);
 
     ViewManager::Remove(this);
+
+    EventManager::Notify("editor_update_tree_file");
 }
 
 
