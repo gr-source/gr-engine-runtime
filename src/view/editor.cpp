@@ -457,7 +457,8 @@ void Editor::on_pre_config_render_scene(Camera* camera)
 void Editor::on_render_scene(Camera* camera)
 {
     grr::gRender::SetRenderState(grr::GR_DEPTH_FUNC, grr::GR_DEPTH_LESS);
-    RenderManager::Render();
+    RenderSystem::Renderer();
+    // RenderManager::Render();
 
     grr::gRender::SetRenderState(grr::GR_DEPTH_FUNC, grr::GR_DEPTH_LEQUAL);
     DebugDraw::Render(camera);
@@ -2528,9 +2529,8 @@ void Editor::RenderShaderUniform(Material *material, grr::gShader *shader)
     {
         switch (type)
         {
-        case UniformVariable::MAT3:
-        case UniformVariable::MAT4:
-        case UniformVariable::NONE:
+        case UniformType::MAT3:
+        case UniformType::MAT4:
             continue;
         default:
             break;
@@ -2540,7 +2540,7 @@ void Editor::RenderShaderUniform(Material *material, grr::gShader *shader)
 
         switch (type)
         {
-            case UniformVariable::VEC3:
+            case UniformType::VEC3:
             {
                 auto value = material->getValue<Vector3>(name);
                 if (value == nullptr)
@@ -2550,7 +2550,7 @@ void Editor::RenderShaderUniform(Material *material, grr::gShader *shader)
                     ImGui::DragFloat3(("##" + std::string(name)).c_str(), (float *)value);
                 break;
             }
-            case UniformVariable::FLOAT:
+            case UniformType::FLOAT:
             {
                 auto value = material->getValue<float>(name);
                 if (value == nullptr)
@@ -2560,7 +2560,7 @@ void Editor::RenderShaderUniform(Material *material, grr::gShader *shader)
                     ImGui::DragFloat(("##" + std::string(name)).c_str(), (float *)value);
                 break;
             }
-            /*case UniformVariable::int: {
+            /*case UniformType::int: {
             int value = 0.0f;
             if (uniform.data != nullptr)
                 value = *reinterpret_cast<int *>(uniform.data);
@@ -2571,7 +2571,7 @@ void Editor::RenderShaderUniform(Material *material, grr::gShader *shader)
             }
             break;
         }
-        case UniformVariable::float: {
+        case UniformType::float: {
             float value = 0.0f;
             if (uniform.data != nullptr)
                 value = *reinterpret_cast<float *>(uniform.data);
@@ -2582,7 +2582,7 @@ void Editor::RenderShaderUniform(Material *material, grr::gShader *shader)
             }
             break;
         }
-        case UniformVariable::vec3: {
+        case UniformType::vec3: {
             Vector3 value = Vector3::zero;
             if (uniform.data != nullptr)
                 value = *reinterpret_cast<Vector3 *>(uniform.data);
@@ -2593,7 +2593,7 @@ void Editor::RenderShaderUniform(Material *material, grr::gShader *shader)
             }
             break;
         }
-        case UniformVariable::vec4: {
+        case UniformType::vec4: {
             Vector4 value = Vector4::zero;
             if (uniform.data != nullptr)
                 value = *reinterpret_cast<Vector4 *>(uniform.data);

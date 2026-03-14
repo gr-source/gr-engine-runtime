@@ -77,7 +77,6 @@ void ScreenRender::Render(Camera *camera) {
     m_shader->setUniform("u_texture", (void *)&textureID);
 
     m_shader->bind();
-    m_shader->flush();
 
     m_vertexArray->bind();
     
