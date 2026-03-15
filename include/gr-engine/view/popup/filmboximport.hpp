@@ -4,7 +4,7 @@
 
 #include <gr-base/core/geometry/default.hpp>
 
-#include <gr-base/core/default.hpp>
+#include <gr-base/ecs/default.hpp>
 
 #include <vector>
 

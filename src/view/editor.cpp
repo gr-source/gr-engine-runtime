@@ -213,9 +213,7 @@ public:
                 int targetX = (currentX + x);
                 int targetZ = (currentZ + z);
 
-                auto prefab = GameObject::Get(prefabID);
-
-                auto gameobjectID = GameObject::Instantiate(prefab);
+                auto gameobjectID = GameObject::Instantiate(prefabID);
 
                 auto gameObject = GameObject::Get(gameobjectID);
                 gameObject->setName("Test[" + std::to_string(targetX) + "][" + std::to_string(targetZ) + "]");
@@ -609,7 +607,7 @@ void Editor::create_render_hierarchy()
                     Transform *transform = gameobject->GetTransform();
                     transform->setParent(nullptr);
 
-                    m_scene->insert(transform->GetGameObject()->getCacheID());
+                    m_scene->insert(transform->GetGameObject()->GetCacheID());
                 });
         
         RenderSceneObject(m_scene);
@@ -687,10 +685,10 @@ void Editor::ReadHierarchy(Scene *scene, GameObject* gameObject)
     ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanFullWidth;
 
     auto transform = gameObject->GetTransform();
-    auto name = gameObject->getName();
+    auto name = gameObject->GetName();
     bool isstatic = gameObject->GetIsStatic();
 
-    if (scene->object_has_been_selected(gameObject->getCacheID()))
+    if (scene->object_has_been_selected(gameObject->GetCacheID()))
         flags |= ImGuiTreeNodeFlags_Selected;
 
     if (transform->hasChildren())
@@ -702,18 +700,18 @@ void Editor::ReadHierarchy(Scene *scene, GameObject* gameObject)
 
     if (ImGui::IsKeyDown(ImGuiKey_ModShift) && ImGui::IsItemClicked(ImGuiMouseButton_Left))
     {
-        if (scene->object_has_been_selected(gameObject->getCacheID()))
+        if (scene->object_has_been_selected(gameObject->GetCacheID()))
         {
-            scene->deselect(gameObject->getCacheID());
+            scene->deselect(gameObject->GetCacheID());
         } else
         {
-            scene->select(gameObject->getCacheID());
+            scene->select(gameObject->GetCacheID());
         }
     } else if (ImGui::IsItemClicked(ImGuiMouseButton_Left) && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
     {
         scene->deselect_all();
 
-        scene->select(gameObject->getCacheID());
+        scene->select(gameObject->GetCacheID());
     }
 
     dragDropGameObject(transform, name);
@@ -752,7 +750,7 @@ void Editor::dragDropGameObject(Transform *transform, const std::string &name)
     {
         target->setParent(transform);
 
-        m_scene->remove(target->GetGameObject()->getCacheID());
+        m_scene->remove(target->GetGameObject()->GetCacheID());
     }
 
     ImGui::EndDragDropTarget();
@@ -1092,7 +1090,7 @@ void Editor::render_scene(Scene *scene)
         m_scene->deselect_all();
 
         for (auto go : temp)
-            m_scene->select(GameObject::Instantiate(GameObject::Get(go)));
+            m_scene->select(GameObject::Instantiate(go));
     }
 
     if (ImGui::IsWindowFocused() && mImGuiIO->KeyCtrl && ImGui::IsKeyReleased(ImGuiKey_S))
@@ -1656,7 +1654,7 @@ void Editor::drop_gameobject_in_treefile(gtreefile *tree_file)
     auto gameobject = transform->GetGameObject();
 
 
-    TaskManager::Add<int, GameObjectSaveTask>(tree_file->path + "/" + gameobject->getName() + ".gmdx", gameobject->getCacheID(), [&](GameObjectHandle id)
+    TaskManager::Add<int, GameObjectSaveTask>(tree_file->path + "/" + gameobject->GetName() + ".gmdx", gameobject->GetCacheID(), [&](GameObjectHandle id)
             {
                 EventManager::Notify("editor_update_tree_file");
             });
@@ -1722,7 +1720,7 @@ void Editor::create_render_property()
     if (go == nullptr)
         return;
 
-    auto objName = go->getName();
+    auto objName = go->GetName();
 
     ImGui::SeparatorText(objName.c_str());
 
@@ -1934,7 +1932,7 @@ void Editor::create_popup_rename_object()
     auto objectlist = m_scene->get_object_selected();
 
     auto object = GameObject::Get(objectlist.back());
-    auto go_name = object->getName();
+    auto go_name = object->GetName();
 
     char name[256] = {0};
     strcpy(name, go_name.c_str());
@@ -2234,7 +2232,7 @@ void Editor::RenderField(Field &field, Component *component) {
 
 void Editor::renderDropGameObject(GameObject **ref) {
     if (*ref) {
-        ImGui::Text("%s", (*ref)->getName().c_str());
+        ImGui::Text("%s", (*ref)->GetName().c_str());
     }
 
     if (!ImGui::BeginDragDropTarget()) {
@@ -2823,7 +2821,7 @@ void Editor::PostLoadGameObject(GameObjectHandle prefabID)
     if (m_scene == nullptr)
         return;
 
-    GameObjectHandle gameObjectID = GameObject::Instantiate(GameObject::Get(prefabID));
+    GameObjectHandle gameObjectID = GameObject::Instantiate(prefabID);
 
     GameObject::DestroyImediate(prefabID);
 
@@ -3086,7 +3084,7 @@ void Editor::set_scene(Scene *scene)
 void Editor::OutputGameObject(GameObject **ref, GameObject *go)
 {
     if ((*ref) != nullptr)
-        GameObject::Destroy((*ref)->getCacheID());
+        GameObject::Destroy((*ref)->GetCacheID());
 
     *ref = go;
 }

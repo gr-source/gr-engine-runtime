@@ -34,7 +34,7 @@ void FilmboxImport::onRenderUI()
     // for (auto &gameObject : resultTask)
     {
         auto gameObject = GameObject::Get(m_gameObjectID);
-        auto name = gameObject->getName();
+        auto name = gameObject->GetName();
 
         if (ImGui::CollapsingHeader(name.c_str()))
         {
@@ -58,7 +58,7 @@ void FilmboxImport::onRenderUI()
         auto gameObject = GameObject::Get(m_gameObjectID);
         
         TaskManager::Add<int, GameObjectSaveTask>(
-                project.path + "/assets/model/" + gameObject->getName() + ".gmdx",
+                project.path + "/assets/model/" + gameObject->GetName() + ".gmdx",
                 m_gameObjectID,
                 std::bind(&FilmboxImport::onSavedGameObject, this, std::placeholders::_1)
             );
@@ -74,7 +74,7 @@ void FilmboxImport::render_tree_node(const GameObject *gameObject)
 {
     auto transform = gameObject->GetTransform();
 
-    auto isOpen = ImGui::TreeNodeEx(gameObject->getName().c_str(), !transform->hasChildren() ? ImGuiTreeNodeFlags_Leaf : 0);
+    auto isOpen = ImGui::TreeNodeEx(gameObject->GetName().c_str(), !transform->hasChildren() ? ImGuiTreeNodeFlags_Leaf : 0);
     if (!isOpen)
         return;
 
