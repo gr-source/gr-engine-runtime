@@ -168,14 +168,6 @@ public:
 
         if (ImGui::Button("Spawn"))
         {
-            if (!m_instances.empty())
-            {
-                for (auto& handle : m_instances)
-                    GameObject::DestroyImediate(handle);
-
-                m_instances.clear();
-            }
-
             std::string file = AssetsManager::GetAssetDir() + "/model/Cubo.gmdx";
 
             AssetsManager::LoadGameObject(file, &TestPopup::SetPrefab, this);
@@ -216,7 +208,7 @@ public:
                 auto gameobjectID = GameObject::Instantiate(prefabID);
 
                 auto gameObject = GameObject::Get(gameobjectID);
-                gameObject->setName("Test[" + std::to_string(targetX) + "][" + std::to_string(targetZ) + "]");
+                gameObject->SetName("Test[" + std::to_string(targetX) + "][" + std::to_string(targetZ) + "]");
 
                 auto transform = gameObject->GetTransform();
                 transform->setLocalPosition({(float)targetX * 5.5f, 0.0f, (float)targetZ * 4.5f});
@@ -225,7 +217,7 @@ public:
             }
         }
 
-        position += Vector2{(float)distance * 16.0f * 2.0f, 0.0f};
+        // position += Vector2{(float)distance * 16.0f * 2.0f, 0.0f};
 
         GameObject::DestroyImediate(prefabID);
 
@@ -1942,7 +1934,7 @@ void Editor::create_popup_rename_object()
 
     if (ImGui::InputText("##create_popup_rename_object_inputtext_0", name, GET_N_ARRAY(name), ImGuiInputTextFlags_EnterReturnsTrue))
     {
-        object->setName(name);
+        object->SetName(name);
 
         ImGui::CloseCurrentPopup();
     }
@@ -2466,6 +2458,8 @@ bool Editor::render_material(MaterialID id)
 
     if (!ImGui::TreeNode(name.c_str()))
         return false;
+
+    ImGui::Checkbox("Instancing", &material->bEnableInstancing);
 
     auto shaderParams = GetShaderParamsFromName(AssetsManager::GetShaderName(shader));
 
