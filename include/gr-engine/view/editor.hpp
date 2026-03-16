@@ -183,6 +183,12 @@ private:
 
     ImVec4 FPSColor;
 
+    float fpsTimer;
+
+    int fpsFrameCount;
+
+    int fps;
+
     gtreefile root_tree_file;
 
     gtreefile *g_treefile_dir_selected;

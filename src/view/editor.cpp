@@ -249,6 +249,10 @@ Editor::Editor()
 
     FPSColor = {1.0f, 1.0f, 1.0f, 1.0f};
 
+    fpsFrameCount = 0;
+    fpsTimer = 0;
+    fps = 0;
+
     m_guizmoOperation = ImGuizmo::TRANSLATE;
 
     m_guizmoManipulate = ImGuizmo::WORLD;
@@ -1050,8 +1054,18 @@ void Editor::render_scene(Scene *scene)
 
     // Fps Draw
     {
+        fpsTimer += static_cast<float>(Clock::deltaTime);
+        fpsFrameCount++;
+
+        if (fpsTimer >= 1.0f)
+        {
+            fps = fpsFrameCount;
+            fpsFrameCount = 0;
+            fpsTimer = 0.0f;
+        }
+
         char fps_text[256] = {0};
-        sprintf(fps_text, "FPS: %.2f", (1.0f / Clock::deltaTime));
+        sprintf(fps_text, "FPS: %d", fps);
 
         auto textSize = ImGui::CalcTextSize(fps_text);
 

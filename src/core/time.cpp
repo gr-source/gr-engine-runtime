@@ -4,7 +4,7 @@
 #include <thread>
 
 gtimer::gtimer(double fps)
-    : m_targetFrameTime(1.0 / fps),
+    : m_targetFrameTime(fps > 0.0 ? 1.0 / fps : 0.0),
       m_lastTime(glfwGetTime()),
       m_delta(0.0)
 {}
@@ -20,7 +20,7 @@ void gtimer::end_frame()
 {
     double frameTime = glfwGetTime() - m_lastTime;
 
-    if (frameTime < m_targetFrameTime)
+    if (m_targetFrameTime > 0.0 && frameTime < m_targetFrameTime)
     {
         double sleep = m_targetFrameTime - frameTime;
         std::this_thread::sleep_for(std::chrono::duration<double>(sleep));

@@ -226,8 +226,6 @@ int main(int argc, char *argv[])
 
     gtimer time(60.0f);
 
-    srand(*(int*)(void*)&Settings::IconSize);
-
     while (Settings::IsEngineRunning() && !glfwWindowShouldClose(&(*window)))
     {
         time.begin_frame();
