@@ -1881,14 +1881,13 @@ void Editor::create_popup_add_component()
 
     std::vector<std::string> m_componentName;
 
-    array* hashtable = BehaviorRegistry::GetBehaviorInfos();
+    ComponentInfo* infos = BehaviorRegistry::GetAllComponentInfo();
 
-    ComponentInfo* infos = (ComponentInfo*)hashtable->vector;
-    for (auto hash : BehaviorRegistry::GetActiveBehaviorActive())
+    for (ComponentInfoID id=0;id<BehaviorRegistry::GetCount();id++)
     {
-        ComponentInfo* info = BehaviorRegistry::Get(hash);
+        ComponentInfo& info = infos[id];
 
-        m_componentName.push_back(info->name);
+        m_componentName.push_back(info.name);
     }
 
     std::sort(m_componentName.begin(), m_componentName.end(), [](const auto &lhs, const auto &rhs) {
@@ -2128,28 +2127,23 @@ void Editor::dropScriptInAddComponent()
 
 void Editor::RenderScriptFromEntity(Entity *entity)
 {
-    array* hashtable = BehaviorRegistry::GetBehaviorInfos();
-
-    ComponentInfo* infos = (ComponentInfo*)hashtable->vector;
     for (auto &hash : entity->GetHashes())
     {
-        size_t poolID = hash % COMPONENT_TABLE_SIZE;
-
-        ComponentInfo& info = infos[poolID];
-        if (info.hash != hash)
+        ComponentInfo* info = BehaviorRegistry::Get(hash);
+        if (info->hash != hash)
             continue;
 
         char name[512] = {0};
-        sprintf(name, "%s %lu", info.name, info.hash);
+        sprintf(name, "%s %lu", info->name, info->hash);
 
-        ImGui::PushID(info.name);
+        ImGui::PushID(info->name);
 
         bool bVisible = true;
 
-        bool bShowCollapsed = strcmp(info.name, "Transform") == 0 ? ImGui::CollapsingHeader(name) : ImGui::CollapsingHeader(name, &bVisible);
+        bool bShowCollapsed = strcmp(info->name, "Transform") == 0 ? ImGui::CollapsingHeader(name) : ImGui::CollapsingHeader(name, &bVisible);
         if (bShowCollapsed)
         {
-            auto it = m_guiscriptmap.find(info.name);
+            auto it = m_guiscriptmap.find(info->name);
             if (it != m_guiscriptmap.end())
                 it->second(entity);
             else
