@@ -8,8 +8,8 @@
 #include <gr-base/script/baserender.hpp>
 #include <gr-base/script/default.hpp>
 
-#include "gr-base/managers/bvhtreemanager.hpp"
-#include "gr-base/managers/chunkmanager.hpp"
+#include <gr-base/managers/bvhtreemanager.hpp>
+#include <gr-base/managers/worldmanager.hpp>
 #include <gr-base/managers/eventManager.hpp>
 
 #include "gr-engine/Global.h"
@@ -37,6 +37,8 @@
 #include "gr-engine/settings.h"
 
 #include "gr-engine/ui/viewlayout.hpp"
+#include "gr-engine/view/spawnObject.hpp"
+#include "gr-engine/view/worldManagerView.hpp"
 #include "imgui.h"
 
 #include <gr-base/core/window.hpp>
@@ -143,88 +145,6 @@ static std::unordered_map<std::string, DragDropFlags> m_extensionNameToFlag =
 
 #include <gr-base/managers/batchingmanager.hpp>
 
-class TestPopup : public ViewLayout
-{
-    int numInstances;
-
-    Vector2 position;
-
-    std::vector<GameObjectHandle> m_instances;
-
-public:
-    TestPopup() : numInstances(100), position({0.0f, 0.0f})
-    {}
-
-    const char* getName() const override
-    {
-        return "TestPopup";
-    }
-
-    void onRenderUI() override
-    {
-        ImGui::Begin("Test");
-
-        ImGui::InputInt("Num", &numInstances);
-
-        if (ImGui::Button("Spawn"))
-        {
-            std::string file = AssetsManager::GetAssetDir() + "/model/Cubo.gmdx";
-
-            AssetsManager::LoadGameObject(file, &TestPopup::SetPrefab, this);
-        }
-
-        ImGui::SameLine();
-
-        if (ImGui::Button("Despawn"))
-        {
-            for (auto& handle : m_instances)
-                GameObject::DestroyImediate(handle);
-
-            m_instances.clear();
-        }
-
-        ImGui::End();
-    }
-
-    void SetPrefab(GameObjectHandle prefabID)
-    {
-        Spawn(prefabID);
-    }
-
-    void Spawn(GameObjectHandle prefabID)
-    {
-        int distance = numInstances / 2;
-
-        int currentX = floor(position.x / 16.0f);
-        int currentZ = floor(position.y / 16.0f);
-
-        for (int x=-distance;x<distance;x++)
-        {
-            for (int z=-distance;z<distance;z++)
-            {
-                int targetX = (currentX + x);
-                int targetZ = (currentZ + z);
-
-                auto gameobjectID = GameObject::Instantiate(prefabID);
-
-                auto gameObject = GameObject::Get(gameobjectID);
-                gameObject->SetName("Test[" + std::to_string(targetX) + "][" + std::to_string(targetZ) + "]");
-
-                auto transform = gameObject->GetTransform();
-                transform->setLocalPosition({(float)targetX * 5.5f, 0.0f, (float)targetZ * 4.5f});
-
-                m_instances.push_back(gameobjectID);
-            }
-        }
-
-        // position += Vector2{(float)distance * 16.0f * 2.0f, 0.0f};
-
-        GameObject::DestroyImediate(prefabID);
-
-        // MainThreadDispatcher::AddDelayed(10.0f, &TestPopup::Spawn, this, prefabID);
-    }
-};
-
 Editor::Editor()
     : m_viewport(ImGui::GetMainViewport()),
     mImGuiIO(&ImGui::GetIO()),
@@ -244,7 +164,7 @@ Editor::Editor()
     g_treefile_dir_selected = nullptr;
 
     m_currentPage = 0;
-
+    
     popupFlags = 0;
 
     FPSColor = {1.0f, 1.0f, 1.0f, 1.0f};
@@ -336,8 +256,6 @@ Editor::Editor()
 
     Window::SetWindowTitle(String::format("GR - %s", m_project->name.c_str()).c_str());
 
-    ViewManager::AddPopup<TestPopup>();
-
     EventManager::Attach("delete_file_selected", &Editor::delete_file_selected, this);
     EventManager::Attach("editor_update_tree_file", &Editor::updateFileTree, this, &root_tree_file);
 }
@@ -395,7 +313,7 @@ void Editor::onUpdate()
             EditorController::Update(scene->getCamera());
     }
 
-    ChunkManager::Update();
+    WorldManager::Update();
 
     // if (scene != nullptr)
         // scene->Update();
@@ -511,6 +429,7 @@ void Editor::create_dock()
         {
             if (ImGui::MenuItem("Bake"))
             {
+                /*
                 for (auto& gameObjectID : m_scene->getObjectList())
                 {
                     auto gameobject = GameObject::Get(gameObjectID);
@@ -538,7 +457,35 @@ void Editor::create_dock()
                     chunk->dirty = true;
                     vector_push(chunk->objects, gameObjectID);
                 }
+                */
             }
+            ImGui::EndMenu();
+        }
+
+        if (ImGui::BeginMenu("View"))
+        {
+            {
+                bool bActive = ViewManager::GetView<SpawnObject>() != nullptr;
+                if (ImGui::MenuItem("Spawn Object", nullptr, &bActive))
+                {
+                    if (bActive)
+                        ViewManager::AddSubView<SpawnObject>();
+                    else
+                        ViewManager::RemoveView<SpawnObject>();
+                }
+            }
+
+            {
+                bool bActive = ViewManager::GetView<WorldManagerView>() != nullptr;
+                if (ImGui::MenuItem("World Manager", nullptr, &bActive))
+                {
+                    if (bActive)
+                        ViewManager::AddSubView<WorldManagerView>();
+                    else
+                        ViewManager::RemoveView<WorldManagerView>();
+                }
+            }
+
             ImGui::EndMenu();
         }
 
@@ -548,9 +495,7 @@ void Editor::create_dock()
     PopupMenuProperty();
     
     if (bBuildDock)
-    {
         return;
-    }
 
     // BuildDock(dockID, 0);
 
@@ -777,6 +722,34 @@ void Editor::PopupMenuAdd()
 
     ImGui::EndPopup();
 }
+
+/*
+class TestPopup : public ViewLayout
+{
+
+
+public:
+    TestPopup() : numInstances(100), position({0.0f, 0.0f})
+    {}
+
+    const char* getName() const override
+    {
+        return "TestPopup";
+    }
+
+    void onRenderUI() override
+    {
+
+    }
+
+    void SetPrefab(GameObjectHandle prefabID)
+    {
+        Spawn(prefabID);
+    }
+
+
+};
+*/
 
 void Editor::create_window_viewport()
 {
@@ -2817,7 +2790,6 @@ void Editor::SetupTexture(IconType type, grr::gTexture *texture) {
     }
 }
 
-#include <gr-base/managers/chunkmanager.hpp>
 void Editor::PostLoadGameObject(GameObjectHandle prefabID)
 {
     if (m_scene == nullptr)

@@ -16,7 +16,7 @@ public:
 
 template <typename... Args>
 inline std::string String::format(const std::string &fmt, Args &&...args) {
-    auto retVal = snprintf(nullptr, 0, fmt.c_str(), std::forward<Args>(args)...);
+    int retVal = snprintf(nullptr, 0, fmt.c_str(), std::forward<Args>(args)...);
     if (retVal <= 0) {
         return "";
     }

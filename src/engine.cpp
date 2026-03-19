@@ -89,15 +89,15 @@ void Engine::init_project(const std::string& path)
     {
         bHasProject = false;
 
-        return ViewManager::Add<ProjectMenu>();
+        return ViewManager::AddView<ProjectMenu>();
     }
 
     bHasProject = m_project.load(path);
 
     if (!bHasProject)
-        return ViewManager::Add<ProjectMenu>();
+        return ViewManager::AddView<ProjectMenu>();
 
-    ViewManager::Add<Editor>();
+    ViewManager::AddView<Editor>();
 }
 
 Project& Engine::get_project()
@@ -130,7 +130,7 @@ void Engine::init()
     grr::gRender::SetRenderState(grr::GR_SRC_ALPHA, grr::GR_ONE_MINUS_SRC_ALPHA);
 
     if (!check_installed())
-        return ViewManager::Add<Installer>();
+        return ViewManager::AddView<Installer>();
 
     init_menu();
 }

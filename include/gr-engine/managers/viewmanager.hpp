@@ -2,6 +2,9 @@
 
 #include "../ui/viewlayout.hpp"
 
+#include <memory>
+#include <typeinfo>
+#include <unordered_map>
 #include <vector>
 
 class ViewManager
@@ -20,15 +23,21 @@ public:
     static void RemoveAllView();
 
     template <typename T, typename... Args>
-    static void Add(Args&&... args);
+    static void AddView(Args&&... args);
 
     template <typename T, typename... Args>
-    static void AddPopup(Args&&... args);
+    static void AddSubView(Args&&... args);
 
-    static void Remove(ViewLayout* view);
+    template <typename T>
+    static ViewLayout* GetView();
+
+    template <typename T>
+    static void RemoveView();
 
 private:
     static ViewManager *s_ViewManager;
+
+    std::unordered_map<ViewHash, std::shared_ptr<ViewLayout>> s_ViewMap;
 
     std::vector<ViewLayout*> s_viewRegistryPopup;
 
@@ -39,11 +48,13 @@ private:
     ViewManager();
     ~ViewManager();
 
-    void add(ViewLayout* view);
+    void addView(ViewHash hash, std::shared_ptr<ViewLayout> view);
 
-    void addPopup(ViewLayout* view);
+    void addSubView(ViewHash hash, std::shared_ptr<ViewLayout> view);
 
-    void remove(ViewLayout* view);
+    ViewLayout* getView(ViewHash hash);
+
+    void remove(ViewHash hash);
 
     void removeAllView();
 
@@ -57,17 +68,31 @@ private:
 };
 
 template <typename T, typename... Args>
-inline void ViewManager::Add(Args&&... args)
+inline void ViewManager::AddView(Args&&... args)
 {
-    return s_ViewManager->add(new T(std::forward<Args>(args)...));
+    if (s_ViewManager->GetView<T>() != nullptr)
+        return;
+    s_ViewManager->addView(typeid(T).hash_code(), std::make_shared<T>(std::forward<Args>(args)...));
 }
 
 template <typename T, typename... Args>
-inline void ViewManager::AddPopup(Args&&... args)
+inline void ViewManager::AddSubView(Args&&... args)
 {
-    return s_ViewManager->addPopup(new T(std::forward<Args>(args)...));
+    if (s_ViewManager->GetView<T>() != nullptr)
+        return;
+    s_ViewManager->addSubView(typeid(T).hash_code(), std::make_shared<T>(std::forward<Args>(args)...));
 }
 
+template <typename T>
+inline ViewLayout* ViewManager::GetView()
+{
+    return s_ViewManager->getView(typeid(T).hash_code());
+}
 
+template <typename T>
+inline void ViewManager::RemoveView()
+{
+    s_ViewManager->remove(typeid(T).hash_code());
+}
 
 

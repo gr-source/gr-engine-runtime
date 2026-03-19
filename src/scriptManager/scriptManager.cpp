@@ -33,7 +33,7 @@ bool ScriptManager::CheckScriptHasInMemory(const char* name)
         return false;
     }
 
-    bool isValid = false;
+    bool found = false;
     
     char line[512];
     while (fgets(line, sizeof(line), fp) != NULL)
@@ -41,11 +41,11 @@ bool ScriptManager::CheckScriptHasInMemory(const char* name)
         if (strstr(line, name) == NULL)
             continue;
 
-        isValid = true;
+        found = true;
         break;
     }
     fclose(fp);
-    return isValid;
+    return found;
 }
 
 // private

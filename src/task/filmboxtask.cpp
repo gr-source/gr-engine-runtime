@@ -84,7 +84,7 @@ void FilmboxLoadTask::onPostExecute(int result)
         CreateGameObjectFromCache(cache.get(), gameObject->GetID<Transform>());
     }
 
-    ViewManager::AddPopup<FilmboxImport>(first, m_meshes);
+    ViewManager::AddSubView<FilmboxImport>(first, m_meshes);
 }
 
 std::unique_ptr<FilmboxLoadTask::GameObjectDataCache> FilmboxLoadTask::foreach_node(const FbxScene* scene, const FbxNode* node)

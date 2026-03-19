@@ -1,4 +1,5 @@
 #include "gr-engine/managers/viewmanager.hpp"
+#include "imgui.h"
 
 #include <imgui.h>
 
@@ -38,59 +39,57 @@ void ViewManager::RemoveAllView()
     s_ViewManager->removeAllView();
 }
 
-void ViewManager::Remove(ViewLayout *view)
-{
-    s_ViewManager->remove(view);
-}
-
 // private
 ViewManager::ViewManager() : s_current(nullptr)
 {}
 
 ViewManager::~ViewManager()
-{
-    auto temp = s_viewRegistry;
-    for (auto& view : temp)
-        remove(view);
-}
+{}
 
-void ViewManager::add(ViewLayout* view)
+void ViewManager::addView(ViewHash hash, std::shared_ptr<ViewLayout> view)
 {
-    s_viewRegistry.push_back(view);
+    s_viewRegistry.push_back(view.get());
 
     if (s_current == nullptr)
         s_current = s_viewRegistry.back();
+
+    s_ViewMap.emplace(hash, std::move(view));
 }
 
-void ViewManager::addPopup(ViewLayout* view)
+void ViewManager::addSubView(ViewHash hash, std::shared_ptr<ViewLayout> view)
 {
-    s_viewRegistryPopup.push_back(view);
+    s_viewRegistryPopup.push_back(view.get());
+
+    s_ViewMap.emplace(hash, std::move(view));
 }
 
-void ViewManager::remove(ViewLayout* view)
+ViewLayout* ViewManager::getView(ViewHash hash)
 {
-    s_viewRegistryPopup.erase(std::remove(s_viewRegistryPopup.begin(), s_viewRegistryPopup.end(), view), s_viewRegistryPopup.end());
-    s_viewRegistry.erase(std::remove(s_viewRegistry.begin(), s_viewRegistry.end(), view), s_viewRegistry.end());
+    auto it = s_ViewMap.find(hash);
+    if (it != s_ViewMap.end())
+        return it->second.get();
+    return nullptr;
+}
 
-    if (s_current == view)
-        s_current = nullptr;
+void ViewManager::remove(ViewHash hash)
+{
+    auto it = s_ViewMap.find(hash);
+    if (it == s_ViewMap.end())
+        return;
 
-    delete view;
+    s_viewRegistryPopup.erase(std::remove(s_viewRegistryPopup.begin(), s_viewRegistryPopup.end(), it->second.get()), s_viewRegistryPopup.end());
+    s_viewRegistry.erase(std::remove(s_viewRegistry.begin(), s_viewRegistry.end(), it->second.get()), s_viewRegistry.end());
+
+    s_ViewMap.erase(it);
 }
 
 void ViewManager::removeAllView()
 {
-    {
-        auto temp = s_viewRegistry;
-        for (auto& view : temp)
-            delete view;
-
-        s_viewRegistry.clear();
-    }
+    s_ViewMap.clear();
+    s_viewRegistry.clear();
 
     {
-        auto temp = s_viewRegistryPopup;
-        for (auto& view : temp)
+        for (auto& view : s_viewRegistryPopup)
             delete view;
 
         s_viewRegistryPopup.clear();
@@ -121,7 +120,11 @@ void ViewManager::rendererUI()
         s_current->onRenderUI();
 
     for (auto& view : s_viewRegistryPopup)
-        view->onRenderUI();
+    {
+        if (ImGui::Begin(view->getName()))
+            view->onRenderUI();
+        ImGui::End();
+    }
 }
 
 void ViewManager::render_tabbar()

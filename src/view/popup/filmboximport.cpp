@@ -88,7 +88,7 @@ void FilmboxImport::onSavedGameObject(GameObjectHandle gameObject)
 {
     GameObject::DestroyImediate(gameObject);
 
-    ViewManager::Remove(this);
+    ViewManager::RemoveView<FilmboxImport>();
 
     EventManager::Notify("editor_update_tree_file");
 }
