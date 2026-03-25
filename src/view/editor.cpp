@@ -1970,7 +1970,7 @@ void Editor::create_popup_rename_filedir()
 
     if (ImGui::InputText("##popup_rename_file", name, GET_N_ARRAY(name), ImGuiInputTextFlags_EnterReturnsTrue))
     {
-        File::rename(tree_file->path, tree_file->parent->path + "/" + name);
+        // File::rename(tree_file->path, tree_file->parent->path + "/" + name);
 
         updateFileTree(tree_file->parent);
         

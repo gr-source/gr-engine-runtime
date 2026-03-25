@@ -35,13 +35,7 @@ static const std::array<const std::string, 8> m_assetsFile {
     "model",
 };
 
-ImGuiViewport *ProjectMenu::m_mainViewport = nullptr;
-
-ImGuiStyle *ProjectMenu::m_style = nullptr;
-
-ImGuiIO *ProjectMenu::m_io = nullptr;
-
-ProjectMenu::ProjectMenu() : m_engine(&Engine::GetInstance()), popup_flags(0)
+ProjectMenu::ProjectMenu() : m_engine(&Engine::GetInstance()), popup_flags(0), m_mainViewport(nullptr), m_style(nullptr), m_io(nullptr)
 {
     m_mainViewport = ImGui::GetMainViewport();
 
@@ -122,6 +116,9 @@ void ProjectMenu::popup_create_new_project()
     ImGui::Text("Name: ");
     ImGui::SameLine();
     
+    if (!ImGui::IsAnyItemActive() && !ImGui::IsMouseClicked(0))
+        ImGui::SetKeyboardFocusHere(0);
+
     static char name[64] = {0};
     ImGui::InputText("##create_project_input_name", name, 64);
 
@@ -132,8 +129,6 @@ void ProjectMenu::popup_create_new_project()
     if (ImGui::Button("Create", ImVec2{avail.x, 0.0f}))
     {
         create_project(name);
-
-        std::memset(name, 0, sizeof(name));
 
         ImGui::CloseCurrentPopup();
     }
@@ -201,23 +196,19 @@ bool ProjectMenu::create_project_metadata()
 void ProjectMenu::CreateProjectAssets(const std::string &path)
 {
     if (!gfile::exists(path + "/assets"))
-    {
         gfile::create_directory(path + "/assets");
-    }
 
     for (auto &dir : m_assetsFile)
     {
         auto fullPath = path + "/assets/" + dir;
 
         if (!gfile::exists(fullPath))
-        {
             gfile::create_directory(fullPath);
-        }
     }
 
-    std::string internal_asset_path = gfile::get_data_directory() + "/assets";
+    // std::string internal_asset_path = gfile::get_data_directory() + "/assets";
 
-    gfile::copy((internal_asset_path + "/shader").c_str(), (path + "/assets").c_str());
+    // gfile::copy((internal_asset_path + "/shader").c_str(), (path + "/assets").c_str());
 }
 
 void ProjectMenu::read_project_directory()

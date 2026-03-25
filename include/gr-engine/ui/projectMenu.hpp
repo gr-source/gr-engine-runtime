@@ -37,13 +37,13 @@ private:
 
     Engine *m_engine;
 
-    static ImGuiViewport *m_mainViewport;
+    ImGuiViewport *m_mainViewport;
 
-    static ImGuiStyle *m_style;
+    ImGuiStyle *m_style;
 
     ProjectMenuPopup_ popup_flags;
 
-    static ImGuiIO *m_io;
+    ImGuiIO *m_io;
 
     void create_window_project_list();
 

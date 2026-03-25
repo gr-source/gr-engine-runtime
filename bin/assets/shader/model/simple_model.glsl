@@ -53,30 +53,26 @@ struct Light {
     int type; // 0: Direcional, 1: Ponto, 2: Spot
 };
 
-// Array de luzes
-uniform Light lights[10]; // Ajuste o tamanho do array de acordo com a necessidade
-uniform int numLights; // Número de luzes ativas
+uniform Light lights[10];
+uniform int numLights;
 
-// Função para calcular a contribuição de uma luz
 vec3 CalculateLight(Light light, vec3 fragPos, vec3 V, vec3 N, vec3 F0, vec3 albedo, float roughness, float metallic) {
     vec3 L;
     float attenuation = 1.0;
 
-    // Tipo de luz
-    if (light.type == 0) { // Direcional
+    if (light.type == 0) {
         L = normalize(-light.direction);
-    } else if (light.type == 1) { // Ponto
+    } else if (light.type == 1) {
         vec3 lightDir = light.position - fragPos;
         float distance = length(lightDir);
         L = normalize(lightDir);
         attenuation = 1.0 / (distance * distance);
-    } else if (light.type == 2) { // Spot
+    } else if (light.type == 2) {
         vec3 lightDir = light.position - fragPos;
         float distance = length(lightDir);
         L = normalize(lightDir);
         attenuation = 1.0 / (distance * distance);
 
-        // Ângulo do spot
         float theta = dot(L, normalize(-light.direction));
         if (theta > cos(light.angle)) {
             attenuation *= (theta - cos(light.angle)) / (1 - cos(light.angle));
@@ -85,37 +81,38 @@ vec3 CalculateLight(Light light, vec3 fragPos, vec3 V, vec3 N, vec3 F0, vec3 alb
         }
     }
 
-    // Calcula os produtos de ponto entre vetores
     float NdotL = max(1e-5, dot(N, L));
     float NdotV = max(1e-5, dot(N, V));
     vec3 H = normalize(L + V);
     float NdotH = max(1e-5, dot(N, H));
     float HdotV = max(1e-5, dot(H, V));
 
-    // Aproximação de Fresnel Schlick
     vec3 F = fresnelSchlick(HdotV, F0);
 
-    // Função de distribuição (NDF - Normal Distribution Function)
     float D = DistributionGGX(NdotH, roughness);
 
-    // Termo de geometria (G - Geometry term)
     float G = GeometrySmith(N, V, L, roughness);
 
-    // Cálculo do termo especular
     vec3 numerator = D * G * F;
     float denominator = max(4.0 * NdotV * NdotL, 1e-5);
     vec3 specular = numerator / denominator;
 
-    // Cálculo do termo difuso
     vec3 kS = F;
     vec3 kD = vec3(1.0) - kS;
     kD *= 1.0 - metallic;
 
-    // Radiância da luz
     vec3 radiance = light.color.rgb * attenuation;
 
-    // Contribuição da luz
     return ((kD * albedo / PI + specular) * radiance * NdotL);
+}
+
+vec3 ACESFilm(vec3 x) {
+    float a = 2.51;
+    float b = 0.03;
+    float c = 2.43;
+    float d = 0.59;
+    float e = 0.14;
+    return clamp((x * (a * x + b)) / (x * (c * x + d) + e), 0.0, 1.0);
 }
 
 uniform vec3 albedo;
@@ -132,32 +129,32 @@ void fragment()
 
     vec3 Lo = vec3(0.0);
     
-    // Calcula a contribuição de cada luz
 	for (int i = 0; i < numLights; i++)
     {
         Lo += CalculateLight(lights[i], u_fragPos, V, N, F0, albedo, roughness, metallic);
     }
 
-    // Iluminação ambiente
-    vec3 ambient = vec3(0.03) * albedo * ambientocclusion;
+    vec3 ambient = vec3(0.1) * albedo * ambientocclusion;
 
-    // Cor final
     vec3 color = ambient + Lo;
-    
-    // Exposição
-    color = color * 10.0;
-    // color = color / (color + vec3(1.0));
 
-    // Gama
-    // color = pow(color, vec3(1.0 / 2.2));
+    float exposure = 2.0;
+    color *= exposure;
+
+    color = ACESFilm(color);
 
     FragColor = vec4(color, 1.0);
+    
+    /*
+    color = color / (color + vec3(1.0));
+
+    color = pow(color, vec3(1.0 / 2.2));
+
+    FragColor = vec4(color, 1.0);
+    */
 }
 
 
-/*
-uniform bool aaa;
-*/
 
 
 

@@ -113,12 +113,6 @@ bool Engine::has_project() const
 // ********** private ********** //
 void Engine::init()
 {
-    File::SetConfigPath(gfile::get_config_directory());
-    
-    File::SetCachePath(gfile::get_cache_directory());
-    
-    File::SetUserPath(gfile::get_data_directory());
-
     ImGuiRender::Initialize("#version 330 core");
 
     ViewManager::Initialize();

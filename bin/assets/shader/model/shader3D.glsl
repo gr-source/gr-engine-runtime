@@ -5,16 +5,21 @@ layout (location = 0) in vec3 in_pos;
 #ifndef ENABLE_LINE
     layout (location = 1) in vec3 in_normal;
     layout (location = 2) in vec2 in_texCoord;
-    layout (location = 3) in int in_entityID;
+    // layout (location = 3) in int in_entityID;
 
 #ifdef ENABLE_ANIMATION
-        layout (location = 4) in ivec4 in_indices;
-        layout (location = 5) in vec4 in_weight;
+        layout (location = 3) in ivec4 in_indices;
+        layout (location = 4) in vec4 in_weight;
 #endif
 
 #ifdef USE_MODEL
         #ifdef USE_INSTANCED
-            layout (location = 6) in mat4 u_model;
+
+#ifndef ENABLE_ANIMATION
+            layout (location = 3) in mat4 u_model;
+#else // ENABLE_ANIMATION
+            layout (location = 5) in mat4 u_model;
+#endif // ENABLE_ANIMATION
         #else
             uniform mat4 u_model;
         #endif
@@ -78,7 +83,7 @@ void main()
 #endif
         u_texCoord = in_texCoord;
 
-        u_entityID = in_entityID;
+        // u_entityID = in_entityID;
         
         u_fragPos = worldpos.xyz;
 #else // ENABLE_LINE
