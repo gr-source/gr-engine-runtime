@@ -105,7 +105,7 @@ typedef struct gtreefile
 
     std::string extension;
 
-    grr::gTexture **icon;
+    gr::gTexture **icon;
 
     bool bdirectory;
 
@@ -140,12 +140,12 @@ public:
 
     void LoadReources();
     
-    void SetupTexture(IconType type, grr::gTexture *texture);
+    void SetupTexture(IconType type, gr::gTexture *texture);
 
 private:
     std::unordered_map<std::string, std::function<void(Entity *)>> m_guiscriptmap;
 
-    std::unordered_map<IconType, grr::gTexture *> iconsUI;
+    std::unordered_map<IconType, gr::gTexture *> iconsUI;
 
     std::vector<gtreefile *> g_tree_file_selected;
 
@@ -171,7 +171,7 @@ private:
 
     ImGuiViewport *m_viewport;
 
-    grr::gTexture *s_texturePlayGame;
+    gr::gTexture *s_texturePlayGame;
 
     uint32_t popupFlags;
 
@@ -327,7 +327,7 @@ private:
 
     void render_material_property(Material *material);
 
-    void RenderShaderUniform(Material *material, grr::gShader *shader);
+    void RenderShaderUniform(Material *material, gr::Shader *shader);
 
     void dropShaderInMaterial(Material *material);
 

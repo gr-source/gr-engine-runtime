@@ -13,9 +13,9 @@ public:
     static void Render(Camera *camera);
 
 private:
-    static grr::gVertexArray *m_vertexArray;
+    static gr::gVertexArray *m_vertexArray;
 
-    static grr::gShader *m_shader;
+    static gr::Shader *m_shader;
 
     static u32 m_vbo;
 

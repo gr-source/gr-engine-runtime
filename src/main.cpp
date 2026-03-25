@@ -208,7 +208,7 @@ int main(int argc, char *argv[])
 
     // glfwSetWindowPos(&(*window), 0, 0);
 
-    if (!grr::gRender::Initialize())
+    if (!gr::gRender::Initialize())
     {
         window = nullptr;
 

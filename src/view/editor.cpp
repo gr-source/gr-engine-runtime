@@ -19,7 +19,6 @@
 
 #include "gr-base/core/clock.hpp"
 #include "gr-base/core/debugdraw.hpp"
-#include "gr-base/core/geometry/shader.hpp"
 #include "gr-base/core/mainthreaddispatcher.hpp"
 #include "gr-base/core/assetReference.hpp"
 
@@ -355,11 +354,11 @@ void Editor::on_pre_config_render_scene(Camera* camera)
     auto rendertarget = camera->getRenderTarget();
     rendertarget->bind();
 
-    grr::gRender::SetRenderState(grr::GR_CULL, grr::GR_BACK);
-    grr::gRender::SetEnable(GR_DEPTH, true);
+    gr::gRender::SetRenderState(gr::GR_CULL, gr::GR_BACK);
+    gr::gRender::SetEnable(GR_DEPTH, true);
 
-    grr::gRender::SetBackgroundColor(camera->background);
-    grr::gRender::SetRenderState(grr::GR_BACKGROUND, grr::GR_DEPTH_BUFFER | grr::GR_COLOR_BUFFER);
+    gr::gRender::SetBackgroundColor(camera->background);
+    gr::gRender::SetRenderState(gr::GR_BACKGROUND, gr::GR_DEPTH_BUFFER | gr::GR_COLOR_BUFFER);
 
     on_render_scene(camera);
 
@@ -368,14 +367,14 @@ void Editor::on_pre_config_render_scene(Camera* camera)
 
 void Editor::on_render_scene(Camera* camera)
 {
-    grr::gRender::SetRenderState(grr::GR_DEPTH_FUNC, grr::GR_DEPTH_LESS);
+    gr::gRender::SetRenderState(gr::GR_DEPTH_FUNC, gr::GR_DEPTH_LESS);
     RenderSystem::Renderer();
     // RenderManager::Render();
 
-    grr::gRender::SetRenderState(grr::GR_DEPTH_FUNC, grr::GR_DEPTH_LEQUAL);
+    gr::gRender::SetRenderState(gr::GR_DEPTH_FUNC, gr::GR_DEPTH_LEQUAL);
     DebugDraw::Render(camera);
 
-    // grr::gRender::SetRenderState(grr::GR_DEPTH_FUNC, grr::GR_DEPTH_LEQUAL);
+    // gr::gRender::SetRenderState(gr::GR_DEPTH_FUNC, gr::GR_DEPTH_LEQUAL);
     // m_skybox.render(camera);
 }
 
@@ -2492,15 +2491,15 @@ void Editor::render_material_property(Material *material)
     ImGui::TreePop();
 }
 
-void Editor::RenderShaderUniform(Material *material, grr::gShader *shader)
+void Editor::RenderShaderUniform(Material *material, gr::Shader *shader)
 {
-    auto property = AssetsManager::GetShaderProperty(shader);
-    if (property == nullptr)
-        return;
+    auto shaderUniforms = shader->GetUniforms();
 
-    for (auto &&[object, name, type] : property->getProperty())
+    for (UniformID id=0;id<shader->GetUniformCount();id++)
     {
-        switch (type)
+        gr::ShaderUniform& uniform = shaderUniforms[id];
+
+        switch (uniform.type)
         {
         case UniformType::MAT3:
         case UniformType::MAT4:
@@ -2509,28 +2508,28 @@ void Editor::RenderShaderUniform(Material *material, grr::gShader *shader)
             break;
         }
 
-        ImGui::SeparatorText(name.c_str());
+        ImGui::SeparatorText(uniform.name);
 
-        switch (type)
+        switch (uniform.type)
         {
             case UniformType::VEC3:
             {
-                auto value = material->getValue<Vector3>(name);
+                auto value = material->getValue<Vector3>(uniform.name);
                 if (value == nullptr)
-                    value = material->setValue<Vector3>(name, Vector3::zero);
+                    value = material->setValue<Vector3>(uniform.name, Vector3::zero);
 
                 if (value != nullptr)
-                    ImGui::DragFloat3(("##" + std::string(name)).c_str(), (float *)value);
+                    ImGui::DragFloat3(("##" + std::string(uniform.name)).c_str(), (float *)value);
                 break;
             }
             case UniformType::FLOAT:
             {
-                auto value = material->getValue<float>(name);
+                auto value = material->getValue<float>(uniform.name);
                 if (value == nullptr)
-                    value = material->setValue<float>(name, 0.0f);
+                    value = material->setValue<float>(uniform.name, 0.0f);
 
                 if (value != nullptr)
-                    ImGui::DragFloat(("##" + std::string(name)).c_str(), (float *)value);
+                    ImGui::DragFloat(("##" + std::string(uniform.name)).c_str(), (float *)value);
                 break;
             }
             /*case UniformType::int: {
@@ -2782,7 +2781,7 @@ void Editor::LoadReources()
     #undef LOAD_ICON
 }
 
-void Editor::SetupTexture(IconType type, grr::gTexture *texture) {
+void Editor::SetupTexture(IconType type, gr::gTexture *texture) {
     iconsUI[type] = texture;
 
     if (type == IconType::ICON_PLAY_GAME) {

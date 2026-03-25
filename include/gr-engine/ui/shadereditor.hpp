@@ -26,7 +26,7 @@ public:
     void onRenderUI() override;
 
 private:
-    std::vector<std::tuple<std::string, grr::gShader *, std::unique_ptr<TextEditor>>> v_shader_texeditor;
+    std::vector<std::tuple<std::string, gr::Shader *, std::unique_ptr<TextEditor>>> v_shader_texeditor;
 
     ImVec2 m_last_view_size;
 

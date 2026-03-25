@@ -4,7 +4,6 @@
 
 #include <gr-base/managers/assetsManager.hpp>
 
-#include "gr-base/core/geometry/shader.hpp"
 #include "gr-engine/settings.h"
 
 #include <gr-render/gVertexArray.h>
@@ -19,9 +18,9 @@
 
 #include <gr-base/core/file/file.hpp>
 
-grr::gVertexArray *ScreenRender::m_vertexArray = nullptr;
+gr::gVertexArray *ScreenRender::m_vertexArray = nullptr;
 
-grr::gShader *ScreenRender::m_shader = nullptr;
+gr::Shader *ScreenRender::m_shader = nullptr;
 
 u32 ScreenRender::m_vbo = 0;
 
@@ -34,7 +33,7 @@ void ScreenRender::Initialize() {
         shaderParams.flags = ShaderOptimize_static;
 
         AssetsManager::LoadShaderAsync(shaderParams,
-            [](grr::gShader *shader) { ScreenRender::m_shader = shader; }
+            [](gr::Shader *shader) { ScreenRender::m_shader = shader; }
         );
     }
     CreateMesh();
@@ -51,7 +50,7 @@ void ScreenRender::Shutdown() {
 void ScreenRender::Render(Camera *camera) {
     auto rendertarget = camera->getRenderTarget();
 
-    if (!m_shader || !m_shader->isValid()) {
+    if (!m_shader) {
         return;
     }
 
@@ -80,7 +79,7 @@ void ScreenRender::Render(Camera *camera) {
 
     m_vertexArray->bind();
     
-    grr::gVertexArray::DrawArrays(PrimitiveType::TRIANGLES, 6);
+    gr::gVertexArray::DrawArrays(PrimitiveType::TRIANGLES, 6);
 
     m_vertexArray->unbind();
     // texture->unbind();
@@ -102,13 +101,13 @@ void ScreenRender::CreateMesh() {
         {{ 1.0f,  1.0f}, {1.0f, 1.0f}}
     };
 
-    m_vbo = grr::gVertexArray::CreateBuffer(BufferType::VBO);
+    m_vbo = gr::gVertexArray::CreateBuffer(BufferType::VBO);
     if (!m_vbo)
     {
         return Console::LogError("[ ScreenRender ] Falied to create vbo.");
     }
 
-    m_vertexArray = new grr::gVertexArray();
+    m_vertexArray = new gr::gVertexArray();
     if (!m_vertexArray)
     {
         return Console::LogError("[ ScreenRender ] Falied to create vao.");
@@ -116,12 +115,12 @@ void ScreenRender::CreateMesh() {
 
     m_vertexArray->bind();
 
-    grr::gVertexArray::Bind(m_vbo);
-    grr::gVertexArray::UpdateResizeBuffer(vertices.size() * sizeof(Vertex2D), BufferUsage::STATIC);
-    grr::gVertexArray::SetBufferUpdate(0, vertices.size() * sizeof(Vertex2D), vertices.data());
+    gr::gVertexArray::Bind(m_vbo);
+    gr::gVertexArray::UpdateResizeBuffer(vertices.size() * sizeof(Vertex2D), BufferUsage::STATIC);
+    gr::gVertexArray::SetBufferUpdate(0, vertices.size() * sizeof(Vertex2D), vertices.data());
 
-    grr::gVertexArray::SetAttrib(0, 2, sizeof(Vertex2D), reinterpret_cast<const void *>(offsetof(Vertex2D, position)));
-    grr::gVertexArray::SetAttrib(1, 2, sizeof(Vertex2D), reinterpret_cast<const void *>(offsetof(Vertex2D, uv)));
+    gr::gVertexArray::SetAttrib(0, 2, sizeof(Vertex2D), reinterpret_cast<const void *>(offsetof(Vertex2D, position)));
+    gr::gVertexArray::SetAttrib(1, 2, sizeof(Vertex2D), reinterpret_cast<const void *>(offsetof(Vertex2D, uv)));
 
     m_vertexArray->unbind();
 }

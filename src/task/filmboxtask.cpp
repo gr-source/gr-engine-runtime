@@ -89,8 +89,8 @@ void FilmboxLoadTask::onPostExecute(int result)
 
 std::unique_ptr<FilmboxLoadTask::GameObjectDataCache> FilmboxLoadTask::foreach_node(const FbxScene* scene, const FbxNode* node)
 {
-    grr::gShader* shader = nullptr;
-    grr::gShader* shaderInstanced = nullptr;
+    gr::Shader* shader = nullptr;
+    gr::Shader* shaderInstanced = nullptr;
     {
         ShaderParams shaderParams;
         shaderParams.name = "simple_model";

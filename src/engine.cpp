@@ -117,11 +117,11 @@ void Engine::init()
 
     ViewManager::Initialize();
 
-    grr::gRender::SetEnable(GR_CULL_FACE, true);
-    grr::gRender::SetRenderState(grr::GR_CULL, grr::GR_BACK);
+    gr::gRender::SetEnable(GR_CULL_FACE, true);
+    gr::gRender::SetRenderState(gr::GR_CULL, gr::GR_BACK);
 
-    grr::gRender::SetEnable(GR_BLEND, true);
-    grr::gRender::SetRenderState(grr::GR_SRC_ALPHA, grr::GR_ONE_MINUS_SRC_ALPHA);
+    gr::gRender::SetEnable(GR_BLEND, true);
+    gr::gRender::SetRenderState(gr::GR_SRC_ALPHA, gr::GR_ONE_MINUS_SRC_ALPHA);
 
     if (!check_installed())
         return ViewManager::AddView<Installer>();
@@ -183,8 +183,8 @@ void Engine::render()
 
 void Engine::render_gui()
 {
-    grr::gRender::SetBackgroundColor(Color::blue);
-    grr::gRender::SetRenderState(grr::GR_BACKGROUND, grr::GR_COLOR_BUFFER);
+    gr::gRender::SetBackgroundColor(Color::blue);
+    gr::gRender::SetRenderState(gr::GR_BACKGROUND, gr::GR_COLOR_BUFFER);
     
     ImGuiRender::Begin();
 
