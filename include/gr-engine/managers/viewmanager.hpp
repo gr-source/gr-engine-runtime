@@ -26,10 +26,10 @@ public:
     static void AddView(Args&&... args);
 
     template <typename T, typename... Args>
-    static void AddSubView(Args&&... args);
+    static T* AddSubView(Args&&... args);
 
     template <typename T>
-    static ViewLayout* GetView();
+    static T* GetView();
 
     template <typename T>
     static void RemoveView();
@@ -48,9 +48,9 @@ private:
     ViewManager();
     ~ViewManager();
 
-    void addView(ViewHash hash, std::shared_ptr<ViewLayout> view);
+    ViewLayout* addView(ViewHash hash, std::shared_ptr<ViewLayout> view);
 
-    void addSubView(ViewHash hash, std::shared_ptr<ViewLayout> view);
+    ViewLayout* addSubView(ViewHash hash, std::shared_ptr<ViewLayout> view);
 
     ViewLayout* getView(ViewHash hash);
 
@@ -76,17 +76,18 @@ inline void ViewManager::AddView(Args&&... args)
 }
 
 template <typename T, typename... Args>
-inline void ViewManager::AddSubView(Args&&... args)
+inline T* ViewManager::AddSubView(Args&&... args)
 {
-    if (s_ViewManager->GetView<T>() != nullptr)
-        return;
-    s_ViewManager->addSubView(typeid(T).hash_code(), std::make_shared<T>(std::forward<Args>(args)...));
+    T* view = static_cast<T*>(s_ViewManager->GetView<T>());
+    if (view == nullptr)
+        view = static_cast<T*>(s_ViewManager->addSubView(typeid(T).hash_code(), std::make_shared<T>(std::forward<Args>(args)...)));
+    return view;
 }
 
 template <typename T>
-inline ViewLayout* ViewManager::GetView()
+inline T* ViewManager::GetView()
 {
-    return s_ViewManager->getView(typeid(T).hash_code());
+    return static_cast<T*>(s_ViewManager->getView(typeid(T).hash_code()));
 }
 
 template <typename T>

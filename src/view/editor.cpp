@@ -2441,8 +2441,6 @@ bool Editor::render_material(MaterialID id)
 
     render_shader_property(shadername, material);
 
-    render_material_property(material);
-
     dropShaderInMaterial(material);
 
     ImGui::TreePop();
@@ -2457,30 +2455,6 @@ void Editor::render_shader_property(const std::string &name, Material *material)
         return;
 
     RenderShaderUniform(material, material->GetShader(false));
-
-    ImGui::TreePop();
-}
-
-void Editor::render_material_property(Material *material)
-{
-    auto isopen = ImGui::TreeNode("Property");
-    if (!isopen)
-        return;
-
-    auto tilling = material->get_scalling();
-    auto offset = material->get_offset();
-
-    ImGui::Text("Tilling");
-    if (ImGui::DragFloat2("##render_material_property_tilling", (float *)&tilling, 1.0f, 1.1f))
-    {
-        material->set_scaling(tilling);
-    }
-    
-    ImGui::Text("Offset");
-    if (ImGui::DragFloat2("##render_material_property_offset", (float *)&offset, 1.0f, 1.0f))
-    {
-        material->set_offset(offset);
-    }
 
     ImGui::TreePop();
 }
@@ -2508,9 +2482,9 @@ void Editor::RenderShaderUniform(Material *material, gr::Shader *shader)
         {
             case UniformType::VEC3:
             {
-                auto value = material->getValue<Vector3>(uniform.name);
+                auto value = material->Get<Vector3>(uniform.name);
                 if (value == nullptr)
-                    value = material->setValue<Vector3>(uniform.name, Vector3::zero);
+                    material->Set<Vector3>(uniform.name, Vector3::zero);
 
                 if (value != nullptr)
                     ImGui::DragFloat3(("##" + std::string(uniform.name)).c_str(), (float *)value);
@@ -2518,9 +2492,9 @@ void Editor::RenderShaderUniform(Material *material, gr::Shader *shader)
             }
             case UniformType::FLOAT:
             {
-                auto value = material->getValue<float>(uniform.name);
+                auto value = material->Get<float>(uniform.name);
                 if (value == nullptr)
-                    value = material->setValue<float>(uniform.name, 0.0f);
+                    material->Set<float>(uniform.name, 0.0f);
 
                 if (value != nullptr)
                     ImGui::DragFloat(("##" + std::string(uniform.name)).c_str(), (float *)value);

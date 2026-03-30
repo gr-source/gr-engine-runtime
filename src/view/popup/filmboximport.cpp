@@ -14,35 +14,41 @@
 #include <gr-base/core/gameObject.hpp>
 
 #include "gr-engine/engine.h"
+#include "imgui.h"
 
 #include <imgui.h>
 
-FilmboxImport::FilmboxImport(GameObjectHandle gameObjectID, std::vector<MeshID> meshes) : m_gameObjectID(gameObjectID), m_meshes(meshes)
+FilmboxImport::FilmboxImport()
 {}
+
+void FilmboxImport::addFile(const std::string& name, const ModelCache& cache)
+{
+    m_modelsCaching.emplace(name, cache);
+}
 
 void FilmboxImport::onRenderUI()
 {
-    ImVec2 center = ImGui::GetMainViewport()->GetCenter();
-
-    auto beginSize = ImVec2{400, 300};
-
-    ImGui::SetNextWindowSize(beginSize);
-    ImGui::SetNextWindowPos(ImVec2{static_cast<float>(center.x), static_cast<float>(center.y)} - (beginSize / 2.0f));
-    ImGui::Begin("##filmboximport_begin", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_AlwaysAutoResize);
-    ImGui::SeparatorText("Filmbox Import");
-
-    // for (auto &gameObject : resultTask)
+    for (auto &&[name, cache] : m_modelsCaching)
     {
-        auto gameObject = GameObject::Get(m_gameObjectID);
-        auto name = gameObject->GetName();
-
         if (ImGui::CollapsingHeader(name.c_str()))
         {
-            auto transform = gameObject->GetTransform();
-
-            for (auto &child : transform->getChildren())
+            auto& materialsCache = cache.materialsAsset;
+            if (!materialsCache.empty() && ImGui::TreeNode("Material"))
             {
-                render_tree_node(BehaviorStorage::GetComponent<Transform>(child)->GetGameObject());
+                for (auto&&[name, asset] : materialsCache)
+                {
+                    ImGui::Text("%s", name.c_str());
+                }
+                ImGui::TreePop();
+            }
+
+            auto& meshesCache = cache.meshesAsset;
+            if (!meshesCache.empty() && ImGui::TreeNode("Mesh"))
+            {
+                for (auto &&[name, mesh] : meshesCache)
+                    ImGui::Text("%s", name.c_str());
+
+                ImGui::TreePop();
             }
         }
     }
@@ -51,23 +57,15 @@ void FilmboxImport::onRenderUI()
 
     if (ImGui::Button("Save", ImVec2(avail.x, 0.0f)))
     {
-        Engine& engine = Engine::GetInstance();
+        for (auto &&[name, cache] : m_modelsCaching)
+        {
+            for (auto&&[name, asset] : cache.materialsAsset)
+            {}
 
-        Project& project = engine.get_project();
-
-        auto gameObject = GameObject::Get(m_gameObjectID);
-        
-        TaskManager::Add<int, GameObjectSaveTask>(
-                project.path + "/assets/model/" + gameObject->GetName() + ".gmdx",
-                m_gameObjectID,
-                std::bind(&FilmboxImport::onSavedGameObject, this, std::placeholders::_1)
-            );
-
-        // for (auto& meshID : m_meshes)
-        //     TaskManager::Add<MeshID, MeshSaveTask>(project.path + "/assets/mesh", meshID, nullptr);
+            for (auto &&[name, mesh] : cache.meshesAsset)
+            {}
+        }
     }
-
-    ImGui::End();
 }
 
 void FilmboxImport::render_tree_node(const GameObject *gameObject)
