@@ -314,9 +314,6 @@ void Editor::onUpdate()
 
     WorldManager::Update();
 
-    // if (scene != nullptr)
-        // scene->Update();
-
     GameObjectManager::Cleanup();
 
     RenderSystem::Update();
@@ -327,8 +324,6 @@ void Editor::onRender3D()
     // OctreeManager::Render();
 
     // BVHTreeManager::Render();
-
-    // ChunkManager::Render();
 
     if (!Settings::bGameRunning)
     {
