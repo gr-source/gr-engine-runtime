@@ -17,7 +17,7 @@
 #define SCREEN_WIDTH 1024
 #define SCREEN_HEIGHT 600
 
-GLFWwindow *CreateWindown(const char* name, int width, int height, GLFWwindow * share, bool isVisible)
+GLFWwindow *CreateWindow(const char* name, int width, int height, GLFWwindow * share, bool isVisible)
 {
     glfwWindowHint(GLFW_VISIBLE, isVisible ? GL_TRUE : GL_FALSE);
 
@@ -52,8 +52,9 @@ void glfwInstallCallback(GLFWwindow * window) {
     glfwSetDropCallback(window, GLFWdropfunCallback);
 }
 
-void error_callback(int error, const char* description) {
-    std::cerr << "Error: " << description << std::endl;
+void MyGLFWerrorfun(int error, const char* description)
+{
+    std::cerr << "GLFWerrorfun: " << description << std::endl;
 }
 
 static void glfw_set_window_title(const char *title)
@@ -179,7 +180,7 @@ int main(int argc, char *argv[])
     sigaction(SIGSEGV, &sa, NULL);
 
     // ===============================
-    glfwSetErrorCallback(error_callback);
+    glfwSetErrorCallback(MyGLFWerrorfun);
 
     if (glfwInit() != GLFW_TRUE)
     {
@@ -191,7 +192,7 @@ int main(int argc, char *argv[])
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    std::unique_ptr<GLFWwindow, decltype(&glfwDestroyWindow)> window(CreateWindown("GR - GameEngine", SCREEN_WIDTH, SCREEN_HEIGHT, nullptr, true), glfwDestroyWindow);
+    std::unique_ptr<GLFWwindow, decltype(&glfwDestroyWindow)> window(CreateWindow("GR - GameEngine", SCREEN_WIDTH, SCREEN_HEIGHT, nullptr, true), glfwDestroyWindow);
     if (!window)
     {
         std::cout << "Falied to create window." << std::endl;
@@ -233,12 +234,12 @@ int main(int argc, char *argv[])
         Clock::deltaTime = time.get_delta();
         Clock::time += Clock::deltaTime;
 
-        glfwSwapBuffers(&(*window));
-        glfwPollEvents();
-
         update_input_states();
 
         engine.process();
+
+        glfwSwapBuffers(&(*window));
+        glfwPollEvents();
 
         time.end_frame();
     }

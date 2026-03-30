@@ -134,14 +134,6 @@ static std::unordered_map<std::string, DragDropFlags> m_extensionNameToFlag =
     {".gmsh",       DragDropFlags::MESH},
 };
 
-#define INSERT_SCRIPT(object) \
-    {#object, [this](Entity *entity) \
-        { \
-            RenderProperty<object>(&Editor::OnProperty##object, this); \
-        } \
-    }
-
-
 #include <gr-base/managers/batchingmanager.hpp>
 
 Editor::Editor()
@@ -180,6 +172,14 @@ Editor::Editor()
 
     m_project = &engine.get_project();
 
+
+#define INSERT_SCRIPT(object) \
+    {#object, [this](Entity *entity) \
+        { \
+            RenderProperty<object>(&Editor::OnProperty##object, this); \
+        } \
+    }
+
     m_guiscriptmap = {
         {"Transform", [this](Entity *entity)
             {
@@ -197,6 +197,7 @@ Editor::Editor()
         INSERT_SCRIPT(Rigidbody),
         // INSERT_SCRIPT(Animator),
     };
+#undef INSERT_SCRIPT
     
     m_viewport = ImGui::GetMainViewport();
 
@@ -283,8 +284,6 @@ void Editor::loadScript(const std::string& dir)
         return Console::LogError("[ Script ] Fatal error data not unloaded.");
 
     ScriptManager::Load(dir + "/libscript.so");
-
-    // BehaviorStorage::Reinstantiate();
 
     Display::SetDisplayRect(Rect{0.0f, 0.0f, (float)Settings::ViewportSize.x, (float)Settings::ViewportSize.y});
 

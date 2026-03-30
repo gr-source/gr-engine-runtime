@@ -74,12 +74,6 @@ void Engine::init_menu()
     }
 
     init_project(project_path);
-
-    /*
-    if (!check_project_openable())
-        
-    // AssetsManager::LoadTexture("/home/NoirVoid/Downloads/sky_17_2k/sky_17_2k.png", &Skybox::set_texture, &m_skybox);
-    */
 }
 
 void Engine::init_project(const std::string& path)
