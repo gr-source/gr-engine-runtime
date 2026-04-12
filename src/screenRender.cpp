@@ -27,6 +27,7 @@ u32 ScreenRender::m_vbo = 0;
 void ScreenRender::Initialize() {
     if (!m_shader)
     {
+        /*
         ShaderParams shaderParams;
         shaderParams.name = "screen";
         shaderParams.base = gfile::get_data_directory("/assets/shader/screen.glsl");
@@ -35,6 +36,7 @@ void ScreenRender::Initialize() {
         AssetsManager::LoadShaderAsync(shaderParams,
             [](gr::Shader *shader) { ScreenRender::m_shader = shader; }
         );
+        */
     }
     CreateMesh();
 }

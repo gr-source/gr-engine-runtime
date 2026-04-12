@@ -55,11 +55,12 @@ void FilmboxLoadTask::onPostExecute(int result)
     if (result != 0)
         return Console::LogError("[FilmboxLoadTask] fail in to load '%s' error code: %d", m_file.c_str(), result);
 
+    /*
     for (auto& cache : m_materialCacheList)
     {
         MaterialID materialID = AssetsManager::FindMaterial(cache.name);
         if (materialID == ID_INVALID)
-            materialID = AssetsManager::CreateMaterial(cache.name, &cache.material);
+            materialID = AssetsManager::CreateMaterial(cache.name);
 
         m_materialMapLookUp[cache.name] = materialID;
     }
@@ -85,12 +86,14 @@ void FilmboxLoadTask::onPostExecute(int result)
     }
 
     ViewManager::AddSubView<FilmboxImport>(first, m_meshes);
+    */
 }
 
 std::unique_ptr<FilmboxLoadTask::GameObjectDataCache> FilmboxLoadTask::foreach_node(const FbxScene* scene, const FbxNode* node)
 {
     gr::Shader* shader = nullptr;
     gr::Shader* shaderInstanced = nullptr;
+    /*
     {
         ShaderParams shaderParams;
         shaderParams.name = "simple_model";
@@ -124,6 +127,7 @@ std::unique_ptr<FilmboxLoadTask::GameObjectDataCache> FilmboxLoadTask::foreach_n
             shaderInstanced = info->get();
         }
     }
+    */
 
     std::vector<std::string> materialsName;
     for (auto &fbxMeshID : node->GetMesheIDs())
@@ -140,10 +144,10 @@ std::unique_ptr<FilmboxLoadTask::GameObjectDataCache> FilmboxLoadTask::foreach_n
         material.SetShader(shader, false);
         material.SetShader(shaderInstanced, true);
 
-        material.setValue("albedo", fbxMaterial.albedo);
-        material.setValue("metallic", fbxMaterial.metallic);
-        material.setValue("roughness", fbxMaterial.roughness);
-        material.setValue("ambientocclusion", fbxMaterial.ao);
+        material.Set("albedo", fbxMaterial.albedo);
+        material.Set("metallic", fbxMaterial.metallic);
+        material.Set("roughness", fbxMaterial.roughness);
+        material.Set("ambientocclusion", fbxMaterial.ao);
     }
 
     std::vector<std::string> meshesName;

@@ -57,7 +57,7 @@ void FilmboxImport::onRenderUI()
 
         auto gameObject = GameObject::Get(m_gameObjectID);
         
-        TaskManager::Add<int, GameObjectSaveTask>(
+        TaskManager::Add<GameObjectSaveTask>(
                 project.path + "/assets/model/" + gameObject->GetName() + ".gmdx",
                 m_gameObjectID,
                 std::bind(&FilmboxImport::onSavedGameObject, this, std::placeholders::_1)

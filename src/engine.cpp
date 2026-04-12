@@ -195,7 +195,7 @@ void Engine::drop_file(const std::string &path)
     }
 
     if (path.find(".fbx") != std::string::npos)
-        TaskManager::Add<int, FilmboxLoadTask>(path);
+        TaskManager::Add<FilmboxLoadTask>(path);
 }
 
 

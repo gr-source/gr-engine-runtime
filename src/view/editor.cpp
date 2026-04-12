@@ -1070,7 +1070,7 @@ void Editor::render_scene(Scene *scene)
         std::string path = m_project->path + "/assets/scene";
 
         for (auto &scene : SceneManager::GetScenes())
-            TaskManager::Add<int, SceneSaveTask>(path + "/" + SceneManager::GetSceneName(scene) + ".scn", scene);
+            TaskManager::Add<SceneSaveTask>(path + "/" + SceneManager::GetSceneName(scene) + ".scn", scene);
     }
 }
 
@@ -1257,7 +1257,7 @@ void Editor::OnPostLoadSnapshot(Scene* scene)
 
     Settings::bGameRunning = true;
 
-    TaskManager::Add<int, PhysicsTask>();
+    TaskManager::Add<PhysicsTask>();
 
     BehaviorStorage::Start();
 
@@ -1626,7 +1626,7 @@ void Editor::drop_gameobject_in_treefile(gtreefile *tree_file)
     auto gameobject = transform->GetGameObject();
 
 
-    TaskManager::Add<int, GameObjectSaveTask>(tree_file->path + "/" + gameobject->GetName() + ".gmdx", gameobject->GetCacheID(), [&](GameObjectHandle id)
+    TaskManager::Add<GameObjectSaveTask>(tree_file->path + "/" + gameobject->GetName() + ".gmdx", gameobject->GetCacheID(), [&](GameObjectHandle id)
             {
                 EventManager::Notify("editor_update_tree_file");
             });
@@ -2398,7 +2398,7 @@ void Editor::OnPropertyLODComponent(LODComponent* lodComponent)
 
                 for (auto file : files)
                 {
-                    TaskManager::Add<MeshID, MeshLoadTask>(file->path, [ld = std::forward<LODMesh*>(&lod)](MeshID id)
+                    TaskManager::Add<MeshLoadTask>(file->path, [ld = std::forward<LODMesh*>(&lod)](MeshID id)
                     {
                         ld->meshes.push_back(id);
                     });
@@ -2467,6 +2467,7 @@ void Editor::render_material_property(Material *material)
     if (!isopen)
         return;
 
+    /*
     auto tilling = material->get_scalling();
     auto offset = material->get_offset();
 
@@ -2481,6 +2482,7 @@ void Editor::render_material_property(Material *material)
     {
         material->set_offset(offset);
     }
+    */
 
     ImGui::TreePop();
 }
@@ -2508,9 +2510,9 @@ void Editor::RenderShaderUniform(Material *material, gr::Shader *shader)
         {
             case UniformType::VEC3:
             {
-                auto value = material->getValue<Vector3>(uniform.name);
+                auto value = material->Get<Vector3>(uniform.name);
                 if (value == nullptr)
-                    value = material->setValue<Vector3>(uniform.name, Vector3::zero);
+                    material->Set<Vector3>(uniform.name, Vector3::zero);
 
                 if (value != nullptr)
                     ImGui::DragFloat3(("##" + std::string(uniform.name)).c_str(), (float *)value);
@@ -2518,9 +2520,9 @@ void Editor::RenderShaderUniform(Material *material, gr::Shader *shader)
             }
             case UniformType::FLOAT:
             {
-                auto value = material->getValue<float>(uniform.name);
+                auto value = material->Get<float>(uniform.name);
                 if (value == nullptr)
-                    value = material->setValue<float>(uniform.name, 0.0f);
+                    material->Set<float>(uniform.name, 0.0f);
 
                 if (value != nullptr)
                     ImGui::DragFloat(("##" + std::string(uniform.name)).c_str(), (float *)value);
