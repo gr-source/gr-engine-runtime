@@ -1,5 +1,6 @@
 #pragma once
 
+#include "gr-base/core/geometry/meshAsset.hpp"
 #include "gr-engine/filmbox/default.hpp"
 
 #include "gr-base/core/geometry/default.hpp"
@@ -11,7 +12,7 @@
 
 #include <gr-base/core/default.hpp>
 
-#include <gr-base/core/geometry/material.hpp>
+#include <gr-base/core/geometry/materialAsset.hpp>
 #include <gr-base/core/geometry/mesh.hpp>
 
 #include <gr-base/ecs/default.hpp>
@@ -30,19 +31,6 @@ private:
 
     std::string m_file;
 
-    struct MaterialDataCache
-    {
-        std::string name;
-        Material material;
-    };
-
-    struct MeshDataCache
-    {
-        std::string name;
-        Mesh mesh;
-    };
-
-
     struct GameObjectDataCache
     {
         std::string name;
@@ -58,9 +46,9 @@ private:
         std::vector<std::unique_ptr<GameObjectDataCache>> children;
     };
 
-    std::vector<MaterialDataCache> m_materialCacheList;
+    std::unordered_map<std::string, MaterialAsset> m_materialCacheList;
 
-    std::vector<MeshDataCache> m_meshCacheList;
+    std::unordered_map<std::string, MeshAsset> m_meshCacheList;
 
     std::unordered_map<std::string, MeshID> m_meshMapLookUp;
 

@@ -46,7 +46,7 @@ ViewManager::ViewManager() : s_current(nullptr)
 ViewManager::~ViewManager()
 {}
 
-void ViewManager::addView(ViewHash hash, std::shared_ptr<ViewLayout> view)
+ViewLayout* ViewManager::addView(ViewHash hash, std::shared_ptr<ViewLayout> view)
 {
     s_viewRegistry.push_back(view.get());
 
@@ -54,13 +54,17 @@ void ViewManager::addView(ViewHash hash, std::shared_ptr<ViewLayout> view)
         s_current = s_viewRegistry.back();
 
     s_ViewMap.emplace(hash, std::move(view));
+
+    return s_ViewMap[hash].get();
 }
 
-void ViewManager::addSubView(ViewHash hash, std::shared_ptr<ViewLayout> view)
+ViewLayout* ViewManager::addSubView(ViewHash hash, std::shared_ptr<ViewLayout> view)
 {
     s_viewRegistryPopup.push_back(view.get());
 
     s_ViewMap.emplace(hash, std::move(view));
+
+    return s_ViewMap[hash].get();
 }
 
 ViewLayout* ViewManager::getView(ViewHash hash)
@@ -88,12 +92,7 @@ void ViewManager::removeAllView()
     s_ViewMap.clear();
     s_viewRegistry.clear();
 
-    {
-        for (auto& view : s_viewRegistryPopup)
-            delete view;
-
-        s_viewRegistryPopup.clear();
-    }
+    s_viewRegistryPopup.clear();
 
     s_current = nullptr;
 }

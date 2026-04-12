@@ -2441,8 +2441,6 @@ bool Editor::render_material(MaterialID id)
 
     render_shader_property(shadername, material);
 
-    render_material_property(material);
-
     dropShaderInMaterial(material);
 
     ImGui::TreePop();
@@ -2461,6 +2459,7 @@ void Editor::render_shader_property(const std::string &name, Material *material)
     ImGui::TreePop();
 }
 
+<<<<<<< HEAD
 void Editor::render_material_property(Material *material)
 {
     auto isopen = ImGui::TreeNode("Property");
@@ -2487,6 +2486,8 @@ void Editor::render_material_property(Material *material)
     ImGui::TreePop();
 }
 
+=======
+>>>>>>> 16355d4608a779c1a39fdb48c3a213dc964c3c6c
 void Editor::RenderShaderUniform(Material *material, gr::Shader *shader)
 {
     auto shaderUniforms = shader->GetUniforms();
