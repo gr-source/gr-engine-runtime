@@ -2459,35 +2459,6 @@ void Editor::render_shader_property(const std::string &name, Material *material)
     ImGui::TreePop();
 }
 
-<<<<<<< HEAD
-void Editor::render_material_property(Material *material)
-{
-    auto isopen = ImGui::TreeNode("Property");
-    if (!isopen)
-        return;
-
-    /*
-    auto tilling = material->get_scalling();
-    auto offset = material->get_offset();
-
-    ImGui::Text("Tilling");
-    if (ImGui::DragFloat2("##render_material_property_tilling", (float *)&tilling, 1.0f, 1.1f))
-    {
-        material->set_scaling(tilling);
-    }
-    
-    ImGui::Text("Offset");
-    if (ImGui::DragFloat2("##render_material_property_offset", (float *)&offset, 1.0f, 1.0f))
-    {
-        material->set_offset(offset);
-    }
-    */
-
-    ImGui::TreePop();
-}
-
-=======
->>>>>>> 16355d4608a779c1a39fdb48c3a213dc964c3c6c
 void Editor::RenderShaderUniform(Material *material, gr::Shader *shader)
 {
     auto shaderUniforms = shader->GetUniforms();

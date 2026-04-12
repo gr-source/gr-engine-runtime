@@ -61,25 +61,7 @@ void FilmboxImport::onRenderUI()
         {
             for (auto&&[name, asset] : cache.materialsAsset)
             {}
-
-<<<<<<< HEAD
-        Project& project = engine.get_project();
-
-        auto gameObject = GameObject::Get(m_gameObjectID);
-        
-        TaskManager::Add<GameObjectSaveTask>(
-                project.path + "/assets/model/" + gameObject->GetName() + ".gmdx",
-                m_gameObjectID,
-                std::bind(&FilmboxImport::onSavedGameObject, this, std::placeholders::_1)
-            );
-
-        // for (auto& meshID : m_meshes)
-        //     TaskManager::Add<MeshID, MeshSaveTask>(project.path + "/assets/mesh", meshID, nullptr);
-=======
-            for (auto &&[name, mesh] : cache.meshesAsset)
-            {}
         }
->>>>>>> 16355d4608a779c1a39fdb48c3a213dc964c3c6c
     }
 }
 

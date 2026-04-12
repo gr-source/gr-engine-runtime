@@ -56,46 +56,6 @@ void FilmboxLoadTask::onPostExecute(int result)
     if (result != 0)
         return Console::LogError("[FilmboxLoadTask] fail in to load '%s' error code: %d", m_file.c_str(), result);
 
-<<<<<<< HEAD
-    /*
-    for (auto& cache : m_materialCacheList)
-    {
-        MaterialID materialID = AssetsManager::FindMaterial(cache.name);
-        if (materialID == ID_INVALID)
-            materialID = AssetsManager::CreateMaterial(cache.name);
-
-        m_materialMapLookUp[cache.name] = materialID;
-    }
-
-=======
->>>>>>> 16355d4608a779c1a39fdb48c3a213dc964c3c6c
-    for (auto& cache : m_meshCacheList)
-    {
-        /*
-        MeshID meshID = AssetsManager::FindMesh(cache.name);
-        if (meshID == ID_INVALID)
-            meshID = AssetsManager::CreateMesh(cache.name, &cache.mesh);
-
-        m_meshMapLookUp.emplace(cache.name, meshID);
-        */
-    }
-
-    /*
-    GameObjectHandle first = GameObject::Create(gfile::getname(m_file.c_str()));
-
-    for (auto &cache : m_gameObjectCacheList)
-    {
-        auto gameObject = GameObject::Get(first);
-        gameObject->SetIsPrefab(true);
-
-        CreateGameObjectFromCache(cache.get(), gameObject->GetID<Transform>());
-    }
-    */
-
-<<<<<<< HEAD
-    ViewManager::AddSubView<FilmboxImport>(first, m_meshes);
-    */
-=======
 
     auto view = ViewManager::GetView<FilmboxImport>();
     if (view == nullptr)
@@ -106,52 +66,10 @@ void FilmboxLoadTask::onPostExecute(int result)
     cache.meshesAsset = m_meshCacheList;
 
     view->addFile(gfile::getname(m_file.c_str()), cache);
->>>>>>> 16355d4608a779c1a39fdb48c3a213dc964c3c6c
 }
 
 std::unique_ptr<FilmboxLoadTask::GameObjectDataCache> FilmboxLoadTask::foreach_node(const FbxScene* scene, const FbxNode* node)
 {
-<<<<<<< HEAD
-    gr::Shader* shader = nullptr;
-    gr::Shader* shaderInstanced = nullptr;
-    /*
-    {
-        ShaderParams shaderParams;
-        shaderParams.name = "simple_model";
-        shaderParams.base = gfile::get_data_directory() + "/assets/shader/model/simple_model.glsl";
-        shaderParams.flags = ShaderOptimize_dynamic;
-        shaderParams.type = ShaderType::SHADER3D;
-
-        auto name = GetShaderParamsName(shaderParams);
-
-        shader = AssetsManager::FindShader(name);
-        if (shader == nullptr)
-        {
-            auto info = AssetsManager::LoadShaderAsync(shaderParams);
-            shader = info->get();
-        }
-    }
-
-    {
-        ShaderParams shaderParams;
-        shaderParams.name = "simple_model";
-        shaderParams.base = gfile::get_data_directory() + "/assets/shader/model/simple_model.glsl";
-        shaderParams.flags = ShaderOptimize_dynamic | ShaderOptimize_instanced;
-        shaderParams.type = ShaderType::SHADER3D;
-
-        auto name = GetShaderParamsName(shaderParams);
-
-        shaderInstanced = AssetsManager::FindShader(name);
-        if (shaderInstanced == nullptr)
-        {
-            auto info = AssetsManager::LoadShaderAsync(shaderParams);
-            shaderInstanced = info->get();
-        }
-    }
-    */
-
-=======
->>>>>>> 16355d4608a779c1a39fdb48c3a213dc964c3c6c
     std::vector<std::string> materialsName;
     for (auto &fbxMeshID : node->GetMesheIDs())
     {
@@ -168,16 +86,9 @@ std::unique_ptr<FilmboxLoadTask::GameObjectDataCache> FilmboxLoadTask::foreach_n
         asset.Set("roughness", fbxMaterial.roughness);
         asset.Set("ambientocclusion", fbxMaterial.ao);
 
-<<<<<<< HEAD
-        material.Set("albedo", fbxMaterial.albedo);
-        material.Set("metallic", fbxMaterial.metallic);
-        material.Set("roughness", fbxMaterial.roughness);
-        material.Set("ambientocclusion", fbxMaterial.ao);
-=======
         m_materialCacheList.emplace(fbxMaterial.name, asset);
 
         materialsName.push_back(fbxMaterial.name);
->>>>>>> 16355d4608a779c1a39fdb48c3a213dc964c3c6c
     }
 
     std::vector<std::string> meshesName;
