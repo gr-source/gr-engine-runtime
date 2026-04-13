@@ -1,7 +1,7 @@
 #pragma once
 
-#include "gr-base/core/geometry/materialAsset.hpp"
-#include "gr-base/core/geometry/meshAsset.hpp"
+#include "gr-base/asset/materialasset.hpp"
+#include "gr-base/asset/meshasset.hpp"
 
 #include "gr-engine/ui/viewlayout.hpp"
 
@@ -10,7 +10,8 @@
 #include <gr-base/ecs/default.hpp>
 
 #include <string>
-#include <unordered_set>
+
+#include <unordered_map>
 #include <vector>
 
 struct ModelCache
@@ -37,8 +38,6 @@ private:
     void onRenderUI() override;
 
     void render_tree_node(const GameObject *gameObject);
-
-    void onSavedGameObject(GameObjectHandle gameObject);
 };
 
 

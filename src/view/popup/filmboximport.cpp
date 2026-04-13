@@ -1,11 +1,13 @@
 #include "gr-engine/view/popup/filmboximport.hpp"
 
+#include "gr-base/core/file/file.hpp"
 #include "gr-base/core/task/runtime/gameobjectsavetask.hpp"
 #include "gr-base/core/task/runtime/meshSaveTask.hpp"
 
 #include "gr-base/core/thread/taskmanager.hpp"
 
 #include "gr-base/ecs/behaviorStorage.hpp"
+#include "gr-base/managers/assetsManager.hpp"
 #include "gr-base/managers/eventManager.hpp"
 #include "gr-engine/managers/viewmanager.hpp"
 
@@ -14,6 +16,7 @@
 #include <gr-base/core/gameObject.hpp>
 
 #include "gr-engine/engine.h"
+#include "gr-engine/task/materialsavetask.hpp"
 #include "imgui.h"
 
 #include <imgui.h>
@@ -57,11 +60,24 @@ void FilmboxImport::onRenderUI()
 
     if (ImGui::Button("Save", ImVec2(avail.x, 0.0f)))
     {
+        auto dir = AssetsManager::GetAssetDir();
+
         for (auto &&[name, cache] : m_modelsCaching)
         {
-            for (auto&&[name, asset] : cache.materialsAsset)
-            {}
+            // material
+            {
+                auto newdirmat = dir + "/material/" + name;
+                if (!gfile::exists(newdirmat))
+                    gfile::create_directory(newdirmat);
+
+                for (auto&&[name, asset] : cache.materialsAsset)
+                {
+                    TaskManager::Add<MaterialSaveTask>(newdirmat + "/" + name + ".gmat", asset);
+                }
+            }
         }
+
+        ViewManager::RemoveView<FilmboxImport>();
     }
 }
 
@@ -79,13 +95,5 @@ void FilmboxImport::render_tree_node(const GameObject *gameObject)
     ImGui::TreePop();
 }
 
-void FilmboxImport::onSavedGameObject(GameObjectHandle gameObject)
-{
-    GameObject::DestroyImediate(gameObject);
-
-    ViewManager::RemoveView<FilmboxImport>();
-
-    EventManager::Notify("editor_update_tree_file");
-}
 
 

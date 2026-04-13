@@ -289,12 +289,6 @@ void Filmbox::setupMesh(const aiMesh *mMesh, FbxMesh* fbxMesh, std::unordered_ma
     }
 }
 
-void Filmbox::InserMesh(FbxMesh *fbxMesh, aiMesh *mMesh, std::unordered_map<std::string, Matrix4x4> &boneMap, std::unordered_map<std::string, int> &boneIndex) {
-
-
-
-}
-
 void Filmbox::LoadAnimation(const aiScene *scene, FbxScene *fbxScene, std::unordered_map<std::string, int> &boneIndex)
 {
     for (auto i=0;i<scene->mNumAnimations;i++) {

@@ -36,8 +36,6 @@ private:
 
     void setupMesh(const aiMesh *mMesh, FbxMesh* fbxMesh, std::unordered_map<std::string, Matrix4x4> &boneMap, std::unordered_map<std::string, int> &boneIndex);
 
-    static void InserMesh(FbxMesh *fbxMesh, aiMesh *mMesh, std::unordered_map<std::string, Matrix4x4> &boneMap, std::unordered_map<std::string, int> &boneIndex);
-
     static void LoadAnimation(const aiScene *scene, FbxScene *fbxScene, std::unordered_map<std::string, int> &boneIndex);
 
     static void AddKeys(aiNodeAnim *mNodeAnim, FbxChannel *channel);
