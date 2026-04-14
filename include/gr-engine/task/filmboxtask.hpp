@@ -16,6 +16,7 @@
 #include <gr-base/ecs/default.hpp>
 
 #include <gr-base/asset/materialasset.hpp>
+#include <gr-base/asset/modelasset.hpp>
 #include <gr-base/asset/meshasset.hpp>
 
 #include <unordered_map>
@@ -32,10 +33,31 @@ private:
 
     std::unordered_map<std::string, MeshAsset> m_meshCacheList;
 
+    struct GameObjectCache
+    {
+        Vector3 position;
+        Quaternion rotation;
+        Vector3 scale;
+
+        std::string name;
+
+        std::vector<GameObjectCache> childrent;
+    };
+
+    std::vector<GameObjectCache> m_objectCacheList;
+
+    const FbxScene *m_scene;
+
     void onPreExecute() override;
 
     int doInBackground() override;
 
     void onPostExecute(int result) override;
+
+    GameObjectCache foreach_node(const FbxNode* node);
+
+    GameObjectHandle CreateGameObjectFromCache(GameObjectCache* cache, GameObjectHandle parent = HANDLE_INVALID);
+
+    ModelAsset ConvertToAssetModel(GameObjectHandle handle);
 };
 

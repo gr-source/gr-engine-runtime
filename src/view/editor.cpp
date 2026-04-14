@@ -99,7 +99,7 @@
 #define GET_N_ARRAY(c) sizeof(c) / sizeof(c[0])
 
 enum class DragDropFlags : uint32_t {
-    GMDX        = 1 << 1,
+    GMDL        = 1 << 1,
     SCN         = 1 << 2,
     SCRIPT      = 1 << 3,
     SHADER      = 1 << 4,
@@ -111,7 +111,7 @@ enum class DragDropFlags : uint32_t {
 
 static std::map<DragDropFlags, const char *> m_extensionDragDrop =
 {
-    {DragDropFlags::GMDX,       ".gmdx"},
+    {DragDropFlags::GMDL,       ".gmdl"},
     {DragDropFlags::SCN,        ".scn"},
     {DragDropFlags::SCRIPT,     ".script"},
     {DragDropFlags::SHADER,     ".shader"},
@@ -123,7 +123,7 @@ static std::map<DragDropFlags, const char *> m_extensionDragDrop =
 
 static std::unordered_map<std::string, DragDropFlags> m_extensionNameToFlag =
 {
-    {".gmdx",       DragDropFlags::GMDX},
+    {".gmdl",       DragDropFlags::GMDL},
     {".scn",        DragDropFlags::SCN},
     {".cpp",        DragDropFlags::SCRIPT},
     {".hpp",        DragDropFlags::SCRIPT},
@@ -1294,7 +1294,7 @@ void Editor::drop_gameobject_in_scene()
     if (!isOpen)
         return;
 
-    auto payload = ImGui::AcceptDragDropPayload(m_extensionDragDrop[DragDropFlags::GMDX]);
+    auto payload = ImGui::AcceptDragDropPayload(m_extensionDragDrop[DragDropFlags::GMDL]);
     if (!payload)
         return ImGui::EndDragDropTarget();
 
@@ -1303,7 +1303,7 @@ void Editor::drop_gameobject_in_scene()
 
     for (auto &file : files)
     {
-        if (file->extension == ".gmdx")
+        if (file->extension == ".gmdl")
             AssetsManager::LoadGameObject(file->path, &Editor::PostLoadGameObject, this);
     }
 
@@ -2205,7 +2205,7 @@ void Editor::renderDropGameObject(GameObject **ref) {
         return;
     }
     
-    auto data = ImGui::AcceptDragDropPayload(m_extensionDragDrop[DragDropFlags::GMDX], ImGuiDragDropFlags_None);
+    auto data = ImGui::AcceptDragDropPayload(m_extensionDragDrop[DragDropFlags::GMDL], ImGuiDragDropFlags_None);
     if (!data) {
         return ImGui::EndDragDropTarget();
     }
@@ -2368,7 +2368,6 @@ void Editor::OnPropertySkinnedMeshRender(SkinnedMeshRender *skinnedMeshRender) {
     }
 }
 
-#include <gr-base/core/task/runtime/meshLoadTask.hpp>
 void Editor::OnPropertyLODComponent(LODComponent* lodComponent)
 {
     auto avail = ImGui::GetContentRegionAvail();
@@ -2393,6 +2392,7 @@ void Editor::OnPropertyLODComponent(LODComponent* lodComponent)
             auto payload = ImGui::AcceptDragDropPayload(m_extensionDragDrop[DragDropFlags::MESH]);
             if (payload != NULL && payload->DataSize > 0)
             {
+                /*
                 std::vector<gtreefile *> files(payload->DataSize / sizeof(gtreefile *), nullptr);
                 memcpy(files.data(), payload->Data, payload->DataSize);
 
@@ -2403,6 +2403,7 @@ void Editor::OnPropertyLODComponent(LODComponent* lodComponent)
                         ld->meshes.push_back(id);
                     });
                 }
+                */
             }
             ImGui::EndDragDropTarget();
         }
@@ -3179,7 +3180,7 @@ void Editor::drop_gmdx(std::function<void (std::string)> func)
         return;
     }
 
-    auto payload = ImGui::AcceptDragDropPayload(m_extensionDragDrop[DragDropFlags::GMDX]);
+    auto payload = ImGui::AcceptDragDropPayload(m_extensionDragDrop[DragDropFlags::GMDL]);
     if (!payload)
     {
         return ImGui::EndDragDropTarget();

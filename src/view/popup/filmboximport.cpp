@@ -2,7 +2,6 @@
 
 #include "gr-base/core/file/file.hpp"
 #include "gr-base/core/task/runtime/gameobjectsavetask.hpp"
-#include "gr-base/core/task/runtime/meshSaveTask.hpp"
 
 #include "gr-base/core/thread/taskmanager.hpp"
 
@@ -15,8 +14,10 @@
 
 #include <gr-base/core/gameObject.hpp>
 
-#include "gr-engine/engine.h"
 #include "gr-engine/task/materialsavetask.hpp"
+#include "gr-engine/task/modelsavetask.hpp"
+#include "gr-engine/task/meshsavetask.hpp"
+
 #include "imgui.h"
 
 #include <imgui.h>
@@ -49,8 +50,14 @@ void FilmboxImport::onRenderUI()
             if (!meshesCache.empty() && ImGui::TreeNode("Mesh"))
             {
                 for (auto &&[name, mesh] : meshesCache)
-                    ImGui::Text("%s", name.c_str());
+                    ImGui::Text("%s sub: %ld", name.c_str(), mesh.submeshes.size());
 
+                ImGui::TreePop();
+            }
+
+            if (ImGui::TreeNode("GameObject"))
+            {
+                render_tree_node(&cache.modelAsset);
                 ImGui::TreePop();
             }
         }
@@ -75,22 +82,45 @@ void FilmboxImport::onRenderUI()
                     TaskManager::Add<MaterialSaveTask>(newdirmat + "/" + name + ".gmat", asset);
                 }
             }
+
+            // mesh
+            {
+                auto newdirmat = dir + "/mesh/" + name;
+                if (!gfile::exists(newdirmat))
+                    gfile::create_directory(newdirmat);
+
+                for (auto&&[name, asset] : cache.meshesAsset)
+                {
+                    TaskManager::Add<MeshSaveTask>(newdirmat + "/" + name + ".gmsh", asset);
+                }
+            }
+
+            // gameObject
+            {
+                auto newdirmat = dir + "/model/" + name;
+                if (!gfile::exists(newdirmat))
+                    gfile::create_directory(newdirmat);
+
+                auto& asset = cache.modelAsset;
+
+                TaskManager::Add<ModelSaveTask>(newdirmat + "/" + asset.name + ".gmdl", asset);
+            }
         }
 
         ViewManager::RemoveView<FilmboxImport>();
     }
 }
 
-void FilmboxImport::render_tree_node(const GameObject *gameObject)
+void FilmboxImport::render_tree_node(const ModelAsset* asset)
 {
-    auto transform = gameObject->GetTransform();
+    auto& childrent = asset->childrent;
 
-    auto isOpen = ImGui::TreeNodeEx(gameObject->GetName().c_str(), !transform->hasChildren() ? ImGuiTreeNodeFlags_Leaf : 0);
+    auto isOpen = ImGui::TreeNodeEx(asset->name.c_str(), childrent.empty() ? ImGuiTreeNodeFlags_Leaf : 0);
     if (!isOpen)
         return;
 
-    for (auto &child : transform->getChildren())
-        render_tree_node(BehaviorStorage::GetComponent<Transform>(child)->GetGameObject());
+    for (auto &child : childrent)
+        render_tree_node(&child);
 
     ImGui::TreePop();
 }

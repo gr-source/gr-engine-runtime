@@ -38,7 +38,7 @@ void Filmbox::load(const std::string &path)
     importer.FreeScene();
 }
 
-FbxScene *Filmbox::get_scene() const
+FbxScene *Filmbox::getScene() const
 {
     return m_scene.get();
 }

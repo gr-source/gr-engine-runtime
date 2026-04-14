@@ -1,11 +1,14 @@
 #include "gr-engine/task/filmboxtask.hpp"
 
+#include "gr-base/ecs/behaviorStorage.hpp"
 #include "gr-engine/filmbox/filmbox.hpp"
 
 #include "gr-engine/managers/viewmanager.hpp"
 
 #include "gr-engine/view/popup/filmboximport.hpp"
 
+#include <cstring>
+#include <gr-base/core/file/memoryStream.hpp>
 #include <gr-base/core/file/file.hpp>
 
 #include <gr-base/core/gameObject.hpp>
@@ -19,9 +22,8 @@
 // #include <gr-base/script/animator.hpp>
 
 #include <gr-base/managers/assetsManager.hpp>
-#include <utility>
 
-FilmboxLoadTask::FilmboxLoadTask(const std::string& file) : m_file(file)
+FilmboxLoadTask::FilmboxLoadTask(const std::string& file) : m_file(file), m_scene(nullptr)
 {}
 
 void FilmboxLoadTask::onPreExecute()
@@ -41,9 +43,9 @@ int FilmboxLoadTask::doInBackground()
         return 1;
     }
 
-    auto scene = std::move(filmbox.get_scene());
+    m_scene = filmbox.getScene();
 
-    for (auto& fbxMaterial : scene->materials)
+    for (auto& fbxMaterial : m_scene->materials)
     {
         if (m_materialCacheList.find(fbxMaterial.name) != m_materialCacheList.end())
             continue;
@@ -57,22 +59,9 @@ int FilmboxLoadTask::doInBackground()
         m_materialCacheList.emplace(fbxMaterial.name, asset);
     }
 
-    for (auto& fbxMesh : scene->meshes)
-    {
-        if (m_meshCacheList.find(fbxMesh.GetName()) != m_meshCacheList.end())
-            continue;
-
-        MeshAsset asset;
-
-        for (auto &v : fbxMesh.vertices)
-            asset.vertices.push_back({v.position, v.normal, v.texCoord});
-
-        asset.indices = fbxMesh.indices;
-
-        m_meshCacheList.emplace(fbxMesh.GetName(), asset);
-    }
-
-    auto& root = scene->getRootNode();
+    auto& root = m_scene->getRootNode();
+    for (auto& fbxNode : root.getChildren())
+        m_objectCacheList.push_back(foreach_node(&fbxNode));
 
     return 0;
 }
@@ -92,9 +81,117 @@ void FilmboxLoadTask::onPostExecute(int result)
     cache.materialsAsset = m_materialCacheList;
     cache.meshesAsset = m_meshCacheList;
 
+    GameObjectHandle handle = GameObject::Create(gfile::getname(m_file.c_str()));
+
+    for (auto &objectcache : m_objectCacheList)
+    {
+        CreateGameObjectFromCache(&objectcache, handle);
+    }
+
+    cache.modelAsset = ConvertToAssetModel(handle);
+
+    GameObject::DestroyImediate(handle);
+
     view->addFile(name, cache);
 }
 
+FilmboxLoadTask::GameObjectCache FilmboxLoadTask::foreach_node(const FbxNode* node)
+{
+    for (auto& meshID : node->GetMesheIDs())
+    {
+        auto& fbxMesh = m_scene->meshes[meshID];
 
+        if (m_meshCacheList.find(fbxMesh.GetName()) != m_meshCacheList.end())
+        {
+            auto& asset = m_meshCacheList[fbxMesh.GetName()];
+
+            for (auto &v : fbxMesh.vertices)
+                asset.vertices.push_back({v.position, v.normal, v.texCoord});
+
+            asset.submeshes.push_back(SubMesh{fbxMesh.indices, fbxMesh.GetMaterialID()});
+        } else
+        {
+            MeshAsset asset;
+
+            for (auto &v : fbxMesh.vertices)
+                asset.vertices.push_back({v.position, v.normal, v.texCoord});
+
+            asset.submeshes.push_back(SubMesh{fbxMesh.indices, fbxMesh.GetMaterialID()});
+
+            m_meshCacheList.emplace(fbxMesh.GetName(), asset);
+        }
+    }
+
+    GameObjectCache cache;
+    cache.name = node->getName();
+    cache.position = node->getPosition();
+    cache.rotation = node->getRotation();
+    cache.scale = node->getScale();
+
+    for (auto& child : node->getChildren())
+        cache.childrent.push_back(foreach_node(&child));
+
+    return cache;
+}
+
+
+GameObjectHandle FilmboxLoadTask::CreateGameObjectFromCache(GameObjectCache* cache, GameObjectHandle parent)
+{
+    GameObjectHandle handle = GameObject::Create(cache->name);
+
+    GameObject* gameObject = GameObject::Get(handle);
+    gameObject->SetIsPrefab(true);
+
+    auto transform = gameObject->GetTransform();
+    transform->setLocalPosition(cache->position);
+    transform->setLocalRotation(cache->rotation);
+    transform->setLocalScale(cache->scale);
+
+    if (parent != HANDLE_INVALID)
+    {
+        GameObject* gameObjectParent = GameObject::Get(parent);
+
+        auto transformParent = gameObjectParent->GetTransform();
+        transformParent->addChildren(gameObject->GetTransform());
+    }
+
+    for (auto& child : cache->childrent)
+        CreateGameObjectFromCache(&child, handle);
+
+    return handle;
+}
+
+
+ModelAsset FilmboxLoadTask::ConvertToAssetModel(GameObjectHandle handle)
+{
+    GameObject* gameObject = GameObject::Get(handle);
+
+    ModelAsset asset;
+    asset.name = gameObject->GetName();
+    asset.isStatic = gameObject->GetIsStatic();
+
+    for (auto& hash : gameObject->GetHashes())
+    {
+        Behavior* behavior = gameObject->getComponent(hash);
+
+        MemoryStream stream;
+        behavior->Serialize(&stream);
+
+        std::vector<uint8_t> buffer(stream.tellg(), 0);
+        memcpy(buffer.data(), stream.data(), stream.tellg());
+
+        asset.componentBuffer.emplace(hash, buffer);
+    }
+
+    auto transform = gameObject->GetTransform();
+    for (auto& childID : transform->getChildren())
+    {
+        auto childTransform = BehaviorStorage::GetComponent<Transform>(childID);
+
+        asset.childrent.push_back(ConvertToAssetModel(childTransform->GetGameObject()->GetCacheID()));
+    }
+
+    return asset;
+}
 
 

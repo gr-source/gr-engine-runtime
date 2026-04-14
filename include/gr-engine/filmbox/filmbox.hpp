@@ -17,7 +17,7 @@ public:
 
     void load(const std::string &path);
 
-    FbxScene *get_scene() const;
+    FbxScene *getScene() const;
 
     std::unique_ptr<FbxScene> get_scene();
 
