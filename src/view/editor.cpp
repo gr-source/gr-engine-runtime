@@ -2313,12 +2313,10 @@ void Editor::OnPropertyMeshFilter(MeshFilter *meshFilter)
 {
     if (ImGui::TreeNode("Mesh"))
     {
-        for (auto &meshID : meshFilter->getMesh())
-        {
-            auto name = AssetsManager::GetMeshName(meshID);
+        auto name = AssetsManager::GetMeshName(meshFilter->getMeshID());
 
-            ImGui::Text("%s", name.c_str());
-        }
+        ImGui::Text("%s", name.c_str());
+
         ImGui::TreePop();
     }
 }
@@ -2335,7 +2333,7 @@ void Editor::OnPropertyMeshRender(MeshRender *meshRender)
     {
         if (render_material(materialID))
         {
-            meshRender->removeMaterial(materialID);
+            // meshRender->removeMaterial(materialID);
         }
     }
     ImGui::Unindent();
@@ -2357,7 +2355,7 @@ void Editor::OnPropertySkinnedMeshRender(SkinnedMeshRender *skinnedMeshRender) {
     {
         if (render_material(materialID))
         {
-            skinnedMeshRender->removeMaterial(materialID);
+            // skinnedMeshRender->removeMaterial(materialID);
         }
     }
     ImGui::Unindent();

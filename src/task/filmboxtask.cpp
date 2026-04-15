@@ -97,29 +97,24 @@ void FilmboxLoadTask::onPostExecute(int result)
 
 FilmboxLoadTask::GameObjectCache FilmboxLoadTask::foreach_node(const FbxNode* node)
 {
+    std::string SelfMeshName;
     for (auto& meshID : node->GetMesheIDs())
     {
         auto& fbxMesh = m_scene->meshes[meshID];
+        const auto& meshName = fbxMesh.GetName();
 
-        if (m_meshCacheList.find(fbxMesh.GetName()) != m_meshCacheList.end())
+        SelfMeshName = meshName;
+
+        auto& asset = m_meshCacheList[meshName]; 
+
+        asset.vertices.reserve(asset.vertices.size() + fbxMesh.vertices.size());
+        
+        for (const auto& v : fbxMesh.vertices)
         {
-            auto& asset = m_meshCacheList[fbxMesh.GetName()];
-
-            for (auto &v : fbxMesh.vertices)
-                asset.vertices.push_back({v.position, v.normal, v.texCoord});
-
-            asset.submeshes.push_back(SubMesh{fbxMesh.indices, fbxMesh.GetMaterialID()});
-        } else
-        {
-            MeshAsset asset;
-
-            for (auto &v : fbxMesh.vertices)
-                asset.vertices.push_back({v.position, v.normal, v.texCoord});
-
-            asset.submeshes.push_back(SubMesh{fbxMesh.indices, fbxMesh.GetMaterialID()});
-
-            m_meshCacheList.emplace(fbxMesh.GetName(), asset);
+            asset.vertices.push_back({v.position, v.normal, v.texCoord});
         }
+
+        asset.submeshes.push_back(SubMesh{fbxMesh.indices, m_scene->materials[fbxMesh.GetMaterialID()].name});
     }
 
     GameObjectCache cache;
@@ -127,6 +122,7 @@ FilmboxLoadTask::GameObjectCache FilmboxLoadTask::foreach_node(const FbxNode* no
     cache.position = node->getPosition();
     cache.rotation = node->getRotation();
     cache.scale = node->getScale();
+    cache.meshName = SelfMeshName;
 
     for (auto& child : node->getChildren())
         cache.childrent.push_back(foreach_node(&child));
@@ -146,6 +142,33 @@ GameObjectHandle FilmboxLoadTask::CreateGameObjectFromCache(GameObjectCache* cac
     transform->setLocalPosition(cache->position);
     transform->setLocalRotation(cache->rotation);
     transform->setLocalScale(cache->scale);
+
+    if (!cache->meshName.empty())
+    {
+        auto& asset = m_meshCacheList[cache->meshName];
+
+        std::vector<MaterialID> materials;
+        for(auto& sub : asset.submeshes)
+        {
+            auto& material = m_materialCacheList[sub.materialName];
+
+            auto materialID = AssetsManager::FindMaterial(sub.materialName);
+            if (materialID == ID_INVALID)
+                materialID = AssetsManager::CreateMaterial(sub.materialName);
+
+            materials.push_back(materialID);
+        }
+
+        // MeshID meshID = AssetsManager::FindMesh(cache->meshName);
+        // if (meshID == ID_INVALID)
+        //     meshID = AssetsManager::CreateMesh(cache->meshName, &asset);
+        //
+        // auto meshFilter = gameObject->addComponent<MeshFilter>();
+        // meshFilter->SetMesh(meshID);
+        //
+        auto meshRender = gameObject->addComponent<MeshRender>();
+        meshRender->SetMaterial(materials);
+    }
 
     if (parent != HANDLE_INVALID)
     {

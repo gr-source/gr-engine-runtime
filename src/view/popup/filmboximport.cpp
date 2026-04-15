@@ -1,5 +1,6 @@
 #include "gr-engine/view/popup/filmboximport.hpp"
 
+#include "gr-base/core/assetReference.hpp"
 #include "gr-base/core/file/file.hpp"
 #include "gr-base/core/task/runtime/gameobjectsavetask.hpp"
 
@@ -79,7 +80,11 @@ void FilmboxImport::onRenderUI()
 
                 for (auto&&[name, asset] : cache.materialsAsset)
                 {
-                    TaskManager::Add<MaterialSaveTask>(newdirmat + "/" + name + ".gmat", asset);
+                    auto path = newdirmat + "/" + name + ".gmat";
+
+                    AssetReference::Registry(name, path);
+
+                    TaskManager::Add<MaterialSaveTask>(path, asset);
                 }
             }
 

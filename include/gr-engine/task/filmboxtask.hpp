@@ -39,6 +39,8 @@ private:
         Quaternion rotation;
         Vector3 scale;
 
+        std::string meshName;
+
         std::string name;
 
         std::vector<GameObjectCache> childrent;
