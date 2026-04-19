@@ -13,7 +13,11 @@ private:
 
     ModelAsset m_asset;
 
+    void onPreExecute() override;
+
     int doInBackground() override;
+
+    void onPostExecute(int result) override;
 };
 
 

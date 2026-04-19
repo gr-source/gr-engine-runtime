@@ -29,6 +29,8 @@ public:
 private:
     std::string m_file;
 
+    std::string m_shader;
+
     std::unordered_map<std::string, MaterialAsset> m_materialCacheList;
 
     std::unordered_map<std::string, MeshAsset> m_meshCacheList;

@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <cstdio>
 #include <cstring>
+#include <exception>
 #include <gr-base/script/baserender.hpp>
 #include <gr-base/script/default.hpp>
 
@@ -220,6 +221,14 @@ Editor::Editor()
     AssetsManager::SetAssetDir(m_project->path + "/assets");
 
     AssetReference::Load(m_project->path + "/asset.txt");
+
+    try
+    {
+        AssetReference::GetFile("shader/default");
+    } catch (const std::exception& e)
+    {
+        AssetReference::Registry("shader/default", gfile::get_data_directory() + "/assets/shader/model//home/NoirVoid/.local/share/gr-engine/assets/shader/model/simple_model.glsl");
+    }
 
     {
         GameObjectHandle gameObjectID = GameObject::Create("Camera");

@@ -1,5 +1,6 @@
 #include "gr-engine/task/filmboxtask.hpp"
 
+#include "gr-base/core/assetReference.hpp"
 #include "gr-base/ecs/behaviorStorage.hpp"
 #include "gr-engine/filmbox/filmbox.hpp"
 
@@ -23,7 +24,7 @@
 
 #include <gr-base/managers/assetsManager.hpp>
 
-FilmboxLoadTask::FilmboxLoadTask(const std::string& file) : m_file(file), m_scene(nullptr)
+FilmboxLoadTask::FilmboxLoadTask(const std::string& file) : m_file(file), m_scene(nullptr), m_shader("shader/default")
 {}
 
 void FilmboxLoadTask::onPreExecute()
@@ -51,6 +52,9 @@ int FilmboxLoadTask::doInBackground()
             continue;
 
         MaterialAsset asset;
+        asset.SetName(fbxMaterial.name);
+        asset.SetShader(m_shader);
+
         asset.Set("albedo", fbxMaterial.albedo);
         asset.Set("metallic", fbxMaterial.metallic);
         asset.Set("roughness", fbxMaterial.roughness);
