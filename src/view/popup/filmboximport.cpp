@@ -6,7 +6,6 @@
 
 #include "gr-base/core/thread/taskmanager.hpp"
 
-#include "gr-base/ecs/behaviorStorage.hpp"
 #include "gr-base/managers/assetsManager.hpp"
 #include "gr-base/managers/eventManager.hpp"
 #include "gr-engine/managers/viewmanager.hpp"

@@ -1,7 +1,9 @@
 #include "gr-engine/task/filmboxtask.hpp"
 
 #include "gr-base/core/assetReference.hpp"
-#include "gr-base/ecs/behaviorStorage.hpp"
+
+#include "gr-base/ecs/componentstorage.hpp"
+
 #include "gr-engine/filmbox/filmbox.hpp"
 
 #include "gr-engine/managers/viewmanager.hpp"
@@ -199,7 +201,7 @@ ModelAsset FilmboxLoadTask::ConvertToAssetModel(GameObjectHandle handle)
 
     for (auto& hash : gameObject->GetHashes())
     {
-        Behavior* behavior = gameObject->getComponent(hash);
+        Component* behavior = gameObject->getComponent(hash);
 
         MemoryStream stream;
         behavior->Serialize(&stream);
@@ -213,7 +215,7 @@ ModelAsset FilmboxLoadTask::ConvertToAssetModel(GameObjectHandle handle)
     auto transform = gameObject->GetTransform();
     for (auto& childID : transform->getChildren())
     {
-        auto childTransform = BehaviorStorage::GetComponent<Transform>(childID);
+        auto childTransform = ComponentStorage::GetComponent<Transform>(childID);
 
         asset.childrent.push_back(ConvertToAssetModel(childTransform->GetGameObject()->GetCacheID()));
     }

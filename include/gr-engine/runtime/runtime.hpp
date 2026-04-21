@@ -1,7 +1,9 @@
 #pragma once
 
 #include "gr-base/core/renderSystem.hpp"
-#include "gr-base/ecs/behaviorStorage.hpp"
+
+#include "gr-base/ecs/componentstorage.hpp"
+
 #include "gr-base/managers/gameobjectmanager.hpp"
 #include "gr-base/managers/octreemanager.hpp"
 #include "gr-base/managers/bvhtreemanager.hpp"
@@ -13,7 +15,7 @@ class Runtime
 public:
     std::unique_ptr<GameObjectManager> s_GameObjectManager;
 
-    std::unique_ptr<BehaviorStorage> s_BehaviorStorage;
+    std::unique_ptr<ComponentStorage> s_ComponentStorage;
 
     std::unique_ptr<RenderSystem> s_RenderSystem;
 
@@ -27,7 +29,7 @@ public:
 
     inline Runtime()
         : s_GameObjectManager(std::make_unique<GameObjectManager>()),
-        s_BehaviorStorage(std::make_unique<BehaviorStorage>()),
+        s_ComponentStorage(std::make_unique<ComponentStorage>()),
         s_OctreeManager(std::make_unique<OctreeManager>()),
         s_BVHTreeManager(std::make_unique<BVHTreeManager>()),
         s_RenderManager(std::make_unique<RenderManager>()),

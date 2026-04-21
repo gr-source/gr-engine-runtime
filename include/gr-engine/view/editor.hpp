@@ -299,7 +299,7 @@ private:
 
     void RenderScriptFromEntity(Entity *entity);
 
-    void RenderComponents(Behavior *behavior);
+    void RenderComponents(Component *behavior);
 
     // void RenderField(Field &field, Component *component);
 

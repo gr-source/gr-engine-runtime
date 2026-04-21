@@ -29,7 +29,7 @@
 #include "gr-base/core/thread/asynctask.hpp"
 #include "gr-base/core/thread/taskmanager.hpp"
 
-#include "gr-base/ecs/behaviorStorage.hpp"
+#include "gr-base/ecs/componentstorage.hpp"
 
 #include "gr-base/physics/physicsScene.hpp"
 
@@ -319,7 +319,7 @@ void Editor::onUpdate()
     auto scene = SceneManager::GetCurrent();
     if (Settings::bGameRunning)
     {
-        BehaviorStorage::Update();
+        ComponentStorage::Update();
     } else
     {
         if (scene != nullptr && scene->getCamera())
@@ -350,7 +350,7 @@ void Editor::onRender3D()
     } else if (m_scene != nullptr)
     {
         for (auto &cameraID : m_scene->GetCameras())
-            on_pre_config_render_scene(BehaviorStorage::GetComponent<Camera>(cameraID));
+            on_pre_config_render_scene(ComponentStorage::GetComponent<Camera>(cameraID));
     }
 
     DebugDraw::Clear();
@@ -670,7 +670,7 @@ void Editor::ReadHierarchy(Scene *scene, GameObject* gameObject)
         auto children = transform->getChildren();
 
         for (auto& child : children)
-            ReadHierarchy(scene, BehaviorStorage::GetComponent<Transform>(child)->GetGameObject());
+            ReadHierarchy(scene, ComponentStorage::GetComponent<Transform>(child)->GetGameObject());
 
         ImGui::TreePop();
     }
@@ -1274,7 +1274,7 @@ void Editor::OnPostLoadSnapshot(Scene* scene)
 
     TaskManager::Add<PhysicsTask>();
 
-    BehaviorStorage::Start();
+    ComponentStorage::Start();
 
     // set_scene(scene);
 }
@@ -1862,9 +1862,9 @@ void Editor::create_popup_add_component()
 
     std::vector<std::string> m_componentName;
 
-    ComponentInfo* infos = BehaviorRegistry::GetAllComponentInfo();
+    ComponentInfo* infos = ComponentRegistry::GetAllComponentInfo();
 
-    for (ComponentInfoID id=0;id<BehaviorRegistry::GetCount();id++)
+    for (ComponentInfoID id=0;id<ComponentRegistry::GetCount();id++)
     {
         ComponentInfo& info = infos[id];
 
@@ -2110,7 +2110,7 @@ void Editor::RenderScriptFromEntity(Entity *entity)
 {
     for (auto &hash : entity->GetHashes())
     {
-        ComponentInfo* info = BehaviorRegistry::Get(hash);
+        ComponentInfo* info = ComponentRegistry::Get(hash);
         if (info->hash != hash)
             continue;
 
@@ -2138,7 +2138,7 @@ void Editor::RenderScriptFromEntity(Entity *entity)
     }
 }
 
-void Editor::RenderComponents(Behavior *behavior)
+void Editor::RenderComponents(Component *behavior)
 {
     /*
     auto baseChunk = ComponentManager::Find(name);

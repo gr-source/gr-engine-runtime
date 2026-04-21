@@ -201,7 +201,7 @@ int main(int argc, char *argv[])
 
     glfwMakeContextCurrent(&(*window));
 
-    glfwSwapInterval(0);
+    glfwSwapInterval(GLFW_FALSE);
 
     glfwInstallCallback(&(*window));
 
