@@ -13,6 +13,7 @@
 #include <gr-base/managers/worldmanager.hpp>
 #include <gr-base/managers/eventManager.hpp>
 
+#include "gr-base/core/geometry/shaderData.hpp"
 #include "gr-engine/Global.h"
 #include "gr-engine/core/time.hpp"
 #include "gr-engine/editorController.h"
@@ -136,6 +137,7 @@ static std::unordered_map<std::string, DragDropFlags> m_extensionNameToFlag =
 };
 
 #include <gr-base/managers/batchingmanager.hpp>
+#include <gr-base/task/shaderbuildtask.hpp>
 
 Editor::Editor()
     : m_viewport(ImGui::GetMainViewport()),
@@ -225,9 +227,11 @@ Editor::Editor()
     try
     {
         AssetReference::GetFile("shader/default");
+        AssetReference::GetFile("line.glsl");
     } catch (const std::exception& e)
     {
-        AssetReference::Registry("shader/default", gfile::get_data_directory() + "/assets/shader/model//home/NoirVoid/.local/share/gr-engine/assets/shader/model/simple_model.glsl");
+        AssetReference::Registry("shader/default", gfile::get_data_directory() + "/assets/shader/model/simple_model.glsl");
+        AssetReference::Registry("line.glsl", gfile::get_data_directory() + "/assets/shader/line.glsl");
     }
 
     {
@@ -267,6 +271,8 @@ Editor::Editor()
 
     EventManager::Attach("delete_file_selected", &Editor::delete_file_selected, this);
     EventManager::Attach("editor_update_tree_file", &Editor::updateFileTree, this, &root_tree_file);
+
+    TaskManager::Add<ShaderBuildTask>("", AssetReference::GetFile("line.glsl"));
 }
 
 Editor::~Editor()
