@@ -224,16 +224,6 @@ Editor::Editor()
 
     AssetReference::Load(m_project->path + "/asset.txt");
 
-    try
-    {
-        AssetReference::GetFile("shader/default");
-        AssetReference::GetFile("line.glsl");
-    } catch (const std::exception& e)
-    {
-        AssetReference::Registry("shader/default", gfile::get_data_directory() + "/assets/shader/model/simple_model.glsl");
-        AssetReference::Registry("line.glsl", gfile::get_data_directory() + "/assets/shader/line.glsl");
-    }
-
     {
         GameObjectHandle gameObjectID = GameObject::Create("Camera");
 
@@ -272,7 +262,15 @@ Editor::Editor()
     EventManager::Attach("delete_file_selected", &Editor::delete_file_selected, this);
     EventManager::Attach("editor_update_tree_file", &Editor::updateFileTree, this, &root_tree_file);
 
-    TaskManager::Add<ShaderBuildTask>("", AssetReference::GetFile("line.glsl"));
+    // try
+    // {
+        // AssetReference::GetFile("")
+    // } catch (declaration) {
+    
+    // }
+
+    // AssetReference::Registry("simple_model.gshd", "/home/NoirVoid/gr-engine/MySecondProject/assets/shader/simple_model.gshd");
+    // TaskManager::Add<ShaderBuildTask>("/home/NoirVoid/Projetos/simple_model.gshd", "/home/NoirVoid/.local/share/gr-engine/assets/shader/model/simple_model.glsl");
 }
 
 Editor::~Editor()

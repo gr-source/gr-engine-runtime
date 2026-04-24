@@ -26,7 +26,7 @@
 
 #include <gr-base/managers/assetsManager.hpp>
 
-FilmboxLoadTask::FilmboxLoadTask(const std::string& file) : m_file(file), m_scene(nullptr), m_shader("shader/default")
+FilmboxLoadTask::FilmboxLoadTask(const std::string& file) : m_file(file), m_scene(nullptr), m_shader("simple_model.gshd")
 {}
 
 void FilmboxLoadTask::onPreExecute()
@@ -112,6 +112,7 @@ FilmboxLoadTask::GameObjectCache FilmboxLoadTask::foreach_node(const FbxNode* no
         SelfMeshName = meshName;
 
         auto& asset = m_meshCacheList[meshName]; 
+        asset.SetName(meshName);
 
         asset.vertices.reserve(asset.vertices.size() + fbxMesh.vertices.size());
         
@@ -165,13 +166,13 @@ GameObjectHandle FilmboxLoadTask::CreateGameObjectFromCache(GameObjectCache* cac
             materials.push_back(materialID);
         }
 
-        // MeshID meshID = AssetsManager::FindMesh(cache->meshName);
-        // if (meshID == ID_INVALID)
-        //     meshID = AssetsManager::CreateMesh(cache->meshName, &asset);
-        //
-        // auto meshFilter = gameObject->addComponent<MeshFilter>();
-        // meshFilter->SetMesh(meshID);
-        //
+        MeshID meshID = AssetsManager::FindMesh(cache->meshName);
+        if (meshID == ID_INVALID)
+            meshID = AssetsManager::CreateMesh(cache->meshName, &asset);
+
+        auto meshFilter = gameObject->addComponent<MeshFilter>();
+        meshFilter->SetMesh(meshID);
+
         auto meshRender = gameObject->addComponent<MeshRender>();
         meshRender->SetMaterial(materials);
     }

@@ -13,7 +13,11 @@ private:
 
     std::string m_file;
 
+    void onPreExecute() override;
+
     int doInBackground() override;
+
+    void onPostExecute(int result) override;
 };
 
 
