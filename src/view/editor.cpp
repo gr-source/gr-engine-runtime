@@ -24,7 +24,6 @@
 #include "gr-base/core/mainthreaddispatcher.hpp"
 #include "gr-base/core/assetReference.hpp"
 
-#include "gr-base/core/task/runtime/gameobjectsavetask.hpp"
 #include "gr-base/core/task/runtime/scenesavetask.hpp"
 #include "gr-base/core/thread/asynctask.hpp"
 #include "gr-base/core/thread/taskmanager.hpp"
@@ -1638,11 +1637,12 @@ void Editor::drop_gameobject_in_treefile(gtreefile *tree_file)
 
     auto gameobject = transform->GetGameObject();
 
-
+    /*
     TaskManager::Add<GameObjectSaveTask>(tree_file->path + "/" + gameobject->GetName() + ".gmdx", gameobject->GetCacheID(), [&](GameObjectHandle id)
             {
                 EventManager::Notify("editor_update_tree_file");
             });
+    */
 
     ImGui::EndDragDropTarget();
 }
