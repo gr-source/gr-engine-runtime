@@ -363,7 +363,7 @@ void Editor::on_pre_config_render_scene(Camera* camera)
     gr::gRender::SetRenderState(gr::GR_CULL, gr::GR_BACK);
     gr::gRender::SetEnable(GR_DEPTH, true);
 
-    gr::gRender::SetBackgroundColor(camera->background);
+    gr::gRender::SetBackgroundColor(Color{0.5f, 0.5f, 0.5f, 1.0f});
     gr::gRender::SetRenderState(gr::GR_BACKGROUND, gr::GR_DEPTH_BUFFER | gr::GR_COLOR_BUFFER);
 
     on_render_scene(camera);
@@ -2435,7 +2435,7 @@ bool Editor::render_material(MaterialID id)
 
     auto material = AssetsManager::GetMaterial(id);
 
-    auto shader = material->GetShader(false);
+    auto shader = material->GetShader();
     if (shader == nullptr)
     {
         dropShaderInMaterial(material);
@@ -2445,7 +2445,9 @@ bool Editor::render_material(MaterialID id)
     if (!ImGui::TreeNode(name.c_str()))
         return false;
 
-    ImGui::Checkbox("Instancing", &material->bEnableInstancing);
+    bool bCanEnableInstancing = material->supportsInstancing();
+    if (ImGui::Checkbox("Instancing", &bCanEnableInstancing))
+    {}
 
     auto shaderParams = GetShaderParamsFromName(AssetsManager::GetShaderName(shader));
 
@@ -2466,7 +2468,7 @@ void Editor::render_shader_property(const std::string &name, Material *material)
     if (!isopen)
         return;
 
-    RenderShaderUniform(material, material->GetShader(false));
+    RenderShaderUniform(material, material->GetShader());
 
     ImGui::TreePop();
 }
@@ -2478,6 +2480,8 @@ void Editor::RenderShaderUniform(Material *material, gr::Shader *shader)
     for (UniformID id=0;id<shader->GetUniformCount();id++)
     {
         gr::ShaderUniform& uniform = shaderUniforms[id];
+        if (strstr(uniform.name, "u_mat") != nullptr)
+            continue;
 
         switch (uniform.type)
         {

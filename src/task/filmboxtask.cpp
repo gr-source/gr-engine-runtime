@@ -114,6 +114,8 @@ FilmboxLoadTask::GameObjectCache FilmboxLoadTask::foreach_node(const FbxNode* no
         auto& asset = m_meshCacheList[meshName]; 
         asset.SetName(meshName);
 
+        size_t vertexOffset = asset.vertices.size();
+
         asset.vertices.reserve(asset.vertices.size() + fbxMesh.vertices.size());
         
         for (const auto& v : fbxMesh.vertices)
@@ -121,7 +123,15 @@ FilmboxLoadTask::GameObjectCache FilmboxLoadTask::foreach_node(const FbxNode* no
             asset.vertices.push_back({v.position, v.normal, v.texCoord});
         }
 
-        asset.submeshes.push_back(SubMesh{fbxMesh.indices, m_scene->materials[fbxMesh.GetMaterialID()].name});
+        auto& submesh = asset.submeshes.emplace_back();
+        submesh.materialName = m_scene->materials[fbxMesh.GetMaterialID()].name;
+
+        for (auto& idx : fbxMesh.indices)
+        {
+            submesh.indices.push_back(idx + static_cast<uint32_t>(vertexOffset));
+        }
+
+        // asset.submeshes.push_back(SubMeshAsset{fbxMesh.indices, });
     }
 
     GameObjectCache cache;
