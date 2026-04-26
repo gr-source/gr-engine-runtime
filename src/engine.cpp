@@ -4,6 +4,7 @@
 
 #include "gr-base/core/console.hpp"
 #include "gr-base/core/thread/taskmanager.hpp"
+#include "gr-engine/view/shadereditor.hpp"
 #include "imgui.h"
 
 #include "gr-engine/task/filmboxtask.hpp"
@@ -26,8 +27,6 @@
 
 #include "gr-engine/functionTimer.hpp"
 #include "gr-engine/Global.h"
-
-#include "gr-engine/ui/shadereditor.hpp"
 
 // Managers
 #include "gr-engine/managers/viewmanager.hpp"
@@ -92,6 +91,7 @@ void Engine::init_project(const std::string& path)
         return ViewManager::AddView<ProjectMenu>();
 
     ViewManager::AddView<Editor>();
+    ViewManager::AddView<ShaderEditor>();
 }
 
 Project& Engine::get_project()

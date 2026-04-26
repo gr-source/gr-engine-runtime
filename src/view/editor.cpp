@@ -49,7 +49,6 @@
 
 #include <gr-base/managers/gameobjectmanager.hpp>
 #include <gr-base/managers/assetsManager.hpp>
-#include <gr-base/managers/rendermanager.hpp>
 #include <gr-base/managers/octreemanager.hpp>
 #include <gr-base/managers/sceneManager.hpp>
 
@@ -355,7 +354,7 @@ void Editor::onRender3D()
 
 void Editor::on_pre_config_render_scene(Camera* camera)
 {
-    RenderManager::PreRender(camera);
+    RenderSystem::Begin(camera);
 
     auto rendertarget = camera->getRenderTarget();
     rendertarget->bind();
