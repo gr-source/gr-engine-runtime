@@ -61,7 +61,5 @@ private:
     GameObjectCache foreach_node(const FbxNode* node);
 
     GameObjectHandle CreateGameObjectFromCache(GameObjectCache* cache, GameObjectHandle parent = HANDLE_INVALID);
-
-    ModelAsset ConvertToAssetModel(GameObjectHandle handle);
 };
 

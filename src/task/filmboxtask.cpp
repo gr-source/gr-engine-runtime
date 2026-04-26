@@ -4,6 +4,7 @@
 
 #include "gr-base/ecs/componentstorage.hpp"
 
+#include "gr-base/task/modelsavetask.hpp"
 #include "gr-engine/filmbox/filmbox.hpp"
 
 #include "gr-engine/managers/viewmanager.hpp"
@@ -94,7 +95,7 @@ void FilmboxLoadTask::onPostExecute(int result)
         CreateGameObjectFromCache(&objectcache, handle);
     }
 
-    cache.modelAsset = ConvertToAssetModel(handle);
+    cache.modelAsset = ModelSaveTask::ConvertToAssetModel(handle);
 
     GameObject::DestroyImediate(handle);
 
@@ -202,36 +203,5 @@ GameObjectHandle FilmboxLoadTask::CreateGameObjectFromCache(GameObjectCache* cac
 }
 
 
-ModelAsset FilmboxLoadTask::ConvertToAssetModel(GameObjectHandle handle)
-{
-    GameObject* gameObject = GameObject::Get(handle);
-
-    ModelAsset asset;
-    asset.name = gameObject->GetName();
-    asset.isStatic = gameObject->GetIsStatic();
-
-    for (auto& hash : gameObject->GetHashes())
-    {
-        Component* behavior = gameObject->getComponent(hash);
-
-        MemoryStream stream;
-        behavior->Serialize(&stream);
-
-        std::vector<uint8_t> buffer(stream.tellg(), 0);
-        memcpy(buffer.data(), stream.data(), stream.tellg());
-
-        asset.componentBuffer.emplace(hash, buffer);
-    }
-
-    auto transform = gameObject->GetTransform();
-    for (auto& childID : transform->getChildren())
-    {
-        auto childTransform = ComponentStorage::GetComponent<Transform>(childID);
-
-        asset.childrent.push_back(ConvertToAssetModel(childTransform->GetGameObject()->GetCacheID()));
-    }
-
-    return asset;
-}
 
 

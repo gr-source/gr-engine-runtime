@@ -5,41 +5,33 @@
 
 #include <algorithm>
 
-ViewManager* ViewManager::s_ViewManager = nullptr;
-
-void ViewManager::Initialize()
-{
-    if (s_ViewManager == nullptr)
-        s_ViewManager = new ViewManager();
-}
-
-void ViewManager::Shutdown()
-{
-    if (s_ViewManager != nullptr)
-        delete s_ViewManager;
-}
-
 void ViewManager::Update()
 {
-    s_ViewManager->update();
+    GetInstance().update();
 }
 
 void ViewManager::Renderer3D()
 {
-    s_ViewManager->renderer3D();
+    GetInstance().renderer3D();
 }
 
 void ViewManager::RendererUI()
 {
-    s_ViewManager->rendererUI();
+    GetInstance().rendererUI();
 }
 
 void ViewManager::RemoveAllView()
 {
-    s_ViewManager->removeAllView();
+    GetInstance().removeAllView();
 }
 
 // private
+ViewManager &ViewManager::GetInstance()
+{
+    static ViewManager s_ViewManager;
+    return s_ViewManager;
+}
+
 ViewManager::ViewManager() : s_current(nullptr)
 {}
 
@@ -53,18 +45,18 @@ ViewLayout* ViewManager::addView(ViewHash hash, std::shared_ptr<ViewLayout> view
     if (s_current == nullptr)
         s_current = s_viewRegistry.back();
 
-    s_ViewMap.emplace(hash, std::move(view));
+    auto&&[it, inserted] = s_ViewMap.emplace(hash, std::move(view));
 
-    return s_ViewMap[hash].get();
+    return it->second.get();
 }
 
 ViewLayout* ViewManager::addSubView(ViewHash hash, std::shared_ptr<ViewLayout> view)
 {
     s_viewRegistryPopup.push_back(view.get());
 
-    s_ViewMap.emplace(hash, std::move(view));
+    auto&& [it, inserted] =s_ViewMap.emplace(hash, std::move(view));
 
-    return s_ViewMap[hash].get();
+    return it->second.get();
 }
 
 ViewLayout* ViewManager::getView(ViewHash hash)

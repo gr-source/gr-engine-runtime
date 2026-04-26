@@ -14,6 +14,7 @@
 #include <gr-base/managers/eventManager.hpp>
 
 #include "gr-base/core/geometry/shaderData.hpp"
+#include "gr-base/task/modelsavetask.hpp"
 #include "gr-engine/Global.h"
 #include "gr-engine/core/time.hpp"
 #include "gr-engine/editorController.h"
@@ -94,22 +95,24 @@
 #include <iostream>
 #include <string>
 
+#include <gr-base/system/worldsystem.hpp>
+
 #define ITEMS_PER_PAGE 20
 
 #define GET_N_ARRAY(c) sizeof(c) / sizeof(c[0])
 
 enum class DragDropFlags : uint32_t {
-    GMDL        = 1 << 1,
-    SCN         = 1 << 2,
-    SCRIPT      = 1 << 3,
-    SHADER      = 1 << 4,
-    GAMEOBJECT  = 1 << 5,
-    ANIMATION   = 1 << 6,
-    TEXTURE     = 1 << 7,
-    MESH        = 1 << 8,
+    GMDL,
+    SCN,
+    SCRIPT,
+    SHADER,
+    GAMEOBJECT,
+    ANIMATION,
+    TEXTURE,
+    MESH
 };
 
-static std::map<DragDropFlags, const char *> m_extensionDragDrop =
+static std::unordered_map<DragDropFlags, const char *> m_extensionDragDrop =
 {
     {DragDropFlags::GMDL,       ".gmdl"},
     {DragDropFlags::SCN,        ".scn"},
@@ -207,16 +210,7 @@ Editor::Editor()
     m_runtime = m_editMode.get();
     m_runtime->initialize();
 
-    // Initialize
-    {
-        AssetReference::Initialize();
-
-        AssetsManager::Initialize();
-
-        BatchingManager::Initialize();
-        
-        DebugDraw::Initialize();
-    }
+    initialize();
 
     AssetsManager::SetAssetDir(m_project->path + "/assets");
 
@@ -278,13 +272,7 @@ Editor::~Editor()
 
     AssetReference::Save(m_project->path + "/asset.txt");
 
-    DebugDraw::Shutdown();
-
-    BatchingManager::Shutdown();
-
-    AssetReference::Shutdown();
-
-    AssetsManager::Shutdown();
+    shutdown();
 }
 
 void Editor::loadScript(const std::string& dir)
@@ -322,7 +310,7 @@ void Editor::onUpdate()
             EditorController::Update(scene->getCamera());
     }
 
-    WorldManager::Update();
+    WorldSystem::Update();
 
     GameObjectManager::Cleanup();
 
@@ -416,6 +404,34 @@ void Editor::onBlur()
 void Editor::drop(void *data)
 {
     updateFileTree(&root_tree_file);
+}
+
+void Editor::initialize()
+{
+    AssetReference::Initialize();
+
+    AssetsManager::Initialize();
+
+    BatchingManager::Initialize();
+    
+    DebugDraw::Initialize();
+
+    TaskManager::Initialize();
+}
+
+void Editor::shutdown()
+{
+    TaskManager::Shutdown();
+
+    ScriptManager::Unload();
+
+    DebugDraw::Shutdown();
+
+    BatchingManager::Shutdown();
+
+    AssetReference::Shutdown();
+
+    AssetsManager::Shutdown();
 }
 
 void Editor::create_dock()
@@ -1636,12 +1652,13 @@ void Editor::drop_gameobject_in_treefile(gtreefile *tree_file)
 
     auto gameobject = transform->GetGameObject();
 
-    /*
-    TaskManager::Add<GameObjectSaveTask>(tree_file->path + "/" + gameobject->GetName() + ".gmdx", gameobject->GetCacheID(), [&](GameObjectHandle id)
+    auto file = tree_file->path + "/" + gameobject->GetName() + ".gmdl";
+
+    TaskManager::Add<ModelSaveTask>(file, gameobject->GetCacheID() /*, [&](GameObjectHandle id)
             {
                 EventManager::Notify("editor_update_tree_file");
-            });
-    */
+            }
+            */);
 
     ImGui::EndDragDropTarget();
 }

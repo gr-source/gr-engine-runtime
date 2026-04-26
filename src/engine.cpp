@@ -109,8 +109,6 @@ void Engine::init()
 {
     ImGuiRender::Initialize("#version 330 core");
 
-    ViewManager::Initialize();
-
     gr::gRender::SetEnable(GR_CULL_FACE, true);
     gr::gRender::SetRenderState(gr::GR_CULL, gr::GR_BACK);
 
@@ -132,9 +130,9 @@ void Engine::shutdown()
 {
     save_engine_config();
 
-    ImGuiRender::Shutdown();
+    ViewManager::RemoveAllView();
 
-    ViewManager::Shutdown();
+    ImGuiRender::Shutdown();
 }
 
 void Engine::save_engine_config()

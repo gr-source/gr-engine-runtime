@@ -199,6 +199,10 @@ private:
 
     MaterialID m_materialToRename;
 
+    void initialize();
+
+    void shutdown();
+
     void create_dock();
 
     void BuildDock(ImGuiID dockspace_id, ImGuiDockNodeFlags dockspace_flags);

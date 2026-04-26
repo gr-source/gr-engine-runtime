@@ -10,10 +10,6 @@
 class ViewManager
 {
 public:
-    static void Initialize();
-
-    static void Shutdown();
-
     static void Update();
 
     static void Renderer3D();
@@ -35,8 +31,6 @@ public:
     static void RemoveView();
 
 private:
-    static ViewManager *s_ViewManager;
-
     std::unordered_map<ViewHash, std::shared_ptr<ViewLayout>> s_ViewMap;
 
     std::vector<ViewLayout*> s_viewRegistryPopup;
@@ -44,6 +38,8 @@ private:
     std::vector<ViewLayout*> s_viewRegistry;
 
     ViewLayout* s_current;
+
+    static ViewManager &GetInstance();
 
     ViewManager();
     ~ViewManager();
@@ -70,30 +66,30 @@ private:
 template <typename T, typename... Args>
 inline void ViewManager::AddView(Args&&... args)
 {
-    if (s_ViewManager->GetView<T>() != nullptr)
+    if (GetInstance().GetView<T>() != nullptr)
         return;
-    s_ViewManager->addView(typeid(T).hash_code(), std::make_shared<T>(std::forward<Args>(args)...));
+    GetInstance().addView(typeid(T).hash_code(), std::make_shared<T>(std::forward<Args>(args)...));
 }
 
 template <typename T, typename... Args>
 inline T* ViewManager::AddSubView(Args&&... args)
 {
-    T* view = static_cast<T*>(s_ViewManager->GetView<T>());
+    T* view = static_cast<T*>(GetInstance().GetView<T>());
     if (view == nullptr)
-        view = static_cast<T*>(s_ViewManager->addSubView(typeid(T).hash_code(), std::make_shared<T>(std::forward<Args>(args)...)));
+        view = static_cast<T*>(GetInstance().addSubView(typeid(T).hash_code(), std::make_shared<T>(std::forward<Args>(args)...)));
     return view;
 }
 
 template <typename T>
 inline T* ViewManager::GetView()
 {
-    return static_cast<T*>(s_ViewManager->getView(typeid(T).hash_code()));
+    return static_cast<T*>(GetInstance().getView(typeid(T).hash_code()));
 }
 
 template <typename T>
 inline void ViewManager::RemoveView()
 {
-    s_ViewManager->remove(typeid(T).hash_code());
+    GetInstance().remove(typeid(T).hash_code());
 }
 
 
