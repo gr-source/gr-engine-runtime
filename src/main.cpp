@@ -1,3 +1,4 @@
+#include "gr-base/core/file/file.hpp"
 #include "gr-base/core/thread/threadpool.hpp"
 
 #include <gr-math/gmath.hpp>
@@ -7,6 +8,7 @@
 #include "gr-engine/settings.h"
 #include "gr-engine/engine.h"
 
+#include <gr-base/core/logger.hpp>
 #include <gr-base/core/window.hpp>
 #include <gr-base/core/input.hpp>
 
@@ -16,6 +18,8 @@
 
 #define SCREEN_WIDTH 1024
 #define SCREEN_HEIGHT 600
+
+// #define ENABLE_VSYNC
 
 GLFWwindow *CreateWindow(const char* name, int width, int height, GLFWwindow * share, bool isVisible)
 {
@@ -54,7 +58,7 @@ void glfwInstallCallback(GLFWwindow * window) {
 
 void MyGLFWerrorfun(int error, const char* description)
 {
-    std::cerr << "GLFWerrorfun: " << description << std::endl;
+    logger::error("Erro interno do glfw '%s' code '%d'.", description, error);
 }
 
 static void glfw_set_window_title(const char *title)
@@ -164,6 +168,18 @@ void segfault_sigaction(int signal, siginfo_t *si, void *arg)
     exit(1);
 }
 
+static void check_app_dir()
+{
+    if (!gfile::exists(gfile::get_config_directory()))
+        gfile::create_directory(gfile::get_config_directory());
+
+    if (!gfile::exists(gfile::get_data_directory()))
+        gfile::create_directory(gfile::get_config_directory());
+
+    if (!gfile::exists(gfile::get_data_directory()))
+        gfile::create_directory(gfile::get_config_directory());
+}
+
 #include <gr-base/core/clock.hpp>
 
 #include "gr-engine/core/time.hpp"
@@ -182,9 +198,11 @@ int main(int argc, char *argv[])
     // ===============================
     glfwSetErrorCallback(MyGLFWerrorfun);
 
+    check_app_dir();
+
     if (glfwInit() != GLFW_TRUE)
     {
-        std::cout << "GLFW not initialized." << std::endl;
+        logger::critical("Falha ao iniciar o GLFW.");
         return 1;
     }
 
@@ -192,29 +210,39 @@ int main(int argc, char *argv[])
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    std::unique_ptr<GLFWwindow, decltype(&glfwDestroyWindow)> window(CreateWindow("GR - GameEngine", SCREEN_WIDTH, SCREEN_HEIGHT, nullptr, true), glfwDestroyWindow);
-    if (!window)
+    logger::info("Versão a ser usada do opengl 3.3");
+
+    GLFWwindow* window = CreateWindow("GR - GameEngine", SCREEN_WIDTH, SCREEN_HEIGHT, nullptr, true);
+    if (window == nullptr)
     {
-        std::cout << "Falied to create window." << std::endl;
+        glfwTerminate();
+
+        logger::critical("Falha ao criar a uma janela.");
         return 2;
     }
 
-    glfwMakeContextCurrent(&(*window));
+    glfwMakeContextCurrent(window);
 
+#ifdef ENABLE_VSYNC
+    glfwSwapInterval(GLFW_TRUE);
+    logger::info("VSync habilitato.");
+#else
     glfwSwapInterval(GLFW_FALSE);
+    logger::info("VSync desabilitado.");
+#endif // ENABLE_VSYNC
 
-    glfwInstallCallback(&(*window));
+    glfwInstallCallback(window);
 
     config_set_engine_callback();
 
-    // glfwSetWindowPos(&(*window), 0, 0);
-
     if (!gr::gRender::Initialize())
     {
-        window = nullptr;
+        glfwDestroyWindow(window);
 
         glfwTerminate();
-        std::cout << "Falied to initialize opengl library." << std::endl;
+
+        logger::critical("Falha ao iniciar o renderizador.");
+
         return 3;
     }
 
