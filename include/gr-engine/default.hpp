@@ -10,20 +10,6 @@
 #include <array>
 #include <list>
 
-class Component;
-class Entity;
-
-class GameObject;
-
-class Transform;
-class Animator;
-class Camera;
-class Light;
-
-class Animation;
-class Batching;
-class Mesh;
-
 
 class btDefaultMotionState;
 class btTriangleMeshShape;
@@ -31,5 +17,7 @@ class btCollisionShape;
 class btTriangleMesh;
 class btRigidBody;
 
+class Application;
+class Engine;
 
 

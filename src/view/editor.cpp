@@ -1,7 +1,6 @@
 #include "gr-engine/view/editor.hpp"
 
 #include <atomic>
-#include <chrono>
 #include <cstddef>
 #include <cstdio>
 #include <cstring>
@@ -18,7 +17,9 @@
 #include "gr-engine/Global.h"
 #include "gr-engine/core/time.hpp"
 #include "gr-engine/editorController.h"
-#include "gr-engine/engine.h"
+
+#include "gr-engine/application.hpp"
+#include "gr-engine/engine.hpp"
 
 #include "gr-base/core/clock.hpp"
 #include "gr-base/core/debugdraw.hpp"
@@ -26,7 +27,6 @@
 #include "gr-base/core/assetReference.hpp"
 
 #include "gr-base/core/task/runtime/scenesavetask.hpp"
-#include "gr-base/core/thread/asynctask.hpp"
 #include "gr-base/core/thread/taskmanager.hpp"
 
 #include "gr-base/ecs/componentstorage.hpp"
@@ -172,9 +172,9 @@ Editor::Editor()
 
     m_guizmoManipulate = ImGuizmo::WORLD;
 
-    Engine& engine = Engine::GetInstance();
+    Engine* engine = static_cast<Engine*>(Application::GetInstance());
 
-    m_project = &engine.get_project();
+    m_project = &engine->get_project();
 
 
 #define INSERT_SCRIPT(object) \
@@ -440,8 +440,8 @@ void Editor::create_dock()
     {
         if (ImGui::BeginMenu("Project"))
         {
-            if (ImGui::MenuItem("Close"))
-                MainThreadDispatcher::Add(Priority::LOW, &Engine::init_project, &Engine::GetInstance(), "");
+            // if (ImGui::MenuItem("Close"))
+                // MainThreadDispatcher::Add(Priority::LOW, &Application::init_project, &Application::GetInstance(), "");
             ImGui::EndMenu();
         }
 

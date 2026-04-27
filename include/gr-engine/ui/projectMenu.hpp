@@ -7,13 +7,12 @@
 #include <array>
 #include <memory>
 
+#include "gr-engine/default.hpp"
+
 #include "ImGuiRender.h"
 #include "project.hpp"
 
 #include "viewlayout.hpp"
-
-class Editor;
-class Engine;
 
 using ProjectMenuPopup_ = std::uint32_t;
 

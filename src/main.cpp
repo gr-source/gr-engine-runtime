@@ -5,8 +5,8 @@
 
 #include <gr-render/gRender.h>
 
+#include "gr-engine/application.hpp"
 #include "gr-engine/settings.h"
-#include "gr-engine/engine.h"
 
 #include <gr-base/core/logger.hpp>
 #include <gr-base/core/window.hpp>
@@ -43,9 +43,9 @@ void GLFWscrollfunCallback(GLFWwindow* window, double xoffset, double yoffset)
 
 void GLFWdropfunCallback(GLFWwindow* window, int path_count, const char* paths[])
 {
-    Engine& engine = Engine::GetInstance();
+    Application* app = Application::GetInstance();
     for (int i=0;i<path_count;i++)
-        engine.drop_file(paths[i]);
+        app->DropFile(paths[i]);
 }
 
 void glfwInstallCallback(GLFWwindow * window) {
@@ -151,8 +151,8 @@ static void config_set_engine_callback()
 static void destroy() {
     Settings::StopPlayEngine();
 
-    auto& engine = Engine::GetInstance();
-    engine.shutdown();
+    auto app = Application::GetInstance();
+    app->shutdown();
     
     glfwTerminate();
 }
@@ -248,14 +248,12 @@ int main(int argc, char *argv[])
 
     Threadpool::Initialize();
 
-    auto &engine = Engine::GetInstance();
-    engine.init();
-
-    GLFWframebuffersizefunCallback(&(*window), SCREEN_WIDTH, SCREEN_HEIGHT);
+    auto app = Application::GetInstance();
+    app->initialize();
 
     gtimer time(60.0f);
 
-    while (Settings::IsEngineRunning() && !glfwWindowShouldClose(&(*window)))
+    while (Settings::IsEngineRunning() && !glfwWindowShouldClose(window))
     {
         time.begin_frame();
 
@@ -264,7 +262,7 @@ int main(int argc, char *argv[])
 
         update_input_states();
 
-        engine.process();
+        app->process();
 
         glfwSwapBuffers(&(*window));
         glfwPollEvents();

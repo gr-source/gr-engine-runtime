@@ -1,12 +1,15 @@
 #pragma once
 
+#include "gr-engine/application.hpp"
+
 #include "gr-engine/ui/project.hpp"
 
 #include <gr-base/script/default.hpp>
 
 #include <gr-base/core/default.hpp>
 
-class Engine {
+class Engine : public Application
+{
 public:
     enum EngineEvent {
         INITIALIZE     = 1 << 1,
@@ -17,16 +20,14 @@ public:
         DROFUNC        = 1 << 9
     };
 
-    static Engine &GetInstance();
-
     Engine();
-    ~Engine();
+    ~Engine() override;
 
-    void init();
+    void initialize() override;
 
-    void process();
+    void process() override;
 
-    void shutdown();
+    void shutdown() override;
 
     void init_menu();
 
@@ -36,7 +37,7 @@ public:
 
     bool has_project() const;
 
-    void drop_file(const std::string &path);
+    void DropFile(const std::string &path) override;
 
 private:
     Project m_project;

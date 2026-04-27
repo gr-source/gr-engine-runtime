@@ -1,6 +1,7 @@
 #include "gr-engine/ui/projectMenu.hpp"
 
-#include "gr-engine/engine.h"
+#include "gr-engine/application.hpp"
+#include "gr-engine/engine.hpp"
 
 #include "gr-base/core/mainthreaddispatcher.hpp"
 #include "imgui.h"
@@ -35,7 +36,7 @@ static const std::array<const std::string, 8> m_assetsFile {
     "model",
 };
 
-ProjectMenu::ProjectMenu() : m_engine(&Engine::GetInstance()), popup_flags(0), m_mainViewport(nullptr), m_style(nullptr), m_io(nullptr)
+ProjectMenu::ProjectMenu() : m_engine(static_cast<Engine*>(Application::GetInstance())), popup_flags(0), m_mainViewport(nullptr), m_style(nullptr), m_io(nullptr)
 {
     m_mainViewport = ImGui::GetMainViewport();
 

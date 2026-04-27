@@ -1,5 +1,6 @@
-#include "gr-engine/engine.h"
+#include "gr-engine/engine.hpp"
 
+#include "gr-base/core/logger.hpp"
 #include "gr-engine/editorController.h"
 
 #include "gr-base/core/console.hpp"
@@ -37,15 +38,11 @@
 
 #include <gr-render/gCommon.h>
 
-Engine &Engine::GetInstance()
-{
-    static Engine engine;
-    return engine;
-}
-
 // ********** public ********** //
 Engine::Engine() : bHasProject(false)
-{}
+{
+    logger::info("[Application] Runtime mode 'Engine'.");
+}
 
 Engine::~Engine()
 {}
@@ -105,7 +102,7 @@ bool Engine::has_project() const
 }
 
 // ********** private ********** //
-void Engine::init()
+void Engine::initialize()
 {
     ImGuiRender::Initialize("#version 330 core");
 
@@ -185,7 +182,7 @@ void Engine::render_gui()
     ImGuiRender::End();
 }
 
-void Engine::drop_file(const std::string &path)
+void Engine::DropFile(const std::string &path)
 {
     if (!gfile::exists(path))
     {

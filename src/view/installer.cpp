@@ -1,6 +1,7 @@
 #include "gr-engine/view/installer.hpp"
 
-#include "gr-engine/engine.h"
+#include "gr-engine/application.hpp"
+#include "gr-engine/engine.hpp"
 
 #include "gr-base/core/mainthreaddispatcher.hpp"
 
@@ -74,7 +75,7 @@ void Installer::onRenderUI()
     {
         bFinnish = false;
 
-        MainThreadDispatcher::Add(Priority::NORMAL, &Engine::init_menu, Engine::GetInstance());
+        MainThreadDispatcher::Add(Priority::NORMAL, &Engine::init_menu, static_cast<Engine*>(Application::GetInstance()));
     }
     ImGui::End();
 }
