@@ -42,6 +42,8 @@ file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS "src/*.cpp")
 add_executable(${CMAKE_PROJECT_NAME} ${SOURCES})
 
 add_subdirectory(imgui)
+add_subdirectory(tests)
+
 add_subdirectory(${GR_BASE_PATH} gr-base)
 
 include_directories(include)

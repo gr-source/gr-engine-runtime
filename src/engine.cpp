@@ -5,6 +5,7 @@
 
 #include "gr-base/core/console.hpp"
 #include "gr-base/core/thread/taskmanager.hpp"
+#include "gr-engine/view/checkupdate.hpp"
 #include "gr-engine/view/shadereditor.hpp"
 #include "imgui.h"
 
@@ -33,7 +34,6 @@
 #include "gr-engine/managers/viewmanager.hpp"
 
 // Views
-#include "gr-engine/view/installer.hpp"
 #include "gr-engine/view/editor.hpp"
 
 #include <gr-render/gCommon.h>
@@ -112,15 +112,7 @@ void Engine::initialize()
     gr::gRender::SetEnable(GR_BLEND, true);
     gr::gRender::SetRenderState(gr::GR_SRC_ALPHA, gr::GR_ONE_MINUS_SRC_ALPHA);
 
-    if (!check_installed())
-        return ViewManager::AddView<Installer>();
-
-    init_menu();
-}
-
-bool Engine::check_installed()
-{
-    return gfile::exists(gfile::get_home_directory() + "/.config/gr-engine");
+    ViewManager::AddView<CheckUpdate>(&Engine::init_menu, this);
 }
 
 void Engine::shutdown()

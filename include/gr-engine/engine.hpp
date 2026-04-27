@@ -44,8 +44,6 @@ private:
 
     bool bHasProject;
 
-    bool check_installed();
-
     void save_engine_config();
 
     void update();

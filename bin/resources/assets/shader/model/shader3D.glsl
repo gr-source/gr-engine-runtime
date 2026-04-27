@@ -16,12 +16,12 @@ layout (location = 0) in vec3 in_pos;
         #ifdef USE_INSTANCED
 
 #ifndef ENABLE_ANIMATION
-            layout (location = 3) in mat4 u_model;
+            layout (location = 3) in mat4 u_mat_model;
 #else // ENABLE_ANIMATION
-            layout (location = 5) in mat4 u_model;
+            layout (location = 5) in mat4 u_mat_model;
 #endif // ENABLE_ANIMATION
         #else
-            uniform mat4 u_model;
+            uniform mat4 u_mat_model;
         #endif
 #endif
 
@@ -40,8 +40,8 @@ layout (location = 0) in vec3 in_pos;
     out vec4 u_color;
 #endif // ENABLE_LINE
 
-uniform mat4 u_projection;
-uniform mat4 u_view;
+uniform mat4 u_mat_projection;
+uniform mat4 u_mat_view;
 
 vec4 u_position;
 
@@ -75,8 +75,8 @@ void main()
 #endif
 
 #ifdef USE_MODEL
-        worldpos = u_model * SkinVertex;
-        u_normal = mat3(u_model) * in_normal;
+        worldpos = u_mat_model * SkinVertex;
+        u_normal = mat3(u_mat_model) * in_normal;
 #else
         worldpos = SkinVertex;
         u_normal = in_normal;
@@ -90,7 +90,7 @@ void main()
         u_color = in_color;
 #endif // ENABLE_LINE
 
-    u_position = u_projection * u_view * worldpos;
+    u_position = u_mat_projection * u_mat_view * worldpos;
 
     vertex();
 
@@ -110,7 +110,7 @@ out vec4 FragColor;
     in vec3 u_fragPos;
     in vec3 u_normal;
 
-    uniform vec3 u_eye;
+    uniform vec3 u_mat_eye;
 #else
     in vec4 u_color;
 #endif

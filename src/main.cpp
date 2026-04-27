@@ -170,14 +170,17 @@ void segfault_sigaction(int signal, siginfo_t *si, void *arg)
 
 static void check_app_dir()
 {
+    if (!gfile::exists(gfile::get_cache_directory()))
+        gfile::create_directory(gfile::get_cache_directory());
+
+    if (!gfile::exists(gfile::get_data_directory()))
+        gfile::create_directory(gfile::get_data_directory());
+
     if (!gfile::exists(gfile::get_config_directory()))
         gfile::create_directory(gfile::get_config_directory());
 
-    if (!gfile::exists(gfile::get_data_directory()))
-        gfile::create_directory(gfile::get_config_directory());
-
-    if (!gfile::exists(gfile::get_data_directory()))
-        gfile::create_directory(gfile::get_config_directory());
+    if (!gfile::exists(gfile::get_home_directory() + "/gr-engine"))
+        gfile::create_directory(gfile::get_home_directory() + "/gr-engine");
 }
 
 #include <gr-base/core/clock.hpp>

@@ -53,8 +53,8 @@ struct Light {
     int type; // 0: Direcional, 1: Ponto, 2: Spot
 };
 
-uniform Light lights[10];
-uniform int numLights;
+uniform Light u_mat_lights[10];
+uniform int u_mat_numLights;
 
 vec3 CalculateLight(Light light, vec3 fragPos, vec3 V, vec3 N, vec3 F0, vec3 albedo, float roughness, float metallic) {
     vec3 L;
@@ -123,15 +123,15 @@ uniform float ambientocclusion;
 void fragment()
 {
 	vec3 N = normalize(u_normal);
-	vec3 V = normalize(u_eye - u_fragPos);
+	vec3 V = normalize(u_mat_eye - u_fragPos);
     vec3 F0 = vec3(0.04);
     F0 = mix(F0, albedo, metallic);
 
     vec3 Lo = vec3(0.0);
     
-	for (int i = 0; i < numLights; i++)
+	for (int i = 0; i < u_mat_numLights; i++)
     {
-        Lo += CalculateLight(lights[i], u_fragPos, V, N, F0, albedo, roughness, metallic);
+        Lo += CalculateLight(u_mat_lights[i], u_fragPos, V, N, F0, albedo, roughness, metallic);
     }
 
     vec3 ambient = vec3(0.1) * albedo * ambientocclusion;
