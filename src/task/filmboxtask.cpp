@@ -82,13 +82,13 @@ void FilmboxLoadTask::onPostExecute(int result)
     if (view == nullptr)
         view = ViewManager::AddSubView<FilmboxImport>();
 
-    auto name = gfile::getname(m_file.c_str());
+    auto name = gfile::get_file_name(m_file);
 
     ModelCache cache;
     cache.materialsAsset = m_materialCacheList;
     cache.meshesAsset = m_meshCacheList;
 
-    GameObjectHandle handle = GameObject::Create(gfile::getname(m_file.c_str()));
+    GameObjectHandle handle = GameObject::Create(gfile::get_file_name(m_file));
 
     for (auto &objectcache : m_objectCacheList)
     {

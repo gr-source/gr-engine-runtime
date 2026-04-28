@@ -2467,7 +2467,7 @@ bool Editor::render_material(MaterialID id)
 
     auto shaderParams = GetShaderParamsFromName(AssetsManager::GetShaderName(shader));
 
-    auto shadername = gfile::getname(shaderParams.base.c_str());
+    auto shadername = gfile::get_file_name(shaderParams.base);
 
     render_shader_property(shadername, material);
 
