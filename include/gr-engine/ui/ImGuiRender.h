@@ -13,7 +13,7 @@ public:
 
     static void PushStyle(ImGuiStyle& dst);
 
-    static void AddFont(const char* path);
+    static void SetFont(const char* path);
 
     static void SetConfigPath(const char* path);
 

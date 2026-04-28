@@ -1,14 +1,16 @@
 #include "gr-engine/ui/ImGuiRender.h"
+#include "gr-base/core/logger.hpp"
 
 #include <gr-base/core/file/file.hpp>
 
 #include <GLFW/glfw3.h>
 
-#include <iostream>
-
 ImGuiIO *ImGuiRender::m_io = nullptr;
 
-void ImGuiRender::Initialize(const char* openglVersion) {
+void ImGuiRender::Initialize(const char* openglVersion)
+{
+    logger::info("[ImGuiRender] Initialize.");
+
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
 
@@ -20,10 +22,15 @@ void ImGuiRender::Initialize(const char* openglVersion) {
 
     m_io = &ImGui::GetIO();
     m_io->ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-    m_io->Fonts->AddFontFromFileTTF("/usr/share/fonts/TTF/0xProtoNerdFont-Regular.ttf", 13.5f);
+    SetFont("/usr/share/fonts/TTF/0xProtoNerdFont-Regular.ttf");
+
+    SetConfigPath((gfile::get_config_directory() + "/imgui.ini").c_str());
 }
 
-void ImGuiRender::Shutdown() {
+void ImGuiRender::Shutdown()
+{
+    logger::info("[ImGuiRender] Shutdown");
+
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
@@ -95,12 +102,18 @@ void ImGuiRender::PushStyle(ImGuiStyle& dst) {
     dst.SeparatorTextAlign = {0.5f, 0.5f};
 }
 
-void ImGuiRender::AddFont(const char* path) {
+void ImGuiRender::SetFont(const char* path)
+{
     m_io->Fonts->AddFontFromFileTTF(path, 16.5f);
+
+    logger::debug("[ImGuiRender] Set font file '%s'", path);
 }
 
-void ImGuiRender::SetConfigPath(const char *path) {
-    m_io->IniFilename = path;
+void ImGuiRender::SetConfigPath(const char *path)
+{
+    m_io->IniFilename = strdup(path);
+
+    logger::debug("[ImGuiRender] Set config file '%s'", path);
 }
 
 void ImGuiRender::Begin() {

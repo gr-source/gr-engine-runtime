@@ -203,24 +203,66 @@ int main(int argc, char *argv[])
 
     check_app_dir();
 
+    logger::info("[Main] Initialize.");
+
     if (glfwInit() != GLFW_TRUE)
     {
         logger::critical("Falha ao iniciar o GLFW.");
         return 1;
     }
 
+    logger::debug("[Main] Usding glfw version '%s'.", glfwGetVersionString());
+
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    logger::info("Versão a ser usada do opengl 3.3");
+    logger::debug("[Main] Versão a ser usada do opengl 3.3");
+
+    {
+        switch (glfwGetPlatform())
+        {
+            case GLFW_PLATFORM_WAYLAND:
+                logger::debug("[Main] Plataforma: Wayland");
+                break;
+            case GLFW_PLATFORM_X11:
+                logger::debug("[Main] Plataforma: X11");
+                break;
+            case GLFW_PLATFORM_WIN32:
+                logger::debug("[Main] Plataforma: Windows");
+                break;
+            case GLFW_PLATFORM_COCOA:
+                logger::debug("[Main] Plataforma: macOS");
+                break;
+            case GLFW_PLATFORM_NULL:
+                logger::debug("[Main] Plataforma: Null (simulação)");
+                break;
+            default:
+                logger::debug("[Main] Plataforma desconhecida");
+                break;
+        }   
+    }
+
+    {
+        int count = 0;
+        GLFWmonitor** monitors = glfwGetMonitors(&count);
+
+        logger::debug("[Main] Número de monitores: %d.", count);
+
+        for (int i = 0; i < count; ++i)
+        {
+            const char* name = glfwGetMonitorName(monitors[i]);
+
+            logger::debug("[Main] Monitor %d: %s", i, (name != nullptr ? name : "Nome não disponível"));
+        }
+    }
 
     GLFWwindow* window = CreateWindow("GR - GameEngine", SCREEN_WIDTH, SCREEN_HEIGHT, nullptr, true);
     if (window == nullptr)
     {
         glfwTerminate();
 
-        logger::critical("Falha ao criar a uma janela.");
+        logger::critical("[Main] Falha ao criar a uma janela.");
         return 2;
     }
 
@@ -228,10 +270,10 @@ int main(int argc, char *argv[])
 
 #ifdef ENABLE_VSYNC
     glfwSwapInterval(GLFW_TRUE);
-    logger::info("VSync habilitato.");
+    logger::info("[Main] VSync habilitato.");
 #else
     glfwSwapInterval(GLFW_FALSE);
-    logger::info("VSync desabilitado.");
+    logger::info("[Main] VSync desabilitado.");
 #endif // ENABLE_VSYNC
 
     glfwInstallCallback(window);
@@ -244,7 +286,7 @@ int main(int argc, char *argv[])
 
         glfwTerminate();
 
-        logger::critical("Falha ao iniciar o renderizador.");
+        logger::critical("[Main] Falha ao iniciar o renderizador.");
 
         return 3;
     }
@@ -278,6 +320,8 @@ int main(int argc, char *argv[])
     destroy();
 
     Threadpool::Shutdown();
+
+    logger::info("[Main] Shutdown.");
 }
 
 
