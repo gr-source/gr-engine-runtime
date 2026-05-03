@@ -13,6 +13,9 @@
 #include <gr-base/managers/eventManager.hpp>
 
 #include "gr-base/core/geometry/shaderData.hpp"
+#include "gr-base/core/logger.hpp"
+#include "gr-base/ecs/componentregistry.hpp"
+#include "gr-base/ecs/default.hpp"
 #include "gr-base/task/modelsavetask.hpp"
 #include "gr-engine/Global.h"
 #include "gr-engine/core/time.hpp"
@@ -417,6 +420,9 @@ void Editor::initialize()
     DebugDraw::Initialize();
 
     TaskManager::Initialize();
+
+    logger::debug("[Editor] Carregando script padrões...");
+    RegistryDefaultComponent();
 }
 
 void Editor::shutdown()

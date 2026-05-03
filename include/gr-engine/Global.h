@@ -1,8 +1,8 @@
 
 /*
     Criado: seg 13 nov 2023 11∶47∶36
-    Atualizado: qua 15 nov 2023 11∶23∶54
-    By: ghosth-br
+    Atualizado: 03/05/2026 18:50
+    By: NoirVoid
 */
 
 
@@ -23,7 +23,7 @@
 #include <algorithm>
 
 #include <imgui.h>
-#include <imgui_impl_glfw.h>
+#include <backends/imgui_impl_glfw.h>
 
 #include "core/exception/Exception.h"
 

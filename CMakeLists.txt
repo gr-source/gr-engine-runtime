@@ -44,10 +44,13 @@ add_executable(${CMAKE_PROJECT_NAME} ${SOURCES})
 add_subdirectory(imgui)
 add_subdirectory(tests)
 
-add_subdirectory(${GR_BASE_PATH} gr-base)
+target_include_directories(${CMAKE_PROJECT_NAME} PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    ${BULLET_INCLUDE_DIRS}
+)
 
-include_directories(include)
+target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE ${OPENGL_LIBRARIES} ${GRINI_LIBRARIES} ${GRMATH_LIBRARIES} ${GRRENDER_LIBRARIES} ${BULLET_LIBRARIES} ${GLEW_LIBRARIES} "${GR_BASE_PATH}/lib/libgr-base.so" imgui glfw assimp)
 
-target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE ${OPENGL_LIBRARIES} ${GRINI_LIBRARIES} ${GRMATH_LIBRARIES} ${GRRENDER_LIBRARIES} ${BULLET_LIBRARIES} ${GLEW_LIBRARIES} gr-base imgui glfw assimp)
+target_include_directories(${CMAKE_PROJECT_NAME} PUBLIC "${GR_BASE_PATH}/include")
 
 
