@@ -177,8 +177,6 @@ private:
 
     ImGuiIO *mImGuiIO;
 
-    u8 m_currentPage;
-
     bool bBuildDock;
 
     ImVec4 FPSColor;
@@ -209,13 +207,13 @@ private:
 
     void create_window_hierarchy();
 
-    void create_render_hierarchy();
+    void create_render_hierarchy(Scene* scene);
 
     void drop_gameobject(std::function<void (GameObject *)> func);
 
     void RenderSceneObject(Scene *scene);
 
-    void ReadHierarchy(Scene *scene, GameObject* gameObject);
+    void ShowGameObjectHierarchy(Scene *scene, GameObject* gameObject);
 
     void dragDropGameObject(Transform *transform, const std::string &name);
 

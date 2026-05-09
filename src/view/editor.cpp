@@ -146,7 +146,6 @@ static std::unordered_map<std::string, DragDropFlags> m_extensionNameToFlag =
 Editor::Editor()
     : m_viewport(ImGui::GetMainViewport()),
     mImGuiIO(&ImGui::GetIO()),
-    m_currentPage(0),
     m_materialToRename(ID_INVALID),
     m_plugin(nullptr),
     m_state(EngineState::Edit),
@@ -160,8 +159,6 @@ Editor::Editor()
     s_texturePlayGame = nullptr;
 
     g_treefile_dir_selected = nullptr;
-
-    m_currentPage = 0;
     
     popupFlags = 0;
 
@@ -421,7 +418,6 @@ void Editor::initialize()
 
     TaskManager::Initialize();
 
-    logger::debug("[Editor] Carregando script padrões...");
     RegistryDefaultComponent();
 }
 
@@ -556,56 +552,49 @@ void Editor::BuildDock(ImGuiID dockspace_id, ImGuiDockNodeFlags dockspace_flags)
 
 void Editor::create_window_hierarchy()
 {
-    if (ImGui::Begin("hierarchy"))
-        create_render_hierarchy();
+    if (ImGui::Begin("hierarchy") && m_scene != NULL)
+        create_render_hierarchy(m_scene);
 
     ImGui::End();
 }
 
-void Editor::create_render_hierarchy()
+void Editor::create_render_hierarchy(Scene* scene)
 {
-    std::string name = m_scene != nullptr ? SceneManager::GetSceneName(m_scene) : "Scene name is empty!";
+    std::string name = SceneManager::GetSceneName(m_scene);
 
     ImGui::SetNextItemOpen(true, ImGuiCond_Appearing);
-    if (m_scene != nullptr && ImGui::TreeNodeEx(name.c_str(), ImGuiTreeNodeFlags_SpanFullWidth))
+    if (ImGui::TreeNodeEx(name.c_str(), ImGuiTreeNodeFlags_SpanFullWidth))
     {
-        drop_gameobject([this](GameObject *gameobject)
+        drop_gameobject([&](GameObject *gameobject)
                 {
                     Transform *transform = gameobject->GetTransform();
                     transform->setParent(nullptr);
 
-                    m_scene->insert(transform->GetGameObject()->GetCacheID());
+                    scene->insert(transform->GetGameObject()->GetCacheID());
                 });
         
-        RenderSceneObject(m_scene);
+        RenderSceneObject(scene);
 
         ImGui::TreePop();
     }
 
-    if (ImGui::IsKeyReleased(ImGuiKey_Delete) && m_scene->has_object_selected())
+    if (ImGui::IsKeyReleased(ImGuiKey_Delete) && scene->has_object_selected())
     {
-        for (auto go : m_scene->get_object_selected())
-            m_scene->destroy(go);
+        for (auto go : scene->get_object_selected())
+            scene->destroy(go);
 
-        m_scene->deselect_all();
+        scene->deselect_all();
 
-        auto objects = m_scene->getObjectList();
+        auto objects = scene->getObjectList();
         if (!objects.empty())
-            m_scene->select(objects.back());
+            scene->select(objects.back());
     }
     
-    if (ImGui::IsKeyReleased(ImGuiKey_F2) && ImGui::IsWindowHovered() && m_scene->has_object_selected())
-    {
+    if (ImGui::IsKeyReleased(ImGuiKey_F2) && ImGui::IsWindowHovered() && scene->has_object_selected())
         popupFlags |= EditorPopupFlags_RenameGameObject;
-    }
 
     if (ImGui::IsKeyReleased(ImGuiKey_Escape) && ImGui::IsWindowHovered())
-    {
-        m_scene->deselect_all();
-    }
-
-    if (ImGui::IsWindowHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Right))
-        popupFlags |= EditorPopupFlags_SceneAddOption;
+        scene->deselect_all();
 }
 
 void Editor::drop_gameobject(std::function<void (GameObject *)> func)
@@ -628,26 +617,29 @@ void Editor::RenderSceneObject(Scene *scene)
 {
     auto list = scene->getObjectList();
 
-    if (m_currentPage > 0 && ImGui::Button("Before"))
-        --m_currentPage;
+    ImGui::BeginChild("SceneObjectsScroll");
 
+    ImGuiListClipper clipper;
+    clipper.Begin((int)list.size());
+
+    while (clipper.Step())
     {
-        int start = m_currentPage * ITEMS_PER_PAGE;
-        int end = std::min(start + ITEMS_PER_PAGE, static_cast<int>(list.size()));
-
-        for (int i = start; i < end; ++i)
+        for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++)
         {
             auto gameObject = GameObject::Get(list[i]);
-            if (gameObject != NULL)
-                ReadHierarchy(scene, gameObject);
+
+            if (gameObject)
+                ShowGameObjectHierarchy(scene, gameObject);
         }
     }
-    
-    if (list.size() > ITEMS_PER_PAGE && ImGui::Button("Next"))
-        ++m_currentPage;
+
+    if (ImGui::IsWindowHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Right))
+        popupFlags |= EditorPopupFlags_SceneAddOption;
+
+    ImGui::EndChild();
 }
 
-void Editor::ReadHierarchy(Scene *scene, GameObject* gameObject)
+void Editor::ShowGameObjectHierarchy(Scene *scene, GameObject* gameObject)
 {
     ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanFullWidth;
 
@@ -688,7 +680,7 @@ void Editor::ReadHierarchy(Scene *scene, GameObject* gameObject)
         auto children = transform->getChildren();
 
         for (auto& child : children)
-            ReadHierarchy(scene, ComponentStorage::GetComponent<Transform>(child)->GetGameObject());
+            ShowGameObjectHierarchy(scene, ComponentStorage::GetComponent<Transform>(child)->GetGameObject());
 
         ImGui::TreePop();
     }
@@ -729,15 +721,15 @@ void Editor::PopupMenuAdd()
     if (!isOpen)
         return;
 
-    const char* item_name[2] {"Cube", "Empty"};
-    auto id = 0;
+    static std::vector<const char*> items {"Empty GameObject"};
+    int id = 0;
 
     ImGui::Text("Add Object");
-    if (ImGui::ListBox("##popup_menu_menu_add_list_box", &id, item_name, (sizeof(item_name) / sizeof(item_name[0])))) {
-        switch (id) {
+    if (ImGui::ListBox("##popup_menu_menu_add_list_box", &id, items.data(), items.size()))
+    {
+        switch (id)
+        {
         case 0:
-            break;
-        case 1:
             PostLoadGameObject(GameObject::Create("Empty"));
             break;
         default:
@@ -748,34 +740,6 @@ void Editor::PopupMenuAdd()
 
     ImGui::EndPopup();
 }
-
-/*
-class TestPopup : public ViewLayout
-{
-
-
-public:
-    TestPopup() : numInstances(100), position({0.0f, 0.0f})
-    {}
-
-    const char* getName() const override
-    {
-        return "TestPopup";
-    }
-
-    void onRenderUI() override
-    {
-
-    }
-
-    void SetPrefab(GameObjectHandle prefabID)
-    {
-        Spawn(prefabID);
-    }
-
-
-};
-*/
 
 void Editor::create_window_viewport()
 {
@@ -2135,7 +2099,7 @@ void Editor::RenderScriptFromEntity(Entity *entity)
             continue;
 
         char name[512] = {0};
-        sprintf(name, "%s %lu", info->name, info->hash);
+        sprintf(name, "%s 0x%lX", info->name, info->hash);
 
         ImGui::PushID(info->name);
 
