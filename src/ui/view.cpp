@@ -24,35 +24,29 @@ const bool View::PopupChangeColor(const std::string& name, Color& color) {
     return false;
 }
 
-bool View::DragScalarEx(const char *name[], float *data, int size, float v_speed, float p_min, float p_max) {
+bool View::DragScalarEx(const char** items, int numItems, float* data, float v_speed, float p_min, float p_max) {
     bool value_changed = false;
 
     ImGui::BeginGroup();
-    ImGui::PushID(data);
+    ImGui::PushID(&data);
 
-    ImGui::PushMultiItemsWidths(size, ImGui::CalcItemWidth());
-    for (int i=0;i<size;i++) {
-        char buffer[256];
-        sprintf(buffer, "##%s_%d", name[i], i);
-
-        ImGui::PushID(i);
-
-        ImGui::Text("%s", name[i]);
-
+    ImGui::PushMultiItemsWidths(numItems, ImGui::CalcItemWidth());
+    for (int i = 0; i < numItems; i++)
+    {
+        ImGui::Text("%s", items[i]);
         ImGui::SameLine();
-
-        value_changed |= ImGui::DragFloat(buffer, &data[i], v_speed, p_min, p_max);
-
+        
+        value_changed |= ImGui::DragFloat("##drag", &data[i], v_speed, p_min, p_max);
         ImGui::PopItemWidth();
 
-        ImGui::SameLine();
-
-        ImGui::PopID();
+        if (i < numItems - 1)
+            ImGui::SameLine();
     }
+
     ImGui::PopID();
     ImGui::EndGroup();
     return value_changed;
-}
+}   
 
 bool View::ImageTreeNode(ImTextureID textureID, const char *name) {
     const ImGuiStyle& style = ImGui::GetStyle();

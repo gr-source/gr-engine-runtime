@@ -13,7 +13,7 @@
 #include <gr-base/managers/eventManager.hpp>
 
 #include "gr-base/core/geometry/shaderData.hpp"
-#include "gr-base/core/logger.hpp"
+
 #include "gr-base/ecs/componentregistry.hpp"
 #include "gr-base/ecs/default.hpp"
 #include "gr-base/task/modelsavetask.hpp"
@@ -40,7 +40,7 @@
 #include "gr-engine/runtime/editorRuntime.hpp"
 #include "gr-engine/settings.h"
 
-#include "gr-engine/ui/viewlayout.hpp"
+#include "gr-engine/view/engineStatusView.hpp"
 #include "gr-engine/view/spawnObject.hpp"
 #include "gr-engine/view/worldManagerView.hpp"
 #include "imgui.h"
@@ -260,7 +260,10 @@ Editor::Editor()
     // }
 
     // AssetReference::Registry("simple_model.gshd", "/home/NoirVoid/gr-engine/MySecondProject/assets/shader/simple_model.gshd");
-    // TaskManager::Add<ShaderBuildTask>("/home/NoirVoid/Projetos/simple_model.gshd", "/home/NoirVoid/.local/share/gr-engine/assets/shader/model/simple_model.glsl");
+    // TaskManager::Add<ShaderBuildTask>(
+    //         "/home/NoirVoid/Projetos/simple_model.gshd",
+    //         "/home/NoirVoid/.local/share/gr-engine/assets/shader/model/simple_model.glsl"
+    //         );
 }
 
 Editor::~Editor()
@@ -506,13 +509,24 @@ void Editor::create_dock()
                 }
             }
 
+            {
+                bool bActive = ViewManager::GetView<EngineStatusView>() != nullptr;
+                if (ImGui::MenuItem("Status", nullptr, &bActive))
+                {
+                    if (bActive)
+                        ViewManager::AddSubView<EngineStatusView>();
+                    else
+                        ViewManager::RemoveView<EngineStatusView>();
+                }
+            }
+
             ImGui::EndMenu();
         }
 
         ImGui::EndMainMenuBar();
     }
 
-    PopupMenuProperty();
+    // PopupMenuProperty();
     
     if (bBuildDock)
         return;
@@ -1677,7 +1691,7 @@ void Editor::RenderLog(Log &info)
 
 void Editor::create_window_property()
 {
-    if (ImGui::Begin("property") && m_scene != nullptr && m_scene->has_object_selected())
+    if (ImGui::Begin("property", NULL, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_AlwaysHorizontalScrollbar | ImGuiWindowFlags_AlwaysVerticalScrollbar) && m_scene != nullptr && m_scene->has_object_selected())
         create_render_property();
 
     ImGui::End();
@@ -1704,7 +1718,9 @@ void Editor::create_render_property()
     if (ImGui::IsItemHovered())
         ImGui::SetTooltip("Definir como Estático");
 
-    RenderScriptFromEntity(go);
+
+    for (auto &hash : go->GetHashes())
+        ShowComponentInfoUI(go, ComponentRegistry::Get(hash));
 
     auto avail = ImGui::GetContentRegionAvail();
 
@@ -2038,32 +2054,6 @@ void Editor::create_popup_new_material()
     ImGui::EndPopup();
 }
 
-#include <gr-base/core/status.hpp>
-
-void Editor::RenderStatisticsMenu()
-{
-    ImGui::SeparatorText("Scripts");
-    ImGui::Text("GameObject: %ld", GameObjectManager::GetCount());
-
-    ImGui::SeparatorText("AssetManager");
-    ImGui::Text("Textures: %ld", AssetsManager::GetTextureCount());
-    ImGui::Text("Material: %d", AssetsManager::GetMaterialCount());
-    ImGui::Text("Mesh: %ld", AssetsManager::GetMeshCount());
-
-    ImGui::SeparatorText("Threads");
-    ImGui::Text("Threads: %ld/%ld", Threadpool::GetThreadCount(), Threadpool::GetCount());
-
-    ImGui::SeparatorText("Renderização");
-    if (m_scene != nullptr)
-    {
-        ImGui::Text("Luzes: %ld",       m_scene->GetLights().size());
-        ImGui::Text("Cameras: %ld",     m_scene->GetCameras().size());
-        ImGui::Text("Objects: %ld",     m_scene->getObjectList().size());
-    }
-    ImGui::Text("DrawCall Count: %ld", Status::BatchDrawCallCount);
-    ImGui::Text("Render Count: %ld", Status::BatchRenderCount);
-}
-
 void Editor::dropScriptInAddComponent()
 {
     /*if (s_objectSelected == nullptr || !ImGui::BeginDragDropTarget())
@@ -2088,56 +2078,33 @@ void Editor::dropScriptInAddComponent()
     */
 }
 
-void Editor::RenderScriptFromEntity(Entity *entity)
+void Editor::ShowComponentInfoUI(Entity* entity, ComponentInfo* info)
 {
-    for (auto &hash : entity->GetHashes())
+    char name[512] = {0};
+    sprintf(name, "%s 0x%lX", info->name, info->hash);
+
+    ImGui::PushID(info->name);
+
+    bool bVisible = true;
+
+    bool bShowCollapsed = strcmp(info->name, "Transform") == 0 ? ImGui::CollapsingHeader(name) : ImGui::CollapsingHeader(name, &bVisible);
+    if (bShowCollapsed)
     {
-        ComponentInfo* info = ComponentRegistry::Get(hash);
-        if (info->hash != hash)
-            continue;
-
-        char name[512] = {0};
-        sprintf(name, "%s 0x%lX", info->name, info->hash);
-
-        ImGui::PushID(info->name);
-
-        bool bVisible = true;
-
-        bool bShowCollapsed = strcmp(info->name, "Transform") == 0 ? ImGui::CollapsingHeader(name) : ImGui::CollapsingHeader(name, &bVisible);
-        if (bShowCollapsed)
-        {
-            auto it = m_guiscriptmap.find(info->name);
-            if (it != m_guiscriptmap.end())
-                it->second(entity);
-            else
-                RenderComponents(entity->getComponent(hash));
-        }
-
-        if (!bVisible)
-            entity->destroy(hash);
-
-        ImGui::PopID();
+        auto it = m_guiscriptmap.find(info->name);
+        if (it != m_guiscriptmap.end())
+            it->second(entity);
+        else
+            ShowUserComponentUI(entity->getComponent(info->hash));
     }
+
+    if (!bVisible)
+        entity->destroy(info->hash);
+
+    ImGui::PopID();
 }
 
-void Editor::RenderComponents(Component *behavior)
-{
-    /*
-    auto baseChunk = ComponentManager::Find(name);
-    if (baseChunk == nullptr)
-    {
-        Console::LogError("Invalid component: " + name);
-        return false;
-    }
-
-    auto fieldList = baseChunk->getFields();
-
-    for (auto &field : fieldList)
-    {
-        RenderField(field, component);
-    }
-    */
-}
+void Editor::ShowUserComponentUI(Component *behavior)
+{}
 
 /*
 void Editor::RenderField(Field &field, Component *component) {
@@ -2216,35 +2183,25 @@ void Editor::renderDropGameObject(GameObject **ref) {
     ImGui::EndDragDropTarget();
 }
 
-void Editor::PopupMenuProperty() {
-    ImGui::Begin("Status");
-
-    RenderStatisticsMenu();
-
-    ImGui::End();
-}
-
 /* ********** Propriedades ********** */
 void Editor::OnPropertyTransform(Transform *transform)
 {
-    const char *data[3] = {"X:", "Y:", "Z:"};
+    static std::vector<const char*> textItemsToVector = {"X:", "Y:", "Z:"};
     
     auto position = transform->getLocalPosition();
     ImGui::Text("Position");
-    if (View::DragScalarEx(data, (float *)&position, 3, 1.0f, 0.0f, 0.0f))
-    {
+    if (View::DragScalarEx(textItemsToVector.data(), textItemsToVector.size(), (float *)&position, 1.0f, 0.0f, 0.0f))
         transform->setLocalPosition(position);
-    }
     
     auto scale = transform->getLocalScale();
     ImGui::Text("Scale");
-    if (View::DragScalarEx(data, (float *)&scale, 3, 1.0f, 0.0f, 0.0f)) {
+    if (View::DragScalarEx(textItemsToVector.data(), textItemsToVector.size(), (float *)&scale, 1.0f, 0.0f, 0.0f))
         transform->setLocalScale(scale);
-    }
 
     auto euler = Math::eulerAngles(transform->getLocalRotation());
     ImGui::Text("Rotation");
-    if (View::DragScalarEx(data, (float *)&euler, 3, 1.0f, -360.0f, 360.0f)) {
+    if (View::DragScalarEx(textItemsToVector.data(), textItemsToVector.size(), (float *)&euler, 1.0f, -360.0f, 360.0f))
+    {
         euler.y = std::clamp(euler.y, -89.0f, 89.0f);
 
         transform->setLocalRotation(Math::normalize(Math::euler(Vector3{Math::rad(euler.x), Math::rad(euler.y), Math::rad(euler.z)})));
@@ -2431,7 +2388,7 @@ bool Editor::render_material(MaterialID id)
 
     bool bCanEnableInstancing = material->supportsInstancing();
     if (ImGui::Checkbox("Instancing", &bCanEnableInstancing))
-    {}
+        material->SetEnableInstancing();
 
     auto shaderParams = GetShaderParamsFromName(AssetsManager::GetShaderName(shader));
 

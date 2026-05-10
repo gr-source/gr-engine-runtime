@@ -295,19 +295,13 @@ private:
 
     void create_popup_new_material();
 
-    void RenderStatisticsMenu();
-
     void dropScriptInAddComponent();
 
-    void RenderScriptFromEntity(Entity *entity);
+    void ShowComponentInfoUI(Entity* entity, ComponentInfo* info);
 
-    void RenderComponents(Component *behavior);
-
-    // void RenderField(Field &field, Component *component);
+    void ShowUserComponentUI(Component *component);
 
     void renderDropGameObject(GameObject **ref);
-
-    void PopupMenuProperty();
 
     void OnPropertyTransform(Transform *transform);
 
