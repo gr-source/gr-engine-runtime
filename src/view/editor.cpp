@@ -212,8 +212,6 @@ Editor::Editor()
 
     initialize();
 
-    AssetsManager::SetAssetDir(m_project->path + "/assets");
-
     AssetReference::Load(m_project->path + "/asset.txt");
 
     {
@@ -241,7 +239,7 @@ Editor::Editor()
         Console::LogError("Fatal error in script: %s", e.what());
     }
 
-    root_tree_file.path = AssetsManager::GetAssetDir();
+    root_tree_file.path = m_project->path + "/assets";
     root_tree_file.name = "Assets";
     root_tree_file.parent = nullptr;
     root_tree_file.bdirectory = true;
@@ -1301,7 +1299,7 @@ void Editor::drop_gameobject_in_scene()
     for (auto &file : files)
     {
         if (file->extension == ".gmdl")
-            AssetsManager::LoadGameObject(file->path, &Editor::PostLoadGameObject, this);
+            AssetsManager::LoadGameObjectFromFile(file->path, &Editor::PostLoadGameObject, this);
     }
 
     unselect_all_file();

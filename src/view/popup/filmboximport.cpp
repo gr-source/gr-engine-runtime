@@ -7,6 +7,7 @@
 
 #include "gr-base/managers/assetsManager.hpp"
 #include "gr-base/managers/eventManager.hpp"
+#include "gr-engine/engine.hpp"
 #include "gr-engine/managers/viewmanager.hpp"
 
 #include <gr-base/script/transform.hpp>
@@ -31,6 +32,8 @@ void FilmboxImport::addFile(const std::string& name, const ModelCache& cache)
 
 void FilmboxImport::onRenderUI()
 {
+    Engine* engine = static_cast<Engine*>(Application::GetInstance());
+
     for (auto &&[name, cache] : m_modelsCaching)
     {
         if (ImGui::CollapsingHeader(name.c_str()))
@@ -64,9 +67,11 @@ void FilmboxImport::onRenderUI()
 
     auto avail = ImGui::GetContentRegionAvail();
 
-    if (ImGui::Button("Save", ImVec2(avail.x, 0.0f)))
+    if (engine->has_project() && ImGui::Button("Save", ImVec2(avail.x, 0.0f)))
     {
-        auto dir = AssetsManager::GetAssetDir();
+        auto& project = engine->get_project();
+
+        auto dir = project.path + "/assets";
 
         for (auto &&[name, cache] : m_modelsCaching)
         {

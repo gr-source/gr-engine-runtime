@@ -6,6 +6,7 @@
 
 #include <gr-base/script/transform.hpp>
 
+#include "gr-engine/engine.hpp"
 #include "imgui.h"
 
 SpawnObject::SpawnObject() : numInstances(100), position({0.0f, 0.0f})
@@ -17,9 +18,7 @@ void SpawnObject::onRenderUI()
 
     if (ImGui::Button("Spawn"))
     {
-        std::string file = AssetsManager::GetAssetDir() + "/model/Cubo.gmdx";
-
-        AssetsManager::LoadGameObject(file, &SpawnObject::SetPrefab, this);
+        AssetsManager::LoadGameObject("Cubo", &SpawnObject::SetPrefab, this);
     }
 
     ImGui::SameLine();
