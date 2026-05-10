@@ -9,6 +9,12 @@ gtimer::gtimer(double fps)
       m_delta(0.0)
 {}
 
+
+void gtimer::set_fps(double fps)
+{
+    m_targetFrameTime = fps > 0.0 ? 1.0 / fps : m_targetFrameTime;
+}
+
 void gtimer::begin_frame()
 {
     double now = glfwGetTime();

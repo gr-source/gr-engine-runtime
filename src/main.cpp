@@ -6,18 +6,22 @@
 #include <gr-render/gRender.h>
 
 #include "gr-engine/application.hpp"
+#include "gr-engine/core/screen.hpp"
 #include "gr-engine/settings.h"
 
 #include <gr-base/core/logger.hpp>
 #include <gr-base/core/window.hpp>
 #include <gr-base/core/input.hpp>
+#include <gr-base/core/clock.hpp>
 
 #include <string.h>
 
 #include <GLFW/glfw3.h>
 
-#define SCREEN_WIDTH 1024
-#define SCREEN_HEIGHT 600
+extern "C"
+{
+#include <gr-ini/config.h>
+}
 
 // #define ENABLE_VSYNC
 
@@ -127,6 +131,28 @@ static void update_input_states()
     current_scroll_offset = Vector2::zero;
 }
 
+struct app_settings
+{
+    bool vsync;
+} settings;
+
+static void app_set_vsync(bool value)
+{
+    if (settings.vsync == value)
+        return;
+
+    glfwSwapInterval(value ? GLFW_TRUE : GLFW_FALSE);
+
+    logger::info("[Main] VSync %s.", (value ? "enable" : "disable"));
+
+    settings.vsync = value;
+}
+
+static bool app_get_vsync()
+{
+    return settings.vsync;
+}
+
 static void config_set_engine_callback()
 {
     // ********** Window ********** //
@@ -135,6 +161,9 @@ static void config_set_engine_callback()
     Window::SetWindowSize   = &glfw_set_window_size;
 
     Window::GetWindowSize   = &glfw_get_window_size;
+
+    Window::SetVSync        = &app_set_vsync;
+    Window::GetEnableVSync  = &app_get_vsync;
 
     // ********** Input ********** //
     Input::IsKeyPress       = &glfw_is_key_press;
@@ -148,11 +177,14 @@ static void config_set_engine_callback()
     Input::GetMouseScroll   = &glfw_get_mouse_scroll;
 }
 
-static void destroy() {
+static void destroy()
+{
     Settings::StopPlayEngine();
 
     auto app = Application::GetInstance();
     app->shutdown();
+
+    glfwDestroyWindow(glfwGetCurrentContext());
     
     glfwTerminate();
 }
@@ -183,7 +215,84 @@ static void check_app_dir()
         gfile::create_directory(gfile::get_home_directory() + "/gr-engine");
 }
 
-#include <gr-base/core/clock.hpp>
+static void app_set_default_window_config()
+{
+    Window::SetWindowSize({1024.0f, 600.0f});
+
+    Window::SetVSync(false);
+}
+
+static void app_set_config()
+{
+    std::string dir = gfile::get_config_directory() + "/app.ini";
+
+    if (!gfile::exists(dir))
+        return app_set_default_window_config();
+
+    gConfig* config = config_create();
+    if (config == NULL)
+        return;
+
+    config_load(config, dir.c_str());
+
+    // window
+    {
+        gSection* section = config_find_section(config, "window");
+        if (section != NULL)
+        {
+            float width = config_get_float(section, "width");
+            float height = config_get_float(section, "height");
+
+            Window::SetWindowSize({width, height});
+        }
+    }
+
+    // application
+    {
+        gSection* section = config_find_section(config, "application");
+        if (section != NULL)
+        {
+            Window::SetVSync(config_get_bool(section, "vsync"));
+            
+            Clock::max_fps = static_cast<double>(config_get_int(section, "max_fps"));
+        }
+    }
+
+    config_release(config);
+}
+
+static void app_save_config()
+{
+    Vector2 window_size = Window::GetWindowSize();
+
+    std::string dir = gfile::get_config_directory() + "/app.ini";
+
+    gConfig* config = config_create();
+    if (config == NULL)
+        return;
+
+    {
+        gSection* section = config_create_section(config, "window");
+        if (section != NULL)
+        {
+            config_set_float(section, "width", window_size.x);
+            config_set_float(section, "height", window_size.y);
+        }
+    }
+
+    {
+        gSection* section = config_create_section(config, "application");
+        if (section != NULL)
+        {
+            config_set_bool(section, "vsync", Window::GetEnableVSync());
+            config_set_int(section, "max_fps", Clock::max_fps);
+        }
+    }
+
+    config_save(config, dir.c_str());
+
+    config_release(config);
+}
 
 #include "gr-engine/core/time.hpp"
 
@@ -257,7 +366,7 @@ int main(int argc, char *argv[])
         }
     }
 
-    GLFWwindow* window = CreateWindow("GR - GameEngine", SCREEN_WIDTH, SCREEN_HEIGHT, nullptr, true);
+    GLFWwindow* window = CreateWindow("GR - GameEngine", 1024, 512, nullptr, true);
     if (window == nullptr)
     {
         glfwTerminate();
@@ -268,17 +377,11 @@ int main(int argc, char *argv[])
 
     glfwMakeContextCurrent(window);
 
-#ifdef ENABLE_VSYNC
-    glfwSwapInterval(GLFW_TRUE);
-    logger::info("[Main] VSync habilitato.");
-#else
-    glfwSwapInterval(GLFW_FALSE);
-    logger::info("[Main] VSync desabilitado.");
-#endif // ENABLE_VSYNC
-
     glfwInstallCallback(window);
 
     config_set_engine_callback();
+
+    app_set_config();
 
     if (!gr::gRender::Initialize())
     {
@@ -296,7 +399,7 @@ int main(int argc, char *argv[])
     auto app = Application::GetInstance();
     app->initialize();
 
-    gtimer time(60.0f);
+    gtimer time(Clock::max_fps);
 
     while (Settings::IsEngineRunning() && !glfwWindowShouldClose(window))
     {
@@ -315,7 +418,7 @@ int main(int argc, char *argv[])
         time.end_frame();
     }
 
-    window = nullptr;
+    app_save_config();
 
     destroy();
 
