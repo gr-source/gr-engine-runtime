@@ -10,6 +10,9 @@
 class ViewManager
 {
 public:
+    ViewManager(const ViewManager&) = delete;
+    ViewManager& operator=(const ViewManager&) = delete;   
+
     static void Update();
 
     static void Renderer3D();

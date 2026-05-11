@@ -1284,7 +1284,7 @@ void ImGuiStyle::ScaleAllSizes(float scale_factor)
 ImGuiIO::ImGuiIO()
 {
     // Most fields are initialized with zero
-    memset(this, 0, sizeof(*this));
+    memset((void*)this, 0, sizeof(*this));
     IM_STATIC_ASSERT(IM_ARRAYSIZE(ImGuiIO::MouseDown) == ImGuiMouseButton_COUNT && IM_ARRAYSIZE(ImGuiIO::MouseClicked) == ImGuiMouseButton_COUNT);
 
     // Settings
@@ -1439,7 +1439,7 @@ void ImGuiIO::ClearEventsQueue()
 void ImGuiIO::ClearInputKeys()
 {
 #ifndef IMGUI_DISABLE_OBSOLETE_KEYIO
-    memset(KeysDown, 0, sizeof(KeysDown));
+    memset((void*)KeysDown, 0, sizeof(KeysDown));
 #endif
     for (int n = 0; n < IM_ARRAYSIZE(KeysData); n++)
     {
@@ -2163,7 +2163,7 @@ void*   ImFileLoadToMemory(const char* filename, const char* mode, size_t* out_f
         return NULL;
     }
     if (padding_bytes > 0)
-        memset((void*)(((char*)file_data) + file_size), 0, (size_t)padding_bytes);
+        memset((void*)(void*)(((char*)file_data) + file_size), 0, (size_t)padding_bytes);
 
     ImFileClose(f);
     if (out_file_size)
@@ -2890,7 +2890,7 @@ static void ImGuiListClipper_SeekCursorForItem(ImGuiListClipper* clipper, int it
 
 ImGuiListClipper::ImGuiListClipper()
 {
-    memset(this, 0, sizeof(*this));
+    memset((void*)this, 0, sizeof(*this));
 }
 
 ImGuiListClipper::~ImGuiListClipper()
@@ -3844,7 +3844,7 @@ void ImGui::CallContextHooks(ImGuiContext* ctx, ImGuiContextHookType hook_type)
 // ImGuiWindow is mostly a dumb struct. It merely has a constructor and a few helper methods
 ImGuiWindow::ImGuiWindow(ImGuiContext* ctx, const char* name) : DrawListInst(NULL)
 {
-    memset(this, 0, sizeof(*this));
+    memset((void*)this, 0, sizeof(*this));
     Ctx = ctx;
     Name = ImStrdup(name);
     NameBufLen = (int)strlen(name) + 1;
@@ -13244,7 +13244,7 @@ void ImGui::ClearDragDrop()
     g.DragDropAcceptFrameCount = -1;
 
     g.DragDropPayloadBufHeap.clear();
-    memset(&g.DragDropPayloadBufLocal, 0, sizeof(g.DragDropPayloadBufLocal));
+    memset((void*)&g.DragDropPayloadBufLocal, 0, sizeof(g.DragDropPayloadBufLocal));
 }
 
 bool ImGui::BeginTooltipHidden()
@@ -13418,7 +13418,7 @@ bool ImGui::SetDragDropPayload(const char* type, const void* data, size_t data_s
         else if (data_size > 0)
         {
             // Store locally
-            memset(&g.DragDropPayloadBufLocal, 0, sizeof(g.DragDropPayloadBufLocal));
+            memset((void*)&g.DragDropPayloadBufLocal, 0, sizeof(g.DragDropPayloadBufLocal));
             payload.Data = g.DragDropPayloadBufLocal;
             memcpy(payload.Data, data, data_size);
         }
@@ -15338,7 +15338,7 @@ struct ImGuiDockNodeSettings
     ImVec2ih            Pos;
     ImVec2ih            Size;
     ImVec2ih            SizeRef;
-    ImGuiDockNodeSettings() { memset(this, 0, sizeof(*this)); SplitAxis = ImGuiAxis_None; }
+    ImGuiDockNodeSettings() { memset((void*)this, 0, sizeof(*this)); SplitAxis = ImGuiAxis_None; }
 };
 
 //-----------------------------------------------------------------------------
@@ -16343,7 +16343,7 @@ struct ImGuiDockNodeTreeInfo
     int                 CountNodesWithWindows;
     //ImGuiWindowClass  WindowClassForMerges;
 
-    ImGuiDockNodeTreeInfo() { memset(this, 0, sizeof(*this)); }
+    ImGuiDockNodeTreeInfo() { memset((void*)this, 0, sizeof(*this)); }
 };
 
 static void DockNodeFindInfo(ImGuiDockNode* node, ImGuiDockNodeTreeInfo* info)
@@ -18828,7 +18828,7 @@ void ImGui::BeginDockableDragDropSource(ImGuiWindow* window)
     bool is_drag_docking = (g.IO.ConfigDockingWithShift) || ImRect(0, 0, window->SizeFull.x, GetFrameHeight()).Contains(g.ActiveIdClickOffset); // FIXME-DOCKING: Need to make this stateful and explicit
     if (is_drag_docking && BeginDragDropSource(ImGuiDragDropFlags_SourceNoPreviewTooltip | ImGuiDragDropFlags_SourceNoHoldToOpenOthers | ImGuiDragDropFlags_SourceAutoExpirePayload))
     {
-        SetDragDropPayload(IMGUI_PAYLOAD_TYPE_WINDOW, &window, sizeof(window));
+        SetDragDropPayload(IMGUI_PAYLOAD_TYPE_WINDOW, &window, sizeof(void*));
         EndDragDropSource();
 
         // Store style overrides
@@ -20437,7 +20437,7 @@ void ImGui::DebugNodeFont(ImFont* font)
             {
                 // We use ImFont::RenderChar as a shortcut because we don't have UTF-8 conversion functions
                 // available here and thus cannot easily generate a zero-terminated UTF-8 encoded string.
-                ImVec2 cell_p1(base_pos.x + (n % 16) * (cell_size + cell_spacing), base_pos.y + (n / 16) * (cell_size + cell_spacing));
+                ImVec2 cell_p1(base_pos.x + (n % 16) * (cell_size + cell_spacing), base_pos.y + (float(n) / 16) * (cell_size + cell_spacing));
                 ImVec2 cell_p2(cell_p1.x + cell_size, cell_p1.y + cell_size);
                 const ImFontGlyph* glyph = font->FindGlyphNoFallback((ImWchar)(base + n));
                 draw_list->AddRect(cell_p1, cell_p2, glyph ? IM_COL32(255, 255, 255, 100) : IM_COL32(255, 255, 255, 50));

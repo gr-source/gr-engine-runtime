@@ -6,6 +6,7 @@
 
 #include "gr-base/core/file/file.hpp"
 
+#include "gr-base/externals/utils.h"
 #include "imgui.h"
 
 #include <exception>
@@ -15,48 +16,6 @@
 #include <stdio.h>
 
 #include <sys/stat.h>
-
-uint64_t GetHash(uint8_t* buff, size_t length)
-{
-    uint64_t hash = 14695981039346656037UL;
-    for (size_t i = 0; i < length; i++)
-    {
-        hash ^= (uint64_t)(buff[i]);
-        hash *= 1099511628211UL;
-    }
-    return hash;
-}   
-
-int forearch_dir(const char* path, FILE* fp)
-{
-    DIR* dir = opendir(path);
-    if (dir == NULL)
-        return 1;
-
-    struct dirent* entry;
-    while ((entry = readdir(dir)) != NULL)
-    {
-        if (entry->d_name[0] == '.')
-            continue;
-
-        char current[512];
-        sprintf(current, "%s/%s", path, entry->d_name);
-
-        struct stat path_stat;
-        if (stat(current, &path_stat) == 0 && S_ISDIR(path_stat.st_mode))
-        {
-            if (forearch_dir(current, fp) != 0)
-                return 2;
-        } else
-        {
-            size_t length = 0;
-
-            uint8_t* buffer = gfile::read(current, &length);
-        }
-    }
-
-    return 0;
-}
 
 void CheckUpdate::init()
 {
@@ -172,7 +131,7 @@ uint64_t CheckUpdate::GetHashFromFile(const std::string& file)
     if (buffer == NULL || length == 0)
         return (uint64_t)-1;
 
-    uint64_t hash = GetHash(buffer, length);
+    uint64_t hash = fnv1_hash_buff(buffer, length);
 
     free(buffer);
 
