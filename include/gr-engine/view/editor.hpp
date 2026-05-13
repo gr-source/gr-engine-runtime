@@ -297,7 +297,7 @@ private:
 
     void dropScriptInAddComponent();
 
-    void ShowComponentInfoUI(Entity* entity, ComponentInfo* info);
+    void ShowTypeInfoUI(Entity* entity, TypeInfo* info);
 
     void ShowUserComponentUI(Component *component);
 

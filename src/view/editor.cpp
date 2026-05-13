@@ -1720,7 +1720,7 @@ void Editor::create_render_property()
 
 
     for (auto &hash : go->GetHashes())
-        ShowComponentInfoUI(go, ComponentRegistry::Get(hash));
+        ShowTypeInfoUI(go, ComponentRegistry::Get(hash));
 
     auto avail = ImGui::GetContentRegionAvail();
 
@@ -1860,11 +1860,11 @@ void Editor::create_popup_add_component()
 
     std::vector<std::string> m_componentName;
 
-    ComponentInfo* infos = ComponentRegistry::GetAllComponentInfo();
+    TypeInfo* infos = ComponentRegistry::GetAllTypeInfo();
 
-    for (ComponentInfoID id=0;id<ComponentRegistry::GetCount();id++)
+    for (TypeInfoID id=0;id<ComponentRegistry::GetCount();id++)
     {
-        ComponentInfo& info = infos[id];
+        TypeInfo& info = infos[id];
 
         m_componentName.push_back(info.name);
     }
@@ -2078,7 +2078,7 @@ void Editor::dropScriptInAddComponent()
     */
 }
 
-void Editor::ShowComponentInfoUI(Entity* entity, ComponentInfo* info)
+void Editor::ShowTypeInfoUI(Entity* entity, TypeInfo* info)
 {
     char name[512] = {0};
     sprintf(name, "%s 0x%lX", info->name, info->hash);
