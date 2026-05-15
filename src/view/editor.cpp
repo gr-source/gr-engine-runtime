@@ -29,7 +29,6 @@
 #include "gr-base/core/mainthreaddispatcher.hpp"
 #include "gr-base/core/assetReference.hpp"
 
-#include "gr-base/core/task/runtime/scenesavetask.hpp"
 #include "gr-base/core/thread/taskmanager.hpp"
 
 #include "gr-base/ecs/componentstorage.hpp"
@@ -86,10 +85,6 @@
 
 #include "gr-engine/scriptManager/scriptManager.hpp"
 
-#include <gr-base/core/geometry/batching.hpp>
-
-// #include <gr-base/broadphase/bvhtree.hpp>
-
 #include <gr-ini/config.h>
 #include <gr-math/gmath.hpp>
 #include <gr-math/matrix4x4.hpp>
@@ -140,7 +135,6 @@ static std::unordered_map<std::string, DragDropFlags> m_extensionNameToFlag =
     {".gmsh",       DragDropFlags::MESH},
 };
 
-#include <gr-base/managers/batchingmanager.hpp>
 #include <gr-base/task/shaderbuildtask.hpp>
 
 Editor::Editor()
@@ -413,8 +407,6 @@ void Editor::initialize()
 
     AssetsManager::Initialize();
 
-    BatchingManager::Initialize();
-    
     DebugDraw::Initialize();
 
     TaskManager::Initialize();
@@ -429,8 +421,6 @@ void Editor::shutdown()
     ScriptManager::Unload();
 
     DebugDraw::Shutdown();
-
-    BatchingManager::Shutdown();
 
     AssetReference::Shutdown();
 
@@ -1076,10 +1066,10 @@ void Editor::render_scene(Scene *scene)
 
     if (ImGui::IsWindowFocused() && mImGuiIO->KeyCtrl && ImGui::IsKeyReleased(ImGuiKey_S))
     {
-        std::string path = m_project->path + "/assets/scene";
+        // std::string path = m_project->path + "/assets/scene";
 
-        for (auto &scene : SceneManager::GetScenes())
-            TaskManager::Add<SceneSaveTask>(path + "/" + SceneManager::GetSceneName(scene) + ".scn", scene);
+        // for (auto &scene : SceneManager::GetScenes())
+            // TaskManager::Add<SceneSaveTask>(path + "/" + SceneManager::GetSceneName(scene) + ".scn", scene);
     }
 }
 
@@ -2190,17 +2180,20 @@ void Editor::OnPropertyTransform(Transform *transform)
     
     auto position = transform->getLocalPosition();
     ImGui::Text("Position");
-    if (View::DragScalarEx(textItemsToVector.data(), textItemsToVector.size(), (float *)&position, 1.0f, 0.0f, 0.0f))
+    if (ImGui::DragFloat3("##engine_ui_transform_position", (float*)&position))
+    // if (View::DragScalarEx(textItemsToVector.data(), textItemsToVector.size(), (float *)&position, 1.0f, 0.0f, 0.0f))
         transform->setLocalPosition(position);
     
     auto scale = transform->getLocalScale();
     ImGui::Text("Scale");
-    if (View::DragScalarEx(textItemsToVector.data(), textItemsToVector.size(), (float *)&scale, 1.0f, 0.0f, 0.0f))
+    if (ImGui::DragFloat3("##engine_ui_transform_scale", (float*)&scale))
+    // if (View::DragScalarEx(textItemsToVector.data(), textItemsToVector.size(), (float *)&scale, 1.0f, 0.0f, 0.0f))
         transform->setLocalScale(scale);
 
     auto euler = Math::eulerAngles(transform->getLocalRotation());
     ImGui::Text("Rotation");
-    if (View::DragScalarEx(textItemsToVector.data(), textItemsToVector.size(), (float *)&euler, 1.0f, -360.0f, 360.0f))
+    if (ImGui::DragFloat3("##engine_ui_transform_rotation", (float*)&euler))
+    // if (View::DragScalarEx(textItemsToVector.data(), textItemsToVector.size(), (float *)&euler, 1.0f, -360.0f, 360.0f))
     {
         euler.y = std::clamp(euler.y, -89.0f, 89.0f);
 

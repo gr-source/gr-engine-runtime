@@ -6,9 +6,6 @@
 #include "gr-base/core/mainthreaddispatcher.hpp"
 #include "imgui.h"
 
-#include <cstring>
-#include <gr-base/core/geometry/batching.hpp>
-
 #include <gr-base/core/thread/threadpool.hpp>
 
 #include <gr-base/core/console.hpp>

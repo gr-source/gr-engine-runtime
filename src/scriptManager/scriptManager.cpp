@@ -1,15 +1,11 @@
 #include "gr-engine/scriptManager/scriptManager.hpp"
 
 #include <cstdio>
-#include <gr-base/core/geometry/batching.hpp>
 
 #include <gr-base/core/console.hpp>
 #include <gr-base/core/scene.hpp>
 
 #include <gr-base/core/file/file.hpp>
-
-#include <iostream>
-#include <fstream>
 
 #include <dlfcn.h>
 

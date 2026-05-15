@@ -46,7 +46,7 @@ bool View::DragScalarEx(const char** items, int numItems, float* data, float v_s
     ImGui::PopID();
     ImGui::EndGroup();
     return value_changed;
-}   
+}
 
 bool View::ImageTreeNode(ImTextureID textureID, const char *name) {
     const ImGuiStyle& style = ImGui::GetStyle();

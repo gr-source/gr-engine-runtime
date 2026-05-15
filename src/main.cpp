@@ -138,8 +138,8 @@ struct app_settings
 
 static void app_set_vsync(bool value)
 {
-    if (settings.vsync == value)
-        return;
+    // if (settings.vsync == value)
+        // return;
 
     glfwSwapInterval(value ? GLFW_TRUE : GLFW_FALSE);
 
