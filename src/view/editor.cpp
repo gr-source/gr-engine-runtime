@@ -2381,7 +2381,12 @@ bool Editor::render_material(MaterialID id)
 
     bool bCanEnableInstancing = material->supportsInstancing();
     if (ImGui::Checkbox("Instancing", &bCanEnableInstancing))
-        material->SetEnableInstancing();
+    {
+        if (bCanEnableInstancing)
+            material->SetEnableInstancing();
+        else
+            material->SetDisableInstancing();
+    }
 
     auto shaderParams = GetShaderParamsFromName(AssetsManager::GetShaderName(shader));
 

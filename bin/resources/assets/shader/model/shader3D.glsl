@@ -3,27 +3,41 @@
 layout (location = 0) in vec3 in_pos;
 
 #ifndef ENABLE_LINE
-    layout (location = 1) in vec3 in_normal;
-    layout (location = 2) in vec2 in_texCoord;
-    // layout (location = 3) in int in_entityID;
+layout (location = 1) in vec3 in_normal;
+layout (location = 2) in vec2 in_texCoord;
+// layout (location = 3) in int in_entityID;
 
 #ifdef ENABLE_ANIMATION
         layout (location = 3) in ivec4 in_indices;
         layout (location = 4) in vec4 in_weight;
 #endif
 
+#ifdef USE_INSTANCED
+
+#ifdef ENABLE_ANIMATION
+        layout (location = 5) in mat4 u_mat_model;
+#else // ENABLE_ANIMATION
+        layout (location = 3) in mat4 u_mat_model;
+#endif // ENABLE_ANIMATION
+
+#else // USE_INSTANCED
+        uniform mat4 u_mat_model;
+#endif // USE_INSTANCED
+
+        /*
 #ifdef USE_MODEL
-        #ifdef USE_INSTANCED
+#ifdef USE_INSTANCED
 
 #ifndef ENABLE_ANIMATION
             layout (location = 3) in mat4 u_mat_model;
 #else // ENABLE_ANIMATION
             layout (location = 5) in mat4 u_mat_model;
 #endif // ENABLE_ANIMATION
-        #else
+#else
             uniform mat4 u_mat_model;
-        #endif
 #endif
+#endif
+            */
 
     flat out int u_entityID;
 
@@ -33,7 +47,8 @@ layout (location = 0) in vec3 in_pos;
 
 #ifdef ENABLE_ANIMATION
     uniform mat4 u_boneMatrices[100];
-#endif
+#endif // ENABLE_ANIMATION
+
 #else // ENABLE_LINE
     layout (location = 1) in vec4 in_color;
 
