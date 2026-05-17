@@ -67,17 +67,17 @@ void ScreenRender::Render(Camera *camera) {
 
     auto orth = Math::orthographic(-1.0f, 1.0f, -1.0f, 1.0f, -1.0f, 1.0f);
 
-    m_shader->setUniform("u_projection", &orth);
-    m_shader->setUniform("u_model", &model);
+    // m_shader->setUniform("u_projection", &orth);
+    // m_shader->setUniform("u_model", &model);
 
     int textureID = 0;
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, rendertarget->GetTextureID());
 
-    m_shader->setUniform("u_texture", (void *)&textureID);
+    // m_shader->setUniform("u_texture", (void *)&textureID);
 
-    m_shader->bind();
+    // m_shader->bind();
 
     m_vertexArray->bind();
     
@@ -85,7 +85,7 @@ void ScreenRender::Render(Camera *camera) {
 
     m_vertexArray->unbind();
     // texture->unbind();
-    m_shader->unbind();
+    // m_shader->unbind();
 }
 
 void ScreenRender::CreateMesh() {

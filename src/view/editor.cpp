@@ -93,6 +93,8 @@
 #include <iostream>
 #include <string>
 
+#include <gr-base/prefab/shaderprefab.hpp>
+
 #include <gr-base/system/worldsystem.hpp>
 
 #define ITEMS_PER_PAGE 20
@@ -253,7 +255,11 @@ Editor::Editor()
     
     // }
 
-    // AssetReference::Registry("simple_model.gshd", "/home/NoirVoid/gr-engine/MySecondProject/assets/shader/simple_model.gshd");
+    // TaskManager::Add<ShaderBuildTask>(
+    //         "/home/NoirVoid/Projetos/line.gshd",
+    //         "/home/NoirVoid/.local/share/gr-engine/assets/shader/line.glsl"
+    //         );
+    //
     // TaskManager::Add<ShaderBuildTask>(
     //         "/home/NoirVoid/Projetos/simple_model.gshd",
     //         "/home/NoirVoid/.local/share/gr-engine/assets/shader/model/simple_model.glsl"
@@ -2369,8 +2375,8 @@ bool Editor::render_material(MaterialID id)
 
     auto material = AssetsManager::GetMaterial(id);
 
-    auto shader = material->GetShader();
-    if (shader == nullptr)
+    auto shaderPrefab = material->GetShaderPrefab();
+    if (shaderPrefab == nullptr)
     {
         dropShaderInMaterial(material);
         return false;
@@ -2379,6 +2385,7 @@ bool Editor::render_material(MaterialID id)
     if (!ImGui::TreeNode(name.c_str()))
         return false;
 
+    /*
     bool bCanEnableInstancing = material->supportsInstancing();
     if (ImGui::Checkbox("Instancing", &bCanEnableInstancing))
     {
@@ -2387,12 +2394,13 @@ bool Editor::render_material(MaterialID id)
         else
             material->SetDisableInstancing();
     }
+    */
 
-    auto shaderParams = GetShaderParamsFromName(AssetsManager::GetShaderName(shader));
+    // auto shaderParams = GetShaderParamsFromName(AssetsManager::GetShaderName(shader));
 
-    auto shadername = gfile::get_file_name(shaderParams.base);
+    // auto shadername = gfile::get_file_name(shaderParams.base);
 
-    render_shader_property(shadername, material);
+    render_shader_property(shaderPrefab->GetName(), material);
 
     dropShaderInMaterial(material);
 
@@ -2407,7 +2415,7 @@ void Editor::render_shader_property(const std::string &name, Material *material)
     if (!isopen)
         return;
 
-    RenderShaderUniform(material, material->GetShader());
+    // RenderShaderUniform(material, material->GetShaderPrefab());
 
     ImGui::TreePop();
 }
