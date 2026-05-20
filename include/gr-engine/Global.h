@@ -1,7 +1,7 @@
 
 /*
     Criado: seg 13 nov 2023 11∶47∶36
-    Atualizado: 03/05/2026 18:50
+    Atualizado: 18/05/26 14:18
     By: NoirVoid
 */
 
@@ -60,19 +60,13 @@ class Collider;
 class Animator;
 class Camera;
 
-class ObjectManager;
-
 class ImGuiRender;
 
 /* pasta: src/engine/ecs */
-class Entity;
-class EntityManager;
 
 /* pasta: src/engine/core/scenes */
 class SceneManager;
 class Scene;
-
-class Component;
 
 enum class FileType : int {
 	NONE = 0,

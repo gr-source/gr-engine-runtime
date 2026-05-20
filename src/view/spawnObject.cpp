@@ -26,20 +26,21 @@ void SpawnObject::onRenderUI()
     if (ImGui::Button("Despawn"))
     {
         for (auto& handle : m_instances)
-            GameObject::DestroyImediate(handle);
+            // GameObject::DestroyImediate(handle);
 
         m_instances.clear();
     }
 
 }
 
-void SpawnObject::SetPrefab(GameObjectHandle prefabID)
+void SpawnObject::SetPrefab(Entity prefabID)
 {
     int distance = numInstances / 2;
 
     int currentX = floor(position.x / 16.0f);
     int currentZ = floor(position.y / 16.0f);
 
+    /*
     for (int x=-distance;x<distance;x++)
     {
         for (int z=-distance;z<distance;z++)
@@ -58,10 +59,11 @@ void SpawnObject::SetPrefab(GameObjectHandle prefabID)
             m_instances.push_back(gameobjectID);
         }
     }
+    */
 
     // position += Vector2{(float)distance * 16.0f * 2.0f, 0.0f};
 
-    GameObject::DestroyImediate(prefabID);
+    // GameObject::DestroyImediate(prefabID);
 
     // MainThreadDispatcher::AddDelayed(10.0f, &TestPopup::Spawn, this, prefabID);
 }

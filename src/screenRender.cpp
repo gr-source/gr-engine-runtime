@@ -49,7 +49,9 @@ void ScreenRender::Shutdown() {
 }
 
 #include <gr-render/gl.h>
-void ScreenRender::Render(Camera *camera) {
+void ScreenRender::Render(Camera *camera)
+{
+    /*
     auto rendertarget = camera->getRenderTarget();
 
     if (!m_shader) {
@@ -86,6 +88,7 @@ void ScreenRender::Render(Camera *camera) {
     m_vertexArray->unbind();
     // texture->unbind();
     // m_shader->unbind();
+    */
 }
 
 void ScreenRender::CreateMesh() {

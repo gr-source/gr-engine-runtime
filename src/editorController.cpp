@@ -32,6 +32,7 @@ void EditorController::Initialize()
 
 void EditorController::Update(Camera *camera)
 {
+    /*
     m_mainCamera = camera;
 
     if (!m_mainCamera || !EditorController::bCanMove)
@@ -74,6 +75,7 @@ void EditorController::Update(Camera *camera)
     }
 
     UpdateCursor(transform);
+    */
 }
 
 void EditorController::LookAt(Transform *transform) {
@@ -99,7 +101,9 @@ void EditorController::UpdateCursor(Transform *transform) {
         ProcessMouse(Input::GetMouseDelta(), transform);
 }
 
-void EditorController::ProcessMouse(const Vector2 &delta, Transform *transform) {
+void EditorController::ProcessMouse(const Vector2 &delta, Transform *transform)
+{
+    /*
     elapsed += delta * mouseSensitivity;
 
     elapsed.y = std::clamp(elapsed.y, -89.0f, 89.0f);
@@ -110,5 +114,6 @@ void EditorController::ProcessMouse(const Vector2 &delta, Transform *transform) 
     rotation = Math::slerp(transform->getLocalRotation(), rotation, 12.0f * Clock::deltaTime);
 
     transform->setLocalRotation(Math::normalize(rotation));
+    */
 }
 

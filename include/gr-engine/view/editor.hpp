@@ -28,6 +28,8 @@
 
 #include "gr-engine/ui/viewlayout.hpp"
 
+#include <gr-base/ecs/default.hpp>
+
 #ifdef __cplusplus
 extern "C"
 {
@@ -151,7 +153,7 @@ private:
 
     std::unordered_set<gtreefile *> g_tree_file_selected_map;
 
-    ComponentHandle m_cameraID;
+    // ComponentHandle m_cameraID;
 
     Runtime* m_runtime;
 
@@ -213,9 +215,9 @@ private:
 
     void RenderSceneObject(Scene *scene);
 
-    void ShowGameObjectHierarchy(Scene *scene, GameObject* gameObject);
+    void ShowGameObjectHierarchy(Scene *scene, Entity entity);
 
-    void dragDropGameObject(Transform *transform, const std::string &name);
+    bool dragDropGameObject(Entity entity, const std::string &name);
 
     void PopupMenuAdd();
 
@@ -299,7 +301,7 @@ private:
 
     void ShowTypeInfoUI(Entity* entity, TypeInfo* info);
 
-    void ShowUserComponentUI(Component *component);
+    // void ShowUserComponentUI(Component *component);
 
     void renderDropGameObject(GameObject **ref);
 
@@ -338,7 +340,7 @@ private:
     void dropAnimation(Animator *animator);
 
     // Loader    
-    void PostLoadGameObject(GameObjectHandle gameObjectID);
+    void PostLoadGameObject(Entity entity);
 
     void CreateShaderTemplate(const std::string &path, const std::string &name);
 
@@ -373,6 +375,8 @@ private:
     void delete_file_selected();
 
     void drop_gmdx(std::function<void (std::string)> func);
+
+    std::string GetEntityName(Entity e);
 };
 
 template <typename T, typename... Args>
@@ -381,11 +385,11 @@ inline void Editor::RenderProperty(Args&&... args)
     if (m_scene == nullptr || !m_scene->has_object_selected())
         return;
 
-    auto go = GameObject::Get(m_scene->get_object_selected().back());
-    if (!go->getComponent<T>())
+    auto go = m_scene->Wrap(m_scene->get_object_selected().back());
+    if (!go.GetComponent<T>())
         return;
 
-    std::invoke(std::bind(std::forward<Args>(args)..., go->getComponent<T>()));
+    std::invoke(std::bind(std::forward<Args>(args)..., go.GetComponent<T>()));
 }
 
 class PhysicsTask : public IAsyncTask<int>

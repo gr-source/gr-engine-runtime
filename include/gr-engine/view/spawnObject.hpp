@@ -14,7 +14,7 @@ class SpawnObject : public ViewLayout
 
     Vector2 position;
 
-    std::vector<GameObjectHandle> m_instances;
+    std::vector<Handle> m_instances;
 
 public:
     SpawnObject();
@@ -27,7 +27,7 @@ public:
     virtual void onRenderUI() override;
 
 private:
-    void SetPrefab(GameObjectHandle prefabID);
+    void SetPrefab(Entity prefabID);
 };
 
 

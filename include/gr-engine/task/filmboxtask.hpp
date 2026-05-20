@@ -60,6 +60,6 @@ private:
 
     GameObjectCache foreach_node(const FbxNode* node);
 
-    GameObjectHandle CreateGameObjectFromCache(GameObjectCache* cache, GameObjectHandle parent = HANDLE_INVALID);
+    Entity CreateGameObjectFromCache(GameObjectCache* cache, Entity parent = HANDLE_INVALID);
 };
 

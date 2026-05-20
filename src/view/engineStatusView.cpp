@@ -4,7 +4,6 @@
 
 #include <gr-base/core/thread/threadpool.hpp>
 
-#include <gr-base/managers/gameobjectmanager.hpp>
 #include <gr-base/managers/assetsManager.hpp>
 
 #include <gr-base/core/status.hpp>
@@ -13,8 +12,11 @@
 
 void EngineStatusView::onRenderUI()
 {
+    Scene* scene = Scene::GetCurrent();
+
     ImGui::SeparatorText("Scripts");
-    ImGui::Text("GameObject: %ld", GameObjectManager::GetCount());
+    if (scene != nullptr)
+        ImGui::Text("Entities: %ld", scene->GetEntityCount());
 
     ImGui::SeparatorText("AssetManager");
     ImGui::Text("Textures: %ld", AssetsManager::GetTextureCount());
@@ -26,6 +28,7 @@ void EngineStatusView::onRenderUI()
 
     ImGui::SeparatorText("Renderização");
 
+    /*
     Scene* scene = Scene::GetCurrent();
     if (scene != nullptr)
     {
@@ -33,6 +36,7 @@ void EngineStatusView::onRenderUI()
         ImGui::Text("Cameras: %ld",     scene->GetCameras().size());
         ImGui::Text("Objects: %ld",     scene->getObjectList().size());
     }
+    */
 
     ImGui::Text("DrawCall Count: %ld", Status::BatchDrawCallCount);
     ImGui::Text("Render Count: %ld", Status::BatchRenderCount);

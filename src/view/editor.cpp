@@ -12,11 +12,9 @@
 #include <gr-base/managers/worldmanager.hpp>
 #include <gr-base/managers/eventManager.hpp>
 
-#include "gr-base/core/geometry/shaderData.hpp"
+#include <gr-base/ecs/default.hpp>
 
-#include "gr-base/ecs/componentregistry.hpp"
-#include "gr-base/ecs/default.hpp"
-#include "gr-base/task/modelsavetask.hpp"
+#include "gr-base/externals/handle.h"
 #include "gr-engine/Global.h"
 #include "gr-engine/core/time.hpp"
 #include "gr-engine/editorController.h"
@@ -30,8 +28,6 @@
 #include "gr-base/core/assetReference.hpp"
 
 #include "gr-base/core/thread/taskmanager.hpp"
-
-#include "gr-base/ecs/componentstorage.hpp"
 
 #include "gr-base/physics/physicsScene.hpp"
 
@@ -50,7 +46,6 @@
 
 #include <gr-base/core/thread/threadpool.hpp>
 
-#include <gr-base/managers/gameobjectmanager.hpp>
 #include <gr-base/managers/assetsManager.hpp>
 #include <gr-base/managers/octreemanager.hpp>
 #include <gr-base/managers/sceneManager.hpp>
@@ -81,7 +76,6 @@
 
 #include "gr-engine/ui/ImGuiRender.h"
 #include "gr-engine/ui/project.hpp"
-#include "gr-engine/ui/view.hpp"
 
 #include "gr-engine/scriptManager/scriptManager.hpp"
 
@@ -210,14 +204,16 @@ Editor::Editor()
 
     AssetReference::Load(m_project->path + "/asset.txt");
 
+    /*
     {
-        GameObjectHandle gameObjectID = GameObject::Create("Camera");
+        Entity gameObjectID = GameObject::Create("Camera");
 
         GameObject* gameObject = GameObject::Get(gameObjectID);
         gameObject->addComponent<Camera>();
 
         m_cameraID = gameObject->GetID<Camera>();
     }
+    */
 
     bBuildDock = gfile::exists("imgui.ini");
 
@@ -226,8 +222,8 @@ Editor::Editor()
     try
     {
         auto libdir = m_project->path + "/.build/lib/libscript.so";
-        if (gfile::exists(libdir))
-            ScriptManager::Load(libdir);
+        // if (gfile::exists(libdir))
+            // ScriptManager::Load(libdir);
 
         Display::SetDisplayRect(Rect{0.0f, 0.0f, (float)Settings::ViewportSize.x, (float)Settings::ViewportSize.y});
     } catch (const std::exception &e)
@@ -304,16 +300,16 @@ void Editor::onUpdate()
     auto scene = SceneManager::GetCurrent();
     if (Settings::bGameRunning)
     {
-        ComponentStorage::Update();
+        // ComponentStorage::Update();
     } else
     {
-        if (scene != nullptr && scene->getCamera())
-            EditorController::Update(scene->getCamera());
+        // if (scene != nullptr && scene->getCamera())
+        //     EditorController::Update(scene->getCamera());
     }
 
     WorldSystem::Update();
 
-    GameObjectManager::Cleanup();
+    // GameObjectManager::Cleanup();
 
     RenderSystem::Update();
 }
@@ -324,6 +320,7 @@ void Editor::onRender3D()
 
     // BVHTreeManager::Render();
 
+    /*
     if (!Settings::bGameRunning)
     {
         auto scene = SceneManager::GetCurrent();
@@ -339,13 +336,14 @@ void Editor::onRender3D()
     }
 
     DebugDraw::Clear();
+    */
 }
 
 void Editor::on_pre_config_render_scene(Camera* camera)
 {
     RenderSystem::Begin(camera);
 
-    auto rendertarget = camera->getRenderTarget();
+    auto rendertarget = camera->rendertarget;
     rendertarget->bind();
 
     gr::gRender::SetRenderState(gr::GR_CULL, gr::GR_BACK);
@@ -573,6 +571,7 @@ void Editor::create_render_hierarchy(Scene* scene)
     ImGui::SetNextItemOpen(true, ImGuiCond_Appearing);
     if (ImGui::TreeNodeEx(name.c_str(), ImGuiTreeNodeFlags_SpanFullWidth))
     {
+        /*
         drop_gameobject([&](GameObject *gameobject)
                 {
                     Transform *transform = gameobject->GetTransform();
@@ -580,6 +579,7 @@ void Editor::create_render_hierarchy(Scene* scene)
 
                     scene->insert(transform->GetGameObject()->GetCacheID());
                 });
+        */
         
         RenderSceneObject(scene);
 
@@ -593,7 +593,7 @@ void Editor::create_render_hierarchy(Scene* scene)
 
         scene->deselect_all();
 
-        auto objects = scene->getObjectList();
+        auto objects = scene->GetRoot();
         if (!objects.empty())
             scene->select(objects.back());
     }
@@ -607,6 +607,7 @@ void Editor::create_render_hierarchy(Scene* scene)
 
 void Editor::drop_gameobject(std::function<void (GameObject *)> func)
 {
+    /*
     if (!ImGui::BeginDragDropTarget())
         return;
 
@@ -619,11 +620,12 @@ void Editor::drop_gameobject(std::function<void (GameObject *)> func)
     func(transform->GetGameObject());
 
     ImGui::EndDragDropTarget();
+    */
 }
 
 void Editor::RenderSceneObject(Scene *scene)
 {
-    auto list = scene->getObjectList();
+    auto list = scene->GetRoot();
 
     ImGui::BeginChild("SceneObjectsScroll");
 
@@ -633,12 +635,7 @@ void Editor::RenderSceneObject(Scene *scene)
     while (clipper.Step())
     {
         for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++)
-        {
-            auto gameObject = GameObject::Get(list[i]);
-
-            if (gameObject)
-                ShowGameObjectHierarchy(scene, gameObject);
-        }
+            ShowGameObjectHierarchy(scene, list[i]);
     }
 
     if (ImGui::IsWindowHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Right))
@@ -647,48 +644,64 @@ void Editor::RenderSceneObject(Scene *scene)
     ImGui::EndChild();
 }
 
-void Editor::ShowGameObjectHierarchy(Scene *scene, GameObject* gameObject)
+#include <gr-base/script/relationship.hpp>
+
+#include <gr-base/ecs/ecs.hpp>
+
+void Editor::ShowGameObjectHierarchy(Scene *scene, Entity entity)
 {
     ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanFullWidth;
 
-    auto transform = gameObject->GetTransform();
-    auto name = gameObject->GetName();
-    bool isstatic = gameObject->GetIsStatic();
+    auto name = GetEntityName(entity);
 
-    if (scene->object_has_been_selected(gameObject->GetCacheID()))
+    auto rel = scene->GetECS()->GetComponent<Relationship>(entity);
+
+    if (scene->object_has_been_selected(entity))
         flags |= ImGuiTreeNodeFlags_Selected;
 
-    if (transform->hasChildren())
+    if (rel != nullptr && rel->firstChild != INVALID_ENTITY)
         flags &= ~ImGuiTreeNodeFlags_Leaf;
 
-    ImGui::PushID(transform);
+    ImGui::PushID(entity);
 
     auto isOpen = ImGui::TreeNodeEx(name.c_str(), flags);
 
     if (ImGui::IsKeyDown(ImGuiKey_ModShift) && ImGui::IsItemClicked(ImGuiMouseButton_Left))
     {
-        if (scene->object_has_been_selected(gameObject->GetCacheID()))
+        if (scene->object_has_been_selected(entity))
         {
-            scene->deselect(gameObject->GetCacheID());
+            scene->deselect(entity);
         } else
         {
-            scene->select(gameObject->GetCacheID());
+            scene->select(entity);
         }
     } else if (ImGui::IsItemClicked(ImGuiMouseButton_Left) && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
     {
         scene->deselect_all();
 
-        scene->select(gameObject->GetCacheID());
+        scene->select(entity);
     }
 
-    dragDropGameObject(transform, name);
+    if (dragDropGameObject(entity, name))
+        rel = scene->GetECS()->GetComponent<Relationship>(entity);
     
     if (isOpen)
     {
-        auto children = transform->getChildren();
+        if (rel != nullptr)
+        {
+            Entity child = rel->firstChild;
 
-        for (auto& child : children)
-            ShowGameObjectHierarchy(scene, ComponentStorage::GetComponent<Transform>(child)->GetGameObject());
+            while (child != INVALID_ENTITY)
+            {
+                ShowGameObjectHierarchy(scene, child);
+
+                auto childRel = scene->GetECS()->GetComponent<Relationship>(child);
+                if (!childRel)
+                    break;
+
+                child = childRel->nextSibling;
+            }
+        }
 
         ImGui::TreePop();
     }
@@ -696,31 +709,36 @@ void Editor::ShowGameObjectHierarchy(Scene *scene, GameObject* gameObject)
     ImGui::PopID();
 }
 
-void Editor::dragDropGameObject(Transform *transform, const std::string &name)
+bool Editor::dragDropGameObject(Entity entity, const std::string &name)
 {
     if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceNoDisableHover | ImGuiDragDropFlags_SourceNoHoldToOpenOthers))
     {
         ImGui::Text("Moving \"%s\"", name.c_str());
-        ImGui::SetDragDropPayload(m_extensionDragDrop[DragDropFlags::GAMEOBJECT], &transform, sizeof(Transform *));
+        ImGui::SetDragDropPayload(m_extensionDragDrop[DragDropFlags::GAMEOBJECT], &entity, sizeof(Entity));
         ImGui::EndDragDropSource();
     }
 
     if (!ImGui::BeginDragDropTarget())
-        return;
+        return false;
 
     auto payload = ImGui::AcceptDragDropPayload(m_extensionDragDrop[DragDropFlags::GAMEOBJECT]);
     if (!payload || payload->DataSize <= 0)
-        return ImGui::EndDragDropTarget();
-
-    auto target = *reinterpret_cast<Transform **>(payload->Data);
-    if (target != transform->getParent())
     {
-        target->setParent(transform);
+        ImGui::EndDragDropTarget();
+        return false;
+    }
 
-        m_scene->remove(target->GetGameObject()->GetCacheID());
+    Entity child = *reinterpret_cast<Entity*>(payload->Data);
+    if (entity != child)
+    {
+        m_scene->Unlink(child);
+
+        m_scene->SetParent(entity, child);
     }
 
     ImGui::EndDragDropTarget();
+
+    return true;
 }
 
 void Editor::PopupMenuAdd()
@@ -738,7 +756,8 @@ void Editor::PopupMenuAdd()
         switch (id)
         {
         case 0:
-            PostLoadGameObject(GameObject::Create("Empty"));
+            static int is = 0;
+            PostLoadGameObject(m_scene->create(std::string("Empty " + std::to_string(is++)).c_str()));
             break;
         default:
             break;
@@ -982,6 +1001,7 @@ void Editor::render_scene(Scene *scene)
         }
     }
 
+    /*
     // auto texture = Engine::GetImGuiPostprocess()->getTextureColor();
     auto camera = m_scene->getCamera();
     if (camera != nullptr)
@@ -992,36 +1012,15 @@ void Editor::render_scene(Scene *scene)
         auto rendertarget = camera->getRenderTarget();
 
         ImGui::Image(reinterpret_cast<ImTextureID>(rendertarget->GetTextureID()), regionAvail, {0.0f, 1.0f}, {1.0f, 0.0f});
-
-        /*if (ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
-            auto mousePos = ImGui::GetMousePos();
-            mousePos -= windowPos + cursorPos;
-
-            mousePos.y = regionAvail.y - mousePos.y;
-
-            int mouseX = static_cast<int>(mousePos.x);
-            int mouseY = static_cast<int>(mousePos.y);
-
-            if (mouseX >= 0 && mouseY >= 0 && mouseX <= static_cast<int>(regionAvail.x) && mouseY <= static_cast<int>(regionAvail.y)) {
-                int entityID = -1;
-                Engine::GetMainPostprocess()->readPixel(mouseX, mouseY, &entityID);
-
-                if (entityID != -1) {
-                    auto entity = Manager::GetEntityFromID(static_cast<EntityID>(entityID));
-                    if (entity != nullptr)
-                        s_objectSelected = entity->getGameObject();
-                }
-            }
-        }
-        */
         drop_gameobject_in_scene();
     }
+    */
 
     ImGuizmo::SetDrawlist();
     ImGuizmo::SetRect(windowPos.x + cursorPos.x, windowPos.y + cursorPos.y, regionAvail.x, regionAvail.y);
 
-    if (camera != nullptr && scene->has_object_selected() && !Settings::bGameRunning)
-        create_render_guizmo(scene);
+    // if (camera != nullptr && scene->has_object_selected() && !Settings::bGameRunning)
+        // create_render_guizmo(scene);
 
     // Fps Draw
     {
@@ -1066,8 +1065,8 @@ void Editor::render_scene(Scene *scene)
         auto temp = m_scene->get_object_selected();
         m_scene->deselect_all();
 
-        for (auto go : temp)
-            m_scene->select(GameObject::Instantiate(go));
+        // for (auto go : temp)
+        //     m_scene->select(GameObject::Instantiate(go));
     }
 
     if (ImGui::IsWindowFocused() && mImGuiIO->KeyCtrl && ImGui::IsKeyReleased(ImGuiKey_S))
@@ -1081,6 +1080,7 @@ void Editor::render_scene(Scene *scene)
 
 void Editor::UpdateResizeSceneFramebuffer()
 {
+    /*
     auto camera = m_scene->getCamera();
     if (camera == nullptr)
         return;
@@ -1184,8 +1184,9 @@ void Editor::create_render_guizmo(Scene *scene)
 
             RenderManager::Insert(gameObjectID);
             */
-        }
-    }
+        // }
+    // }
+
 }
 
 void Editor::OnPlayButton()
@@ -1264,13 +1265,14 @@ void Editor::OnPostLoadSnapshot(Scene* scene)
 
     TaskManager::Add<PhysicsTask>();
 
-    ComponentStorage::Start();
+    // ComponentStorage::Start();
 
     // set_scene(scene);
 }
 
 void Editor::OnStopButton()
 {
+    /*
     MainThreadDispatcher::Add(Priority::HIGHT, [&]
     {
 
@@ -1291,6 +1293,7 @@ void Editor::OnStopButton()
 
         Console::LogDefault("Game stoped.");
     });
+    */
 }
 
 void Editor::drop_gameobject_in_scene()
@@ -1381,6 +1384,7 @@ void Editor::PopupFileManager()
         return;
     }
 
+    /*
     if (View::ButtonWithComment("Remove", "delete"))
     {
         for (auto &file : g_tree_file_selected)
@@ -1393,6 +1397,7 @@ void Editor::PopupFileManager()
         // FIXME: Muito lento
         updateFileTree(&root_tree_file);
     }
+    */
 
     ImGui::EndPopup();
 }
@@ -1519,9 +1524,9 @@ void Editor::render_files_on_dir(gtreefile *dir)
             continue;
         }
 
-        if (View::ImageAndTextButton(reinterpret_cast<ImTextureID>((*entry.icon)->getTextureID()), entry.name.c_str(), selected_file(&entry)))
-        {
-        }
+        // if (View::ImageAndTextButton(reinterpret_cast<ImTextureID>((*entry.icon)->getTextureID()), entry.name.c_str(), selected_file(&entry)))
+        // {
+        // }
 
         if (ImGui::IsItemClicked(ImGuiMouseButton_Right))
         {
@@ -1619,6 +1624,7 @@ void Editor::drag_file(gtreefile *file)
 
 void Editor::drop_gameobject_in_treefile(gtreefile *tree_file)
 {
+    /*
     if (!ImGui::BeginDragDropTarget())
         return;
     
@@ -1632,13 +1638,14 @@ void Editor::drop_gameobject_in_treefile(gtreefile *tree_file)
 
     auto file = tree_file->path + "/" + gameobject->GetName() + ".gmdl";
 
-    TaskManager::Add<ModelSaveTask>(file, gameobject->GetCacheID() /*, [&](GameObjectHandle id)
+    TaskManager::Add<ModelSaveTask>(file, gameobject->GetCacheID() /*, [&](Entity id)
             {
                 EventManager::Notify("editor_update_tree_file");
             }
-            */);
+            );
 
     ImGui::EndDragDropTarget();
+    */
 }
 
 void Editor::create_window_console()
@@ -1695,6 +1702,7 @@ void Editor::create_window_property()
 
 void Editor::create_render_property()
 {
+    /*
     auto go = GameObject::Get(m_scene->get_object_selected().back());
     if (go == nullptr)
         return;
@@ -1722,6 +1730,7 @@ void Editor::create_render_property()
 
     if (ImGui::Button("AddComponent", {avail.x, 0.0f}))
         popupFlags |= EditorPopupFlags_AddComponent;
+    */
 }
 
 void Editor::create_call_popup()
@@ -1835,7 +1844,6 @@ void Editor::create_popup_create_scene()
     if (ImGui::InputText("##popup_create_scene_inputtext", name, GET_N_ARRAY(name), ImGuiInputTextFlags_EnterReturnsTrue))
     {
         m_scene = SceneManager::Create(name);
-        m_scene->SetCamera(m_cameraID);
 
         // set_scene(m_scene);
 
@@ -1846,6 +1854,7 @@ void Editor::create_popup_create_scene()
 
 void Editor::create_popup_add_component()
 {
+    /*
     auto isOpen = ImGui::BeginPopup(GET_FLAG_NAME(EditorPopupFlags_AddComponent));
     if (!isOpen)
     {
@@ -1898,10 +1907,12 @@ void Editor::create_popup_add_component()
     }
     
     ImGui::EndPopup();
+    */
 }
 
 void Editor::create_popup_rename_object()
 {
+    /*
     auto isopen = ImGui::BeginPopup(GET_FLAG_NAME(EditorPopupFlags_RenameGameObject));
     if (!isopen)
     {
@@ -1928,6 +1939,7 @@ void Editor::create_popup_rename_object()
     }
 
     ImGui::EndPopup();
+    */
 }
 
 void Editor::create_popup_create_script()
@@ -2076,6 +2088,7 @@ void Editor::dropScriptInAddComponent()
 
 void Editor::ShowTypeInfoUI(Entity* entity, TypeInfo* info)
 {
+    /*
     char name[512] = {0};
     sprintf(name, "%s 0x%lX", info->name, info->hash);
 
@@ -2097,8 +2110,10 @@ void Editor::ShowTypeInfoUI(Entity* entity, TypeInfo* info)
         entity->destroy(info->hash);
 
     ImGui::PopID();
+    */
 }
 
+/*
 void Editor::ShowUserComponentUI(Component *behavior)
 {}
 
@@ -2156,7 +2171,9 @@ void Editor::RenderField(Field &field, Component *component) {
 }
 */
 
-void Editor::renderDropGameObject(GameObject **ref) {
+void Editor::renderDropGameObject(GameObject **ref)
+{
+    /*
     if (*ref) {
         ImGui::Text("%s", (*ref)->GetName().c_str());
     }
@@ -2177,11 +2194,13 @@ void Editor::renderDropGameObject(GameObject **ref) {
     // AssetsManager::LoadGameObject(path, &Editor::OutputGameObject, ref);
 
     ImGui::EndDragDropTarget();
+    */
 }
 
 /* ********** Propriedades ********** */
 void Editor::OnPropertyTransform(Transform *transform)
 {
+    /*
     static std::vector<const char*> textItemsToVector = {"X:", "Y:", "Z:"};
     
     auto position = transform->getLocalPosition();
@@ -2205,10 +2224,12 @@ void Editor::OnPropertyTransform(Transform *transform)
 
         transform->setLocalRotation(Math::normalize(Math::euler(Vector3{Math::rad(euler.x), Math::rad(euler.y), Math::rad(euler.z)})));
     }
+    */
 }
 
 void Editor::OnPropertyCamera(Camera *camera)
 {
+    /*
     auto avail = ImGui::GetContentRegionAvail();
 
     bool isChanged = false;
@@ -2260,10 +2281,12 @@ void Editor::OnPropertyCamera(Camera *camera)
         if (rendertarget->is_valid())
             ImGui::Image(reinterpret_cast<ImTextureID>(rendertarget->GetTextureID()), {64.0f, 64.0f}, {0.0f, 1.0f}, {1.0f, 0.0f});
     }
+    */
 }
 
 void Editor::OnPropertyMeshFilter(MeshFilter *meshFilter)
 {
+    /*
     if (ImGui::TreeNode("Mesh"))
     {
         auto name = AssetsManager::GetMeshName(meshFilter->getMeshID());
@@ -2272,10 +2295,12 @@ void Editor::OnPropertyMeshFilter(MeshFilter *meshFilter)
 
         ImGui::TreePop();
     }
+    */
 }
 
 void Editor::OnPropertyMeshRender(MeshRender *meshRender)
 {
+    /*
     auto avail = ImGui::GetContentRegionAvail();
     
     if (ImGui::Button("Create", {avail.x, 0.0f}))
@@ -2290,9 +2315,12 @@ void Editor::OnPropertyMeshRender(MeshRender *meshRender)
         }
     }
     ImGui::Unindent();
+    */
 }
 
-void Editor::OnPropertySkinnedMeshRender(SkinnedMeshRender *skinnedMeshRender) {
+void Editor::OnPropertySkinnedMeshRender(SkinnedMeshRender *skinnedMeshRender)
+{
+    /*
     if (ImGui::IsItemClicked(ImGuiMouseButton_Right))
     {
         ImGui::OpenPopup("##game_object_component_menu");
@@ -2317,10 +2345,12 @@ void Editor::OnPropertySkinnedMeshRender(SkinnedMeshRender *skinnedMeshRender) {
     {
         ImGui::OpenPopup("##popup_rename_material");
     }
+    */
 }
 
 void Editor::OnPropertyLODComponent(LODComponent* lodComponent)
 {
+    /*
     auto avail = ImGui::GetContentRegionAvail();
 
     for (auto& lod : lodComponent->meshesLOD)
@@ -2354,7 +2384,6 @@ void Editor::OnPropertyLODComponent(LODComponent* lodComponent)
                         ld->meshes.push_back(id);
                     });
                 }
-                */
             }
             ImGui::EndDragDropTarget();
         }
@@ -2364,6 +2393,7 @@ void Editor::OnPropertyLODComponent(LODComponent* lodComponent)
 
     if (ImGui::Button("Add", ImVec2{avail.x, 0.0f}))
         lodComponent->meshesLOD.push_back({});
+    */
 }
 
 bool Editor::render_material(MaterialID id)
@@ -2542,6 +2572,7 @@ void Editor::dropShaderInMaterial(Material *material) {
 
 void Editor::OnPropertyLight(Light *light)
 {
+    /*
     int elem = light->getType();
     
     const char* elems_names[3] = {"Directional", "Point", "Spot"};
@@ -2600,6 +2631,7 @@ void Editor::OnPropertyLight(Light *light)
         }
         ImGui::EndPopup();
     }
+    */
 }
 
 
@@ -2609,16 +2641,19 @@ void Editor::OnPropertyMeshCollider(MeshCollider* meshCollider)
 
 void Editor::OnPropertyBoxCollider(BoxCollider *boxCollider)
 {
+    /*
     const char* text[] {"X", "Y", "Z"};
 
     auto size = boxCollider->getBoxSize();
     ImGui::Text("Size");
     if (ImGui::DragFloatEx("##boxcollider_size", text, reinterpret_cast<float *>(&size), 1.0f, 0.0f, 0.0f, "%.3f"))
         boxCollider->setBoxSize(size);
+    */
 }
 
 void Editor::OnPropertyRigidbody(Rigidbody *rigidbody)
 {
+    /*
     auto mass = rigidbody->getMass();
 
     ImGui::Text("Mass");
@@ -2648,6 +2683,7 @@ void Editor::OnPropertyRigidbody(Rigidbody *rigidbody)
     if (ImGui::DragFloat("##rigidbody_ccd_sphereradius", &fSweptSphereRadius, 0.4f, 0.0f, 5.0f)) {
         rigidbody->setSweptSphereRadius(fSweptSphereRadius);
     }
+    */
 }
 
 void Editor::OnPropertyAnimator(Animator *animator) {
@@ -2720,17 +2756,19 @@ void Editor::SetupTexture(IconType type, gr::gTexture *texture) {
     }
 }
 
-void Editor::PostLoadGameObject(GameObjectHandle prefabID)
+void Editor::PostLoadGameObject(Entity prefabID)
 {
+    /*
     if (m_scene == nullptr)
         return;
 
-    GameObjectHandle gameObjectID = GameObject::Instantiate(prefabID);
+    Entity gameObjectID = GameObject::Instantiate(prefabID);
 
     GameObject::DestroyImediate(prefabID);
 
     m_scene->deselect_all();
     m_scene->select(gameObjectID);
+    */
 }
 
 void Editor::CreateShaderTemplate(const std::string &path, const std::string &name)
@@ -2980,17 +3018,17 @@ void Editor::PluginEditor() {
 
 void Editor::set_scene(Scene *scene)
 {
-    m_scene = scene;
+    // m_scene = scene;
 
-    scene->SetCamera(m_cameraID);
+    // scene->SetCamera(m_cameraID);
 }
 
 void Editor::OutputGameObject(GameObject **ref, GameObject *go)
 {
-    if ((*ref) != nullptr)
-        GameObject::Destroy((*ref)->GetCacheID());
+    // if ((*ref) != nullptr)
+        // GameObject::Destroy((*ref)->GetCacheID());
 
-    *ref = go;
+    // *ref = go;
 }
 
 void Editor::generateConfig(const std::string &file)
@@ -3163,6 +3201,24 @@ void Editor::drop_gmdx(std::function<void (std::string)> func)
     unselect_all_file();
 
     ImGui::EndDragDropTarget();
+}
+
+#include <gr-base/script/name.hpp>
+
+std::string Editor::GetEntityName(Entity e)
+{
+    GameObject go = m_scene->Wrap(e);
+
+    Name* name = go.GetComponent<Name>();
+    if (name != nullptr)
+    {
+        return name->value;
+    } else
+    {
+        EntityID entityID = handle_get_first(e);
+
+        return "Entity " + std::to_string(entityID);
+    }
 }
 
 PhysicsTask::PhysicsTask()

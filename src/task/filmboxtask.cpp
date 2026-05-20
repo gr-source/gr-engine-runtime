@@ -2,8 +2,6 @@
 
 #include "gr-base/core/assetReference.hpp"
 
-#include "gr-base/ecs/componentstorage.hpp"
-
 #include "gr-base/task/modelsavetask.hpp"
 #include "gr-engine/filmbox/filmbox.hpp"
 
@@ -88,17 +86,17 @@ void FilmboxLoadTask::onPostExecute(int result)
     cache.materialsAsset = m_materialCacheList;
     cache.meshesAsset = m_meshCacheList;
 
-    GameObjectHandle handle = GameObject::Create(gfile::get_file_name(m_file));
-
-    for (auto &objectcache : m_objectCacheList)
-    {
-        CreateGameObjectFromCache(&objectcache, handle);
-    }
-
-    cache.modelAsset = ModelSaveTask::ConvertToAssetModel(handle);
-
-    GameObject::DestroyImediate(handle);
-
+    // GameObjectHandle handle = GameObject::Create(gfile::get_file_name(m_file));
+    //
+    // for (auto &objectcache : m_objectCacheList)
+    // {
+    //     CreateGameObjectFromCache(&objectcache, handle);
+    // }
+    //
+    // cache.modelAsset = ModelSaveTask::ConvertToAssetModel(handle);
+    //
+    // GameObject::DestroyImediate(handle);
+    //
     view->addFile(name, cache);
 }
 
@@ -149,57 +147,57 @@ FilmboxLoadTask::GameObjectCache FilmboxLoadTask::foreach_node(const FbxNode* no
 }
 
 
-GameObjectHandle FilmboxLoadTask::CreateGameObjectFromCache(GameObjectCache* cache, GameObjectHandle parent)
+Entity FilmboxLoadTask::CreateGameObjectFromCache(GameObjectCache* cache, Entity parent)
 {
-    GameObjectHandle handle = GameObject::Create(cache->name);
-
-    GameObject* gameObject = GameObject::Get(handle);
-    gameObject->SetIsPrefab(true);
-
-    auto transform = gameObject->GetTransform();
-    transform->setLocalPosition(cache->position);
-    transform->setLocalRotation(cache->rotation);
-    transform->setLocalScale(cache->scale);
-
-    if (!cache->meshName.empty())
-    {
-        auto& asset = m_meshCacheList[cache->meshName];
-
-        std::vector<MaterialID> materials;
-        for(auto& sub : asset.submeshes)
-        {
-            auto& material = m_materialCacheList[sub.materialName];
-
-            auto materialID = AssetsManager::FindMaterial(sub.materialName);
-            if (materialID == ID_INVALID)
-                materialID = AssetsManager::CreateMaterial(sub.materialName);
-
-            materials.push_back(materialID);
-        }
-
-        MeshID meshID = AssetsManager::FindMesh(cache->meshName);
-        if (meshID == ID_INVALID)
-            meshID = AssetsManager::CreateMesh(cache->meshName, &asset);
-
-        auto meshFilter = gameObject->addComponent<MeshFilter>();
-        meshFilter->SetMesh(meshID);
-
-        auto meshRender = gameObject->addComponent<MeshRender>();
-        meshRender->SetMaterial(materials);
-    }
-
-    if (parent != HANDLE_INVALID)
-    {
-        GameObject* gameObjectParent = GameObject::Get(parent);
-
-        auto transformParent = gameObjectParent->GetTransform();
-        transformParent->addChildren(gameObject->GetTransform());
-    }
-
-    for (auto& child : cache->childrent)
-        CreateGameObjectFromCache(&child, handle);
-
-    return handle;
+    // GameObjectHandle handle = GameObject::Create(cache->name);
+    //
+    // GameObject* gameObject = GameObject::Get(handle);
+    // // gameObject->SetIsPrefab(true);
+    //
+    // auto transform = gameObject->GetTransform();
+    // transform->position = cache->position;
+    // transform->rotation = cache->rotation;
+    // transform->scale = cache->scale;
+    //
+    // if (!cache->meshName.empty())
+    // {
+    //     auto& asset = m_meshCacheList[cache->meshName];
+    //
+    //     std::vector<MaterialID> materials;
+    //     for(auto& sub : asset.submeshes)
+    //     {
+    //         auto& material = m_materialCacheList[sub.materialName];
+    //
+    //         auto materialID = AssetsManager::FindMaterial(sub.materialName);
+    //         if (materialID == ID_INVALID)
+    //             materialID = AssetsManager::CreateMaterial(sub.materialName);
+    //
+    //         materials.push_back(materialID);
+    //     }
+    //
+    //     MeshID meshID = AssetsManager::FindMesh(cache->meshName);
+    //     if (meshID == ID_INVALID)
+    //         meshID = AssetsManager::CreateMesh(cache->meshName, &asset);
+    //
+    //     auto meshFilter = gameObject->addComponent<MeshFilter>();
+    //     // meshFilter->SetMesh(meshID);
+    //
+    //     auto meshRender = gameObject->addComponent<MeshRender>();
+    //     // meshRender->SetMaterial(materials);
+    // }
+    //
+    // if (parent != HANDLE_INVALID)
+    // {
+    //     // GameObject* gameObjectParent = GameObject::Get(parent);
+    //     //
+    //     // auto transformParent = gameObjectParent->GetTransform();
+    //     // transformParent->addChildren(gameObject->GetTransform());
+    // }
+    //
+    // for (auto& child : cache->childrent)
+    //     CreateGameObjectFromCache(&child, handle);
+    //
+    // return handle;
 }
 
 
