@@ -162,7 +162,6 @@ Entity FilmboxLoadTask::CreateGameObjectFromCache(Scene* scene, GameObjectCache*
     transform->scale = cache->scale;
     transform->dirty = true;
 
-    /*
     if (!cache->meshName.empty())
     {
         auto& asset = m_meshCacheList[cache->meshName];
@@ -183,13 +182,13 @@ Entity FilmboxLoadTask::CreateGameObjectFromCache(Scene* scene, GameObjectCache*
         if (meshID == ID_INVALID)
             meshID = AssetsManager::CreateMesh(cache->meshName, &asset);
 
-        auto meshFilter = gameObject->addComponent<MeshFilter>();
-        // meshFilter->SetMesh(meshID);
+        auto meshFilter = gameObject.AddComponent<MeshFilter>();
+        meshFilter->meshID = meshID;
 
-        auto meshRender = gameObject->addComponent<MeshRender>();
-        // meshRender->SetMaterial(materials);
+        auto meshRender = gameObject.AddComponent<MeshRender>();
+        for (auto &id : materials)
+            meshRender->materials.push_back(id);
     }
-    */
 
     if (parent != HANDLE_INVALID)
     {

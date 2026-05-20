@@ -2254,28 +2254,25 @@ void Editor::OnPropertyCamera(Camera *camera)
 
 void Editor::OnPropertyMeshFilter(MeshFilter *meshFilter)
 {
-    /*
     if (ImGui::TreeNode("Mesh"))
     {
-        auto name = AssetsManager::GetMeshName(meshFilter->getMeshID());
+        auto name = AssetsManager::GetMeshName(meshFilter->meshID);
 
         ImGui::Text("%s", name.c_str());
 
         ImGui::TreePop();
     }
-    */
 }
 
 void Editor::OnPropertyMeshRender(MeshRender *meshRender)
 {
-    /*
     auto avail = ImGui::GetContentRegionAvail();
     
     if (ImGui::Button("Create", {avail.x, 0.0f}))
         popupFlags |= EditorPopupFlags_CreateMaterial;
 
     ImGui::Indent();
-    for (MaterialID &materialID : meshRender->getMaterialIDs())
+    for (MaterialID &materialID : meshRender->materials)
     {
         if (render_material(materialID))
         {
@@ -2283,7 +2280,6 @@ void Editor::OnPropertyMeshRender(MeshRender *meshRender)
         }
     }
     ImGui::Unindent();
-    */
 }
 
 void Editor::OnPropertySkinnedMeshRender(SkinnedMeshRender *skinnedMeshRender)
