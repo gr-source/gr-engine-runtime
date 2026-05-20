@@ -1,7 +1,7 @@
 #include "gr-engine/ui/view.hpp"
 #include "imgui.h"
 
-const bool View::TextureInputUI(const ImColor& color) {
+const bool ImGuiWidget::TextureInputUI(const ImColor& color) {
     ImDrawList* drawList = ImGui::GetWindowDrawList();
     ImVec2 size = ImGui::GetItemRectSize();
 
@@ -15,7 +15,7 @@ const bool View::TextureInputUI(const ImColor& color) {
     return ImGui::InvisibleButton(std::string("#TextureInputUI" + std::to_string(color.Value.x)).c_str(), ImVec2(rectMax.x - rectMin.x, size.y));
 }
 
-const bool View::PopupChangeColor(const std::string& name, Color& color) {
+const bool ImGuiWidget::PopupChangeColor(const std::string& name, Color& color) {
     if (ImGui::BeginPopup(std::string("#PopupChangeColor" + name).c_str())) {
         auto isOpen = ImGui::ColorPicker4(name.c_str(), color.data);
         ImGui::EndPopup();
@@ -24,7 +24,7 @@ const bool View::PopupChangeColor(const std::string& name, Color& color) {
     return false;
 }
 
-bool View::DragScalarEx(const char** items, int numItems, float* data, float v_speed, float p_min, float p_max) {
+bool ImGuiWidget::DragScalarEx(const char** items, int numItems, float* data, float v_speed, float p_min, float p_max) {
     bool value_changed = false;
 
     ImGui::BeginGroup();
@@ -48,7 +48,7 @@ bool View::DragScalarEx(const char** items, int numItems, float* data, float v_s
     return value_changed;
 }
 
-bool View::ImageTreeNode(ImTextureID textureID, const char *name) {
+bool ImGuiWidget::ImageTreeNode(ImTextureID textureID, const char *name) {
     const ImGuiStyle& style = ImGui::GetStyle();
     ImGuiStorage* storage = ImGui::GetStateStorage();
 
@@ -82,11 +82,11 @@ bool View::ImageTreeNode(ImTextureID textureID, const char *name) {
     return opened;
 }
 
-bool View::CloseButton() {
+bool ImGuiWidget::CloseButton() {
     return false;
 }
 
-bool View::ImageAndTextButton(ImTextureID textureID, const char *label, bool selected, ImVec2 size)
+bool ImGuiWidget::ImageAndTextButton(ImTextureID textureID, const char *label, bool selected, ImVec2 size)
 {
     size.x = size.x <= 0.0f ? 40.0f : size.x;
     size.y = size.y <= 0.0f ? 40.0f : size.y;
@@ -113,7 +113,7 @@ bool View::ImageAndTextButton(ImTextureID textureID, const char *label, bool sel
     return press;
 }
 
-bool View::ButtonWithComment(const char *name, const char *comment)
+bool ImGuiWidget::ButtonWithComment(const char *name, const char *comment)
 {
     auto avail = ImGui::GetContentRegionAvail();
 

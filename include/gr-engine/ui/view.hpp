@@ -5,7 +5,8 @@
 #include <gr-math/gmath.hpp>
 #include <string>
 
-class View {
+class ImGuiWidget
+{
 public:
     static const bool TextureInputUI(const ImColor& color);
 

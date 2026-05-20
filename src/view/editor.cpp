@@ -12,11 +12,12 @@
 #include <gr-base/managers/worldmanager.hpp>
 #include <gr-base/managers/eventManager.hpp>
 
-#include <gr-base/ecs/default.hpp>
+#include <gr-base/ecs/archetypeStorage.hpp>
 
 #include "gr-base/core/renderer.hpp"
 #include "gr-base/externals/handle.h"
 #include "gr-base/system/worldsystem.hpp"
+#include "gr-base/task/modelsavetask.hpp"
 #include "gr-engine/Global.h"
 #include "gr-engine/core/time.hpp"
 
@@ -39,6 +40,7 @@
 #include "gr-engine/runtime/editorRuntime.hpp"
 #include "gr-engine/settings.h"
 
+#include "gr-engine/ui/view.hpp"
 #include "gr-engine/view/engineStatusView.hpp"
 #include "gr-engine/view/spawnObject.hpp"
 #include "gr-engine/view/worldManagerView.hpp"
@@ -176,14 +178,14 @@ Editor::Editor()
 
 
 #define INSERT_SCRIPT(object) \
-    {#object, [this](Entity *entity) \
+    {#object, [this](GameObject *go) \
         { \
             RenderProperty<object>(&Editor::OnProperty##object, this); \
         } \
     }
 
     m_guiscriptmap = {
-        {"Transform", [this](Entity *entity)
+        {"Transform", [this](GameObject *go)
             {
                 RenderProperty<Transform>(&Editor::OnPropertyTransform, this);
             }
@@ -573,9 +575,8 @@ void Editor::create_render_hierarchy(Scene* scene)
         scene->deselect_all();
 }
 
-void Editor::drop_gameobject(std::function<void (GameObject *)> func)
+void Editor::drop_gameobject(std::function<void (Entity)> func)
 {
-    /*
     if (!ImGui::BeginDragDropTarget())
         return;
 
@@ -583,12 +584,11 @@ void Editor::drop_gameobject(std::function<void (GameObject *)> func)
     if (!payload || payload->DataSize <= 0)
         return ImGui::EndDragDropTarget();
 
-    auto transform = *reinterpret_cast<Transform **>(payload->Data);
+    auto entity = *reinterpret_cast<Entity*>(payload->Data);
     
-    func(transform->GetGameObject());
+    func(entity);
 
     ImGui::EndDragDropTarget();
-    */
 }
 
 void Editor::RenderSceneObject(Scene *scene)
@@ -620,7 +620,7 @@ void Editor::ShowGameObjectHierarchy(Scene *scene, Entity entity)
 {
     ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanFullWidth;
 
-    auto name = GetEntityName(entity);
+    auto name = scene->GetEntityName(entity);
 
     auto rel = scene->GetECS()->GetComponent<Relationship>(entity);
 
@@ -1494,9 +1494,9 @@ void Editor::render_files_on_dir(gtreefile *dir)
             continue;
         }
 
-        // if (View::ImageAndTextButton(reinterpret_cast<ImTextureID>((*entry.icon)->getTextureID()), entry.name.c_str(), selected_file(&entry)))
-        // {
-        // }
+        if (ImGuiWidget::ImageAndTextButton(reinterpret_cast<ImTextureID>((*entry.icon)->getTextureID()), entry.name.c_str(), selected_file(&entry)))
+        {
+        }
 
         if (ImGui::IsItemClicked(ImGuiMouseButton_Right))
         {
@@ -1594,7 +1594,6 @@ void Editor::drag_file(gtreefile *file)
 
 void Editor::drop_gameobject_in_treefile(gtreefile *tree_file)
 {
-    /*
     if (!ImGui::BeginDragDropTarget())
         return;
     
@@ -1602,20 +1601,15 @@ void Editor::drop_gameobject_in_treefile(gtreefile *tree_file)
     if (!payload || payload->DataSize <= 0)
         return ImGui::EndDragDropTarget();
 
-    auto transform = *reinterpret_cast<Transform **>(payload->Data);
+    auto entity = *reinterpret_cast<Entity*>(payload->Data);
 
-    auto gameobject = transform->GetGameObject();
+    auto gameobject = m_scene->Wrap(entity);
 
-    auto file = tree_file->path + "/" + gameobject->GetName() + ".gmdl";
+    auto file = tree_file->path + "/" + m_scene->GetEntityName(entity) + ".gmdl";
 
-    TaskManager::Add<ModelSaveTask>(file, gameobject->GetCacheID() /*, [&](Entity id)
-            {
-                EventManager::Notify("editor_update_tree_file");
-            }
-            );
+    TaskManager::Add<ModelSaveTask>(file, m_scene, entity);
 
     ImGui::EndDragDropTarget();
-    */
 }
 
 void Editor::create_window_console()
@@ -1672,19 +1666,18 @@ void Editor::create_window_property()
 
 void Editor::create_render_property()
 {
-    /*
-    auto go = GameObject::Get(m_scene->get_object_selected().back());
-    if (go == nullptr)
+    auto go = m_scene->Wrap(m_scene->get_object_selected().back());
+    if (!go.IsAlive())
         return;
 
-    auto objName = go->GetName();
+    auto objName = m_scene->GetEntityName(go.entity);
 
     ImGui::SeparatorText(objName.c_str());
 
-    bool isStatic = go->GetIsStatic();
+    bool isStatic = false; // go->GetIsStatic();
     if (ImGui::Checkbox("static", &isStatic))
     {
-        go->SetIsStatic(isStatic);
+        // go->SetIsStatic(isStatic);
 
         // RenderManager::SwitchTo(go->getCacheID(), isStatic);
     }
@@ -1692,15 +1685,14 @@ void Editor::create_render_property()
     if (ImGui::IsItemHovered())
         ImGui::SetTooltip("Definir como Estático");
 
-
-    for (auto &hash : go->GetHashes())
-        ShowTypeInfoUI(go, ComponentRegistry::Get(hash));
+    Signature mask = m_scene->GetECS()->GetMask(go.entity);
+    for (auto typeID : m_scene->GetECS()->GetArchetype(mask)->GetTypes())
+        ShowTypeInfoUI(&go, Type::GetTypeInfoByID(typeID));
 
     auto avail = ImGui::GetContentRegionAvail();
 
     if (ImGui::Button("AddComponent", {avail.x, 0.0f}))
         popupFlags |= EditorPopupFlags_AddComponent;
-    */
 }
 
 void Editor::create_call_popup()
@@ -2069,9 +2061,8 @@ void Editor::dropScriptInAddComponent()
     */
 }
 
-void Editor::ShowTypeInfoUI(Entity* entity, TypeInfo* info)
+void Editor::ShowTypeInfoUI(GameObject* go, const TypeInfo* info)
 {
-    /*
     char name[512] = {0};
     sprintf(name, "%s 0x%lX", info->name, info->hash);
 
@@ -2084,20 +2075,18 @@ void Editor::ShowTypeInfoUI(Entity* entity, TypeInfo* info)
     {
         auto it = m_guiscriptmap.find(info->name);
         if (it != m_guiscriptmap.end())
-            it->second(entity);
+            it->second(go);
         else
-            ShowUserComponentUI(entity->getComponent(info->hash));
+            ShowUserComponentUI(go->GetComponent(info->index));
     }
 
     if (!bVisible)
-        entity->destroy(info->hash);
+        go->DelComponent(info->index);
 
     ImGui::PopID();
-    */
 }
 
-/*
-void Editor::ShowUserComponentUI(Component *behavior)
+void Editor::ShowUserComponentUI(void *behavior)
 {}
 
 /*
@@ -2183,31 +2172,27 @@ void Editor::renderDropGameObject(GameObject **ref)
 /* ********** Propriedades ********** */
 void Editor::OnPropertyTransform(Transform *transform)
 {
-    /*
     static std::vector<const char*> textItemsToVector = {"X:", "Y:", "Z:"};
-    
-    auto position = transform->getLocalPosition();
-    ImGui::Text("Position");
-    if (ImGui::DragFloat3("##engine_ui_transform_position", (float*)&position))
-    // if (View::DragScalarEx(textItemsToVector.data(), textItemsToVector.size(), (float *)&position, 1.0f, 0.0f, 0.0f))
-        transform->setLocalPosition(position);
-    
-    auto scale = transform->getLocalScale();
-    ImGui::Text("Scale");
-    if (ImGui::DragFloat3("##engine_ui_transform_scale", (float*)&scale))
-    // if (View::DragScalarEx(textItemsToVector.data(), textItemsToVector.size(), (float *)&scale, 1.0f, 0.0f, 0.0f))
-        transform->setLocalScale(scale);
 
-    auto euler = Math::eulerAngles(transform->getLocalRotation());
+    bool dirty = false;
+
+    ImGui::Text("Position");
+    dirty |= ImGui::DragFloat3("##engine_ui_transform_position", transform->position.data);
+    
+    ImGui::Text("Scale");
+    dirty |= ImGui::DragFloat3("##engine_ui_transform_scale", transform->scale.data);
+
+    auto euler = Math::eulerAngles(transform->rotation);
     ImGui::Text("Rotation");
     if (ImGui::DragFloat3("##engine_ui_transform_rotation", (float*)&euler))
-    // if (View::DragScalarEx(textItemsToVector.data(), textItemsToVector.size(), (float *)&euler, 1.0f, -360.0f, 360.0f))
     {
         euler.y = std::clamp(euler.y, -89.0f, 89.0f);
 
-        transform->setLocalRotation(Math::normalize(Math::euler(Vector3{Math::rad(euler.x), Math::rad(euler.y), Math::rad(euler.z)})));
+        transform->rotation = Math::normalize(Math::euler(Vector3{Math::rad(euler.x), Math::rad(euler.y), Math::rad(euler.z)}));
+        dirty = true;
     }
-    */
+
+    transform->dirty = dirty;
 }
 
 void Editor::OnPropertyCamera(Camera *camera)
@@ -3184,24 +3169,6 @@ void Editor::drop_gmdx(std::function<void (std::string)> func)
     unselect_all_file();
 
     ImGui::EndDragDropTarget();
-}
-
-#include <gr-base/script/name.hpp>
-
-std::string Editor::GetEntityName(Entity e)
-{
-    GameObject go = m_scene->Wrap(e);
-
-    Name* name = go.GetComponent<Name>();
-    if (name != nullptr)
-    {
-        return name->value;
-    } else
-    {
-        EntityID entityID = handle_get_first(e);
-
-        return "Entity " + std::to_string(entityID);
-    }
 }
 
 PhysicsTask::PhysicsTask()

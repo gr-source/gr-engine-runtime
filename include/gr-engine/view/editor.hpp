@@ -141,7 +141,7 @@ public:
     void SetupTexture(IconType type, gr::gTexture *texture);
 
 private:
-    std::unordered_map<std::string, std::function<void(Entity *)>> m_guiscriptmap;
+    std::unordered_map<std::string, std::function<void(GameObject *)>> m_guiscriptmap;
 
     std::unordered_map<IconType, gr::gTexture *> iconsUI;
 
@@ -207,7 +207,7 @@ private:
 
     void create_render_hierarchy(Scene* scene);
 
-    void drop_gameobject(std::function<void (GameObject *)> func);
+    void drop_gameobject(std::function<void (Entity)> func);
 
     void RenderSceneObject(Scene *scene);
 
@@ -295,9 +295,9 @@ private:
 
     void dropScriptInAddComponent();
 
-    void ShowTypeInfoUI(Entity* entity, TypeInfo* info);
+    void ShowTypeInfoUI(GameObject* go, const TypeInfo* info);
 
-    // void ShowUserComponentUI(Component *component);
+    void ShowUserComponentUI(void *component);
 
     void renderDropGameObject(GameObject **ref);
 
@@ -371,8 +371,6 @@ private:
     void delete_file_selected();
 
     void drop_gmdx(std::function<void (std::string)> func);
-
-    std::string GetEntityName(Entity e);
 };
 
 template <typename T, typename... Args>
