@@ -1,7 +1,5 @@
 #include "gr-engine/view/shadereditor.hpp"
 
-#include "gr-engine/editorController.h"
-
 #include <gr-base/managers/assetsManager.hpp>
 
 #include <gr-base/core/scene.hpp>
@@ -24,12 +22,12 @@ ShaderEditor::~ShaderEditor()
 
 void ShaderEditor::onFocus()
 {
-    EditorController::bCanMove = false;
+    // EditorController::bCanMove = false;
 }
 
 void ShaderEditor::onBlur()
 {
-    EditorController::bCanMove = true;
+    // EditorController::bCanMove = true;
 }
 
 void ShaderEditor::onRenderUI()

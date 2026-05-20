@@ -14,10 +14,14 @@
 
 #include <gr-base/ecs/default.hpp>
 
+#include "gr-base/core/renderer.hpp"
 #include "gr-base/externals/handle.h"
+#include "gr-base/system/worldsystem.hpp"
 #include "gr-engine/Global.h"
 #include "gr-engine/core/time.hpp"
-#include "gr-engine/editorController.h"
+
+#include "gr-engine/script/cameraEditor.hpp"
+#include "gr-engine/system/cameraEditorSystem.hpp"
 
 #include "gr-engine/application.hpp"
 #include "gr-engine/engine.hpp"
@@ -87,9 +91,13 @@
 #include <iostream>
 #include <string>
 
+#include <gr-base/core/rendertarget.hpp>
+
 #include <gr-base/prefab/shaderprefab.hpp>
 
-#include <gr-base/system/worldsystem.hpp>
+#include <gr-base/system/transformsystem.hpp>
+#include <gr-base/system/renderSystem.hpp>
+#include <gr-base/system/camerasystem.hpp>
 
 #define ITEMS_PER_PAGE 20
 
@@ -224,8 +232,6 @@ Editor::Editor()
         auto libdir = m_project->path + "/.build/lib/libscript.so";
         // if (gfile::exists(libdir))
             // ScriptManager::Load(libdir);
-
-        Display::SetDisplayRect(Rect{0.0f, 0.0f, (float)Settings::ViewportSize.x, (float)Settings::ViewportSize.y});
     } catch (const std::exception &e)
     {
         Console::LogError("Fatal error in script: %s", e.what());
@@ -255,7 +261,7 @@ Editor::Editor()
     //         "/home/NoirVoid/Projetos/line.gshd",
     //         "/home/NoirVoid/.local/share/gr-engine/assets/shader/line.glsl"
     //         );
-    //
+
     // TaskManager::Add<ShaderBuildTask>(
     //         "/home/NoirVoid/Projetos/simple_model.gshd",
     //         "/home/NoirVoid/.local/share/gr-engine/assets/shader/model/simple_model.glsl"
@@ -281,8 +287,6 @@ void Editor::loadScript(const std::string& dir)
 
     ScriptManager::Load(dir + "/libscript.so");
 
-    Display::SetDisplayRect(Rect{0.0f, 0.0f, (float)Settings::ViewportSize.x, (float)Settings::ViewportSize.y});
-
     std::string temp = gfile::get_cache_directory() + "/snapshot.scn";
 
     AssetsManager::SceneSaveAsync(temp, m_scene, &Editor::OnPostSaveSnapshot, this, temp);
@@ -294,7 +298,6 @@ const char* Editor::getName() const
     return "Editor";
 }
 
-#include <gr-base/core/renderSystem.hpp>
 void Editor::onUpdate()
 {
     auto scene = SceneManager::GetCurrent();
@@ -307,67 +310,25 @@ void Editor::onUpdate()
         //     EditorController::Update(scene->getCamera());
     }
 
-    WorldSystem::Update();
+    if (scene != nullptr)
+    {
+        CameraEditorSystem::Update(scene);
+        TransformSystem::Update(scene->GetECS());
+        CameraSystem::Update(scene->GetECS());
+        WorldSystem::Update(scene);
+        RenderSystem::Update(scene);
+    }
 
     // GameObjectManager::Cleanup();
 
-    RenderSystem::Update();
+    // RenderSystem::Update();
 }
 
 void Editor::onRender3D()
 {
-    // OctreeManager::Render();
-
-    // BVHTreeManager::Render();
-
-    /*
-    if (!Settings::bGameRunning)
-    {
-        auto scene = SceneManager::GetCurrent();
-        if (scene != nullptr && scene->getCamera())
-            on_pre_config_render_scene(scene->getCamera());
-
-        if (m_cameraObjectSelected != nullptr)
-            on_pre_config_render_scene(m_cameraObjectSelected);
-    } else if (m_scene != nullptr)
-    {
-        for (auto &cameraID : m_scene->GetCameras())
-            on_pre_config_render_scene(ComponentStorage::GetComponent<Camera>(cameraID));
-    }
+    Renderer::Process();
 
     DebugDraw::Clear();
-    */
-}
-
-void Editor::on_pre_config_render_scene(Camera* camera)
-{
-    RenderSystem::Begin(camera);
-
-    auto rendertarget = camera->rendertarget;
-    rendertarget->bind();
-
-    gr::gRender::SetRenderState(gr::GR_CULL, gr::GR_BACK);
-    gr::gRender::SetEnable(GR_DEPTH, true);
-
-    gr::gRender::SetBackgroundColor(Color{0.5f, 0.5f, 0.5f, 1.0f});
-    gr::gRender::SetRenderState(gr::GR_BACKGROUND, gr::GR_DEPTH_BUFFER | gr::GR_COLOR_BUFFER);
-
-    on_render_scene(camera);
-
-    rendertarget->unbind();
-}
-
-void Editor::on_render_scene(Camera* camera)
-{
-    gr::gRender::SetRenderState(gr::GR_DEPTH_FUNC, gr::GR_DEPTH_LESS);
-    RenderSystem::Renderer();
-    // RenderManager::Render();
-
-    gr::gRender::SetRenderState(gr::GR_DEPTH_FUNC, gr::GR_DEPTH_LEQUAL);
-    DebugDraw::Render(camera);
-
-    // gr::gRender::SetRenderState(gr::GR_DEPTH_FUNC, gr::GR_DEPTH_LEQUAL);
-    // m_skybox.render(camera);
 }
 
 void Editor::onRenderUI()
@@ -405,8 +366,12 @@ void Editor::drop(void *data)
     updateFileTree(&root_tree_file);
 }
 
+#include <gr-base/core/renderer.hpp>
+
 void Editor::initialize()
 {
+    Renderer::Initialize();
+
     AssetReference::Initialize();
 
     AssetsManager::Initialize();
@@ -416,10 +381,13 @@ void Editor::initialize()
     TaskManager::Initialize();
 
     RegistryDefaultComponent();
+    Type::Registry<CameraEditor>("CameraEditor");
 }
 
 void Editor::shutdown()
 {
+    Renderer::Shutdown();
+
     TaskManager::Shutdown();
 
     ScriptManager::Unload();
@@ -972,7 +940,7 @@ void Editor::render_scene(Scene *scene)
 {
     UpdateResizeSceneFramebuffer();
 
-    EditorController::bCanMove = ImGui::IsWindowHovered();
+    // EditorController::bCanMove = ImGui::IsWindowHovered();
 
     auto regionAvail = ImGui::GetContentRegionAvail();
     auto windowPos = ImGui::GetWindowPos();
@@ -1001,26 +969,28 @@ void Editor::render_scene(Scene *scene)
         }
     }
 
-    /*
-    // auto texture = Engine::GetImGuiPostprocess()->getTextureColor();
-    auto camera = m_scene->getCamera();
-    if (camera != nullptr)
+    ImGuizmo::SetDrawlist();
+    ImGuizmo::SetRect(windowPos.x + cursorPos.x, windowPos.y + cursorPos.y, regionAvail.x, regionAvail.y);
+
+    auto obj = m_scene->Wrap(m_scene->GetCamera());
+    if (obj.IsAlive())
     {
         regionAvail = ImGui::GetContentRegionAvail();
         cursorPos = ImGui::GetCursorPos();
 
-        auto rendertarget = camera->getRenderTarget();
+        Camera* camera = obj.GetComponent<Camera>();
+        if (camera != nullptr)
+        {
+            RenderTarget* rendertarget = camera->rendertarget;
 
-        ImGui::Image(reinterpret_cast<ImTextureID>(rendertarget->GetTextureID()), regionAvail, {0.0f, 1.0f}, {1.0f, 0.0f});
-        drop_gameobject_in_scene();
+            ImGui::Image(reinterpret_cast<ImTextureID>(rendertarget->GetTextureID()), regionAvail, {0.0f, 1.0f}, {1.0f, 0.0f});
+
+            drop_gameobject_in_scene();
+
+            // if (scene->has_object_selected() && !Settings::bGameRunning)
+                // create_render_guizmo(scene);
+        }
     }
-    */
-
-    ImGuizmo::SetDrawlist();
-    ImGuizmo::SetRect(windowPos.x + cursorPos.x, windowPos.y + cursorPos.y, regionAvail.x, regionAvail.y);
-
-    // if (camera != nullptr && scene->has_object_selected() && !Settings::bGameRunning)
-        // create_render_guizmo(scene);
 
     // Fps Draw
     {
@@ -1066,7 +1036,7 @@ void Editor::render_scene(Scene *scene)
         m_scene->deselect_all();
 
         // for (auto go : temp)
-        //     m_scene->select(GameObject::Instantiate(go));
+            // m_scene->select(GameObject::Instantiate(go));
     }
 
     if (ImGui::IsWindowFocused() && mImGuiIO->KeyCtrl && ImGui::IsKeyReleased(ImGuiKey_S))
@@ -1080,27 +1050,30 @@ void Editor::render_scene(Scene *scene)
 
 void Editor::UpdateResizeSceneFramebuffer()
 {
-    /*
-    auto camera = m_scene->getCamera();
-    if (camera == nullptr)
+    auto obj = m_scene->Wrap(m_scene->GetCamera());
+    if (!obj.IsAlive())
         return;
 
-    auto rect = camera->getRect();
+    auto camera = obj.GetComponent<Camera>();
+
+    auto rendertarget = camera->rendertarget;
+    float width = static_cast<float>(rendertarget->GetWidth());
+    float height = static_cast<float>(rendertarget->GetHeight());
 
     ImVec2 regionAvail = ImGui::GetContentRegionAvail();
-    if (camera != nullptr && (rect.w != regionAvail.x || rect.h != regionAvail.y && regionAvail.x > 5.0f && regionAvail.y > 5.0f))
+    if (camera != nullptr && (width != regionAvail.x || height != regionAvail.y && regionAvail.x > 5.0f && regionAvail.y > 5.0f))
     {
-        auto &viewport = Settings::ViewportSize = {regionAvail.x, regionAvail.y};
-        if (viewport.x > 0 && viewport.y > 0)
+        if (regionAvail.x > 0 && regionAvail.y > 0)
         {
-            Display::SetDisplayRect(Rect{0.0f, 0.0f, (float)Settings::ViewportSize.x, (float)Settings::ViewportSize.y});
+            Display::SetDisplayRect(Rect{0.0f, 0.0f, regionAvail.x, regionAvail.y});
 
-            camera->setRect(Rect{0.0f, 0.0f, regionAvail.x, regionAvail.y});
+            rendertarget->resize(static_cast<int>(regionAvail.x), static_cast<int>(regionAvail.y));
         }
     }
 }
 
-void Editor::create_render_guizmo(Scene *scene)
+/*
+void Editor::create_render_guizmo(Scene *scene, const Camera* camera)
 {
     if (ImGui::IsWindowHovered() && !mImGuiIO->KeyShift && !mImGuiIO->KeyCtrl)
     {
@@ -1119,8 +1092,6 @@ void Editor::create_render_guizmo(Scene *scene)
             m_guizmoOperation = ImGuizmo::SCALE;
         }
     }
-
-    auto camera = m_scene->getCamera();
 
     auto viewmatrix = camera->getViewmatrix();
     auto projection = camera->getPerspesctive();
@@ -1179,15 +1150,14 @@ void Editor::create_render_guizmo(Scene *scene)
         {
             isDragging = false;
 
-            /*
-            RenderManager::Remove(gameObjectID);
+            // RenderManager::Remove(gameObjectID);
 
-            RenderManager::Insert(gameObjectID);
-            */
-        // }
-    // }
+            // RenderManager::Insert(gameObjectID);
+        }
+    }
 
 }
+*/
 
 void Editor::OnPlayButton()
 {
@@ -1844,6 +1814,19 @@ void Editor::create_popup_create_scene()
     if (ImGui::InputText("##popup_create_scene_inputtext", name, GET_N_ARRAY(name), ImGuiInputTextFlags_EnterReturnsTrue))
     {
         m_scene = SceneManager::Create(name);
+
+        Entity camera = m_scene->create("MainCamera");
+        {
+            GameObject go = m_scene->Wrap(camera);
+            // go.AddComponent<CameraEditor>()
+            go.AddComponent<CameraData>();
+            go.AddComponent<Camera>();
+            go.GetComponent<Camera>()->rendertarget = Renderer::backbuffer;
+
+            auto transform = go.GetComponent<Transform>();
+        }
+
+        m_scene->SetCamera(camera);
 
         // set_scene(m_scene);
 

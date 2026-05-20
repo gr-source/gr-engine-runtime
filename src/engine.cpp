@@ -1,13 +1,10 @@
 #include "gr-engine/engine.hpp"
 
 #include "gr-base/core/logger.hpp"
-#include "gr-engine/editorController.h"
 
-#include "gr-base/core/console.hpp"
 #include "gr-base/core/thread/taskmanager.hpp"
 #include "gr-engine/view/checkupdate.hpp"
 #include "gr-engine/view/shadereditor.hpp"
-#include "imgui.h"
 
 #include "gr-engine/task/filmboxtask.hpp"
 #include "gr-engine/ui/project.hpp"
@@ -27,7 +24,6 @@
 
 #include <gr-base/core/debugdraw.hpp>
 
-#include "gr-engine/functionTimer.hpp"
 #include "gr-engine/Global.h"
 
 // Managers

@@ -18,8 +18,6 @@ public:
 
     static Vector2 IconSize;
 
-    static Vector2 ViewportSize;
-
 private:
     static std::atomic<bool> m_bEngineRunning;
 };

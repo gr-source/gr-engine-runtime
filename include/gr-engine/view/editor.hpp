@@ -19,11 +19,11 @@
 #include <gr-render/gTexture.h>
 
 #include <gr-base/script/default.hpp>
-#include <memory>
 #include <string>
 #include <vector>
 
-#include "gr-engine/runtime/editorRuntime.hpp"
+#include "gr-engine/runtime/runtime.hpp"
+
 #include "gr-engine/ui/default.hpp"
 
 #include "gr-engine/ui/viewlayout.hpp"
@@ -126,10 +126,6 @@ public:
 
     void onRender3D() override;
 
-    void on_pre_config_render_scene(Camera* camera);
-
-    void on_render_scene(Camera* camera);
-
     void onRenderUI() override;
 
     void onFocus() override;
@@ -231,7 +227,7 @@ private:
 
     void UpdateResizeSceneFramebuffer();
 
-    void create_render_guizmo(Scene *scene);
+    void create_render_guizmo(Scene *scene, const Camera* camera);
 
     void OnPlayButton();
 
