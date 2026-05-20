@@ -100,6 +100,8 @@ bool Engine::has_project() const
 // ********** private ********** //
 void Engine::initialize()
 {
+    logger::info("[ Engine ] Initialize '0x%lX'.", this);
+
     ImGuiRender::Initialize("#version 330 core");
 
     gr::gRender::SetEnable(GR_CULL_FACE, true);
@@ -118,6 +120,8 @@ void Engine::shutdown()
     ViewManager::RemoveAllView();
 
     ImGuiRender::Shutdown();
+
+    logger::info("[ Engine ] Shutdown '0x%lX'.", this);
 }
 
 void Engine::save_engine_config()

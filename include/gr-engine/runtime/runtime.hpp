@@ -1,8 +1,9 @@
 #pragma once
 
+#include <memory>
+
 #include "gr-base/managers/octreemanager.hpp"
 #include "gr-base/managers/bvhtreemanager.hpp"
-#include "gr-base/managers/sceneManager.hpp"
 
 class Runtime
 {
@@ -11,12 +12,9 @@ public:
 
     std::unique_ptr<BVHTreeManager> s_BVHTreeManager;
 
-    std::unique_ptr<SceneManager> s_SceneManager;
-
     inline Runtime() :
         s_OctreeManager(std::make_unique<OctreeManager>()),
-        s_BVHTreeManager(std::make_unique<BVHTreeManager>()),
-        s_SceneManager(std::make_unique<SceneManager>())
+        s_BVHTreeManager(std::make_unique<BVHTreeManager>())
     {}
 
     virtual ~Runtime() {}

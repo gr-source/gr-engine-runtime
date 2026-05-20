@@ -1,4 +1,5 @@
 #include "gr-engine/managers/viewmanager.hpp"
+#include "gr-base/core/logger.hpp"
 #include "imgui.h"
 
 #include <imgui.h>
@@ -33,10 +34,14 @@ ViewManager &ViewManager::GetInstance()
 }
 
 ViewManager::ViewManager() : s_current(nullptr)
-{}
+{
+    logger::info("[ ViewManager ] Initialize '0x%lX'.", this);
+}
 
 ViewManager::~ViewManager()
-{}
+{
+    logger::info("[ ViewManager ] Shutdown '0x%lX'.", this);
+}
 
 ViewLayout* ViewManager::addView(ViewHash hash, std::shared_ptr<ViewLayout> view)
 {

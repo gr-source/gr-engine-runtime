@@ -212,6 +212,9 @@ Editor::Editor()
 
     initialize();
 
+    RegistryDefaultComponent();
+    Type::Registry<CameraEditor>("CameraEditor");
+
     AssetReference::Load(m_project->path + "/asset.txt");
 
     /*
@@ -372,6 +375,8 @@ void Editor::drop(void *data)
 
 void Editor::initialize()
 {
+    SceneManager::Initialize();
+
     Renderer::Initialize();
 
     AssetReference::Initialize();
@@ -381,13 +386,12 @@ void Editor::initialize()
     DebugDraw::Initialize();
 
     TaskManager::Initialize();
-
-    RegistryDefaultComponent();
-    Type::Registry<CameraEditor>("CameraEditor");
 }
 
 void Editor::shutdown()
 {
+    SceneManager::Shutdown();
+
     Renderer::Shutdown();
 
     TaskManager::Shutdown();
@@ -1685,8 +1689,7 @@ void Editor::create_render_property()
     if (ImGui::IsItemHovered())
         ImGui::SetTooltip("Definir como Estático");
 
-    Signature mask = m_scene->GetECS()->GetMask(go.entity);
-    for (auto typeID : m_scene->GetECS()->GetArchetype(mask)->GetTypes())
+    for (auto typeID : m_scene->GetECS()->GetAllComponentType(go.entity))
         ShowTypeInfoUI(&go, Type::GetTypeInfoByID(typeID));
 
     auto avail = ImGui::GetContentRegionAvail();
