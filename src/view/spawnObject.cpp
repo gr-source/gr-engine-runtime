@@ -1,11 +1,14 @@
 #include "gr-engine/view/spawnObject.hpp"
 
+#include <cstring>
 #include <gr-base/managers/assetsManager.hpp>
 
 #include <gr-base/core/gameObject.hpp>
 
 #include <gr-base/script/transform.hpp>
 
+#include "gr-base/core/scene.hpp"
+#include "gr-base/script/name.hpp"
 #include "gr-engine/engine.hpp"
 #include "imgui.h"
 
@@ -14,6 +17,10 @@ SpawnObject::SpawnObject() : numInstances(100), position({0.0f, 0.0f})
 
 void SpawnObject::onRenderUI()
 {
+    auto scene = Scene::GetCurrent();
+    if (scene == nullptr)
+        return;
+
     ImGui::InputInt("Num", &numInstances);
 
     if (ImGui::Button("Spawn"))
@@ -26,7 +33,7 @@ void SpawnObject::onRenderUI()
     if (ImGui::Button("Despawn"))
     {
         for (auto& handle : m_instances)
-            // GameObject::DestroyImediate(handle);
+            scene->destroy(handle);
 
         m_instances.clear();
     }
@@ -35,12 +42,15 @@ void SpawnObject::onRenderUI()
 
 void SpawnObject::SetPrefab(Entity prefabID)
 {
+    auto scene = Scene::GetCurrent();
+    if (scene == nullptr)
+        return;
+
     int distance = numInstances / 2;
 
     int currentX = floor(position.x / 16.0f);
     int currentZ = floor(position.y / 16.0f);
 
-    /*
     for (int x=-distance;x<distance;x++)
     {
         for (int z=-distance;z<distance;z++)
@@ -48,18 +58,19 @@ void SpawnObject::SetPrefab(Entity prefabID)
             int targetX = (currentX + x);
             int targetZ = (currentZ + z);
 
-            auto gameobjectID = GameObject::Instantiate(prefabID);
+            std:: string str = "Test[" + std::to_string(targetX) + "][" + std::to_string(targetZ) + "]";
 
-            auto gameObject = GameObject::Get(gameobjectID);
-            gameObject->SetName("Test[" + std::to_string(targetX) + "][" + std::to_string(targetZ) + "]");
+            auto gameObject = scene->Wrap(scene->create(prefabID));
+            auto name = gameObject.GetOrAddComponent<Name>();
+            name->value = strdup(str.c_str());
 
-            auto transform = gameObject->GetTransform();
-            transform->setLocalPosition({(float)targetX * 5.5f, 0.0f, (float)targetZ * 4.5f});
+            auto transform = gameObject.GetOrAddComponent<Transform>();
+            transform->position = {(float)targetX * 5.5f, 0.0f, (float)targetZ * 4.5f};
+            transform->dirty = true;
 
-            m_instances.push_back(gameobjectID);
+            m_instances.push_back(gameObject.entity);
         }
     }
-    */
 
     // position += Vector2{(float)distance * 16.0f * 2.0f, 0.0f};
 

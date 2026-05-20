@@ -14,7 +14,7 @@ class SpawnObject : public ViewLayout
 
     Vector2 position;
 
-    std::vector<Handle> m_instances;
+    std::vector<Entity> m_instances;
 
 public:
     SpawnObject();

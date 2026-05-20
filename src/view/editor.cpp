@@ -1035,8 +1035,8 @@ void Editor::render_scene(Scene *scene)
         auto temp = m_scene->get_object_selected();
         m_scene->deselect_all();
 
-        // for (auto go : temp)
-            // m_scene->select(GameObject::Instantiate(go));
+        for (auto go : temp)
+            m_scene->select(m_scene->create(go));
     }
 
     if (ImGui::IsWindowFocused() && mImGuiIO->KeyCtrl && ImGui::IsKeyReleased(ImGuiKey_S))
