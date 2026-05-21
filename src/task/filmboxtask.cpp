@@ -98,7 +98,7 @@ void FilmboxLoadTask::onPostExecute(int result)
 
     cache.modelAsset = ModelSaveTask::ConvertToAssetModel(scene, entity);
 
-    scene->destroy(entity);
+    // scene->destroy(entity);
 
     view->addFile(name, cache);
 }
@@ -151,9 +151,7 @@ FilmboxLoadTask::GameObjectCache FilmboxLoadTask::foreach_node(const FbxNode* no
 
 Entity FilmboxLoadTask::CreateGameObjectFromCache(Scene* scene, GameObjectCache* cache, Entity parent)
 {
-    Entity entity = scene->create(cache->name.c_str());
-
-    GameObject gameObject = scene->Wrap(entity);
+    GameObject gameObject = scene->Wrap(scene->create(cache->name.c_str()));
     // gameObject->SetIsPrefab(true);
 
     auto transform = gameObject.GetComponent<Transform>();
@@ -192,13 +190,13 @@ Entity FilmboxLoadTask::CreateGameObjectFromCache(Scene* scene, GameObjectCache*
 
     if (parent != HANDLE_INVALID)
     {
-        scene->SetParent(parent, entity);
+        scene->SetParent(parent, gameObject.entity);
     }
 
     for (auto& child : cache->childrent)
-        CreateGameObjectFromCache(scene, &child, entity);
+        CreateGameObjectFromCache(scene, &child, gameObject.entity);
 
-    return entity;
+    return gameObject.entity;
 }
 
 

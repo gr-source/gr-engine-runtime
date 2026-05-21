@@ -227,7 +227,7 @@ private:
 
     void UpdateResizeSceneFramebuffer();
 
-    void create_render_guizmo(Scene *scene, const Camera* camera);
+    void create_render_guizmo(Scene *scene, const GameObject* go);
 
     void OnPlayButton();
 
@@ -301,13 +301,13 @@ private:
 
     void renderDropGameObject(GameObject **ref);
 
-    void OnPropertyTransform(Transform *transform);
+    void OnPropertyTransform(Entity e, Transform *transform);
 
     void OnPropertyCamera(Camera *camera);
     
-    void OnPropertyMeshFilter(MeshFilter *meshFilter);
+    void OnPropertyMeshFilter(Entity e, MeshFilter *meshFilter);
 
-    void OnPropertyMeshRender(MeshRender *meshRender);
+    void OnPropertyMeshRender(Entity e, MeshRender *meshRender);
 
     void OnPropertySkinnedMeshRender(SkinnedMeshRender *skinnedMeshRender);
 
@@ -383,7 +383,7 @@ inline void Editor::RenderProperty(Args&&... args)
     if (!go.GetComponent<T>())
         return;
 
-    std::invoke(std::bind(std::forward<Args>(args)..., go.GetComponent<T>()));
+    std::invoke(std::bind(std::forward<Args>(args)..., go.entity, go.GetComponent<T>()));
 }
 
 class PhysicsTask : public IAsyncTask<int>

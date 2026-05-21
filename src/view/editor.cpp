@@ -3,6 +3,7 @@
 #include <atomic>
 #include <cstddef>
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
 #include <exception>
 #include <gr-base/script/baserender.hpp>
@@ -13,9 +14,14 @@
 #include <gr-base/managers/eventManager.hpp>
 
 #include <gr-base/ecs/archetypeStorage.hpp>
+#include <gr-base/ecs/ecs.hpp>
 
 #include "gr-base/core/renderer.hpp"
-#include "gr-base/externals/handle.h"
+#include "gr-base/ecs/default.hpp"
+
+#include <gr-base/script/relationship.hpp>
+#include <gr-base/script/name.hpp>
+
 #include "gr-base/system/worldsystem.hpp"
 #include "gr-base/task/modelsavetask.hpp"
 #include "gr-engine/Global.h"
@@ -190,15 +196,15 @@ Editor::Editor()
                 RenderProperty<Transform>(&Editor::OnPropertyTransform, this);
             }
         },
-        INSERT_SCRIPT(Camera),
-        INSERT_SCRIPT(Light),
+        // INSERT_SCRIPT(Camera),
+        // INSERT_SCRIPT(Light),
         INSERT_SCRIPT(MeshRender),
-        INSERT_SCRIPT(SkinnedMeshRender),
+        // INSERT_SCRIPT(SkinnedMeshRender),
         INSERT_SCRIPT(MeshFilter),
-        INSERT_SCRIPT(LODComponent),
-        INSERT_SCRIPT(MeshCollider),
-        INSERT_SCRIPT(BoxCollider),
-        INSERT_SCRIPT(Rigidbody),
+        // INSERT_SCRIPT(LODComponent),
+        // INSERT_SCRIPT(MeshCollider),
+        // INSERT_SCRIPT(BoxCollider),
+        // INSERT_SCRIPT(Rigidbody),
         // INSERT_SCRIPT(Animator),
     };
 #undef INSERT_SCRIPT
@@ -571,12 +577,6 @@ void Editor::create_render_hierarchy(Scene* scene)
         if (!objects.empty())
             scene->select(objects.back());
     }
-    
-    if (ImGui::IsKeyReleased(ImGuiKey_F2) && ImGui::IsWindowHovered() && scene->has_object_selected())
-        popupFlags |= EditorPopupFlags_RenameGameObject;
-
-    if (ImGui::IsKeyReleased(ImGuiKey_Escape) && ImGui::IsWindowHovered())
-        scene->deselect_all();
 }
 
 void Editor::drop_gameobject(std::function<void (Entity)> func)
@@ -613,12 +613,14 @@ void Editor::RenderSceneObject(Scene *scene)
     if (ImGui::IsWindowHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Right))
         popupFlags |= EditorPopupFlags_SceneAddOption;
 
+    if (ImGui::IsKeyReleased(ImGuiKey_F2) && ImGui::IsWindowHovered() && scene->has_object_selected())
+        popupFlags |= EditorPopupFlags_RenameGameObject;
+
+    if (ImGui::IsKeyReleased(ImGuiKey_Escape) && ImGui::IsWindowHovered())
+        scene->deselect_all();
+
     ImGui::EndChild();
 }
-
-#include <gr-base/script/relationship.hpp>
-
-#include <gr-base/ecs/ecs.hpp>
 
 void Editor::ShowGameObjectHierarchy(Scene *scene, Entity entity)
 {
@@ -728,8 +730,7 @@ void Editor::PopupMenuAdd()
         switch (id)
         {
         case 0:
-            static int is = 0;
-            PostLoadGameObject(m_scene->create(std::string("Empty " + std::to_string(is++)).c_str()));
+            PostLoadGameObject(m_scene->create("Empty "));
             break;
         default:
             break;
@@ -991,8 +992,8 @@ void Editor::render_scene(Scene *scene)
 
             drop_gameobject_in_scene();
 
-            // if (scene->has_object_selected() && !Settings::bGameRunning)
-                // create_render_guizmo(scene);
+            if (scene->has_object_selected() && !Settings::bGameRunning)
+                create_render_guizmo(scene, &obj);
         }
     }
 
@@ -1076,8 +1077,7 @@ void Editor::UpdateResizeSceneFramebuffer()
     }
 }
 
-/*
-void Editor::create_render_guizmo(Scene *scene, const Camera* camera)
+void Editor::create_render_guizmo(Scene *scene, const GameObject* go)
 {
     if (ImGui::IsWindowHovered() && !mImGuiIO->KeyShift && !mImGuiIO->KeyCtrl)
     {
@@ -1097,54 +1097,58 @@ void Editor::create_render_guizmo(Scene *scene, const Camera* camera)
         }
     }
 
-    auto viewmatrix = camera->getViewmatrix();
-    auto projection = camera->getPerspesctive();
+    auto camera = go->GetComponent<CameraData>();
 
-    static bool IsMoving = false;
-    static std::unordered_set<Transform *> nodeup;
-    for (auto gameObjectID : scene->get_object_selected())
+    auto viewmatrix = camera->view;
+    auto projection = camera->projection;
+
+    // static bool IsMoving = false;
+    // static std::unordered_set<Transform *> nodeup;
+    for (auto entity : scene->get_object_selected())
     {
-        // TODO: Não deveria ser assim por que o objeto ainda permanece na lista ?
-        auto go = GameObject::Get(gameObjectID);
-        if (go == nullptr)
+        GameObject entitySelected = scene->Wrap(entity);
+        if (!entitySelected.IsAlive())
             continue;
 
-        ImGuizmo::SetID(gameObjectID);
-        auto transform = go->GetTransform();
+        ImGuizmo::SetID(entity);
+        auto transform = entitySelected.GetComponent<Transform>();
 
-        auto lastPosition = transform->getLocalPosition();
+        auto manipulatedWorld = transform->worldMatrix;
 
-        auto globalMatrix = transform->getGlobalMatrix();
-
-        bool bChanged = ImGuizmo::Manipulate(&viewmatrix[0][0], &projection[0][0], m_guizmoOperation, m_guizmoManipulate, &globalMatrix[0][0]);
-        if (bChanged)
+        transform->dirty = ImGuizmo::Manipulate(&viewmatrix[0][0], &projection[0][0], m_guizmoOperation, m_guizmoManipulate, &manipulatedWorld[0][0]);
+        if (transform->dirty)
         {
-            auto localMatrix = globalMatrix;
-            if (transform->hasParent())
-            {
-                auto parentMat = transform->getParent()->getGlobalMatrix();
-                Matrix4x4 m = Matrix4x4::identityMatrix;
+            Matrix4x4 localMatrix = manipulatedWorld;
 
-                if (gluInvertMatrix(&parentMat[0][0], &m[0][0]))
+            Relationship* rel = scene->GetECS()->GetComponent<Relationship>(entity);
+
+            if (rel != nullptr && rel->parent != INVALID_ENTITY)
+            {
+                auto* parentTransform =
+                    scene->GetECS()->GetComponent<Transform>(rel->parent);
+
+                if (parentTransform != nullptr)
                 {
-                    localMatrix = m * localMatrix;
+                    Matrix4x4 invParent = Matrix4x4::identityMatrix;
+
+                    if (gluInvertMatrix(
+                            &parentTransform->worldMatrix[0][0],
+                            &invParent[0][0]))
+                    {
+                        localMatrix = invParent * manipulatedWorld;
+                    }
                 }
             }
 
-            Vector3 s;
-            Quaternion r;
-            Vector3 t;
-            localMatrix.decompose(s, r, t);
+            localMatrix.decompose(
+                transform->scale,
+                transform->rotation,
+                transform->position);
 
-            transform->setLocalScale(s);
-            transform->setLocalRotation(r);
-            transform->setLocalPosition(t);
-
-            nodeup.emplace(transform);
-
-            IsMoving = true;
+            m_scene->MarkChildrenDirty(entity);
         }
 
+        /*
         static bool isDragging = false;
         if (ImGuizmo::IsUsing() && !isDragging) 
         {
@@ -1153,15 +1157,10 @@ void Editor::create_render_guizmo(Scene *scene, const Camera* camera)
         if (isDragging && !ImGuizmo::IsUsing()) 
         {
             isDragging = false;
-
-            // RenderManager::Remove(gameObjectID);
-
-            // RenderManager::Insert(gameObjectID);
         }
+        */
     }
-
 }
-*/
 
 void Editor::OnPlayButton()
 {
@@ -1890,34 +1889,37 @@ void Editor::create_popup_add_component()
 
 void Editor::create_popup_rename_object()
 {
-    /*
     auto isopen = ImGui::BeginPopup(GET_FLAG_NAME(EditorPopupFlags_RenameGameObject));
     if (!isopen)
-    {
         return;
-    }
 
     ImGui::SeparatorText("[ Rename ]");
-    auto objectlist = m_scene->get_object_selected();
 
-    auto object = GameObject::Get(objectlist.back());
-    auto go_name = object->GetName();
+    Entity entity = m_scene->get_object_selected().back();
 
-    char name[256] = {0};
-    strcpy(name, go_name.c_str());
+    auto go = m_scene->Wrap(entity);
+
+    // auto object = GameObject::Get();
+    auto entityName = m_scene->GetEntityName(entity);
+
+    char newName[256] = {0};
+    strcpy(newName, entityName.c_str());
 
     if (!ImGui::IsAnyItemActive() && !ImGui::IsMouseClicked(ImGuiMouseButton_Left))
         ImGui::SetKeyboardFocusHere();
 
-    if (ImGui::InputText("##create_popup_rename_object_inputtext_0", name, GET_N_ARRAY(name), ImGuiInputTextFlags_EnterReturnsTrue))
+    if (ImGui::InputText("##create_popup_rename_object_inputtext_0", newName, sizeof(newName), ImGuiInputTextFlags_EnterReturnsTrue))
     {
-        object->SetName(name);
+        auto n = go.GetOrAddComponent<Name>();
+        if (n->value != nullptr)
+            free(n->value);
+
+        n->value = strdup(newName);
 
         ImGui::CloseCurrentPopup();
     }
 
     ImGui::EndPopup();
-    */
 }
 
 void Editor::create_popup_create_script()
@@ -2173,7 +2175,7 @@ void Editor::renderDropGameObject(GameObject **ref)
 }
 
 /* ********** Propriedades ********** */
-void Editor::OnPropertyTransform(Transform *transform)
+void Editor::OnPropertyTransform(Entity e, Transform *transform)
 {
     static std::vector<const char*> textItemsToVector = {"X:", "Y:", "Z:"};
 
@@ -2195,7 +2197,8 @@ void Editor::OnPropertyTransform(Transform *transform)
         dirty = true;
     }
 
-    transform->dirty = dirty;
+    if (dirty)
+        m_scene->MarkChildrenDirty(e);
 }
 
 void Editor::OnPropertyCamera(Camera *camera)
@@ -2255,19 +2258,14 @@ void Editor::OnPropertyCamera(Camera *camera)
     */
 }
 
-void Editor::OnPropertyMeshFilter(MeshFilter *meshFilter)
+void Editor::OnPropertyMeshFilter(Entity e, MeshFilter *meshFilter)
 {
-    if (ImGui::TreeNode("Mesh"))
-    {
-        auto name = AssetsManager::GetMeshName(meshFilter->meshID);
+    auto name = AssetsManager::GetMeshName(meshFilter->meshID);
 
-        ImGui::Text("%s", name.c_str());
-
-        ImGui::TreePop();
-    }
+    ImGui::Text("%s", name.c_str());
 }
 
-void Editor::OnPropertyMeshRender(MeshRender *meshRender)
+void Editor::OnPropertyMeshRender(Entity e, MeshRender *meshRender)
 {
     auto avail = ImGui::GetContentRegionAvail();
     
@@ -2340,7 +2338,6 @@ void Editor::OnPropertyLODComponent(LODComponent* lodComponent)
             auto payload = ImGui::AcceptDragDropPayload(m_extensionDragDrop[DragDropFlags::MESH]);
             if (payload != NULL && payload->DataSize > 0)
             {
-                /*
                 std::vector<gtreefile *> files(payload->DataSize / sizeof(gtreefile *), nullptr);
                 memcpy(files.data(), payload->Data, payload->DataSize);
 
@@ -2725,17 +2722,11 @@ void Editor::SetupTexture(IconType type, gr::gTexture *texture) {
 
 void Editor::PostLoadGameObject(Entity prefabID)
 {
-    /*
     if (m_scene == nullptr)
         return;
 
-    Entity gameObjectID = GameObject::Instantiate(prefabID);
-
-    GameObject::DestroyImediate(prefabID);
-
     m_scene->deselect_all();
-    m_scene->select(gameObjectID);
-    */
+    m_scene->select(prefabID);
 }
 
 void Editor::CreateShaderTemplate(const std::string &path, const std::string &name)
