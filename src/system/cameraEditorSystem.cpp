@@ -15,6 +15,8 @@ CameraEditorSystem& CameraEditorSystem::GetInstance()
 void CameraEditorSystem::update(Scene *scene)
 {
     GameObject go = scene->Wrap(scene->GetCamera());
+    if (!go.IsAlive())
+        return;
 
     auto transform = go.GetComponent<Transform>();
 

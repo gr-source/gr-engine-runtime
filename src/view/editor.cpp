@@ -14,7 +14,7 @@
 #include <gr-base/managers/eventManager.hpp>
 
 #include <gr-base/ecs/archetypeStorage.hpp>
-#include <gr-base/ecs/ecs.hpp>
+#include <gr-base/ecs/world.hpp>
 
 #include "gr-base/core/renderer.hpp"
 #include "gr-base/ecs/default.hpp"
@@ -311,7 +311,6 @@ const char* Editor::getName() const
 
 void Editor::onUpdate()
 {
-    auto scene = SceneManager::GetCurrent();
     if (Settings::bGameRunning)
     {
         // ComponentStorage::Update();
@@ -321,13 +320,13 @@ void Editor::onUpdate()
         //     EditorController::Update(scene->getCamera());
     }
 
-    if (scene != nullptr)
+    if (m_scene != nullptr)
     {
-        CameraEditorSystem::Update(scene);
-        TransformSystem::Update(scene->GetECS());
-        CameraSystem::Update(scene->GetECS());
-        WorldSystem::Update(scene);
-        RenderSystem::Update(scene);
+        CameraEditorSystem::Update(m_scene);
+        TransformSystem::Update(m_scene->GetWorld());
+        CameraSystem::Update(m_scene->GetWorld());
+        WorldSystem::Update(m_scene);
+        RenderSystem::Update(m_scene);
     }
 
     // GameObjectManager::Cleanup();
@@ -628,7 +627,7 @@ void Editor::ShowGameObjectHierarchy(Scene *scene, Entity entity)
 
     auto name = scene->GetEntityName(entity);
 
-    auto rel = scene->GetECS()->GetComponent<Relationship>(entity);
+    auto rel = scene->GetWorld()->GetComponent<Relationship>(entity);
 
     if (scene->object_has_been_selected(entity))
         flags |= ImGuiTreeNodeFlags_Selected;
@@ -657,7 +656,7 @@ void Editor::ShowGameObjectHierarchy(Scene *scene, Entity entity)
     }
 
     if (dragDropGameObject(entity, name))
-        rel = scene->GetECS()->GetComponent<Relationship>(entity);
+        rel = scene->GetWorld()->GetComponent<Relationship>(entity);
     
     if (isOpen)
     {
@@ -669,7 +668,7 @@ void Editor::ShowGameObjectHierarchy(Scene *scene, Entity entity)
             {
                 ShowGameObjectHierarchy(scene, child);
 
-                auto childRel = scene->GetECS()->GetComponent<Relationship>(child);
+                auto childRel = scene->GetWorld()->GetComponent<Relationship>(child);
                 if (!childRel)
                     break;
 
@@ -1120,12 +1119,12 @@ void Editor::create_render_guizmo(Scene *scene, const GameObject* go)
         {
             Matrix4x4 localMatrix = manipulatedWorld;
 
-            Relationship* rel = scene->GetECS()->GetComponent<Relationship>(entity);
+            Relationship* rel = scene->GetWorld()->GetComponent<Relationship>(entity);
 
             if (rel != nullptr && rel->parent != INVALID_ENTITY)
             {
                 auto* parentTransform =
-                    scene->GetECS()->GetComponent<Transform>(rel->parent);
+                    scene->GetWorld()->GetComponent<Transform>(rel->parent);
 
                 if (parentTransform != nullptr)
                 {
@@ -1688,7 +1687,7 @@ void Editor::create_render_property()
     if (ImGui::IsItemHovered())
         ImGui::SetTooltip("Definir como Estático");
 
-    for (auto typeID : m_scene->GetECS()->GetAllComponentType(go.entity))
+    for (auto typeID : m_scene->GetWorld()->GetAllComponentType(go.entity))
         ShowTypeInfoUI(&go, Type::GetTypeInfoByID(typeID));
 
     auto avail = ImGui::GetContentRegionAvail();
@@ -1812,17 +1811,12 @@ void Editor::create_popup_create_scene()
         Entity camera = m_scene->create("MainCamera");
         {
             GameObject go = m_scene->Wrap(camera);
-            // go.AddComponent<CameraEditor>()
             go.AddComponent<CameraData>();
             go.AddComponent<Camera>();
             go.GetComponent<Camera>()->rendertarget = Renderer::backbuffer;
-
-            auto transform = go.GetComponent<Transform>();
         }
 
         m_scene->SetCamera(camera);
-
-        // set_scene(m_scene);
 
         ImGui::CloseCurrentPopup();
     }
