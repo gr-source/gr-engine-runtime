@@ -5,20 +5,13 @@
 class FunctionTimer
 {
 public:
-    FunctionTimer();
-
-    void start();
+    FunctionTimer(const char* name);
+    ~FunctionTimer();
     
-    void end();
-    
-    float getDeltaTime() const;
-    
-    float getFps() const;
-
 private:
-    std::chrono::high_resolution_clock::time_point startTime;
+    std::chrono::high_resolution_clock::time_point m_start;
 
-    float deltaTime;
+    const char* m_name;
 };
 
 

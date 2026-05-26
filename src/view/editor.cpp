@@ -27,6 +27,7 @@
 #include "gr-engine/Global.h"
 #include "gr-engine/core/time.hpp"
 
+#include "gr-engine/functionTimer.hpp"
 #include "gr-engine/script/cameraEditor.hpp"
 #include "gr-engine/system/cameraEditorSystem.hpp"
 
@@ -96,6 +97,7 @@
 #include <gr-math/matrix4x4.hpp>
 #include <gr-render/gTexture.h>
 #include <filesystem>
+#include <iomanip>
 #include <iostream>
 #include <string>
 
@@ -311,27 +313,35 @@ const char* Editor::getName() const
 
 void Editor::onUpdate()
 {
-    if (Settings::bGameRunning)
-    {
-        // ComponentStorage::Update();
-    } else
-    {
-        // if (scene != nullptr && scene->getCamera())
-        //     EditorController::Update(scene->getCamera());
-    }
+    // FunctionTimer frameTimer("Editor::onUpdate");
 
     if (m_scene != nullptr)
     {
-        CameraEditorSystem::Update(m_scene);
-        TransformSystem::Update(m_scene->GetWorld());
-        CameraSystem::Update(m_scene->GetWorld());
-        WorldSystem::Update(m_scene);
-        RenderSystem::Update(m_scene);
+        {
+            // FunctionTimer timer("CameraEditorSystem");
+            CameraEditorSystem::Update(m_scene);
+        }
+
+        {
+            // FunctionTimer timer("TransformSystem");
+            TransformSystem::Update(m_scene->GetWorld());
+        }
+
+        {
+            // FunctionTimer timer("CameraSystem");
+            CameraSystem::Update(m_scene->GetWorld());
+        }
+
+        {
+            // FunctionTimer timer("WorldSystem");
+            WorldSystem::Update(m_scene);
+        }
+
+        {
+            // FunctionTimer timer("RenderSystem");
+            RenderSystem::Update(m_scene);
+        }
     }
-
-    // GameObjectManager::Cleanup();
-
-    // RenderSystem::Update();
 }
 
 void Editor::onRender3D()
@@ -550,16 +560,12 @@ void Editor::create_render_hierarchy(Scene* scene)
     ImGui::SetNextItemOpen(true, ImGuiCond_Appearing);
     if (ImGui::TreeNodeEx(name.c_str(), ImGuiTreeNodeFlags_SpanFullWidth))
     {
-        /*
-        drop_gameobject([&](GameObject *gameobject)
-                {
-                    Transform *transform = gameobject->GetTransform();
-                    transform->setParent(nullptr);
+        drop_gameobject([&](Entity entity)
+        {
+            scene->Unlink(entity);
+            scene->SetParent(scene->GetRoot(), entity);
+        });
 
-                    scene->insert(transform->GetGameObject()->GetCacheID());
-                });
-        */
-        
         RenderSceneObject(scene);
 
         ImGui::TreePop();
@@ -572,9 +578,17 @@ void Editor::create_render_hierarchy(Scene* scene)
 
         scene->deselect_all();
 
-        auto objects = scene->GetRoot();
-        if (!objects.empty())
-            scene->select(objects.back());
+
+        GameObject root = scene->Wrap(scene->GetRoot());
+
+        auto rel = root.GetComponent<Relationship>();
+        if (rel != nullptr)
+        {
+            Entity child = rel->firstChild;
+
+            if (child != INVALID_ENTITY)
+                scene->select(child);
+        }
     }
 }
 
@@ -596,17 +610,23 @@ void Editor::drop_gameobject(std::function<void (Entity)> func)
 
 void Editor::RenderSceneObject(Scene *scene)
 {
-    auto list = scene->GetRoot();
+    GameObject root = scene->Wrap(scene->GetRoot());
 
-    ImGui::BeginChild("SceneObjectsScroll");
-
-    ImGuiListClipper clipper;
-    clipper.Begin((int)list.size());
-
-    while (clipper.Step())
+    auto rel = root.GetComponent<Relationship>();
+    if (rel != nullptr)
     {
-        for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++)
-            ShowGameObjectHierarchy(scene, list[i]);
+        Entity child = rel->firstChild;
+
+        while (child != INVALID_ENTITY)
+        {
+            ShowGameObjectHierarchy(scene, child);
+
+            auto childRel = scene->GetWorld()->GetComponent<Relationship>(child);
+            if (!childRel)
+                break;
+
+            child = childRel->nextSibling;
+        }
     }
 
     if (ImGui::IsWindowHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Right))
@@ -617,8 +637,6 @@ void Editor::RenderSceneObject(Scene *scene)
 
     if (ImGui::IsKeyReleased(ImGuiKey_Escape) && ImGui::IsWindowHovered())
         scene->deselect_all();
-
-    ImGui::EndChild();
 }
 
 void Editor::ShowGameObjectHierarchy(Scene *scene, Entity entity)
