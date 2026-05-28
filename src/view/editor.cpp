@@ -610,6 +610,27 @@ void Editor::drop_gameobject(std::function<void (Entity)> func)
 
 void Editor::RenderSceneObject(Scene *scene)
 {
+    if (scene->hierarchyDirty)
+    {
+        RebuildHierarchyVector();
+
+        scene->hierarchyDirty = false;
+    }
+
+    ImGui::BeginChild("SceneObjectsScroll");
+
+    ImGuiListClipper clipper;
+    clipper.Begin((int)uiList.size());
+
+    while (clipper.Step())
+    {
+        for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++)
+        {
+            ShowGameObjectHierarchy(scene, uiList[i]);
+        }
+    }
+
+    /*
     GameObject root = scene->Wrap(scene->GetRoot());
 
     auto rel = root.GetComponent<Relationship>();
@@ -628,6 +649,7 @@ void Editor::RenderSceneObject(Scene *scene)
             child = childRel->nextSibling;
         }
     }
+    */
 
     if (ImGui::IsWindowHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Right))
         popupFlags |= EditorPopupFlags_SceneAddOption;
@@ -1248,8 +1270,6 @@ void Editor::OnPostSaveSnapshot(std::string file)
 void Editor::OnPostLoadSnapshot(Scene* scene)
 {
     m_scene = scene;
-
-    m_scene->bRunning = true;
 
     Settings::bGameRunning = true;
 
@@ -3171,6 +3191,44 @@ void Editor::drop_gmdx(std::function<void (std::string)> func)
     unselect_all_file();
 
     ImGui::EndDragDropTarget();
+}
+
+void Editor::RebuildHierarchyVector()
+{
+    uiList.clear();
+
+    Entity root = m_scene->GetRoot();
+
+    auto rel = m_scene->GetWorld()->GetComponent<Relationship>(root);
+
+    Entity child = rel->firstChild;
+    while (child != INVALID_ENTITY)
+    {
+        Traverse(child, 0);
+
+        auto cRel = m_scene->GetWorld()->GetComponent<Relationship>(child);
+        child = cRel->nextSibling;
+    }
+
+    // Traverse(root, 0);
+}
+
+
+void Editor::Traverse(Entity e, int depth)
+{
+    uiList.push_back(e);
+    // uiList.push_back({e, depth});
+
+    auto rel = m_scene->GetWorld()->GetComponent<Relationship>(e);
+
+    Entity child = rel->firstChild;
+    while (child != INVALID_ENTITY)
+    {
+        Traverse(child, depth + 1);
+
+        auto cRel = m_scene->GetWorld()->GetComponent<Relationship>(child);
+        child = cRel->nextSibling;
+    }
 }
 
 PhysicsTask::PhysicsTask()

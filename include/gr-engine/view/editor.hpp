@@ -195,6 +195,8 @@ private:
 
     MaterialID m_materialToRename;
 
+    std::vector<Entity> uiList;
+
     void initialize();
 
     void shutdown();
@@ -371,6 +373,10 @@ private:
     void delete_file_selected();
 
     void drop_gmdx(std::function<void (std::string)> func);
+
+    void RebuildHierarchyVector();
+
+    void Traverse(Entity e, int depth);
 };
 
 template <typename T, typename... Args>
