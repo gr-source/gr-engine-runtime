@@ -630,6 +630,8 @@ void Editor::RenderSceneObject(Scene *scene)
         }
     }
 
+    ImGui::EndChild();
+
     /*
     GameObject root = scene->Wrap(scene->GetRoot());
 

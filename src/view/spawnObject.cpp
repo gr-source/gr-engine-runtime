@@ -72,6 +72,8 @@ void SpawnObject::SetPrefab(Entity prefabID)
         }
     }
 
+    scene->destroy(prefabID);
+
     // position += Vector2{(float)distance * 16.0f * 2.0f, 0.0f};
 
     // GameObject::DestroyImediate(prefabID);
