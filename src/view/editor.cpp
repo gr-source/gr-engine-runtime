@@ -27,7 +27,7 @@
 #include "gr-engine/Global.h"
 #include "gr-engine/core/time.hpp"
 
-#include "gr-engine/functionTimer.hpp"
+#include "gr-engine/scopeTimer.hpp"
 #include "gr-engine/script/cameraEditor.hpp"
 #include "gr-engine/system/cameraEditorSystem.hpp"
 
@@ -313,35 +313,8 @@ const char* Editor::getName() const
 
 void Editor::onUpdate()
 {
-    // FunctionTimer frameTimer("Editor::onUpdate");
-
     if (m_scene != nullptr)
-    {
-        {
-            // FunctionTimer timer("CameraEditorSystem");
-            CameraEditorSystem::Update(m_scene);
-        }
-
-        {
-            // FunctionTimer timer("TransformSystem");
-            TransformSystem::Update(m_scene->GetWorld());
-        }
-
-        {
-            // FunctionTimer timer("CameraSystem");
-            CameraSystem::Update(m_scene->GetWorld());
-        }
-
-        {
-            // FunctionTimer timer("WorldSystem");
-            WorldSystem::Update(m_scene);
-        }
-
-        {
-            // FunctionTimer timer("RenderSystem");
-            RenderSystem::Update(m_scene);
-        }
-    }
+        m_scene->Update();
 }
 
 void Editor::onRender3D()
@@ -1847,6 +1820,11 @@ void Editor::create_popup_create_scene()
     if (ImGui::InputText("##popup_create_scene_inputtext", name, GET_N_ARRAY(name), ImGuiInputTextFlags_EnterReturnsTrue))
     {
         m_scene = SceneManager::Create(name);
+        m_scene->RegistrySystem<CameraEditorSystem>(StageType::INPUT);
+        m_scene->RegistrySystem<TransformSystem>(StageType::SIMULATION);
+        m_scene->RegistrySystem<WorldSystem>(StageType::SIMULATION);
+        m_scene->RegistrySystem<CameraSystem>(StageType::SIMULATION);
+        m_scene->RegistrySystem<RenderSystem>(StageType::RENDER);
 
         Entity camera = m_scene->create("MainCamera");
         {

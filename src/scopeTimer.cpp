@@ -1,14 +1,14 @@
-#include "gr-engine/functionTimer.hpp"
+#include "gr-engine/scopeTimer.hpp"
 
 #include <iostream>
 #include <iomanip>
 
-FunctionTimer::FunctionTimer(const char* name) : m_name(name)
+ScopeTimer::ScopeTimer(const char* name) : m_name(name)
 {
     m_start = std::chrono::high_resolution_clock::now();
 }
 
-FunctionTimer::~FunctionTimer()
+ScopeTimer::~ScopeTimer()
 {
     auto end =
             std::chrono::high_resolution_clock::now();

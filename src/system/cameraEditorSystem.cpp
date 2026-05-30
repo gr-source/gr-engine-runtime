@@ -6,13 +6,10 @@
 #include <algorithm>
 #include <gr-base/core/scene.hpp>
 
-CameraEditorSystem& CameraEditorSystem::GetInstance()
-{
-    static CameraEditorSystem instance;
-    return instance;
-}
+CameraEditorSystem::CameraEditorSystem() : mouseSensitivity(0.1f), elapsed(Vector2::zero)
+{}
 
-void CameraEditorSystem::update(Scene *scene)
+void CameraEditorSystem::Update(Scene *scene)
 {
     GameObject go = scene->Wrap(scene->GetCamera());
     if (!go.IsAlive())

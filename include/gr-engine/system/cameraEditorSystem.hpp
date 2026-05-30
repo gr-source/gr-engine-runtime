@@ -1,24 +1,21 @@
 #pragma once
 
+#include "gr-base/core/system.hpp"
+
 #include "gr-base/script/transform.hpp"
 #include <gr-base/core/default.hpp>
 
-class CameraEditorSystem
+class CameraEditorSystem : public System
 {
 public:
-    inline static void Update(Scene* scene)
-    {
-        GetInstance().update(scene);
-    }
+    CameraEditorSystem();
 
-private:
-    static CameraEditorSystem& GetInstance();
+public:
+    float mouseSensitivity;
 
-    float mouseSensitivity = 0.1f;
+    Vector2 elapsed;
 
-    Vector2 elapsed = Vector2::zero;
-
-    void update(Scene* scene);
+    void Update(Scene* scene) override;
 
     void UpdateCursor(Transform* transform);
 

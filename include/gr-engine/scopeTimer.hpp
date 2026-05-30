@@ -2,11 +2,11 @@
 
 #include <chrono>
 
-class FunctionTimer
+class ScopeTimer
 {
 public:
-    FunctionTimer(const char* name);
-    ~FunctionTimer();
+    ScopeTimer(const char* name);
+    ~ScopeTimer();
     
 private:
     std::chrono::high_resolution_clock::time_point m_start;
