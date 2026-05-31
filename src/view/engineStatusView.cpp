@@ -101,7 +101,7 @@ void EngineStatusView::onRenderUI()
 
     ImGui::SeparatorText("AssetManager");
     ImGui::Text("Textures: %ld", AssetsManager::GetTextureCount());
-    ImGui::Text("Material: %d", AssetsManager::GetMaterialCount());
+    ImGui::Text("Material: %ld", AssetsManager::GetMaterialCount());
     ImGui::Text("Mesh: %ld", AssetsManager::GetMeshCount());
 
     ImGui::SeparatorText("Threads");

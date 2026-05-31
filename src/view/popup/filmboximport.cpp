@@ -1,10 +1,10 @@
 #include "gr-engine/view/popup/filmboximport.hpp"
 
-#include "gr-base/core/assetReference.hpp"
 #include "gr-base/core/file/file.hpp"
 
 #include "gr-base/core/thread/taskmanager.hpp"
 
+#include "gr-base/externals/hash.hpp"
 #include "gr-base/managers/assetsManager.hpp"
 #include "gr-base/managers/eventManager.hpp"
 #include "gr-engine/engine.hpp"
@@ -25,20 +25,20 @@
 FilmboxImport::FilmboxImport()
 {}
 
-void FilmboxImport::addFile(const std::string& name, const ModelCache& cache)
+void FilmboxImport::addFile(const std::string& filename, const ModelPack& pack)
 {
-    m_modelsCaching.emplace(name, cache);
+    m_modelPack.emplace(filename, pack);
 }
 
 void FilmboxImport::onRenderUI()
 {
     Engine* engine = static_cast<Engine*>(Application::GetInstance());
 
-    for (auto &&[name, cache] : m_modelsCaching)
+    for (auto &&[filename, pack] : m_modelPack)
     {
-        if (ImGui::CollapsingHeader(name.c_str()))
+        if (ImGui::CollapsingHeader(filename.c_str()))
         {
-            auto& materialsCache = cache.materialsAsset;
+            auto& materialsCache = pack.materialsAsset;
             if (!materialsCache.empty() && ImGui::TreeNode("Material"))
             {
                 for (auto&&[name, asset] : materialsCache)
@@ -48,7 +48,7 @@ void FilmboxImport::onRenderUI()
                 ImGui::TreePop();
             }
 
-            auto& meshesCache = cache.meshesAsset;
+            auto& meshesCache = pack.meshesAsset;
             if (!meshesCache.empty() && ImGui::TreeNode("Mesh"))
             {
                 for (auto &&[name, mesh] : meshesCache)
@@ -59,7 +59,7 @@ void FilmboxImport::onRenderUI()
 
             if (ImGui::TreeNode("GameObject"))
             {
-                render_tree_node(&cache.modelAsset);
+                render_tree_node(&pack.modelAsset);
                 ImGui::TreePop();
             }
         }
@@ -69,23 +69,13 @@ void FilmboxImport::onRenderUI()
 
     if (engine->has_project() && ImGui::Button("Save", ImVec2(avail.x, 0.0f)))
     {
-        auto& project = engine->get_project();
-
-        auto dir = project.path + "/assets";
-
-        for (auto &&[name, cache] : m_modelsCaching)
+        for (auto &&[filename, cache] : m_modelPack)
         {
             // material
             {
-                auto newdirmat = dir + "/material/" + name;
-                if (!gfile::exists(newdirmat))
-                    gfile::create_directory(newdirmat);
-
-                for (auto&&[name, asset] : cache.materialsAsset)
+                for (auto&&[asset_name, asset] : cache.materialsAsset)
                 {
-                    auto path = newdirmat + "/" + name + ".gmat";
-
-                    AssetReference::Registry(name, path);
+                    auto path = "material/" + asset_name;
 
                     TaskManager::Add<MaterialSaveTask>(path, asset);
                 }
@@ -93,25 +83,21 @@ void FilmboxImport::onRenderUI()
 
             // mesh
             {
-                auto newdirmat = dir + "/mesh/" + name;
-                if (!gfile::exists(newdirmat))
-                    gfile::create_directory(newdirmat);
-
-                for (auto&&[name, asset] : cache.meshesAsset)
+                for (auto&&[asset_name, asset] : cache.meshesAsset)
                 {
-                    TaskManager::Add<MeshSaveTask>(newdirmat + "/" + name + ".gmsh", asset);
+                    auto path = "mesh/" + asset_name;
+
+                    TaskManager::Add<MeshSaveTask>(path, asset);
                 }
             }
 
             // gameObject
             {
-                auto newdirmat = dir + "/model/" + name;
-                if (!gfile::exists(newdirmat))
-                    gfile::create_directory(newdirmat);
-
                 auto& asset = cache.modelAsset;
 
-                TaskManager::Add<ModelSaveTask>(newdirmat + "/" + asset.name + ".gmdl", asset);
+                auto path = "model/" + asset.name;
+
+                TaskManager::Add<ModelSaveTask>(path, asset);
             }
         }
 

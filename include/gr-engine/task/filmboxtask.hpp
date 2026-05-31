@@ -35,20 +35,7 @@ private:
 
     std::unordered_map<std::string, MeshAsset> m_meshCacheList;
 
-    struct GameObjectCache
-    {
-        Vector3 position;
-        Quaternion rotation;
-        Vector3 scale;
-
-        std::string meshName;
-
-        std::string name;
-
-        std::vector<GameObjectCache> childrent;
-    };
-
-    std::vector<GameObjectCache> m_objectCacheList;
+    std::vector<ModelAsset> m_objectCacheList;
 
     const FbxScene *m_scene;
 
@@ -56,10 +43,8 @@ private:
 
     int doInBackground() override;
 
-    void onPostExecute(int result) override;
+    void onPostExecute(Result<int> result) override;
 
-    GameObjectCache foreach_node(const FbxNode* node);
-
-    Entity CreateGameObjectFromCache(Scene* scene, GameObjectCache* cache, Entity parent = HANDLE_INVALID);
+    ModelAsset PackingObject(const FbxNode* node);
 };
 

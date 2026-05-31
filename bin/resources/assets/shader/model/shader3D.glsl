@@ -1,8 +1,8 @@
 #define_type vertex
 
-layout (location = 0) in vec3 in_pos;
+layout (location = 0) in vec4 in_pos;
 
-layout (location = 1) in vec3 in_normal;
+layout (location = 1) in vec4 in_normal;
 layout (location = 2) in vec2 in_texCoord;
 // layout (location = 3) in int in_entityID;
 
@@ -40,7 +40,7 @@ void vertex();
 
 void main()
 {
-    vec4 localPos = vec4(in_pos, 1.0);
+    vec4 localPos = vec4(in_pos.xyz, 1.0);
 
     // =========================
     // Skinning
@@ -84,7 +84,7 @@ void main()
 
     // normal matrix correta
     mat3 normalMatrix = transpose(inverse(mat3(u_mat_model)));
-    u_normal = normalize(normalMatrix * in_normal);
+    u_normal = normalize(normalMatrix * in_normal.xyz);
 
     u_texCoord = in_texCoord;
 

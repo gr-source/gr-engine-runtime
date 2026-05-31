@@ -193,8 +193,6 @@ private:
 
     ImGuizmo::MODE m_guizmoManipulate;
 
-    MaterialID m_materialToRename;
-
     std::vector<Entity> uiList;
 
     void initialize();
@@ -317,7 +315,7 @@ private:
 
     void OnPropertyMeshCollider(MeshCollider *meshCollider);
 
-    bool render_material(MaterialID id);
+    // bool render_material(MaterialID id);
 
     void render_shader_property(const std::string &name, Material *material);
 
@@ -375,8 +373,6 @@ private:
     void drop_gmdx(std::function<void (std::string)> func);
 
     void RebuildHierarchyVector();
-
-    void Traverse(Entity e, int depth);
 };
 
 template <typename T, typename... Args>

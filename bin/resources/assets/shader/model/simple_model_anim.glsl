@@ -21,11 +21,11 @@ void vertex()
         
         if (in_indices[i] >= MAX_BONES)
         {
-            SkinVertex = vec4(in_pos, 1.0);
+            SkinVertex = vec4(in_pos.xyz, 1.0);
             break;
         }
         
-        SkinVertex += u_boneMatrices[in_indices[i]] * vec4(in_pos, 1.0) * in_weight[i];
+        SkinVertex += u_boneMatrices[in_indices[i]] * vec4(in_pos.xyz, 1.0) * in_weight[i];
     }
 
     u_position = u_projection * u_view * u_model * SkinVertex;

@@ -14,7 +14,7 @@
 
 #include <unordered_map>
 
-struct ModelCache
+struct ModelPack
 {
     std::unordered_map<std::string, MaterialAsset> materialsAsset;
     std::unordered_map<std::string, MeshAsset> meshesAsset;
@@ -32,10 +32,10 @@ public:
         return "Filmbox Import";
     }
 
-    void addFile(const std::string& name, const ModelCache& cache);
+    void addFile(const std::string& filename, const ModelPack& pack);
 
 private:
-    std::unordered_map<std::string, ModelCache> m_modelsCaching;
+    std::unordered_map<std::string, ModelPack> m_modelPack;
 
     void onRenderUI() override;
 

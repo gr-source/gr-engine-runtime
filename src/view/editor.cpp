@@ -34,10 +34,10 @@
 #include "gr-engine/application.hpp"
 #include "gr-engine/engine.hpp"
 
-#include "gr-base/core/clock.hpp"
-#include "gr-base/core/debugdraw.hpp"
 #include "gr-base/core/mainthreaddispatcher.hpp"
-#include "gr-base/core/assetReference.hpp"
+#include "gr-base/core/debugdraw.hpp"
+#include "gr-base/core/assetDB.hpp"
+#include "gr-base/core/clock.hpp"
 
 #include "gr-base/core/thread/taskmanager.hpp"
 
@@ -99,6 +99,7 @@
 #include <filesystem>
 #include <iomanip>
 #include <iostream>
+#include <stdexcept>
 #include <string>
 
 #include <gr-base/core/rendertarget.hpp>
@@ -124,9 +125,11 @@ enum class DragDropFlags : uint32_t {
     MESH
 };
 
+#include <gr-base/core/binary/gHeader.hpp>
+
 static std::unordered_map<DragDropFlags, const char *> m_extensionDragDrop =
 {
-    {DragDropFlags::GMDL,       ".gmdl"},
+    {DragDropFlags::GMDL,       HEADER_MODEL_EXTENSION},
     {DragDropFlags::SCN,        ".scn"},
     {DragDropFlags::SCRIPT,     ".script"},
     {DragDropFlags::SHADER,     ".shader"},
@@ -138,7 +141,7 @@ static std::unordered_map<DragDropFlags, const char *> m_extensionDragDrop =
 
 static std::unordered_map<std::string, DragDropFlags> m_extensionNameToFlag =
 {
-    {".gmdl",       DragDropFlags::GMDL},
+    {HEADER_MODEL_EXTENSION,  DragDropFlags::GMDL},
     {".scn",        DragDropFlags::SCN},
     {".cpp",        DragDropFlags::SCRIPT},
     {".hpp",        DragDropFlags::SCRIPT},
@@ -154,7 +157,6 @@ static std::unordered_map<std::string, DragDropFlags> m_extensionNameToFlag =
 Editor::Editor()
     : m_viewport(ImGui::GetMainViewport()),
     mImGuiIO(&ImGui::GetIO()),
-    m_materialToRename(ID_INVALID),
     m_plugin(nullptr),
     m_state(EngineState::Edit),
     m_runtime(nullptr),
@@ -223,7 +225,7 @@ Editor::Editor()
     RegistryDefaultComponent();
     Type::Registry<CameraEditor>("CameraEditor");
 
-    AssetReference::Load(m_project->path + "/asset.txt");
+    AssetDB::Load(m_project->path + "/asset.txt");
 
     /*
     {
@@ -263,20 +265,11 @@ Editor::Editor()
     EventManager::Attach("delete_file_selected", &Editor::delete_file_selected, this);
     EventManager::Attach("editor_update_tree_file", &Editor::updateFileTree, this, &root_tree_file);
 
-    // try
-    // {
-        // AssetReference::GetFile("")
-    // } catch (declaration) {
-    
-    // }
-
     // TaskManager::Add<ShaderBuildTask>(
-    //         "/home/NoirVoid/Projetos/line.gshd",
     //         "/home/NoirVoid/.local/share/gr-engine/assets/shader/line.glsl"
     //         );
 
     // TaskManager::Add<ShaderBuildTask>(
-    //         "/home/NoirVoid/Projetos/simple_model.gshd",
     //         "/home/NoirVoid/.local/share/gr-engine/assets/shader/model/simple_model.glsl"
     //         );
 }
@@ -286,7 +279,7 @@ Editor::~Editor()
     m_playMode = nullptr;
     m_editMode = nullptr;
 
-    AssetReference::Save(m_project->path + "/asset.txt");
+    AssetDB::Save(m_project->path + "/asset.txt");
 
     shutdown();
 }
@@ -302,7 +295,9 @@ void Editor::loadScript(const std::string& dir)
 
     std::string temp = gfile::get_cache_directory() + "/snapshot.scn";
 
-    AssetsManager::SceneSaveAsync(temp, m_scene, &Editor::OnPostSaveSnapshot, this, temp);
+    throw std::runtime_error("Falta ajustar");
+
+    // AssetsManager::SceneSaveAsync(temp, m_scene, &Editor::OnPostSaveSnapshot, this, temp);
 }
 
 // ===================================== END =========================================================
@@ -367,7 +362,13 @@ void Editor::initialize()
 
     Renderer::Initialize();
 
-    AssetReference::Initialize();
+    {
+        AssetConfig config;
+        config.projectRoot = m_project->path + "/";
+        config.assetFolder = "assets/";
+
+        AssetDB::Initialize(config);
+    }
 
     AssetsManager::Initialize();
 
@@ -388,7 +389,7 @@ void Editor::shutdown()
 
     DebugDraw::Shutdown();
 
-    AssetReference::Shutdown();
+    AssetDB::Shutdown();
 
     AssetsManager::Shutdown();
 }
@@ -820,8 +821,8 @@ void Editor::drop_scene_file_in_viewport()
     std::vector<gtreefile *> files(payload->DataSize / sizeof(gtreefile *), nullptr);
     memcpy(files.data(), payload->Data, payload->DataSize);
 
-    for (auto file : files)
-        AssetsManager::LoadScene(file->path, &Editor::set_scene, this);
+    // for (auto file : files)
+    //     AssetsManager::LoadScene(file->path, &Editor::set_scene, this);
 
     ImGui::EndDragDropTarget();
 }
@@ -1238,8 +1239,6 @@ void Editor::OnPostSaveSnapshot(std::string file)
     m_runtime->initialize();
 
     m_scene = nullptr;
-
-    AssetsManager::LoadScene(file, &Editor::OnPostLoadSnapshot, this);
 }
 
 void Editor::OnPostLoadSnapshot(Scene* scene)
@@ -1296,7 +1295,7 @@ void Editor::drop_gameobject_in_scene()
 
     for (auto &file : files)
     {
-        if (file->extension == ".gmdl")
+        if (file->extension == HEADER_MODEL_EXTENSION)
             AssetsManager::LoadGameObjectFromFile(file->path, &Editor::PostLoadGameObject, this);
     }
 
@@ -1620,9 +1619,9 @@ void Editor::drop_gameobject_in_treefile(gtreefile *tree_file)
 
     auto gameobject = m_scene->Wrap(entity);
 
-    auto file = tree_file->path + "/" + m_scene->GetEntityName(entity) + ".gmdl";
+    auto path = "model/" + m_scene->GetEntityName(entity);
 
-    TaskManager::Add<ModelSaveTask>(file, m_scene, entity);
+    TaskManager::Add<ModelSaveTask>(path, m_scene, entity);
 
     ImGui::EndDragDropTarget();
 }
@@ -1824,7 +1823,7 @@ void Editor::create_popup_create_scene()
         m_scene->RegistrySystem<TransformSystem>(StageType::SIMULATION);
         m_scene->RegistrySystem<WorldSystem>(StageType::SIMULATION);
         m_scene->RegistrySystem<CameraSystem>(StageType::SIMULATION);
-        m_scene->RegistrySystem<RenderSystem>(StageType::RENDER);
+        // m_scene->RegistrySystem<RenderSystem>(StageType::RENDER);
 
         Entity camera = m_scene->create("MainCamera");
         {
@@ -2272,9 +2271,9 @@ void Editor::OnPropertyCamera(Camera *camera)
 
 void Editor::OnPropertyMeshFilter(Entity e, MeshFilter *meshFilter)
 {
-    auto name = AssetsManager::GetMeshName(meshFilter->meshID);
+    // auto name = AssetsManager::GetMeshName(meshFilter->meshID);
 
-    ImGui::Text("%s", name.c_str());
+    ImGui::Text("Mesh Handle: %ld", meshFilter->mesh);
 }
 
 void Editor::OnPropertyMeshRender(Entity e, MeshRender *meshRender)
@@ -2285,12 +2284,11 @@ void Editor::OnPropertyMeshRender(Entity e, MeshRender *meshRender)
         popupFlags |= EditorPopupFlags_CreateMaterial;
 
     ImGui::Indent();
-    for (MaterialID &materialID : meshRender->materials)
+    for (size_t i=0;i<meshRender->numMaterials;i++)
     {
-        if (render_material(materialID))
-        {
-            // meshRender->removeMaterial(materialID);
-        }
+        auto& material = meshRender->materials[i];
+
+        ImGui::Text("Material: %ld", material);
     }
     ImGui::Unindent();
 }
@@ -2372,6 +2370,7 @@ void Editor::OnPropertyLODComponent(LODComponent* lodComponent)
     */
 }
 
+/*
 bool Editor::render_material(MaterialID id)
 {
     auto name = AssetsManager::GetMaterialName(id);
@@ -2400,7 +2399,6 @@ bool Editor::render_material(MaterialID id)
         else
             material->SetDisableInstancing();
     }
-    */
 
     // auto shaderParams = GetShaderParamsFromName(AssetsManager::GetShaderName(shader));
 
@@ -2414,6 +2412,7 @@ bool Editor::render_material(MaterialID id)
 
     return false;
 }
+*/
 
 void Editor::render_shader_property(const std::string &name, Material *material)
 {
@@ -3184,27 +3183,7 @@ void Editor::RebuildHierarchyVector()
     Entity child = rel->firstChild;
     while (child != INVALID_ENTITY)
     {
-        Traverse(child, 0);
-
-        auto cRel = m_scene->GetWorld()->GetComponent<Relationship>(child);
-        child = cRel->nextSibling;
-    }
-
-    // Traverse(root, 0);
-}
-
-
-void Editor::Traverse(Entity e, int depth)
-{
-    uiList.push_back(e);
-    // uiList.push_back({e, depth});
-
-    auto rel = m_scene->GetWorld()->GetComponent<Relationship>(e);
-
-    Entity child = rel->firstChild;
-    while (child != INVALID_ENTITY)
-    {
-        Traverse(child, depth + 1);
+        uiList.push_back(child);
 
         auto cRel = m_scene->GetWorld()->GetComponent<Relationship>(child);
         child = cRel->nextSibling;
