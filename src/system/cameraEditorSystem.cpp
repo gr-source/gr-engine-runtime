@@ -51,7 +51,7 @@ void CameraEditorSystem::Update(Scene *scene)
 
     UpdateCursor(transform);
 
-    transform->dirty = true;
+    scene->MarkChanged<Transform>(go.entity);
 }
 
 void CameraEditorSystem::UpdateCursor(Transform *transform)

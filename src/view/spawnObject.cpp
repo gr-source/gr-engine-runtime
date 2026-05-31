@@ -66,7 +66,8 @@ void SpawnObject::SetPrefab(Entity prefabID)
 
             auto transform = gameObject.GetOrAddComponent<Transform>();
             transform->position = {(float)targetX * 5.5f, 0.0f, (float)targetZ * 4.5f};
-            transform->dirty = true;
+
+            scene->MarkChanged<Transform>(gameObject.entity);
 
             m_instances.push_back(gameObject.entity);
         }

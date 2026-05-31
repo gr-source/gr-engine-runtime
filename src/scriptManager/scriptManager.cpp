@@ -8,6 +8,7 @@
 #include <gr-base/core/file/file.hpp>
 
 #include <dlfcn.h>
+#include <stdexcept>
 
 void ScriptManager::Load(const std::string &path)
 {

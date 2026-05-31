@@ -1130,9 +1130,11 @@ void Editor::create_render_guizmo(Scene *scene, const GameObject* go)
 
         auto manipulatedWorld = transform->worldMatrix;
 
-        transform->dirty = ImGuizmo::Manipulate(&viewmatrix[0][0], &projection[0][0], m_guizmoOperation, m_guizmoManipulate, &manipulatedWorld[0][0]);
-        if (transform->dirty)
+        bool changed = ImGuizmo::Manipulate(&viewmatrix[0][0], &projection[0][0], m_guizmoOperation, m_guizmoManipulate, &manipulatedWorld[0][0]);
+        if (changed)
         {
+            scene->MarkChanged<Transform>(entity);
+
             Matrix4x4 localMatrix = manipulatedWorld;
 
             Relationship* rel = scene->GetWorld()->GetComponent<Relationship>(entity);
@@ -1823,7 +1825,7 @@ void Editor::create_popup_create_scene()
         m_scene->RegistrySystem<TransformSystem>(StageType::SIMULATION);
         m_scene->RegistrySystem<WorldSystem>(StageType::SIMULATION);
         m_scene->RegistrySystem<CameraSystem>(StageType::SIMULATION);
-        // m_scene->RegistrySystem<RenderSystem>(StageType::RENDER);
+        m_scene->RegistrySystem<RenderSystem>(StageType::RENDER);
 
         Entity camera = m_scene->create("MainCamera");
         {
