@@ -604,29 +604,6 @@ void Editor::RenderSceneObject(Scene *scene)
         }
     }
 
-    ImGui::EndChild();
-
-    /*
-    GameObject root = scene->Wrap(scene->GetRoot());
-
-    auto rel = root.GetComponent<Relationship>();
-    if (rel != nullptr)
-    {
-        Entity child = rel->firstChild;
-
-        while (child != INVALID_ENTITY)
-        {
-            ShowGameObjectHierarchy(scene, child);
-
-            auto childRel = scene->GetWorld()->GetComponent<Relationship>(child);
-            if (!childRel)
-                break;
-
-            child = childRel->nextSibling;
-        }
-    }
-    */
-
     if (ImGui::IsWindowHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Right))
         popupFlags |= EditorPopupFlags_SceneAddOption;
 
@@ -635,6 +612,8 @@ void Editor::RenderSceneObject(Scene *scene)
 
     if (ImGui::IsKeyReleased(ImGuiKey_Escape) && ImGui::IsWindowHovered())
         scene->deselect_all();
+
+    ImGui::EndChild();
 }
 
 void Editor::ShowGameObjectHierarchy(Scene *scene, Entity entity)
