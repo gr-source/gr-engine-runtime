@@ -1,28 +1,28 @@
-#include "gr-engine/core/time.hpp"
+#include "gr-engine/timer.hpp"
 
 #include <GLFW/glfw3.h>
 #include <thread>
 
-gtimer::gtimer(double fps)
+Timer::Timer(double fps)
     : m_targetFrameTime(fps > 0.0 ? 1.0 / fps : 0.0),
       m_lastTime(glfwGetTime()),
       m_delta(0.0)
 {}
 
 
-void gtimer::set_fps(double fps)
+void Timer::set_fps(double fps)
 {
     m_targetFrameTime = fps > 0.0 ? 1.0 / fps : m_targetFrameTime;
 }
 
-void gtimer::begin_frame()
+void Timer::begin_frame()
 {
     double now = glfwGetTime();
     m_delta = now - m_lastTime;
     m_lastTime = now;
 }
 
-void gtimer::end_frame()
+void Timer::end_frame()
 {
     double frameTime = glfwGetTime() - m_lastTime;
 
@@ -33,10 +33,11 @@ void gtimer::end_frame()
     }
 }
 
-double gtimer::get_delta() const
+double Timer::get_delta() const
 {
     return m_delta;
 }
+
 
 
 

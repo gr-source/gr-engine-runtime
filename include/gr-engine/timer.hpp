@@ -1,11 +1,9 @@
 #pragma once
 
-#include <chrono>
-
-class gtimer
+class Timer
 {
 public:
-    gtimer(double fps);
+    Timer(double fps);
 
     void set_fps(double fps);
 

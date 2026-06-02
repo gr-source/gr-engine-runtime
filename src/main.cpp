@@ -1,13 +1,14 @@
 #include "gr-base/core/file/file.hpp"
-#include "gr-base/core/thread/threadpool.hpp"
 
 #include <gr-math/gmath.hpp>
 
 #include <gr-render/gRender.h>
 
-#include "gr-engine/application.hpp"
-#include "gr-engine/core/screen.hpp"
-#include "gr-engine/settings.h"
+#include "gr-engine/timer.hpp"
+
+#include "gr-engine/module/moduleloader.hpp"
+
+#include <gr-base/application.hpp>
 
 #include <gr-base/core/logger.hpp>
 #include <gr-base/core/window.hpp>
@@ -47,9 +48,11 @@ void GLFWscrollfunCallback(GLFWwindow* window, double xoffset, double yoffset)
 
 void GLFWdropfunCallback(GLFWwindow* window, int path_count, const char* paths[])
 {
+    /*
     Application* app = Application::GetInstance();
     for (int i=0;i<path_count;i++)
         app->DropFile(paths[i]);
+    */
 }
 
 void glfwInstallCallback(GLFWwindow * window) {
@@ -177,42 +180,15 @@ static void config_set_engine_callback()
     Input::GetMouseScroll   = &glfw_get_mouse_scroll;
 }
 
-static void destroy()
-{
-    Settings::StopPlayEngine();
-
-    auto app = Application::GetInstance();
-    app->shutdown();
-
-    glfwDestroyWindow(glfwGetCurrentContext());
-    
-    glfwTerminate();
-}
-
 #include <sys/signal.h>
 
 void segfault_sigaction(int signal, siginfo_t *si, void *arg)
 {
     printf("Caught segfault at address %p\n", si->si_addr);
 
-    destroy();
+    // destroy();
     
     exit(1);
-}
-
-static void check_app_dir()
-{
-    if (!gfile::exists(gfile::get_cache_directory()))
-        gfile::create_directory(gfile::get_cache_directory());
-
-    if (!gfile::exists(gfile::get_data_directory()))
-        gfile::create_directory(gfile::get_data_directory());
-
-    if (!gfile::exists(gfile::get_config_directory()))
-        gfile::create_directory(gfile::get_config_directory());
-
-    if (!gfile::exists(gfile::get_home_directory() + "/gr-engine"))
-        gfile::create_directory(gfile::get_home_directory() + "/gr-engine");
 }
 
 static void app_set_default_window_config()
@@ -294,31 +270,29 @@ static void app_save_config()
     config_release(config);
 }
 
-#include "gr-engine/core/time.hpp"
-
-int main(int argc, char *argv[])
+static void SetupAppDirectories()
 {
-    struct sigaction sa;
+    if (!gfile::exists(gfile::get_cache_directory()))
+        gfile::create_directory(gfile::get_cache_directory());
 
-    memset(&sa, 0, sizeof(struct sigaction));
-    sigemptyset(&sa.sa_mask);
-    sa.sa_sigaction = segfault_sigaction;
-    sa.sa_flags   = SA_SIGINFO;
+    if (!gfile::exists(gfile::get_data_directory()))
+        gfile::create_directory(gfile::get_data_directory());
 
-    sigaction(SIGSEGV, &sa, NULL);
+    if (!gfile::exists(gfile::get_config_directory()))
+        gfile::create_directory(gfile::get_config_directory());
 
-    // ===============================
-    glfwSetErrorCallback(MyGLFWerrorfun);
+    if (!gfile::exists(gfile::get_home_directory() + "/gr-engine"))
+        gfile::create_directory(gfile::get_home_directory() + "/gr-engine");
+}
 
-    check_app_dir();
-
-    logger::info("[Main] Initialize.");
+static void Run(Application* app)
+{
+    logger::info("[ Main ] Setup window.");
 
     if (glfwInit() != GLFW_TRUE)
-    {
-        logger::critical("Falha ao iniciar o GLFW.");
-        return 1;
-    }
+        return logger::critical("[ Main ] Falha ao iniciar o GLFW.");
+
+    glfwSetErrorCallback(MyGLFWerrorfun);
 
     logger::debug("[Main] Usding glfw version '%s'.", glfwGetVersionString());
 
@@ -371,17 +345,12 @@ int main(int argc, char *argv[])
     {
         glfwTerminate();
 
-        logger::critical("[Main] Falha ao criar a uma janela.");
-        return 2;
+        return logger::critical("[ Main ] Falha ao criar a uma janela.");
     }
 
     glfwMakeContextCurrent(window);
 
     glfwInstallCallback(window);
-
-    config_set_engine_callback();
-
-    app_set_config();
 
     if (!gr::gRender::Initialize())
     {
@@ -389,42 +358,91 @@ int main(int argc, char *argv[])
 
         glfwTerminate();
 
-        logger::critical("[Main] Falha ao iniciar o renderizador.");
-
-        return 3;
+        return logger::critical("[Main] Falha ao iniciar o renderizador.");
     }
 
-    Threadpool::Initialize();
+    config_set_engine_callback();
 
-    auto app = Application::GetInstance();
+    app_set_config();
+
+    Timer time(Clock::max_fps);
+
+    logger::info("[ Main ] Application '0x%lX' initialize.", app);
     app->initialize();
 
-    gtimer time(Clock::max_fps);
-
-    while (Settings::IsEngineRunning() && !glfwWindowShouldClose(window))
+    // run
+    while (!glfwWindowShouldClose(window))
     {
+        // input 
+        glfwPollEvents();
+
+        update_input_states();
+
+        // frame calculate
         time.begin_frame();
 
         Clock::deltaTime = time.get_delta();
         Clock::time += Clock::deltaTime;
 
-        update_input_states();
+        app->run();
 
-        app->process();
-
-        glfwSwapBuffers(&(*window));
-        glfwPollEvents();
+        glfwSwapBuffers(window);
 
         time.end_frame();
     }
 
+    logger::info("[ Main ] Application '0x%lX'shutdown.", app);
+    app->shutdown();
+
+    // Shutdown
     app_save_config();
 
-    destroy();
+    glfwDestroyWindow(window);
 
-    Threadpool::Shutdown();
+    glfwTerminate();
+}
 
-    logger::info("[Main] Shutdown.");
+static void SetupModule()
+{
+    try
+    {
+        ModuleLoader::Load("editor", "/home/NoirVoid/Projetos/gr-engine-dev/modules/gr-engine-editor/lib/libgr-engine-editor.so");
+    } catch (const std::exception& e)
+    {
+        return logger::critical("[ Main ] Falha ao carregar o modulo erro='%s'", e.what());
+    }
+
+    auto CreateInstance = ModuleLoader::GetFunction<Application*>("editor", "CreateInstance");
+    if (CreateInstance == nullptr)
+        return logger::critical("[ Main ] Símbolo 'CreateInstance' não encontrado no módulo 'editor'.");
+
+    Application* app = CreateInstance();
+
+    Run(app);
+
+    delete app;
+}
+
+int main(int argc, char *argv[])
+{
+    SetupAppDirectories();
+
+    logger_config config;
+    config.path = gfile::get_config_directory();
+
+    logger::Initialize(config);
+
+    logger::info("[ Main ] Initialize.");
+
+    ModuleLoader::Initialize();
+
+    SetupModule();
+
+    ModuleLoader::Shutdown();
+
+    logger::info("[ Main ] Shutdown.");
+
+    logger::Shutdown();
 }
 
 

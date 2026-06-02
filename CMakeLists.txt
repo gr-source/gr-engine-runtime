@@ -6,7 +6,15 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
 
-set(GR_BASE_PATH "/home/NoirVoid/AppProjects/gr-base")
+if(NOT DEFINED GR_ENGINE_CORE)
+    message(FATAL_ERROR "GR_ENGINE_CORE NÃO foi definida!")
+endif()
+
+if(NOT GR_ENGINE_CORE)
+    message(FATAL_ERROR "A variável GR_ENGINE_CORE está definida, mas está vazia.")
+endif()
+
+message(STATUS "GR_ENGINE_CORE configurada com sucesso: ${GR_ENGINE_CORE}")
 
 find_package(OpenGL     REQUIRED)
 find_package(gr-math    REQUIRED)
@@ -41,16 +49,27 @@ file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS "src/*.cpp")
 
 add_executable(${CMAKE_PROJECT_NAME} ${SOURCES})
 
-add_subdirectory(imgui)
 add_subdirectory(tests)
 
 target_include_directories(${CMAKE_PROJECT_NAME} PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     ${BULLET_INCLUDE_DIRS}
+    ${GR_ENGINE_CORE}/include
+    ${GR_ENGINE_CORE}/imgui
 )
 
-target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE ${OPENGL_LIBRARIES} ${GRINI_LIBRARIES} ${GRMATH_LIBRARIES} ${GRRENDER_LIBRARIES} ${BULLET_LIBRARIES} ${GLEW_LIBRARIES} "${GR_BASE_PATH}/lib/libgr-base.so" imgui glfw assimp)
+target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE
+    ${OPENGL_LIBRARIES}
+    ${GRINI_LIBRARIES}
+    ${GRMATH_LIBRARIES}
+    ${GRRENDER_LIBRARIES}
+    ${BULLET_LIBRARIES}
+    ${GLEW_LIBRARIES}
+    ${GR_ENGINE_CORE}/lib/libgr-base.so
+    ${GR_ENGINE_CORE}/lib/libimgui.so
+    glfw
+    assimp
+)
 
-target_include_directories(${CMAKE_PROJECT_NAME} PUBLIC "${GR_BASE_PATH}/include")
 
 
