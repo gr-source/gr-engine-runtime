@@ -6,7 +6,7 @@
 
 #include "gr-engine/timer.hpp"
 
-#include "gr-engine/module/moduleloader.hpp"
+#include <gr-base/module/moduleloader.hpp>
 
 #include <gr-base/application.hpp>
 
