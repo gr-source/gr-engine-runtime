@@ -428,7 +428,7 @@ int main(int argc, char *argv[])
     SetupAppDirectories();
 
     logger_config config;
-    config.path = gfile::get_config_directory();
+    config.path = gfile::get_config_directory() + "/logs";
 
     logger::Initialize(config);
 
