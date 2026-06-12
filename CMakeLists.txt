@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.22.1)
 
-project(gr-engine VERSION 0.1.0 LANGUAGES C CXX HOMEPAGE_URL https://github.com/gr-source/gr-engine.git)
+project("gr-engine-runtime" VERSION 0.1.0 LANGUAGES C CXX)
 
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
