@@ -48,11 +48,12 @@ void GLFWscrollfunCallback(GLFWwindow* window, double xoffset, double yoffset)
 
 void GLFWdropfunCallback(GLFWwindow* window, int path_count, const char* paths[])
 {
-    /*
-    Application* app = Application::GetInstance();
+    Application* app = Application::application;
+    if (app == nullptr)
+        return;
+
     for (int i=0;i<path_count;i++)
-        app->DropFile(paths[i]);
-    */
+        app->dropPath(paths[i]);
 }
 
 void glfwInstallCallback(GLFWwindow * window) {
