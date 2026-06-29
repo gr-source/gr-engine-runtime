@@ -44,41 +44,60 @@ vec3 fresnelSchlick(float cosTheta, vec3 F0) {
     return F0 + (1.0 - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
 }
 
-struct Light {
-    vec3 position;
-    vec3 direction;
-    vec4 color;
-    float range;
-    float angle;
-    int type; // 0: Direcional, 1: Ponto, 2: Spot
-};
-
-uniform Light u_mat_lights[10];
-uniform int u_mat_numLights;
-
 vec3 CalculateLight(Light light, vec3 fragPos, vec3 V, vec3 N, vec3 F0, vec3 albedo, float roughness, float metallic) {
     vec3 L;
     float attenuation = 1.0;
 
-    if (light.type == 0) {
-        L = normalize(-light.direction);
-    } else if (light.type == 1) {
-        vec3 lightDir = light.position - fragPos;
-        float distance = length(lightDir);
-        L = normalize(lightDir);
-        attenuation = 1.0 / (distance * distance);
-    } else if (light.type == 2) {
-        vec3 lightDir = light.position - fragPos;
-        float distance = length(lightDir);
-        L = normalize(lightDir);
-        attenuation = 1.0 / (distance * distance);
+    int type = int(light.params.w);
 
-        float theta = dot(L, normalize(-light.direction));
-        if (theta > cos(light.angle)) {
-            attenuation *= (theta - cos(light.angle)) / (1 - cos(light.angle));
-        } else {
-            attenuation = 0.0;
-        }
+    if (type == 0)
+    {
+        L = normalize(-light.direction.xyz);
+    } else if (type == 1)
+    {
+        vec3 lightDir = light.position.xyz - fragPos;
+        float distance = length(lightDir);
+
+        L = normalize(lightDir);
+
+        float constant  = light.params.x;
+        float linear    = light.params.y;
+        float quadratic = light.params.z;
+
+        attenuation = 1.0 /
+            (constant +
+             linear * distance +
+             quadratic * distance * distance);
+    } else if (type == 2)
+    {
+        vec3 lightDir = light.position.xyz - fragPos;
+        float distance = length(lightDir);
+
+        L = normalize(lightDir);
+
+        float constant  = light.params.x;
+        float linear    = light.params.y;
+        float quadratic = light.params.z;
+
+        attenuation = 1.0 /
+            (constant +
+             linear * distance +
+             quadratic * distance * distance);
+
+        vec3 spotDir = normalize(-light.direction.xyz);
+
+        float theta = dot(L, spotDir);
+
+        float inner = light.spot.x; // cos(innerAngle)
+        float outer = light.spot.y; // cos(outerAngle)
+
+        float intensity = clamp(
+            (theta - outer) / (inner - outer),
+            0.0,
+            1.0
+        );
+
+        attenuation *= intensity;
     }
 
     float NdotL = max(1e-5, dot(N, L));
@@ -123,15 +142,15 @@ uniform float ambientocclusion;
 void fragment()
 {
 	vec3 N = normalize(u_normal);
-	vec3 V = normalize(u_mat_eye - u_fragPos);
+	vec3 V = normalize(u_eye - u_fragPos);
     vec3 F0 = vec3(0.04);
     F0 = mix(F0, albedo, metallic);
 
     vec3 Lo = vec3(0.0);
     
-	for (int i = 0; i < u_mat_numLights; i++)
+	for (int i = 0; i < u_numLights; i++)
     {
-        Lo += CalculateLight(u_mat_lights[i], u_fragPos, V, N, F0, albedo, roughness, metallic);
+        Lo += CalculateLight(u_lights[i], u_fragPos, V, N, F0, albedo, roughness, metallic);
     }
 
     vec3 ambient = vec3(0.1) * albedo * ambientocclusion;

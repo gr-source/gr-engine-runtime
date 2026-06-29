@@ -1,5 +1,12 @@
 #define_type vertex
 
+layout(std140, binding = 0) uniform CameraBuffer
+{
+    mat4 u_projection;
+    mat4 u_view;
+    vec3 u_eye;
+};
+
 layout (location = 0) in vec4 in_pos;
 
 layout (location = 1) in vec4 in_normal;
@@ -32,9 +39,6 @@ out vec3 u_normal;
 #ifdef ENABLE_ANIMATION
 uniform mat4 u_boneMatrices[100];
 #endif // ENABLE_ANIMATION
-
-uniform mat4 u_mat_projection;
-uniform mat4 u_mat_view;
 
 void vertex();
 
@@ -91,8 +95,8 @@ void main()
     // u_entityID = in_entityID;
 
     vec4 finalPos =
-        u_mat_projection
-        * u_mat_view
+        u_projection
+        * u_view
         * worldPos;
 
     vertex();
@@ -101,6 +105,36 @@ void main()
 }
 
 #define_type fragment
+
+layout(std140, binding = 0) uniform CameraBuffer
+{
+    mat4 u_projection;
+    mat4 u_view;
+    vec3 u_eye;
+};
+
+struct Light
+{
+    vec4 position;
+    vec4 direction;
+
+    vec4 color;
+
+    vec4 params;     // x = constant
+                           // y = linear
+                           // z = quadratic
+                           // w = tipo
+
+    vec4 spot;       // x = cos(innerCone)
+                           // y = cos(outerCone)
+                           // z,w = reservados
+};
+
+layout(std140, binding = 1) uniform LightBuffer
+{
+    int u_numLights;
+    Light u_lights[10];
+};
 
 out vec4 FragColor;
 
@@ -111,8 +145,6 @@ flat in int u_entityID;
 in vec2 u_texCoord;
 in vec3 u_fragPos;
 in vec3 u_normal;
-
-uniform vec3 u_mat_eye;
 
 void fragment();
 

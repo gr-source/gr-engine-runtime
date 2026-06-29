@@ -1,12 +1,16 @@
 #define_type vertex
 
+layout(std140, binding = 0) uniform Camera
+{
+    mat4 u_projection;
+    mat4 u_view;
+    vec3 u_eye;
+};
+
 layout (location = 0) in vec4 in_pos;
 layout (location = 1) in vec4 in_color;
 
 out vec4 u_color;
-
-uniform mat4 u_mat_projection;
-uniform mat4 u_mat_view;
 
 void vertex();
 
@@ -16,8 +20,8 @@ void main()
     u_color = in_color;
 
     vec4 finalPos =
-        u_mat_projection
-        * u_mat_view
+        u_projection
+        * u_view
         * worldPos;
 
     vertex();
