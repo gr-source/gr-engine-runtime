@@ -71,5 +71,15 @@ target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE
     assimp
 )
 
+if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+    target_compile_options(${PROJECT_NAME} PRIVATE
+        -fsanitize=address,undefined
+        -fno-omit-frame-pointer
+    )
+
+    target_link_options(${PROJECT_NAME} PRIVATE
+        -fsanitize=address,undefined
+    )
+endif()
 
 
