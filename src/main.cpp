@@ -52,8 +52,11 @@ void GLFWdropfunCallback(GLFWwindow* window, int path_count, const char* paths[]
     if (app == nullptr)
         return;
 
+    std::vector<std::string> files;
     for (int i=0;i<path_count;i++)
-        app->dropPath(paths[i]);
+        files.push_back(paths[i]);
+
+    app->dropPath(files);
 }
 
 void glfwInstallCallback(GLFWwindow * window) {
