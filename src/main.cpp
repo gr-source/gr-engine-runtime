@@ -431,7 +431,7 @@ int main(int argc, char *argv[])
     logger_config config;
     config.path = gfile::get_config_directory() + "/logs";
 
-    logger::Initialize(config);
+    logger::Initialize(&config);
 
     logger::info("[ Main ] Initialize.");
 

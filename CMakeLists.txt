@@ -47,29 +47,35 @@ endif()
 
 file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS "src/*.cpp")
 
-add_executable(${CMAKE_PROJECT_NAME} ${SOURCES})
+add_executable(${PROJECT_NAME} ${SOURCES})
 
-add_subdirectory(tests)
-
-target_include_directories(${CMAKE_PROJECT_NAME} PUBLIC
+target_include_directories(${PROJECT_NAME} PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     ${BULLET_INCLUDE_DIRS}
     ${GR_ENGINE_CORE}/include
     ${GR_ENGINE_CORE}/imgui
 )
 
-target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE
+add_library(gr-base SHARED IMPORTED)
+set_target_properties(gr-base PROPERTIES IMPORTED_LOCATION "${GR_ENGINE_CORE}/lib/libgr-base.so")
+
+add_library(imgui SHARED IMPORTED)
+set_target_properties(imgui PROPERTIES IMPORTED_LOCATION "${GR_ENGINE_CORE}/lib/libimgui.so")
+
+target_link_libraries(${PROJECT_NAME} PUBLIC
     ${OPENGL_LIBRARIES}
     ${GRINI_LIBRARIES}
     ${GRMATH_LIBRARIES}
     ${GRRENDER_LIBRARIES}
     ${BULLET_LIBRARIES}
     ${GLEW_LIBRARIES}
-    ${GR_ENGINE_CORE}/lib/libgr-base.so
-    ${GR_ENGINE_CORE}/lib/libimgui.so
+    gr-base
+    imgui
     glfw
     assimp
 )
+
+add_subdirectory(tests)
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     target_compile_options(${PROJECT_NAME} PRIVATE
