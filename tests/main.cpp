@@ -218,7 +218,10 @@ void runnable()
     {
         ScopeTimer timer("Iterate Position");
 
-        world.Query<Position>([](Entity* entities, Position* positions, size_t count)
+        world.Query<Position>([](
+                    size_t count,
+                    Entity* entities,
+                    Position* positions)
         {
             for (size_t i=0;i<count;i++)
             {
@@ -235,7 +238,12 @@ void runnable()
         ScopeTimer timer("Iterate Position + Velocity");
 
         world.Query<Position, Velocity>(
-            [](Entity*, Position* positions, Velocity* velocities, size_t count)
+            [](
+                size_t count,
+                Entity*,
+                Position* positions,
+                Velocity* velocities
+            )
             {
                 for (size_t i=0;i<count;i++)
                 {
