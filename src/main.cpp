@@ -37,8 +37,8 @@ void GLFWframebuffersizefunCallback(GLFWwindow* window, int width, int height)
 {
 }
 
-static Vector2 current_scroll_offset = Vector2::zero;
-static Vector2 mouse_scroll = Vector2::zero;
+static Vector2 current_scroll_offset = type_traits<Vector2>::zero;
+static Vector2 mouse_scroll = type_traits<Vector2>::zero;
 
 void GLFWscrollfunCallback(GLFWwindow* window, double xoffset, double yoffset)
 {
@@ -112,8 +112,8 @@ static bool glfw_get_mouse_button(int button)
     return glfwGetMouseButton(glfwGetCurrentContext(), button) == GLFW_PRESS;
 }
 
-static Vector2 last_mouse_pos = Vector2::zero;
-static Vector2 mouse_delta = Vector2::zero;
+static Vector2 last_mouse_pos = type_traits<Vector2>::zero;
+static Vector2 mouse_delta = type_traits<Vector2>::zero;
 
 static Vector2 glfw_get_mouse_delta()
 {
@@ -135,7 +135,7 @@ static void update_input_states()
     last_mouse_pos = current_pos;
 
     mouse_scroll = current_scroll_offset;
-    current_scroll_offset = Vector2::zero;
+    current_scroll_offset = type_traits<Vector2>::zero;
 }
 
 struct app_settings
