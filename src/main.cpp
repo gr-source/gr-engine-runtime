@@ -1,5 +1,3 @@
-#include "gr-base/core/file/file.hpp"
-
 #include <gr-math/gmath.hpp>
 
 #include <gr-render/gRender.h>
@@ -15,7 +13,7 @@
 #include <gr-base/core/input.hpp>
 #include <gr-base/core/clock.hpp>
 
-#include <string.h>
+#include <gr-base/file/file.hpp>
 
 #include <GLFW/glfw3.h>
 
