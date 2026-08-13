@@ -4,7 +4,7 @@
 
 void vertex()
 {
-	u_position = u_projection * u_model * vec4(in_pos, 0.0f, 1.0); 
+	u_position = u_projection * u_model * vec4(in_position, 0.0f, 1.0); 
 
     u_texCoord = in_texCoord;
 }
@@ -23,7 +23,7 @@ void fragment()
 
 #version 330 core
 
-layout (location = 0) in vec2 in_pos;
+layout (location = 0) in vec2 in_position;
 layout (location = 1) in vec2 in_texCoord;
 
 out vec2 u_texCoord;
@@ -32,7 +32,7 @@ uniform mat4 u_projection;
 uniform mat4 u_model;
 
 void main() {
-    gl_Position = u_projection * u_model * vec4(in_pos, 0.0f, 1.0); 
+    gl_Position = u_projection * u_model * vec4(in_position, 0.0f, 1.0); 
 
     u_texCoord = in_texCoord;
 }
