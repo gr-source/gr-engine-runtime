@@ -3,21 +3,21 @@
 class Timer
 {
 public:
+    double deltaTime =
+        0.0;
+
     Timer(double fps);
 
     void set_fps(double fps);
 
     void begin_frame();
 
-    void end_frame();
-
-    double get_delta() const;
+    void end_frame() const;
 
 private:
     double m_targetFrameTime;
     
-    double m_lastTime;
-
-    double m_delta;
+    double lastTime =
+        0.0;
 };
 

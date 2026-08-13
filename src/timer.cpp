@@ -5,8 +5,7 @@
 
 Timer::Timer(double fps)
     : m_targetFrameTime(fps > 0.0 ? 1.0 / fps : 0.0),
-      m_lastTime(glfwGetTime()),
-      m_delta(0.0)
+      lastTime(glfwGetTime())
 {}
 
 
@@ -17,26 +16,25 @@ void Timer::set_fps(double fps)
 
 void Timer::begin_frame()
 {
-    double now = glfwGetTime();
-    m_delta = now - m_lastTime;
-    m_lastTime = now;
+    double nowTime = glfwGetTime();
+    deltaTime = nowTime - lastTime;
+    lastTime = nowTime;
 }
 
-void Timer::end_frame()
+void Timer::end_frame() const
 {
-    double frameTime = glfwGetTime() - m_lastTime;
+    double endTime =
+        glfwGetTime();
+
+    double frameTime =
+        endTime - lastTime;
 
     if (m_targetFrameTime > 0.0 && frameTime < m_targetFrameTime)
-    {
-        double sleep = m_targetFrameTime - frameTime;
-        std::this_thread::sleep_for(std::chrono::duration<double>(sleep));
-    }
+        std::this_thread::sleep_for(
+                std::chrono::duration<double>(m_targetFrameTime - frameTime)
+            );
 }
 
-double Timer::get_delta() const
-{
-    return m_delta;
-}
 
 
 

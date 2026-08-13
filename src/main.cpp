@@ -127,8 +127,7 @@ static void update_input_states()
 {
     Vector2 current_pos = glfw_get_cursor_pos();
     
-    mouse_delta.x = current_pos.x - last_mouse_pos.x;
-    mouse_delta.y = current_pos.y - last_mouse_pos.y;
+    mouse_delta = current_pos - last_mouse_pos;
 
     last_mouse_pos = current_pos;
 
@@ -375,16 +374,16 @@ static void Run(Application* app)
     // run
     while (!glfwWindowShouldClose(window))
     {
+        // frame calculate
+        time.begin_frame();
+
+        Clock::deltaTime = time.deltaTime;
+        Clock::time += time.deltaTime;
+
         // input 
         glfwPollEvents();
 
         update_input_states();
-
-        // frame calculate
-        time.begin_frame();
-
-        Clock::deltaTime = time.get_delta();
-        Clock::time += Clock::deltaTime;
 
         app->run();
 
