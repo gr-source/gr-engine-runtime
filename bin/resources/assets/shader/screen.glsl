@@ -3,11 +3,7 @@
 #define_raster vertex
 
 void vertex()
-{
-	u_position = u_projection * u_model * vec4(in_position, 0.0f, 1.0); 
-
-    u_texCoord = in_texCoord;
-}
+{}
 
 #define_raster fragment
 
@@ -15,7 +11,16 @@ uniform sampler2D u_texture;
 
 void fragment()
 {
-	FragColor = texture(u_texture, u_texCoord);
+    const float gamma = 2.2;
+    const float exposure = 1.0;
+
+    vec3 hdrColor = texture(u_texture, u_texCoord).rgb;
+
+    vec3 mapped = vec3(1.0) - exp(-hdrColor * exposure);
+    // gamma correction 
+    mapped = pow(mapped, vec3(1.0 / gamma));
+  
+    FragColor = vec4(mapped, 1.0);
 }
 
 /*

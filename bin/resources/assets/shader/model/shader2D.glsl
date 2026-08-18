@@ -16,7 +16,7 @@ void main()
 {
     u_texCoord = in_texCoord;
 
-    u_position = u_projection * u_model * vec4(in_position, 0.0, 1.0);
+    u_position = vec4(in_position, 0.0, 1.0);
 
     vertex();
 
