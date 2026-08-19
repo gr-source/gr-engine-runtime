@@ -16,92 +16,24 @@
 #include <stdio.h>
 
 #include <sys/stat.h>
-
-uint64_t GetHash(uint8_t* buff, size_t length)
-{
-    uint64_t hash = 14695981039346656037UL;
-    for (size_t i = 0; i < length; i++)
-    {
-        hash ^= (uint64_t)(buff[i]);
-        hash *= 1099511628211UL;
-    }
-    return hash;
-}   
-
-int forearch_dir(const char* path, const char* base, FILE* fp)
-{
-    DIR* dir = opendir(path);
-    if (dir == NULL)
-        return 1;
-
-    struct dirent* entry;
-    while ((entry = readdir(dir)) != NULL)
-    {
-        if (entry->d_name[0] == '.')
-            continue;
-
-        char current[512];
-        sprintf(current, "%s/%s", path, entry->d_name);
-
-        char base_dir[512];
-        sprintf(base_dir, "%s/%s", (base == NULL ? "" : base), entry->d_name);
-
-        struct stat path_stat;
-        if (stat(current, &path_stat) == 0 && S_ISDIR(path_stat.st_mode))
-        {
-            if (forearch_dir(current, base_dir, fp) != 0)
-                return 2;
-        } else
-        {
-            FILE* file = fopen(current, "r");
-            if (file != NULL)
-            {
-                fseek(file, 0, SEEK_END);
-                size_t length = ftell(file);
-                fseek(file, 0, SEEK_SET);
-
-                uint8_t* buffer = (uint8_t*)malloc(length + 1);
-                if (fread(buffer, 1, length, file) == length)
-                {
-                    buffer[length] = '\0';
-
-                    uint64_t hash = GetHash(buffer, length);
-                    free(buffer);
-
-                    fprintf(fp, "%lu %s\n", hash, base_dir);
-                } else
-                {
-                    perror("forearch_dir");
-                }
-
-                fclose(file);
-            }
-        }
-    }
-
-    closedir(dir);
-
-    return 0;
-}
-
 #include <chrono>
 
 class ScopeTimer
 {
-    std::chrono::high_resolution_clock::time_point m_start;
+    std::chrono::steady_clock::time_point m_start;
 
     std::string m_name;
 
 public:
     ScopeTimer(const char* name) : m_name(name)
     {
-        m_start = std::chrono::high_resolution_clock::now();
+        m_start = std::chrono::steady_clock::now();
     }
 
     ~ScopeTimer()
     {
         auto end =
-                std::chrono::high_resolution_clock::now();
+                std::chrono::steady_clock::now();
 
             auto duration =
                 std::chrono::duration<double, std::milli>(
@@ -148,11 +80,7 @@ inline constexpr TypeCategory engine::type_traits::category<Health> =
 
 void runnable()
 {
-    ComponentRegistry::Register<Position>(false);
-    ComponentRegistry::Register<Velocity>(false);
-    ComponentRegistry::Register<Health>(false);
-
-    static engine::ecs::world world;
+    engine::ecs::World world;
 
     std::vector<Entity> entities;
     entities.reserve(EntityCount);
@@ -207,8 +135,8 @@ void runnable()
 
         for (auto e : entities)
         {
-            auto p = world.GetComponent<Position>(e);
-            sum += p->x;
+            auto& p = world.GetComponent<Position>(e);
+            sum += p.x;
         }
     }
 

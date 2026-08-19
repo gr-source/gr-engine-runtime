@@ -1,0 +1,519 @@
+[18:05:44.573] [ INFO ]   [ ComponentRegistry ] Initialize '0x55840729ab70'.
+[18:05:44.573] [ DEBUG ]  [ComponentRegistry::Registry] Carregando script padrões...
+[18:05:44.573] [ DEBUG ]  [ ComponentRegistry ] registered: name=Relationship, hash=0x8D342ECAA9E75B9B, index=0, stride=32 alignment=8
+[18:05:44.573] [ DEBUG ]  [ ComponentRegistry ] registered: name=MeshRender, hash=0xE96C5124DF4ADF8C, index=1, stride=16 alignment=8
+[18:05:44.573] [ DEBUG ]  [ ComponentRegistry ] registered: name=RenderBounds, hash=0x72A41A38BA000170, index=2, stride=28 alignment=4
+[18:05:44.573] [ DEBUG ]  [ ComponentRegistry ] registered: name=MeshFilter, hash=0x9DC6D3E1C279E2BE, index=3, stride=4 alignment=4
+[18:05:44.573] [ DEBUG ]  [ ComponentRegistry ] registered: name=MeshRef, hash=0x14F1689A78A65A81, index=4, stride=8 alignment=8
+[18:05:44.574] [ DEBUG ]  [ ComponentRegistry ] registered: name=Static, hash=0xAD9D5481474D4F5B, index=5, stride=0 alignment=0
+[18:05:44.574] [ DEBUG ]  [ ComponentRegistry ] registered: name=TransformLocal, hash=0x4073A06EAC9947AA, index=6, stride=40 alignment=4
+[18:05:44.574] [ DEBUG ]  [ ComponentRegistry ] registered: name=TransformWorld, hash=0xAE22B6C27EF1A7B1, index=7, stride=128 alignment=4
+[18:05:44.574] [ DEBUG ]  [ ComponentRegistry ] registered: name=CameraRenderResult, hash=0x228B51CD2A9B613B, index=8, stride=4 alignment=4
+[18:05:44.574] [ DEBUG ]  [ ComponentRegistry ] registered: name=CameraData, hash=0x158D9B1BB8792E8E, index=9, stride=128 alignment=4
+[18:05:44.574] [ DEBUG ]  [ ComponentRegistry ] registered: name=Camera, hash=0x54D1B2A64667E32E, index=10, stride=32 alignment=4
+[18:05:44.574] [ DEBUG ]  [ ComponentRegistry ] registered: name=Light, hash=0x3B0AB4B52326316F, index=11, stride=40 alignment=4
+[18:05:44.574] [ DEBUG ]  [ ComponentRegistry ] registered: name=Name, hash=0xEF49AEC68FD1DC66, index=12, stride=8 alignment=8
+[18:05:44.574] [ DEBUG ]  [ ComponentRegistry ] registered: name=PhysicsShape, hash=0xFD2D913536AA897F, index=13, stride=8 alignment=8
+[18:05:44.574] [ DEBUG ]  [ ComponentRegistry ] registered: name=Rigidbody, hash=0x29CB18CABB0743E8, index=14, stride=24 alignment=8
+[18:05:44.574] [ DEBUG ]  [ ComponentRegistry ] registered: name=CharacterController, hash=0x3E1CDCB3104EDD38, index=15, stride=16 alignment=8
+[18:05:44.574] [ DEBUG ]  [ ComponentRegistry ] registered: name=CharacterState, hash=0xCB5D00F8C36AE8A5, index=16, stride=1 alignment=1
+[18:05:44.574] [ DEBUG ]  [ ComponentRegistry ] registered: name=CharacterInput, hash=0x37B2EC91370F10F4, index=17, stride=16 alignment=4
+[18:05:44.574] [ DEBUG ]  [ComponentRegistry::Registry] Carregando script padrões...
+[18:05:44.574] [ WARNING ]  [ ComponentRegistry ] type already registered 'Relationship'.
+[18:05:44.574] [ WARNING ]  [ ComponentRegistry ] type already registered 'MeshRender'.
+[18:05:44.574] [ WARNING ]  [ ComponentRegistry ] type already registered 'RenderBounds'.
+[18:05:44.574] [ WARNING ]  [ ComponentRegistry ] type already registered 'MeshFilter'.
+[18:05:44.574] [ WARNING ]  [ ComponentRegistry ] type already registered 'MeshRef'.
+[18:05:44.574] [ WARNING ]  [ ComponentRegistry ] type already registered 'Static'.
+[18:05:44.574] [ WARNING ]  [ ComponentRegistry ] type already registered 'TransformLocal'.
+[18:05:44.574] [ WARNING ]  [ ComponentRegistry ] type already registered 'TransformWorld'.
+[18:05:44.574] [ WARNING ]  [ ComponentRegistry ] type already registered 'CameraRenderResult'.
+[18:05:44.574] [ WARNING ]  [ ComponentRegistry ] type already registered 'CameraData'.
+[18:05:44.574] [ WARNING ]  [ ComponentRegistry ] type already registered 'Camera'.
+[18:05:44.574] [ WARNING ]  [ ComponentRegistry ] type already registered 'Light'.
+[18:05:44.574] [ WARNING ]  [ ComponentRegistry ] type already registered 'Name'.
+[18:05:44.574] [ WARNING ]  [ ComponentRegistry ] type already registered 'PhysicsShape'.
+[18:05:44.574] [ WARNING ]  [ ComponentRegistry ] type already registered 'Rigidbody'.
+[18:05:44.574] [ WARNING ]  [ ComponentRegistry ] type already registered 'CharacterController'.
+[18:05:44.574] [ WARNING ]  [ ComponentRegistry ] type already registered 'CharacterState'.
+[18:05:44.574] [ WARNING ]  [ ComponentRegistry ] type already registered 'CharacterInput'.
+[18:05:45.341] [ INFO ]   [ ComponentRegistry ] Shutdown '0x55840729ab70'.
+Create: 11.437 ms
+Add Position: 30.531 ms
+Add Velocity: 6.015 ms
+Add Health: 6.577 ms
+Get Position: 5.607 ms
+Iterate Position: 1.038 ms
+Iterate Position + Velocity: 1.510 ms
+Destroy: 20.309 ms
+Create: 8.051 ms
+Add Position: 29.708 ms
+Add Velocity: 6.382 ms
+Add Health: 5.902 ms
+Get Position: 4.883 ms
+Iterate Position: 1.023 ms
+Iterate Position + Velocity: 1.481 ms
+Destroy: 19.957 ms
+Create: 8.583 ms
+Add Position: 28.159 ms
+Add Velocity: 6.161 ms
+Add Health: 6.168 ms
+Get Position: 4.938 ms
+Iterate Position: 0.984 ms
+Iterate Position + Velocity: 1.397 ms
+Destroy: 18.291 ms
+Create: 8.810 ms
+Add Position: 27.296 ms
+Add Velocity: 6.231 ms
+Add Health: 5.833 ms
+Get Position: 5.005 ms
+Iterate Position: 0.996 ms
+Iterate Position + Velocity: 1.435 ms
+Destroy: 17.786 ms
+Create: 9.720 ms
+Add Position: 28.605 ms
+Add Velocity: 6.103 ms
+Add Health: 6.124 ms
+Get Position: 4.950 ms
+Iterate Position: 0.986 ms
+Iterate Position + Velocity: 1.405 ms
+Destroy: 18.301 ms
+Create: 8.830 ms
+Add Position: 27.740 ms
+Add Velocity: 6.235 ms
+Add Health: 6.023 ms
+Get Position: 5.128 ms
+Iterate Position: 0.995 ms
+Iterate Position + Velocity: 1.398 ms
+Destroy: 19.141 ms
+Create: 10.522 ms
+Add Position: 27.656 ms
+Add Velocity: 6.293 ms
+Add Health: 5.945 ms
+Get Position: 4.873 ms
+Iterate Position: 0.995 ms
+Iterate Position + Velocity: 1.377 ms
+Destroy: 17.964 ms
+Create: 8.586 ms
+Add Position: 27.654 ms
+Add Velocity: 6.242 ms
+Add Health: 5.896 ms
+Get Position: 5.571 ms
+Iterate Position: 0.990 ms
+Iterate Position + Velocity: 1.442 ms
+Destroy: 18.826 ms
+Create: 9.335 ms
+Add Position: 27.352 ms
+Add Velocity: 6.320 ms
+Add Health: 5.991 ms
+Get Position: 4.890 ms
+Iterate Position: 0.971 ms
+Iterate Position + Velocity: 1.461 ms
+Destroy: 18.416 ms
+Create: 9.382 ms
+Add Position: 28.181 ms
+Add Velocity: 6.129 ms
+Add Health: 6.475 ms
+Get Position: 5.015 ms
+Iterate Position: 0.989 ms
+Iterate Position + Velocity: 1.403 ms
+Destroy: 17.911 ms
+[18:05:46.227] [ INFO ]   [ ComponentRegistry ] Initialize '0x55cea5993b70'.
+[18:05:46.227] [ DEBUG ]  [ComponentRegistry::Registry] Carregando script padrões...
+[18:05:46.227] [ DEBUG ]  [ ComponentRegistry ] registered: name=Relationship, hash=0x8D342ECAA9E75B9B, index=0, stride=32 alignment=8
+[18:05:46.227] [ DEBUG ]  [ ComponentRegistry ] registered: name=MeshRender, hash=0xE96C5124DF4ADF8C, index=1, stride=16 alignment=8
+[18:05:46.227] [ DEBUG ]  [ ComponentRegistry ] registered: name=RenderBounds, hash=0x72A41A38BA000170, index=2, stride=28 alignment=4
+[18:05:46.227] [ DEBUG ]  [ ComponentRegistry ] registered: name=MeshFilter, hash=0x9DC6D3E1C279E2BE, index=3, stride=4 alignment=4
+[18:05:46.227] [ DEBUG ]  [ ComponentRegistry ] registered: name=MeshRef, hash=0x14F1689A78A65A81, index=4, stride=8 alignment=8
+[18:05:46.227] [ DEBUG ]  [ ComponentRegistry ] registered: name=Static, hash=0xAD9D5481474D4F5B, index=5, stride=0 alignment=0
+[18:05:46.227] [ DEBUG ]  [ ComponentRegistry ] registered: name=TransformLocal, hash=0x4073A06EAC9947AA, index=6, stride=40 alignment=4
+[18:05:46.227] [ DEBUG ]  [ ComponentRegistry ] registered: name=TransformWorld, hash=0xAE22B6C27EF1A7B1, index=7, stride=128 alignment=4
+[18:05:46.227] [ DEBUG ]  [ ComponentRegistry ] registered: name=CameraRenderResult, hash=0x228B51CD2A9B613B, index=8, stride=4 alignment=4
+[18:05:46.227] [ DEBUG ]  [ ComponentRegistry ] registered: name=CameraData, hash=0x158D9B1BB8792E8E, index=9, stride=128 alignment=4
+[18:05:46.227] [ DEBUG ]  [ ComponentRegistry ] registered: name=Camera, hash=0x54D1B2A64667E32E, index=10, stride=32 alignment=4
+[18:05:46.227] [ DEBUG ]  [ ComponentRegistry ] registered: name=Light, hash=0x3B0AB4B52326316F, index=11, stride=40 alignment=4
+[18:05:46.227] [ DEBUG ]  [ ComponentRegistry ] registered: name=Name, hash=0xEF49AEC68FD1DC66, index=12, stride=8 alignment=8
+[18:05:46.227] [ DEBUG ]  [ ComponentRegistry ] registered: name=PhysicsShape, hash=0xFD2D913536AA897F, index=13, stride=8 alignment=8
+[18:05:46.227] [ DEBUG ]  [ ComponentRegistry ] registered: name=Rigidbody, hash=0x29CB18CABB0743E8, index=14, stride=24 alignment=8
+[18:05:46.227] [ DEBUG ]  [ ComponentRegistry ] registered: name=CharacterController, hash=0x3E1CDCB3104EDD38, index=15, stride=16 alignment=8
+[18:05:46.227] [ DEBUG ]  [ ComponentRegistry ] registered: name=CharacterState, hash=0xCB5D00F8C36AE8A5, index=16, stride=1 alignment=1
+[18:05:46.227] [ DEBUG ]  [ ComponentRegistry ] registered: name=CharacterInput, hash=0x37B2EC91370F10F4, index=17, stride=16 alignment=4
+[18:05:46.227] [ DEBUG ]  [ComponentRegistry::Registry] Carregando script padrões...
+[18:05:46.227] [ WARNING ]  [ ComponentRegistry ] type already registered 'Relationship'.
+[18:05:46.227] [ WARNING ]  [ ComponentRegistry ] type already registered 'MeshRender'.
+[18:05:46.227] [ WARNING ]  [ ComponentRegistry ] type already registered 'RenderBounds'.
+[18:05:46.227] [ WARNING ]  [ ComponentRegistry ] type already registered 'MeshFilter'.
+[18:05:46.227] [ WARNING ]  [ ComponentRegistry ] type already registered 'MeshRef'.
+[18:05:46.227] [ WARNING ]  [ ComponentRegistry ] type already registered 'Static'.
+[18:05:46.227] [ WARNING ]  [ ComponentRegistry ] type already registered 'TransformLocal'.
+[18:05:46.227] [ WARNING ]  [ ComponentRegistry ] type already registered 'TransformWorld'.
+[18:05:46.227] [ WARNING ]  [ ComponentRegistry ] type already registered 'CameraRenderResult'.
+[18:05:46.227] [ WARNING ]  [ ComponentRegistry ] type already registered 'CameraData'.
+[18:05:46.227] [ WARNING ]  [ ComponentRegistry ] type already registered 'Camera'.
+[18:05:46.227] [ WARNING ]  [ ComponentRegistry ] type already registered 'Light'.
+[18:05:46.227] [ WARNING ]  [ ComponentRegistry ] type already registered 'Name'.
+[18:05:46.227] [ WARNING ]  [ ComponentRegistry ] type already registered 'PhysicsShape'.
+[18:05:46.227] [ WARNING ]  [ ComponentRegistry ] type already registered 'Rigidbody'.
+[18:05:46.227] [ WARNING ]  [ ComponentRegistry ] type already registered 'CharacterController'.
+[18:05:46.227] [ WARNING ]  [ ComponentRegistry ] type already registered 'CharacterState'.
+[18:05:46.227] [ WARNING ]  [ ComponentRegistry ] type already registered 'CharacterInput'.
+[18:05:46.997] [ INFO ]   [ ComponentRegistry ] Shutdown '0x55cea5993b70'.
+Create: 11.008 ms
+Add Position: 31.005 ms
+Add Velocity: 6.150 ms
+Add Health: 7.056 ms
+Get Position: 5.396 ms
+Iterate Position: 0.993 ms
+Iterate Position + Velocity: 1.438 ms
+Destroy: 20.967 ms
+Create: 8.533 ms
+Add Position: 29.547 ms
+Add Velocity: 6.148 ms
+Add Health: 5.874 ms
+Get Position: 5.464 ms
+Iterate Position: 0.997 ms
+Iterate Position + Velocity: 1.414 ms
+Destroy: 19.687 ms
+Create: 8.982 ms
+Add Position: 28.075 ms
+Add Velocity: 6.432 ms
+Add Health: 5.982 ms
+Get Position: 5.000 ms
+Iterate Position: 1.084 ms
+Iterate Position + Velocity: 1.440 ms
+Destroy: 18.083 ms
+Create: 8.574 ms
+Add Position: 27.835 ms
+Add Velocity: 6.173 ms
+Add Health: 6.278 ms
+Get Position: 5.037 ms
+Iterate Position: 1.182 ms
+Iterate Position + Velocity: 1.742 ms
+Destroy: 18.680 ms
+Create: 8.837 ms
+Add Position: 27.728 ms
+Add Velocity: 6.511 ms
+Add Health: 6.017 ms
+Get Position: 5.181 ms
+Iterate Position: 0.997 ms
+Iterate Position + Velocity: 1.432 ms
+Destroy: 17.857 ms
+Create: 8.456 ms
+Add Position: 28.072 ms
+Add Velocity: 6.170 ms
+Add Health: 6.146 ms
+Get Position: 4.879 ms
+Iterate Position: 0.980 ms
+Iterate Position + Velocity: 1.401 ms
+Destroy: 18.004 ms
+Create: 8.799 ms
+Add Position: 29.619 ms
+Add Velocity: 6.273 ms
+Add Health: 6.018 ms
+Get Position: 5.165 ms
+Iterate Position: 1.003 ms
+Iterate Position + Velocity: 1.398 ms
+Destroy: 17.821 ms
+Create: 8.530 ms
+Add Position: 27.790 ms
+Add Velocity: 6.222 ms
+Add Health: 6.178 ms
+Get Position: 4.877 ms
+Iterate Position: 0.981 ms
+Iterate Position + Velocity: 1.396 ms
+Destroy: 18.065 ms
+Create: 9.682 ms
+Add Position: 27.837 ms
+Add Velocity: 6.231 ms
+Add Health: 7.225 ms
+Get Position: 5.700 ms
+Iterate Position: 1.001 ms
+Iterate Position + Velocity: 1.418 ms
+Destroy: 18.362 ms
+Create: 9.486 ms
+Add Position: 27.778 ms
+Add Velocity: 6.393 ms
+Add Health: 5.833 ms
+Get Position: 4.835 ms
+Iterate Position: 0.980 ms
+Iterate Position + Velocity: 1.392 ms
+Destroy: 18.456 ms
+[18:05:47.837] [ INFO ]   [ ComponentRegistry ] Initialize '0x55a0500e0b70'.
+[18:05:47.837] [ DEBUG ]  [ComponentRegistry::Registry] Carregando script padrões...
+[18:05:47.837] [ DEBUG ]  [ ComponentRegistry ] registered: name=Relationship, hash=0x8D342ECAA9E75B9B, index=0, stride=32 alignment=8
+[18:05:47.837] [ DEBUG ]  [ ComponentRegistry ] registered: name=MeshRender, hash=0xE96C5124DF4ADF8C, index=1, stride=16 alignment=8
+[18:05:47.837] [ DEBUG ]  [ ComponentRegistry ] registered: name=RenderBounds, hash=0x72A41A38BA000170, index=2, stride=28 alignment=4
+[18:05:47.837] [ DEBUG ]  [ ComponentRegistry ] registered: name=MeshFilter, hash=0x9DC6D3E1C279E2BE, index=3, stride=4 alignment=4
+[18:05:47.837] [ DEBUG ]  [ ComponentRegistry ] registered: name=MeshRef, hash=0x14F1689A78A65A81, index=4, stride=8 alignment=8
+[18:05:47.837] [ DEBUG ]  [ ComponentRegistry ] registered: name=Static, hash=0xAD9D5481474D4F5B, index=5, stride=0 alignment=0
+[18:05:47.837] [ DEBUG ]  [ ComponentRegistry ] registered: name=TransformLocal, hash=0x4073A06EAC9947AA, index=6, stride=40 alignment=4
+[18:05:47.837] [ DEBUG ]  [ ComponentRegistry ] registered: name=TransformWorld, hash=0xAE22B6C27EF1A7B1, index=7, stride=128 alignment=4
+[18:05:47.837] [ DEBUG ]  [ ComponentRegistry ] registered: name=CameraRenderResult, hash=0x228B51CD2A9B613B, index=8, stride=4 alignment=4
+[18:05:47.837] [ DEBUG ]  [ ComponentRegistry ] registered: name=CameraData, hash=0x158D9B1BB8792E8E, index=9, stride=128 alignment=4
+[18:05:47.837] [ DEBUG ]  [ ComponentRegistry ] registered: name=Camera, hash=0x54D1B2A64667E32E, index=10, stride=32 alignment=4
+[18:05:47.837] [ DEBUG ]  [ ComponentRegistry ] registered: name=Light, hash=0x3B0AB4B52326316F, index=11, stride=40 alignment=4
+[18:05:47.837] [ DEBUG ]  [ ComponentRegistry ] registered: name=Name, hash=0xEF49AEC68FD1DC66, index=12, stride=8 alignment=8
+[18:05:47.837] [ DEBUG ]  [ ComponentRegistry ] registered: name=PhysicsShape, hash=0xFD2D913536AA897F, index=13, stride=8 alignment=8
+[18:05:47.837] [ DEBUG ]  [ ComponentRegistry ] registered: name=Rigidbody, hash=0x29CB18CABB0743E8, index=14, stride=24 alignment=8
+[18:05:47.837] [ DEBUG ]  [ ComponentRegistry ] registered: name=CharacterController, hash=0x3E1CDCB3104EDD38, index=15, stride=16 alignment=8
+[18:05:47.837] [ DEBUG ]  [ ComponentRegistry ] registered: name=CharacterState, hash=0xCB5D00F8C36AE8A5, index=16, stride=1 alignment=1
+[18:05:47.837] [ DEBUG ]  [ ComponentRegistry ] registered: name=CharacterInput, hash=0x37B2EC91370F10F4, index=17, stride=16 alignment=4
+[18:05:47.837] [ DEBUG ]  [ComponentRegistry::Registry] Carregando script padrões...
+[18:05:47.837] [ WARNING ]  [ ComponentRegistry ] type already registered 'Relationship'.
+[18:05:47.837] [ WARNING ]  [ ComponentRegistry ] type already registered 'MeshRender'.
+[18:05:47.837] [ WARNING ]  [ ComponentRegistry ] type already registered 'RenderBounds'.
+[18:05:47.837] [ WARNING ]  [ ComponentRegistry ] type already registered 'MeshFilter'.
+[18:05:47.837] [ WARNING ]  [ ComponentRegistry ] type already registered 'MeshRef'.
+[18:05:47.837] [ WARNING ]  [ ComponentRegistry ] type already registered 'Static'.
+[18:05:47.837] [ WARNING ]  [ ComponentRegistry ] type already registered 'TransformLocal'.
+[18:05:47.837] [ WARNING ]  [ ComponentRegistry ] type already registered 'TransformWorld'.
+[18:05:47.837] [ WARNING ]  [ ComponentRegistry ] type already registered 'CameraRenderResult'.
+[18:05:47.837] [ WARNING ]  [ ComponentRegistry ] type already registered 'CameraData'.
+[18:05:47.837] [ WARNING ]  [ ComponentRegistry ] type already registered 'Camera'.
+[18:05:47.837] [ WARNING ]  [ ComponentRegistry ] type already registered 'Light'.
+[18:05:47.837] [ WARNING ]  [ ComponentRegistry ] type already registered 'Name'.
+[18:05:47.837] [ WARNING ]  [ ComponentRegistry ] type already registered 'PhysicsShape'.
+[18:05:47.837] [ WARNING ]  [ ComponentRegistry ] type already registered 'Rigidbody'.
+[18:05:47.837] [ WARNING ]  [ ComponentRegistry ] type already registered 'CharacterController'.
+[18:05:47.837] [ WARNING ]  [ ComponentRegistry ] type already registered 'CharacterState'.
+[18:05:47.837] [ WARNING ]  [ ComponentRegistry ] type already registered 'CharacterInput'.
+[18:05:48.606] [ INFO ]   [ ComponentRegistry ] Shutdown '0x55a0500e0b70'.
+Create: 10.918 ms
+Add Position: 30.868 ms
+Add Velocity: 6.262 ms
+Add Health: 7.830 ms
+Get Position: 5.987 ms
+Iterate Position: 1.044 ms
+Iterate Position + Velocity: 1.458 ms
+Destroy: 20.483 ms
+Create: 8.278 ms
+Add Position: 29.559 ms
+Add Velocity: 6.377 ms
+Add Health: 5.872 ms
+Get Position: 4.935 ms
+Iterate Position: 1.063 ms
+Iterate Position + Velocity: 1.464 ms
+Destroy: 19.489 ms
+Create: 8.512 ms
+Add Position: 29.873 ms
+Add Velocity: 6.144 ms
+Add Health: 6.150 ms
+Get Position: 4.884 ms
+Iterate Position: 0.994 ms
+Iterate Position + Velocity: 1.400 ms
+Destroy: 18.112 ms
+Create: 8.780 ms
+Add Position: 27.601 ms
+Add Velocity: 6.195 ms
+Add Health: 5.834 ms
+Get Position: 4.997 ms
+Iterate Position: 1.002 ms
+Iterate Position + Velocity: 1.419 ms
+Destroy: 18.006 ms
+Create: 8.391 ms
+Add Position: 28.021 ms
+Add Velocity: 6.068 ms
+Add Health: 6.510 ms
+Get Position: 4.891 ms
+Iterate Position: 0.987 ms
+Iterate Position + Velocity: 1.416 ms
+Destroy: 18.611 ms
+Create: 8.498 ms
+Add Position: 27.771 ms
+Add Velocity: 6.319 ms
+Add Health: 5.915 ms
+Get Position: 5.278 ms
+Iterate Position: 1.024 ms
+Iterate Position + Velocity: 1.443 ms
+Destroy: 18.514 ms
+Create: 8.385 ms
+Add Position: 29.722 ms
+Add Velocity: 6.221 ms
+Add Health: 5.983 ms
+Get Position: 4.890 ms
+Iterate Position: 0.983 ms
+Iterate Position + Velocity: 1.396 ms
+Destroy: 18.168 ms
+Create: 8.702 ms
+Add Position: 28.184 ms
+Add Velocity: 6.091 ms
+Add Health: 5.845 ms
+Get Position: 5.059 ms
+Iterate Position: 0.986 ms
+Iterate Position + Velocity: 1.399 ms
+Destroy: 17.952 ms
+Create: 8.433 ms
+Add Position: 27.437 ms
+Add Velocity: 6.162 ms
+Add Health: 6.041 ms
+Get Position: 4.898 ms
+Iterate Position: 0.971 ms
+Iterate Position + Velocity: 1.414 ms
+Destroy: 20.488 ms
+Create: 9.370 ms
+Add Position: 27.617 ms
+Add Velocity: 6.277 ms
+Add Health: 5.852 ms
+Get Position: 5.058 ms
+Iterate Position: 0.982 ms
+Iterate Position + Velocity: 1.389 ms
+Destroy: 17.875 ms
+[18:05:49.354] [ INFO ]   [ ComponentRegistry ] Initialize '0x558457e22b70'.
+[18:05:49.354] [ DEBUG ]  [ComponentRegistry::Registry] Carregando script padrões...
+[18:05:49.354] [ DEBUG ]  [ ComponentRegistry ] registered: name=Relationship, hash=0x8D342ECAA9E75B9B, index=0, stride=32 alignment=8
+[18:05:49.354] [ DEBUG ]  [ ComponentRegistry ] registered: name=MeshRender, hash=0xE96C5124DF4ADF8C, index=1, stride=16 alignment=8
+[18:05:49.354] [ DEBUG ]  [ ComponentRegistry ] registered: name=RenderBounds, hash=0x72A41A38BA000170, index=2, stride=28 alignment=4
+[18:05:49.354] [ DEBUG ]  [ ComponentRegistry ] registered: name=MeshFilter, hash=0x9DC6D3E1C279E2BE, index=3, stride=4 alignment=4
+[18:05:49.354] [ DEBUG ]  [ ComponentRegistry ] registered: name=MeshRef, hash=0x14F1689A78A65A81, index=4, stride=8 alignment=8
+[18:05:49.354] [ DEBUG ]  [ ComponentRegistry ] registered: name=Static, hash=0xAD9D5481474D4F5B, index=5, stride=0 alignment=0
+[18:05:49.354] [ DEBUG ]  [ ComponentRegistry ] registered: name=TransformLocal, hash=0x4073A06EAC9947AA, index=6, stride=40 alignment=4
+[18:05:49.354] [ DEBUG ]  [ ComponentRegistry ] registered: name=TransformWorld, hash=0xAE22B6C27EF1A7B1, index=7, stride=128 alignment=4
+[18:05:49.354] [ DEBUG ]  [ ComponentRegistry ] registered: name=CameraRenderResult, hash=0x228B51CD2A9B613B, index=8, stride=4 alignment=4
+[18:05:49.354] [ DEBUG ]  [ ComponentRegistry ] registered: name=CameraData, hash=0x158D9B1BB8792E8E, index=9, stride=128 alignment=4
+[18:05:49.354] [ DEBUG ]  [ ComponentRegistry ] registered: name=Camera, hash=0x54D1B2A64667E32E, index=10, stride=32 alignment=4
+[18:05:49.354] [ DEBUG ]  [ ComponentRegistry ] registered: name=Light, hash=0x3B0AB4B52326316F, index=11, stride=40 alignment=4
+[18:05:49.354] [ DEBUG ]  [ ComponentRegistry ] registered: name=Name, hash=0xEF49AEC68FD1DC66, index=12, stride=8 alignment=8
+[18:05:49.354] [ DEBUG ]  [ ComponentRegistry ] registered: name=PhysicsShape, hash=0xFD2D913536AA897F, index=13, stride=8 alignment=8
+[18:05:49.354] [ DEBUG ]  [ ComponentRegistry ] registered: name=Rigidbody, hash=0x29CB18CABB0743E8, index=14, stride=24 alignment=8
+[18:05:49.354] [ DEBUG ]  [ ComponentRegistry ] registered: name=CharacterController, hash=0x3E1CDCB3104EDD38, index=15, stride=16 alignment=8
+[18:05:49.354] [ DEBUG ]  [ ComponentRegistry ] registered: name=CharacterState, hash=0xCB5D00F8C36AE8A5, index=16, stride=1 alignment=1
+[18:05:49.354] [ DEBUG ]  [ ComponentRegistry ] registered: name=CharacterInput, hash=0x37B2EC91370F10F4, index=17, stride=16 alignment=4
+[18:05:49.354] [ DEBUG ]  [ComponentRegistry::Registry] Carregando script padrões...
+[18:05:49.354] [ WARNING ]  [ ComponentRegistry ] type already registered 'Relationship'.
+[18:05:49.354] [ WARNING ]  [ ComponentRegistry ] type already registered 'MeshRender'.
+[18:05:49.354] [ WARNING ]  [ ComponentRegistry ] type already registered 'RenderBounds'.
+[18:05:49.354] [ WARNING ]  [ ComponentRegistry ] type already registered 'MeshFilter'.
+[18:05:49.354] [ WARNING ]  [ ComponentRegistry ] type already registered 'MeshRef'.
+[18:05:49.354] [ WARNING ]  [ ComponentRegistry ] type already registered 'Static'.
+[18:05:49.354] [ WARNING ]  [ ComponentRegistry ] type already registered 'TransformLocal'.
+[18:05:49.354] [ WARNING ]  [ ComponentRegistry ] type already registered 'TransformWorld'.
+[18:05:49.354] [ WARNING ]  [ ComponentRegistry ] type already registered 'CameraRenderResult'.
+[18:05:49.354] [ WARNING ]  [ ComponentRegistry ] type already registered 'CameraData'.
+[18:05:49.354] [ WARNING ]  [ ComponentRegistry ] type already registered 'Camera'.
+[18:05:49.354] [ WARNING ]  [ ComponentRegistry ] type already registered 'Light'.
+[18:05:49.354] [ WARNING ]  [ ComponentRegistry ] type already registered 'Name'.
+[18:05:49.354] [ WARNING ]  [ ComponentRegistry ] type already registered 'PhysicsShape'.
+[18:05:49.354] [ WARNING ]  [ ComponentRegistry ] type already registered 'Rigidbody'.
+[18:05:49.354] [ WARNING ]  [ ComponentRegistry ] type already registered 'CharacterController'.
+[18:05:49.354] [ WARNING ]  [ ComponentRegistry ] type already registered 'CharacterState'.
+[18:05:49.354] [ WARNING ]  [ ComponentRegistry ] type already registered 'CharacterInput'.
+[18:05:50.128] [ INFO ]   [ ComponentRegistry ] Shutdown '0x558457e22b70'.
+Create: 11.318 ms
+Add Position: 31.586 ms
+Add Velocity: 6.494 ms
+Add Health: 7.799 ms
+Get Position: 5.652 ms
+Iterate Position: 1.021 ms
+Iterate Position + Velocity: 1.411 ms
+Destroy: 20.457 ms
+Create: 8.453 ms
+Add Position: 29.634 ms
+Add Velocity: 6.423 ms
+Add Health: 5.918 ms
+Get Position: 5.057 ms
+Iterate Position: 1.013 ms
+Iterate Position + Velocity: 1.410 ms
+Destroy: 19.588 ms
+Create: 10.809 ms
+Add Position: 27.912 ms
+Add Velocity: 6.504 ms
+Add Health: 5.919 ms
+Get Position: 4.946 ms
+Iterate Position: 0.982 ms
+Iterate Position + Velocity: 1.392 ms
+Destroy: 18.318 ms
+Create: 8.412 ms
+Add Position: 27.776 ms
+Add Velocity: 6.175 ms
+Add Health: 5.877 ms
+Get Position: 5.202 ms
+Iterate Position: 0.973 ms
+Iterate Position + Velocity: 1.412 ms
+Destroy: 18.021 ms
+Create: 8.497 ms
+Add Position: 27.836 ms
+Add Velocity: 6.394 ms
+Add Health: 6.124 ms
+Get Position: 5.090 ms
+Iterate Position: 1.003 ms
+Iterate Position + Velocity: 1.417 ms
+Destroy: 18.092 ms
+Create: 8.487 ms
+Add Position: 27.773 ms
+Add Velocity: 6.279 ms
+Add Health: 6.040 ms
+Get Position: 5.326 ms
+Iterate Position: 1.120 ms
+Iterate Position + Velocity: 1.508 ms
+Destroy: 18.874 ms
+Create: 8.736 ms
+Add Position: 29.869 ms
+Add Velocity: 6.635 ms
+Add Health: 5.989 ms
+Get Position: 4.883 ms
+Iterate Position: 1.087 ms
+Iterate Position + Velocity: 1.445 ms
+Destroy: 18.987 ms
+Create: 8.581 ms
+Add Position: 28.027 ms
+Add Velocity: 6.196 ms
+Add Health: 6.235 ms
+Get Position: 5.057 ms
+Iterate Position: 0.989 ms
+Iterate Position + Velocity: 1.422 ms
+Destroy: 17.978 ms
+Create: 8.860 ms
+Add Position: 27.719 ms
+Add Velocity: 6.471 ms
+Add Health: 8.346 ms
+Get Position: 5.231 ms
+Iterate Position: 0.963 ms
+Iterate Position + Velocity: 1.413 ms
+Destroy: 18.104 ms
+Create: 9.248 ms
+Add Position: 27.467 ms
+Add Velocity: 6.271 ms
+Add Health: 6.128 ms
+Get Position: 4.904 ms
+Iterate Position: 0.988 ms
+Iterate Position + Velocity: 1.397 ms
+Destroy: 17.783 ms
+[18:07:54.043] [ INFO ]   [ ComponentRegistry ] Initialize '0x55ed288eab70'.
+[18:07:54.043] [ DEBUG ]  [ComponentRegistry::Registry] Carregando script padrões...
+[18:07:54.043] [ DEBUG ]  [ ComponentRegistry ] registered: name=Relationship, hash=0x8D342ECAA9E75B9B, index=0, stride=32 alignment=8
+[18:07:54.043] [ DEBUG ]  [ ComponentRegistry ] registered: name=MeshRender, hash=0xE96C5124DF4ADF8C, index=1, stride=16 alignment=8
+[18:07:54.043] [ DEBUG ]  [ ComponentRegistry ] registered: name=RenderBounds, hash=0x72A41A38BA000170, index=2, stride=28 alignment=4
+[18:07:54.043] [ DEBUG ]  [ ComponentRegistry ] registered: name=MeshFilter, hash=0x9DC6D3E1C279E2BE, index=3, stride=4 alignment=4
+[18:07:54.043] [ DEBUG ]  [ ComponentRegistry ] registered: name=MeshRef, hash=0x14F1689A78A65A81, index=4, stride=8 alignment=8
+[18:07:54.043] [ DEBUG ]  [ ComponentRegistry ] registered: name=Static, hash=0xAD9D5481474D4F5B, index=5, stride=0 alignment=0
+[18:07:54.043] [ DEBUG ]  [ ComponentRegistry ] registered: name=TransformLocal, hash=0x4073A06EAC9947AA, index=6, stride=40 alignment=4
+[18:07:54.043] [ DEBUG ]  [ ComponentRegistry ] registered: name=TransformWorld, hash=0xAE22B6C27EF1A7B1, index=7, stride=128 alignment=4
+[18:07:54.043] [ DEBUG ]  [ ComponentRegistry ] registered: name=CameraRenderResult, hash=0x228B51CD2A9B613B, index=8, stride=4 alignment=4
+[18:07:54.043] [ DEBUG ]  [ ComponentRegistry ] registered: name=CameraData, hash=0x158D9B1BB8792E8E, index=9, stride=128 alignment=4
+[18:07:54.043] [ DEBUG ]  [ ComponentRegistry ] registered: name=Camera, hash=0x54D1B2A64667E32E, index=10, stride=32 alignment=4
+[18:07:54.043] [ DEBUG ]  [ ComponentRegistry ] registered: name=Light, hash=0x3B0AB4B52326316F, index=11, stride=40 alignment=4
+[18:07:54.043] [ DEBUG ]  [ ComponentRegistry ] registered: name=Name, hash=0xEF49AEC68FD1DC66, index=12, stride=8 alignment=8
+[18:07:54.043] [ DEBUG ]  [ ComponentRegistry ] registered: name=PhysicsShape, hash=0xFD2D913536AA897F, index=13, stride=8 alignment=8
+[18:07:54.043] [ DEBUG ]  [ ComponentRegistry ] registered: name=Rigidbody, hash=0x29CB18CABB0743E8, index=14, stride=24 alignment=8
+[18:07:54.043] [ DEBUG ]  [ ComponentRegistry ] registered: name=CharacterController, hash=0x3E1CDCB3104EDD38, index=15, stride=16 alignment=8
+[18:07:54.043] [ DEBUG ]  [ ComponentRegistry ] registered: name=CharacterState, hash=0xCB5D00F8C36AE8A5, index=16, stride=1 alignment=1
+[18:07:54.043] [ DEBUG ]  [ ComponentRegistry ] registered: name=CharacterInput, hash=0x37B2EC91370F10F4, index=17, stride=16 alignment=4
+[18:07:54.043] [ DEBUG ]  [ComponentRegistry::Registry] Carregando script padrões...
+[18:07:54.043] [ WARNING ]  [ ComponentRegistry ] type already registered 'Relationship'.
+[18:07:54.043] [ WARNING ]  [ ComponentRegistry ] type already registered 'MeshRender'.
+[18:07:54.043] [ WARNING ]  [ ComponentRegistry ] type already registered 'RenderBounds'.
+[18:07:54.043] [ WARNING ]  [ ComponentRegistry ] type already registered 'MeshFilter'.
+[18:07:54.043] [ WARNING ]  [ ComponentRegistry ] type already registered 'MeshRef'.
+[18:07:54.043] [ WARNING ]  [ ComponentRegistry ] type already registered 'Static'.
+[18:07:54.043] [ WARNING ]  [ ComponentRegistry ] type already registered 'TransformLocal'.
+[18:07:54.043] [ WARNING ]  [ ComponentRegistry ] type already registered 'TransformWorld'.
+[18:07:54.043] [ WARNING ]  [ ComponentRegistry ] type already registered 'CameraRenderResult'.
+[18:07:54.043] [ WARNING ]  [ ComponentRegistry ] type already registered 'CameraData'.
+[18:07:54.043] [ WARNING ]  [ ComponentRegistry ] type already registered 'Camera'.
+[18:07:54.043] [ WARNING ]  [ ComponentRegistry ] type already registered 'Light'.
+[18:07:54.043] [ WARNING ]  [ ComponentRegistry ] type already registered 'Name'.
+[18:07:54.043] [ WARNING ]  [ ComponentRegistry ] type already registered 'PhysicsShape'.
+[18:07:54.043] [ WARNING ]  [ ComponentRegistry ] type already registered 'Rigidbody'.
+[18:07:54.043] [ WARNING ]  [ ComponentRegistry ] type already registered 'CharacterController'.
+[18:07:54.043] [ WARNING ]  [ ComponentRegistry ] type already registered 'CharacterState'.
+[18:07:54.043] [ WARNING ]  [ ComponentRegistry ] type already registered 'CharacterInput'.
