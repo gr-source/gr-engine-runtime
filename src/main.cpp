@@ -16,6 +16,7 @@
 #include <gr-base/file/file.hpp>
 
 #include <GLFW/glfw3.h>
+#include <iostream>
 
 extern "C"
 {
@@ -353,13 +354,14 @@ static void Run(Application* app)
 
     glfwInstallCallback(window);
 
-    if (!gr::gRender::Initialize())
+    std::string error;
+    if (!gr::gRender::Initialize(error))
     {
         glfwDestroyWindow(window);
 
         glfwTerminate();
 
-        return logger::critical("[Main] Falha ao iniciar o renderizador.");
+        return logger::critical("[Main] Falha ao iniciar o renderizador: %s", error.c_str());
     }
 
     config_set_engine_callback();
@@ -407,7 +409,7 @@ static void SetupModule()
 {
     try
     {
-        ModuleLoader::Load("editor", "/home/NoirVoid/Projetos/gr-engine-dev/modules/gr-engine-editor/lib/libgr-engine-editor.so");
+        ModuleLoader::Load("editor", "/home/NoirVoid/Documentos/gr-engine-editor/lib/libgr-engine-editor.so");
     } catch (const std::exception& e)
     {
         return logger::critical("[ Main ] Falha ao carregar o modulo erro='%s'", e.what());
