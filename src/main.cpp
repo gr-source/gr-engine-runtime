@@ -6,7 +6,7 @@
 
 #include <gr-base/module/moduleloader.hpp>
 
-#include <gr-base/application.hpp>
+#include <gr-base/iapplication.hpp>
 
 #include <gr-base/core/logger.hpp>
 #include <gr-base/core/window.hpp>
@@ -16,7 +16,6 @@
 #include <gr-base/file/file.hpp>
 
 #include <GLFW/glfw3.h>
-#include <iostream>
 
 extern "C"
 {
@@ -47,7 +46,7 @@ void GLFWscrollfunCallback(GLFWwindow* window, double xoffset, double yoffset)
 
 void GLFWdropfunCallback(GLFWwindow* window, int path_count, const char* paths[])
 {
-    Application* app = Application::application;
+    auto app = IApplication::GetInstance();
     if (app == nullptr)
         return;
 
@@ -287,7 +286,7 @@ static void SetupAppDirectories()
         gfile::create_directory(gfile::get_home_directory() + "/gr-engine");
 }
 
-static void Run(Application* app)
+static void Run(IApplication* app)
 {
     logger::info("[ Main ] Setup window.");
 
@@ -415,11 +414,11 @@ static void SetupModule()
         return logger::critical("[ Main ] Falha ao carregar o modulo erro='%s'", e.what());
     }
 
-    auto CreateInstance = ModuleLoader::GetFunction<Application*>("editor", "CreateInstance");
+    auto CreateInstance = ModuleLoader::GetFunction<IApplication*>("editor", "CreateInstance");
     if (CreateInstance == nullptr)
         return logger::critical("[ Main ] Símbolo 'CreateInstance' não encontrado no módulo 'editor'.");
 
-    Application* app = CreateInstance();
+    IApplication* app = CreateInstance();
 
     Run(app);
 
