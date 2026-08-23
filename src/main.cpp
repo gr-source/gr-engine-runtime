@@ -367,7 +367,7 @@ static void Run(IApplication* app)
 
     app_set_config();
 
-    Timer time(Clock::max_fps);
+    Timer time(Window::GetEnableVSync() ? 0.0 : Clock::max_fps);
 
     logger::info("[ Main ] Application '0x%lX' initialize.", app);
     app->initialize();
