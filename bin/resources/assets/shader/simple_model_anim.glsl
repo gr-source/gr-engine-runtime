@@ -1,4 +1,4 @@
-#define_type shader3D
+#define_type surface
 
 #define USE_MODEL
 

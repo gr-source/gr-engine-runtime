@@ -1,4 +1,4 @@
-#define_type line
+#define_type debug
 
 #define_raster vertex
 
