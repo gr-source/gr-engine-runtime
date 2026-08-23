@@ -23,13 +23,16 @@ void Timer::begin_frame()
 
 void Timer::end_frame() const
 {
+    if (m_targetFrameTime <= 0.0)
+        return;
+
     double endTime =
         glfwGetTime();
 
     double frameTime =
         endTime - lastTime;
 
-    if (m_targetFrameTime > 0.0 && frameTime < m_targetFrameTime)
+    if (frameTime < m_targetFrameTime)
         std::this_thread::sleep_for(
                 std::chrono::duration<double>(m_targetFrameTime - frameTime)
             );
