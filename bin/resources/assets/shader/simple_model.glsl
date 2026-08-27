@@ -129,24 +129,25 @@ vec3 CalculateLight(Light light, vec3 fragPos, vec3 V, vec3 N, vec3 F0, vec3 alb
     return (kD * albedo / PI + specular) * radiance * NdotL;
 }
 
-vec3 ACESFilm(vec3 x) {
-    float a = 2.51;
-    float b = 0.03;
-    float c = 2.43;
-    float d = 0.59;
-    float e = 0.14;
-    return clamp((x * (a * x + b)) / (x * (c * x + d) + e), 0.0, 1.0);
-}
-
+#ifdef USE_BASECOLOR_MAP
+uniform sampler2D albedoTex;
+#else // USE_BASECOLOR_MAP
 uniform vec3 albedo;
+#endif // USE_BASECOLOR_MAP
+
 uniform float metallic;
 uniform float roughness;
 uniform float ambientocclusion;
 
 void fragment()
 {
+#ifdef USE_BASECOLOR_MAP
+    vec3 albedo = pow(texture(albedoTex, u_texCoord).rgb, vec3(2.2));
+#endif
+
 	vec3 N = normalize(u_normal);
 	vec3 V = normalize(u_eye - u_fragPos);
+
     vec3 F0 = vec3(0.04);
     F0 = mix(F0, albedo, metallic);
 
