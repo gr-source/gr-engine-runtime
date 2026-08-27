@@ -210,28 +210,29 @@ static void app_set_config()
     if (config == NULL)
         return;
 
-    config_load(config, dir.c_str());
-
-    // window
+    if (config_load(config, dir.c_str()) == CONFIG_TRUE)
     {
-        gSection* section = config_find_section(config, "window");
-        if (section != NULL)
+        // window
         {
-            float width = config_get_float(section, "width");
-            float height = config_get_float(section, "height");
+            gSection* section = config_find_section(config, "window");
+            if (section != NULL)
+            {
+                float width = (float)config_get_int(section, "width");
+                float height = (float)config_get_int(section, "height");
 
-            Window::SetWindowSize({width, height});
+                Window::SetWindowSize({width, height});
+            }
         }
-    }
 
-    // application
-    {
-        gSection* section = config_find_section(config, "application");
-        if (section != NULL)
+        // application
         {
-            Window::SetVSync(config_get_bool(section, "vsync"));
-            
-            Clock::max_fps = static_cast<double>(config_get_int(section, "max_fps"));
+            gSection* section = config_find_section(config, "application");
+            if (section != NULL)
+            {
+                Window::SetVSync(config_get_bool(section, "vsync"));
+                
+                Clock::max_fps = static_cast<double>(config_get_int(section, "max_fps"));
+            }
         }
     }
 
@@ -252,8 +253,8 @@ static void app_save_config()
         gSection* section = config_create_section(config, "window");
         if (section != NULL)
         {
-            config_set_float(section, "width", window_size.x);
-            config_set_float(section, "height", window_size.y);
+            config_set_int(section, "width", window_size.x);
+            config_set_int(section, "height", window_size.y);
         }
     }
 
