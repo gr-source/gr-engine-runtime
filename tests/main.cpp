@@ -56,27 +56,45 @@ struct Position
     float x, y, z;
 };
 
+namespace engine
+{
 template <>
-inline constexpr TypeCategory engine::type_traits::category<Position> =
-    TypeCategory::Component;
+struct category_traits<Position>
+{
+    static constexpr TypeCategory value =
+        TypeCategory::Component;
+};
+}
 
 struct Velocity
 {
     float x, y, z;
 };
 
+namespace engine
+{
 template <>
-inline constexpr TypeCategory engine::type_traits::category<Velocity> =
-    TypeCategory::Component;
+struct category_traits<Velocity>
+{
+    static constexpr TypeCategory value =
+        TypeCategory::Component;
+};
+}
 
 struct Health
 {
     int value;
 };
 
+namespace engine
+{
 template <>
-inline constexpr TypeCategory engine::type_traits::category<Health> =
-    TypeCategory::Component;
+struct category_traits<Health>
+{
+    static constexpr TypeCategory value =
+        TypeCategory::Component;
+};
+}
 
 void runnable()
 {
