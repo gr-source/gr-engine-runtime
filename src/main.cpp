@@ -26,7 +26,7 @@ extern "C"
 
 GLFWwindow *CreateWindow(const char* name, int width, int height, GLFWwindow * share, bool isVisible)
 {
-    glfwWindowHint(GLFW_VISIBLE, isVisible ? GL_TRUE : GL_FALSE);
+    // glfwWindowHint(GLFW_VISIBLE, isVisible ? GL_TRUE : GL_FALSE);
 
     return glfwCreateWindow(width, height, name, nullptr, share);
 }
@@ -299,8 +299,8 @@ static void Run(IApplication* app)
     logger::debug("[Main] Usding glfw version '%s'.", glfwGetVersionString());
 
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+    // glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
     logger::debug("[Main] Versão a ser usada do opengl 3.3");
 
@@ -342,7 +342,7 @@ static void Run(IApplication* app)
         }
     }
 
-    GLFWwindow* window = CreateWindow("GR - GameEngine", 1024, 512, nullptr, true);
+    GLFWwindow* window = CreateWindow("GR - GameEngine", 1280, 800, nullptr, true);
     if (window == nullptr)
     {
         glfwTerminate();
