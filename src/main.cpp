@@ -16,6 +16,7 @@
 #include <gr-base/file/file.hpp>
 
 #include <GLFW/glfw3.h>
+#include <iostream>
 
 extern "C"
 {
@@ -405,33 +406,50 @@ static void Run(IApplication* app)
     glfwTerminate();
 }
 
-static void SetupModule()
+static bool SetupModule(int argc, char *argv[])
 {
     try
     {
-        ModuleLoader::Load("editor", "/home/NoirVoid/Documentos/gr-engine-editor/lib/libgr-engine-editor.so");
+        ModuleLoader::Load("editor", argv[1]);
     } catch (const std::exception& e)
     {
-        return logger::critical("[ Main ] Falha ao carregar o modulo erro='%s'", e.what());
+        logger::critical("[ Main ] Falha ao carregar o modulo erro='%s'", e.what());
+        return false;
     }
 
     auto CreateInstance = ModuleLoader::GetFunction<IApplication*>("editor", "CreateInstance");
     if (CreateInstance == nullptr)
-        return logger::critical("[ Main ] Símbolo 'CreateInstance' não encontrado no módulo 'editor'.");
+    {
+        logger::critical("[ Main ] Símbolo 'CreateInstance' não encontrado no módulo 'editor'.");
+        return false;
+    }
 
     IApplication* app = CreateInstance();
 
     Run(app);
 
     delete app;
+
+    return true;
 }
 
 int main(int argc, char *argv[])
 {
+    if (argc <= 1)
+    {
+        std::cerr << "[!] Numero de argumentos invalidos, adicione o caminho do modulo runtime!!!" << std::endl;
+        std::cerr << "[+] Exemplo: ./gr-engine-runtime /home/[user]/libeditor.so" << std::endl;
+        return 1;
+    }
+
     SetupAppDirectories();
 
+    std::string log_path =
+        gfile::get_config_directory() + "/logs";
+
     logger_config config;
-    config.path = gfile::get_config_directory() + "/logs";
+    config.path =
+        log_path;
 
     logger::Initialize(&config);
 
@@ -439,7 +457,10 @@ int main(int argc, char *argv[])
 
     ModuleLoader::Initialize();
 
-    SetupModule();
+    if (!SetupModule(argc, argv))
+    {
+        std::cerr << "[!] Falha ao executar o modulo, veja os logs em: '" << log_path << "'" << std::endl;
+    }
 
     ModuleLoader::Shutdown();
 
